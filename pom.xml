@@ -123,6 +123,7 @@
     <cs.wiremock.version>2.11.0</cs.wiremock.version>
     <cs.jetty.version>9.4.8.v20171121</cs.jetty.version>
     <cs.jetty-maven-plugin.version>9.2.22.v20170606</cs.jetty-maven-plugin.version>
+    <cs.lombok.version>1.18.6</cs.lombok.version>
   </properties>
 
   <distributionManagement>
@@ -502,6 +503,11 @@
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-util</artifactId>
         <version>${cs.jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>${cs.lombok.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

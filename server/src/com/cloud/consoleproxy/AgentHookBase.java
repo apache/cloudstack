@@ -30,6 +30,7 @@ import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager.Certificates;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -43,6 +44,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.proxy.StartConsoleProxyAgentHttpHandlerCommand;
 import com.cloud.configuration.Config;
+import com.cloud.consoleproxy.api.NoVncKeyIvPair;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
@@ -69,6 +71,7 @@ public abstract class AgentHookBase implements AgentHook {
     AgentManager _agentMgr;
     KeystoreManager _ksMgr;
     KeysManager _keysMgr;
+    ConsoleProxyManager _consoleMgr;
 
     public AgentHookBase(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, KeysManager keysMgr) {
         _instanceDao = instanceDao;
@@ -198,16 +201,29 @@ public abstract class AgentHookBase implements AgentHook {
             String storePassword = Base64.encodeBase64String(randomBytes);
 
             byte[] ksBits = null;
+            Certificates certificates = null;
+            boolean sslEnabled = false;
+            String sslEnabledStr = _configDao.getValue("consoleproxy.sslEnabled");
+            if (sslEnabledStr != null && sslEnabledStr.equalsIgnoreCase("true")) {
+                sslEnabled = true;
+            }
             String consoleProxyUrlDomain = _configDao.getValue(Config.ConsoleProxyUrlDomain.key());
             if (consoleProxyUrlDomain == null || consoleProxyUrlDomain.isEmpty()) {
                 s_logger.debug("SSL is disabled for console proxy based on global config, skip loading certificates");
             } else {
                 ksBits = _ksMgr.getKeystoreBits(ConsoleProxyManager.CERTIFICATE_NAME, ConsoleProxyManager.CERTIFICATE_NAME, storePassword);
+                if (sslEnabled) {
+                    certificates = _ksMgr.getCertificates(ConsoleProxyManager.CERTIFICATE_NAME);
+                }
                 //ks manager raises exception if ksBits are null, hence no need to explicltly handle the condition
             }
 
             cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);
             cmd.setEncryptorPassword(getEncryptorPassword());
+            s_logger.debug("Adding data for noVNC based console proxy");
+            cmd.setCertificates(certificates);
+            NoVncKeyIvPair keyIvPair = new NoVncKeyIvPair(ConsoleProxyManager.NoVncEncryptionKey.value(), ConsoleProxyManager.NoVncEncryptionIV.value());
+            cmd.setNoVncKeyIvPair(keyIvPair);
 
             HostVO consoleProxyHost = findConsoleProxyHost(startupCmd);
 

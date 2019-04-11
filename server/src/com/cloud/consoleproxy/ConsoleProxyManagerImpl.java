@@ -17,6 +17,8 @@
 package com.cloud.consoleproxy;
 
 import java.nio.charset.Charset;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -32,6 +34,8 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreDao;
@@ -41,6 +45,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -153,7 +158,7 @@ import com.google.gson.GsonBuilder;
 // Starting, HA, Migrating, Running state are all counted as "Open" for available capacity calculation
 // because sooner or later, it will be driven into Running state
 //
-public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter, Configurable {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30 seconds
@@ -1329,6 +1334,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
         }
 
+        // Initialize NoVncEncryptionKey and NoVncEncryptionIV
+        _configDao.getValueAndInitIfNotExist(NoVncEncryptionKey.key(), NoVncEncryptionKey.category(), getBase64EncodedRandomKey(128), NoVncEncryptionKey.description());
+        _configDao.getValueAndInitIfNotExist(NoVncEncryptionIV.key(), NoVncEncryptionIV.category(), getBase64EncodedRandomKey(128), NoVncEncryptionIV.description());
+
         _loadScanner = new SystemVmLoadScanner<Long>(this);
         _loadScanner.initScan(STARTUP_DELAY, _capacityScanInterval);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
@@ -1345,6 +1354,19 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     protected ConsoleProxyManagerImpl() {
+    }
+
+    private static String getBase64EncodedRandomKey(int nBits) {
+        SecureRandom random;
+        try {
+            random = SecureRandom.getInstance("SHA1PRNG");
+            byte[] keyBytes = new byte[nBits / 8];
+            random.nextBytes(keyBytes);
+            return Base64.encodeBase64URLSafeString(keyBytes);
+        } catch (NoSuchAlgorithmException e) {
+            s_logger.error("Unhandled exception: ", e);
+        }
+        return null;
     }
 
     @Override
@@ -1732,6 +1754,16 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Inject
     public void setConsoleProxyAllocators(List<ConsoleProxyAllocator> consoleProxyAllocators) {
         _consoleProxyAllocators = consoleProxyAllocators;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ConsoleProxyManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] { NoVncConsoleDefault, NoVncEncryptionKey, NoVncEncryptionIV };
     }
 
 }

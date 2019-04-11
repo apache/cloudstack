@@ -18,6 +18,7 @@ package com.cloud.agent.resource.consoleproxy;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,7 +33,10 @@ import java.util.Properties;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager.Certificates;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.Agent.ExitStatus;
@@ -53,6 +57,7 @@ import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.StartConsoleProxyAgentHttpHandlerCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
+import com.cloud.consoleproxy.api.NoVncKeyIvPair;
 import com.cloud.exception.AgentControlChannelException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -113,9 +118,77 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     }
 
     private Answer execute(StartConsoleProxyAgentHttpHandlerCommand cmd) {
+        launchNoVNC(cmd.getCertificates(), cmd.getNoVncKeyIvPair());
         s_logger.info("Invoke launchConsoleProxy() in responding to StartConsoleProxyAgentHttpHandlerCommand");
         launchConsoleProxy(cmd.getKeystoreBits(), cmd.getKeystorePassword(), cmd.getEncryptorPassword());
         return new Answer(cmd);
+    }
+
+    private void launchNoVNC(Certificates certificates, NoVncKeyIvPair keyIvPair) {
+        if (certificates != null) {
+            s_logger.info("Saving certificate data for use in CPVM");
+            saveCertDataForNoVNC(certificates);
+        }
+        if (keyIvPair != null) {
+            s_logger.info("Saving noVNC key/iv pair for use in CPVM");
+            saveKeyIvPairForNoVNC(keyIvPair);
+        }
+        startNoVNCScript(certificates);
+    }
+
+    private void startNoVNCScript(Certificates certificates) {
+        Script command = new Script("/usr/local/cloud/systemvm/noVNC_daemons.sh", s_logger);
+        if (certificates != null) {
+            command = new Script("/usr/local/cloud/systemvm/noVNC_daemons_ssl.sh", s_logger);
+        }
+        s_logger.info("Starting noVNC command line: " + command.toString());
+        String result = command.execute();
+        if (result != null) {
+            s_logger.warn("Error while starting the noVNC daemons websockify and socat. err=" + result);
+        } else {
+            s_logger.info("noVNC daemons websockify and socat are started.");
+        }
+    }
+
+    private void saveCertDataForNoVNC(Certificates certificates) {
+        if (certificates == null) {
+            s_logger.debug("No certificates");
+            return;
+        }
+        final String customCertificate = certificates.getPrivCert();
+        final String customKey = certificates.getPrivKey();
+        if (StringUtils.isEmpty(customCertificate) || StringUtils.isEmpty(customKey) ) {
+            s_logger.debug("No certificate data");
+            return;
+        } else if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Saving " + customCertificate.length() + " + " + customKey.length() + " bytes of certificate data.");
+        }
+        // considder making these configurable or settable through the command class
+        final String customCertificateLocation = "/usr/local/cloud/systemvm/certs/customssl.crt";
+        final String customKeyLocation = "/usr/local/cloud/systemvm/certs/customssl.key";
+        try (FileWriter certificateStream = new FileWriter(customCertificateLocation);
+             FileWriter keyStream = new FileWriter(customKeyLocation);
+             BufferedWriter certificateBufferer = new BufferedWriter(certificateStream);
+             BufferedWriter keyBufferer = new BufferedWriter(keyStream);
+            ) {
+            certificateBufferer.write(customCertificate);
+            keyBufferer.write(customKey);
+        } catch (IOException e) {
+            s_logger.error("saving custom certificates failed due to ", e);
+        }
+
+    }
+
+    private void saveKeyIvPairForNoVNC(NoVncKeyIvPair keyIvPair) {
+        try {
+            File file = new File("/root/noVNC/utils/websockify/websockify/websocketproxy.py");
+            String websockify = FileUtils.readFileToString(file);
+            websockify = websockify.replaceFirst("self.novnc_key =(.*)", "self.novnc_key = '" + keyIvPair.getKey() + "'");
+            websockify = websockify.replaceFirst("self.novnc_iv =(.*)", "self.novnc_iv = '" + keyIvPair.getIv() + "'");
+            FileUtils.writeStringToFile(file, websockify);
+        } catch (IOException e) {
+            s_logger.error("Unable to save noVNC key/iv pair due to ", e);
+        }
     }
 
     private void disableRpFilter() {
