@@ -6878,10 +6878,9 @@ label.error {
 .multi-wizard.instance-wizard .diagram .part.zone-plane {
   width: 354px;
   height: 117px;
-  background-position: 0px -55px;
+  background-position: -38px -55px;
   /*+placement:displace -38px 259px;*/
   position: absolute;
-  margin-left: -38px;
   margin-top: 259px;
 }
 
