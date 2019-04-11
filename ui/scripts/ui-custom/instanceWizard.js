@@ -552,6 +552,9 @@
 
                                                     $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').bind('change', function() {
                                                         var val = $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val();
+                                                        if (val < minVal || val > maxVal) {
+                                                            cloudStack.dialog.notice({ message: $.validator.format(_l('message.validate.range'), [minVal, maxVal]) });
+                                                        }
                                                         if (val < minVal) {
                                                             val = minVal;
                                                             $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(val);
