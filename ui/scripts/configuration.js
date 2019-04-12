@@ -73,6 +73,7 @@
                                 preFilter: function(args) {
                                     if (isAdmin()) {
                                     } else {
+                                        args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
                                         args.$form.find('.form-item[rel=isPublic]').hide();
                                         args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
                                         args.$form.find('.form-item[rel=deploymentPlanner]').hide();
@@ -648,9 +649,9 @@
                                     },
                                     domainId: {
                                         label: 'label.domain',
-                                        docID: 'helpDiskOfferingDomain',
+                                        docID: 'helpComputeOfferingDomain',
                                         dependsOn: 'isPublic',
-                                        isMultiple: true,
+                                        //isMultiple: true,
                                         select: function(args) {
                                             $.ajax({
                                                 url: createURL('listDomains'),
@@ -682,7 +683,7 @@
                                     },
                                     zoneId: {
                                         label: 'label.zone',
-                                        docID: 'helpDiskOfferingZone',
+                                        docID: 'helpComputeOfferingZone',
                                         isMultiple: true,
                                         validation: {
                                             allzonesonly: true
@@ -865,12 +866,6 @@
                                 $.extend(data, {
                                     isvolatile: (args.data.isVolatile == "on")
                                 });
-
-                                if (args.data.isPublic != "on") {
-                                    $.extend(data, {
-                                        domainid: args.data.domainId
-                                    });
-                                }
 
                                 if (args.data.isPublic != "on") {
                                     var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
@@ -1203,6 +1198,7 @@
                                 preFilter: function(args) {
                                     if (isAdmin()) {
                                     } else {
+                                        args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
                                         args.$form.find('.form-item[rel=isPublic]').hide();
                                         args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
                                     }
@@ -2169,7 +2165,7 @@
                                         label: 'label.domain',
                                         docID: 'helpDiskOfferingDomain',
                                         dependsOn: 'isPublic',
-                                        isMultiple: true,
+                                        //isMultiple: true,
                                         select: function(args) {
                                             $.ajax({
                                                 url: createURL('listDomains'),
@@ -3458,6 +3454,83 @@
                                                 ]
                                             });
                                         }
+                                    },
+                                    isPublic: {
+                                        label: 'label.public',
+                                        isBoolean: true,
+                                        isReverse: true,
+                                        isChecked: false,
+                                        docID: 'helpNetworkOfferingPublic'
+                                    },
+                                    domainId: {
+                                        label: 'label.domain',
+                                        docID: 'helpNetworkOfferingDomain',
+                                        dependsOn: 'isPublic',
+                                        //isMultiple: true,
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL('listDomains'),
+                                                data: {
+                                                    listAll: true,
+                                                    details: 'min'
+                                                },
+                                                dataType: "json",
+                                                async: false,
+                                                success: function(json) {
+                                                    var items = [];
+                                                    var domainObjs = json.listdomainsresponse.domain;
+                                                    $(domainObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.path
+                                                        });
+                                                    });
+                                                    items.sort(function(a, b) {
+                                                        return a.description.localeCompare(b.description);
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        },
+                                        isHidden: true
+                                    },
+                                    zoneId: {
+                                        label: 'label.zone',
+                                        docID: 'helpNetworkOfferingZone',
+                                        isMultiple: true,
+                                        validation: {
+                                            allzonesonly: true
+                                        },
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listZones"),
+                                                data: {available: 'true'},
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var items = [];
+                                                    var zoneObjs = json.listzonesresponse.zone;
+                                                    $(zoneObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.name
+                                                        });
+                                                    });
+                                                    items.sort(function(a, b) {
+                                                        return a.description.localeCompare(b.description);
+                                                    });
+                                                    items.unshift({
+                                                        id: -1,
+                                                        description: "All Zones"
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        }
                                     }
                                 }
                             },
@@ -3672,6 +3745,22 @@
 
                                 if (args.$form.find('.form-item[rel=serviceofferingid]').css("display") == "none")
                                     delete inputData.serviceofferingid;
+
+                                if (args.data.isPublic != "on") {
+                                    var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                    if (domainId) {
+                                        $.extend(inputData, {
+                                            domainid: domainId
+                                        });
+                                    }
+                                }
+
+                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId;
+                                if (zoneId) {
+                                    $.extend(inputData, {
+                                        zoneid: zoneId
+                                    });
+                                }
 
                                 inputData['traffictype'] = 'GUEST'; //traffic type dropdown has been removed since it has only one option ('Guest'). Hardcode traffic type value here.
 
@@ -3965,6 +4054,12 @@
                                     },
                                     serviceCapabilities: {
                                         label: 'label.service.capabilities'
+                                    },
+                                    domain: {
+                                        label: 'label.domain'
+                                    },
+                                    zone: {
+                                        label: 'label.zone'
                                     },
                                     tags: {
                                         label: 'label.tags'
@@ -4277,6 +4372,83 @@
                                         isHidden: true,
                                         dependsOn: 'service.SourceNat.isEnabled',
                                         isBoolean: true
+                                    },
+                                    isPublic: {
+                                        label: 'label.public',
+                                        isBoolean: true,
+                                        isReverse: true,
+                                        isChecked: false,
+                                        docID: 'helpVpcOfferingPublic'
+                                    },
+                                    domainId: {
+                                        label: 'label.domain',
+                                        docID: 'helpVpcOfferingDomain',
+                                        dependsOn: 'isPublic',
+                                        //isMultiple: true,
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL('listDomains'),
+                                                data: {
+                                                    listAll: true,
+                                                    details: 'min'
+                                                },
+                                                dataType: "json",
+                                                async: false,
+                                                success: function(json) {
+                                                    var items = [];
+                                                    var domainObjs = json.listdomainsresponse.domain;
+                                                    $(domainObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.path
+                                                        });
+                                                    });
+                                                    items.sort(function(a, b) {
+                                                        return a.description.localeCompare(b.description);
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        },
+                                        isHidden: true
+                                    },
+                                    zoneId: {
+                                        label: 'label.zone',
+                                        docID: 'helpVpcOfferingZone',
+                                        isMultiple: true,
+                                        validation: {
+                                            allzonesonly: true
+                                        },
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listZones"),
+                                                data: {available: 'true'},
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var items = [];
+                                                    var zoneObjs = json.listzonesresponse.zone;
+                                                    $(zoneObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.name
+                                                        });
+                                                    });
+                                                    items.sort(function(a, b) {
+                                                        return a.description.localeCompare(b.description);
+                                                    });
+                                                    items.unshift({
+                                                        id: -1,
+                                                        description: "All Zones"
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        }
                                     }
                                 }//end of fields
                             }, //end of createForm
@@ -4331,6 +4503,22 @@
                                     inputData['serviceProviderList[' + serviceProviderIndex + '].provider'] = value;
                                     serviceProviderIndex++;
                                 });
+
+                                if (args.data.isPublic != "on") {
+                                    var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                    if (domainId) {
+                                        $.extend(inputData, {
+                                            domainid: domainId
+                                        });
+                                    }
+                                }
+
+                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId;
+                                if (zoneId) {
+                                    $.extend(inputData, {
+                                        zoneid: zoneId
+                                    });
+                                }
 
                                 $.ajax({
                                     url: createURL('createVPCOffering'),
@@ -4553,6 +4741,12 @@
                                     },
                                     serviceCapabilities: {
                                         label: 'label.service.capabilities'
+                                    },
+                                    domain: {
+                                        label: 'label.domain'
+                                    },
+                                    zone: {
+                                        label: 'label.zone'
                                     },
                                     tags: {
                                         label: 'label.tags'
