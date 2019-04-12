@@ -166,8 +166,7 @@ env:
 
     # domains
     - TESTS="component/test_cpu_domain_limits
-             component/test_mm_domain_limits
-             component/test_resource_limits"
+             component/test_mm_domain_limits"
 
     # misc
     - TESTS="component/test_tags
