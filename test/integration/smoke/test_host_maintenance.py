@@ -326,6 +326,9 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
             cls._cleanup.append(cls.l2_network)
             cls._cleanup.append(cls.network_offering)
 
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+
+
     @classmethod
     def tearDownClass(cls):
         try:
@@ -466,24 +469,6 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
 
-    @classmethod
-    def get_host_credentials(cls, hostid):
-        sql = "select id from host where uuid = '%s';" % hostid
-        internal_id = cls.dbclient.execute(sql)[0]
-        sql = "select name, value from host_details where host_id = '%s' and name in ('username', 'password');" \
-              % internal_id
-        rows = cls.dbclient.execute(sql)
-        username = None
-        password = None
-        for row in rows:
-            if row[0] == "username":
-                username = row[1]
-            elif row[0] == "password":
-                password = row[1]
-        if not username or not password:
-            raise unittest.SkipTest("Incomplete credentials for host %s" % hostid)
-        return username, password
-
     def get_ssh_client(self, ip, username, password, retries=10):
         """ Setup ssh client connection and return connection """
 
@@ -498,7 +483,7 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
         return ssh_client
 
     @skipTestIf("hypervisorNotSupported")
-    @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="true")
+    @attr(tags=["boris", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="true")
     def test_02_cancel_host_maintenance_ssh_enabled_agent_disconnected(self):
         """
         Test cancel maintenance when: 'kvm.ssh.to.agent' = true, agent state != 'Up'
@@ -512,13 +497,16 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
 
         if not self.is_ssh_enabled():
             self.set_ssh_enabled(True)
-        username, password = self.get_host_credentials(self.host.id)
+        # username, password = self.get_host_credentials(self.host.id)
+        username = self.hostConfig["username"]
+        password = self.hostConfig["password"]
 
         try:
             self.prepare_host_for_maintenance(self.host.id)
             self.wait_until_host_is_in_state(self.host.id, "Maintenance")
 
-            ssh_client = self.get_ssh_client(self.host.ipaddress, username, password)
+            ssh_client = self.get_ssh_client(self.host.ipaddress, self.hostConfig["username"],
+                  self.hostConfig["password"])
             ssh_client.execute("service cloudstack-agent stop")
             self.wait_until_agent_is_in_state(self.host.id, "Disconnected")
 
@@ -572,13 +560,12 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
         if self.is_ssh_enabled():
             self.set_ssh_enabled(False)
 
-        username, password = self.get_host_credentials(self.host.id)
-
         try:
             self.prepare_host_for_maintenance(self.host.id)
             self.wait_until_host_is_in_state(self.host.id, "Maintenance")
 
-            ssh_client = self.get_ssh_client(self.host.ipaddress, username, password)
+            ssh_client = self.get_ssh_client(self.host.ipaddress, self.hostConfig["username"],
+                  self.hostConfig["password"])
             ssh_client.execute("service cloudstack-agent stop")
             self.wait_until_agent_is_in_state(self.host.id, "Disconnected")
         except Exception as e:
@@ -587,7 +574,8 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
         self.assertRaises(Exception, self.cancel_host_maintenance, self.host.id)
 
         try:
-            ssh_client = self.get_ssh_client(self.host.ipaddress, username, password)
+            ssh_client = self.get_ssh_client(self.host.ipaddress, self.hostConfig["username"],
+                  self.hostConfig["password"])
             ssh_client.execute("service cloudstack-agent start")
             self.wait_until_agent_is_in_state(self.host.id, "Up")
 
