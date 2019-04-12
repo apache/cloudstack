@@ -1058,6 +1058,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             }
             throw ex;
         }
+        _accountMgr.checkAccess(caller, ntwkOff, _dcDao.findById(zoneId));
+
         // validate physical network and zone
         // Check if physical network exists
         PhysicalNetwork pNtwk = null;
@@ -2015,6 +2017,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         }
 
         _accountMgr.checkAccess(callerAccount, null, true, network);
+        _accountMgr.checkAccess(callerAccount, offering, _dcDao.findById(network.getDataCenterId()));
 
         if (name != null) {
             network.setName(name);
@@ -2521,6 +2524,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
         Vpc vpc = _vpcDao.findById(vpcId);
         _accountMgr.checkAccess(account, null, true, vpc);
+        _accountMgr.checkAccess(account, _vpcOfferingDao.findById(vpcOfferingId), _dcDao.findById(vpc.getZoneId()));
 
         if (vpc.getVpcOfferingId() == vpcOfferingId) {
             return vpc;

@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -103,6 +104,8 @@ public interface AccountService {
     void checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException;
 
     void checkAccess(Account account, NetworkOffering nof, DataCenter zone) throws PermissionDeniedException;
+
+    void checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException;
 
     void checkAccess(User user, ControlledEntity entity);
 

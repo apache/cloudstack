@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -44,6 +45,7 @@ import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -51,6 +53,8 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.api.query.dao.VpcOfferingJoinDao;
+import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenter;
@@ -143,6 +147,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.google.common.base.Strings;
 
 public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
     private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);
@@ -157,6 +162,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     EntityManager _entityMgr;
     @Inject
     VpcOfferingDao _vpcOffDao;
+    @Inject
+    VpcOfferingJoinDao vpcOfferingJoinDao;
     @Inject
     VpcOfferingDetailsDao vpcOfferingDetailsDao;
     @Inject
@@ -638,13 +645,23 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @Override
-    public Pair<List<? extends VpcOffering>, Integer> listVpcOfferings(final Long id, final String name, final String displayText, final List<String> supportedServicesStr,
-            final Boolean isDefault, final String keyword, final String state, final Long startIndex, final Long pageSizeVal) {
-        final Filter searchFilter = new Filter(VpcOfferingVO.class, "created", false, null, null);
-        final SearchCriteria<VpcOfferingVO> sc = _vpcOffDao.createSearchCriteria();
+    public Pair<List<? extends VpcOffering>, Integer> listVpcOfferings(ListVPCOfferingsCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
+        final Long id = cmd.getId();
+        final String name = cmd.getVpcOffName();
+        final String displayText = cmd.getDisplayText();
+        final List<String> supportedServicesStr = cmd.getSupportedServices();
+        final Boolean isDefault = cmd.getIsDefault();
+        final String keyword = cmd.getKeyword();
+        final String state = cmd.getState();
+        final Long startIndex = cmd.getStartIndex();
+        final Long pageSizeVal = cmd.getPageSizeVal();
+        final Long zoneId = cmd.getZoneId();
+        final Filter searchFilter = new Filter(VpcOfferingJoinVO.class, "created", false, null, null);
+        final SearchCriteria<VpcOfferingJoinVO> sc = vpcOfferingJoinDao.createSearchCriteria();
 
         if (keyword != null) {
-            final SearchCriteria<VpcOfferingVO> ssc = _vpcOffDao.createSearchCriteria();
+            final SearchCriteria<VpcOfferingJoinVO> ssc = vpcOfferingJoinDao.createSearchCriteria();
             ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
@@ -671,13 +688,45 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
 
-        final List<VpcOfferingVO> offerings = _vpcOffDao.search(sc, searchFilter);
+        if (zoneId != null) {
+            SearchBuilder<VpcOfferingJoinVO> sb = vpcOfferingJoinDao.createSearchBuilder();
+            sb.and("zoneId", sb.entity().getZoneId(), Op.FIND_IN_SET);
+            sb.or("zId", sb.entity().getZoneId(), Op.NULL);
+            sb.done();
+            SearchCriteria<VpcOfferingJoinVO> zoneSC = sb.create();
+            zoneSC.setParameters("zoneId", String.valueOf(zoneId));
+            sc.addAnd("zoneId", SearchCriteria.Op.SC, zoneSC);
+        }
 
+        final List<VpcOfferingJoinVO> offerings = vpcOfferingJoinDao.search(sc, searchFilter);
+
+        // Remove offerings that are not associated with caller's domain
+        // TODO: Better approach
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && CollectionUtils.isNotEmpty(offerings)) {
+            ListIterator<VpcOfferingJoinVO> it = offerings.listIterator();
+            while (it.hasNext()) {
+                VpcOfferingJoinVO offering = it.next();
+                if(!Strings.isNullOrEmpty(offering.getDomainId())) {
+                    boolean toRemove = true;
+                    String[] domainIdsArray = offering.getDomainId().split(",");
+                    for (String domainIdString : domainIdsArray) {
+                        Long dId = Long.valueOf(domainIdString.trim());
+                        if (domainDao.isChildDomain(dId, caller.getDomainId())) {
+                            toRemove = false;
+                            break;
+                        }
+                    }
+                    if (toRemove) {
+                        it.remove();
+                    }
+                }
+            }
+        }
         // filter by supported services
         final boolean listBySupportedServices = supportedServicesStr != null && !supportedServicesStr.isEmpty() && !offerings.isEmpty();
 
         if (listBySupportedServices) {
-            final List<VpcOfferingVO> supportedOfferings = new ArrayList<VpcOfferingVO>();
+            final List<VpcOfferingJoinVO> supportedOfferings = new ArrayList<>();
             Service[] supportedServices = null;
 
             if (listBySupportedServices) {
@@ -694,7 +743,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
 
-            for (final VpcOfferingVO offering : offerings) {
+            for (final VpcOfferingJoinVO offering : offerings) {
                 if (areServicesSupportedByVpcOffering(offering.getId(), supportedServices)) {
                     supportedOfferings.add(offering);
                 }
@@ -702,15 +751,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
             final List<? extends VpcOffering> wPagination = StringUtils.applyPagination(supportedOfferings, startIndex, pageSizeVal);
             if (wPagination != null) {
-                final Pair<List<? extends VpcOffering>, Integer> listWPagination = new Pair<List<? extends VpcOffering>, Integer>(wPagination, supportedOfferings.size());
-                return listWPagination;
+                return new Pair<>(wPagination, supportedOfferings.size());
             }
             return new Pair<List<? extends VpcOffering>, Integer>(supportedOfferings, supportedOfferings.size());
         } else {
             final List<? extends VpcOffering> wPagination = StringUtils.applyPagination(offerings, startIndex, pageSizeVal);
             if (wPagination != null) {
-                final Pair<List<? extends VpcOffering>, Integer> listWPagination = new Pair<List<? extends VpcOffering>, Integer>(wPagination, offerings.size());
-                return listWPagination;
+                return new Pair<>(wPagination, offerings.size());
             }
             return new Pair<List<? extends VpcOffering>, Integer>(offerings, offerings.size());
         }
@@ -874,6 +921,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // Validate vpc offering
         final VpcOfferingVO vpcOff = _vpcOffDao.findById(vpcOffId);
+        _accountMgr.checkAccess(caller, vpcOff, _dcDao.findById(zoneId));
         if (vpcOff == null || vpcOff.getState() != State.Enabled) {
             final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find vpc offering in " + State.Enabled + " state by specified id");
             if (vpcOff == null) {

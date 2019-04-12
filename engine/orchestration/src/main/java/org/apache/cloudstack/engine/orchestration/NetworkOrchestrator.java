@@ -171,7 +171,6 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
@@ -287,8 +286,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     RemoteAccessVpnDao _remoteAccessVpnDao;
     @Inject
     VpcVirtualNetworkApplianceService _routerService;
-    @Inject
-    AccountManager accountManager;
 
     List<NetworkGuru> networkGurus;
 
@@ -2166,7 +2163,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         final NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
         final DataCenterVO zone = _dcDao.findById(zoneId);
-        accountManager.checkAccess(owner, ntwkOff, zone);
         // this method supports only guest network creation
         if (ntwkOff.getTrafficType() != TrafficType.Guest) {
             s_logger.warn("Only guest networks can be created using this method");

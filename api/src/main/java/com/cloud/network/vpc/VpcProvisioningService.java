@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;
 
 import com.cloud.utils.Pair;
 
@@ -36,8 +37,7 @@ public interface VpcProvisioningService {
                                   Map serviceCapabilitystList,
                                   Long serviceOfferingId, List<Long> domainIds, List<Long> zoneIds);
 
-    Pair<List<? extends VpcOffering>,Integer> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr, Boolean isDefault, String keyword,
-        String state, Long startIndex, Long pageSizeVal);
+    Pair<List<? extends VpcOffering>,Integer> listVpcOfferings(ListVPCOfferingsCmd cmd);
 
     /**
      * @param offId

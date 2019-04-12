@@ -34,6 +34,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -74,7 +75,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Inject
     ServiceOfferingDetailsDao serviceOfferingDetailsDao;
     @Inject
-    NetworkOfferingDetailsDao networkserviceOfferingDetailsDao;
+    NetworkOfferingDetailsDao networkOfferingDetailsDao;
+    @Inject
+    NetworkOfferingDetailsDao vpcOfferingDetailsDao;
 
     protected DomainChecker() {
         super();
@@ -270,7 +273,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
                     || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                final List<Long> doDomainIds = networkserviceOfferingDetailsDao.findDomainIds(nof.getId());
+                final List<Long> doDomainIds = networkOfferingDetailsDao.findDomainIds(nof.getId());
                 if (doDomainIds.isEmpty()) {
                     isAccess = true;
                 } else {
@@ -285,7 +288,45 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         }
         // Check for zones
         if (isAccess && nof != null && zone != null) {
-            final List<Long> doZoneIds = networkserviceOfferingDetailsDao.findZoneIds(nof.getId());
+            final List<Long> doZoneIds = networkOfferingDetailsDao.findZoneIds(nof.getId());
+            isAccess = doZoneIds.isEmpty() || doZoneIds.contains(zone.getId());
+        }
+        return isAccess;
+    }
+
+    @Override
+    public boolean checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException {
+        boolean isAccess = false;
+        // Check fo domains
+        if (account == null || vof == null) {
+            isAccess = true;
+        } else {
+            //admin has all permissions
+            if (_accountService.isRootAdmin(account.getId())) {
+                isAccess = true;
+            }
+            //if account is normal user or domain admin
+            //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for disk offering)
+            else if (_accountService.isNormalUser(account.getId())
+                    || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+                    || _accountService.isDomainAdmin(account.getId())
+                    || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                final List<Long> doDomainIds = vpcOfferingDetailsDao.findDomainIds(vof.getId());
+                if (doDomainIds.isEmpty()) {
+                    isAccess = true;
+                } else {
+                    for (Long domainId : doDomainIds) {
+                        if (_domainDao.isChildDomain(domainId, account.getDomainId())) {
+                            isAccess = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        // Check for zones
+        if (isAccess && vof != null && zone != null) {
+            final List<Long> doZoneIds = vpcOfferingDetailsDao.findZoneIds(vof.getId());
             isAccess = doZoneIds.isEmpty() || doZoneIds.contains(zone.getId());
         }
         return isAccess;
