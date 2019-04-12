@@ -187,6 +187,7 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
@@ -2799,15 +2800,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public VpcOfferingResponse createVpcOfferingResponse(VpcOffering offering) {
-        VpcOfferingResponse response = new VpcOfferingResponse();
-        response.setId(offering.getUuid());
-        response.setName(offering.getName());
-        response.setDisplayText(offering.getDisplayText());
-        response.setIsDefault(offering.isDefault());
-        response.setState(offering.getState().name());
-        response.setSupportsDistributedRouter(offering.supportsDistributedRouter());
-        response.setSupportsRegionLevelVpc(offering.offersRegionLevelVPC());
-
+        if (!(offering instanceof VpcOfferingJoinVO)) {
+            offering = ApiDBUtils.newVpcOfferingView(offering);
+        }
+        VpcOfferingResponse response = ApiDBUtils.newVpcOfferingResponse(offering);
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(offering.getId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         for (Map.Entry<Service, Set<Provider>> entry : serviceProviderMap.entrySet()) {
@@ -2833,7 +2829,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             serviceResponses.add(svcRsp);
         }
         response.setServices(serviceResponses);
-        response.setObjectName("vpcoffering");
         return response;
     }
 

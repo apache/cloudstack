@@ -61,6 +61,7 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -97,6 +98,7 @@ import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
+import com.cloud.api.query.dao.VpcOfferingJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
@@ -121,6 +123,7 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -425,6 +428,7 @@ public class ApiDBUtils {
     static VpcGatewayDao s_vpcGatewayDao;
     static VpcDao s_vpcDao;
     static VpcOfferingDao s_vpcOfferingDao;
+    static VpcOfferingJoinDao s_vpcOfferingJoinDao;
     static SnapshotPolicyDao s_snapshotPolicyDao;
     static AsyncJobDao s_asyncJobDao;
     static HostDetailsDao s_hostDetailsDao;
@@ -644,6 +648,8 @@ public class ApiDBUtils {
     @Inject
     private VpcOfferingDao vpcOfferingDao;
     @Inject
+    private VpcOfferingJoinDao vpcOfferingJoinDao;
+    @Inject
     private SnapshotPolicyDao snapshotPolicyDao;
     @Inject
     private AsyncJobDao asyncJobDao;
@@ -780,6 +786,7 @@ public class ApiDBUtils {
         s_asVmGroupDao = asVmGroupDao;
         s_vpcDao = vpcDao;
         s_vpcOfferingDao = vpcOfferingDao;
+        s_vpcOfferingJoinDao = vpcOfferingJoinDao;
         s_snapshotPolicyDao = snapshotPolicyDao;
         s_asyncJobDao = asyncJobDao;
         s_hostDetailsDao = hostDetailsDao;
@@ -1540,6 +1547,14 @@ public class ApiDBUtils {
 
     public static VpcOffering findVpcOfferingById(long offeringId) {
         return s_vpcOfferingDao.findById(offeringId);
+    }
+
+    public static VpcOfferingResponse newVpcOfferingResponse(VpcOffering offering) {
+        return s_vpcOfferingJoinDao.newVpcOfferingResponse(offering);
+    }
+
+    public static VpcOfferingJoinVO newVpcOfferingView(VpcOffering offering) {
+        return s_vpcOfferingJoinDao.newVpcOfferingView(offering);
     }
 
     public static NetworkACL findByNetworkACLId(long aclId) {

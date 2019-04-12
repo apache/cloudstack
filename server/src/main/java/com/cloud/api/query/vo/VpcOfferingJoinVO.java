@@ -14,30 +14,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.vpc;
+
+package com.cloud.api.query.vo;
 
 import java.util.Date;
-import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name = "vpc_offerings")
-public class VpcOfferingVO implements VpcOffering {
+@Table(name = "vpc_offering_view")
+public class VpcOfferingJoinVO implements VpcOffering {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    long id;
+    @Column(name = "id", updatable = false, nullable = false)
+    private long id;
 
     @Column(name = "uuid")
     private String uuid;
@@ -53,7 +51,7 @@ public class VpcOfferingVO implements VpcOffering {
 
     @Column(name = "state")
     @Enumerated(value = EnumType.STRING)
-    State state = State.Disabled;
+    VpcOffering.State state = VpcOffering.State.Disabled;
 
     @Column(name = "default")
     boolean isDefault = false;
@@ -76,35 +74,28 @@ public class VpcOfferingVO implements VpcOffering {
     @Column(name = "redundant_router_service")
     boolean redundantRouter = false;
 
-    public VpcOfferingVO() {
-        this.uuid = UUID.randomUUID().toString();
-    }
+    @Column(name = "domain_id")
+    private String domainId;
 
-    public VpcOfferingVO(String name, String displayText, Long serviceOfferingId) {
-        this.name = name;
-        this.displayText = displayText;
-        this.uniqueName = name;
-        this.serviceOfferingId = serviceOfferingId;
-        this.uuid = UUID.randomUUID().toString();
-        this.state = State.Disabled;
-    }
+    @Column(name = "domain_uuid")
+    private String domainUuid;
 
-    public VpcOfferingVO(final String name, final String displayText, final boolean isDefault, final Long serviceOfferingId,
-                         final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
-                         final boolean redundantRouter) {
-        this(name, displayText, serviceOfferingId);
-        this.isDefault = isDefault;
-        this.supportsDistributedRouter = supportsDistributedRouter;
-        this.offersRegionLevelVPC = offersRegionLevelVPC;
-        this.redundantRouter = redundantRouter;
-    }
+    @Column(name = "domain_name")
+    private String domainName = null;
 
-    public VpcOfferingVO(String name, String displayText, boolean isDefault, Long serviceOfferingId,
-                         boolean supportsDistributedRouter, boolean offersRegionLevelVPC) {
-        this(name, displayText, serviceOfferingId);
-        this.isDefault = isDefault;
-        this.supportsDistributedRouter = supportsDistributedRouter;
-        this.offersRegionLevelVPC = offersRegionLevelVPC;
+    @Column(name = "domain_path")
+    private String domainPath = null;
+
+    @Column(name = "zone_id")
+    private String zoneId = null;
+
+    @Column(name = "zone_uuid")
+    private String zoneUuid = null;
+
+    @Column(name = "zone_name")
+    private String zoneName = null;
+
+    public VpcOfferingJoinVO() {
     }
 
     @Override
@@ -132,35 +123,13 @@ public class VpcOfferingVO implements VpcOffering {
     }
 
     @Override
-    public State getState() {
+    public VpcOffering.State getState() {
         return state;
     }
 
     @Override
     public boolean isDefault() {
         return isDefault;
-    }
-
-    public void setUniqueName(String uniqueName) {
-        this.uniqueName = uniqueName;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder buf = new StringBuilder("[VPC Offering [");
-        return buf.append(id).append("-").append(name).append("]").toString();
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setDisplayText(String displayText) {
-        this.displayText = displayText;
-    }
-
-    public void setState(State state) {
-        this.state = state;
     }
 
     @Override
@@ -190,7 +159,40 @@ public class VpcOfferingVO implements VpcOffering {
 
     @Override
     public boolean isRedundantRouter() {
-        return this.redundantRouter;
+        return redundantRouter;
     }
 
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public String getDomainUuid() {
+        return domainUuid;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+
+    public String getDomainPath() {
+        return domainPath;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
+
+    public String getZoneUuid() {
+        return zoneUuid;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder buf = new StringBuilder("[VPC Offering [");
+        return buf.append(id).append("-").append(name).append("]").toString();
+    }
 }

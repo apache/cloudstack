@@ -39,6 +39,9 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
+import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -57,6 +60,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -97,6 +101,7 @@ import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpc.dao.VpcOfferingDetailsDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.network.vpc.dao.VpcServiceMapDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
@@ -153,6 +158,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Inject
     VpcOfferingDao _vpcOffDao;
     @Inject
+    VpcOfferingDetailsDao vpcOfferingDetailsDao;
+    @Inject
     VpcOfferingServiceMapDao _vpcOffSvcMapDao;
     @Inject
     VpcDao _vpcDao;
@@ -204,6 +211,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     VpcVirtualNetworkApplianceManager _routerService;
     @Inject
     DomainRouterDao _routerDao;
+    @Inject
+    DomainDao domainDao;
 
     @Inject
     private VpcPrivateGatewayTransactionCallable vpcTxCallable;
@@ -343,8 +352,45 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create = true)
+    public VpcOffering createVpcOffering(CreateVPCOfferingCmd cmd) {
+        final String vpcOfferingName = cmd.getVpcOfferingName();
+        final String displayText = cmd.getDisplayText();
+        final List<String> supportedServices = cmd.getSupportedServices();
+        final Map<String, List<String>> serviceProviderList = cmd.getServiceProviders();
+        final Map<String, List<String>> serviceCapabilitystList = cmd.getServiceCapabilitystList();
+        final Long serviceOfferingId = cmd.getServiceOfferingId();
+        final List<Long> domainIds = cmd.getDomainIds();
+        final List<Long> zoneIds = cmd.getZoneIds();
+
+        // check if valid domain
+        if (CollectionUtils.isNotEmpty(cmd.getDomainIds())) {
+            for (final Long domainId: cmd.getDomainIds()) {
+                if (domainDao.findById(domainId) == null) {
+                    throw new InvalidParameterValueException("Please specify a valid domain id");
+                }
+            }
+        }
+
+        // check if valid zone
+        if (CollectionUtils.isNotEmpty(cmd.getZoneIds())) {
+            for (Long zoneId : cmd.getZoneIds()) {
+                if (_dcDao.findById(zoneId) == null)
+                    throw new InvalidParameterValueException("Please specify a valid zone id");
+            }
+        }
+
+        return createVpcOffering(vpcOfferingName, displayText, supportedServices,
+                serviceCapabilitystList, serviceCapabilitystList, serviceOfferingId,
+                domainIds, zoneIds);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create = true)
     public VpcOffering createVpcOffering(final String name, final String displayText, final List<String> supportedServices, final Map<String, List<String>> serviceProviders,
-            final Map serviceCapabilitystList, final Long serviceOfferingId) {
+            final Map serviceCapabilitystList, final Long serviceOfferingId, List<Long> domainIds, List<Long> zoneIds) {
+
+        // Filter child domains when both parent and child domains are present
+        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
 
         final Map<Network.Service, Set<Network.Provider>> svcProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
         final Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
@@ -423,6 +469,21 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilitystList);
         final VpcOffering offering = createVpcOffering(name, displayText, svcProviderMap, false, null, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
                 redundantRouter);
+
+        if (offering != null) {
+            List<VpcOfferingDetailsVO> detailsVO = new ArrayList<>();
+            for (Long domainId : filteredDomainIds) {
+                detailsVO.add(new VpcOfferingDetailsVO(offering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
+            }
+            if (CollectionUtils.isNotEmpty(zoneIds)) {
+                for (Long zoneId : zoneIds) {
+                    detailsVO.add(new VpcOfferingDetailsVO(offering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
+                }
+            }
+            if (!detailsVO.isEmpty()) {
+                vpcOfferingDetailsDao.saveDetails(detailsVO);
+            }
+        }
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
 
         return offering;
@@ -692,44 +753,110 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_UPDATE, eventDescription = "updating vpc offering")
-    public VpcOffering updateVpcOffering(final long vpcOffId, final String vpcOfferingName, final String displayText, final String state) {
+    public VpcOffering updateVpcOffering(UpdateVPCOfferingCmd cmd) {
+        final Long offeringId = cmd.getId();
+        final String vpcOfferingName = cmd.getVpcOfferingName();
+        final String displayText = cmd.getDisplayText();
+        final String state = cmd.getState();
+        final List<Long> domainIds = cmd.getDomainIds();
+        final List<Long> zoneIds = cmd.getZoneIds();
+
+        // check if valid domain
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            for (final Long domainId: domainIds) {
+                if (domainDao.findById(domainId) == null) {
+                    throw new InvalidParameterValueException("Please specify a valid domain id");
+                }
+            }
+        }
+
+        // check if valid zone
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            for (Long zoneId : zoneIds) {
+                if (_dcDao.findById(zoneId) == null)
+                    throw new InvalidParameterValueException("Please specify a valid zone id");
+            }
+        }
+
+        return updateVpcOffering(offeringId, vpcOfferingName, displayText, state, domainIds, zoneIds);
+    }
+
+    private VpcOffering updateVpcOffering(final long vpcOffId,final String vpcOfferingName, final String displayText, final String state, final List<Long> domainIds, final List<Long> zoneIds) {
         CallContext.current().setEventDetails(" Id: " + vpcOffId);
 
         // Verify input parameters
         final VpcOfferingVO offeringToUpdate = _vpcOffDao.findById(vpcOffId);
+        List<Long> existingDomainIds = vpcOfferingDetailsDao.findDomainIds(vpcOffId);
         if (offeringToUpdate == null) {
             throw new InvalidParameterValueException("Unable to find vpc offering " + vpcOffId);
         }
 
-        final VpcOfferingVO offering = _vpcOffDao.createForUpdate(vpcOffId);
 
-        if (vpcOfferingName != null) {
-            offering.setName(vpcOfferingName);
-        }
-
-        if (displayText != null) {
-            offering.setDisplayText(displayText);
-        }
-
-        if (state != null) {
-            boolean validState = false;
-            for (final VpcOffering.State st : VpcOffering.State.values()) {
-                if (st.name().equalsIgnoreCase(state)) {
-                    validState = true;
-                    offering.setState(st);
+        // Filter child domains when both parent and child domains are present
+        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        if (CollectionUtils.isNotEmpty(existingDomainIds) && CollectionUtils.isNotEmpty(filteredDomainIds)) {
+            filteredDomainIds.removeIf(existingDomainIds::contains);
+            for (Long domainId : filteredDomainIds) {
+                for (Long existingDomainId : existingDomainIds) {
+                    if (domainDao.isChildDomain(existingDomainId, domainId)) {
+                        throw new InvalidParameterValueException("Unable to update VPC offering for domain " + domainDao.findById(domainId).getUuid() + " as offering is already available for parent domain");
+                    }
                 }
             }
-            if (!validState) {
-                throw new InvalidParameterValueException("Incorrect state value: " + state);
+        }
+
+        List<Long> filteredZoneIds = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            filteredZoneIds.addAll(zoneIds);
+            List<Long> existingZoneIds = vpcOfferingDetailsDao.findZoneIds(vpcOffId);
+            if (CollectionUtils.isNotEmpty(existingZoneIds)) {
+                filteredZoneIds.removeIf(existingZoneIds::contains);
             }
         }
 
-        if (_vpcOffDao.update(vpcOffId, offering)) {
-            s_logger.debug("Updated VPC offeirng id=" + vpcOffId);
-            return _vpcOffDao.findById(vpcOffId);
-        } else {
-            return null;
+        final boolean updateNeeded = vpcOfferingName != null || displayText != null || state != null;
+
+        final VpcOfferingVO offering = _vpcOffDao.createForUpdate(vpcOffId);
+
+        if (updateNeeded) {
+            if (vpcOfferingName != null) {
+                offering.setName(vpcOfferingName);
+            }
+
+            if (displayText != null) {
+                offering.setDisplayText(displayText);
+            }
+
+            if (state != null) {
+                boolean validState = false;
+                for (final VpcOffering.State st : VpcOffering.State.values()) {
+                    if (st.name().equalsIgnoreCase(state)) {
+                        validState = true;
+                        offering.setState(st);
+                    }
+                }
+                if (!validState) {
+                    throw new InvalidParameterValueException("Incorrect state value: " + state);
+                }
+            }
+            if (!_vpcOffDao.update(vpcOffId, offering)) {
+                return  null;
+            }
         }
+        List<VpcOfferingDetailsVO> detailsVO = new ArrayList<>();
+        for (Long domainId : filteredDomainIds) {
+            detailsVO.add(new VpcOfferingDetailsVO(vpcOffId, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
+        }
+        for (Long zoneId : filteredZoneIds) {
+            detailsVO.add(new VpcOfferingDetailsVO(vpcOffId, ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
+        }
+        if (!detailsVO.isEmpty()) {
+            for (VpcOfferingDetailsVO detailVO : detailsVO) {
+                vpcOfferingDetailsDao.persist(detailVO);
+            }
+        }
+        s_logger.debug("Updated VPC offeirng id=" + vpcOffId);
+        return _vpcOffDao.findById(vpcOffId);
     }
 
     @Override
@@ -757,7 +884,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw ex;
         }
 
-        final boolean isRegionLevelVpcOff = vpcOff.offersRegionLevelVPC();
+        final boolean isRegionLevelVpcOff = vpcOff.isOffersRegionLevelVPC();
         if (isRegionLevelVpcOff && networkDomain == null) {
             throw new InvalidParameterValueException("Network domain must be specified for region level VPC");
         }
@@ -786,9 +913,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        final boolean useDistributedRouter = vpcOff.supportsDistributedRouter();
+        final boolean useDistributedRouter = vpcOff.isSupportsDistributedRouter();
         final VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, owner.getId(), owner.getDomainId(), vpcOffId, cidr, networkDomain, useDistributedRouter, isRegionLevelVpcOff,
-                vpcOff.getRedundantRouter());
+                vpcOff.isRedundantRouter());
 
         return createVpc(displayVpc, vpc);
     }
@@ -2502,4 +2629,27 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return _ntwkMgr.areRoutersRunning(_routerDao.listByVpcId(vpc.getId()));
     }
 
+    private List<Long> filterChildSubDomains(final List<Long> domainIds) {
+        List<Long> filteredDomainIds = new ArrayList<>();
+        if (domainIds != null) {
+            filteredDomainIds.addAll(domainIds);
+        }
+        if (filteredDomainIds.size() > 1) {
+            for (int i = filteredDomainIds.size() - 1; i >= 1; i--) {
+                long first = filteredDomainIds.get(i);
+                for (int j = i - 1; j >= 0; j--) {
+                    long second = filteredDomainIds.get(j);
+                    if (domainDao.isChildDomain(filteredDomainIds.get(i), filteredDomainIds.get(j))) {
+                        filteredDomainIds.remove(j);
+                        i--;
+                    }
+                    if (domainDao.isChildDomain(filteredDomainIds.get(j), filteredDomainIds.get(i))) {
+                        filteredDomainIds.remove(i);
+                        break;
+                    }
+                }
+            }
+        }
+        return filteredDomainIds;
+    }
 }
