@@ -3531,8 +3531,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 final VirtualMachineMO vmMo = dcMo.findVm(vmName);
                 final List<VmDiskStatsEntry> diskStats = new ArrayList<>();
                 for (VirtualDisk disk : vmMo.getAllDiskDevice()) {
-                    // TODO Get UUID, PATH of VirtualDisk
-                    String diskUuid = "123", diskPath = "something";
+                    // TODO verify if the UUID, PATH of VirtualDisk is correct
+                    String diskUuid = disk.getVDiskId().getId();
 
                     final ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, diskUuid);
                     final ArrayList<PerfMetricId> diskMetricsIds = new ArrayList<PerfMetricId>();
@@ -3586,7 +3586,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             }
                         }
                     }
-                    diskStats.add(new VmDiskStatsEntry(vmName, diskPath, writeReq, readReq, writeBytes, readBytes));
+                    diskStats.add(new VmDiskStatsEntry(vmName, diskUuid, writeReq, readReq, writeBytes, readBytes));
                 }
                 if (diskStats.size() > 0) {
                     vmStatsMap.put(vmName, diskStats);
