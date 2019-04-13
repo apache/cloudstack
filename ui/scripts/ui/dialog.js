@@ -818,7 +818,16 @@
                                             $form.find('.loading-overlay').remove();
                                             $('div.loading-overlay').remove();
 
-                                            cloudStack.dialog.error({ message: msg });
+                                            if (!msg) {
+                                                msg = "Please enable SSL on your SSVM to allow uploading local files";
+                                            }
+                                            cloudStack.dialog.notice({ message: msg });
+
+                                            $('.tooltip-box').remove();
+                                            $formContainer.remove();
+                                            $(this).dialog('destroy');
+
+                                            $('.hovered-elem').hide();
                                         }
                                     }
                                 };
