@@ -209,7 +209,6 @@ import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
-import com.cloud.hypervisor.vmware.mo.PerfManagerMO;
 import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
@@ -3499,34 +3498,28 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             final VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             final ManagedObjectReference perfMgr = getServiceContext().getServiceContent().getPerfManager();
-            final PerfManagerMO perfManagerMO = new PerfManagerMO(getServiceContext(), perfMgr);
             VimPortType service = getServiceContext().getService();
 
             PerfCounterInfo diskReadIOPerfCounterInfo = null;
             PerfCounterInfo diskWriteIOPerfCounterInfo = null;
             PerfCounterInfo diskReadKbsPerfCounterInfo = null;
             PerfCounterInfo diskWriteKbsPerfCounterInfo = null;
-            List<Integer> perfCounterKeys = new ArrayList<>();
 
             // https://pubs.vmware.com/vsphere-5-5/topic/com.vmware.wssdk.apiref.doc/virtual_disk_counters.html
-            List<PerfCounterInfo> cInfo = perfManagerMO.getCounterInfo();
+            List<PerfCounterInfo> cInfo = getServiceContext().getVimClient().getDynamicProperty(perfMgr, "perfCounter");
             for (PerfCounterInfo info : cInfo) {
                 if ("virtualdisk".equalsIgnoreCase(info.getGroupInfo().getKey())) {
                     if ("numberReadAveraged".equalsIgnoreCase(info.getNameInfo().getKey())) {
                         diskReadIOPerfCounterInfo = info;
-                        perfCounterKeys.add(info.getKey());
                     }
                     if ("numberWriteAveraged".equalsIgnoreCase(info.getNameInfo().getKey())) {
                         diskWriteIOPerfCounterInfo = info;
-                        perfCounterKeys.add(info.getKey());
                     }
                     if ("read".equalsIgnoreCase(info.getNameInfo().getKey())) {
                         diskReadKbsPerfCounterInfo = info;
-                        perfCounterKeys.add(info.getKey());
                     }
                     if ("write".equalsIgnoreCase(info.getNameInfo().getKey())) {
                         diskWriteKbsPerfCounterInfo = info;
-                        perfCounterKeys.add(info.getKey());
                     }
                 }
             }
@@ -3539,30 +3532,31 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 final VirtualMachineMO vmMo = dcMo.findVm(vmName);
                 final List<VmDiskStatsEntry> diskStats = new ArrayList<>();
                 for (VirtualDisk disk : vmMo.getAllDiskDevice()) {
-                    final ArrayList<PerfMetricId> diskMetricsIds = new ArrayList<PerfMetricId>();
-                    final List<PerfMetricId> perfMetrics = service.queryAvailablePerfMetric(perfMgr, vmMo.getMor(), null, null, null);
-                    if (perfMetrics != null) {
-                        for (PerfMetricId perfMetricId : perfMetrics) {
-                            if (perfCounterKeys.contains(perfMetricId.getCounterId())) {
-                                diskMetricsIds.add(perfMetricId);
-                            }
-                        }
-                    }
-
+                    final String diskBusName = vmMo.getDeviceBusName(vmMo.getAllDeviceList(), disk);
                     long readReq = 0;
                     long readBytes = 0;
                     long writeReq = 0;
                     long writeBytes = 0;
 
+                    final ArrayList<PerfMetricId> diskMetricsIds = new ArrayList<PerfMetricId>();
+                    if (diskReadIOPerfCounterInfo != null) {
+                        diskMetricsIds.add(VmwareHelper.createPerfMetricId(diskReadIOPerfCounterInfo, diskBusName));
+                    }
+                    if (diskWriteIOPerfCounterInfo != null) {
+                        diskMetricsIds.add(VmwareHelper.createPerfMetricId(diskWriteIOPerfCounterInfo, diskBusName));
+                    }
+                    if (diskReadKbsPerfCounterInfo != null) {
+                        diskMetricsIds.add(VmwareHelper.createPerfMetricId(diskReadKbsPerfCounterInfo, diskBusName));
+                    }
+                    if (diskWriteKbsPerfCounterInfo != null) {
+                        diskMetricsIds.add(VmwareHelper.createPerfMetricId(diskWriteKbsPerfCounterInfo, diskBusName));
+                    }
+
                     if (diskMetricsIds.size() != 0) {
                         final PerfQuerySpec qSpec = new PerfQuerySpec();
                         qSpec.setEntity(vmMo.getMor());
-                        final PerfMetricId[] availableMetricIds = diskMetricsIds.toArray(new PerfMetricId[0]);
-                        qSpec.getMetricId().addAll(Arrays.asList(availableMetricIds));
-                        final List<PerfQuerySpec> qSpecs = new ArrayList<PerfQuerySpec>();
-                        qSpecs.add(qSpec);
-
-                        for (PerfEntityMetricBase perfValue : service.queryPerf(perfMgr, qSpecs)) {
+                        qSpec.getMetricId().addAll(diskMetricsIds);
+                        for (PerfEntityMetricBase perfValue : service.queryPerf(perfMgr, Collections.singletonList(qSpec))) {
                             final List<PerfMetricSeries> values = ((PerfEntityMetric)perfValue).getValue();
                             for (PerfMetricSeries value : values) {
                                 if (value instanceof PerfMetricIntSeries) {
@@ -3572,7 +3566,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                         for (long val : valIntSeries) {
                                             sumVal += val;
                                         }
-                                        //sumVal /= valIntSeries.size();
+                                        sumVal /= valIntSeries.size();
                                         if (value.getId().getCounterId() == diskReadIOPerfCounterInfo.getKey()) {
                                             readReq = sumVal;
                                         } else if (value.getId().getCounterId() == diskWriteIOPerfCounterInfo.getKey()) {

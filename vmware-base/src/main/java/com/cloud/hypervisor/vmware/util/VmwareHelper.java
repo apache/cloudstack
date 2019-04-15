@@ -41,6 +41,8 @@ import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.MethodFault;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.OptionValue;
+import com.vmware.vim25.PerfCounterInfo;
+import com.vmware.vim25.PerfMetricId;
 import com.vmware.vim25.ResourceAllocationInfo;
 import com.vmware.vim25.VirtualCdrom;
 import com.vmware.vim25.VirtualCdromIsoBackingInfo;
@@ -635,6 +637,13 @@ public class VmwareHelper {
         usbController.setAutoConnectDevices(true);
 
         return usbController;
+    }
+
+    public static PerfMetricId createPerfMetricId(PerfCounterInfo counterInfo, String instance) {
+        PerfMetricId metricId = new PerfMetricId();
+        metricId.setCounterId(counterInfo.getKey());
+        metricId.setInstance(instance);
+        return metricId;
     }
 
     public static String getDiskDeviceFileName(VirtualDisk diskDevice) {
