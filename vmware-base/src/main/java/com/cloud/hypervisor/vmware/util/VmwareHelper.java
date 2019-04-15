@@ -637,6 +637,18 @@ public class VmwareHelper {
         return usbController;
     }
 
+    public static String getDiskDeviceFileName(VirtualDisk diskDevice) {
+        VirtualDeviceBackingInfo backingInfo = diskDevice.getBacking();
+        if (backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
+            final String vmdkName = ((VirtualDiskFlatVer2BackingInfo)backingInfo).getFileName().replace(".vmdk", "");
+            if (vmdkName.contains("/")) {
+                return vmdkName.split("/", 2)[1];
+            }
+            return vmdkName;
+        }
+        return null;
+    }
+
     public static ManagedObjectReference getDiskDeviceDatastore(VirtualDisk diskDevice) throws Exception {
         VirtualDeviceBackingInfo backingInfo = diskDevice.getBacking();
         assert (backingInfo instanceof VirtualDiskFlatVer2BackingInfo);
