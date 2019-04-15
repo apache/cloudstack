@@ -1920,12 +1920,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             // Mark the volume as detached
             _volsDao.detachVolume(volume.getId());
 
-            // volume.getPoolId() should be null if the VM we are detaching the disk from has never been started before
-            DataStore dataStore = volume.getPoolId() != null ? dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary) : null;
-
-            volService.revokeAccess(volFactory.getVolume(volume.getId()), host, dataStore);
-
-            handleTargetsForVMware(hostId, volumePool.getHostAddress(), volumePool.getPort(), volume.get_iScsiName());
+            // volumePool() should be null if the VM we are detaching the disk from has never been started before
+            // only revoke access on volumes that are actually on a datastore
+            if (volumePool != null) {
+                DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
+                volService.revokeAccess(volFactory.getVolume(volume.getId()), host, dataStore);
+                handleTargetsForVMware(hostId, volumePool.getHostAddress(), volumePool.getPort(), volume.get_iScsiName());
+            }
 
             return _volsDao.findById(volumeId);
         } else {
@@ -2640,14 +2641,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (volumeToAttach.isAttachedVM()) {
             throw new CloudRuntimeException("volume: " + volumeToAttach.getName() + " is already attached to a VM: " + volumeToAttach.getAttachedVmName());
         }
-        if (volumeToAttach.getState().equals(Volume.State.Ready)) {
+        if (volumeToAttach.getState().equals(Volume.State.Ready) || volumeToAttach.getState().equals(Volume.State.Allocated)) {
             volumeToAttach.stateTransit(Volume.Event.AttachRequested);
         } else {
             String error = null;
             if (hostId == null) {
                 error = "Please try attach operation after starting VM once";
             } else {
-                error = "Volume: " + volumeToAttach.getName() + " is in " + volumeToAttach.getState() + ". It should be in Ready state";
+                error = "Volume: " + volumeToAttach.getName() + " is in " + volumeToAttach.getState() + ". It should be in Ready or Allocated state";
             }
             s_logger.error(error);
             throw new CloudRuntimeException(error);
@@ -2773,9 +2774,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                     volumeToAttach = _volsDao.findById(volumeToAttach.getId());
 
-                    if (vm.getHypervisorType() == HypervisorType.KVM && volumeToAttachStoragePool.isManaged() && volumeToAttach.getPath() == null) {
-                        volumeToAttach.setPath(volumeToAttach.get_iScsiName());
+                    if (volumeToAttach.getState().equals(Volume.State.Ready) &&
+                        vm.getHypervisorType() == HypervisorType.KVM &&
+                        volumeToAttachStoragePool.isManaged() &&
+                        volumeToAttach.getPath() == null) {
 
+                        volumeToAttach.setPath(volumeToAttach.get_iScsiName());
                         _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                     }
                 }

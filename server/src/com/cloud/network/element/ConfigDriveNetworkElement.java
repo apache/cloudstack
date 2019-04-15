@@ -23,7 +23,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.StoragePool;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -59,6 +58,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -377,7 +377,8 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         case RevertSnapshotting:
         case Resizing:
         case Copying:
-        case Attaching:
+        case AttachingFromReady:
+        case AttachingFromAllocated:
             return true;
         case Migrating:
         case Expunging:
