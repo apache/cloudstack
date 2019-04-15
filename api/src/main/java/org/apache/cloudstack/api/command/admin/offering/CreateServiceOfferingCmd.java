@@ -186,7 +186,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.MAX_MEMORY,
             type = CommandType.INTEGER,
             description = "The maximum memroy size of the custom service offering in MB",
-            since = "4.11")
+            since = "4.13")
     private Integer maxMemory;
 
     @Parameter(name = ApiConstants.MIN_MEMORY,
