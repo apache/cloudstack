@@ -1707,36 +1707,36 @@
                                         var accounts = args.data.accounts;
                                         var accountList = args.data.accountlist;
 
-                                        if ((accounts !== undefined || accountList !== undefined) && projects !== undefined) {
-                                            //Let API throw Runtime Exception
-                                        } else {
-                                            if ((accounts !== undefined || accountList !== undefined) && projects === undefined) {
-                                                var accountNames = "";
-                                                if (accountList !== undefined && accounts === undefined) {
-                                                    accountNames = accountList;
+                                        if (accounts !== undefined || (accountList !== undefined && accountList.length > 0)) {
+                                            var accountNames = "";
+                                            if (accountList !== undefined && accounts === undefined) {
+                                                accountNames = accountList;
+                                            } else {
+                                                if (Object.prototype.toString.call(accounts) === '[object Array]') {
+                                                    accountNames = accounts.join(",");
                                                 } else {
-                                                    if (Object.prototype.toString.call(accounts) === '[object Array]') {
-                                                        accountNames = accounts.join(",");
-                                                    } else {
-                                                        accountNames = accounts;
-                                                    }
+                                                    accountNames = accounts;
                                                 }
-                                                $.extend(data, {
-                                                    accounts: accountNames
-                                                });
-                                            } else if ((accounts === undefined || accountList === undefined) && projects !== undefined) {
-                                                var projectIds = "";
-                                                if (Object.prototype.toString.call(projects) === '[object Array]') {
-                                                    projectIds = projects.join(",");
-                                                } else {
-                                                    projectIds = projects;
-                                                }
-                                                $.extend(data, {
-                                                    projectids: projectIds
-                                                });
                                             }
+                                            $.extend(data, {
+                                                accounts: accountNames
+                                            });
+                                        }
+
+                                        if (projects !== undefined) {
+                                            var projectIds = "";
+                                            if (Object.prototype.toString.call(projects) === '[object Array]') {
+                                                projectIds = projects.join(",");
+                                            } else {
+                                                projectIds = projects;
+                                            }
+
+                                            $.extend(data, {
+                                                projectids: projectIds
+                                            });
                                         }
                                     }
+
                                     $.ajax({
                                         url: createURL('updateTemplatePermissions'),
                                         data: data,
