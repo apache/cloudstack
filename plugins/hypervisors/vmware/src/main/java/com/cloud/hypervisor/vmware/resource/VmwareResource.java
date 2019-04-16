@@ -3589,15 +3589,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                     } else if (value.getId().getCounterId() == diskWriteIOPerfCounterInfo.getKey()) {
                                         writeReq = avg;
                                     } else if (value.getId().getCounterId() == diskReadKbsPerfCounterInfo.getKey()) {
-                                        readBytes = avg;
+                                        readBytes = avg * 1024;
                                     } else if (value.getId().getCounterId() == diskWriteKbsPerfCounterInfo.getKey()) {
-                                        writeBytes = avg;
+                                        writeBytes = avg * 1024;
                                     }
                                 }
                             }
                         }
                     }
-                    diskStats.add(new VmDiskStatsEntry(vmName, VmwareHelper.getDiskDeviceFileName(disk), writeReq, readReq, 1024 * writeBytes, 1024 * readBytes));
+                    diskStats.add(new VmDiskStatsEntry(vmName, VmwareHelper.getDiskDeviceFileName(disk), writeReq, readReq, writeBytes, readBytes));
                 }
                 if (diskStats.size() > 0) {
                     vmStatsMap.put(vmName, diskStats);
@@ -6005,7 +6005,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         PerfCounterInfo diskReadKbsPerfCounterInfo = null;
         PerfCounterInfo diskWriteKbsPerfCounterInfo = null;
 
-        final int intervalSeconds = 60;
+        final int intervalSeconds = 300;
         final XMLGregorianCalendar startTime = VmwareHelper.getXMLGregorianCalendar(new Date(), intervalSeconds);
         final XMLGregorianCalendar endTime = VmwareHelper.getXMLGregorianCalendar(new Date(), 0);
 
@@ -6109,10 +6109,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     final ArrayList<PerfMetricId> perfMetricsIds = new ArrayList<PerfMetricId>();
                     if (rxPerfCounterInfo != null) {
-                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(rxPerfCounterInfo, "*"));
+                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(rxPerfCounterInfo, ""));
                     }
                     if (txPerfCounterInfo != null) {
-                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(txPerfCounterInfo, "*"));
+                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(txPerfCounterInfo, ""));
                     }
                     if (diskReadIOPerfCounterInfo != null) {
                         perfMetricsIds.add(VmwareHelper.createPerfMetricId(diskReadIOPerfCounterInfo, "*"));
@@ -6121,10 +6121,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         perfMetricsIds.add(VmwareHelper.createPerfMetricId(diskWriteIOPerfCounterInfo, "*"));
                     }
                     if (diskReadKbsPerfCounterInfo != null) {
-                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(diskReadKbsPerfCounterInfo, "*"));
+                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(diskReadKbsPerfCounterInfo, ""));
                     }
                     if (diskWriteKbsPerfCounterInfo != null) {
-                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(diskWriteKbsPerfCounterInfo, "*"));
+                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(diskWriteKbsPerfCounterInfo, ""));
                     }
 
                     if (perfMetricsIds.size() > 0) {
@@ -6158,10 +6158,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                     networkWriteKBs = avg;
                                 }
                                 if (series.getId().getCounterId() == diskReadIOPerfCounterInfo.getKey()) {
-                                    diskReadIops = avg;
+                                    diskReadIops += avg;
                                 }
                                 if (series.getId().getCounterId() == diskWriteIOPerfCounterInfo.getKey()) {
-                                    diskWriteIops = avg;
+                                    diskWriteIops += avg;
                                 }
                                 if (series.getId().getCounterId() == diskReadKbsPerfCounterInfo.getKey()) {
                                     diskReadKbs = avg;
