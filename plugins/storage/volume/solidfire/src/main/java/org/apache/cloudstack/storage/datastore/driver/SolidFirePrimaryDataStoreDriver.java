@@ -364,7 +364,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         if (lstVolumes != null) {
             for (VolumeVO volume : lstVolumes) {
-                if (volume.getId() == volumeIdToIgnore) {
+                if (volume.getId() == volumeIdToIgnore || !volume.getState().equals(Volume.State.Ready)) {
                     continue;
                 }
 
@@ -394,7 +394,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         usedSpace += volumeSize;
                     }
                     catch (Exception ex) {
-                        // can be ignored
+                        LOGGER.info("Exception when getting volume from SolidFire");
+                        LOGGER.error(ex.getMessage());
                     }
                 }
             }
