@@ -831,13 +831,6 @@ var addL2GuestNetwork = {
             }
         },
 
-        preFilter: function(args) {
-            if (isAdmin())
-                return true;
-            else
-                return false;
-        },
-
         createForm: {
             title: 'label.add.l2.guest.network',
             fields: {
@@ -867,7 +860,7 @@ var addL2GuestNetwork = {
                             url: createURL('listZones'),
                             success: function(json) {
                                 var zones = $.grep(json.listzonesresponse.zone, function(zone) {
-                                    return (zone.networktype == 'Advanced' && zone.securitygroupsenabled != true); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
+                                    return (zone.networktype == 'Advanced'); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
                                 });
 
                                 args.response.success({
@@ -2614,6 +2607,19 @@ $.validator.addMethod("ipv4cidr", function(value, element) {
 
     return true;
 }, "The specified IPv4 CIDR is invalid.");
+
+$.validator.addMethod("ipv46cidrs", function(value, element) {
+    var result = true;
+    if (value) {
+        var validatorThis = this;
+        value.split(',').forEach(function(item){
+            if (result && !$.validator.methods.ipv46cidr.call(validatorThis, item.trim(), element)) {
+                result = false;
+            }
+        })
+    }
+    return result;
+}, "The specified IPv4/IPv6 CIDR input is invalid.");
 
 $.validator.addMethod("ipv46cidr", function(value, element) {
     if (this.optional(element) && value.length == 0)

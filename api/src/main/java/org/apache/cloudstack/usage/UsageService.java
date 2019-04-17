@@ -18,7 +18,7 @@ package org.apache.cloudstack.usage;
 
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
-import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
 
@@ -52,7 +52,7 @@ public interface UsageService {
      *             the appropriate page number)
      * @return a list of usage records
      */
-    Pair<List<? extends Usage>, Integer> getUsageRecords(GetUsageRecordsCmd cmd);
+    Pair<List<? extends Usage>, Integer> getUsageRecords(ListUsageRecordsCmd cmd);
 
     /**
      * Retrieves the timezone used for usage aggregation.  One day is represented as midnight to 11:59:59pm
