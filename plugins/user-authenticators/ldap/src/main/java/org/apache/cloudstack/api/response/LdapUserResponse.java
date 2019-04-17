@@ -18,12 +18,13 @@ package org.apache.cloudstack.api.response;
 
 import com.google.gson.annotations.SerializedName;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
 
 public class LdapUserResponse extends BaseResponse {
-    @SerializedName("email")
+    @SerializedName(ApiConstants.EMAIL)
     @Param(description = "The user's email")
     private String email;
 
@@ -31,21 +32,25 @@ public class LdapUserResponse extends BaseResponse {
     @Param(description = "The user's principle")
     private String principal;
 
-    @SerializedName("firstname")
+    @SerializedName(ApiConstants.FIRSTNAME)
     @Param(description = "The user's firstname")
     private String firstname;
 
-    @SerializedName("lastname")
+    @SerializedName(ApiConstants.LASTNAME)
     @Param(description = "The user's lastname")
     private String lastname;
 
-    @SerializedName("username")
+    @SerializedName(ApiConstants.USERNAME)
     @Param(description = "The user's username")
     private String username;
 
-    @SerializedName("domain")
+    @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "The user's domain")
     private String domain;
+
+    @SerializedName(ApiConstants.USER_SOURCE)
+    @Param(description = "The authentication source for this user")
+    private String userSource;
 
     public LdapUserResponse() {
         super();
@@ -59,6 +64,11 @@ public class LdapUserResponse extends BaseResponse {
         this.lastname = lastname;
         this.principal = principal;
         this.domain = domain;
+    }
+
+    public LdapUserResponse(final String username, final String email, final String firstname, final String lastname, final String principal, String domain, String userSource) {
+        this(username, email, firstname, lastname, principal, domain);
+        setUserSource(userSource);
     }
 
     public String getEmail() {
@@ -85,6 +95,10 @@ public class LdapUserResponse extends BaseResponse {
         return domain;
     }
 
+    public String getUserSource() {
+        return userSource;
+    }
+
     public void setEmail(final String email) {
         this.email = email;
     }
@@ -107,5 +121,9 @@ public class LdapUserResponse extends BaseResponse {
 
     public void setDomain(String domain) {
         this.domain = domain;
+    }
+
+    public void setUserSource(String userSource) {
+        this.userSource = userSource;
     }
 }
