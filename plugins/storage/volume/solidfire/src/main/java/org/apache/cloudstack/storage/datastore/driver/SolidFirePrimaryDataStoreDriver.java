@@ -394,7 +394,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         usedSpace += volumeSize;
                     }
                     catch (Exception ex) {
-                        LOGGER.info("Exception when getting volume from SolidFire");
+                        LOGGER.info("Exception when getting volume size from SolidFire and updating volume details in the cloudstack database");
                         LOGGER.error(ex.getMessage());
                     }
                 }
