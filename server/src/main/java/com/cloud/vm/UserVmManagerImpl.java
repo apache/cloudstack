@@ -4612,8 +4612,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public void collectVmDiskStatistics(final UserVm userVm) {
-        // support KVM only util 2013.06.25
-        // TODO: Implement support for VMware?
+        // Only supported for KVM and VMware
         if (!(userVm.getHypervisorType().equals(HypervisorType.KVM) || userVm.getHypervisorType().equals(HypervisorType.VMware))) {
             return;
         }
