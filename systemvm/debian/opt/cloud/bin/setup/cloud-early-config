@@ -90,6 +90,7 @@ get_boot_params() {
           sed -i "s/%/ /g" $CMDLINE
           ;;
      kvm)
+          systemctl start qemu-guest-agent
           # In case of reboot we may already have the cmdline
           if [ -s $CMDLINE  ]
           then
