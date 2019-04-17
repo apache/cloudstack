@@ -824,7 +824,7 @@ def default_network_rules(session, args):
        logging.debug(" failed to add vm " + vm_ip + " ip to set ")
        return 'false'
 
-    #add secodnary nic ips to ipset
+    #add secondary nic ips to ipset
     secIpSet = "1"
     ips = sec_ips.split(';')
     ips.pop()
@@ -1419,12 +1419,22 @@ def network_rules(session, args):
         reason = 'domid_change'
 
     rules = args.pop('rules')
+    logging.debug("Network rules compressed in base64 [%s]." % rules)
+
     if deflated.lower() == 'true':
        rules = inflate_rules (rules)
     keyword = '--' + get_ipset_keyword()
+
+    #Split spaces into lines. Example of rule [I:tcp;22;22;0.0.0.0/22,NEXT I:tcp;8001;8010;192.168.100.0/24,NEXT E:tcp;22;22;0.0.0.0/0,NEXT ]
+    #After split:
+    # I:tcp;22;22;0.0.0.0/22,NEXT
+    # I:tcp;8001;8010;192.168.100.0/24,NEXT
+    # E:tcp;22;22;0.0.0.0/0,NEXT
     lines = rules.split(' ')
 
-    logging.debug("Programming network rules for vm  %s seqno=%s numrules=%s signature=%s guestIp=%s,"\
+    logging.info("Network rules to be processed [%s]." % rules)
+
+    logging.info("Programming network rules for vm  %s seqno=%s numrules=%s signature=%s guestIp=%s,"\
               " update iptables, reason=%s" % (vm_name, seqno, len(lines), signature, vm_ip, reason))
 
     # Flush iptables rules to clear ipset references and before re-applying iptable rules
@@ -1438,14 +1448,24 @@ def network_rules(session, args):
     cmds = []
     egressrules = 0
     for line in lines:
-        tokens = line.split(':')
-        if len(tokens) != 5:
-          continue
-        token_type = tokens[0]
-        protocol = tokens[1]
-        start = tokens[2]
-        end = tokens[3]
-        cidrs = tokens.pop().split(",")
+        logging.debug("Processing rule [%s]." % line)
+        
+        #Example of rule: [I:tcp;12;34;1.2.3.4/24,NEXT] -> tokens: ['I:tcp', '12', '34', '1.2.3.4/24,NEXT'].
+        tokens = line.split(';')
+        logging.debug("Tokens %s." % tokens)
+        
+        tokens_size = len(tokens)
+
+        expected_tokens_size = 4
+        if tokens_size != expected_tokens_size:
+            logging.warning("Network rule tokens size [%s] is different from the expected size [%s], ignoring rule %s" % (str(tokens_size), str(expected_tokens_size), tokens))
+            continue
+
+        token_type, protocol = tokens[0].split(':')
+        start = tokens[1]
+        end = tokens[2]
+        cidrs = tokens[3].split(",")
+        # Remove placeholder 'NEXT' from the cidrs array
         cidrs.pop()
         allow_any = False
 
@@ -1456,17 +1476,22 @@ def network_rules(session, args):
             action = "RETURN"
             direction = "dst"
             egressrules = egressrules + 1
+            logging.debug("Ipset chaing [%s], VM chain [%s], VM name [%s], Action [%s], Direction [%s], egress rules [%s]" % (ipset_chain, vmchain, vm_name, action, direction, egressrules))
         else:
             #ipset chain name
             ipset_chain = ingress_chain_name_ipset(vm_name)
             vmchain = chain_name(vm_name)
             action = "ACCEPT"
             direction = "src"
-        if  '0.0.0.0/0' in cidrs:
+            logging.debug("Ipset chaing [%s], VM [%s], Action [%s], Direction [%s], egress rules [%s]" % (ipset_chain, vm_name, action, direction, egressrules))
+        if '0.0.0.0/0' in cidrs:
             i = cidrs.index('0.0.0.0/0')
             del cidrs[i]
             allow_any = True
+        
         port_range = start + ":" + end
+        logging.debug("port range [%s]" % port_range)
+
         if cidrs:
             #create seperate ipset name
             ipsetname = ipset_chain + "" + protocol[0:1] + "" + start + "_" + end
@@ -1500,6 +1525,7 @@ def network_rules(session, args):
             logging.debug(iptables)
 
     for cmd in cmds:
+        logging.debug("Executing command: [%s]." % str(cmd))
         util.pread2(cmd)
 
     vmchain = chain_name(vm_name)
@@ -1517,7 +1543,7 @@ def network_rules(session, args):
 
     return 'true'
   except:
-    logging.debug("Failed to network rule !")
+    logging.exception("Failed to network rule!")
 
 if __name__ == "__main__":
      XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi,

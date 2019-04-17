@@ -21,7 +21,9 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import java.util.Set;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateAnswer;
@@ -32,11 +34,13 @@ import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VM;
 
 @ResourceWrapper(handles =  MigrateCommand.class)
-public final class CitrixMigrateCommandWrapper extends CommandWrapper<MigrateCommand, Answer, CitrixResourceBase> {
+public class CitrixMigrateCommandWrapper extends CommandWrapper<MigrateCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixMigrateCommandWrapper.class);
 
@@ -81,6 +85,8 @@ public final class CitrixMigrateCommandWrapper extends CommandWrapper<MigrateCom
                 }
                 citrixResourceBase.migrateVM(conn, dsthost, vm, vmName);
                 vm.setAffinity(conn, dsthost);
+
+                destroyMigratedVmNetworkRulesOnSourceHost(command, citrixResourceBase, conn, dsthost);
             }
 
             // The iso can be attached to vm only once the vm is (present in the host) migrated.
@@ -93,6 +99,21 @@ public final class CitrixMigrateCommandWrapper extends CommandWrapper<MigrateCom
         } catch (final Exception e) {
             s_logger.warn(e.getMessage(), e);
             return new MigrateAnswer(command, false, e.getMessage(), null);
+        }
+    }
+
+    /**
+     * On networks with security group, it removes the network rules related to the migrated VM from the source host.
+     */
+    protected void destroyMigratedVmNetworkRulesOnSourceHost(final MigrateCommand command, final CitrixResourceBase citrixResourceBase, final Connection conn, Host dsthost)
+            throws BadServerResponse, XenAPIException, XmlRpcException {
+        if (citrixResourceBase.canBridgeFirewall()) {
+            final String result = citrixResourceBase.callHostPlugin(conn, "vmops", "destroy_network_rules_for_vm", "vmName", command.getVmName());
+            if (BooleanUtils.toBoolean(result)) {
+                s_logger.debug(String.format("Removed network rules from source host [%s] for migrated vm [%s]", dsthost.getHostname(conn), command.getVmName()));
+            } else {
+                s_logger.warn(String.format("Failed to remove network rules from source host [%s] for migrated vm [%s]", dsthost.getHostname(conn), command.getVmName()));
+            }
         }
     }
 }

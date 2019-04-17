@@ -346,13 +346,17 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         return xmlDesc;
     }
 
-    // Pass in a list of the disks to update in the XML (xmlDesc). Each disk passed in needs to have a serial number. If any disk's serial number in the
-    // list does not match a disk in the XML, an exception should be thrown.
-    // In addition to the serial number, each disk in the list needs the following info:
-    //   * The value of the 'type' of the disk (ex. file, block)
-    //   * The value of the 'type' of the driver of the disk (ex. qcow2, raw)
-    //   * The source of the disk needs an attribute that is either 'file' or 'dev' as well as its corresponding value.
-    private String replaceStorage(String xmlDesc, Map<String, MigrateCommand.MigrateDiskInfo> migrateStorage)
+    /**
+     * Pass in a list of the disks to update in the XML (xmlDesc). Each disk passed in needs to have a serial number. If any disk's serial number in the
+     * list does not match a disk in the XML, an exception should be thrown.
+     * In addition to the serial number, each disk in the list needs the following info:
+     * <ul>
+     *  <li>The value of the 'type' of the disk (ex. file, block)
+     *  <li>The value of the 'type' of the driver of the disk (ex. qcow2, raw)
+     *  <li>The source of the disk needs an attribute that is either 'file' or 'dev' as well as its corresponding value.
+     * </ul>
+     */
+    protected String replaceStorage(String xmlDesc, Map<String, MigrateCommand.MigrateDiskInfo> migrateStorage)
             throws IOException, ParserConfigurationException, SAXException, TransformerException {
         InputStream in = IOUtils.toInputStream(xmlDesc);
 
@@ -410,8 +414,6 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
                                     diskNode.appendChild(newChildSourceNode);
                                 } else if ("auth".equals(diskChildNode.getNodeName())) {
-                                    diskNode.removeChild(diskChildNode);
-                                } else if ("iotune".equals(diskChildNode.getNodeName())) {
                                     diskNode.removeChild(diskChildNode);
                                 }
                             }

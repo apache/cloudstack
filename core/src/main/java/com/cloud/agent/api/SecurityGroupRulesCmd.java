@@ -173,7 +173,7 @@ public class SecurityGroupRulesCmd extends Command {
         final StringBuilder sb = new StringBuilder();
         final List<String> ips = getSecIps();
         if (ips == null) {
-            sb.append("0:");
+            sb.append("0").append(RULE_COMMAND_SEPARATOR);
         } else {
             for (final String ip : ips) {
                 sb.append(ip).append(RULE_COMMAND_SEPARATOR);

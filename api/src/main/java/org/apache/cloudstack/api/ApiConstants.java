@@ -110,6 +110,7 @@ public class ApiConstants {
     public static final String IP6_DNS1 = "ip6dns1";
     public static final String IP6_DNS2 = "ip6dns2";
     public static final String DOMAIN = "domain";
+    public static final String DOMAIN_PATH = "domainpath";
     public static final String DOMAIN_ID = "domainid";
     public static final String DOMAIN__ID = "domainId";
     public static final String DURATION = "duration";

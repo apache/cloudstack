@@ -20,11 +20,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import com.cloud.storage.Storage;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import org.apache.commons.lang.NotImplementedException;
 
 public class QemuImg {
 
@@ -72,7 +71,7 @@ public class QemuImg {
             case FAT:
                 return PreallocationType.Full;
             default:
-                throw new NotImplementedException();
+                throw new NotImplementedException(String.format("type %s not defined as member-value of PreallocationType", provisioningType));
             }
         }
     }
