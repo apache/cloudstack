@@ -40,7 +40,7 @@ if [ ! -e $SSHKEY_FILE ]; then
     exit 1
 fi
 
-if ! which virsh2 > /dev/null; then
+if ! which virsh > /dev/null; then
     echo "Libvirt CLI 'virsh' not found"
     exit 1
 fi
