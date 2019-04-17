@@ -21,12 +21,12 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
 
-import junit.framework.TestCase;
-
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
 import com.cloud.utils.Pair;
+
+import junit.framework.TestCase;
 
 public class LibvirtVMDefTest extends TestCase {
 
@@ -180,7 +180,7 @@ public class LibvirtVMDefTest extends TestCase {
     public void testChannelDef() {
         ChannelDef.ChannelType type = ChannelDef.ChannelType.UNIX;
         ChannelDef.ChannelState state = ChannelDef.ChannelState.CONNECTED;
-        String name = "v-136-VM.vport";
+        String name = "v-136-VM.org.qemu.guest_agent.0";
         File path = new File("/var/lib/libvirt/qemu/" + name);
 
         ChannelDef channelDef = new ChannelDef(name, type, state, path);

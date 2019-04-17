@@ -22,13 +22,13 @@ package com.cloud.hypervisor.kvm.resource;
 import java.io.File;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
+
+import junit.framework.TestCase;
 
 public class LibvirtDomainXMLParserTest extends TestCase {
 
@@ -45,9 +45,6 @@ public class LibvirtDomainXMLParserTest extends TestCase {
         InterfaceDef.GuestNetType ifType = InterfaceDef.GuestNetType.BRIDGE;
 
         ChannelDef.ChannelType channelType = ChannelDef.ChannelType.UNIX;
-        ChannelDef.ChannelState channelState = ChannelDef.ChannelState.DISCONNECTED;
-        String ssvmAgentPath =  "/var/lib/libvirt/qemu/s-2970-VM.agent";
-        String ssvmAgentName = "s-2970-VM.vport";
         String guestAgentPath = "/var/lib/libvirt/qemu/guest-agent.org.qemu.guest_agent.0";
         String guestAgentName = "org.qemu.guest_agent.0";
 
@@ -155,12 +152,6 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                      "<target type='serial' port='0'/>" +
                      "<alias name='serial0'/>" +
                      "</console>" +
-                     "<channel type='unix'>" +
-                     "<source mode='bind' path='/var/lib/libvirt/qemu/s-2970-VM.agent'/>" +
-                     "<target type='virtio' name='s-2970-VM.vport' state='disconnected'/>" +
-                     "<alias name='channel0'/>" +
-                     "<address type='virtio-serial' controller='0' bus='0' port='1'/>" +
-                     "</channel>" +
                      "<input type='tablet' bus='usb'>" +
                      "<alias name='input0'/>" +
                      "</input>" +
@@ -215,14 +206,9 @@ public class LibvirtDomainXMLParserTest extends TestCase {
             assertEquals(channelType, channels.get(i).getChannelType());
         }
 
-        /* SSVM provisioning port/channel */
-        assertEquals(channelState, channels.get(0).getChannelState());
-        assertEquals(new File(ssvmAgentPath), channels.get(0).getPath());
-        assertEquals(ssvmAgentName, channels.get(0).getName());
-
         /* Qemu Guest Agent port/channel */
-        assertEquals(new File(guestAgentPath), channels.get(1).getPath());
-        assertEquals(guestAgentName, channels.get(1).getName());
+        assertEquals(new File(guestAgentPath), channels.get(0).getPath());
+        assertEquals(guestAgentName, channels.get(0).getName());
 
         List<InterfaceDef> ifs = parser.getInterfaces();
         for (int i = 0; i < ifs.size(); i++) {
