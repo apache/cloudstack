@@ -38,7 +38,7 @@ import java.util.List;
 
 public class UpdateVmNicIpTest extends TestCase {
 
-    private UpdateVmNicIpCmd updateVmNicIpMtuCmd;
+    private UpdateVmNicIpCmd updateVmNicIpCmd;
     private ResponseGenerator responseGenerator;
 
     @Override
@@ -51,12 +51,12 @@ public class UpdateVmNicIpTest extends TestCase {
     public void testSuccess() throws ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
 
         UserVmService userVmService = Mockito.mock(UserVmService.class);
-        updateVmNicIpMtuCmd = Mockito.mock(UpdateVmNicIpCmd.class);
+        updateVmNicIpCmd = Mockito.mock(UpdateVmNicIpCmd.class);
         UserVm userVm = Mockito.mock(UserVm.class);
 
         Mockito.when(userVmService.updateNicIpForVirtualMachine(Mockito.any(UpdateVmNicIpCmd.class))).thenReturn(userVm);
 
-        updateVmNicIpMtuCmd._userVmService = userVmService;
+        updateVmNicIpCmd._userVmService = userVmService;
         responseGenerator = Mockito.mock(ResponseGenerator.class);
 
         List<UserVmResponse> list = new LinkedList<UserVmResponse>();
@@ -64,22 +64,22 @@ public class UpdateVmNicIpTest extends TestCase {
         list.add(userVmResponse);
         Mockito.when(responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", userVm)).thenReturn(list);
 
-        updateVmNicIpMtuCmd._responseGenerator = responseGenerator;
-        updateVmNicIpMtuCmd.execute();
+        updateVmNicIpCmd._responseGenerator = responseGenerator;
+        updateVmNicIpCmd.execute();
     }
 
     @Test
     public void testFailure() throws ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
         UserVmService userVmService = Mockito.mock(UserVmService.class);
-        updateVmNicIpMtuCmd = Mockito.mock(UpdateVmNicIpCmd.class);
+        updateVmNicIpCmd = Mockito.mock(UpdateVmNicIpCmd.class);
 
         Mockito.when(userVmService.updateNicIpForVirtualMachine(Mockito.any(UpdateVmNicIpCmd.class))).thenReturn(null);
 
-        updateVmNicIpMtuCmd._userVmService = userVmService;
+        updateVmNicIpCmd._userVmService = userVmService;
 
-        updateVmNicIpMtuCmd._responseGenerator = responseGenerator;
+        updateVmNicIpCmd._responseGenerator = responseGenerator;
         try {
-            updateVmNicIpMtuCmd.execute();
+            updateVmNicIpCmd.execute();
         } catch (ServerApiException exception) {
             Assert.assertEquals("Failed to update ip address on vm NIC. Refer to server logs for details.", exception.getDescription());
         }
