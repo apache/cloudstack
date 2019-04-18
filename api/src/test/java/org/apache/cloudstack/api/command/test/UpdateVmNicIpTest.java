@@ -27,7 +27,7 @@ import junit.framework.TestCase;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpMtuCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +38,7 @@ import java.util.List;
 
 public class UpdateVmNicIpTest extends TestCase {
 
-    private UpdateVmNicIpMtuCmd updateVmNicIpMtuCmd;
+    private UpdateVmNicIpCmd updateVmNicIpMtuCmd;
     private ResponseGenerator responseGenerator;
 
     @Override
@@ -51,10 +51,10 @@ public class UpdateVmNicIpTest extends TestCase {
     public void testSuccess() throws ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
 
         UserVmService userVmService = Mockito.mock(UserVmService.class);
-        updateVmNicIpMtuCmd = Mockito.mock(UpdateVmNicIpMtuCmd.class);
+        updateVmNicIpMtuCmd = Mockito.mock(UpdateVmNicIpCmd.class);
         UserVm userVm = Mockito.mock(UserVm.class);
 
-        Mockito.when(userVmService.updateNicIpMtuForVirtualMachine(Mockito.any(UpdateVmNicIpMtuCmd.class))).thenReturn(userVm);
+        Mockito.when(userVmService.updateNicIpForVirtualMachine(Mockito.any(UpdateVmNicIpCmd.class))).thenReturn(userVm);
 
         updateVmNicIpMtuCmd._userVmService = userVmService;
         responseGenerator = Mockito.mock(ResponseGenerator.class);
@@ -71,9 +71,9 @@ public class UpdateVmNicIpTest extends TestCase {
     @Test
     public void testFailure() throws ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
         UserVmService userVmService = Mockito.mock(UserVmService.class);
-        updateVmNicIpMtuCmd = Mockito.mock(UpdateVmNicIpMtuCmd.class);
+        updateVmNicIpMtuCmd = Mockito.mock(UpdateVmNicIpCmd.class);
 
-        Mockito.when(userVmService.updateNicIpMtuForVirtualMachine(Mockito.any(UpdateVmNicIpMtuCmd.class))).thenReturn(null);
+        Mockito.when(userVmService.updateNicIpForVirtualMachine(Mockito.any(UpdateVmNicIpCmd.class))).thenReturn(null);
 
         updateVmNicIpMtuCmd._userVmService = userVmService;
 

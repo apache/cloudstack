@@ -245,7 +245,7 @@ import org.apache.cloudstack.api.command.user.vm.SecurityGroupAction;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpMtuCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
@@ -1459,7 +1459,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public UserVm updateNicIpMtuForVirtualMachine(UpdateVmNicIpMtuCmd cmd) {
+    public UserVm updateNicIpForVirtualMachine(UpdateVmNicIpCmd cmd) {
         Long nicId = cmd.getNicId();
         String ipaddr = cmd.getIpaddress();
         int mtu = cmd.getMtu();

@@ -94,11 +94,7 @@ public class AddNicToVMCmd extends BaseAsyncCmd {
     }
 
     public int getMtu() {
-        if (mtu != 0) {
-            return mtu;
-        } else {
-            return 0;
-        }
+        return mtu;
     }
 
     public String getMacAddress() {

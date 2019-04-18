@@ -47,8 +47,8 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
-@APICommand(name = "updateVmNicIpMtu", description = "Update the default Ip and MTU of a VM Nic", responseObject = UserVmResponse.class)
-public class UpdateVmNicIpMtuCmd extends BaseAsyncCmd {
+@APICommand(name = "updateVmNicIp", description = "Update the default Ip and MTU of a VM Nic", responseObject = UserVmResponse.class)
+public class UpdateVmNicIpCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddIpToVmNicCmd.class.getName());
     private static final String s_name = "updatevmnicipresponse";
 
@@ -112,11 +112,7 @@ public class UpdateVmNicIpMtuCmd extends BaseAsyncCmd {
     }
 
     public int getMtu () {
-        if (mtu != 0) {
-            return mtu;
-        } else {
-            return 0;
-        }
+        return mtu;
     }
 
     public NetworkType getNetworkType() {
@@ -166,7 +162,7 @@ public class UpdateVmNicIpMtuCmd extends BaseAsyncCmd {
             }
         }
 
-        UserVm vm = _userVmService.updateNicIpMtuForVirtualMachine(this);
+        UserVm vm = _userVmService.updateNicIpForVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("nics"));
         EnumSet<VMDetails> details = EnumSet.copyOf(dc);
