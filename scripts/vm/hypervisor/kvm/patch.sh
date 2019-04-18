@@ -77,4 +77,4 @@ send_file $name "/root/.ssh/authorized_keys" $sshkey
 virsh qemu-agent-command $name '{"execute":"guest-exec","arguments":{"path":"chmod","arg":["go-rwx","/root/.ssh/authorized_keys"]}}' > /dev/null
 
 # Write cmdline payload
-send_file $name "/var/cache/cloud/cmdline.kvm" $cmdline
+send_file $name "/var/cache/cloud/cmdline" $cmdline

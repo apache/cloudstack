@@ -90,20 +90,28 @@ get_boot_params() {
           sed -i "s/%/ /g" $CMDLINE
           ;;
      kvm)
-          systemctl start qemu-guest-agent
-          # In case of reboot we may already have the cmdline
-          if [ -s $CMDLINE  ]
-          then
-            log_it "Found a non empty cmdline file, re-using it."
-          else
-            # Wait for $CMDLINE.kvm file to be written by the qemu-guest-agent
-            for i in {1..60}; do
-              if [ -e $CMDLINE.kvm ]; then
-                mv $CMDLINE.kvm $CMDLINE
-                break
-              fi
-              sleep 1
-            done
+          # Use any old cmdline as backup only
+          if [ -s $CMDLINE ]; then
+            mv $CMDLINE $CMDLINE.old
+            log_it "Found a non-empty old cmdline file"
+          fi
+          systemctl enable --now qemu-guest-agent
+          # Wait for $CMDLINE file to be written by the qemu-guest-agent
+          for i in {1..60}; do
+            if [ -s $CMDLINE ]; then
+              log_it "Received a new non-empty cmdline file from qemu-guest-agent"
+              break
+            fi
+            sleep 1
+          done
+          # Use any old cmdline only when new cmdline is not received
+          if [ -e $CMDLINE.old ]; then
+            if [ -s $CMDLINE  ]; then
+              rm $CMDLINE.old
+            else
+              mv $CMDLINE.old $CMDLINE
+              log_it "Using old cmdline file, VM was perhaps rebooted."
+            fi
           fi
           ;;
      vmware)
