@@ -333,6 +333,8 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
         return forVpc;
     }
 
+    public void setForVpc(boolean forVpc) { this.forVpc = forVpc; }
+
     public String getServicePackage() {
         return servicePackageUuid;
     }
