@@ -3303,7 +3303,8 @@
                                             }
                                         }
                                         newDetails['details[0].' + data.name] = data.value;
-                                        var postData = {'id' : args.context.instances[0].id};
+
+									var postData = {'id' : args.context.instances[0].id};
                                         $.extend(postData, newDetails);
                                         $.ajax({
                                             url: createURL('updateVirtualMachine'),
@@ -3339,7 +3340,7 @@
 											args.response.error(parseXMLHttpResponse(json));
 										}
 									});
-                                    if (virtualMachine && virtualMachine.state == "Stopped") {
+if (virtualMachine && virtualMachine.state == "Stopped") {
                                         // It could happen that a stale web page has been opened up when VM was stopped but
                                         // vm was turned on through another route - UI or API. so we should check again.
                                         var detailToDelete = args.data.jsonObj.name;
