@@ -52,8 +52,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         UploadInProgress("Volume upload is in progress"),
         UploadError("Volume upload encountered some error"),
         UploadAbandoned("Volume upload is abandoned since the upload was never initiated within a specificed time"),
-        AttachingFromReady("The volume is attaching to a VM from Ready State"),
-        AttachingFromAllocated("The volume is attaching to a VM from Allocated State");
+        Attaching("The volume is attaching to a VM from Ready State");
 
         String _description;
 
@@ -120,12 +119,10 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadInProgress, Event.OperationTimeout, UploadError, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadError, Event.DestroyRequested, Destroy, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadAbandoned, Event.DestroyRequested, Destroy, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.AttachRequested, AttachingFromAllocated, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(AttachingFromAllocated, Event.OperationSucceeded, Allocated, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(AttachingFromAllocated, Event.OperationFailed, Allocated, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.AttachRequested, AttachingFromReady, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(AttachingFromReady, Event.OperationSucceeded, Ready, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(AttachingFromReady, Event.OperationFailed, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.AttachRequested, Attaching, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.AttachRequested, Attaching, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Attaching, Event.OperationSucceeded, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Attaching, Event.OperationFailed, Ready, null));
         }
     }
 

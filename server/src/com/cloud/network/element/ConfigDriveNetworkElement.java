@@ -377,8 +377,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         case RevertSnapshotting:
         case Resizing:
         case Copying:
-        case AttachingFromReady:
-        case AttachingFromAllocated:
+        case Attaching:
             return true;
         case Migrating:
         case Expunging:

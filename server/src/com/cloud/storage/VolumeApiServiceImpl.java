@@ -2635,7 +2635,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return !storeForExistingStoreScope.isSameScope(storeForNewStoreScope);
     }
 
-    private synchronized void checkAndSetAttaching(Long volumeId, Long hostId) {
+    private synchronized void checkAndSetAttaching(Long volumeId) {
         VolumeInfo volumeToAttach = volFactory.getVolume(volumeId);
 
         if (volumeToAttach.isAttachedVM()) {
@@ -2644,12 +2644,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (volumeToAttach.getState().equals(Volume.State.Ready) || volumeToAttach.getState().equals(Volume.State.Allocated)) {
             volumeToAttach.stateTransit(Volume.Event.AttachRequested);
         } else {
-            String error = null;
-            if (hostId == null) {
-                error = "Please try attach operation after starting VM once";
-            } else {
-                error = "Volume: " + volumeToAttach.getName() + " is in " + volumeToAttach.getState() + ". It should be in Ready or Allocated state";
-            }
+            final String error = "Volume: " + volumeToAttach.getName() + " is in " + volumeToAttach.getState() + ". It should be in Ready or Allocated state";
             s_logger.error(error);
             throw new CloudRuntimeException(error);
         }
@@ -2685,7 +2680,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // volumeToAttachStoragePool should be null if the VM we are attaching the disk to has never been started before
         DataStore dataStore = volumeToAttachStoragePool != null ? dataStoreMgr.getDataStore(volumeToAttachStoragePool.getId(), DataStoreRole.Primary) : null;
 
-        checkAndSetAttaching(volumeToAttach.getId(), hostId);
+        checkAndSetAttaching(volumeToAttach.getId());
 
         boolean attached = false;
         try {
@@ -2774,11 +2769,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                     volumeToAttach = _volsDao.findById(volumeToAttach.getId());
 
-                    if (volumeToAttach.getState().equals(Volume.State.Ready) &&
-                        vm.getHypervisorType() == HypervisorType.KVM &&
-                        volumeToAttachStoragePool.isManaged() &&
-                        volumeToAttach.getPath() == null) {
-
+                    if (vm.getHypervisorType() == HypervisorType.KVM && volumeToAttachStoragePool.isManaged() && volumeToAttach.getPath() == null) {
                         volumeToAttach.setPath(volumeToAttach.get_iScsiName());
                         _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                     }
