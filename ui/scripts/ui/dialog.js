@@ -131,7 +131,7 @@
                         }
                     }]
                 });
-                
+
                 return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
             };
 
@@ -819,7 +819,7 @@
                                             $('div.loading-overlay').remove();
 
                                             if (!msg) {
-                                                msg = "Please enable SSL on your SSVM to allow uploading local files";
+                                                msg = "Failed to upload file due to system misconfiguration. Please contact admin.";
                                             }
                                             cloudStack.dialog.notice({ message: msg });
 
@@ -1089,7 +1089,7 @@
                     }
                 }]
             });
-            
+
             return  cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
         },
 
@@ -1117,7 +1117,7 @@
                         }
                     }]
                 });
-                             
+
                 return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog, 5001);
             }
             return false;
