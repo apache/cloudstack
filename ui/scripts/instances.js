@@ -847,7 +847,7 @@
                     if (includingSecurityGroupService == false) {
                         hiddenTabs.push("securityGroups");
                     }
-					
+
 					if (args.context.instances[0].state == 'Running') {
 						hiddenTabs.push("settings");
 					}
@@ -2439,7 +2439,7 @@
                                 $.extend(dataObj, {
                                     networkIds: args.data.network
                                 });
-                            } 
+                            }
                             if (args.data.securitygroup != null && args.data.securitygroup != '') {
                                 $.extend(dataObj, {
                                     securitygroupIds: args.data.securitygroup
@@ -2969,7 +2969,7 @@
                                     }
 
                                     $.ajax({
-                                        url: createURL('updateVmNicIpMtu'),
+                                        url: createURL('updateVmNicIp'),
                                         data: dataObj,
                                         success: function(json) {
                                             args.response.success({
@@ -3229,7 +3229,7 @@
                             });
                         }
                     },
-					
+
 					/**
                      * Settings tab
                      */
@@ -3280,7 +3280,7 @@
 										}
 									}
 									newDetails += 'details[0].' + data.name + '=' + data.value;
-									
+
 									$.ajax({
 										url: createURL('updateVirtualMachine&id=' + args.context.instances[0].id + '&' + newDetails),
 										async:false,
@@ -3310,7 +3310,7 @@
 											args.response.error(parseXMLHttpResponse(json));
 										}
 									});
-									
+
 									var detailToDelete = args.data.jsonObj.name;
 									var newDetails = ''
 									for (detail in existingDetails) {
@@ -3341,7 +3341,7 @@
 								add: function(args) {
 									var name = args.data.name;
 									var value = args.data.value;
-									
+
 									var details;
 									$.ajax({
 										url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
@@ -3355,7 +3355,7 @@
 											args.response.error(parseXMLHttpResponse(json));
 										}
 									});
-									
+
 									var detailsFormat = '';
 									for (key in details) {
 										detailsFormat += "details[0]." + key + "=" + details[key] + "&";
@@ -3383,7 +3383,7 @@
             }
         }
     };
-	
+
 	var parseDetails = function(details) {
 		var listDetails = [];
 		for (detail in details){
