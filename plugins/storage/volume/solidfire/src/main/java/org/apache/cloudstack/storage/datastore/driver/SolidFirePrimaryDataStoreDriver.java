@@ -401,7 +401,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
         }
 
-        List<SnapshotVO> lstSnapshots = snapshotDao.listAllByStatus(Snapshot.State.BackedUp);
+        List<SnapshotVO> lstSnapshots = snapshotDao.listAllByStatus(State.BackedUp);
 
         if (lstSnapshots != null) {
             for (SnapshotVO snapshot : lstSnapshots) {
