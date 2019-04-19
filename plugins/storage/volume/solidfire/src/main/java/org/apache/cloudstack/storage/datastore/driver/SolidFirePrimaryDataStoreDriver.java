@@ -35,15 +35,8 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ResizeVolumePayload;
+import com.cloud.storage.*;
 import com.cloud.storage.Snapshot.State;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeDetailVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
@@ -401,7 +394,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
         }
 
-        List<SnapshotVO> lstSnapshots = snapshotDao.listAll();
+        List<SnapshotVO> lstSnapshots = snapshotDao.listAllByStatus(Snapshot.State.BackedUp);
 
         if (lstSnapshots != null) {
             for (SnapshotVO snapshot : lstSnapshots) {
