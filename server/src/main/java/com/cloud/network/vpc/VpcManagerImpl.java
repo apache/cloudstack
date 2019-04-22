@@ -846,7 +846,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             for (Long domainId : filteredDomainIds) {
                 for (Long existingDomainId : existingDomainIds) {
                     if (domainDao.isChildDomain(existingDomainId, domainId)) {
-                        throw new InvalidParameterValueException("Unable to update VPC offering for domain " + domainDao.findById(domainId).getUuid() + " as offering is already available for parent domain");
+                        throw new InvalidParameterValueException(String.format("Unable to update VPC offering for domain %s as offering is already available for parent domain", domainDao.findById(domainId).getUuid()));
                     }
                 }
             }
