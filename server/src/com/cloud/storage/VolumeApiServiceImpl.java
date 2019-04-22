@@ -2769,7 +2769,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                     volumeToAttach = _volsDao.findById(volumeToAttach.getId());
 
-                    if (vm.getHypervisorType() == HypervisorType.KVM && volumeToAttachStoragePool.isManaged() && volumeToAttach.getPath() == null) {
+                    if (volumeToAttach.getState().equals(Volume.State.Ready) &&
+                            vm.getHypervisorType() == HypervisorType.KVM &&
+                            volumeToAttachStoragePool.isManaged() && volumeToAttach.getPath() == null) {
                         volumeToAttach.setPath(volumeToAttach.get_iScsiName());
                         _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                     }
