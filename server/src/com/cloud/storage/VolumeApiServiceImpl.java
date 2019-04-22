@@ -2641,9 +2641,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (volumeToAttach.isAttachedVM()) {
             throw new CloudRuntimeException("volume: " + volumeToAttach.getName() + " is already attached to a VM: " + volumeToAttach.getAttachedVmName());
         }
-        if (volumeToAttach.getState().equals(Volume.State.Ready) || volumeToAttach.getState().equals(Volume.State.Allocated)) {
+        if (volumeToAttach.getState().equals(Volume.State.Ready)) {
             volumeToAttach.stateTransit(Volume.Event.AttachRequested);
-        } else {
+        } else if (!volumeToAttach.getState().equals(Volume.State.Allocated)) {
             final String error = "Volume: " + volumeToAttach.getName() + " is in " + volumeToAttach.getState() + ". It should be in Ready or Allocated state";
             s_logger.error(error);
             throw new CloudRuntimeException(error);
@@ -2799,16 +2799,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         } finally {
             final VolumeInfo volInfo = volFactory.getVolume(volumeToAttach.getId());
-            final boolean isVolumeInAllocated = volInfo.getPoolId() == null && volInfo.getLastPoolId() == null;
-            final Volume.Event ev;
-            if (attached) {
-                ev = isVolumeInAllocated ? Volume.Event.AttachFromAllocatedSucceeded : Volume.Event.AttachFromReadySucceeded;
-                s_logger.debug("Volume: " + volInfo.getName() + " successfully attached to VM: " + volInfo.getAttachedVmName());
-            } else {
-                ev = isVolumeInAllocated ? Volume.Event.AttachFromAllocatedFailed : Volume.Event.AttachFromReadyFailed;
-                s_logger.debug("Volume: " + volInfo.getName() + " failed to attach to VM: " + volInfo.getAttachedVmName());
+            // Transit events are only fired when volume was allocated at some point of time.
+            if (volInfo.getPoolId() != null || volInfo.getLastPoolId() != null) {
+                final Volume.Event ev;
+                if (attached) {
+                    ev = Volume.Event.OperationSucceeded;
+                    s_logger.debug("Volume: " + volInfo.getName() + " successfully attached to VM: " + volInfo.getAttachedVmName());
+                } else {
+                    ev = Volume.Event.OperationFailed;
+                    s_logger.debug("Volume: " + volInfo.getName() + " failed to attach to VM: " + volInfo.getAttachedVmName());
+                }
+                volInfo.stateTransit(ev);
             }
-            volInfo.stateTransit(ev);
         }
         return _volsDao.findById(volumeToAttach.getId());
     }

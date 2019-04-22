@@ -1468,7 +1468,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         if (volume.getState().equals(Volume.State.Attaching)) {
             s_logger.warn("Vol: " + volume.getName() + " failed to attach to VM: " + _userVmDao.findById(vmId).getHostName() + " on last mgt server stop, changing state back to Ready");
-            volume.setState((volume.getPoolId() == null && volume.getLastPoolId() == null) ? Volume.State.Allocated : Volume.State.Ready);
+            volume.setState(Volume.State.Ready);
             _volsDao.update(volumeId, volume);
         }
     }
