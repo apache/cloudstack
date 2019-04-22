@@ -1058,7 +1058,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             }
             throw ex;
         }
-        _accountMgr.checkAccess(caller, ntwkOff, _dcDao.findById(zoneId));
+
+        Account owner = null;
+        if ((cmd.getAccountName() != null && domainId != null) || cmd.getProjectId() != null) {
+            owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), domainId, cmd.getProjectId());
+        } else {
+            owner = caller;
+        }
 
         // validate physical network and zone
         // Check if physical network exists
@@ -1082,6 +1088,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         if (zone == null) {
             throw new InvalidParameterValueException("Specified zone id was not found");
         }
+
+        _accountMgr.checkAccess(owner, ntwkOff, zone);
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
             // See DataCenterVO.java
@@ -1150,12 +1158,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
         } else if (subdomainAccess != null) {
             throw new InvalidParameterValueException("Parameter subDomainAccess can be specified only with aclType=Domain");
-        }
-        Account owner = null;
-        if ((cmd.getAccountName() != null && domainId != null) || cmd.getProjectId() != null) {
-            owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), domainId, cmd.getProjectId());
-        } else {
-            owner = caller;
         }
 
         boolean ipv4 = true, ipv6 = false;
@@ -2017,7 +2019,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         }
 
         _accountMgr.checkAccess(callerAccount, null, true, network);
-        _accountMgr.checkAccess(callerAccount, offering, _dcDao.findById(network.getDataCenterId()));
+        _accountMgr.checkAccess(_accountMgr.getActiveAccountById(network.getAccountId()), offering, _dcDao.findById(network.getDataCenterId()));
 
         if (name != null) {
             network.setName(name);
