@@ -1046,7 +1046,7 @@
                                             <File Id="fil47212822DDAFFCD71C79615CF4583BAF" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\kvm\kvmheartbeat.sh" />
                                         </Component>
                                         <Component Id="cmpF2BBDD336FEC0B34B3C744ACF1E4B959" Guid="{56D8ECF7-49F8-4B26-A8F4-662252C0A647}">
-                                            <File Id="filD809C7F728AC5D1BD36E7DB403BFA141" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\kvm\patchviasocket.py" />
+                                            <File Id="filD809C7F728AC5D1BD36E7DB403BFA141" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\kvm\patch.sh" />
                                         </Component>
                                         <Component Id="cmp2F4D4D81563D153E86B0A652A83D363A" Guid="{7BFC7637-E33D-4BC4-8B25-3CDEA601110C}">
                                             <File Id="fil349420D6088A01C9F63E27634623F5BE" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\kvm\setup_agent.sh" />

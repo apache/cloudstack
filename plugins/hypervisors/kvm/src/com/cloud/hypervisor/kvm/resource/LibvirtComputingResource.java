@@ -47,7 +47,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.resource.RequestWrapper;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -146,6 +145,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStorageProcessor;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.resource.RequestWrapper;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.JavaStorageLayer;
@@ -199,7 +199,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private String _modifyVlanPath;
     private String _versionstringpath;
-    private String _patchViaSocketPath;
+    private String _patchScriptPath;
     private String _createvmPath;
     private String _manageSnapshotPath;
     private String _resizeVolumePath;
@@ -682,9 +682,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find versions.sh");
         }
 
-        _patchViaSocketPath = Script.findScript(kvmScriptsDir + "/patch/", "patchviasocket.py");
-        if (_patchViaSocketPath == null) {
-            throw new ConfigurationException("Unable to find patchviasocket.py");
+        _patchScriptPath = Script.findScript(kvmScriptsDir, "patch.sh");
+        if (_patchScriptPath == null) {
+            throw new ConfigurationException("Unable to find patch.sh");
         }
 
         _heartBeatPath = Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
@@ -1362,13 +1362,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean passCmdLine(final String vmName, final String cmdLine) throws InternalErrorException {
-        final Script command = new Script(_patchViaSocketPath, 5 * 1000, s_logger);
+        final Script command = new Script(_patchScriptPath, 30 * 1000, s_logger);
         String result;
         command.add("-n", vmName);
-        command.add("-p", cmdLine.replaceAll(" ", "%"));
+        command.add("-c", cmdLine);
         result = command.execute();
         if (result != null) {
-            s_logger.error("passcmd failed:" + result);
+            s_logger.error("Passing cmdline failed:" + result);
             return false;
         }
         return true;
@@ -2140,12 +2140,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final SerialDef serial = new SerialDef("pty", null, (short)0);
         devices.addDevice(serial);
-
-        /* Add a VirtIO channel for SystemVMs for communication and provisioning */
-        if (vmTO.getType() != VirtualMachine.Type.User) {
-            devices.addDevice(new ChannelDef(vmTO.getName() + ".vport", ChannelDef.ChannelType.UNIX,
-                              new File(_qemuSocketsPath + "/" + vmTO.getName() + ".agent")));
-        }
 
         if (_rngEnable) {
             final RngDef rngDevice = new RngDef(_rngPath, _rngBackendModel, _rngRateBytes, _rngRatePeriod);
