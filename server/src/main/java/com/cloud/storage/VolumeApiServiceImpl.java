@@ -599,7 +599,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("This disk offering does not allow custom size");
             }
 
-            _configMgr.checkDiskOfferingAccess(caller, diskOffering, _dcDao.findById(zoneId));
+            _configMgr.checkDiskOfferingAccess(owner, diskOffering, _dcDao.findById(zoneId));
 
             if (diskOffering.getDiskSize() > 0) {
                 size = diskOffering.getDiskSize();
@@ -944,7 +944,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("There are no tags on the current disk offering. The new disk offering needs to have no tags, as well.");
             }
 
-            _configMgr.checkDiskOfferingAccess(CallContext.current().getCallingAccount(), newDiskOffering, _dcDao.findById(volume.getDataCenterId()));
+            _configMgr.checkDiskOfferingAccess(_accountMgr.getActiveAccountById(volume.getAccountId()), newDiskOffering, _dcDao.findById(volume.getDataCenterId()));
 
             if (newDiskOffering.isCustomized()) {
                 newSize = cmd.getSize();
