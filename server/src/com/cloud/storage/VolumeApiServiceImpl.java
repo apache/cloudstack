@@ -2798,12 +2798,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new CloudRuntimeException(errorMsg);
             }
         } finally {
-            Volume.Event ev = Volume.Event.OperationFailed;
-            VolumeInfo volInfo = volFactory.getVolume(volumeToAttach.getId());
+            final VolumeInfo volInfo = volFactory.getVolume(volumeToAttach.getId());
+            final boolean isVolumeInAllocated = volInfo.getPoolId() == null && volInfo.getLastPoolId() == null;
+            final Volume.Event ev;
             if (attached) {
-                ev = Volume.Event.OperationSucceeded;
+                ev = isVolumeInAllocated ? Volume.Event.AttachFromAllocatedSucceeded : Volume.Event.AttachFromReadySucceeded;
                 s_logger.debug("Volume: " + volInfo.getName() + " successfully attached to VM: " + volInfo.getAttachedVmName());
             } else {
+                ev = isVolumeInAllocated ? Volume.Event.AttachFromAllocatedFailed : Volume.Event.AttachFromReadyFailed;
                 s_logger.debug("Volume: " + volInfo.getName() + " failed to attach to VM: " + volInfo.getAttachedVmName());
             }
             volInfo.stateTransit(ev);

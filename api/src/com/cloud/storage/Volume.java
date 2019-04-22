@@ -52,7 +52,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         UploadInProgress("Volume upload is in progress"),
         UploadError("Volume upload encountered some error"),
         UploadAbandoned("Volume upload is abandoned since the upload was never initiated within a specificed time"),
-        Attaching("The volume is attaching to a VM from Ready State");
+        Attaching("The volume is attaching to a VM");
 
         String _description;
 
@@ -119,10 +119,14 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadInProgress, Event.OperationTimeout, UploadError, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadError, Event.DestroyRequested, Destroy, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadAbandoned, Event.DestroyRequested, Destroy, null));
+
+            // Attaching can start from Allocated or Ready state. We need to track attaching and return to the original state.
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.AttachRequested, Attaching, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.AttachRequested, Attaching, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Attaching, Event.OperationSucceeded, Ready, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Attaching, Event.OperationFailed, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Attaching, Event.AttachFromAllocatedSucceeded, Allocated, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Attaching, Event.AttachFromAllocatedFailed, Allocated, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Attaching, Event.AttachFromReadySucceeded, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Attaching, Event.AttachFromReadyFailed, Ready, null));
         }
     }
 
@@ -145,7 +149,11 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         ExpungingRequested,
         ResizeRequested,
         AttachRequested,
-        OperationTimeout;
+        OperationTimeout,
+        AttachFromReadySucceeded,
+        AttachFromReadyFailed,
+        AttachFromAllocatedSucceeded,
+        AttachFromAllocatedFailed;
     }
 
     /**
