@@ -2610,7 +2610,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             for (Long domainId : filteredDomainIds) {
                 for (Long existingDomainId : existingDomainIds) {
                     if (_domainDao.isChildDomain(existingDomainId, domainId)) {
-                        throw new InvalidParameterValueException("Unable to update service offering for domain " + _domainDao.findById(domainId).getUuid() + " as offering is already available for parent domain");
+                        throw new InvalidParameterValueException(String.format("Unable to update service offering for domain %s as offering is already available for parent domain", _domainDao.findById(domainId).getUuid()));
                     }
                 }
             }
@@ -2974,7 +2974,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             for (Long domainId : filteredDomainIds) {
                 for (Long existingDomainId : existingDomainIds) {
                     if (_domainDao.isChildDomain(existingDomainId, domainId)) {
-                        throw new InvalidParameterValueException("Unable to update disk offering for domain " + _domainDao.findById(domainId).getUuid() + " as offering is already available for parent domain");
+                        throw new InvalidParameterValueException(String.format("Unable to update disk offering for domain %s as offering is already available for parent domain", _domainDao.findById(domainId).getUuid()));
                     }
                 }
             }
