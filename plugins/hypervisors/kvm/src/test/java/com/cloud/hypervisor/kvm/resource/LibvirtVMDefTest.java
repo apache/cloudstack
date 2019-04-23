@@ -30,7 +30,7 @@ public class LibvirtVMDefTest extends TestCase {
 
     public void testInterfaceEtehrnet() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
-        ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, 1500);
+        ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO,null,1500);
 
         String expected =
             "<interface type='ethernet'>\n"
@@ -40,56 +40,6 @@ public class LibvirtVMDefTest extends TestCase {
                     + "<model type='virtio'/>\n"
                     + "<link state='up'/>\n"
                     + "</interface>\n";
-
-        assertEquals(expected, ifDef.toString());
-    }
-
-    public void testInterfaceDirectNet() {
-        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
-        ifDef.defDirectNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "private", 1500);
-
-        String expected =
-            "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.DIRECT + "'>\n"
-                    + "<source dev='targetDeviceName' mode='private'/>\n"
-                    + "<mtu size='1500'/>\n"
-                    + "<mac address='00:11:22:aa:bb:dd'/>\n"
-                    + "<model type='virtio'/>\n"
-                    + "<link state='up'/>\n"
-                    + "</interface>\n";
-
-        assertEquals(expected, ifDef.toString());
-    }
-
-    public void testInterfaceBridgeSlot() {
-        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
-        ifDef.defBridgeNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, 1500);
-        ifDef.setSlot(16);
-
-        String expected =
-                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
-                        + "<source bridge='targetDeviceName'/>\n"
-                        + "<mtu size='1500'/>\n"
-                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
-                        + "<model type='virtio'/>\n"
-                        + "<link state='up'/>\n"
-                        + "<address type='pci' domain='0x0000' bus='0x00' slot='0x10' function='0x0'/>\n"
-                        + "</interface>\n";
-
-        assertEquals(expected, ifDef.toString());
-
-        ifDef.setLinkStateUp(false);
-        ifDef.setDevName("vnet11");
-
-        expected =
-                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
-                        + "<source bridge='targetDeviceName'/>\n"
-                        + "<target dev='vnet11'/>\n"
-                        + "<mtu size='1500'/>\n"
-                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
-                        + "<model type='virtio'/>\n"
-                        + "<link state='down'/>\n"
-                        + "<address type='pci' domain='0x0000' bus='0x00' slot='0x10' function='0x0'/>\n"
-                        + "</interface>\n";
 
         assertEquals(expected, ifDef.toString());
     }

@@ -1021,8 +1021,10 @@ public class LibvirtVMDef {
         private String _dpdkSourcePort;
         private String _dpdkExtraLines;
 
-        public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model, Integer mtu) {
-            defBridgeNet(brName, targetBrName, macAddr, model, 0, mtu);
+        /* ----- BRIDGE NET ----- */
+
+        public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model) {
+            defBridgeNet(brName, targetBrName, macAddr, model, 0, null);
         }
 
         public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model, Integer networkRateKBps, Integer mtu) {
@@ -1035,6 +1037,8 @@ public class LibvirtVMDef {
             _mtu = mtu;
         }
 
+        /* ----- DPDK-NET ----- */
+
         public void defDpdkNet(String dpdkSourcePath, String dpdkPort, String macAddress, NicModel model, Integer networkRateKBps, String extra, Integer mtu) {
             _netType = GuestNetType.VHOSTUSER;
             _dpdkSourcePath = dpdkSourcePath;
@@ -1046,9 +1050,7 @@ public class LibvirtVMDef {
             _mtu = mtu;
         }
 
-        public void defDirectNet(String sourceName, String targetName, String macAddr, NicModel model, String sourceMode, Integer mtu) {
-            defDirectNet(sourceName, targetName, macAddr, model, sourceMode, 0, mtu);
-        }
+        /* ----- DIRECT-NET ----- */
 
         public void defDirectNet(String sourceName, String targetName, String macAddr, NicModel model, String sourceMode, Integer networkRateKBps, Integer mtu) {
             _netType = GuestNetType.DIRECT;
@@ -1061,9 +1063,7 @@ public class LibvirtVMDef {
             _mtu = mtu;
         }
 
-        public void defPrivateNet(String networkName, String targetName, String macAddr, NicModel model, Integer mtu) {
-            defPrivateNet(networkName, targetName, macAddr, model, 0, mtu);
-        }
+        /* ----- PRIVATE NET ----- */
 
         public void defPrivateNet(String networkName, String targetName, String macAddr, NicModel model, Integer networkRateKBps, Integer mtu) {
             _netType = GuestNetType.NETWORK;
@@ -1074,6 +1074,8 @@ public class LibvirtVMDef {
             _networkRateKBps = networkRateKBps;
             _mtu = mtu;
         }
+
+        /* ----- ETHER NET ----- */
 
         public void defEthernet(String targetName, String macAddr, NicModel model, String scriptPath, Integer mtu) {
             defEthernet(targetName, macAddr, model, scriptPath, 0, mtu);
@@ -1088,10 +1090,6 @@ public class LibvirtVMDef {
             _scriptPath = scriptPath;
             _networkRateKBps = networkRateKBps;
             _mtu = mtu;
-        }
-
-        public void defEthernet(String targetName, String macAddr, NicModel model, int mtu) {
-            defEthernet(targetName, macAddr, model, null, mtu);
         }
 
         public void setHostNetType(HostNicType hostNetType) {
