@@ -1920,12 +1920,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             // Mark the volume as detached
             _volsDao.detachVolume(volume.getId());
 
-            // volume.getPoolId() should be null if the VM we are detaching the disk from has never been started before
-            DataStore dataStore = volume.getPoolId() != null ? dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary) : null;
-
-            volService.revokeAccess(volFactory.getVolume(volume.getId()), host, dataStore);
-
-            handleTargetsForVMware(hostId, volumePool.getHostAddress(), volumePool.getPort(), volume.get_iScsiName());
+            // volumePool() should be null if the VM we are detaching the disk from has never been started before
+            // only revoke access on volumes that are actually on a datastore
+            if (volumePool != null) {
+                DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
+                volService.revokeAccess(volFactory.getVolume(volume.getId()), host, dataStore);
+                handleTargetsForVMware(hostId, volumePool.getHostAddress(), volumePool.getPort(), volume.get_iScsiName());
+            }
 
             return _volsDao.findById(volumeId);
         } else {
@@ -2634,7 +2635,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return !storeForExistingStoreScope.isSameScope(storeForNewStoreScope);
     }
 
-    private synchronized void checkAndSetAttaching(Long volumeId, Long hostId) {
+    private synchronized void checkAndSetAttaching(Long volumeId) {
         VolumeInfo volumeToAttach = volFactory.getVolume(volumeId);
 
         if (volumeToAttach.isAttachedVM()) {
@@ -2642,13 +2643,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
         if (volumeToAttach.getState().equals(Volume.State.Ready)) {
             volumeToAttach.stateTransit(Volume.Event.AttachRequested);
-        } else {
-            String error = null;
-            if (hostId == null) {
-                error = "Please try attach operation after starting VM once";
-            } else {
-                error = "Volume: " + volumeToAttach.getName() + " is in " + volumeToAttach.getState() + ". It should be in Ready state";
-            }
+        } else if (!volumeToAttach.getState().equals(Volume.State.Allocated)) {
+            final String error = "Volume: " + volumeToAttach.getName() + " is in " + volumeToAttach.getState() + ". It should be in Ready or Allocated state";
             s_logger.error(error);
             throw new CloudRuntimeException(error);
         }
@@ -2684,7 +2680,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // volumeToAttachStoragePool should be null if the VM we are attaching the disk to has never been started before
         DataStore dataStore = volumeToAttachStoragePool != null ? dataStoreMgr.getDataStore(volumeToAttachStoragePool.getId(), DataStoreRole.Primary) : null;
 
-        checkAndSetAttaching(volumeToAttach.getId(), hostId);
+        checkAndSetAttaching(volumeToAttach.getId());
 
         boolean attached = false;
         try {
@@ -2773,9 +2769,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                     volumeToAttach = _volsDao.findById(volumeToAttach.getId());
 
-                    if (vm.getHypervisorType() == HypervisorType.KVM && volumeToAttachStoragePool.isManaged() && volumeToAttach.getPath() == null) {
+                    if (volumeToAttach.getState().equals(Volume.State.Ready) &&
+                            vm.getHypervisorType() == HypervisorType.KVM &&
+                            volumeToAttachStoragePool.isManaged() && volumeToAttach.getPath() == null) {
                         volumeToAttach.setPath(volumeToAttach.get_iScsiName());
-
                         _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                     }
                 }
@@ -2801,15 +2798,19 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new CloudRuntimeException(errorMsg);
             }
         } finally {
-            Volume.Event ev = Volume.Event.OperationFailed;
-            VolumeInfo volInfo = volFactory.getVolume(volumeToAttach.getId());
-            if (attached) {
-                ev = Volume.Event.OperationSucceeded;
-                s_logger.debug("Volume: " + volInfo.getName() + " successfully attached to VM: " + volInfo.getAttachedVmName());
-            } else {
-                s_logger.debug("Volume: " + volInfo.getName() + " failed to attach to VM: " + volInfo.getAttachedVmName());
+            final VolumeInfo volInfo = volFactory.getVolume(volumeToAttach.getId());
+            // Transit events are only fired when volume was allocated at some point of time.
+            if (volInfo.getPoolId() != null || volInfo.getLastPoolId() != null) {
+                final Volume.Event ev;
+                if (attached) {
+                    ev = Volume.Event.OperationSucceeded;
+                    s_logger.debug("Volume: " + volInfo.getName() + " successfully attached to VM: " + volInfo.getAttachedVmName());
+                } else {
+                    ev = Volume.Event.OperationFailed;
+                    s_logger.debug("Volume: " + volInfo.getName() + " failed to attach to VM: " + volInfo.getAttachedVmName());
+                }
+                volInfo.stateTransit(ev);
             }
-            volInfo.stateTransit(ev);
         }
         return _volsDao.findById(volumeToAttach.getId());
     }
