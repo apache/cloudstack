@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.configuration;
 
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Date;
@@ -31,11 +34,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import com.google.common.collect.Sets;
 
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -232,6 +230,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
@@ -1404,7 +1403,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public Pod editPod(final UpdatePodCmd cmd) {
-        return editPod(cmd.getId(), cmd.getPodName(), null, null, cmd.getGateway(), cmd.getNetmask(), cmd.getAllocationState());
+        return editPod(cmd.getId(), cmd.getPodName(), cmd.getStartIp(), cmd.getEndIp(), cmd.getGateway(), cmd.getNetmask(),
+                cmd.getAllocationState());
     }
 
     @Override
@@ -1443,6 +1443,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String oldPodName = pod.getName();
         if (name == null) {
             name = oldPodName;
+        }
+
+        final String[] existingPodIPRangeArray = pod.getDescription().split("-");
+        final String currentStartIP= existingPodIPRangeArray[0];
+        final String currentEndIP = existingPodIPRangeArray [1];
+
+        if(startIp == null){
+            startIp= currentStartIP;
+        }
+
+        if(endIp == null){
+            endIp= currentEndIP;
         }
 
         if (allocationStateStr == null) {
@@ -1487,6 +1499,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final String allocationStateStrFinal = allocationStateStr;
             final String nameFinal = name;
             final String gatewayFinal = gateway;
+            final String newStartIP= startIp;
+            final String newEndIP= endIp;
+
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(final TransactionStatus status) {
@@ -1497,6 +1512,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     pod.setGateway(gatewayFinal);
                     pod.setCidrAddress(getCidrAddress(cidr));
                     pod.setCidrSize(getCidrSize(cidr));
+                    pod.setDescription(pod.getDescription().replaceAll(currentEndIP, newEndIP).replaceAll(currentStartIP,
+                            newStartIP));
 
                     Grouping.AllocationState allocationState = null;
                     if (allocationStateStrFinal != null && !allocationStateStrFinal.isEmpty()) {
