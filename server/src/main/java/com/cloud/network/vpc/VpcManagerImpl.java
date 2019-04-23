@@ -921,7 +921,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // Validate vpc offering
         final VpcOfferingVO vpcOff = _vpcOffDao.findById(vpcOffId);
-        _accountMgr.checkAccess(caller, vpcOff, _dcDao.findById(zoneId));
+        _accountMgr.checkAccess(owner, vpcOff, _dcDao.findById(zoneId));
         if (vpcOff == null || vpcOff.getState() != State.Enabled) {
             final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find vpc offering in " + State.Enabled + " state by specified id");
             if (vpcOff == null) {

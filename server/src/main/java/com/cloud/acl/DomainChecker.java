@@ -35,6 +35,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.dao.VpcOfferingDetailsDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -77,7 +78,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Inject
     NetworkOfferingDetailsDao networkOfferingDetailsDao;
     @Inject
-    NetworkOfferingDetailsDao vpcOfferingDetailsDao;
+    VpcOfferingDetailsDao vpcOfferingDetailsDao;
 
     protected DomainChecker() {
         super();
@@ -273,11 +274,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
                     || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                final List<Long> doDomainIds = networkOfferingDetailsDao.findDomainIds(nof.getId());
-                if (doDomainIds.isEmpty()) {
+                final List<Long> noDomainIds = networkOfferingDetailsDao.findDomainIds(nof.getId());
+                if (noDomainIds.isEmpty()) {
                     isAccess = true;
                 } else {
-                    for (Long domainId : doDomainIds) {
+                    for (Long domainId : noDomainIds) {
                         if (_domainDao.isChildDomain(domainId, account.getDomainId())) {
                             isAccess = true;
                             break;
@@ -311,11 +312,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
                     || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                final List<Long> doDomainIds = vpcOfferingDetailsDao.findDomainIds(vof.getId());
-                if (doDomainIds.isEmpty()) {
+                final List<Long> voDomainIds = vpcOfferingDetailsDao.findDomainIds(vof.getId());
+                if (voDomainIds.isEmpty()) {
                     isAccess = true;
                 } else {
-                    for (Long domainId : doDomainIds) {
+                    for (Long domainId : voDomainIds) {
                         if (_domainDao.isChildDomain(domainId, account.getDomainId())) {
                             isAccess = true;
                             break;
