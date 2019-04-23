@@ -65,7 +65,7 @@ do
 done
 
 # Test guest agent sanity
-while [ $(virsh qemu-agent-command $name '{"execute":"guest-sync","arguments":{"id":1234567890}}' 2>/dev/null) != '{"return":1234567890}' ]
+while [ "$(virsh qemu-agent-command $name '{"execute":"guest-sync","arguments":{"id":1234567890}}' 2>/dev/null)" != '{"return":1234567890}' ]
 do
     sleep 0.1
 done
