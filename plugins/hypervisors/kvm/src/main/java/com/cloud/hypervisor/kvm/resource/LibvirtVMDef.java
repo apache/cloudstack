@@ -1077,10 +1077,6 @@ public class LibvirtVMDef {
 
         /* ----- ETHER NET ----- */
 
-        public void defEthernet(String targetName, String macAddr, NicModel model, String scriptPath, Integer mtu) {
-            defEthernet(targetName, macAddr, model, scriptPath, 0, mtu);
-        }
-
         public void defEthernet(String targetName, String macAddr, NicModel model, String scriptPath, Integer networkRateKBps, Integer mtu) {
             _netType = GuestNetType.ETHERNET;
             _networkName = targetName;

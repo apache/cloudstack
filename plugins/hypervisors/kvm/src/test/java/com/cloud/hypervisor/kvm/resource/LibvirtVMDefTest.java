@@ -28,22 +28,6 @@ import java.io.File;
 
 public class LibvirtVMDefTest extends TestCase {
 
-    public void testInterfaceEtehrnet() {
-        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
-        ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO,null,1500);
-
-        String expected =
-            "<interface type='ethernet'>\n"
-                    + "<target dev='targetDeviceName'/>\n"
-                    + "<mtu size='1500'/>\n"
-                    + "<mac address='00:11:22:aa:bb:dd'/>\n"
-                    + "<model type='virtio'/>\n"
-                    + "<link state='up'/>\n"
-                    + "</interface>\n";
-
-        assertEquals(expected, ifDef.toString());
-    }
-
     public void testCpuModeDef() {
         LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
         cpuModeDef.setMode("custom");
