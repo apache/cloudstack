@@ -51,25 +51,25 @@ public class DirectDownloadManagerImplTest {
     private static final String HTTP_HEADER_2 = "Accept-Encoding";
     private static final String HTTP_VALUE_2 = "gzip";
 
-    private static final String VALID_HUNDRED_YEARS_CERTIFICATE =
-            "MIIDSzCCAjMCFExHvjXI7ffTZqcH4urbc6bqazFaMA0GCSqGSIb3DQEBCwUAMGEx" +
-            "CzAJBgNVBAYTAkNTMQswCQYDVQQIDAJDUzELMAkGA1UEBwwCQ1MxCzAJBgNVBAoM" +
-            "AkNTMQswCQYDVQQLDAJDUzELMAkGA1UEAwwCQ1MxETAPBgkqhkiG9w0BCQEWAkNT" +
-            "MCAXDTE5MDQwMzEzMzgyOFoYDzIxMTkwMzEwMTMzODI4WjBhMQswCQYDVQQGEwJD" +
-            "UzELMAkGA1UECAwCQ1MxCzAJBgNVBAcMAkNTMQswCQYDVQQKDAJDUzELMAkGA1UE" +
-            "CwwCQ1MxCzAJBgNVBAMMAkNTMREwDwYJKoZIhvcNAQkBFgJDUzCCASIwDQYJKoZI" +
-            "hvcNAQEBBQADggEPADCCAQoCggEBANEuKuCOjnRJZtqBeKwZD4XNVDTKmxGLNJ3j" +
-            "6q71qlLa8quu115di6IxHkeerB9XnQMHHmqCv1qgpoWDuxA8uAra8T/teCvQjGRl" +
-            "lWDlBBajFZZ4Crsj0MxGIbuoHTQ4Ossyv3vJztbm+RZ79nTEA35xzQj7HxeFVyk+" +
-            "zqC6e4mMCzhI+UTKd3sOZBt8/y34egCv2UK9Lso9950dHnmlXYREd1j85Kestqjh" +
-            "tKntw3DLo5i8RLQ/11iW4Z+xOlL11ubhvJ0S8UAF5BU8pcLMNv+WztaoAAc3N+Yc" +
-            "WSTIXjQUtMT9TlHec8+NKlF9e62o4XMNHiaGEOf1idXC2URqqy8CAwEAATANBgkq" +
-            "hkiG9w0BAQsFAAOCAQEAFSAjv8dw0Lo8U7CsjWNlW/LBZdP9D54vx0kXOLyWjeYH" +
-            "7u4DTikoigjunm1lB5QPL2k5jSQEpTclcN313hMGCEMW9GZEtcSoUxqkiTEtKlyw" +
-            "cC/PO/NHHgDrp1Fg9yhUOLKXJyBp9bfjKtm2YqPNyrpTB5cLfjRp69Hx5G5KuKCm" +
-            "fAxcVdrfUluu6l+d4Y4FnuvS3rb9rDy/ES36SXczXNQFAzvI8ZuTlgxTRIvM184N" +
-            "GA0utaoFPJAzZ01HYlRSYmipHx6NZE7roTAC5wmT3R1jkFlfkw8LSBynsR6U6Vkw" +
-            "90kMmEH4NoYTV+mF4A0iY+NkEsuvnSsqheDknO/8OA==";
+    private static final String VALID_CERTIFICATE =
+            "MIIDSzCCAjMCFDa0LoW+1O8/cEwCI0nIqfl8c1TLMA0GCSqGSIb3DQEBCwUAMGEx\n" +
+            "CzAJBgNVBAYTAkNTMQswCQYDVQQIDAJDUzELMAkGA1UEBwwCQ1MxCzAJBgNVBAoM\n" +
+            "AkNTMQswCQYDVQQLDAJDUzELMAkGA1UEAwwCQ1MxETAPBgkqhkiG9w0BCQEWAkNT\n" +
+            "MCAXDTE5MDQyNDE1NTIzNVoYDzIwOTgwOTE1MTU1MjM1WjBhMQswCQYDVQQGEwJD\n" +
+            "UzELMAkGA1UECAwCQ1MxCzAJBgNVBAcMAkNTMQswCQYDVQQKDAJDUzELMAkGA1UE\n" +
+            "CwwCQ1MxCzAJBgNVBAMMAkNTMREwDwYJKoZIhvcNAQkBFgJDUzCCASIwDQYJKoZI\n" +
+            "hvcNAQEBBQADggEPADCCAQoCggEBAKstLRcMGCo6+2hojRMjEuuimnWp27yfYhDU\n" +
+            "w/Cj03MJe/KCOhwsDqX82QNIr/bNtLdFf2ZJEUQd08sLLlHeUy9y5aOcxt9SGx2j\n" +
+            "xolqO4MBL7BW3dklO0IvjaEfBeFP6udz8ajeVur/iPPZb2Edd0zlXuHvDozfQisv\n" +
+            "bpuJImnTUVx0ReCXP075PBGvlqQXW2uEht+E/w3H8/2rra3JFV6J5xc77KyQSq2t\n" +
+            "1+2ZU7PJiy/rppXf5rjTvNm6ydfag8/av7lcgs2ntdkK4koAmkmROhAwNonlL7cD\n" +
+            "xIC83cKOqOFiQXSwr1IgoLf7zBNafKoTlSb/ev6Zt18BXEMLGpkCAwEAATANBgkq\n" +
+            "hkiG9w0BAQsFAAOCAQEAVS5uWZRz2m3yx7EUQm47RTMW5WMXU4pI8D+N5WZ9xubY\n" +
+            "OqtU3r2OAYpfL/QO8iT7jcqNYGoDqe8ZjEaNvfxiTG8cOI6TSXhKBG6hjSaSFQSH\n" +
+            "OZ5mfstM36y/3ENFh6JCJ2ao1rgWSbfDRyAaHuvt6aCkaV6zRq2OMEgoJqZSgwxL\n" +
+            "QO230xa2hYgKXOePMVZyHFA2oKJtSOc3jCke9Y8zDUwm0McGdMRBD8tVB0rcaOqQ\n" +
+            "0PlDLjB9sQuhhLu8vjdgbznmPbUmMG7JN0yhT1eJbIX5ImXyh0DoTwiaGcYwW6Sq\n" +
+            "YodjXACsC37xaQXAPYBiaAs4iI80TJSx1DVFO1LV0g==";
 
     @Before
     public void setUp() {
@@ -127,13 +127,13 @@ public class DirectDownloadManagerImplTest {
 
     @Test
     public void testCertificateSanityValidCertificate() {
-        String pretifiedCertificate = manager.getPretifiedCertificate(VALID_HUNDRED_YEARS_CERTIFICATE);
+        String pretifiedCertificate = manager.getPretifiedCertificate(VALID_CERTIFICATE);
         manager.certificateSanity(pretifiedCertificate);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testCertificateSanityInvalidCertificate() {
-        String pretifiedCertificate = manager.getPretifiedCertificate(VALID_HUNDRED_YEARS_CERTIFICATE + "xxx");
+        String pretifiedCertificate = manager.getPretifiedCertificate(VALID_CERTIFICATE + "xxx");
         manager.certificateSanity(pretifiedCertificate);
     }
 }
