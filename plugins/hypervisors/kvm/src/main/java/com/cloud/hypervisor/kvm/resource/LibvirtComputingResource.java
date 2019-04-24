@@ -1379,7 +1379,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final Script command = new Script(_patchViaSocketPath, 5 * 1000, s_logger);
         String result;
         command.add("-n", vmName);
-        command.add("-p", cmdLine.replace(" ", "%"));
+        command.add("-p", cmdLine.replace(' ', '%'));
         result = command.execute();
         if (result != null) {
             s_logger.error("passcmd failed:" + result);
