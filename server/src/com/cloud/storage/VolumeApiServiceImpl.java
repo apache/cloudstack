@@ -1888,6 +1888,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
+        if (volumePool == null) {
+            sendCommand = false;
+        }
+
         Answer answer = null;
 
         if (sendCommand) {
@@ -1920,14 +1924,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             // Mark the volume as detached
             _volsDao.detachVolume(volume.getId());
 
-            // volumePool() should be null if the VM we are detaching the disk from has never been started before
-            // only revoke access on volumes that are actually on a datastore
-            if (volumePool != null) {
+            // volume.getPoolId() should be null if the VM we are detaching the disk from has never been started before
+            if (volume.getPoolId() != null) {
                 DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
                 volService.revokeAccess(volFactory.getVolume(volume.getId()), host, dataStore);
+            }
+            if (volumePool != null && hostId != null) {
                 handleTargetsForVMware(hostId, volumePool.getHostAddress(), volumePool.getPort(), volume.get_iScsiName());
             }
-
             return _volsDao.findById(volumeId);
         } else {
 
@@ -2641,13 +2645,19 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (volumeToAttach.isAttachedVM()) {
             throw new CloudRuntimeException("volume: " + volumeToAttach.getName() + " is already attached to a VM: " + volumeToAttach.getAttachedVmName());
         }
-        if (volumeToAttach.getState().equals(Volume.State.Ready)) {
-            volumeToAttach.stateTransit(Volume.Event.AttachRequested);
-        } else if (!volumeToAttach.getState().equals(Volume.State.Allocated)) {
-            final String error = "Volume: " + volumeToAttach.getName() + " is in " + volumeToAttach.getState() + ". It should be in Ready or Allocated state";
-            s_logger.error(error);
-            throw new CloudRuntimeException(error);
+
+        if (Volume.State.Allocated.equals(volumeToAttach.getState())) {
+            return;
         }
+
+        if (Volume.State.Ready.equals(volumeToAttach.getState())) {
+            volumeToAttach.stateTransit(Volume.Event.AttachRequested);
+            return;
+        }
+
+        final String error = "Volume: " + volumeToAttach.getName() + " is in " + volumeToAttach.getState() + ". It should be in Ready or Allocated state";
+        s_logger.error(error);
+        throw new CloudRuntimeException(error);
     }
 
     private VolumeVO sendAttachVolumeCommand(UserVmVO vm, VolumeVO volumeToAttach, Long deviceId) {
@@ -2769,9 +2779,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                     volumeToAttach = _volsDao.findById(volumeToAttach.getId());
 
-                    if (volumeToAttach.getState().equals(Volume.State.Ready) &&
-                            vm.getHypervisorType() == HypervisorType.KVM &&
-                            volumeToAttachStoragePool.isManaged() && volumeToAttach.getPath() == null) {
+                    if (vm.getHypervisorType() == HypervisorType.KVM &&
+                            volumeToAttachStoragePool != null && volumeToAttachStoragePool.isManaged() &&
+                            volumeToAttach.getPath() == null && volumeToAttach.get_iScsiName() != null) {
                         volumeToAttach.setPath(volumeToAttach.get_iScsiName());
                         _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                     }
@@ -2798,19 +2808,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new CloudRuntimeException(errorMsg);
             }
         } finally {
-            final VolumeInfo volInfo = volFactory.getVolume(volumeToAttach.getId());
-            // Transit events are only fired when volume was allocated at some point of time.
-            if (volInfo.getPoolId() != null || volInfo.getLastPoolId() != null) {
-                final Volume.Event ev;
-                if (attached) {
-                    ev = Volume.Event.OperationSucceeded;
-                    s_logger.debug("Volume: " + volInfo.getName() + " successfully attached to VM: " + volInfo.getAttachedVmName());
-                } else {
-                    ev = Volume.Event.OperationFailed;
-                    s_logger.debug("Volume: " + volInfo.getName() + " failed to attach to VM: " + volInfo.getAttachedVmName());
-                }
-                volInfo.stateTransit(ev);
+            Volume.Event ev = Volume.Event.OperationFailed;
+            VolumeInfo volInfo = volFactory.getVolume(volumeToAttach.getId());
+            if (attached) {
+                ev = Volume.Event.OperationSucceeded;
+                s_logger.debug("Volume: " + volInfo.getName() + " successfully attached to VM: " + volInfo.getAttachedVmName());
+            } else {
+                s_logger.debug("Volume: " + volInfo.getName() + " failed to attach to VM: " + volInfo.getAttachedVmName());
             }
+            volInfo.stateTransit(ev);
         }
         return _volsDao.findById(volumeToAttach.getId());
     }
