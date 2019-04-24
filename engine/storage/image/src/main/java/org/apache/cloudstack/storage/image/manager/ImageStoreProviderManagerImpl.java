@@ -157,6 +157,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
                 }
             }
         }
-        return imageStores.get(0);
+        s_logger.debug("Can't find staging storage in zone with less than 90% usage");
+        return null;
     }
 }
