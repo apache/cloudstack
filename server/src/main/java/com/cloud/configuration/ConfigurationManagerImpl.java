@@ -1445,6 +1445,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             name = oldPodName;
         }
 
+        final String[] existingPodIPRangeArray = pod.getDescription().split("-");
+        final String currentStartIP= existingPodIPRangeArray[0];
+        final String currentEndIP = existingPodIPRangeArray [1];
+
+        if(startIp == null){
+            startIp= currentStartIP;
+        }
+
+        if(endIp == null){
+            endIp= currentEndIP;
+        }
+
         if (allocationStateStr == null) {
             allocationStateStr = pod.getAllocationState().toString();
         }
@@ -1487,6 +1499,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final String allocationStateStrFinal = allocationStateStr;
             final String nameFinal = name;
             final String gatewayFinal = gateway;
+            final String newStartIP= startIp;
+            final String newEndIP= endIp;
+
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(final TransactionStatus status) {
@@ -1497,6 +1512,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     pod.setGateway(gatewayFinal);
                     pod.setCidrAddress(getCidrAddress(cidr));
                     pod.setCidrSize(getCidrSize(cidr));
+                    pod.setDescription(pod.getDescription().replaceAll(currentEndIP, newEndIP).replaceAll(currentStartIP,
+                            newStartIP));
 
                     Grouping.AllocationState allocationState = null;
                     if (allocationStateStrFinal != null && !allocationStateStrFinal.isEmpty()) {
@@ -1514,6 +1531,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         return pod;
     }
+
+
 
     @Override
     public Pod createPod(final long zoneId, final String name, final String startIp, final String endIp, final String gateway, final String netmask, String allocationState) {
