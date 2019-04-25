@@ -1366,13 +1366,14 @@
                 var wizardDialog = $wizard.dialog({
                     title: _l('label.vm.add'),
                     width: 896,
-                    height: 570,
-                    closeOnEscape: false
+                    minHeight: 600,
+                    height: 'auto',
+                    closeOnEscape: false,
+                    modal: true
                 });
                 var wizardDialogDiv = wizardDialog.closest('.ui-dialog');
-                wizardDialogDiv.css('z-index', 5001);
-                
-                $('button.ui-dialog-titlebar-close').remove()
+
+                $('button.ui-dialog-titlebar-close').remove();
                 return wizardDialogDiv.overlay();
             };
 
