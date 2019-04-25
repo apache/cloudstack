@@ -15,9 +15,12 @@
 * KIND, either express or implied.  See the License for the
 * specific language governing permissions and limitations
 * under the License.
-*
-*
-* Use custom.css to override the default CloudStack styles
 */
 
-/*# sourceMappingURL=src/sourcemaps/custom.css.map */
+/*
+ * correct the breadcrumbs, hungarian translation is longer
+ * than the english default.
+ */
+#breadcrumbs div.home {
+	width: 100px;
+}
