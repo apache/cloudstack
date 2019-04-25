@@ -54,6 +54,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private static final Logger s_logger = Logger.getLogger(SnapshotDataStoreDaoImpl.class);
     private SearchBuilder<SnapshotDataStoreVO> updateStateSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSearch;
+    private SearchBuilder<SnapshotDataStoreVO> storeStateSearch;
     private SearchBuilder<SnapshotDataStoreVO> destroyedSearch;
     private SearchBuilder<SnapshotDataStoreVO> cacheSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotSearch;
@@ -91,6 +92,11 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         storeSearch.and("store_role", storeSearch.entity().getRole(), SearchCriteria.Op.EQ);
         storeSearch.and("state", storeSearch.entity().getState(), SearchCriteria.Op.NEQ);
         storeSearch.done();
+
+        storeStateSearch = createSearchBuilder();
+        storeStateSearch.and("store_id", destroyedSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeStateSearch.and("state", destroyedSearch.entity().getState(), SearchCriteria.Op.EQ);
+        storeStateSearch.done();
 
         destroyedSearch = createSearchBuilder();
         destroyedSearch.and("store_id", destroyedSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
@@ -223,7 +229,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public List<SnapshotDataStoreVO> listByStoreIdAndState(long id, ObjectInDataStoreStateMachine.State state) {
-        SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = storeStateSearch.create();
         sc.setParameters("store_id", id);
         sc.setParameters("state", state);
         return listBy(sc);
