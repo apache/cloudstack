@@ -132,7 +132,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 
     @Override
     public VMTemplateStoragePoolVO findByPoolTemplate(long poolId, long templateId) {
-        SearchCriteria<VMTemplateStoragePoolVO> sc = PoolTemplateSearch.create();
+        SearchCriteria<VMTemplateStoragePoolVO> sc = TemplatePoolStateSearch.create();
         sc.setParameters("pool_id", poolId);
         sc.setParameters("template_id", templateId);
         return findOneIncludingRemovedBy(sc);
