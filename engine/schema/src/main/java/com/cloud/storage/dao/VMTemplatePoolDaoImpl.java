@@ -139,7 +139,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     }
 
     @Override
-    public List<VMTemplateStoragePoolVO> listByPoolIdStatus(long poolId, VMTemplateStoragePoolVO.Status downloadState) {
+    public List<VMTemplateStoragePoolVO> listByPoolIdAndStatus(long poolId, VMTemplateStoragePoolVO.Status downloadState) {
         SearchCriteria<VMTemplateStoragePoolVO> sc = TemplatePoolStatusSearch.create();
         sc.setParameters("pool_id", poolId);
         sc.setParameters("download_state", downloadState.toString());

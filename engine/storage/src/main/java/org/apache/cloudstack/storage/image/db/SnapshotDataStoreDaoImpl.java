@@ -27,6 +27,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.SnapshotVO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -37,8 +39,6 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -218,6 +218,14 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters("store_id", id);
         sc.setParameters("store_role", role);
         sc.setParameters("state", ObjectInDataStoreStateMachine.State.Destroyed);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listByStoreIdInReadyState(long id) {
+        SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
+        sc.setParameters("store_id", id);
+        sc.setParameters("state", State.Ready);
         return listBy(sc);
     }
 

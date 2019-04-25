@@ -30,6 +30,8 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     List<SnapshotDataStoreVO> listByStoreId(long id, DataStoreRole role);
 
+    List<SnapshotDataStoreVO> listByStoreIdInReadyState(long id);
+
     List<SnapshotDataStoreVO> listActiveOnCache(long id);
 
     void deletePrimaryRecordsForStore(long id, DataStoreRole role);

@@ -76,6 +76,8 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -104,9 +106,10 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Inject private HostDao hostDao;
     @Inject private SnapshotDao snapshotDao;
     @Inject private SnapshotDetailsDao snapshotDetailsDao;
+    @Inject private SnapshotDataStoreDao snapshotDataStoreDao;
     @Inject private PrimaryDataStoreDao storagePoolDao;
     @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
-    @Inject private VMTemplatePoolDao tmpltPoolDao;
+    @Inject private VMTemplatePoolDao vmTemplatePoolDao;
     @Inject private VolumeDao volumeDao;
     @Inject private VolumeDetailsDao volumeDetailsDao;
     @Inject private VolumeDataFactory volumeFactory;
@@ -368,63 +371,26 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     continue;
                 }
 
-                VolumeDetailVO volumeDetail = volumeDetailsDao.findDetail(volume.getId(), SolidFireUtil.VOLUME_SIZE);
+                usedSpace += getVolumeSizeIncludingHypervisorSnapshotReserve(volume.getSize(),volume.getHypervisorSnapshotReserve());
 
-                if (volumeDetail != null && volumeDetail.getValue() != null) {
-                    long volumeSize = Long.parseLong(volumeDetail.getValue());
-
-                    usedSpace += volumeSize;
-                }
-                else {
-                    SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePool.getId(), storagePoolDetailsDao);
-
-                    try {
-                        long lVolumeId = Long.parseLong(volume.getFolder());
-
-                        SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getVolume(sfConnection, lVolumeId);
-
-                        long volumeSize = sfVolume.getTotalSize();
-
-                        // SolidFireUtil.VOLUME_SIZE was introduced in 4.5.
-                        // To be backward compatible with releases prior to 4.5, call updateVolumeDetails here.
-                        // That way if SolidFireUtil.VOLUME_SIZE wasn't put in the volume_details table when the
-                        // volume was initially created, it can be placed in volume_details here.
-                        updateVolumeDetails(volume.getId(), volumeSize, sfVolume.getScsiNaaDeviceId());
-
-                        usedSpace += volumeSize;
-                    }
-                    catch (Exception ex) {
-                        LOGGER.info("Exception when getting volume size from SolidFire and updating volume details in the cloudstack database");
-                        LOGGER.error(ex.getMessage());
-                    }
-                }
             }
         }
 
-        List<SnapshotVO> lstSnapshots = snapshotDao.listAllByStatus(State.BackedUp);
+        List<SnapshotDataStoreVO> snapshotDataStoreVOList = snapshotDataStoreDao.listByStoreIdInReadyState(storagePool.getId());
 
-        if (lstSnapshots != null) {
-            for (SnapshotVO snapshot : lstSnapshots) {
-                SnapshotDetailsVO snapshotDetails = snapshotDetailsDao.findDetail(snapshot.getId(), SolidFireUtil.STORAGE_POOL_ID);
+        if (snapshotDataStoreVOList != null) {
+            for (SnapshotDataStoreVO snapshot : snapshotDataStoreVOList) {
 
-                // if this snapshot belongs to the storagePool that was passed in
-                if (snapshotDetails != null && snapshotDetails.getValue() != null && Long.parseLong(snapshotDetails.getValue()) == storagePool.getId()) {
-                    snapshotDetails = snapshotDetailsDao.findDetail(snapshot.getId(), SolidFireUtil.VOLUME_SIZE);
+                usedSpace += snapshot.getPhysicalSize();
 
-                    if (snapshotDetails != null && snapshotDetails.getValue() != null) {
-                        long snapshotSize = Long.parseLong(snapshotDetails.getValue());
-
-                        usedSpace += snapshotSize;
-                    }
-                }
             }
         }
 
-        List<VMTemplateStoragePoolVO> lstTemplatePoolRefs = tmpltPoolDao.listByPoolIdStatus(storagePool.getId(), VMTemplateStoragePoolVO.Status.DOWNLOADED);
+        List<VMTemplateStoragePoolVO> vmTemplateStoragePoolVOList = vmTemplatePoolDao.listByPoolIdAndStatus(storagePool.getId(), VMTemplateStoragePoolVO.Status.DOWNLOADED);
 
-        if (lstTemplatePoolRefs != null) {
-            for (VMTemplateStoragePoolVO templatePoolRef : lstTemplatePoolRefs) {
-                usedSpace += templatePoolRef.getTemplateSize();
+        if (vmTemplateStoragePoolVOList != null) {
+            for (VMTemplateStoragePoolVO template : vmTemplateStoragePoolVOList) {
+                usedSpace += template.getTemplateSize();
             }
         }
 
@@ -488,7 +454,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
      */
     @Override
     public long getBytesRequiredForTemplate(TemplateInfo templateInfo, StoragePool storagePool) {
-        List<VMTemplateStoragePoolVO> lstTemplatePoolRefs = tmpltPoolDao.listByPoolId(storagePool.getId());
+        List<VMTemplateStoragePoolVO> lstTemplatePoolRefs = vmTemplatePoolDao.listByPoolId(storagePool.getId());
 
         if (lstTemplatePoolRefs != null) {
             for (VMTemplateStoragePoolVO templatePoolRef : lstTemplatePoolRefs) {
@@ -741,7 +707,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             sfVolumeId = Long.parseLong(snapshotDetails.getValue());
         } else if (dataObjectType == DataObjectType.TEMPLATE) {
             // get the cached template on this storage
-            VMTemplateStoragePoolVO templatePoolRef = tmpltPoolDao.findByPoolTemplate(storagePoolId, dataObjectId);
+            VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(storagePoolId, dataObjectId);
 
             if (templatePoolRef != null) {
                 sfVolumeId = Long.parseLong(templatePoolRef.getLocalDownloadPath());
@@ -1167,13 +1133,13 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         String iqn = sfVolume.getIqn();
 
-        VMTemplateStoragePoolVO templatePoolRef = tmpltPoolDao.findByPoolTemplate(storagePoolId, templateInfo.getId());
+        VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(storagePoolId, templateInfo.getId());
 
         templatePoolRef.setInstallPath(iqn);
         templatePoolRef.setLocalDownloadPath(Long.toString(sfVolume.getId()));
         templatePoolRef.setTemplateSize(sfVolume.getTotalSize());
 
-        tmpltPoolDao.update(templatePoolRef.getId(), templatePoolRef);
+        vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
 
         StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
 
