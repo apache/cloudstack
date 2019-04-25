@@ -387,7 +387,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
         }
 
-        List<VMTemplateStoragePoolVO> vmTemplateStoragePoolVOList = vmTemplatePoolDao.listByPoolIdAndStatus(storagePool.getId(), VMTemplateStoragePoolVO.Status.DOWNLOADED);
+        List<VMTemplateStoragePoolVO> vmTemplateStoragePoolVOList = vmTemplatePoolDao.listByPoolIdAndState(storagePool.getId(), ObjectInDataStoreStateMachine.State.Ready);
 
         if (vmTemplateStoragePoolVOList != null) {
             for (VMTemplateStoragePoolVO template : vmTemplateStoragePoolVOList) {

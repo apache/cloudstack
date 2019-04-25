@@ -33,7 +33,7 @@ public interface VMTemplatePoolDao extends GenericDao<VMTemplateStoragePoolVO, L
 
     public VMTemplateStoragePoolVO findByPoolTemplate(long poolId, long templateId);
 
-    public List<VMTemplateStoragePoolVO> listByPoolIdAndStatus(long poolId, VMTemplateStoragePoolVO.Status downloadState);
+    public List<VMTemplateStoragePoolVO> listByPoolIdAndState(long poolId, ObjectInDataStoreStateMachine.State state);
 
     public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId, VMTemplateStoragePoolVO.Status downloadState);
 

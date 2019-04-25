@@ -94,8 +94,8 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         storeSearch.done();
 
         storeStateSearch = createSearchBuilder();
-        storeStateSearch.and("store_id", destroyedSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-        storeStateSearch.and("state", destroyedSearch.entity().getState(), SearchCriteria.Op.EQ);
+        storeStateSearch.and("store_id", storeStateSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeStateSearch.and("state", storeStateSearch.entity().getState(), SearchCriteria.Op.EQ);
         storeStateSearch.done();
 
         destroyedSearch = createSearchBuilder();
