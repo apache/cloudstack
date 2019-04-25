@@ -165,7 +165,7 @@
 
         // Fix overlay
         setTimeout(function() {
-            $('.tooltip-box').css( "zIndex", $(':ui-dialog').css("zIndex") + 10);
+            $('.tooltip-box').css( "zIndex", 10000);
         });
 
     };
