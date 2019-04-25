@@ -47,6 +47,8 @@ tools/cli/cloudmonkey/precache.py
 tools/marvin/marvin/cloudstackAPI/
 tools/marvin/build/
 tools/cli/build/
+node_modules/
+*.css.map
 *.jar
 *.war
 *.mar
