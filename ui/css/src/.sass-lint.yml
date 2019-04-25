@@ -12,26 +12,26 @@ files:
   include: 'theme-ewerk/core/css/src/sass/**/*.s+(a|c)ss'
 
 rules:
-  attribute-quotes: 2
+  attribute-quotes: 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
   bem-depth:
-    - 2
+    - 0
     - max-depth: 1
-  border-zero: 2
-  brace-style: 2
+  border-zero: 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+  brace-style: 1
   class-name-format:
     - 1
     - convention: hyphenatedbem
   clean-import-paths:
-    - 2
+    - 1
     - filename-extension: false
       leading-underscore: false
   empty-line-between-blocks:
-    - 2
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
     - ignore-single-line-rulesets: true
   extends-before-declarations: 2
   extends-before-mixins: 2
   final-newline:
-    - 2
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
     - include: true
   force-attribute-nesting: 0
   force-element-nesting: 0
@@ -41,19 +41,19 @@ rules:
     - allow-leading-underscore: true
       convention: hyphenatedlowercase
   hex-length:
-    - 2
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
     - style: long
   hex-notation:
-    - 2
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
     - style: lowercase
   id-name-format:
     - 1
     - convention: hyphenatedlowercase
   indentation:
-    - 2
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
     - size: 2
   leading-zero:
-    - 2
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
     - include: false
   mixin-name-format:
     - 1
@@ -94,12 +94,12 @@ rules:
   #   - 1
   #   - ignore-non-standard: true
   no-warn: 1
-  placeholder-in-extend: 2
+  placeholder-in-extend: 1
   placeholder-name-format:
-    - 2
+    - 1
     - convention: hyphenatedlowercase
   property-sort-order:
-    - 2
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
     -
       order:
         # visibility
@@ -362,7 +362,7 @@ rules:
         - dpi
         - '%'
   quotes:
-    - 2
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
     - style: single
   shorthand-values:
     - 1
