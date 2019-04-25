@@ -16,6 +16,7 @@
 * specific language governing permissions and limitations
 * under the License.
 */
+
 /*[fmt]1C20-1C0D-E*/
 div.panel div.list-view {
   position: relative;
@@ -162,8 +163,14 @@ table th {
   top: 5px;
 }
 
+.quick-view-tooltip div.title > span.title {
+}
+
 .quick-view-tooltip div.title .icon {
   top: -15px;
+}
+
+.quick-view-tooltip table {
 }
 
 .quick-view-tooltip .main-groups {
@@ -194,8 +201,9 @@ table th {
   left: 0px;
 }
 
-.quick-view-tooltip .detail-view .detail-group.actions .action.text {
-  filter: alpha(opacity=100);
+.list-view td.quick-view {
 }
 
-/*# sourceMappingURL=src/sourcemaps/cloudstack3-ie7.css.map */
+.quick-view-tooltip .detail-view .detail-group.actions .action.text {
+  filter:alpha(opacity=100);
+}
