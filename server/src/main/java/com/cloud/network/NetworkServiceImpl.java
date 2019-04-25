@@ -1829,7 +1829,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
         Account owner = _accountMgr.getAccount(network.getAccountId());
 
-        // Only Admin can delete Shared
+        // Only Admin can delete Shared networks
         if ((network.getGuestType() == GuestType.Shared) && !_accountMgr.isAdmin(caller.getId())) {
             throw new InvalidParameterValueException("Only Admins can delete network with guest type " + network.getGuestType());
         }
