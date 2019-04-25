@@ -360,10 +360,16 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
             return bool(strtobool(conf[0].value)) if conf[0].value else False
 
     @classmethod
+    def updateConfiguration(self, name, value):
+        cmd = updateConfiguration.updateConfigurationCmd()
+        cmd.name = name
+        cmd.value = value
+        self.apiclient.updateConfiguration(cmd)
+
+    @classmethod
     def set_ssh_enabled(cls, on):
         value = "true" if on else "false"
-        sql = "update configuration set value = '%s' where name = 'kvm.ssh.to.agent';" % value
-        cls.dbclient.execute(sql)
+        cls.updateConfiguration('kvm.ssh.to.agent', value)
 
     def prepare_host_for_maintenance(self, hostid):
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
@@ -445,6 +451,13 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
         )
         self.cleanup.append(vm)
 
+    def revert_host_state_on_failure(self, host):
+        cmd = updateHost.updateHostCmd()
+        cmd.id = host.id
+        cmd.allocationstate = "Enable"
+        response = self.apiclient.updateHost(cmd)
+        self.assertEqual(response.resourcestate, "Enabled")
+
     @skipTestIf("hypervisorNotSupported")
     @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="true")
     def test_01_cancel_host_maintenance_ssh_enabled_agent_connected(self):
@@ -467,6 +480,7 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
             self.wait_until_host_is_in_state(self.host.id, "Enabled")
             self.assert_host_is_functional_after_cancelling_maintenance(self.host.id)
         except Exception as e:
+            self.revert_host_state_on_failure(self.host)
             self.fail(e)
 
     def get_ssh_client(self, ip, username, password, retries=10):
@@ -515,6 +529,7 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
 
             self.assert_host_is_functional_after_cancelling_maintenance(self.host.id)
         except Exception as e:
+            self.revert_host_state_on_failure(self.host)
             self.fail(e)
 
     @skipTestIf("hypervisorNotSupported")
@@ -539,6 +554,7 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
             self.wait_until_host_is_in_state(self.host.id, "Enabled")
             self.assert_host_is_functional_after_cancelling_maintenance(self.host.id)
         except Exception as e:
+            self.revert_host_state_on_failure(self.host)
             self.fail(e)
 
     @skipTestIf("hypervisorNotSupported")
@@ -569,6 +585,7 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
             ssh_client.execute("service cloudstack-agent stop")
             self.wait_until_agent_is_in_state(self.host.id, "Disconnected")
         except Exception as e:
+            self.revert_host_state_on_failure(self.host)
             self.fail(e)
 
         self.assertRaises(Exception, self.cancel_host_maintenance, self.host.id)
@@ -583,4 +600,5 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
             self.wait_until_host_is_in_state(self.host.id, "Enabled")
             self.assert_host_is_functional_after_cancelling_maintenance(self.host.id)
         except Exception as e:
+            self.revert_host_state_on_failure(self.host)
             self.fail(e)

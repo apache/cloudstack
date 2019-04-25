@@ -2409,6 +2409,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         try {
             SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(
                     connection, "service cloudstack-agent restart");
+            if (result.getReturnCode() != 0) {
+                throw new CloudRuntimeException("Could not restart agent on host " + host.getId() + " due to: " + result.getStdErr());
+            }
             s_logger.debug("cloudstack-agent restart result: " + result.toString());
         } catch (final SshException e) {
             throw new CloudRuntimeException("SSH to agent is enabled, but agent restart failed", e);
