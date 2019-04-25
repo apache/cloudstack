@@ -21,41 +21,6 @@
     var networkServiceObjs = [],
         serviceCheckboxNames = [];
     var serviceFields = [];
-    var serviceOfferingUniqueNames = [{
-        id: '',
-        description: ' '
-      },{
-        id: 'Cloud.com-ConsoleProxy',
-        description: 'Cloud.com-ConsoleProxy'
-      },{
-        id: 'Cloud.com-ConsoleProxy-Local',
-        description: 'Cloud.com-ConsoleProxy-Local'
-      },{
-        id: 'Cloud.com-SecondaryStorage',
-        description: 'Cloud.com-SecondaryStorage'
-      },{
-        id: 'Cloud.com-SecondaryStorage-Local',
-        description: 'Cloud.com-SecondaryStorage-Local'
-      },{
-        id: 'Cloud.Com-InternalLBVm',
-        description: 'Cloud.Com-InternalLBVm'
-      },{
-        id: 'Cloud.Com-InternalLBVm-Local',
-        description: 'Cloud.Com-InternalLBVm-Local'
-      },{
-        id: 'Cloud.Com-ElasticLBVm',
-        description: 'Cloud.Com-ElasticLBVm'
-      },{
-        id: 'Cloud.Com-ElasticLBVm-Local',
-        description: 'Cloud.Com-ElasticLBVm-Local'
-      },{
-        id: 'Cloud.Com-SoftwareRouter',
-        description: 'Cloud.Com-SoftwareRouter'
-      },{
-        id: 'Cloud.Com-SoftwareRouter-Local',
-        description: 'Cloud.Com-SoftwareRouter-Local'
-      }
-    ];
 
     cloudStack.sections.configuration = {
         title: 'label.menu.service.offerings',
@@ -1046,8 +1011,9 @@
                         displaytext: {
                             label: 'label.description'
                         },
-                        uniquename: {
-                            label: 'label.uniquename'
+                        defaultuse: {
+                            label: 'label.default',
+                            converter: cloudStack.converters.toBooleanText,
                         }
                     },
 
@@ -1107,6 +1073,14 @@
                                                 id: 'secondarystoragevm',
                                                 description: _l('label.secondary.storage.vm')
                                             });
+                                            items.push({
+                                              id: 'internalloadbalancervm',
+                                              description: _l('label.internallbvm')
+                                            });
+                                            items.push({
+                                              id: 'elasticloadbalancervm',
+                                              description: _l('label.elastic.LB')
+                                            });
                                             args.response.success({
                                                 data: items
                                             });
@@ -1152,14 +1126,11 @@
                                             });
                                         }
                                     },
-                                    uniqueName: {
-                                      label: 'label.disk.uniquename',
-                                      docID: 'helpDiskOfferingUniqueName',
-                                      select: function(args) {
-                                        args.response.success({
-                                          data: serviceOfferingUniqueNames
-                                        });
-                                      }
+                                    defaultUse: {
+                                      label: 'label.disk.default',
+                                      docID: 'helpServiceOfferingDefaultUse',
+                                      isBoolean: true,
+                                      isChecked: false
                                     },
                                     cpuNumber: {
                                         label: 'label.num.cpu.cores',
@@ -1374,14 +1345,9 @@
                                     provisioningType: args.data.provisioningType,
                                     cpuNumber: args.data.cpuNumber,
                                     cpuSpeed: args.data.cpuSpeed,
-                                    memory: args.data.memory
+                                    memory: args.data.memory,
+                                    defaultUse:  args.data.defaultUse == "on"
                                 };
-
-                                if (args.data.uniqueName.length > 0){
-                                    $.extend(data, {
-                                      uniquename: args.data.uniqueName
-                                    });
-                                }
 
                                 if (args.data.networkRate != null && args.data.networkRate.length > 0) {
                                     $.extend(data, {
@@ -1510,7 +1476,7 @@
                                         id: args.context.systemServiceOfferings[0].id,
                                         name: args.data.name,
                                         displaytext: args.data.displaytext,
-                                        uniquename: args.data.uniquename
+                                        defaultuse: args.data.defaultuse == "on"
                                     };
 
                                     $.ajax({
@@ -1600,6 +1566,12 @@
                                                 case 'secondarystoragevm':
                                                     text = _l('label.secondary.storage.vm');
                                                     break;
+                                                case 'internalloadbalancervm':
+                                                  text = _l('label.internallbvm');
+                                                  break;
+                                                case 'elasticloadbalancervm':
+                                                  text = _l('label.elastic.LB');
+                                                  break;
                                             }
                                             return text;
                                         }
@@ -1610,14 +1582,16 @@
                                     provisioningtype: {
                                         label: 'label.disk.provisioningtype'
                                     },
-                                    uniquename: {
+                                    defaultuse: {
+                                        label: 'label.disk.default',
                                         isEditable: true,
-                                        select: function(args) {
-                                            args.response.success({
-                                              data: serviceOfferingUniqueNames
-                                            });
+                                        isBoolean: true,
+                                        isChecked: function(args) {
+                                          args.response.success({
+                                            data: args
+                                          })
                                         },
-                                        label: 'label.disk.uniquename'
+                                        converter: cloudStack.converters.toBooleanText
                                     },
                                     cpunumber: {
                                         label: 'label.num.cpu.cores'

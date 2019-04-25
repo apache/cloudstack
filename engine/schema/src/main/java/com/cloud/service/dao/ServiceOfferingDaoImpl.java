@@ -303,6 +303,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
       if (vos.size() != 0) {
         ServiceOfferingVO seVo = vos.get(0);
         seVo.setUniqueName(null);
+        seVo.setDefaultUse(false);
         update(seVo.getId(), seVo);
         return seVo.getId();
       } else {
@@ -318,6 +319,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
       if (vos.size() != 0) {
         ServiceOfferingVO seVo = vos.get(0);
         seVo.setUniqueName(uniqueName);
+        seVo.setDefaultUse(true);
         update(seVo.getId(), seVo);
       }
     }

@@ -325,6 +325,10 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.details = details;
     }
 
+    public void setDefaultUse(boolean defaultUse) {
+      this.defaultUse = defaultUse;
+    }
+
     @Override
     public boolean isDynamic() {
         return cpu == null || speed == null || ramSize == null || isDynamic;

@@ -126,30 +126,40 @@ public class Storage {
         return this.uniqueName;
       }
 
-      public static SOUniqueName getUniqueName(String uniqueName){
-
-        if(uniqueName.equals(CONSOLEPROXY.uniqueName)){
-          return SOUniqueName.CONSOLEPROXY;
-        } else if(uniqueName.equals(CONSOLEPROXY_LOCAL.uniqueName)){
-          return SOUniqueName.CONSOLEPROXY_LOCAL;
-        } else if(uniqueName.equals(SECONDARYSTORAGE.uniqueName)){
-          return SOUniqueName.SECONDARYSTORAGE;
-        } else if(uniqueName.equals(SECONDARYSTORAGE_LOCAL.uniqueName)){
-          return SOUniqueName.SECONDARYSTORAGE_LOCAL;
-        } else if(uniqueName.equals(INTERNALLBVM.uniqueName)){
-          return SOUniqueName.INTERNALLBVM;
-        } else if(uniqueName.equals(INTERNALLBVM_LOCAL.uniqueName)){
-          return SOUniqueName.INTERNALLBVM_LOCAL;
-        } else if(uniqueName.equals(ELASTICLBVM.uniqueName)){
-          return SOUniqueName.ELASTICLBVM;
-        } else if(uniqueName.equals(ELASTICLBVM_LOCAL.uniqueName)){
-          return SOUniqueName.ELASTICLBVM_LOCAL;
-        } else if(uniqueName.equals(SOFTWAREROUTER.uniqueName)){
-          return SOUniqueName.SOFTWAREROUTER;
-        } else if(uniqueName.equals(SOFTWAREROUTER_LOCAL.uniqueName)){
-          return SOUniqueName.SOFTWAREROUTER_LOCAL;
-        } else{
-          throw new NotImplementedException();
+      public static SOUniqueName getDefaultUseUniqueName(String systemVMType, boolean isLocal){
+        switch(systemVMType.toLowerCase()){
+          case "domainrouter":
+            if(isLocal){
+              return SOUniqueName.SOFTWAREROUTER_LOCAL;
+            } else {
+              return SOUniqueName.SOFTWAREROUTER;
+            }
+          case "consoleproxy":
+            if(isLocal){
+              return SOUniqueName.CONSOLEPROXY_LOCAL;
+            } else {
+              return SOUniqueName.CONSOLEPROXY;
+            }
+          case "secondarystoragevm":
+            if(isLocal){
+              return SOUniqueName.SECONDARYSTORAGE_LOCAL;
+            } else {
+              return SOUniqueName.SECONDARYSTORAGE;
+            }
+          case "internalloadbalancervm":
+            if(isLocal){
+              return SOUniqueName.INTERNALLBVM_LOCAL;
+            } else {
+              return SOUniqueName.INTERNALLBVM;
+            }
+          case "elasticloadbalancervm":
+            if(isLocal){
+              return SOUniqueName.ELASTICLBVM_LOCAL;
+            } else {
+              return SOUniqueName.ELASTICLBVM;
+            }
+          default:
+            throw new NotImplementedException();
         }
       }
     }

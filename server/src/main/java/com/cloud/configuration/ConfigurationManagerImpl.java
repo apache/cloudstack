@@ -2290,9 +2290,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 vmType = VirtualMachine.Type.SecondaryStorageVm;
             } else if (VirtualMachine.Type.InternalLoadBalancerVm.toString().toLowerCase().equals(vmTypeString)) {
                 vmType = VirtualMachine.Type.InternalLoadBalancerVm;
+            } else if (VirtualMachine.Type.ElasticLoadBalancerVm.toString().toLowerCase().equals(vmTypeString)) {
+                vmType = VirtualMachine.Type.ElasticLoadBalancerVm;
             } else {
                 throw new InvalidParameterValueException("Invalid systemVmType. Supported types are: " + VirtualMachine.Type.DomainRouter + ", " + VirtualMachine.Type.ConsoleProxy
-                        + ", " + VirtualMachine.Type.SecondaryStorageVm);
+                        + ", " + VirtualMachine.Type.SecondaryStorageVm + ", " + VirtualMachine.Type.InternalLoadBalancerVm + ", " + VirtualMachine.Type.ElasticLoadBalancerVm);
             }
 
             if (cmd.isCustomizedIops() != null) {
@@ -2329,8 +2331,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        boolean defaultUse = false;
+        if (cmd.getDefaultUse() != null) {
+          defaultUse = cmd.getDefaultUse();
+        }
+
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
-                cmd.getProvisioningType(), cmd.getUniqueName(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(),
+                cmd.getProvisioningType(), defaultUse, localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(),
                 cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
                 cmd.getBytesReadRate(), cmd.getBytesReadRateMax(), cmd.getBytesReadRateMaxLength(),
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
@@ -2340,7 +2347,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
-            final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, String uniqueName, final boolean localStorageRequired,
+            final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, boolean defaultUse, final boolean localStorageRequired,
             final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm,  String tags, final Long domainId, final String hostTag,
             final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, final Boolean isCustomizedIops, Long minIops, Long maxIops,
             Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
@@ -2370,15 +2377,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final ProvisioningType typedProvisioningType = ProvisioningType.getProvisioningType(provisioningType);
-        String typedUniqueName = uniqueName;
-        if(uniqueName != null) {
-          typedUniqueName = SOUniqueName.getUniqueName(uniqueName).toString();
-        }
+        String uniqueName = defaultUse ? SOUniqueName.getDefaultUseUniqueName(vmType.toString(), localStorageRequired).toString() : null;
 
         tags = StringUtils.cleanupTags(tags);
 
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
-                limitResourceUse, volatileVm, displayText, typedProvisioningType, typedUniqueName, localStorageRequired, false, tags, isSystem, vmType,
+                limitResourceUse, volatileVm, displayText, typedProvisioningType, uniqueName, localStorageRequired, false, tags, isSystem, vmType,
                 domainId, hostTag, deploymentPlanner);
 
         if (Boolean.TRUE.equals(isCustomizedIops)) {
@@ -2407,6 +2411,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         offering.setCustomizedIops(isCustomizedIops);
         offering.setMinIops(minIops);
         offering.setMaxIops(maxIops);
+        offering.setDefaultUse(defaultUse);
 
         if (bytesReadRate != null && bytesReadRate > 0) {
             offering.setBytesReadRate(bytesReadRate);
@@ -2475,8 +2480,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntry.getValue(), true));
             }
         }
-
-        long removedServiceOfferingId = _serviceOfferingDao.removeUniqueName(uniqueName);
+        long removedServiceOfferingId = 0;
+        if(defaultUse){
+          removedServiceOfferingId = _serviceOfferingDao.removeUniqueName(uniqueName);
+        }
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             if (detailsVO != null && !detailsVO.isEmpty()) {
@@ -2488,7 +2495,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             CallContext.current().setEventDetails("Service offering id=" + offering.getId());
             return offering;
         } else {
-            _serviceOfferingDao.resetUniqueName(removedServiceOfferingId, uniqueName);
+            if (removedServiceOfferingId != 0){
+              _serviceOfferingDao.resetUniqueName(removedServiceOfferingId, uniqueName);
+            }
             return null;
         }
     }
@@ -2504,6 +2513,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
+        }
+        boolean defaultUse = false;
+        if(cmd.getDefaultUse() != null){
+          defaultUse = cmd.getDefaultUse();
         }
 
         // Verify input parameters
@@ -2572,38 +2585,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // }
         // }
 
-        String uniqueName = cmd.getUniqueName();
-        boolean uniqueNameChanged = false;
-        boolean setEmptyUniqueName = false;
-        // when unique name parameter is null do not change it
-        if(uniqueName != null) {
-          // when empty string set unique name to null
-          if (uniqueName.isEmpty()){
-            setEmptyUniqueName = true;
-            uniqueNameChanged = uniqueName != null;
-            uniqueName = null;
-            // when string length > 0 then set new unique name
-          } else if (uniqueName.length() > 0){
-            uniqueNameChanged = offering.getUniqueName() == null || !offering.getUniqueName().equals(uniqueName);
-            uniqueName = SOUniqueName.getUniqueName(uniqueName).toString();
-          }
-        }
-
-      // only remove unique name in other entry when changed and not set to null
+      final boolean wasDefault = offering.getDefaultUse();
       long removedServiceOfferingId = 0;
-      if(uniqueNameChanged){
-          offering.setUniqueName(uniqueName);
-          if(!setEmptyUniqueName){
-            removedServiceOfferingId = _serviceOfferingDao.removeUniqueName(uniqueName);
-          }
-        }
+      String uniqueName = defaultUse ? SOUniqueName.getDefaultUseUniqueName(offeringHandle.getSystemVmType(), offeringHandle.isUseLocalStorage()).toString() : null;
+      offering.setUniqueName(uniqueName);
+      offering.setDefaultUse(defaultUse);
+      if(defaultUse && !wasDefault) {
+        removedServiceOfferingId = _serviceOfferingDao.removeUniqueName(uniqueName);
+      }
 
       if (_serviceOfferingDao.update(id, offering)) {
             offering = _serviceOfferingDao.findById(id);
             CallContext.current().setEventDetails("Service offering id=" + offering.getId());
             return offering;
         } else {
-            if(uniqueNameChanged && !setEmptyUniqueName){
+            if(removedServiceOfferingId != 0){
               _serviceOfferingDao.resetUniqueName(removedServiceOfferingId, uniqueName);
             }
             return null;

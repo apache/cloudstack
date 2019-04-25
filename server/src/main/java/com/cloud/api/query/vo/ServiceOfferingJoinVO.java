@@ -77,9 +77,6 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "ha_enabled")
     private boolean offerHA;
 
-    @Column(name = "unique_name")
-    private String uniqueName;
-
     @Column(name = "limit_cpu_use")
     private boolean limitCpuUse;
 
@@ -191,10 +188,6 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     public Storage.ProvisioningType getProvisioningType(){
         return provisioningType;
     }
-
-    public String getUniqueName(){
-    return uniqueName;
-  }
 
     public String getTags() {
         return tags;

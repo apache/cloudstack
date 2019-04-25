@@ -323,8 +323,8 @@ cloudStack.docs = {
         desc: 'Provisioning type to create a volume. Thin and sparse is lazy allocation. fat is eager allocation.',
         externalLink: ''
     },
-    helpDiskOfferingUniqueName: {
-      desc: 'Unique name of the service offering.',
+    helpServiceOfferingDefaultUse: {
+      desc: 'Define if the offering is the default offering',
       externalLink: ''
     },
     helpDiskOfferingStorageType: {
