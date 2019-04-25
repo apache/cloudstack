@@ -363,11 +363,11 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private long getUsedBytes(StoragePool storagePool, long volumeIdToIgnore) {
         long usedSpace = 0;
 
-        List<VolumeVO> lstVolumes = volumeDao.findByPoolId(storagePool.getId(), null);
+        List<VolumeVO> lstVolumes = volumeDao.findByPoolIdAndState(storagePool.getId(), Volume.State.Ready);
 
         if (lstVolumes != null) {
             for (VolumeVO volume : lstVolumes) {
-                if (volume.getId() == volumeIdToIgnore || !volume.getState().equals(Volume.State.Ready)) {
+                if (volume.getId() == volumeIdToIgnore) {
                     continue;
                 }
 
