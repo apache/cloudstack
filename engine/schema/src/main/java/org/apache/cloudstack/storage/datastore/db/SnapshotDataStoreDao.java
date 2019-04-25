@@ -30,7 +30,7 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     List<SnapshotDataStoreVO> listByStoreId(long id, DataStoreRole role);
 
-    List<SnapshotDataStoreVO> listByStoreIdInReadyState(long id);
+    List<SnapshotDataStoreVO> listByStoreIdAndState(long id, ObjectInDataStoreStateMachine.State state);
 
     List<SnapshotDataStoreVO> listActiveOnCache(long id);
 

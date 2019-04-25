@@ -222,10 +222,10 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
-    public List<SnapshotDataStoreVO> listByStoreIdInReadyState(long id) {
+    public List<SnapshotDataStoreVO> listByStoreIdAndState(long id, ObjectInDataStoreStateMachine.State state) {
         SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
         sc.setParameters("store_id", id);
-        sc.setParameters("state", State.Ready);
+        sc.setParameters("state", state);
         return listBy(sc);
     }
 

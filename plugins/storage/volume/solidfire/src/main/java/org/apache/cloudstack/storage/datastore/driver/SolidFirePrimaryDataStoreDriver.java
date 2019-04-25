@@ -72,6 +72,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -376,7 +377,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
         }
 
-        List<SnapshotDataStoreVO> snapshotDataStoreVOList = snapshotDataStoreDao.listByStoreIdInReadyState(storagePool.getId());
+        List<SnapshotDataStoreVO> snapshotDataStoreVOList = snapshotDataStoreDao.listByStoreIdAndState(storagePool.getId(), ObjectInDataStoreStateMachine.State.Ready);
 
         if (snapshotDataStoreVOList != null) {
             for (SnapshotDataStoreVO snapshot : snapshotDataStoreVOList) {
