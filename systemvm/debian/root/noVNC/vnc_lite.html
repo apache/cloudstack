@@ -275,6 +275,13 @@
         // Set parameters that can be changed on an active connection
         rfb.viewOnly = readQueryVariable('view_only', false);
         rfb.scaleViewport = readQueryVariable('scale', false);
+
+        window.addEventListener("load", function() {
+            var screen_div = document.getElementById('screen').getElementsByTagName('div')[0];
+            if (screen_div != undefined && screen_div.getElementsByTagName('canvas')[0] != undefined) {
+                screen_div.getElementsByTagName('canvas')[0].focus();
+            }
+        });
     </script>
 </head>
 
