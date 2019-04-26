@@ -221,6 +221,7 @@ import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementService;
+import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -249,6 +250,8 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
@@ -475,6 +478,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private ConfigurationDao _configDao;
     @Inject
     private DpdkHelper dpdkHelper;
+    @Inject
+    private ResourceTagDao resourceTagDao;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -4929,6 +4934,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String extraConfig = cmd.getExtraConfig();
         if (StringUtils.isNotBlank(extraConfig) && EnableAdditionalVmConfig.valueIn(callerId) ) {
             addExtraConfig(vm, caller, extraConfig);
+        }
+
+        if (cmd.getCopyImageTagsToVm()) {
+            final ResourceTag.ResourceObjectType templateType = (_templateDao.findById(templateId).getFormat() == ImageFormat.ISO) ? ResourceTag.ResourceObjectType.ISO : ResourceTag.ResourceObjectType.Template;
+            final List<? extends ResourceTag> resourceTags = resourceTagDao.listBy(templateId, templateType);
+            for (ResourceTag resourceTag : resourceTags) {
+                final ResourceTagVO copyTag = new ResourceTagVO(resourceTag.getKey(), resourceTag.getValue(), resourceTag.getAccountId(), resourceTag.getDomainId(), vm.getId(), ResourceTag.ResourceObjectType.UserVm, resourceTag.getCustomer(), vm.getUuid());
+                resourceTagDao.persist(copyTag);
+            }
         }
 
         return vm;
