@@ -102,7 +102,7 @@ function unique_tags(tags)
 //async action
 var pollAsyncJobResult = function(args) {
     $.ajax({
-        url: createURL("queryAsyncJobResult&jobId=" + args._custom.jobId), false),
+        url: createURL("queryAsyncJobResult&jobId=" + args._custom.jobId, {}),
         dataType: "json",
         async: false,
         success: function(json) {
@@ -254,7 +254,7 @@ var addGuestNetworkDialog = {
                             addGuestNetworkDialog.zoneObjs = args.context.zones; //i.e. only one zone entry
                         } else { //Network menu > guest network section > add guest network dialog
                             $.ajax({
-                                url: createURL('listZones'),
+                                url: createURL('listZones', {}),
                                 async: false,
                                 success: function(json) {
                                     addGuestNetworkDialog.zoneObjs = []; //reset
@@ -291,7 +291,7 @@ var addGuestNetworkDialog = {
                             var selectedZoneId = args.$form.find('.form-item[rel=zoneId]').find('select').val();
                             if (selectedZoneId != undefined && selectedZoneId.length > 0) {
                                 $.ajax({
-                                    url: createURL('listPhysicalNetworks'),
+                                    url: createURL('listPhysicalNetworks', {}),
                                     data: {
                                         zoneid: selectedZoneId
                                     },
@@ -302,7 +302,7 @@ var addGuestNetworkDialog = {
                                         if (physicalnetworks != null) {
                                             for (var i = 0; i < physicalnetworks.length; i++) {
                                                 $.ajax({
-                                                    url: createURL('listTrafficTypes'),
+                                                    url: createURL('listTrafficTypes', {}),
                                                     data: {
                                                         physicalnetworkid: physicalnetworks[i].id
                                                     },
@@ -443,7 +443,7 @@ var addGuestNetworkDialog = {
                         }
                         if (selectedZoneObj.domainid != null) { //list only domains under selectedZoneObj.domainid
                             $.ajax({
-                                url: createURL("listDomainChildren&id=" + selectedZoneObj.domainid + "&isrecursive=true"),
+                                url: createURL("listDomainChildren&id=" + selectedZoneObj.domainid + "&isrecursive=true", {}),
                                 dataType: "json",
                                 async: false,
                                 success: function(json) {
@@ -457,7 +457,7 @@ var addGuestNetworkDialog = {
                                 }
                             });
                             $.ajax({
-                                url: createURL("listDomains&id=" + selectedZoneObj.domainid),
+                                url: createURL("listDomains&id=" + selectedZoneObj.domainid, {}),
                                 dataType: "json",
                                 async: false,
                                 success: function(json) {
@@ -472,7 +472,7 @@ var addGuestNetworkDialog = {
                             });
                         } else { //list all domains
                             $.ajax({
-                                url: createURL("listDomains&listAll=true"),
+                                url: createURL("listDomains&listAll=true", {}),
                                 dataType: "json",
                                 async: false,
                                 success: function(json) {
@@ -511,7 +511,7 @@ var addGuestNetworkDialog = {
                     select: function(args) {
                         var items = [];
                         $.ajax({
-                            url: createURL("listProjects&listAll=true"),
+                            url: createURL("listProjects&listAll=true", {}),
                             dataType: "json",
                             async: false,
                             success: function(json) {
@@ -573,7 +573,7 @@ var addGuestNetworkDialog = {
 
                         var items = [];
                         $.ajax({
-                            url: createURL('listNetworkOfferings'),
+                            url: createURL('listNetworkOfferings', {}),
                             data: data,
                             async: false,
                             success: function(json) {
@@ -796,7 +796,7 @@ var addGuestNetworkDialog = {
                 array1.push("&networkdomain=" + encodeURIComponent(args.data.networkdomain));
             }
             $.ajax({
-                url: createURL("createNetwork" + array1.join("")),
+                url: createURL("createNetwork" + array1.join(""), {}),
                 dataType: "json",
                 success: function(json) {
                     var item = json.createnetworkresponse.network;
@@ -857,7 +857,7 @@ var addL2GuestNetwork = {
 
                     select: function(args) {
                         $.ajax({
-                            url: createURL('listZones'),
+                            url: createURL('listZones', {}),
                             success: function(json) {
                                 var zones = $.grep(json.listzonesresponse.zone, function(zone) {
                                     return (zone.networktype == 'Advanced'); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
@@ -897,7 +897,7 @@ var addL2GuestNetwork = {
                         else { //from guest network section
                             var vpcs;
                             $.ajax({
-                                url: createURL('listVPCs'),
+                                url: createURL('listVPCs', {}),
                                 data: {
                                     listAll: true
                                 },
@@ -920,7 +920,7 @@ var addL2GuestNetwork = {
                         }
 
                         $.ajax({
-                            url: createURL('listNetworkOfferings'),
+                            url: createURL('listNetworkOfferings', {}),
                             data: data,
                             success: function(json) {
                                 if(!json.listnetworkofferingsresponse || !json.listnetworkofferingsresponse.networkoffering){
@@ -982,7 +982,7 @@ var addL2GuestNetwork = {
                     select: function(args) {
                         if (isAdmin() || isDomainAdmin()) {
                             $.ajax({
-                                url: createURL("listDomains&listAll=true"),
+                                url: createURL("listDomains&listAll=true", {}),
                                 success: function(json) {
                                     var items = [];
                                     items.push({
@@ -1061,7 +1061,7 @@ var addL2GuestNetwork = {
             }
 
             $.ajax({
-                url: createURL('createNetwork'),
+                url: createURL('createNetwork', {}),
                 data: dataObj,
                 success: function(json) {
                     args.response.success({
@@ -1084,7 +1084,7 @@ var addL2GuestNetwork = {
     function isLdapEnabled() {
         var result;
         $.ajax({
-            url: createURL("listLdapConfigurations"),
+            url: createURL("listLdapConfigurations", {}),
             dataType: "json",
             async: false,
             success: function(json) {
@@ -2402,7 +2402,7 @@ cloudStack.api = {
         sort: function(updateCommand, objType) {
             var action = function(args) {
                 $.ajax({
-                    url: createURL(updateCommand),
+                    url: createURL(updateCommand, {}),
                     data: {
                         id: args.context[objType].id,
                         sortKey: args.index
@@ -2448,7 +2448,7 @@ cloudStack.api = {
                     var resourceId = args.context[contextId][0].id;
 
                     $.ajax({
-                        url: createURL('createTags'),
+                        url: createURL('createTags', {}),
                         data: {
                             'tags[0].key': data.key,
                             'tags[0].value': data.value,
@@ -2474,7 +2474,7 @@ cloudStack.api = {
                     var resourceId = args.context[contextId][0].id;
 
                     $.ajax({
-                        url: createURL('deleteTags'),
+                        url: createURL('deleteTags', {}),
                         data: {
                             'tags[0].key': data.key,
                             'tags[0].value': data.value,
@@ -2520,7 +2520,7 @@ cloudStack.api = {
                     }
 
                     $.ajax({
-                        url: createURL('listTags'),
+                        url: createURL('listTags', {}),
                         data: data,
                         success: function(json) {
                             args.response.success({
@@ -2700,7 +2700,7 @@ cloudStack.createTemplateMethod = function (isSnapshot){
                         var b = false;
                         var vmObj;
                         $.ajax({
-                            url: createURL("listVirtualMachines"),
+                            url: createURL("listVirtualMachines", {}),
                             data: {
                                 id: args.context.volumes[0].virtualmachineid
                             },
@@ -2712,7 +2712,7 @@ cloudStack.createTemplateMethod = function (isSnapshot){
                         if (vmObj == undefined) { //e.g. VM has failed over
                             if (isAdmin()) {
                                 $.ajax({
-                                    url: createURL('listConfigurations'),
+                                    url: createURL('listConfigurations', {}),
                                     data: {
                                         name: 'xenserver.pvdriver.version'
                                     },
@@ -2740,7 +2740,7 @@ cloudStack.createTemplateMethod = function (isSnapshot){
                     label: 'label.os.type',
                     select: function(args) {
                         $.ajax({
-                            url: createURL("listOsTypes"),
+                            url: createURL("listOsTypes", {}),
                             dataType: "json",
                             async: true,
                             success: function(json) {
@@ -2817,7 +2817,7 @@ cloudStack.createTemplateMethod = function (isSnapshot){
             //XenServer only (ends here)
 
             $.ajax({
-                url: createURL('createTemplate'),
+                url: createURL('createTemplate', {}),
                 data: data,
                 success: function(json) {
                     var jid = json.createtemplateresponse.jobid;
@@ -2913,7 +2913,7 @@ cloudStack.listDiskOfferings = function(options){
     }
     var diskOfferings = undefined;
     $.ajax({
-        url: createURL(listDiskOfferingsUrl),
+        url: createURL(listDiskOfferingsUrl, {}),
         data: mergedOptions.data,
         dataType: "json",
         async: false,
