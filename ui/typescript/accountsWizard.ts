@@ -14,13 +14,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-(function(cloudStack, $) {
+(function (cloudStack, $) {
     var rootDomainId;
-
-
     cloudStack.accountsWizard = {
-
         informationWithinLdap: {
             username: {
                 label: 'label.username',
@@ -70,7 +66,6 @@
                 docID: 'helpAccountLastName'
             }
         },
-
         informationNotInLdap: {
             domainid: {
                 label: 'label.domain',
@@ -78,22 +73,21 @@
                 validation: {
                     required: true
                 },
-                select: function(args) {
+                select: function (args) {
                     $.ajax({
                         url: createURL("listDomains"),
-                        success: function(json) {
+                        success: function (json) {
                             var items = [];
                             domainObjs = json.listdomainsresponse.domain;
-                            $(domainObjs).each(function() {
+                            $(domainObjs).each(function () {
                                 items.push({
                                     id: this.id,
                                     description: this.path
                                 });
-
                                 if (this.level === 0)
                                     rootDomainId = this.id;
                             });
-                            items.sort(function(a, b) {
+                            items.sort(function (a, b) {
                                 return a.description.localeCompare(b.description);
                             });
                             args.response.success({
@@ -116,13 +110,13 @@
                 validation: {
                     required: true
                 },
-                select: function(args) {
+                select: function (args) {
                     $.ajax({
                         url: createURL("listRoles"),
-                        success: function(json) {
+                        success: function (json) {
                             var items = [];
                             roleObjs = json.listrolesresponse.role;
-                            $(roleObjs).each(function() {
+                            $(roleObjs).each(function () {
                                 items.push({
                                     id: this.id,
                                     description: this.name + ' (' + this.type + ')'
@@ -138,7 +132,7 @@
             timezone: {
                 label: 'label.timezone',
                 docID: 'helpAccountTimezone',
-                select: function(args) {
+                select: function (args) {
                     var items = [];
                     items.push({
                         id: "",
@@ -182,9 +176,9 @@
                 validation: {
                     required: false
                 },
-                select: function(args) {
+                select: function (args) {
                     var items = [];
-                    $(g_idpList).each(function() {
+                    $(g_idpList).each(function () {
                         items.push({
                             id: this.id,
                             description: this.orgName
@@ -196,57 +190,46 @@
                 }
             }
         },
-
-        action: function(args) {
+        action: function (args) {
             var array1 = [];
             var ldapStatus = args.isLdap;
             if (args.username) {
                 array1.push("&username=" + args.username);
             }
-
             if (!ldapStatus) {
                 array1.push("&email=" + args.data.email);
                 array1.push("&firstname=" + args.data.firstname);
                 array1.push("&lastname=" + args.data.lastname);
-
                 cloudStack.addPasswordToCommandUrlParameterArray(array1, args.data.password);
             }
-
             array1.push("&domainid=" + args.data.domainid);
-
             var account = args.data.account;
-
             if (account !== null && account.length > 0) {
                 array1.push("&account=" + account);
             }
-
             if (args.data.roleid) {
                 array1.push("&roleid=" + args.data.roleid);
             }
-
             if (args.data.timezone !== null && args.data.timezone.length > 0) {
                 array1.push("&timezone=" + args.data.timezone);
             }
-
             if (args.data.networkdomain !== null && args.data.networkdomain.length > 0) {
                 array1.push("&networkdomain=" + args.data.networkdomain);
             }
             if (args.groupname && args.groupname !== null && args.groupname.length > 0) {
                 array1.push("&group=" + args.groupname);
             }
-
             var authorizeUsersForSamlSSO = function (users, entity) {
                 for (var i = 0; i < users.length; i++) {
                     $.ajax({
                         url: createURL('authorizeSamlSso&enable=true&userid=' + users[i].id + "&entityid=" + entity),
-                        error: function(XMLHttpResponse) {
+                        error: function (XMLHttpResponse) {
                             args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                         }
                     });
                 }
                 return;
             };
-
             if (ldapStatus) {
                 if (args.groupname) {
                     $.ajax({
@@ -261,17 +244,18 @@
                                 });
                             }
                         },
-                        error: function(XMLHttpResponse) {
+                        error: function (XMLHttpResponse) {
                             args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                         }
                     });
-                } else if (args.username) {
+                }
+                else if (args.username) {
                     $.ajax({
                         url: createURL('ldapCreateAccount' + array1.join("")),
                         dataType: "json",
                         type: "POST",
                         async: false,
-                        success: function(json) {
+                        success: function (json) {
                             if (args.data.samlEnable && args.data.samlEnable === 'on') {
                                 var users = json.createaccountresponse.account.user;
                                 var entity = args.data.samlEntity;
@@ -279,18 +263,19 @@
                                     authorizeUsersForSamlSSO(users, entity);
                             }
                         },
-                        error: function(XMLHttpResponse) {
+                        error: function (XMLHttpResponse) {
                             args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                         }
                     });
                 }
-            } else {
+            }
+            else {
                 $.ajax({
                     url: createURL('createAccount' + array1.join("")),
                     dataType: "json",
                     type: "POST",
                     async: false,
-                    success: function(json) {
+                    success: function (json) {
                         if (args.data.samlEnable && args.data.samlEnable === 'on') {
                             var users = json.createaccountresponse.account.user;
                             var entity = args.data.samlEntity;
@@ -298,7 +283,7 @@
                                 authorizeUsersForSamlSSO(users, entity);
                         }
                     },
-                    error: function(XMLHttpResponse) {
+                    error: function (XMLHttpResponse) {
                         args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                     }
                 });
