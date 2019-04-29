@@ -26,15 +26,12 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.ReplugNicCommand;
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.hypervisor.kvm.resource.BridgeVifDriver;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.resource.OvsVifDriver;
-import com.cloud.network.Networks;
-import com.cloud.utils.script.Script;
-import com.cloud.vm.VirtualMachine;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+
+import org.apache.cloudstack.utils.linux.MemStat;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,13 +43,18 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.ReplugNicCommand;
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.hypervisor.kvm.resource.BridgeVifDriver;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.OvsVifDriver;
+import com.cloud.network.Networks;
+import com.cloud.utils.script.Script;
+import com.cloud.vm.VirtualMachine;
 
-import javax.naming.ConfigurationException;
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(Script.class)
+@PrepareForTest(value = {Script.class, MemStat.class})
 public class LibvirtReplugNicCommandWrapperTest {
     private static final String part_1 =
             "<domain type='kvm' id='143'>\n"
@@ -182,8 +184,19 @@ public class LibvirtReplugNicCommandWrapperTest {
     private LibvirtComputingResource res;
     private final Domain _domain = mock(Domain.class);
 
+    final String memInfo = "MemTotal:        5830236 kB\n" +
+            "MemFree:          156752 kB\n" +
+            "Buffers:          326836 kB\n" +
+            "Cached:          2606764 kB\n" +
+            "SwapCached:            0 kB\n" +
+            "Active:          4260808 kB\n" +
+            "Inactive:         949392 kB\n";
+
     @Before
-    public void setUp() throws LibvirtException, ConfigurationException {
+    public void setUp() throws Exception {
+        Scanner scanner = new Scanner(memInfo);
+        PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
+
         // Use a spy because we only want to override getVifDriverClass
         LibvirtComputingResource resReal = new LibvirtComputingResource();
         res = spy(resReal);

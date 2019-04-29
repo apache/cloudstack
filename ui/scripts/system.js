@@ -1655,7 +1655,7 @@
                                                     desc: 'message.restart.network',
                                                     preFilter: function (args) {
                                                         if (selectedZoneObj.networktype == "Basic") {
-                                                            args.$form.find('.form-item[rel=cleanup]').find('input').removeAttr('checked');
+                                                            args.$form.find('.form-item[rel=cleanup]').find('input').prop('checked', false);
                                                             //unchecked
                                                             args.$form.find('.form-item[rel=cleanup]').hide();
                                                             //hidden
@@ -20324,7 +20324,7 @@
                                                             $form.find('.form-item[rel=maxerrorretry]').hide();
                                                             $form.find('.form-item[rel=sockettimeout]').hide();
 
-                                                            $form.find('.form-item[rel=createNfsCache]').find('input').removeAttr('checked');
+                                                            $form.find('.form-item[rel=createNfsCache]').find('input').prop('checked', false);
                                                             $form.find('.form-item[rel=createNfsCache]').hide();
                                                             $form.find('.form-item[rel=nfsCacheZoneid]').hide();
                                                             $form.find('.form-item[rel=nfsCacheNfsServer]').hide();
@@ -20357,7 +20357,7 @@
                                                             $form.find('.form-item[rel=maxerrorretry]').hide();
                                                             $form.find('.form-item[rel=sockettimeout]').hide();
 
-                                                            $form.find('.form-item[rel=createNfsCache]').find('input').removeAttr('checked');
+                                                            $form.find('.form-item[rel=createNfsCache]').find('input').prop('checked', false);
                                                             $form.find('.form-item[rel=createNfsCache]').hide();
                                                             $form.find('.form-item[rel=nfsCacheZoneid]').hide();
                                                             $form.find('.form-item[rel=nfsCacheNfsServer]').hide();
@@ -20425,7 +20425,7 @@
                                                             $form.find('.form-item[rel=maxerrorretry]').hide();
                                                             $form.find('.form-item[rel=sockettimeout]').hide();
 
-                                                            $form.find('.form-item[rel=createNfsCache]').find('input').removeAttr('checked');
+                                                            $form.find('.form-item[rel=createNfsCache]').find('input').prop('checked', false);
                                                             $form.find('.form-item[rel=createNfsCache]').hide();
                                                             $form.find('.form-item[rel=nfsCacheZoneid]').hide();
                                                             $form.find('.form-item[rel=nfsCacheNfsServer]').hide();

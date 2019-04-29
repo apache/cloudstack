@@ -963,10 +963,10 @@
                                 if ($(this).val() == "VMware") {
                                     if (dvSwitchEnabled) {
                                         $form.find('.form-item[rel=overridepublictraffic]').css('display', 'inline-block');
-                                        $form.find('.form-item[rel=overridepublictraffic]').find('input[type=checkbox]').removeAttr('checked');
+                                        $form.find('.form-item[rel=overridepublictraffic]').find('input[type=checkbox]').prop('checked', false);
 
                                         $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'inline-block');
-                                        $form.find('.form-item[rel=overrideguesttraffic]').find('input[type=checkbox]').removeAttr('checked');
+                                        $form.find('.form-item[rel=overrideguesttraffic]').find('input[type=checkbox]').prop('checked', false);
                                     } else {
                                         $form.find('.form-item[rel=overridepublictraffic]').css('display', 'none');
                                         $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'none');
@@ -984,10 +984,10 @@
                                     }
                                 } else if ($(this).val() == "Ovm3") {
                                     $form.find('.form-item[rel=ovm3pool]').css('display', 'inline-block');
-                                    $form.find('.form-item[rel=ovm3pool]').find('input[type=checkbox]').removeAttr('checked');
+                                    $form.find('.form-item[rel=ovm3pool]').find('input[type=checkbox]').prop('checked', false);
 
                                     $form.find('.form-item[rel=ovm3cluster]').css('display', 'inline-block');
-                                    $form.find('.form-item[rel=ovm3cluster]').find('input[type=checkbox]').removeAttr('checked');
+                                    $form.find('.form-item[rel=ovm3cluster]').find('input[type=checkbox]').prop('checked', false);
                                     $form.find('[rel=ovm3vip]').css('display', 'block');
                                 } else {
                                     $form.find('.form-item[rel=overridepublictraffic]').css('display', 'none');
@@ -1948,7 +1948,7 @@
                                             $fields.filter('[rel=sockettimeout]').hide();
 
                                             $fields.filter('[rel=createNfsCache]').hide();
-                                            $fields.filter('[rel=createNfsCache]').find('input').removeAttr('checked');
+                                            $fields.filter('[rel=createNfsCache]').find('input').prop('checked', false);
                                             $fields.filter('[rel=nfsCacheNfsServer]').hide();
                                             $fields.filter('[rel=nfsCachePath]').hide();
 
@@ -1981,7 +1981,7 @@
                                             $fields.filter('[rel=sockettimeout]').hide();
 
                                             $fields.filter('[rel=createNfsCache]').hide();
-                                            $fields.filter('[rel=createNfsCache]').find('input').removeAttr('checked');
+                                            $fields.filter('[rel=createNfsCache]').find('input').prop('checked', false);
                                             $fields.filter('[rel=nfsCacheNfsServer]').hide();
                                             $fields.filter('[rel=nfsCachePath]').hide();
 
@@ -2014,7 +2014,7 @@
                                             $fields.filter('[rel=sockettimeout]').hide();
 
                                             $fields.filter('[rel=createNfsCache]').hide();
-                                            $fields.filter('[rel=createNfsCache]').find('input').removeAttr('checked');
+                                            $fields.filter('[rel=createNfsCache]').find('input').prop('checked', false);
                                             $fields.filter('[rel=nfsCacheNfsServer]').hide();
                                             $fields.filter('[rel=nfsCachePath]').hide();
 
@@ -2099,7 +2099,7 @@
                                             $fields.filter('[rel=sockettimeout]').hide();
 
                                             $fields.filter('[rel=createNfsCache]').hide();
-                                            $fields.filter('[rel=createNfsCache]').find('input').removeAttr('checked');
+                                            $fields.filter('[rel=createNfsCache]').find('input').prop('checked', false);
                                             $fields.filter('[rel=nfsCacheNfsServer]').hide();
                                             $fields.filter('[rel=nfsCachePath]').hide();
 

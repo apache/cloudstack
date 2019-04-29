@@ -25,20 +25,28 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import org.apache.cloudstack.utils.linux.MemStat;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.libvirt.Connect;
+import org.libvirt.Domain;
+import org.libvirt.LibvirtException;
+
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.network.Networks;
 import com.cloud.utils.ExecutionResult;
-import org.junit.Before;
-import org.junit.Test;
-import org.libvirt.Connect;
-import org.libvirt.Domain;
-import org.libvirt.LibvirtException;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-import javax.naming.ConfigurationException;
+import java.util.Scanner;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(value = {MemStat.class})
 public class LibvirtNetworkElementCommandWrapperTest {
     private static final String fullfile = "<domain type='kvm' id='143'>\n"
             + "  <name>r-3-VM</name>\n"
@@ -210,8 +218,17 @@ public class LibvirtNetworkElementCommandWrapperTest {
     private LibvirtComputingResource res;
     private final Domain _domain = mock(Domain.class);
 
+    final String memInfo = "MemTotal:        5830236 kB\n" +
+            "MemFree:          156752 kB\n" +
+            "Buffers:          326836 kB\n" +
+            "Cached:          2606764 kB\n" +
+            "SwapCached:            0 kB\n" +
+            "Active:          4260808 kB\n" +
+            "Inactive:         949392 kB\n";
     @Before
-    public void setUp() throws LibvirtException, ConfigurationException {
+    public void setUp() throws Exception {
+        Scanner scanner = new Scanner(memInfo);
+        PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
         // Use a spy because we only want to override getVifDriverClass
         LibvirtComputingResource resReal = new LibvirtComputingResource() {
             {

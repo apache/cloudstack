@@ -16,11 +16,18 @@
 // under the License.
 package org.apache.cloudstack.utils.linux;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Scanner;
 
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(MemStat.class)
 public class MemStatTest {
     final String memInfo = "MemTotal:        5830236 kB\n" +
                            "MemFree:          156752 kB\n" +
@@ -30,21 +37,15 @@ public class MemStatTest {
                            "Active:          4260808 kB\n" +
                            "Inactive:         949392 kB\n";
 
+    @Before
+    public void setup() throws Exception {
+        Scanner scanner = new Scanner(memInfo);
+        PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
+    }
+
     @Test
     public void getMemInfoParseTest() {
-        MemStat memStat = null;
-        try {
-            memStat = new MemStat();
-        } catch (RuntimeException ex) {
-            // If test isn't run on linux we'll fail creation of linux-specific MemStat class due
-            // to dependency on /proc/meminfo if we don't catch here.
-            // We are really only interested in testing the parsing algorithm and getters.
-            if (memStat == null) {
-                throw ex;
-            }
-        }
-        Scanner scanner = new Scanner(memInfo);
-        memStat.parseFromScanner(scanner);
+        MemStat memStat = new MemStat();
 
         Assert.assertEquals(memStat.getTotal(), 5970161664L);
         Assert.assertEquals(memStat.getAvailable(), 2829840384L);
@@ -54,17 +55,7 @@ public class MemStatTest {
 
     @Test
     public void reservedMemoryTest() {
-        MemStat memStat = null;
-        try {
-            memStat = new MemStat(1024, 2048);
-        } catch (RuntimeException ex) {
-            if (memStat == null) {
-                throw ex;
-            }
-        }
-        Scanner scanner = new Scanner(memInfo);
-        memStat.parseFromScanner(scanner);
-
+        MemStat memStat = new MemStat(1024, 2048);
         Assert.assertEquals(memStat.getTotal(), 5970162688L);
     }
 }
