@@ -339,28 +339,4 @@ public class ActionEventUtils {
 
         //System.out.println(gson.toJson(cadf));
     }
-
-    /*
-    private static HashMap<String, String> getEventExtraFromContext() {
-        HashMap<String, String> contextParams = new HashMap<String, String>();
-        CallContext context = CallContext.current();
-        System.out.println("getEventExtraFromContext()");
-        System.out.println("context.getContextParameters().size() " + context.getContextParameters().size());
-        System.out.println(context.toString());
-
-        //Object params = context.getContextParameter(User.class);
-        Object params = context.getContextParameter(HashMap.class);
-        if (params != null) {
-            System.out.println("params.getClass().getName() " + params.getClass().getName());
-
-            for (HashMap.Entry<String, String> entry : ((HashMap<String, String>) params).entrySet()) {
-                System.out.println("getEventExtraFromContext()============ entry.getKey() " + entry.getKey());
-                System.out.println("getEventExtraFromContext()============ entry.getValue() " + entry.getValue());
-                contextParams.put(entry.getKey(), entry.getValue());
-            }
-            return contextParams;
-        } else {
-            return null;
-        }
-    }*/
 }
