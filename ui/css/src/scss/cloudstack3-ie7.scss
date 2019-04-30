@@ -1,0 +1,209 @@
+/*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*/
+
+/*[fmt]1C20-1C0D-E*/
+div.panel div.list-view {
+  position: relative;
+  overflow-x: hidden;
+  margin-top: 0px;
+}
+
+div.toolbar {
+  top: expression(this.offsetParent.scrollTop);
+}
+
+div.toolbar div.text-search div.search-bar input {
+  float: left;
+  border: none;
+  margin-top: -1px;
+  margin-right: 0px;
+  margin-bottom: 0px;
+  margin-left: -12px;
+  width: 97%;
+  height: 67%;
+}
+
+div.panel div.list-view div.fixed-header {
+  top: expression(this.offsetParent.scrollTop + 30);
+}
+
+.detail-view div.list-view div.fixed-header {
+  top: 29px !important;
+  left: 12px !important;
+}
+
+div.panel div.list-view div.data-table table.body {
+  top: 78px;
+}
+
+.detail-view .main-groups {
+  width: 96%;
+  height: 416px;
+  position: relative;
+  overflow-x: hidden;
+  margin-top: -18px;
+}
+
+.detail-view .ui-widget-content {
+  overflow-x: hidden !important;
+}
+
+.tree-view {
+  position: relative;
+  top: expression(this.offsetParent.scrollTop);
+}
+
+.tree-view li .name {
+  margin: 0px !important;
+}
+
+.detail-view .button.done {
+  /*+placement:shift 0px 459px;*/
+  position: relative;
+  left: 0px;
+  top: 459px;
+}
+
+.detail-view ul {
+  /*+placement:shift;*/
+  position: relative;
+  left: 0;
+  top: 0;
+}
+
+.ui-tabs ul.ui-tabs-nav {
+  margin-top: 20px;
+}
+
+.dashboard.admin .dashboard-container.sub.alerts ul {
+  top: expression(this.offsetParent.scrollTop);
+}
+
+#user-options a:hover {
+  background: #ADADAD;
+  color: #FFFFFF;
+  /*+text-shadow:0px 1px 2px #383838;*/
+  -moz-text-shadow: 0px 1px 2px #383838;
+  -webkit-text-shadow: 0px 1px 2px #383838;
+  -o-text-shadow: 0px 1px 2px #383838;
+  text-shadow: 0px 1px 2px #383838;
+}
+
+.multi-wizard .progress ul li span.arrow {
+  display: none;
+  border-right: 0px solid #000000;
+}
+
+.tree-view ul li .name {
+  float: right;
+}
+
+.multi-edit .data .data-body .data-item .expandable-listing {
+  width: 99.8%;
+  border: 1px solid #CFC9C9;
+  max-height: 161px;
+  position: relative;
+  overflow: auto;
+  overflow-x: hidden;
+  top: expression(this.offsetParent.scrollTop);
+}
+
+table tbody td,
+table th {
+  padding: 9px 5px 8px 0px;
+  border-right: 1px solid #BFBFBF;
+  color: #495A76;
+  clear: none;
+  width: auto;
+  width: 88px;
+  min-width: 88px;
+  font-size: 11px;
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.detail-view > .toolbar {
+  position: relative;
+  float: left;
+  left: -14px;
+}
+
+.detail-view .list-view > .toolbar {
+  width: 100% !important;
+}
+
+.system-chart ul.resources li .label {
+  /*+placement:shift 3px 9px;*/
+  position: relative;
+  left: 3px;
+  top: 9px;
+  position: absolute;
+}
+
+.system-chart ul.resources li .button.view-all .view-all-label {
+  /*+placement:shift 6px 5px;*/
+  position: relative;
+  left: 6px;
+  top: 5px;
+}
+
+.quick-view-tooltip div.title > span.title {
+}
+
+.quick-view-tooltip div.title .icon {
+  top: -15px;
+}
+
+.quick-view-tooltip table {
+}
+
+.quick-view-tooltip .main-groups {
+  float: left;
+  left: 0px;
+  margin-top: 7px;
+}
+
+.quick-view-tooltip .actions {
+  width: 426px !important;
+  float: left;
+}
+
+.quick-view-tooltip .action {
+  float: left !important;
+  width: 54px !important;
+  margin-left: 7px !important;
+}
+
+.quick-view-tooltip .action .label {
+  float: left;
+  max-width: 20px;
+}
+
+.quick-view-tooltip .action .icon {
+  float: left;
+  height: 7px;
+  left: 0px;
+}
+
+.list-view td.quick-view {
+}
+
+.quick-view-tooltip .detail-view .detail-group.actions .action.text {
+  filter:alpha(opacity=100);
+}

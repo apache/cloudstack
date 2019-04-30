@@ -1,0 +1,83 @@
+/*[fmt]1C20-1C0D-E*/
+/*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*/
+#header div.view-switcher {
+  font-size: 9px;
+}
+
+.dashboard.admin .dashboard-container .stats ul li .name {
+  font-size: 10px;
+}
+
+.dashboard.admin .dashboard-container .stats ul li .percentage {
+  float: left;
+  font-size: 15px;
+  font-weight: bold;
+  margin: 13px 0 0;
+  /*+text-shadow:0px -2px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px -2px 1px #FFFFFF;
+  -webkit-text-shadow: 0px -2px 1px #FFFFFF;
+  -o-text-shadow: 0px -2px 1px #FFFFFF;
+  text-shadow: 0px -2px 1px #FFFFFF;
+}
+
+.dashboard.admin .dashboard-container .stats ul li .value .content {
+  font-size: 10px;
+}
+
+div.toolbar div.filters label {
+  font-size: 9px;
+}
+
+div.toolbar div.filters select {
+  width: 82px;
+  font-size: 11px;
+}
+
+div.toolbar div.button.add,
+div.toolbar div.button.refresh,
+div.toolbar div.button.add,
+div.toolbar div.button.main-action,
+.toolbar div.button.header-action,
+.detail-group .button.add {
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+table tbody td.quick-view,
+table thead th.quick-view {
+  font-size: 8px;
+}
+
+.multi-wizard.instance-wizard .progress ul li span.multiline {
+  font-size: 9px;
+}
+
+.multi-wizard .review .select-container .select .name {
+  white-space: nowrap;
+  font-size: 10px;
+}
+
+.quick-view-tooltip .detail-view .detail-group.actions .action.text .label {
+  font-size: 8px;
+}
+
+.detail-view .multi-edit table tr th, .detail-view .multi-edit table tr td {
+  font-size: 8px;
+}
