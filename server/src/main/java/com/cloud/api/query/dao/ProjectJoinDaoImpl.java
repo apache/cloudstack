@@ -32,6 +32,7 @@ import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.projects.Project;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GenericDaoBase;
@@ -81,12 +82,9 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
         response.setOwner(proj.getOwner());
 
         // update tag information
-        Long tag_id = proj.getTagId();
-        if (tag_id != null && tag_id.longValue() > 0) {
-            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
-            if (vtag != null) {
-                response.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
-            }
+        List<ResourceTagJoinVO> tags = ApiDBUtils.listResourceTagViewByResourceUUID(proj.getUuid(), ResourceObjectType.Project);
+        for (ResourceTagJoinVO vtag : tags) {
+            response.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
         }
 
         //set resource limit/count information for the project (by getting the info of the project's account)
@@ -101,14 +99,6 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
 
     @Override
     public ProjectResponse setProjectResponse(ProjectResponse rsp, ProjectJoinVO proj) {
-        // update tag information
-        Long tag_id = proj.getTagId();
-        if (tag_id != null && tag_id.longValue() > 0) {
-            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
-            if (vtag != null) {
-                rsp.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
-            }
-        }
         return rsp;
     }
 
