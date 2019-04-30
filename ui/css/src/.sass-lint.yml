@@ -1,0 +1,453 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# watch https://github.com/brigade/scss-lint/blob/master/lib/scss_lint/linter/README.md#bangformat
+# watch https://github.com/sasstools/sass-lint/tree/master/docs/rules
+# watch https://github.com/srowhani/sass-lint-auto-fix/tree/master/src/resolvers
+# Default application configuration that all configurations inherit from.
+
+options:
+  merge-default-rules: false
+  formatter: 'stylish'
+  optOut: true
+
+files:
+  include: 'theme-ewerk/core/css/src/sass/**/*.s+(a|c)ss'
+
+rules:
+  attribute-quotes: 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+  bem-depth:
+    - 0
+    - max-depth: 1
+  border-zero: 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+  brace-style: 1
+  class-name-format:
+    - 1
+    - convention: hyphenatedbem
+  clean-import-paths:
+    - 1
+    - filename-extension: false
+      leading-underscore: false
+  empty-line-between-blocks:
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+    - ignore-single-line-rulesets: true
+  extends-before-declarations: 2
+  extends-before-mixins: 2
+  final-newline:
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+    - include: true
+  force-attribute-nesting: 0
+  force-element-nesting: 0
+  force-pseudo-nesting: 0
+  function-name-format:
+    - 1
+    - allow-leading-underscore: true
+      convention: hyphenatedlowercase
+  hex-length:
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+    - style: long
+  hex-notation:
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+    - style: lowercase
+  id-name-format:
+    - 1
+    - convention: hyphenatedlowercase
+  indentation:
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+    - size: 2
+  leading-zero:
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+    - include: false
+  mixin-name-format:
+    - 1
+    - allow-leading-underscore: true
+      convention: hyphenatedlowercase 
+  mixins-before-declarations:
+    - 2
+    - exclude:
+        - breakpoint
+        - mq
+  nesting-depth:
+    - 1
+    - max-depth: 3
+  no-color-keywords: 1
+  no-color-literals: 1
+  no-css-comments: 1
+  no-debug: 1
+  no-duplicate-properties: 1
+  no-empty-rulesets: 1
+  no-extends: 0
+  no-ids: 0
+  no-important: 0
+  no-invalid-hex: 1
+  no-mergeable-selectors: 1
+  no-misspelled-properties:
+    - 1
+    - extra-properties:
+        - caret-color
+  no-qualifying-elements:
+    - 0
+    - allow-element-with-attribute: false
+      allow-element-with-class: false
+      allow-element-with-id: false
+  no-trailing-zero: 1
+  no-transition-all: 0
+  no-url-protocols: 1
+  # no-vendor-prefixes: bugs
+  #   - 1
+  #   - ignore-non-standard: true
+  no-warn: 1
+  placeholder-in-extend: 1
+  placeholder-name-format:
+    - 1
+    - convention: hyphenatedlowercase
+  property-sort-order:
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+    -
+      order:
+        # visibility
+        - 'visibility'
+        - 'opacity'
+
+        # content
+        - 'content'
+        - 'quotes'
+
+        # position
+        - 'display'
+        - 'position'
+        - 'z-index'
+        - 'float'
+        - 'clear'
+        - 'box-sizing'
+        - 'top'
+        - 'right'
+        - 'bottom'
+        - 'left'
+
+        # align-content
+        - 'align-content'
+        - 'align-items'
+        - 'align-self'
+
+        # vertical-alignment
+        - 'vertical-align'
+
+        # width
+        - 'width'
+        - 'min-width'
+        - 'max-width'
+
+        # height
+        - 'height'
+        - 'min-height'
+        - 'max-height'
+       
+        # margin
+        - 'margin'
+        - 'margin-top'
+        - 'margin-right'
+        - 'margin-bottom'
+        - 'margin-left'
+
+        # padding
+        - 'padding'
+        - 'padding-top'
+        - 'padding-right'
+        - 'padding-bottom'
+        - 'padding-left'
+             
+        # border
+        - 'border'
+        - 'border-top'
+        - 'border-right'
+        - 'border-bottom'
+        - 'border-left'
+        - 'border-width'
+        - 'border-top-width'
+        - 'border-right-width'
+        - 'border-bottom-width'
+        - 'border-left-width'
+
+        # border-style
+        - 'border-style'
+        - 'border-top-style'
+        - 'border-right-style'
+        - 'border-bottom-style'
+        - 'border-left-style'
+
+        # border-radius
+        - 'border-radius'
+        - 'border-top-left-radius'
+        - 'border-top-right-radius'
+        - 'border-bottom-left-radius'
+        - 'border-bottom-right-radius'
+
+        # border-color
+        - 'border-color'
+        - 'border-top-color'
+        - 'border-right-color'
+        - 'border-bottom-color'
+        - 'border-left-color'
+
+        # border-image
+        - 'border-image'
+        - 'border-image-source'
+        - 'border-image-width'
+        - 'border-image-outset'
+        - 'border-image-repeat'
+        - 'border-image-slice'
+
+        # outline
+        - 'outline'
+        - 'outline-offset'
+        - 'outline-width'
+        - 'outline-style'
+        - 'outline-color'
+
+        # box-shadow
+        - 'box-shadow'
+
+        # flex
+        - 'flex'
+        - 'flex-basis'
+        - 'flex-direction'
+        - 'flex-flow'
+        - 'flex-grow'
+        - 'flex-shrink'
+        - 'flex-wrap'
+        - 'justify-content'
+        
+        # grid
+        - 'grid'
+        - 'grid-area'
+        - 'grid-template'
+        - 'grid-template-areas'
+        - 'grid-template-rows'
+        - 'grid-template-columns'
+        - 'grid-column'
+        - 'grid-column-start'
+        - 'grid-column-end'
+        - 'grid-row'
+        - 'grid-row-start'
+        - 'grid-row-end'
+        - 'grid-auto-rows'
+        - 'grid-auto-columns'
+        - 'grid-auto-flow'
+        - 'grid-gap'
+        - 'grid-row-gap'
+        - 'grid-column-gap'
+        
+        # order
+        - 'order'
+        
+        # columns
+        - 'columns'
+        - 'column-gap'
+        - 'column-fill'
+        - 'column-rule'
+        - 'column-rule-width'
+        - 'column-rule-style'
+        - 'column-rule-color'
+        - 'column-span'
+        - 'column-count'
+        - 'column-width'
+        
+        # background
+        - 'background'
+        - 'background-attachment'
+        - 'background-clip'
+        - 'background-color'
+        - 'background-image'
+        - 'background-repeat'
+        - 'background-position'
+        - 'background-size'
+
+        # font
+        - 'font'
+        - 'font-family'
+        - 'font-size'
+        - 'font-size-adjust'
+        - 'font-stretch'
+        - 'font-weight'
+        - 'font-smoothing'
+        - 'osx-font-smoothing'
+        - 'font-variant'
+        - 'font-style'
+
+        # text-spacing
+        - 'line-height'
+        - 'word-spacing'
+        - 'letter-spacing'
+        - 'white-space'
+        - 'word-break'
+        - 'word-wrap'
+        - 'color'
+
+        # text-alignment and decoration
+        - 'direction'
+        - 'tab-size'
+        - 'text-align'
+        - 'text-align-last'
+        - 'text-justify'
+        - 'text-indent'
+        - 'text-transform'
+        - 'text-decoration'
+        - 'text-decoration-color'
+        - 'text-decoration-line'
+        - 'text-decoration-style'
+        - 'text-rendering'
+        - 'text-shadow'
+        - 'text-overflow'
+
+        # tables
+        - 'table-layout'
+        - 'border-collapse'
+        - 'border-spacing'
+        - 'empty-cells'
+
+        # list-style
+        - 'list-style'
+        - 'list-style-type'
+        - 'list-style-position'
+        - 'list-style-image'
+        - 'caption-side'
+
+        # cursor
+        - 'cursor'
+
+        # overflow
+        - 'overflow'
+        - 'overflow-x'
+        - 'overflow-y'
+        - 'resize'
+
+        # animation
+        - 'animation'
+        - 'animation-name'
+        - 'animation-duration'
+        - 'animation-timing-function'
+        - 'animation-delay'
+        - 'animation-iteration-count'
+        - 'animation-direction'
+        - 'animation-fill-mode'
+        - 'animation-play-state'
+
+        # transition
+        - 'transition'
+        - 'transition-delay'
+        - 'transition-duration'
+        - 'transition-property'
+        - 'transition-timing-function'
+
+        # counters
+        - 'counter-reset'
+        - 'counter-increment'
+
+        # breaks
+        - 'page-break-before'
+        - 'page-break-after'
+        - 'page-break-inside'
+      ignore-custom-properties: true
+  property-units:
+    - 1
+    - global:
+        - em
+        - rem
+        - px
+        - vh
+        - vw
+        - vmin
+        - vmax
+        - deg
+        - rad
+        - s
+        - dpi
+        - '%'
+  quotes:
+    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+    - style: single
+  shorthand-values:
+    - 1
+    - allowed-shorthands:
+        - 1
+        - 2
+        - 3
+        - 4
+  single-line-per-selector: 1
+  space-after-bang:
+    - 1
+    - include: false
+  space-after-colon:
+    - 1
+    - include: true
+  space-after-comma:
+    - 1
+    - include: true
+  space-before-bang:
+    - 2
+    - include: true
+  space-before-brace:
+    - 1
+    - include: true
+  space-before-colon: 1
+  space-between-parens:
+    - 1
+    - include: false
+  trailing-semicolon: 1
+  url-quotes: 1
+  variable-for-property:
+    - 1
+    - properties: [
+      box-shadow,
+      border,
+      z-index,
+      color,
+      background-color
+    ]
+  variable-name-format:
+    - 1
+    - allow-leading-underscore: true
+      convention: hyphenatedlowercase
+  zero-unit: 1
+  
+
+resolvers:
+  attribute-quotes: 1
+  base-resover: 1
+  border-zero: 1
+  empty-line-between-blocks: 1
+  final-newline: 1
+  hex-length: 1
+  hex-notation: 1
+  indentation: 1
+  no-color-keywords: 1
+  no-css-comments: 0
+  no-important: 0
+  no-trailing-zero: 1
+  property-sort-order: 1
+  space-after-bang: 1
+  space-after-colon: 1
+  #space-after-comma: 1 not implemented yet for sass-lint-auto-fix
+  space-before-bang: 1
+  space-before-colon: 1
+  space-between-parens: 1
+  #trailing-semicolon: 1 not implemented yet for sass-lint-auto-fix
+  #space-after-comma: 1 not implemented yet for sass-lint-auto-fix
+  url-quotes: 1
+  #quotes: 1 not implemented yet for sass-lint-auto-fix
+  zero-unit: 1
