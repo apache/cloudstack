@@ -1119,6 +1119,15 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${cs.failsafe-plugin.version}</version>
                 </plugin>
+                <plugin>
+                    <groupId>com.ppedregal.typescript</groupId>
+                    <artifactId>typescript-maven-plugin</artifactId>
+                    <version>0.0.1-SNAPSHOT</version>
+                    <configuration>
+                        <sourceDirectory>ui/typescript</sourceDirectory>
+                        <targetDirectory>ui/typedscripts</targetDirectory>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
