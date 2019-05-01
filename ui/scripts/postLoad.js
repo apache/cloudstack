@@ -25,7 +25,8 @@
                 if (cloudStackOptions.hiddenFields[prefix]) {
                     var oldPreFilter = data.listView.preFilter;
                     data.listView.preFilter = function() {
-                        var hiddenFields = cloudStackOptions.hiddenFields[prefix];
+                        // Hide config specified fields only for users.
+                        var hiddenFields = isUser() ? cloudStackOptions.hiddenFields[prefix] : [];
                         if (oldPreFilter) {
                             return hiddenFields.concat(oldPreFilter());
                         }

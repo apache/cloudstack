@@ -17,10 +17,11 @@
 
 // Define custom options configurable by admins for UI
 cloudStackOptions = {
-    aboutText: "label.app.name",
-    aboutTitle: "label.about.app",
-    docTitle: "label.app.name",
-    helpURL: "http://docs.cloudstack.apache.org/",
+    aboutText: "label.app.name", // This is the text shown in the 'About' box
+    aboutTitle: "label.about.app", // This is the Application 'Title' shown in the 'About' box
+    docTitle: "label.app.name", // This is the Application 'Title' shown on browser tab.
+
+    helpURL: "http://docs.cloudstack.apache.org/", // This is the URL that opens when users click Help
     keyboardOptions: {
         "us": "label.standard.us.keyboard",
         "uk": "label.uk.keyboard",
