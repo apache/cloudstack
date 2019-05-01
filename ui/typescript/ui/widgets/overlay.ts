@@ -14,11 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($) {
+(function ($) {
     /**
      * Create a dark overlay, for modal dialogs, etc.
      */
-    $.fn.overlay = function(args) {
+    $.fn.overlay = function (args) {
         var $topElem = this;
         var $overlay = $('<div class="overlay">').hide().appendTo('html body').css({
             position: 'absolute',
@@ -30,21 +30,18 @@
             left: 0,
             zIndex: $topElem.css('z-index') - 1
         }).show();
-
         // Events
-        $overlay.click(function(event) {
-            if (!args || !args.closeAction) return false;
-
+        $overlay.click(function (event) {
+            if (!args || !args.closeAction)
+                return false;
             args.closeAction();
-            $overlay.fadeOut(function() {
+            $overlay.fadeOut(function () {
                 $overlay.remove();
             });
         });
-
         return this;
     };
-
-    $(window).bind('resize scroll', function() {
+    $(window).bind('resize scroll', function () {
         $('.overlay').css('top', $(window).scrollTop());
     });
 })(window.jQuery);

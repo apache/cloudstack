@@ -14,9 +14,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-(function($, cloudStack) {
-    $(window).bind('cloudStack.ready', function() {
+(function ($, cloudStack) {
+    $(window).bind('cloudStack.ready', function () {
         var showSamlDomainSwitcher = false;
         if (g_idpList) {
             showSamlDomainSwitcher = true;
@@ -24,14 +23,12 @@
         if (!showSamlDomainSwitcher) {
             return;
         }
-
         var $label = $('<label>').html('Domain:');
         var $header = $('#header .controls');
         var $domainSwitcher = $('<div>').addClass('domain-switcher');
         var $domainSelect = $('<select>');
         $domainSwitcher.append($label, $domainSelect);
-
-        var switchAccount = function(userId, domainId) {
+        var switchAccount = function (userId, domainId) {
             var toReload = true;
             $.ajax({
                 url: createURL('listAndSwitchSamlAccount'),
@@ -41,10 +38,10 @@
                     userid: userId,
                     domainid: domainId
                 },
-                success: function(data, textStatus) {
+                success: function (data, textStatus) {
                     document.location.reload(true);
                 },
-                error: function(data) {
+                error: function (data) {
                     cloudStack.dialog.notice({
                         message: parseXMLHttpResponse(data)
                     });
@@ -52,7 +49,7 @@
                         toReload = false;
                     }
                 },
-                complete: function() {
+                complete: function () {
                     if (toReload) {
                         document.location.reload(true);
                     }
@@ -60,21 +57,20 @@
                 }
             });
         };
-
-        $domainSelect.change(function() {
+        $domainSelect.change(function () {
             var selectedOption = $domainSelect.val();
             var userId = selectedOption.split('/')[0];
             var domainId = selectedOption.split('/')[1];
             switchAccount(userId, domainId);
         });
-
         $.ajax({
             url: createURL('listAndSwitchSamlAccount'),
-            success: function(json) {
+            success: function (json) {
                 var accounts = json.listandswitchsamlaccountresponse.samluseraccount;
                 if (accounts.length < 2) {
                     return;
-                };
+                }
+                ;
                 $domainSelect.empty();
                 for (var i = 0; i < accounts.length; i++) {
                     var option = $('<option>');
@@ -82,16 +78,16 @@
                     option.data("domainId", accounts[i].domainId);
                     option.val(accounts[i].userId + '/' + accounts[i].domainId);
                     option.html(accounts[i].accountName + accounts[i].domainPath);
-					if (accounts[i].domainName == 'ROOT') {
-						option.append('ROOT');
-					}
+                    if (accounts[i].domainName == 'ROOT') {
+                        option.append('ROOT');
+                    }
                     option.appendTo($domainSelect);
                 }
                 var currentAccountDomain = g_userid + '/' + g_domainid;
                 $domainSelect.find('option[value="' + currentAccountDomain + '"]').attr("selected", "selected");
                 $domainSwitcher.insertAfter($header.find('.region-switcher'));
             },
-            error: function(data) {
+            error: function (data) {
                 // if call fails, the logged in user in not a SAML authenticated user
             }
         });

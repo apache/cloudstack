@@ -14,10 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($, cloudStack) {
+(function ($, cloudStack) {
     cloudStack.ui.event = {
         // Attach element to specific event type
-        elem: function(widget, elem, $elem, extraData) {
+        elem: function (widget, elem, $elem, extraData) {
             // Setup DOM metadata
             var data = {
                 cloudStack: {}
@@ -25,37 +25,31 @@
             data.cloudStack[widget] = {
                 elem: elem
             };
-            if (extraData) $.extend(data.cloudStack[widget], extraData);
-
+            if (extraData)
+                $.extend(data.cloudStack[widget], extraData);
             return $elem
                 .addClass('cloudStack-elem')
                 .addClass(widget)
                 .data(data);
         },
-
         // Create widget-based event
-        bind: function(widget, events) {
-            return function(event) {
+        bind: function (widget, events) {
+            return function (event) {
                 var $target = $(event.target);
                 var $widget, $elem;
                 var data, elem;
-
                 $elem = $target.closest('.cloudStack-elem.' + widget);
                 if (!$elem.length)
                     return true;
-
                 $widget = $('.cloudStack-widget.' + widget);
                 data = $elem.data('cloudStack')[widget];
                 elem = data.elem;
-
                 events[elem]($elem, $widget, data);
-
                 return false;
             };
         },
-
         // Trigger CloudStack UI event (cloudStack.*)
-        call: function(eventName, data) {
+        call: function (eventName, data) {
             $(window).trigger('cloudStack.' + eventName, data);
         }
     };

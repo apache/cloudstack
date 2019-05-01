@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($, cloudStack) {
+(function ($, cloudStack) {
     var apiList = [];
     var rolePermissions = [];
     cloudStack.sections.roles = {
@@ -34,7 +34,7 @@
                 }
             },
             disableInfiniteScrolling: true,
-            dataProvider: function(args) {
+            dataProvider: function (args) {
                 var data = {};
                 if (args.filterBy.search && args.filterBy.search.value) {
                     data['name'] = args.filterBy.search.value;
@@ -44,7 +44,7 @@
                     data: data,
                     dataType: "json",
                     async: true,
-                    success: function(json) {
+                    success: function (json) {
                         var jsonObj;
                         jsonObj = json.listrolesresponse.role;
                         args.response.success({
@@ -56,12 +56,12 @@
             actions: {
                 add: {
                     label: 'label.add.role',
-                    preFilter: function(args) {
+                    preFilter: function (args) {
                         if (isAdmin())
                             return true;
                     },
                     messages: {
-                        notification: function() {
+                        notification: function () {
                             return 'label.add.role';
                         }
                     },
@@ -82,7 +82,7 @@
                                 validation: {
                                     required: true
                                 },
-                                select: function(args) {
+                                select: function (args) {
                                     var items = [];
                                     items.push({
                                         id: "Admin",
@@ -103,23 +103,23 @@
                             }
                         }
                     },
-                    action: function(args) {
+                    action: function (args) {
                         $.ajax({
                             url: createURL('createRole'),
                             data: args.data,
-                            success: function(json) {
+                            success: function (json) {
                                 var item = json.createroleresponse.role;
                                 args.response.success({
                                     data: item
                                 });
                             },
-                            error: function(json) {
+                            error: function (json) {
                                 args.response.error(parseXMLHttpResponse(json));
                             }
                         });
                     },
                     notification: {
-                        poll: function(args) {
+                        poll: function (args) {
                             args.complete();
                         }
                     }
@@ -148,12 +148,12 @@
                                 isEditable: true
                             }
                         },
-                        dataProvider: function(args) {
+                        dataProvider: function (args) {
                             $.ajax({
                                 url: createURL("listRoles&id=" + args.context.roles[0].id),
                                 dataType: "json",
                                 async: true,
-                                success: function(json) {
+                                success: function (json) {
                                     var response = json.listrolesresponse.role[0];
                                     args.response.success({
                                         data: response
@@ -164,15 +164,14 @@
                     },
                     rules: {
                         title: 'label.rules',
-                        custom: function(args) {
+                        custom: function (args) {
                             var context = args.context;
-
                             return $('<div>').multiEdit({
                                 context: context,
                                 noSelect: true,
                                 noHeaderActionsColumn: true,
                                 selectPermission: {
-                                    action: function(args){
+                                    action: function (args) {
                                         $.ajax({
                                             url: createURL("updateRolePermission"),
                                             data: {
@@ -182,10 +181,10 @@
                                             },
                                             dataType: "json",
                                             async: true,
-                                            success: function(json) {
+                                            success: function (json) {
                                                 $(window).trigger('cloudStack.fullRefresh');
                                             },
-                                            error: function(json) {
+                                            error: function (json) {
                                                 cloudStack.dialog.notice({
                                                     message: 'message.role.update.fail'
                                                 });
@@ -195,12 +194,11 @@
                                 },
                                 reorder: {
                                     moveDrag: {
-                                        action: function(args) {
+                                        action: function (args) {
                                             var rule = args.context.multiRule[0];
                                             var prevItemId = args.prevItem ? args.prevItem.id : 0;
-
                                             var ruleOrder = [];
-                                            $.each(rolePermissions, function(idx, item) {
+                                            $.each(rolePermissions, function (idx, item) {
                                                 var itemId = item.id;
                                                 if (idx == 0 && prevItemId == 0) {
                                                     ruleOrder.push(rule.id);
@@ -213,19 +211,18 @@
                                                     ruleOrder.push(rule.id);
                                                 }
                                             });
-
                                             $.ajax({
-                                            	type: 'POST',
+                                                type: 'POST',
                                                 url: createURL('updateRolePermission'),
                                                 data: {
                                                     roleid: rule.roleid,
                                                     ruleorder: ruleOrder.join()
                                                 },
-                                                success: function(json) {
+                                                success: function (json) {
                                                     args.response.success();
                                                     $(window).trigger('cloudStack.fullRefresh');
                                                 },
-                                                error: function(json) {
+                                                error: function (json) {
                                                     cloudStack.dialog.notice({
                                                         message: 'message.role.ordering.fail'
                                                     });
@@ -242,15 +239,15 @@
                                     },
                                     'permission': {
                                         label: 'label.permission',
-                                        select: function(args) {
+                                        select: function (args) {
                                             args.response.success({
                                                 data: [{
-                                                    name: 'allow',
-                                                    description: 'Allow'
-                                                }, {
-                                                    name: 'deny',
-                                                    description: 'Deny'
-                                                }]
+                                                        name: 'allow',
+                                                        description: 'Allow'
+                                                    }, {
+                                                        name: 'deny',
+                                                        description: 'Deny'
+                                                    }]
                                             });
                                         }
                                     },
@@ -266,25 +263,24 @@
                                 },
                                 add: {
                                     label: 'label.add',
-                                    action: function(args) {
+                                    action: function (args) {
                                         var data = {
                                             rule: args.data.rule,
                                             permission: args.data.permission,
                                             description: args.data.description,
                                             roleid: args.context.roles[0].id
                                         };
-
                                         $.ajax({
                                             url: createURL('createRolePermission'),
                                             data: data,
                                             dataType: 'json',
-                                            success: function(json) {
+                                            success: function (json) {
                                                 var response = json.createrolepermissionresponse.rolepermission;
                                                 args.response.success({
                                                     data: response
                                                 });
                                             },
-                                            error: function(json) {
+                                            error: function (json) {
                                                 args.response.error(parseXMLHttpResponse(json));
                                             }
                                         });
@@ -293,31 +289,31 @@
                                 actions: {
                                     destroy: {
                                         label: 'label.remove.rule',
-                                        action: function(args) {
+                                        action: function (args) {
                                             $.ajax({
                                                 url: createURL('deleteRolePermission'),
                                                 data: {
                                                     id: args.context.multiRule[0].id
                                                 },
                                                 dataType: 'json',
-                                                success: function(data) {
+                                                success: function (data) {
                                                     args.response.success();
                                                 },
-                                                error: function(json) {
+                                                error: function (json) {
                                                     args.response.error(parseXMLHttpResponse(json));
                                                 }
                                             });
                                         }
                                     }
                                 },
-                                dataProvider: function(args) {
+                                dataProvider: function (args) {
                                     $.ajax({
                                         url: createURL('listRolePermissions'),
                                         data: {
                                             roleid: args.context.roles[0].id
                                         },
                                         dataType: 'json',
-                                        success: function(json) {
+                                        success: function (json) {
                                             var rules = json.listrolepermissionsresponse.rolepermission;
                                             if (rules) {
                                                 rolePermissions = rules;
@@ -327,29 +323,30 @@
                                             });
                                         }
                                     });
-                                    var setupAutocompletion = function() {
+                                    var setupAutocompletion = function () {
                                         var $target = $($.find('input[name="rule"]'));
                                         if ($target.hasClass('ui-autocomplete')) {
                                             $target.autocomplete('destroy');
                                         }
                                         $($.find('input[name="rule"]')).autocomplete({
                                             source: apiList,
-                                            autoFocus:true
+                                            autoFocus: true
                                         });
                                     };
                                     if (apiList.length == 0) {
                                         $.ajax({
                                             url: createURL("listApis"),
                                             dataType: "json",
-                                            success: function(json) {
+                                            success: function (json) {
                                                 var response = json.listapisresponse.api;
-                                                $.each(response, function(idx, api) {
+                                                $.each(response, function (idx, api) {
                                                     apiList.push(api.name);
                                                 });
                                                 setupAutocompletion();
                                             }
                                         });
-                                    } else {
+                                    }
+                                    else {
                                         setupAutocompletion();
                                     }
                                 }
@@ -360,20 +357,19 @@
                 actions: {
                     edit: {
                         label: 'label.edit.role',
-                        action: function(args) {
+                        action: function (args) {
                             var data = {
                                 id: args.context.roles[0].id,
                                 name: args.data.name,
                                 description: args.data.description
                             };
-
                             $.ajax({
                                 url: createURL('updateRole'),
                                 data: data,
-                                success: function(json) {
+                                success: function (json) {
                                     args.response.success();
                                 },
-                                error: function(json) {
+                                error: function (json) {
                                     args.response.error(parseXMLHttpResponse(json));
                                 }
                             });
@@ -382,18 +378,18 @@
                     remove: {
                         label: 'label.delete.role',
                         messages: {
-                            confirm: function(args) {
+                            confirm: function (args) {
                                 return 'label.delete.role';
                             },
-                            notification: function(args) {
+                            notification: function (args) {
                                 return 'label.delete.role';
                             }
                         },
-                        action: function(args) {
+                        action: function (args) {
                             $.ajax({
                                 url: createURL("deleteRole&id=" + args.context.roles[0].id),
                                 dataType: "json",
-                                success: function(json) {
+                                success: function (json) {
                                     var response = json.deleteroleresponse;
                                     args.response.success({
                                         data: response
@@ -402,7 +398,7 @@
                             });
                         },
                         notification: {
-                            poll: function(args) {
+                            poll: function (args) {
                                 args.complete();
                             }
                         }
@@ -410,5 +406,5 @@
                 }
             }
         }
-    }
+    };
 })(jQuery, cloudStack);

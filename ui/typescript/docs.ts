@@ -15,146 +15,96 @@
 // specific language governing permissions and limitations
 // under the License.
 cloudStack.docs = {
-
     //Dedicate Resource
-
     helpDedicateResource: {
-
         desc: 'Check this box to dedicate the resources to specific domain/account',
         externalLink: ''
-
     },
-
     helpAccountForDedication: {
-
         desc: 'Please enter an account name which belongs to the above selected domain in order to dedicate this resource to this account',
         externalLink: ''
-
     },
-
-
     //Delete/archive events
     helpEventsDeleteType: {
-
         desc: 'Delete all the events by specifying its TYPE (e.g., USER.LOGIN)',
         externalLink: ''
-
     },
-
     helpEventsDeleteDate: {
-
         desc: 'Delete all the events which have been created in date range (specify start and end date)',
         externalLink: ''
     },
-
     helpEventsArchiveType: {
-
         desc: 'Archive all the events by specifying its TYPE (i.e., USER.LOGIN)',
         externalLink: ''
     },
-
     helpEventsArchiveDate: {
-
         desc: 'Archive all the events which have been created in date range (specify start and end date)',
         externalLink: ''
     },
-
     //Delete/archive Alerts
     helpAlertsDeleteType: {
-
         desc: 'Delete all the alerts by specifying its TYPE (integer number)',
         externalLink: ''
-
     },
-
     helpAlertsDeleteDate: {
-
         desc: 'Delete all the alerts which have been created in date range (specify start and end date)',
         externalLink: ''
     },
-
     helpAlertsArchiveType: {
-
         desc: 'Archive all the alerts by specifying its TYPE (integer number)',
         externalLink: ''
     },
-
     helpAlertsArchiveDate: {
-
         desc: 'Archive all the alerts which have been created in date range (specify start and end date)',
         externalLink: ''
     },
-
     helpManaged: {
-
         desc: 'True if CloudStack manages the storage; else, false (check with storage provider if unknown)',
         externalLink: ''
     },
-
     helpCapacityBytes: {
-
         desc: 'Number of bytes for the primary storage to have',
         externalLink: ''
     },
-
     helpCapacityIops: {
-
         desc: 'Number of IOPS for the primary storage to have',
         externalLink: ''
     },
-
     helpUrl: {
-
         desc: 'Arbitrary data to be sent to the storage provider for configuration purposes',
         externalLink: ''
     },
-
     //Ldap
     helpLdapQueryFilter: {
-
         desc: 'Query filter is used to find a mapped user in the external LDAP server.Cloudstack provides some wildchars to represent the unique attributes in its database . Example - If Cloudstack account-name is same as the LDAP uid, then following will be a valid filter: Queryfilter :  (&(uid=%u) ,  Queryfilter: .incase of Active Directory , Email _ID :(&(mail=%e)) , displayName :(&(displayName=%u)',
-
         externalLink: ''
     },
-
-
     //IP Reservation tooltips
     helpIPReservationCidr: {
         desc: 'Edit CIDR when you want to configure IP Reservation in isolated guest Network',
         externalLink: ''
-
     },
-
     helpIPReservationNetworkCidr: {
         desc: 'The CIDR of the entire network when IP reservation is configured',
         externalLink: ' '
-
     },
-
     helpReservedIPRange: {
         desc: 'The IP Range which is not used by CloudStack to allocate to Guest VMs.Can be used for Non Cloudstack purposes.',
         externalLink: ''
     },
-
     // Add account
     helpAccountUsername: {
         desc: 'Any desired login ID. Must be unique in the current domain. The same username can exist in other domains, including sub-domains.',
         externalLink: ''
     },
-
     helpOverridePublicNetwork: {
         desc: 'Choose to override zone wide traffic label for guest traffic for this cluster',
         externalLink: ''
-
     },
-
     helpOverrideGuestNetwork: {
-
         desc: 'Choose to override zone wide traffic label for guest traffic for this cluster',
         externalLink: ''
-
     },
-
     helpAccountPassword: {
         desc: 'Any desired password',
         externalLink: ''

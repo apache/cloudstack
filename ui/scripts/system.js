@@ -4165,7 +4165,7 @@
                                         },
                                         // inline: {
                                         //   label: 'Mode',
-                                        //   select: function(args) {
+                                        //   select: function (args) {
                                         //     var items = [];
                                         //     items.push({id: "false", description: "side by side"});
                                         //     items.push({id: "true", description: "inline"});
@@ -4767,7 +4767,7 @@
                                         inline: {
                                         label: 'Mode',
                                         docID: 'helpF5Mode',
-                                        select: function(args) {
+                                        select: function (args) {
                                         var items = [];
                                         items.push({id: "false", description: "side by side"});
                                         items.push({id: "true", description: "inline"});
@@ -5030,7 +5030,7 @@
                                         // inline: {
                                         //   label: 'Mode',
                                         //   docID: 'helpSRXMode',
-                                        //   select: function(args) {
+                                        //   select: function (args) {
                                         //     var items = [];
                                         //     items.push({id: "false", description: "side by side"});
                                         //     items.push({id: "true", description: "inline"});
@@ -5304,7 +5304,7 @@
                                         // inline: {
                                         //   label: 'Mode',
                                         //   docID: 'helpPaloAltoMode',
-                                        //   select: function(args) {
+                                        //   select: function (args) {
                                         //     var items = [];
                                         //     items.push({id: "false", description: "side by side"});
                                         //     items.push({id: "true", description: "inline"});
@@ -11818,7 +11818,7 @@
                                     },
                                     /* inline: {
                                     label: 'Mode',
-                                    select: function(args) {
+                                    select: function (args) {
                                     var items = [];
                                     items.push({id: "false", description: "side by side"});
                                     items.push({id: "true", description: "inline"});
@@ -12188,7 +12188,7 @@
                                     /*
                                     inline: {
                                     label: 'Mode',
-                                    select: function(args) {
+                                    select: function (args) {
                                     var items = [];
                                     items.push({id: "false", description: "side by side"});
                                     items.push({id: "true", description: "inline"});
@@ -12418,7 +12418,7 @@
                                     },
                                     // inline: {
                                     //   label: 'Mode',
-                                    //   select: function(args) {
+                                    //   select: function (args) {
                                     //     var items = [];
                                     //     items.push({id: "false", description: "side by side"});
                                     //     items.push({id: "true", description: "inline"});
@@ -12656,7 +12656,7 @@
                                     },
                                     // inline: {
                                     //   label: 'Mode',
-                                    //   select: function(args) {
+                                    //   select: function (args) {
                                     //     var items = [];
                                     //     items.push({id: "false", description: "side by side"});
                                     //     items.push({id: "true", description: "inline"});
@@ -15525,25 +15525,25 @@
                                             /*   'remove': {
                                             label: 'label.action.delete.nexusVswitch' ,
                                             messages: {
-                                            confirm: function(args) {
+                                            confirm: function (args) {
                                             return 'message.action.delete.nexusVswitch';
                                             },
-                                            notification: function(args) {
+                                            notification: function (args) {
                                             return 'label.action.delete.nexusVswitch';
                                             }
                                             },
-                                            action: function(args) {
+                                            action: function (args) {
                                             $.ajax({
                                             url: createURL("deleteCiscoNexusVSM&id=" + args.context.vSwitches[0].vsmdeviceid),
                                             dataType: "json",
                                             async: true,
-                                            success: function(json) {
+                                            success: function (json) {
                                             args.response.success({data:{}});
                                             }
                                             });
                                             },
                                             notification: {
-                                            poll: function(args) { args.complete(); }
+                                            poll: function (args) { args.complete(); }
                                             }
                                             }*/
                                         },
@@ -20229,7 +20229,7 @@
                                 }
                             },
                             /*
-                            dataProvider: function(args) {  //being replaced with dataProvider in line 6898
+                            dataProvider: function (args) {  //being replaced with dataProvider in line 6898
                             var array1 = [];
                             if(args.filterBy != null) {
                             if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
@@ -20242,12 +20242,11 @@
                             }
                             }
                             array1.push("&zoneid=" + args.context.zones[0].id);
-
                             $.ajax({
                             url: createURL("listImageStores&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                             dataType: "json",
                             async: true,
-                            success: function(json) {
+                            success: function (json) {
                             var items = json.listimagestoreresponse.imagestore;
                             args.response.success({
                             actionFilter: secondarystorageActionfilter,
@@ -20436,7 +20435,7 @@
                                     /*  settings: {
                                     title: 'label.menu.global.settings',
                                     custom: cloudStack.uiCustom.granularSettings({
-                                    dataProvider: function(args) {
+                                    dataProvider: function (args) {
                                     args.response.success({
                                     data: [
                                     { name: 'config.param.1', value: 1 },
@@ -20445,7 +20444,7 @@
                                     });
                                     },
                                     actions: {
-                                    edit: function(args) {
+                                    edit: function (args) {
                                     // call updateStorageLevelParameters
                                     args.response.success();
                                     }
@@ -21519,7 +21518,7 @@
         allowedActions.push("remove");
         /*
         var selectedZoneObj;
-        $(zoneObjs).each(function(){
+        $(zoneObjs).each(function (){
         if(this.id == podObj.zoneid) {
         selectedZoneObj = this;
         return false;  //break the $.each() loop

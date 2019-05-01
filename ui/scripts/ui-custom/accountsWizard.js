@@ -14,25 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-(function($, cloudStack) {
-    cloudStack.uiCustom.accountsWizard = function(args, isLdap) {
-        return function(listViewArgs) {
+(function ($, cloudStack) {
+    cloudStack.uiCustom.accountsWizard = function (args, isLdap) {
+        return function (listViewArgs) {
             var context = listViewArgs.context;
             var ldapStatus = isLdap;
-            var accountsWizard = function(data) {
+            var accountsWizard = function (data) {
                 var $wizard = $('#template').find('div.accounts-wizard').clone();
                 var $form = $wizard.find('form');
-
-                var close = function() {
+                var close = function () {
                     $wizard.dialog('destroy');
                     $wizard.remove();
-                    $('div.overlay').fadeOut(function() {
+                    $('div.overlay').fadeOut(function () {
                         $('div.overlay').remove();
                     });
                 };
-
-                var completeAction = function() {
+                var completeAction = function () {
                     var data = cloudStack.serializeForm($form);
                     var groupname = $.trim(data.ldapGroupName);
                     if (groupname) {
@@ -42,7 +39,7 @@
                             isLdap: isLdap,
                             groupname: groupname,
                             response: {
-                                error: function(message) {
+                                error: function (message) {
                                     if (message) {
                                         cloudStack.dialog.notice({
                                             message: message
@@ -51,7 +48,8 @@
                                 }
                             }
                         });
-                    } else {
+                    }
+                    else {
                         var username = data.username;
                         var bulkAdd = (username instanceof Array);
                         if (bulkAdd) {
@@ -62,7 +60,7 @@
                                     isLdap: isLdap,
                                     username: username[i],
                                     response: {
-                                        error: function(message) {
+                                        error: function (message) {
                                             if (message) {
                                                 cloudStack.dialog.notice({
                                                     message: message
@@ -72,14 +70,15 @@
                                     }
                                 });
                             }
-                        } else {
+                        }
+                        else {
                             args.action({
                                 context: context,
                                 data: data,
                                 isLdap: isLdap,
                                 username: username,
                                 response: {
-                                    error: function(message) {
+                                    error: function (message) {
                                         if (message) {
                                             cloudStack.dialog.notice({
                                                 message: message
@@ -91,8 +90,7 @@
                         }
                     }
                 };
-
-                $wizard.click(function(event) {
+                $wizard.click(function (event) {
                     var $target = $(event.target);
                     if ($target.closest('button.next').length) {
                         $form.validate();
@@ -103,23 +101,21 @@
                             return true;
                         }
                     }
-
                     if ($target.closest('button.cancel').length) {
                         close();
                         return false;
                     }
                 });
-
                 if (ldapStatus) {
                     var $table = $wizard.find('.ldap-account-choice tbody');
-                    $("#label_ldap_group_name").on("keypress", function(event) {
+                    $("#label_ldap_group_name").on("keypress", function (event) {
                         if ($table.find("#tr-groupname-message").length === 0) {
-                            $("<tr id='tr-groupname-message'>").appendTo($table).append("<td colspan=\"4\">"+_l('message.ldap.group.import')+"</td>");
+                            $("<tr id='tr-groupname-message'>").appendTo($table).append("<td colspan=\"4\">" + _l('message.ldap.group.import') + "</td>");
                         }
                         $table.find("tr").hide();
                         $table.find("#tr-groupname-message").show();
                     });
-                    $("#label_ldap_group_name").on("blur", function(event) {
+                    $("#label_ldap_group_name").on("blur", function (event) {
                         if (!$(this).val()) {
                             $table.find("tr").show();
                             $table.find("#tr-groupname-message").hide();
@@ -129,7 +125,7 @@
                         url: createURL("listLdapUsers&listtype=new"),
                         dataType: "json",
                         async: false,
-                        success: function(json) {
+                        success: function (json) {
                             //for testing only (begin)
                             /*
                             json = {
@@ -212,39 +208,27 @@
                                 };
                             */
                             //for testing only (end)
-
                             if (json.ldapuserresponse.count > 0) {
-                                $(json.ldapuserresponse.LdapUser).each(function() {
+                                $(json.ldapuserresponse.LdapUser).each(function () {
                                     var $result = $('<tr>');
-
-                                    $result.append(
-                                        $('<td>').addClass('select').append(
-                                            $('<input>').attr({
-                                                type: 'checkbox', name: 'username', value: _s(this.username)
-                                            })
-                                        ),
-                                        $('<td>').addClass('name').html(_s(this.firstname) + ' ' + _s(this.lastname))
-                                            .attr('title', _s(this.firstname) + ' ' + _s(this.lastname)),
-                                        $('<td>').addClass('username').html(_s(this.username))
-                                            .attr('title', this.username),
-                                        $('<td>').addClass('email').html(_s(this.email))
-                                            .attr('title', _s(this.email))
-                                    )
-
+                                    $result.append($('<td>').addClass('select').append($('<input>').attr({
+                                        type: 'checkbox', name: 'username', value: _s(this.username)
+                                    })), $('<td>').addClass('name').html(_s(this.firstname) + ' ' + _s(this.lastname))
+                                        .attr('title', _s(this.firstname) + ' ' + _s(this.lastname)), $('<td>').addClass('username').html(_s(this.username))
+                                        .attr('title', this.username), $('<td>').addClass('email').html(_s(this.email))
+                                        .attr('title', _s(this.email)));
                                     $table.append($result);
                                 });
-                            } else {
+                            }
+                            else {
                                 var $result = $('<tr>');
-
-                                $result.append(
-                                    $('<td>').attr('colspan', 4).html(_l('label.no.data'))
-                                );
-
+                                $result.append($('<td>').attr('colspan', 4).html(_l('label.no.data')));
                                 $table.append($result);
                             }
                         }
                     });
-                } else {
+                }
+                else {
                     var informationWithinLdap = cloudStack.dialog.createForm({
                         context: context,
                         noDialog: true,
@@ -253,7 +237,6 @@
                             fields: args.informationWithinLdap
                         }
                     });
-
                     var informationWithinLdapForm = informationWithinLdap.$formContainer.find('form .form-item');
                     informationWithinLdapForm.find('.value #label_username').addClass('required');
                     informationWithinLdapForm.find('.value #password').addClass('required');
@@ -266,16 +249,13 @@
                     $wizard.find('.ldap-account-choice').css('display', 'none');
                     $wizard.removeClass('multi-wizard');
                 }
-
                 if (!ldapStatus) {
                     delete args.informationNotInLdap.ldapGroupName;
                 }
-
                 if (g_idpList == null) {
                     delete args.informationNotInLdap.samlEnable;
                     delete args.informationNotInLdap.samlEntity;
                 }
-
                 var informationNotInLdap = cloudStack.dialog.createForm({
                     context: context,
                     noDialog: true,
@@ -284,7 +264,6 @@
                         fields: args.informationNotInLdap
                     }
                 });
-
                 var informationNotInLdapForm = informationNotInLdap.$formContainer.find('form .form-item');
                 informationNotInLdapForm.find('.value #label_domain').addClass('required');
                 informationNotInLdapForm.find('.value #label_type').addClass('required');
@@ -292,11 +271,10 @@
                     informationNotInLdapForm.css('background', 'none');
                 }
                 $wizard.find('.manual-account-details').append(informationNotInLdapForm);
-
                 if (g_idpList && g_appendIdpDomain && !ldapStatus) {
                     var samlChecked = false;
                     var idpUrl = $wizard.find('select[name=samlEntity]').children(':selected').val();
-                    var appendDomainToUsername = function() {
+                    var appendDomainToUsername = function () {
                         if (!g_appendIdpDomain) {
                             return;
                         }
@@ -308,30 +286,28 @@
                             var link = document.createElement('a');
                             link.setAttribute('href', idpUrl);
                             $wizard.find('input[name=username]').val(username + "@" + link.host.split('.').splice(-2).join('.'));
-                        } else {
+                        }
+                        else {
                             $wizard.find('input[name=username]').val(username);
                         }
                     };
-                    $wizard.find('select[name=samlEntity]').change(function() {
+                    $wizard.find('select[name=samlEntity]').change(function () {
                         idpUrl = $(this).children(':selected').val();
                         appendDomainToUsername();
                     });
-                    $wizard.find('input[name=samlEnable]').change(function() {
+                    $wizard.find('input[name=samlEnable]').change(function () {
                         samlChecked = $(this).context.checked;
                         appendDomainToUsername();
                     });
                 }
-
                 var $dialog = $wizard.dialog({
                     title: ldapStatus ? _l('label.add.LDAP.account') : _l('label.add.account'),
                     width: ldapStatus ? 800 : 330,
                     height: ldapStatus ? 500 : 500,
                     closeOnEscape: false
                 });
-                
                 return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
             };
-
             accountsWizard(args);
         };
     };

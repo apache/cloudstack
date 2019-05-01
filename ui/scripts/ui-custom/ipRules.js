@@ -14,29 +14,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($, cloudStack) {
-    cloudStack.ipRules = function(args) {
-        return function(detailArgs) {
+(function ($, cloudStack) {
+    cloudStack.ipRules = function (args) {
+        return function (detailArgs) {
             var context = detailArgs.context;
-
-            var portMultiEdit = function(args) {
+            var portMultiEdit = function (args) {
                 return $('<div>').multiEdit(args);
             };
-
-            var makeMultiEditPanel = function($item) {
+            var makeMultiEditPanel = function ($item) {
                 if ($item.closest('li').hasClass('disabled'))
                     return false;
-
                 var targetId = $item.attr('net-target');
                 var targetName = $item.parent().find('.name').find('span').html();
                 var target = args[targetId];
-
                 var $browser = $item.closest('.detail-view').data('view-args').$browser;
-
                 $browser.cloudBrowser('addPanel', {
                     title: targetName,
                     maximizeIfSelected: true,
-                    complete: function($newPanel) {
+                    complete: function ($newPanel) {
                         $newPanel.detailView({
                             $browser: $browser,
                             name: targetId,
@@ -44,7 +39,7 @@
                             tabs: {
                                 network: {
                                     title: targetName,
-                                    custom: function(args) {
+                                    custom: function (args) {
                                         return portMultiEdit($.extend(target, {
                                             context: context
                                         }));
@@ -54,38 +49,30 @@
                         });
                     }
                 });
-
                 return true;
             };
-
-            var staticNATChart = function(args, includingFirewall) {
+            var staticNATChart = function (args, includingFirewall) {
                 var $chart = $('#template').find('.network-chart.static-nat').clone();
                 var $vmName = $chart.find('li.static-nat-enabled .vmname');
                 var $browser = $('#browser .container');
                 var vmDataProvider = args.vmDataProvider;
                 var vmDetails = args.vmDetails;
-
                 args.staticNATDataProvider({
                     context: context,
                     response: {
-                        success: function(args) {
+                        success: function (args) {
                             var vmID = args.data.virtualmachineid;
                             var vmIP = args.data.vmipaddress;
                             var vmName = args.data.virtualmachinename;
-
-                            $vmName.append(
-                                $('<span>').html('VM: ' + _s(vmName)),
-                                $('<span>').html('<br/>VM IP: ' + vmIP)
-                            );
-
-                            $vmName.click(function() {
+                            $vmName.append($('<span>').html('VM: ' + _s(vmName)), $('<span>').html('<br/>VM IP: ' + vmIP));
+                            $vmName.click(function () {
                                 $browser.cloudBrowser('addPanel', {
                                     title: _l('label.static.nat.vm.details'),
-                                    complete: function($newPanel) {
+                                    complete: function ($newPanel) {
                                         vmDataProvider({
                                             context: context,
                                             response: {
-                                                success: function(args) {
+                                                success: function (args) {
                                                     var instance = args.data;
                                                     var detailViewArgs = $.extend(true, {}, vmDetails, {
                                                         $browser: $browser,
@@ -95,10 +82,8 @@
                                                         jsonObj: instance,
                                                         id: instance.id
                                                     });
-
                                                     // No actions available
                                                     detailViewArgs.actions = {};
-
                                                     $newPanel.detailView(detailViewArgs);
                                                 }
                                             }
@@ -109,54 +94,48 @@
                         }
                     }
                 });
-
                 if (includingFirewall == true) {
-                    $chart.find('li.firewall .view-details').click(function() {
+                    $chart.find('li.firewall .view-details').click(function () {
                         //makeMultiEditPanel($(this), { title: _l('label.nat.port.range')});
                         makeMultiEditPanel($(this));
                     });
-                } else {
+                }
+                else {
                     $chart.find('li.firewall').hide();
                 }
-
                 return $chart;
             };
-
-            var netChart = function(args) {
-
+            var netChart = function (args) {
                 var $chart = $('#template').find('.network-chart.normal').clone();
                 var preFilter = args.preFilter ? args.preFilter({
                     items: ['firewall', 'portForwarding', 'loadBalancing'],
                     context: context
                 }) : [];
-
                 // 1. choose between staticNAT chart and non-staticNAT chart  2. filter disabled tabs
                 if (preFilter.length) {
                     if ($.inArray('nonStaticNATChart', preFilter) != -1) { //choose static NAT chart
                         if ($.inArray('firewall', preFilter) == -1) {
                             return staticNATChart(args, true); //static NAT including Firewall
-                        } else {
+                        }
+                        else {
                             return staticNATChart(args, false); //static NAT excluding Firewall
                         }
-                    } else { //choose non-static NAT chart
-                        $(preFilter).each(function() {
+                    }
+                    else { //choose non-static NAT chart
+                        $(preFilter).each(function () {
                             var id = this;
-
-                            var $li = $chart.find('li').filter(function() {
+                            var $li = $chart.find('li').filter(function () {
                                 return $(this).hasClass(id);
                             }).addClass('disabled');
                         });
                     }
                 }
-
-                $chart.find('.view-details').click(function() {
+                $chart.find('.view-details').click(function () {
                     makeMultiEditPanel($(this));
                     return false;
                 });
-
                 return $chart;
             };
-
             return netChart(args);
         };
     };

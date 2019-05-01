@@ -14,73 +14,61 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-(function($, cloudStack) {
-    $(window).bind('cloudStack.ready', function() {
+(function ($, cloudStack) {
+    $(window).bind('cloudStack.ready', function () {
         var $header = $('#header .controls');
         var $projectSwitcher = $('<div>').addClass('project-switcher');
-        var $projectSelect = $('<select>').append(
-            $('<option>').attr('value', '-1').html(_l('Default view'))
-        );
+        var $projectSelect = $('<select>').append($('<option>').attr('value', '-1').html(_l('Default view')));
         var $label = $('<label>').html(_l('label.project'));
-
-        var populateProjectSelect = function() {
+        var populateProjectSelect = function () {
             // Get project list
             cloudStack.projects.dataProvider({
                 context: cloudStack.context,
                 response: {
-                    success: function(args) {
+                    success: function (args) {
                         var projects = args.data;
                         var arrayOfProjs = [];
-
-                        $(projects).map(function(index, project) {
-                            var proj = {id: _s(project.id), html: _s(project.displaytext ? project.displaytext : project.name)};
+                        $(projects).map(function (index, project) {
+                            var proj = { id: _s(project.id), html: _s(project.displaytext ? project.displaytext : project.name) };
                             arrayOfProjs.push(proj);
                         });
-
-                        arrayOfProjs.sort(function(a,b) {
+                        arrayOfProjs.sort(function (a, b) {
                             return a.html.localeCompare(b.html);
                         });
-
-                        $(arrayOfProjs).map(function(index, project) {
+                        $(arrayOfProjs).map(function (index, project) {
                             var $option = $('<option>').val(_s(project.id));
-
                             $option.html(_s(project.html));
                             $option.appendTo($projectSelect);
                         });
                     },
-                    error: function() {}
+                    error: function () { }
                 }
             });
-        }
-
+        };
         $projectSwitcher.append($label, $projectSelect);
         $projectSwitcher.insertBefore($header.find('.region-switcher'));
-
         // Change project event
-        $projectSelect.change(function() {
+        $projectSelect.change(function () {
             var projectID = $projectSelect.val();
-
             if (projectID != -1) {
                 cloudStack.context.projects = [{
-                    id: projectID
-                }];
-
+                        id: projectID
+                    }];
                 cloudStack.uiCustom.projects({
                     alreadySelected: true
                 });
-            } else {
+            }
+            else {
                 cloudStack.context.projects = null;
                 $('#cloudStack3-container').removeClass('project-view');
                 $('#navigation li.dashboard').click();
             }
         });
-
-        $projectSelect.mousedown(function() {
-           var projectID = $projectSelect.val();
-           $('.project-switcher option:not(:first)').remove();
-           populateProjectSelect();
-           $projectSelect.val(projectID);
+        $projectSelect.mousedown(function () {
+            var projectID = $projectSelect.val();
+            $('.project-switcher option:not(:first)').remove();
+            populateProjectSelect();
+            $projectSelect.val(projectID);
         });
     });
 }(jQuery, cloudStack));

@@ -14,12 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function(cloudStack) {
+(function (cloudStack) {
     cloudStack.sections.events = {
         title: 'label.menu.events',
         id: 'events',
         sectionSelect: {
-            preFilter: function(args) {
+            preFilter: function (args) {
                 if (isAdmin())
                     return ["events", "alerts"];
                 else
@@ -60,7 +60,6 @@
                             converter: cloudStack.converters.toLocalDate
                         }
                     },
-
                     actions: {
                         // Remove multiple events
                         removeMulti: {
@@ -69,40 +68,38 @@
                             addRow: false,
                             isMultiSelectAction: true,
                             messages: {
-                                confirm: function(args) {
+                                confirm: function (args) {
                                     return 'message.confirm.remove.selected.events';
                                 },
-                                notification: function(args) {
+                                notification: function (args) {
                                     return 'label.delete.events';
                                 }
                             },
-                            action: function(args) {
+                            action: function (args) {
                                 var events = args.context.events;
-
                                 $.ajax({
                                     url: createURL("deleteEvents"),
                                     data: {
-                                        ids: $(events).map(function(index, event) {
+                                        ids: $(events).map(function (index, event) {
                                             return event.id;
                                         }).toArray().join(',')
                                     },
-                                    success: function(data) {
+                                    success: function (data) {
                                         args.response.success();
                                         $(window).trigger('cloudStack.fullRefresh');
                                     },
-                                    error:function(data) {
+                                    error: function (data) {
                                         args.response.error(parseXMLHttpResponse(data));
                                     }
                                 });
                             }
                         },
-
                         remove: {
                             label: 'label.delete.events',
                             isHeader: true,
                             addRow: false,
                             messages: {
-                                notification: function(args) {
+                                notification: function (args) {
                                     return 'label.delete.events';
                                 }
                             },
@@ -126,44 +123,38 @@
                                     }
                                 }
                             },
-                            action: function(args) {
-
+                            action: function (args) {
                                 var data = {};
-
                                 if (args.data.type != "")
                                     $.extend(data, {
                                         type: args.data.type
                                     });
-
                                 if (args.data.startdate != "")
                                     $.extend(data, {
                                         startdate: args.data.startdate
                                     });
-
                                 if (args.data.enddate != "")
                                     $.extend(data, {
                                         enddate: args.data.enddate
                                     });
-
                                 $.ajax({
                                     url: createURL("deleteEvents"),
                                     data: data,
-                                    success: function(data) {
+                                    success: function (data) {
                                         args.response.success();
                                     },
-                                    error:function(data) {
+                                    error: function (data) {
                                         args.response.error(parseXMLHttpResponse(data));
                                     }
                                 });
                             }
                         },
-
                         archive: {
                             label: 'label.archive.events',
                             isHeader: true,
                             addRow: false,
                             messages: {
-                                notification: function(args) {
+                                notification: function (args) {
                                     return 'label.archive.events';
                                 }
                             },
@@ -187,38 +178,31 @@
                                     }
                                 }
                             },
-                            action: function(args) {
+                            action: function (args) {
                                 var data = {};
-
                                 if (args.data.type != "")
                                     $.extend(data, {
                                         type: args.data.type
                                     });
-
                                 if (args.data.startdate != "")
                                     $.extend(data, {
                                         startdate: args.data.startdate
                                     });
-
                                 if (args.data.enddate != "")
                                     $.extend(data, {
                                         enddate: args.data.enddate
                                     });
-
                                 $.ajax({
                                     url: createURL("archiveEvents"),
                                     data: data,
                                     dataType: 'json',
                                     async: false,
-
-                                    success: function(data) {
+                                    success: function (data) {
                                         args.response.success();
                                     }
                                 });
-
                             }
                         },
-
                         // Archive multiple events
                         archiveMulti: {
                             label: 'label.archive.events',
@@ -226,63 +210,57 @@
                             addRow: false,
                             isMultiSelectAction: true,
                             messages: {
-                                confirm: function(args) {
+                                confirm: function (args) {
                                     return 'message.confirm.archive.selected.events';
                                 },
-                                notification: function(args) {
+                                notification: function (args) {
                                     return 'label.archive.events';
                                 }
                             },
-                            action: function(args) {
+                            action: function (args) {
                                 var events = args.context.events;
-
                                 $.ajax({
                                     url: createURL("archiveEvents"),
                                     data: {
-                                        ids: $(events).map(function(index, event) {
+                                        ids: $(events).map(function (index, event) {
                                             return event.id;
                                         }).toArray().join(',')
                                     },
-                                    success: function(data) {
+                                    success: function (data) {
                                         args.response.success();
                                         $(window).trigger('cloudStack.fullRefresh');
                                     },
-                                    error:function(data) {
+                                    error: function (data) {
                                         args.response.error(parseXMLHttpResponse(data));
                                     }
                                 });
                             }
                         }
-
                     },
-
-
-
                     advSearchFields: {
                         level: {
                             label: 'label.level',
-                            select: function(args) {
+                            select: function (args) {
                                 args.response.success({
                                     data: [{
-                                        id: '',
-                                        description: ''
-                                    }, {
-                                        id: 'INFO',
-                                        description: 'label.info.upper'
-                                    }, {
-                                        id: 'WARN',
-                                        description: 'label.warn.upper'
-                                    }, {
-                                        id: 'ERROR',
-                                        description: 'label.error.upper'
-                                    }]
+                                            id: '',
+                                            description: ''
+                                        }, {
+                                            id: 'INFO',
+                                            description: 'label.info.upper'
+                                        }, {
+                                            id: 'WARN',
+                                            description: 'label.warn.upper'
+                                        }, {
+                                            id: 'ERROR',
+                                            description: 'label.error.upper'
+                                        }]
                                 });
                             }
                         },
-
                         domainid: {
                             label: 'label.domain',
-                            select: function(args) {
+                            select: function (args) {
                                 if (isAdmin() || isDomainAdmin()) {
                                     $.ajax({
                                         url: createURL('listDomains'),
@@ -290,11 +268,11 @@
                                             listAll: true,
                                             details: 'min'
                                         },
-                                        success: function(json) {
+                                        success: function (json) {
                                             var array1 = [{
-                                                id: '',
-                                                description: ''
-                                            }];
+                                                    id: '',
+                                                    description: ''
+                                                }];
                                             var domains = json.listdomainsresponse.domain;
                                             if (domains != null && domains.length > 0) {
                                                 for (var i = 0; i < domains.length; i++) {
@@ -304,7 +282,7 @@
                                                     });
                                                 }
                                             }
-                                            array1.sort(function(a, b) {
+                                            array1.sort(function (a, b) {
                                                 return a.description.localeCompare(b.description);
                                             });
                                             args.response.success({
@@ -312,23 +290,23 @@
                                             });
                                         }
                                     });
-                                } else {
+                                }
+                                else {
                                     args.response.success({
                                         data: null
                                     });
                                 }
                             },
-                            isHidden: function(args) {
+                            isHidden: function (args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
                                 else
                                     return true;
                             }
                         },
-
                         account: {
                             label: 'label.account',
-                            isHidden: function(args) {
+                            isHidden: function (args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
                                 else
@@ -337,7 +315,7 @@
                         },
                         username: {
                             label: 'label.username',
-                            isHidden: function(args) {
+                            isHidden: function (args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
                                 else
@@ -345,11 +323,9 @@
                             }
                         }
                     },
-
-                    dataProvider: function(args) {
+                    dataProvider: function (args) {
                         var data = {};
                         listViewDataProvider(args, data);
-
                         if ("events" in args.context) {
                             var startId = args.context.events[0].parentid;
                             if (!startId) {
@@ -357,22 +333,21 @@
                             }
                             data.startid = startId;
                         }
-
                         $.ajax({
                             url: createURL('listEvents'),
                             data: data,
-                            success: function(json) {
+                            success: function (json) {
                                 var items = json.listeventsresponse.event;
                                 args.response.success({
                                     data: items
                                 });
                             },
-                            error: function(XMLHttpResponse) {
+                            error: function (XMLHttpResponse) {
                                 cloudStack.dialog.notice({
                                     message: parseXMLHttpResponse(XMLHttpResponse)
                                 });
                                 args.response.error();
-                             }
+                            }
                         });
                     },
                     detailView: {
@@ -381,48 +356,43 @@
                             path: 'events',
                             label: 'label.event.timeline',
                         },
-
                         actions: {
                             // Remove single event
                             remove: {
                                 label: 'label.delete',
                                 messages: {
-                                    notification: function(args) {
+                                    notification: function (args) {
                                         return 'label.event.deleted';
                                     },
-                                    confirm: function() {
+                                    confirm: function () {
                                         return 'message.confirm.remove.event';
                                     }
                                 },
-                                action: function(args) {
-
+                                action: function (args) {
                                     $.ajax({
                                         url: createURL("deleteEvents&ids=" + args.context.events[0].id),
-                                        success: function(json) {
+                                        success: function (json) {
                                             args.response.success();
                                             $(window).trigger('cloudStack.fullRefresh');
                                         }
-
                                     });
                                 }
                             },
-
                             // Archive single event
                             archive: {
                                 label: 'label.archive',
                                 messages: {
-                                    notification: function(args) {
+                                    notification: function (args) {
                                         return 'label.event.archived';
                                     },
-                                    confirm: function() {
+                                    confirm: function () {
                                         return 'message.confirm.archive.event';
                                     }
                                 },
-                                action: function(args) {
-
+                                action: function (args) {
                                     $.ajax({
                                         url: createURL("archiveEvents&ids=" + args.context.events[0].id),
-                                        success: function(json) {
+                                        success: function (json) {
                                             args.response.success();
                                             $(window).trigger('cloudStack.fullRefresh');
                                         }
@@ -434,41 +404,41 @@
                             details: {
                                 title: 'label.details',
                                 fields: [{
-                                    description: {
-                                        label: 'label.description'
-                                    },
-                                    state: {
-                                        label: 'label.state'
-                                    },
-                                    level: {
-                                        label: 'label.level'
-                                    },
-                                    type: {
-                                        label: 'label.type'
-                                    },
-                                    domain: {
-                                        label: 'label.domain'
-                                    },
-                                    account: {
-                                        label: 'label.account'
-                                    },
-                                    username: {
-                                        label: 'label.initiated.by'
-                                    },
-                                    created: {
-                                        label: 'label.date',
-                                        converter: cloudStack.converters.toLocalDate
-                                    },
-                                    id: {
-                                        label: 'label.id'
-                                    }
-                                }],
-                                dataProvider: function(args) {
+                                        description: {
+                                            label: 'label.description'
+                                        },
+                                        state: {
+                                            label: 'label.state'
+                                        },
+                                        level: {
+                                            label: 'label.level'
+                                        },
+                                        type: {
+                                            label: 'label.type'
+                                        },
+                                        domain: {
+                                            label: 'label.domain'
+                                        },
+                                        account: {
+                                            label: 'label.account'
+                                        },
+                                        username: {
+                                            label: 'label.initiated.by'
+                                        },
+                                        created: {
+                                            label: 'label.date',
+                                            converter: cloudStack.converters.toLocalDate
+                                        },
+                                        id: {
+                                            label: 'label.id'
+                                        }
+                                    }],
+                                dataProvider: function (args) {
                                     $.ajax({
                                         url: createURL("listEvents&id=" + args.context.events[0].id),
                                         dataType: "json",
                                         async: true,
-                                        success: function(json) {
+                                        success: function (json) {
                                             var item = json.listeventsresponse.event[0];
                                             args.response.success({
                                                 data: item
@@ -500,7 +470,6 @@
                             converter: cloudStack.converters.toLocalDate
                         }
                     },
-
                     actions: {
                         // Remove multiple Alerts
                         removeMulti: {
@@ -509,40 +478,38 @@
                             addRow: false,
                             isMultiSelectAction: true,
                             messages: {
-                                confirm: function(args) {
+                                confirm: function (args) {
                                     return 'message.confirm.remove.selected.alerts';
                                 },
-                                notification: function(args) {
+                                notification: function (args) {
                                     return 'label.delete.alerts';
                                 }
                             },
-                            action: function(args) {
+                            action: function (args) {
                                 var events = args.context.alerts;
-
                                 $.ajax({
                                     url: createURL("deleteAlerts"),
                                     data: {
-                                        ids: $(events).map(function(index, event) {
+                                        ids: $(events).map(function (index, event) {
                                             return event.id;
                                         }).toArray().join(',')
                                     },
-                                    success: function(data) {
+                                    success: function (data) {
                                         args.response.success();
                                         $(window).trigger('cloudStack.fullRefresh');
                                     },
-                                    error:function(data) {
+                                    error: function (data) {
                                         args.response.error(parseXMLHttpResponse(data));
                                     }
                                 });
                             }
                         },
-
                         remove: {
                             label: 'label.delete.alerts',
                             isHeader: true,
                             addRow: false,
                             messages: {
-                                notification: function(args) {
+                                notification: function (args) {
                                     return 'label.delete.alerts';
                                 }
                             },
@@ -566,41 +533,34 @@
                                     }
                                 }
                             },
-                            action: function(args) {
-
+                            action: function (args) {
                                 var data = {};
-
                                 if (args.data.type != "")
                                     $.extend(data, {
                                         type: args.data.type
                                     });
-
                                 if (args.data.startdate != "")
                                     $.extend(data, {
                                         startdate: args.data.startdate
                                     });
-
                                 if (args.data.enddate != "")
                                     $.extend(data, {
                                         enddate: args.data.enddate
                                     });
-
                                 $.ajax({
                                     url: createURL("deleteAlerts"),
                                     data: data,
                                     dataType: 'json',
                                     async: false,
-
-                                    success: function(data) {
+                                    success: function (data) {
                                         args.response.success();
                                     },
-                                    error:function(data) {
+                                    error: function (data) {
                                         args.response.error(parseXMLHttpResponse(data));
                                     }
                                 });
                             }
                         },
-
                         // Archive multiple Alerts
                         archiveMulti: {
                             label: 'label.archive.alerts',
@@ -608,40 +568,38 @@
                             addRow: false,
                             isMultiSelectAction: true,
                             messages: {
-                                confirm: function(args) {
+                                confirm: function (args) {
                                     return 'message.confirm.archive.selected.alerts';
                                 },
-                                notification: function(args) {
+                                notification: function (args) {
                                     return 'label.archive.alerts';
                                 }
                             },
-                            action: function(args) {
+                            action: function (args) {
                                 var events = args.context.alerts;
-
                                 $.ajax({
                                     url: createURL("archiveAlerts"),
                                     data: {
-                                        ids: $(events).map(function(index, event) {
+                                        ids: $(events).map(function (index, event) {
                                             return event.id;
                                         }).toArray().join(',')
                                     },
-                                    success: function(data) {
+                                    success: function (data) {
                                         args.response.success();
                                         $(window).trigger('cloudStack.fullRefresh');
                                     },
-                                    error:function(data) {
+                                    error: function (data) {
                                         args.response.error(parseXMLHttpResponse(data));
                                     }
                                 });
                             }
                         },
-
                         archive: {
                             label: 'label.archive.alerts',
                             isHeader: true,
                             addRow: false,
                             messages: {
-                                notification: function(args) {
+                                notification: function (args) {
                                     return 'label.archive.alerts';
                                 }
                             },
@@ -663,50 +621,42 @@
                                         docID: 'helpAlertsArchiveDate',
                                         isDatepicker: true
                                     }
-
                                 }
                             },
-                            action: function(args) {
+                            action: function (args) {
                                 var data = {};
-
                                 if (args.data.type != "")
                                     $.extend(data, {
                                         type: args.data.type
                                     });
-
                                 if (args.data.startdate != "")
                                     $.extend(data, {
                                         startdate: args.data.startdate
                                     });
-
                                 if (args.data.enddate != "")
                                     $.extend(data, {
                                         enddate: args.data.enddate
                                     });
-
                                 $.ajax({
                                     url: createURL("archiveAlerts"),
                                     data: data,
                                     dataType: 'json',
                                     async: false,
-
-                                    success: function(data) {
+                                    success: function (data) {
                                         args.response.success();
                                     }
                                 });
                             }
                         }
                     },
-
-                    dataProvider: function(args) {
+                    dataProvider: function (args) {
                         var data = {};
                         listViewDataProvider(args, data);
-
                         $.ajax({
                             url: createURL('listAlerts'),
                             data: data,
                             async: true,
-                            success: function(json) {
+                            success: function (json) {
                                 var items = json.listalertsresponse.alert;
                                 args.response.success({
                                     data: items
@@ -717,76 +667,69 @@
                     detailView: {
                         name: 'label.alert.details',
                         actions: {
-
                             // Remove single Alert
                             remove: {
                                 label: 'label.delete',
                                 messages: {
-                                    notification: function(args) {
+                                    notification: function (args) {
                                         return 'label.alert.deleted';
                                     },
-                                    confirm: function() {
+                                    confirm: function () {
                                         return 'message.confirm.delete.alert';
                                     }
                                 },
-                                action: function(args) {
-
+                                action: function (args) {
                                     $.ajax({
                                         url: createURL("deleteAlerts&ids=" + args.context.alerts[0].id),
-                                        success: function(json) {
+                                        success: function (json) {
                                             args.response.success();
                                             $(window).trigger('cloudStack.fullRefresh');
                                         }
                                     });
-
                                 }
                             },
-
                             archive: {
                                 label: 'label.archive',
                                 messages: {
-                                    notification: function(args) {
+                                    notification: function (args) {
                                         return 'label.alert.archived';
                                     },
-                                    confirm: function() {
+                                    confirm: function () {
                                         return 'message.confirm.archive.alert';
                                     }
                                 },
-                                action: function(args) {
-
+                                action: function (args) {
                                     $.ajax({
                                         url: createURL("archiveAlerts&ids=" + args.context.alerts[0].id),
-                                        success: function(json) {
+                                        success: function (json) {
                                             args.response.success();
                                             $(window).trigger('cloudStack.fullRefresh');
                                         }
                                     });
                                 }
                             }
-
                         },
-
                         tabs: {
                             details: {
                                 title: 'label.details',
                                 fields: [{
-                                    id: {
-                                        label: 'label.id'
-                                    },
-                                    description: {
-                                        label: 'label.description'
-                                    },
-                                    sent: {
-                                        label: 'label.date',
-                                        converter: cloudStack.converters.toLocalDate
-                                    }
-                                }],
-                                dataProvider: function(args) {
+                                        id: {
+                                            label: 'label.id'
+                                        },
+                                        description: {
+                                            label: 'label.description'
+                                        },
+                                        sent: {
+                                            label: 'label.date',
+                                            converter: cloudStack.converters.toLocalDate
+                                        }
+                                    }],
+                                dataProvider: function (args) {
                                     $.ajax({
                                         url: createURL("listAlerts&id=" + args.context.alerts[0].id),
                                         dataType: "json",
                                         async: true,
-                                        success: function(json) {
+                                        success: function (json) {
                                             var item = json.listalertsresponse.alert[0];
                                             args.response.success({
                                                 data: item
