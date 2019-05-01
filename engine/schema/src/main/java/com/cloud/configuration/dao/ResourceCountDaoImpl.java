@@ -266,7 +266,7 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
     }
 
     private long executeSqlCountComputingResourcesForAccount(long accountId, String sqlCountComputingResourcesAllocatedToAccount) {
-        TransactionLegacy tx = TransactionLegacy.currentTxn()
+        TransactionLegacy tx = TransactionLegacy.currentTxn();
         try {
             PreparedStatement pstmt = tx.prepareAutoCloseStatement(sqlCountComputingResourcesAllocatedToAccount);
             pstmt.setLong(1, accountId);
