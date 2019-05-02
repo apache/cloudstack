@@ -968,6 +968,7 @@
                             <exclude>tools/ngui/static/js/lib/*</exclude>
                             <exclude>tools/transifex/.tx/config</exclude>
                             <exclude>ui/css/token-input-facebook.css</exclude>
+                            <exclude>ui/css/src/scss/token-input-facebook.scss</exclude>
                             <exclude>ui/l10n/*</exclude>
                             <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
                             <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
