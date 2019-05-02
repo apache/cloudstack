@@ -18,8 +18,7 @@
  
 
 # cloud-build-api-doc.sh -- builds api documentation.
-set -x
-#set -u
+
 ACS_RELEASE="$1"
 shift
 TARGETJARDIR="$1"
