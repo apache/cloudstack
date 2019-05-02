@@ -18,7 +18,7 @@
  
 
 # cloud-build-api-doc.sh -- builds api documentation.
-#set -x
+set -x
 #set -u
 ACS_RELEASE="$1"
 shift
@@ -61,8 +61,8 @@ set -e
  cp "$thisdir"/*.java .
  cp "$thisdir"/*.xsl .
  sed -e 's,%API_HEADER%,All APIs,g' "$thisdir/generatetoc_header.xsl" >generatetoc.xsl
- sed -i "s/%ACS_RELEASE%/${ACS_RELEASE}/g" generatetoc.xsl
- sed -i "s/%ACS_RELEASE%/${ACS_RELEASE}/g" generatecommands.xsl
+ sed -i .bak "s/%ACS_RELEASE%/${ACS_RELEASE}/g" generatetoc.xsl
+ sed -i .bak "s/%ACS_RELEASE%/${ACS_RELEASE}/g" generatecommands.xsl
 
  PLATFORM=`uname -s`
  if [[ "$PLATFORM" =~ .*WIN.* ]]
