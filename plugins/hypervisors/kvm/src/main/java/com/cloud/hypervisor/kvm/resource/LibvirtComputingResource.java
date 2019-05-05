@@ -72,6 +72,7 @@ import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
+import org.libvirt.Network;
 import org.libvirt.NodeInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -923,6 +924,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         } catch (final LibvirtException e) {
             throw new CloudRuntimeException(e.getMessage());
+        }
+
+        // destroy default network, see https://libvirt.org/sources/java/javadoc/org/libvirt/Network.html
+        try {
+            Network network = conn.networkLookupByName("default");
+            s_logger.debug("Found libvirt default network, destroying it and setting autostart to false");
+            if (network.isActive() == 1) {
+                network.destroy();
+            }
+            if (network.getAutostart()) {
+                network.setAutostart(false);
+            }
+        } catch (final LibvirtException e) {
+            s_logger.warn("Ignoring libvirt error.", e);
         }
 
         if (HypervisorType.KVM == _hypervisorType) {
