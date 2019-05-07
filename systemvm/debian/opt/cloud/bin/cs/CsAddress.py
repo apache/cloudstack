@@ -441,8 +441,8 @@ class CsIP:
                             " -i %s -m state --state RELATED,ESTABLISHED " % self.dev +
                             "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
             guestNetworkCidr = self.address['network']
-            self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
-                            (guestNetworkCidr, self.dev, self.dev)])
+            self.fw.append(["filter", "", "-A FORWARD -o %s -j ACL_INBOUND_%s" %
+                            (self.dev, self.dev)])
             self.fw.append(
                 ["filter", "front", "-A ACL_INBOUND_%s -d 224.0.0.18/32 -j ACCEPT" % self.dev])
             self.fw.append(
