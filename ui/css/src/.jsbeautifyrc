@@ -1,0 +1,14 @@
+{
+  // Documentation: https://github.com/einars/js-beautify/
+  // All Rules: https://github.com/HookyQR/VSCodeBeautify/blob/master/Settings.md
+  "css": {
+    "allowed_file_extensions": ["css", "scss", "sass", "less"],
+    "end_with_newline": true,
+    "indent_char": " ",
+    "indent_size": 2,
+    "newline_between_rules": true,
+    "selector_separator": " ",
+    "selector_separator_newline": true, // Separate selectors with newline or not (e.g. "a,\nbr" or "a, br"),
+    "space_around_combinator": true // space around > and ~
+  }
+}

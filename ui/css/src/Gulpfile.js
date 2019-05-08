@@ -24,12 +24,31 @@ const gulp = require('gulp');
 const sass = require('gulp-sass');
 const sassLint = require('gulp-sass-lint');
 const sourcemaps = require('gulp-sourcemaps');
+const autoprefixer = require('gulp-autoprefixer');
+const shell = require('gulp-shell');
 
 const pathRoot = process.cwd();
 const pathCss = pathRoot + '/../';
 const pathSass = pathRoot + '/scss/';
 const filesSass = pathRoot + '/scss/*.scss';
+const browserVersions = [
+  "last 1 versions",
+  "last 20 firefox versions",
+  "last 20 chrome versions",
+  "last 5 opera versions",
+  "ie >= 9",
+  "last 5 edge versions",
+  "safari >= 9",
+  "last 3 ios versions",
+  "last 5 android versions",
+  "last 5 ie_mob versions",
+  "last 5 and_chr versions"
+];
 
+
+gulp.task('lintSassFix',
+  shell.task('npm run fix')
+);
 
 const buildSass = (style) => {
   const buildSass = () => { // function and name is required here for gulp-task naming-process
@@ -41,6 +60,10 @@ const buildSass = (style) => {
           outputStyle: style
         })
         .on('error', sass.logError))
+      .pipe(autoprefixer({
+        browsers: browserVersions, //todo remove all current prefix rules from css
+        cascade: false // prefix indentation in one line?
+      }))
       .pipe(sourcemaps.write('./src/sourcemaps'))
       .pipe(gulp.dest(pathCss));
   }
@@ -57,6 +80,7 @@ const lintSass = () => {
 const watchSass = () => {
   gulp.watch(pathSass + '**/*.scss',
     gulp.series(
+      'lintSassFix',
       lintSass,
       buildSass('expanded')
     )
@@ -66,6 +90,7 @@ const watchSass = () => {
 
 gulp.task('default',
   gulp.series(
+    'lintSassFix',
     lintSass,
     buildSass('expanded'),
     gulp.parallel(
