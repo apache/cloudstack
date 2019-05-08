@@ -3198,12 +3198,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return DiskDef.DiskBus.IDE;
         } else if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {
             return DiskDef.DiskBus.SCSI;
-        } else if (platformEmulator.startsWith("Ubuntu") || platformEmulator.startsWith("Fedora 13") || platformEmulator.startsWith("Fedora 12") || platformEmulator.startsWith("Fedora 11") ||
-                platformEmulator.startsWith("Fedora 10") || platformEmulator.startsWith("Fedora 9") || platformEmulator.startsWith("CentOS 5.3") || platformEmulator.startsWith("CentOS 5.4") ||
-                platformEmulator.startsWith("CentOS 5.5") || platformEmulator.startsWith("CentOS") || platformEmulator.startsWith("Fedora") ||
-                platformEmulator.startsWith("Red Hat Enterprise Linux 5.3") || platformEmulator.startsWith("Red Hat Enterprise Linux 5.4") ||
-                platformEmulator.startsWith("Red Hat Enterprise Linux 5.5") || platformEmulator.startsWith("Red Hat Enterprise Linux 6") || platformEmulator.startsWith("Debian GNU/Linux") ||
-                platformEmulator.startsWith("FreeBSD 10") || platformEmulator.startsWith("Oracle") || platformEmulator.startsWith("Other PV")) {
+        } else if (platformEmulator.startsWith("Ubuntu") ||
+                platformEmulator.startsWith("Fedora") ||
+                platformEmulator.startsWith("CentOS") ||
+                platformEmulator.startsWith("Red Hat Enterprise Linux") ||
+                platformEmulator.startsWith("Debian GNU/Linux") ||
+                platformEmulator.startsWith("FreeBSD") ||
+                platformEmulator.startsWith("Oracle") ||
+                platformEmulator.startsWith("Windows") ||
+                platformEmulator.startsWith("Other PV")) {
             return DiskDef.DiskBus.VIRTIO;
         } else {
             return DiskDef.DiskBus.IDE;
