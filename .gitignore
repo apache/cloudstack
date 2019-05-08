@@ -53,6 +53,7 @@ tools/cli/build/
 *.iso
 *.tar.gz
 *.tgz
+*.vscode
 
 # this ignores _all files starting with '.'. Don't do that!
 #.*
