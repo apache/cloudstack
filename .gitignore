@@ -54,6 +54,7 @@ tools/cli/build/
 *.tar.gz
 *.tgz
 *.vscode
+*.css.map
 
 # this ignores _all files starting with '.'. Don't do that!
 #.*
@@ -100,3 +101,4 @@ scripts/.pydevproject
 *.qcow2
 *.raw
 venv
+node_modules
