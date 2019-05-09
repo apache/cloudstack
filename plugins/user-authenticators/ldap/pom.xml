@@ -28,6 +28,30 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <build>
+<!--
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>2.0.2</version>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                        <optimize>true</optimize>
+                        <showDeprecation>true</showDeprecation>
+                        <encoding>ISO-8859-1</encoding>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <argLine>-Xmx1024m</argLine>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+-->
         <plugins>
             <plugin>
                 <groupId>org.codehaus.gmaven</groupId>
@@ -81,6 +105,11 @@
                         <include>**/*Spec.groovy</include>
                         <include>**/*Test.java</include>
                     </includes>
+                    <excludes>
+                        <exclude>META-INF/*.SF</exclude>
+                        <exclude>META-INF/*.DSA</exclude>
+                        <exclude>META-INF/*.RSA</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
@@ -93,21 +122,35 @@
                     <daemon>false</daemon>
                     <rootDn>dc=cloudstack,dc=org</rootDn>
                     <ldapPort>10389</ldapPort>
-                    <ldifFile>test/resources/cloudstack.org.ldif</ldifFile>
+                    <ldifFile>src/test/resources/cloudstack.org.ldif</ldifFile>
                 </configuration>
             </plugin>
         </plugins>
-        <testSourceDirectory>test</testSourceDirectory>
+        <testSourceDirectory>src/test/java</testSourceDirectory>
     </build>
     <dependencies>
         <!-- Mandatory dependencies for using Spock -->
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-all</artifactId>
+            <version>1.5.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-server-integ</artifactId>
+            <version>1.5.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-core-integ</artifactId>
+            <version>1.5.7</version>
+        </dependency>
         <dependency>
             <groupId>org.spockframework</groupId>
             <artifactId>spock-core</artifactId>
             <version>1.1-groovy-2.4</version>
             <scope>test</scope>
         </dependency>
-
         <!-- Optional dependencies for using Spock -->
         <dependency> <!-- enables mocking of classes (in addition to interfaces) -->
             <groupId>cglib</groupId>

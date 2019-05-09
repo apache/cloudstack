@@ -33,10 +33,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.internal.util.reflection.Whitebox;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
+//import org.mockito.internal.util.reflection.Whitebox;
+//import org.mockito.runners.MockitoJUnitRunner;
+//import org.powermock.api.mockito.PowerMockito;
+//import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.ArrayList;
@@ -87,22 +87,22 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
      */
     @Test
     public void getEntityOwnerIdisOne() {
-		long ownerId = ldapListUsersCmd.getEntityOwnerId();
-		assertEquals(ownerId, 1);
+        long ownerId = ldapListUsersCmd.getEntityOwnerId();
+        assertEquals(ownerId, 1);
     }
 
     /**
      * given: "We have an LdapManager with no users, QueryService and a LdapListUsersCmd"
      *  when: "LdapListUsersCmd is executed"
-     * 	then: "An array of size 0 is returned"
+     *  then: "An array of size 0 is returned"
      *
      * @throws NoLdapUserMatchingQueryException
      */
     @Test
     public void successfulEmptyResponseFromExecute() throws NoLdapUserMatchingQueryException {
         doThrow(new NoLdapUserMatchingQueryException("")).when(ldapManager).getUsers(null);
-		ldapListUsersCmd.execute();
-		assertEquals(0, ((ListResponse)ldapListUsersCmd.getResponseObject()).getResponses().size());
+        ldapListUsersCmd.execute();
+        assertEquals(0, ((ListResponse)ldapListUsersCmd.getResponseObject()).getResponses().size());
     }
 
     /**
@@ -118,7 +118,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
 
         ldapListUsersCmd.execute();
 
-		verify(queryService, times(1)).searchForUsers(any());
+        verify(queryService, times(1)).searchForUsers(any());
         assertNotEquals(0, ((ListResponse)ldapListUsersCmd.getResponseObject()).getResponses().size());
     }
 
@@ -147,26 +147,26 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
 
         LdapUser ldapUser = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null);
 
-		boolean result = ldapListUsersCmd.isACloudstackUser(ldapUser);
+        boolean result = ldapListUsersCmd.isACloudstackUser(ldapUser);
 
-		assertTrue(result);
-	}
+        assertTrue(result);
+    }
 
     /**
      * given: "We have an LdapUser and not a matching CloudstackUser"
      *  when: "isACloudstackUser is executed"
      *  then: "The result is false"
      */
-	@Test
+    @Test
     public void isNotACloudstackUser() {
-	    doReturn(new ListResponse<UserResponse>()).when(queryService).searchForUsers(any());
+        doReturn(new ListResponse<UserResponse>()).when(queryService).searchForUsers(any());
 
-		LdapUser ldapUser = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null);
+        LdapUser ldapUser = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null);
 
-		boolean result = ldapListUsersCmd.isACloudstackUser(ldapUser);
+        boolean result = ldapListUsersCmd.isACloudstackUser(ldapUser);
 
         assertFalse(result);
-	}
+    }
 
     /**
      * test whether a value other than 'any' for 'listtype' leads to a good 'userfilter' value
@@ -212,7 +212,8 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
     @Test(expected = IllegalArgumentException.class)
     public void getInvalidUserFilterValues() throws NoSuchFieldException, IllegalAccessException{
         setHiddenField(ldapListUsersCmd, "userFilter", "flase");
-        LdapListUsersCmd.UserFilter userfilter = ldapListUsersCmd.getUserFilter();
+//        LdapListUsersCmd.UserFilter userfilter =
+                ldapListUsersCmd.getUserFilter();
     }
 
     @Test
