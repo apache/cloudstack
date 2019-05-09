@@ -1,15 +1,14 @@
-/*
- * jQuery Plugin: Tokenizing Autocomplete Text Entry
- * Version 1.6.0
- *
- * Copyright (c) 2009 James Smith (http://loopj.com)
- * Licensed jointly under the GPL and MIT licenses,
- * choose which one suits your project best!
- *
- */
-/* Example tokeninput style #2: Facebook style */
+// jQuery Plugin: Tokenizing Autocomplete Text Entry
+// Version 1.6.0
+// 
+// Copyright (c) 2009 James Smith (http://loopj.com)
+// Licensed jointly under the GPL and MIT licenses,
+// choose which one suits your project best!
+
+// Example tokeninput style #2: Facebook style
+
 ul.token-input-list-facebook {
-  z-index: 2147483647;
+  z-index: $z-index-facebook;
   clear: left;
   width: 233px;
   height: auto !important;
@@ -81,7 +80,7 @@ li.token-input-input-token-facebook {
 
 div.token-input-dropdown-facebook {
   position: absolute;
-  z-index: 2147483647;
+  z-index: $z-index-facebook;
   width: 233px;
   border-right: 1px solid #cccccc;
   border-bottom: 1px solid #cccccc;
@@ -130,5 +129,3 @@ div.token-input-dropdown-facebook ul li.token-input-selected-dropdown-item-faceb
   background-color: #3b5998;
   color: #ffffff;
 }
-
-/*# sourceMappingURL=src/sourcemaps/token-input-facebook.css.map */
