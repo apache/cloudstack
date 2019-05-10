@@ -18,18 +18,19 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
-
-import com.google.gson.annotations.SerializedName;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.cloud.vm.snapshot.VMSnapshot;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = VMSnapshot.class)
-public class VMSnapshotResponse extends BaseResponse implements ControlledEntityResponse {
+public class VMSnapshotResponse extends BaseResponseWithTagInformation implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the vm snapshot")
@@ -98,6 +99,10 @@ public class VMSnapshotResponse extends BaseResponse implements ControlledEntity
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain associated with the disk volume")
     private String domainName;
+
+    public VMSnapshotResponse() {
+        tags = new LinkedHashSet<ResourceTagResponse>();
+    }
 
     @Override
     public String getObjectId() {
@@ -226,6 +231,9 @@ public class VMSnapshotResponse extends BaseResponse implements ControlledEntity
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
 
+    public void setTags(Set<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 }
