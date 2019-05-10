@@ -2330,9 +2330,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             // if params contains a rootDiskController key, use its value (this is what other HVs are doing)
             DiskDef.DiskBus diskBusType = getDiskModelFromVMDetail(vmSpec);
-
             if (diskBusType == null) {
-                diskBusType = getGuestDiskModel(vmSpec.getPlatformEmulator());
+                // always use bus type ide for windows root volumes unless specified in vmspec
+                if (volume.getType() == Volume.Type.ROOT && vmSpec.getPlatformEmulator().startsWith("Windows")){
+                    diskBusType = DiskDef.DiskBus.IDE;
+                } else {
+                    diskBusType = getGuestDiskModel(vmSpec.getPlatformEmulator());
+                }
             }
 
             // I'm not sure why previously certain DATADISKs were hard-coded VIRTIO and others not, however this
@@ -3205,7 +3209,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 platformEmulator.startsWith("Debian GNU/Linux") ||
                 platformEmulator.startsWith("FreeBSD") ||
                 platformEmulator.startsWith("Oracle") ||
-                platformEmulator.startsWith("Windows") ||
+                platformEmulator.startsWith("Windows PV") ||
                 platformEmulator.startsWith("Other PV")) {
             return DiskDef.DiskBus.VIRTIO;
         } else {
