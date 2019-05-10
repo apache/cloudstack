@@ -217,6 +217,9 @@ public class VolumeServiceImpl implements VolumeService {
     @Override
     public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {
         DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
+        if (dataStoreDriver == null) {
+            return;
+        }
 
         if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
             ((PrimaryDataStoreDriver)dataStoreDriver).revokeAccess(dataObject, host, dataStore);
