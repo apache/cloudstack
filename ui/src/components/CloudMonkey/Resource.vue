@@ -1,120 +1,130 @@
 <template>
-  <div>
-    <div style="margin-bottom: 16px; margin-top: 16px">
-      <a-button
-        @click="fetchData"
-        :loading="loading"
-        shape="circle"
-        icon="reload"
-      />
+  <div style="margin-top: 16px">
+    <a-row>
+      <a-col :span="16">
+        <a-button
+          v-for="(action, index) in actions"
+          :key="index"
+          :icon="action.icon"
+          :type="action.icon == 'delete' ? 'danger' : (action.icon == 'plus' ? 'primary' : 'default')"
+          shape="circle"
+          style="margin-right: 5px"
+          @click="execAction(action)"
+        >
+        </a-button>
+        <a-button
+          @click="fetchData()"
+          :loading="loading"
+          shape="circle"
+          icon="reload"
+        />
+      </a-col>
+      <a-col :span="8" v-if="!$route.params || !$route.params.id">
+        <a-input-search
+          size="default"
+          placeholder="Search"
+          @search="onSearch"
+        >
+          <a-icon slot="prefix" type="search" />
+        </a-input-search>
+      </a-col>
+    </a-row>
 
-      <a-button
-        v-for="(action, index) in actions"
-        :key="index"
-        :icon="action.icon"
-        :type="action.icon == 'delete' ? 'danger' : (action.icon == 'plus' ? 'primary' : 'default')"
-        shape="circle"
-        style="margin-left: 5px"
-        @click="execAction(action)"
-      >
-      </a-button>
+    <a-drawer
+      :title="action.label"
+      placement="right"
+      width="75%"
+      :closable="true"
+      @close="closeAction"
+      :visible="showAction"
+    >
+      <a-spin :spinning="action.loading">
+        <a-form
+          :form="form"
+          @submit="handleSubmit"
+          layout="vertical" >
+          <a-form-item
+            v-for="(field, index) in action.params"
+            :key="index"
+            :label="field.name"
+            :v-bind="field.name">
 
-      <a-drawer
-        :title="action.label"
-        placement="right"
-        width="75%"
-        :closable="true"
-        @close="closeAction"
-        :visible="showAction"
-      >
-        <a-spin :spinning="action.loading">
-          <a-form
-            :form="form"
-            @submit="handleSubmit"
-            layout="vertical" >
-            <a-form-item
-              v-for="(field, index) in action.params"
-              :key="index"
-              :label="field.name"
-              :v-bind="field.name">
+            <span v-if="field.type==='boolean'">
+              <a-switch
+                v-decorator="[field.name, {
+                  rules: [{ required: field.required, message: 'Please provide input' }]
+                }]"
+                :placeholder="field.description"
+              />
+            </span>
+            <span v-else-if="field.type==='uuid' || field.name==='account'">
+              <a-select
+                :loading="field.loading"
+                v-decorator="[field.name, {
+                  rules: [{ required: field.required, message: 'Please select option' }]
+                }]"
+                :placeholder="field.description"
 
-              <span v-if="field.type==='boolean'">
-                <a-switch
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: 'Please provide input' }]
-                  }]"
-                  :placeholder="field.description"
-                />
-              </span>
-              <span v-else-if="field.type==='uuid' || field.name==='account'">
-                <a-select
-                  :loading="field.loading"
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: 'Please select option' }]
-                  }]"
-                  :placeholder="field.description"
-
-                >
-                  <a-select-option v-for="(opt, index) in field.opts" :key="index">
-                    {{ opt.name }}
-                  </a-select-option>
-                </a-select>
-              </span>
-              <span v-else-if="field.type==='long'">
-                <a-input-number
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: 'Please enter a number' }]
-                  }]"
-                  :placeholder="field.description"
-                />
-              </span>
-              <span v-else>
-                <a-input
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: 'Please enter input' }]
-                  }]"
-                  :placeholder="field.description"
-                />
-              </span>
-            </a-form-item>
-
-            <a-form-item>
-              <div
-                :style="{
-                  bottom: 0,
-                  width: '100%',
-                  borderTop: '1px solid #e8e8e8',
-                  paddingTop: '24px',
-                  textAlign: 'right',
-                  left: 0,
-                  background: '#fff',
-                  borderRadius: '0 0 4px 4px',
-                }"
               >
-                <a-button
-                  style="marginRight: 8px"
-                  @click="closeAction"
-                >
-                  Cancel
-                </a-button>
-                <a-button
-                  :loading="action.loading"
-                  type="primary"
-                  html-type="submit">
-                  Submit
-                </a-button>
-              </div>
-            </a-form-item>
-          </a-form>
-        </a-spin>
-      </a-drawer>
+                <a-select-option v-for="(opt, index) in field.opts" :key="index">
+                  {{ opt.name }}
+                </a-select-option>
+              </a-select>
+            </span>
+            <span v-else-if="field.type==='long'">
+              <a-input-number
+                v-decorator="[field.name, {
+                  rules: [{ required: field.required, message: 'Please enter a number' }]
+                }]"
+                :placeholder="field.description"
+              />
+            </span>
+            <span v-else>
+              <a-input
+                v-decorator="[field.name, {
+                  rules: [{ required: field.required, message: 'Please enter input' }]
+                }]"
+                :placeholder="field.description"
+              />
+            </span>
+          </a-form-item>
 
-      <span style="margin-left: 8px">
-        <template v-if="hasSelected">
-          {{ `Selected ${selectedRowKeys.length} items` }}
-        </template>
-      </span>
-    </div>
+          <a-form-item>
+            <div
+              :style="{
+                bottom: 0,
+                width: '100%',
+                borderTop: '1px solid #e8e8e8',
+                paddingTop: '24px',
+                textAlign: 'right',
+                left: 0,
+                background: '#fff',
+                borderRadius: '0 0 4px 4px',
+              }"
+            >
+              <a-button
+                style="marginRight: 8px"
+                @click="closeAction"
+              >
+                Cancel
+              </a-button>
+              <a-button
+                :loading="action.loading"
+                type="primary"
+                html-type="submit">
+                Submit
+              </a-button>
+            </div>
+          </a-form-item>
+        </a-form>
+      </a-spin>
+    </a-drawer>
+
+    <span style="margin-left: 8px">
+      <template v-if="hasSelected">
+        {{ `Selected ${selectedRowKeys.length} items` }}
+      </template>
+    </span>
 
     <div v-if="$route.params && $route.params.id">
       <p v-for="(value, key) in getResource($route.params.id)" :key="key">
@@ -125,12 +135,14 @@
     <div v-else>
       <a-table
         size="middle"
+        striped
         :rowKey="record => record.id"
         :loading="loading"
         :columns="columns"
         :dataSource="items"
         :scroll="{ x: true }"
         :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
+        style="background: #fff"
       >
         <a slot="name" slot-scope="text, record" href="javascript:;">
           <router-link :to="{ path: $route.name + '/' + record.id }">{{ text }}</router-link>
@@ -192,7 +204,7 @@ export default {
   },
   watch: {
     '$route' (to, from) {
-      if (to.name === this.$route.name) {
+      if (to.path === this.$route.path) {
         this.fetchData()
       }
     }
@@ -201,16 +213,23 @@ export default {
     this.form = this.$form.createForm(this)
   },
   methods: {
-    fetchData () {
+    fetchData (search = '') {
+      this.routeName = this.$route.name
+      if (!this.routeName) {
+        this.routeName = this.$route.matched[this.$route.matched.length - 1].parent.name
+      }
+      this.config = apiConfig[this.routeName]
       this.apiName = ''
       this.actions = []
       this.columns = []
       this.columnKeys = []
-      this.config = apiConfig[this.$route.name]
       var params = { listall: true }
       if (this.$route.meta.params) {
         params = this.$route.meta.params
         params['listall'] = 'true'
+      }
+      if (search !== '') {
+        params['keyword'] = search
       }
       if (this.config) {
         this.apiName = this.config.listApi
@@ -279,6 +298,9 @@ export default {
         }
       }
       return res
+    },
+    onSearch (value) {
+      this.fetchData(value)
     },
     closeAction () {
       this.action.loading = false
