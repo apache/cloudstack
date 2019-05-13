@@ -45,6 +45,8 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -83,6 +85,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
@@ -187,6 +190,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     ResourceManager _resourceMgr;
     @Inject
     ManagementServiceConfiguration mgmtServiceConf;
+    @Inject
+    MessageBus messageBus;
 
     protected final ConfigKey<Integer> Workers = new ConfigKey<Integer>("Advanced", Integer.class, "workers", "5",
             "Number of worker threads handling remote agent connections.", false);
@@ -236,6 +241,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         _directAgentThreadCap = Math.round(DirectAgentPoolSize.value() * DirectAgentThreadCap.value()) + 1; // add 1 to always make the value > 0
 
         _monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("AgentMonitor"));
+
+        initMessageBusListener();
 
         return true;
     }
@@ -1786,6 +1793,59 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             return -1;
         }
 
+    }
+
+    protected Map<Long, List<Long>> getHostsPerZone() {
+        List<HostVO> allHosts = _resourceMgr.listAllHostsInAllZonesByType(Host.Type.Routing);
+        if (allHosts == null) {
+            return null;
+        }
+        Map<Long, List<Long>> hostsByZone = new HashMap<Long, List<Long>>();
+        for (HostVO host : allHosts) {
+            if (host.getHypervisorType() == HypervisorType.KVM || host.getHypervisorType() == HypervisorType.LXC) {
+                Long zoneId = host.getDataCenterId();
+                List<Long> hostIds = hostsByZone.get(zoneId);
+                if (hostIds == null) {
+                    hostIds = new ArrayList<Long>();
+                }
+                hostIds.add(host.getId());
+                hostsByZone.put(zoneId, hostIds);
+            }
+        }
+        return hostsByZone;
+    }
+
+    private void sendCommandToAgents(Map<Long, List<Long>> hostsPerZone, Map<String, String> params) {
+        SetHostParamsCommand cmds = new SetHostParamsCommand(params);
+        for (Long zoneId : hostsPerZone.keySet()) {
+            List<Long> hostIds = hostsPerZone.get(zoneId);
+            for (Long hostId : hostIds) {
+                Answer answer = easySend(hostId, cmds);
+                if (answer == null || !answer.getResult()) {
+                    s_logger.error("Error sending parameters to agent " + hostId);
+                }
+            }
+        }
+    }
+
+    private void propagateChangeToAgents() {
+        s_logger.debug("Propagating changes on host parameters to the agents");
+        Map<Long, List<Long>> hostsPerZone = getHostsPerZone();
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("router.aggregation.command.each.timeout", _configDao.getValue("router.aggregation.command.each.timeout"));
+        sendCommandToAgents(hostsPerZone, params);
+    }
+
+    private void initMessageBusListener() {
+        messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String serderAddress, String subject, Object args) {
+                String globalSettingUpdated = (String)args;
+                if (globalSettingUpdated.equals("router.aggregation.command.each.timeout")) {
+                    propagateChangeToAgents();
+                }
+            }
+        });
     }
 
 }
