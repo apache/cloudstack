@@ -20,4 +20,4 @@
 --;
 
 -- DPDK client and server mode support
-ALTER TABLE `cloud`.`service_offering_details` CHANGE COLUMN `value` `value` VARCHAR(5120) NOT NULL;
+ALTER TABLE `cloud`.`service_offering_details` CHANGE COLUMN `value` `value` TEXT NOT NULL;
