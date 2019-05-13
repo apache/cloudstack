@@ -2331,9 +2331,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             // if params contains a rootDiskController key, use its value (this is what other HVs are doing)
             DiskDef.DiskBus diskBusType = getDiskModelFromVMDetail(vmSpec);
             if (diskBusType == null) {
-                // always use bus type ide for windows root volumes unless specified in vm details or windows pv is selected
+                // always use bus type ide for windows root volumes and virtio for data volumes unless specified in vm details or windows pv is selected
                 if (volume.getType() == Volume.Type.ROOT && vmSpec.getPlatformEmulator().startsWith("Windows") && !vmSpec.getPlatformEmulator().startsWith("Windows PV")){
                     diskBusType = DiskDef.DiskBus.IDE;
+                } else if (volume.getType() == Volume.Type.DATADISK && vmSpec.getPlatformEmulator().startsWith("Windows")) {
+                    diskBusType = DiskDef.DiskBus.VIRTIO;
                 } else {
                     diskBusType = getGuestDiskModel(vmSpec.getPlatformEmulator());
                 }
