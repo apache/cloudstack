@@ -726,9 +726,6 @@
                                 value: 'L3VPN'
                             }).html('L3VPN'),
                             $('<option>').attr({
-                                value: 'VSP'
-                            }).html('VSP'),
-                            $('<option>').attr({
                                 value: 'VCS'
                             }).html('VCS')
                         )

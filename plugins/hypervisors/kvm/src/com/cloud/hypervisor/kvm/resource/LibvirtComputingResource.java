@@ -2387,17 +2387,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private void createVif(final LibvirtVMDef vm, final NicTO nic, final String nicAdapter) throws InternalErrorException, LibvirtException {
-
-        if (nic.getType().equals(TrafficType.Guest) && nic.getBroadcastType().equals(BroadcastDomainType.Vsp)) {
-            String vrIp = nic.getBroadcastUri().getPath().substring(1);
-            vm.getMetaData().getMetadataNode(LibvirtVMDef.NuageExtensionDef.class).addNuageExtension(nic.getMac(), vrIp);
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("NIC with MAC " + nic.getMac() + " and BroadcastDomainType " + nic.getBroadcastType() + " in network(" + nic.getGateway() + "/" + nic.getNetmask()
-                        + ") is " + nic.getType() + " traffic type. So, vsp-vr-ip " + vrIp + " is set in the metadata");
-            }
-        }
-
         vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter));
     }
 

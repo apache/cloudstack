@@ -506,7 +506,7 @@ public class HypervisorHostHelper {
          */
         BroadcastDomainType[] supportedBroadcastTypes =
                 new BroadcastDomainType[] {BroadcastDomainType.Lswitch, BroadcastDomainType.LinkLocal, BroadcastDomainType.Native, BroadcastDomainType.Pvlan,
-                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan, BroadcastDomainType.Vsp};
+                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan};
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
             throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
@@ -584,13 +584,6 @@ public class HypervisorHostHelper {
                 }
 
                 VMwareDVSPortgroupPolicy portGroupPolicy = null;
-                if (broadcastDomainType == BroadcastDomainType.Vsp) {
-                    //If the broadcastDomainType is Vsp, then set the VMwareDVSPortgroupPolicy
-                    portGroupPolicy = new VMwareDVSPortgroupPolicy();
-                    portGroupPolicy.setVlanOverrideAllowed(true);
-                    portGroupPolicy.setBlockOverrideAllowed(true);
-                    portGroupPolicy.setPortConfigResetAtDisconnect(true);
-                }
                 // Next, create the port group. For this, we need to create a VLAN spec.
                 createPortGroup(physicalNetwork, networkName, vlanId, vid, spvlanid, dataCenterMo, shapingPolicy, secPolicy, portGroupPolicy, dvSwitchMo, numPorts, autoExpandSupported);
                 bWaitPortGroupReady = true;
@@ -1199,7 +1192,7 @@ public class HypervisorHostHelper {
          */
         BroadcastDomainType[] supportedBroadcastTypes =
                 new BroadcastDomainType[] {BroadcastDomainType.Lswitch, BroadcastDomainType.LinkLocal, BroadcastDomainType.Native, BroadcastDomainType.Pvlan,
-                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan, BroadcastDomainType.Vsp};
+                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan};
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
             throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");

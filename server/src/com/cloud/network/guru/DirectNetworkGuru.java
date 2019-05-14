@@ -156,7 +156,6 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         boolean vxlanWithSecurityGroups = isMyIsolationMethodVxlanWithSecurityGroups(offering, dc, physnet);
         if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) &&
                 (isMyIsolationMethod(physnet) || vxlanWithSecurityGroups) && offering.getGuestType() == GuestType.Shared
-                && !_ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.NuageVsp)
                 && !_ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.NiciraNvp)) {
             return true;
         } else {
