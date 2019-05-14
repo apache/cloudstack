@@ -5152,7 +5152,6 @@
                                             required: true
                                         },
                                         select: function(args) {
-
                                             var data = {};
                                             $.ajax({
                                                 url: createURL('listZones'),
@@ -5163,49 +5162,6 @@
                                                         return zone.networktype == 'Advanced' && !zone.securitygroupsenabled;
                                                     });
 
-                                                    //We need to be able to change the visibility of the NuageVspDT checkbox based on the selected zone (if the zone supports nuage)
-                                                    var nuageDomainTemplateHandler = function(event, zoneid) {
-                                                        zoneid = zoneid || this.value;
-
-                                                        //check if the zone id is already in the cache or not otherwise do a lookup
-                                                        var cache = args.context.domainTemplateMap;
-                                                        if (!(cache && cache[zoneid])) {
-                                                            $.ajax({
-                                                                url: createURL('listNuageVspDomainTemplates'),
-                                                                data: { zoneid: zoneid },
-                                                                success: function(json) {
-                                                                    var domaintemplates = json.listnuagevspdomaintemplatesresponse.domaintemplates ? json.listnuagevspdomaintemplatesresponse.domaintemplates : [];
-
-                                                                    if (domaintemplates.length) {
-                                                                        args.$form.find("[rel=nuageusedomaintemplate]").show();
-                                                                    } else {
-                                                                        args.$form.find("[rel=nuageusedomaintemplate]").hide();
-                                                                    }
-                                                                }
-                                                            });
-                                                            args.$form.find("[rel=nuageusedomaintemplate]").find("input").attr('checked', false);
-                                                        } else if (cache[zoneid].length) {
-                                                            if(args.context.globalDomainTemplateUsed[zoneid]){
-                                                                args.$form.find("[rel=nuageusedomaintemplate]").show();
-                                                                args.$form.find("[rel=nuagedomaintemplatelist]").show();
-                                                                args.$form.find("[rel=nuageusedomaintemplate]").find("input").attr('checked', true);
-                                                            } else {
-                                                                args.$form.find("[rel=nuageusedomaintemplate]").find("input").attr('checked', false);
-                                                            }
-                                                            args.$form.find("[rel=nuageusedomaintemplate]").show();
-                                                        } else {
-                                                            args.$form.find("[rel=nuageusedomaintemplate]").hide();
-                                                            args.$form.find("[rel=nuageusedomaintemplate]").find("input").attr('checked', false);
-                                                        }
-                                                    };
-
-                                                    if (advZones && advZones.length > 0) {
-                                                        nuageDomainTemplateHandler(null, advZones[0].id);
-                                                        args.$select.bind('click', nuageDomainTemplateHandler); //bind on both events click, change, change event of dropdown.
-                                                        args.$select.bind('change', nuageDomainTemplateHandler);
-                                                        args.$form.find("[rel=nuageusedomaintemplate]").find("input").attr('checked', false);
-                                                    }
-
                                                     args.response.success({
                                                         data: $.map(advZones, function(zone) {
                                                             return {
@@ -5214,9 +5170,6 @@
                                                             };
                                                         })
                                                     });
-                                                },
-                                                error: function(errorMsg){
-                                                    args.$form.find("[rel=nuageusedomaintemplate]").hide();
                                                 }
                                             });
                                         }
@@ -5239,7 +5192,6 @@
                                         validation: {
                                             required: true
                                         },
-                                        dependsOn: "zoneid",
                                         select: function(args) {
                                             var data = {};
                                             $.ajax({
@@ -5261,89 +5213,7 @@
                                                 }
                                             });
                                         }
-                                    },
-                                    nuageusedomaintemplate: {
-                                        label: 'label.nuage.vpc.usedomaintemplate',
-                                        isBoolean: true,
-                                        isChecked: false,
-                                        isHidden: function(args){
-                                            var cache=args.context.domainTemplateMap;
-                                            return !(cache && cache[args.zoneid] && cache[args.zoneid].length);
-                                        }
-                                    },
-                                    nuagedomaintemplatelist: {
-                                        label: 'label.nuage.vpc.domaintemplatelist',
-                                        isHidden: true,
-                                        dependsOn: ["nuageusedomaintemplate","zoneid"],
-                                        select: function(args) {
-                                            if(!args.context.domainTemplateMap){//create array if it does not exist.
-                                                args.context.domainTemplateMap = [];
-                                                args.context.globalDomainTemplateUsed = [];
-                                            }
-
-                                            $.ajax({
-                                                url: createURL('listNuageVspDomainTemplates'),
-                                                dataType: "json",
-                                                data: {
-                                                    zoneid: args.zoneid
-                                                },
-                                                async: true,
-                                                error: function(XMLHttpRequest, textStatus, errorThrown) {
-                                                    args.response.success({});
-                                                },
-                                                success: function (json) {
-                                                    $.ajax({
-                                                        url: createURL('listNuageVspGlobalDomainTemplate'),
-                                                        dataType: "json",
-                                                        data: {
-                                                            name: "nuagevsp.vpc.domaintemplate.name"
-                                                        },
-                                                        async: true,
-                                                        success: function(PDTjson){
-                                                            var domaintemplates = json.listnuagevspdomaintemplatesresponse.domaintemplates ? json.listnuagevspdomaintemplatesresponse.domaintemplates : [];
-                                                            var preConfiguredDomainTemplate = PDTjson.listnuagevspglobaldomaintemplateresponse.count == 1 ? PDTjson.listnuagevspglobaldomaintemplateresponse.domaintemplates[0].name : "";
-
-                                                            if (!domaintemplates.length) {
-                                                                args.$form.find("[rel=nuageusedomaintemplate]").hide();
-                                                            }
-
-                                                            var index = -1;
-                                                            $.each(domaintemplates, function(key,value) {
-                                                                if (preConfiguredDomainTemplate == value.name) {
-                                                                    index = key;
-                                                                }
-                                                            });
-
-                                                            //Set global pre configured DT as the default by placing it to the top of the drop down list.
-                                                            if (index != -1) {
-                                                                domaintemplates.unshift(domaintemplates[index]);
-                                                                domaintemplates.splice(index + 1, 1);
-                                                                args.$form.find("[rel=nuageusedomaintemplate]").show();
-                                                                args.$form.find("[rel=nuagedomaintemplatelist]").show();
-                                                                args.$form.find("[rel=nuageusedomaintemplate]").find("input").attr('checked', true);
-                                                                args.context.globalDomainTemplateUsed[args.zoneid] = true;
-                                                            } else {
-                                                                args.context.globalDomainTemplateUsed[args.zoneid] = false;
-                                                            }
-
-                                                            args.context.domainTemplateMap[args.zoneid] = domaintemplates;
-                                                            args.response.success({
-                                                                data: $.map(domaintemplates, function (dt) {
-                                                                    return {
-                                                                        id: dt.name,
-                                                                        description: dt.description
-                                                                    };
-                                                                })
-                                                            });
-                                                        }
-                                                    });
-
-                                                }
-                                            });
-                                        }
-
                                     }
-
                                 }
                             },
                             action: function(args) {
@@ -5368,64 +5238,19 @@
                                     async: true,
                                     success: function(vpcjson) {
                                         var jid = vpcjson.createvpcresponse.jobid;
-                                        if(args.data.nuageusedomaintemplate){
-                                            //Nuagepre-configured DT is chosen
-                                            var dataObj = {
-                                                domaintemplate: args.data.nuagedomaintemplatelist,
-                                                vpcid: vpcjson.createvpcresponse.id,
-                                                zoneid: args.data.zoneid
-                                            };
-                                            $.ajax({
-                                                url: createURL("associateNuageVspDomainTemplate"),
-                                                dataType: "json",
-                                                data: dataObj,
-                                                async: true,
-                                                success: function(json) {
-                                                    args.response.success({
-                                                        _custom: {
-                                                            jobId: jid,
-                                                            getUpdatedItem: function(json) {
-                                                                return json.queryasyncjobresultresponse.jobresult.vpc;
-                                                            }
-                                                        }
-                                                    });
-                                                },
-                                                error: function(errordata) {
-                                                    $.ajax({
-                                                        url: createURL("deleteVPC"),
-                                                        data: {
-                                                            id: vpcjson.createvpcresponse.id
-                                                        },
-                                                        success: function(json) {
-
-                                                        },
-                                                        error: function(data) {
-                                                            args.response.error(parseXMLHttpResponse(data));
-                                                        }
-                                                    });
-                                                    args.response.error(parseXMLHttpResponse(errordata) + ". Rollback of VPC initiated.");
+                                        args.response.success({
+                                            _custom: {
+                                                jobId: jid,
+                                                getUpdatedItem: function(json) {
+                                                    return json.queryasyncjobresultresponse.jobresult.vpc;
                                                 }
-                                            });
-                                        } else {
-                                            args.response.success({
-                                                _custom: {
-                                                    jobId: jid,
-                                                    getUpdatedItem: function(json) {
-                                                        return json.queryasyncjobresultresponse.jobresult.vpc;
-                                                    }
-                                                }
-                                            });
-                                        }
-
-
+                                            }
+                                        });
                                     },
                                     error: function(data) {
                                         args.response.error(parseXMLHttpResponse(data));
                                     }
                                 });
-
-
-
                             },
                             notification: {
                                 poll: pollAsyncJobResult
