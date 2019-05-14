@@ -266,13 +266,14 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
     }
 
     private long executeSqlCountComputingResourcesForAccount(long accountId, String sqlCountComputingResourcesAllocatedToAccount) {
-        try (TransactionLegacy tx = TransactionLegacy.currentTxn()) {
+        TransactionLegacy tx = TransactionLegacy.currentTxn();
+        try {
             PreparedStatement pstmt = tx.prepareAutoCloseStatement(sqlCountComputingResourcesAllocatedToAccount);
             pstmt.setLong(1, accountId);
 
             ResultSet rs = pstmt.executeQuery();
             if (!rs.next()) {
-                throw new CloudRuntimeException(String.format("An unexpected case happened while counting allocated computing resources for account: " + accountId));
+                return 0L;
             }
             return rs.getLong("total");
         } catch (SQLException e) {

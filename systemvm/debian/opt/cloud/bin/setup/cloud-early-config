@@ -90,41 +90,29 @@ get_boot_params() {
           sed -i "s/%/ /g" $CMDLINE
           ;;
      kvm)
-          VPORT=$(find /dev/virtio-ports -type l -name '*.vport' 2>/dev/null|head -1)
-
-          if [ -z "$VPORT" ]; then
-            log_it "No suitable VirtIO port was found in /dev/virtio-ports" && exit 2
+          # Use any old cmdline as backup only
+          if [ -s $CMDLINE ]; then
+            mv $CMDLINE $CMDLINE.old
+            log_it "Found a non-empty old cmdline file"
           fi
-
-          if [ ! -e "$VPORT" ]; then
-            log_it "${VPORT} not loaded, perhaps guest kernel is too old." && exit 2
-          fi
-
-          local factor=2
-          local progress=1
-          for i in {1..5}
-          do
-            while read line; do
-              if [[ $line == cmdline:* ]]; then
-                cmd=${line//cmdline:/}
-                echo $cmd > $CMDLINE
-              elif [[ $line == pubkey:* ]]; then
-                pubkey=${line//pubkey:/}
-                echo $pubkey > /var/cache/cloud/authorized_keys
-                echo $pubkey > /root/.ssh/authorized_keys
-              fi
-            done < $VPORT
-            # In case of reboot we do not send the boot args again.
-            # So, no need to wait for them, as the boot args are already set at startup
-            if [ -s $CMDLINE  ]
-            then
-              log_it "Found a non empty cmdline file. Will now exit the loop and proceed with configuration."
-              break;
+          systemctl enable --now qemu-guest-agent
+          # Wait for $CMDLINE file to be written by the qemu-guest-agent
+          for i in {1..60}; do
+            if [ -s $CMDLINE ]; then
+              log_it "Received a new non-empty cmdline file from qemu-guest-agent"
+              break
             fi
-            sleep ${progress}s
-            progress=$[ progress * factor ]
+            sleep 1
           done
-          chmod go-rwx /root/.ssh/authorized_keys
+          # Use any old cmdline only when new cmdline is not received
+          if [ -e $CMDLINE.old ]; then
+            if [ -s $CMDLINE  ]; then
+              rm $CMDLINE.old
+            else
+              mv $CMDLINE.old $CMDLINE
+              log_it "Using old cmdline file, VM was perhaps rebooted."
+            fi
+          fi
           ;;
      vmware)
           vmtoolsd --cmd 'machine.id.get' > $CMDLINE

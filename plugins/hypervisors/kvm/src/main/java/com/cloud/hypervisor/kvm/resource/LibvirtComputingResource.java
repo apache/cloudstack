@@ -201,7 +201,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private String _modifyVlanPath;
     private String _versionstringpath;
-    private String _patchViaSocketPath;
+    private String _patchScriptPath;
     private String _createvmPath;
     private String _manageSnapshotPath;
     private String _resizeVolumePath;
@@ -694,9 +694,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find versions.sh");
         }
 
-        _patchViaSocketPath = Script.findScript(kvmScriptsDir + "/patch/", "patchviasocket.py");
-        if (_patchViaSocketPath == null) {
-            throw new ConfigurationException("Unable to find patchviasocket.py");
+        _patchScriptPath = Script.findScript(kvmScriptsDir, "patch.sh");
+        if (_patchScriptPath == null) {
+            throw new ConfigurationException("Unable to find patch.sh");
         }
 
         _heartBeatPath = Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
@@ -1391,13 +1391,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean passCmdLine(final String vmName, final String cmdLine) throws InternalErrorException {
-        final Script command = new Script(_patchViaSocketPath, 5 * 1000, s_logger);
+        final Script command = new Script(_patchScriptPath, 30 * 1000, s_logger);
         String result;
         command.add("-n", vmName);
-        command.add("-p", cmdLine.replaceAll(" ", "%"));
+        command.add("-c", cmdLine);
         result = command.execute();
         if (result != null) {
-            s_logger.error("passcmd failed:" + result);
+            s_logger.error("Passing cmdline failed:" + result);
             return false;
         }
         return true;
@@ -2185,12 +2185,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final SerialDef serial = new SerialDef("pty", null, (short)0);
         devices.addDevice(serial);
-
-        /* Add a VirtIO channel for SystemVMs for communication and provisioning */
-        if (vmTO.getType() != VirtualMachine.Type.User) {
-            File virtIoChannel = Paths.get(_qemuSocketsPath.getPath(), vmTO.getName() + ".agent").toFile();
-            devices.addDevice(new ChannelDef(vmTO.getName() + ".vport", ChannelDef.ChannelType.UNIX, virtIoChannel));
-        }
 
         if (_rngEnable) {
             final RngDef rngDevice = new RngDef(_rngPath, _rngBackendModel, _rngRateBytes, _rngRatePeriod);

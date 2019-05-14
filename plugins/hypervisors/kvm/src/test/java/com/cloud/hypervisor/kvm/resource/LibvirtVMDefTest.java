@@ -261,7 +261,7 @@ public class LibvirtVMDefTest extends TestCase {
     public void testChannelDef() {
         ChannelDef.ChannelType type = ChannelDef.ChannelType.UNIX;
         ChannelDef.ChannelState state = ChannelDef.ChannelState.CONNECTED;
-        String name = "v-136-VM.vport";
+        String name = "v-136-VM.org.qemu.guest_agent.0";
         File path = new File("/var/lib/libvirt/qemu/" + name);
 
         ChannelDef channelDef = new ChannelDef(name, type, state, path);

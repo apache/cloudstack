@@ -25,8 +25,3 @@ DROP TABLE IF EXISTS `cloud`.`iam_group_policy_map`;
 DROP TABLE IF EXISTS `cloud`.`iam_group`;
 DROP TABLE IF EXISTS `cloud`.`iam_policy_permission`;
 DROP TABLE IF EXISTS `cloud`.`iam_policy`;
-
--- Cleanup Nuage VSP
-DELETE FROM `cloud`.`host` WHERE id in (SELECT vsp.host_id FROM `cloud`.`external_nuage_vsp_devices` vsp);
-DROP TABLE IF EXISTS `cloud`.`external_nuage_vsp_devices`;
-delete from `cloud`.`role_permissions` where rule = 'issueNuageVspResourceRequest';

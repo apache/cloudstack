@@ -19,3 +19,7 @@
 -- Schema upgrade cleanup from 4.12.0.0 to 4.13.0.0
 --;
 
+-- Cleanup Nuage VSP
+DELETE FROM `cloud`.`host` WHERE id in (SELECT vsp.host_id FROM `cloud`.`external_nuage_vsp_devices` vsp);
+DROP TABLE IF EXISTS `cloud`.`external_nuage_vsp_devices`;
+DELETE FROM `cloud`.`role_permissions` WHERE rule = 'issueNuageVspResourceRequest';
