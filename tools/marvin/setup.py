@@ -59,9 +59,6 @@ setup(name="Marvin",
           "retries",
           "PyCrypt"
       ],
-      extras_require={
-        "nuagevsp": ["vspk", "PyYAML", "futures", "netaddr", "jpype1"]
-      },
       py_modules=['marvin.marvinPlugin'],
       zip_safe=False,
       entry_points={
