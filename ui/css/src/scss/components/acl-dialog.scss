@@ -1,17 +1,3 @@
-/*Configure ACL dialog / VM tier list view dialog*/
-.ui-dialog.configure-acl .multi-edit {
-  width: 866px;
-}
-
-.ui-dialog.configure-acl .multi-edit table {
-  max-width: none;
-}
-
-.ui-dialog.configure-acl .multi-edit table select,
-.detail-view .acl .multi-edit select {
-  width: 76px;
-}
-
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -28,6 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+.ui-dialog.configure-acl .multi-edit {
+  width: 866px;
+}
+
+.ui-dialog.configure-acl .multi-edit table {
+  max-width: none;
+}
+
+.ui-dialog.configure-acl .multi-edit table select,
+.detail-view .acl .multi-edit select {
+  width: 76px;
+}
 
 .ui-dialog.configure-acl .ui-dialog-buttonpane {
   /*+placement:shift 722px -2px;*/

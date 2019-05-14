@@ -15,5 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-@import 'common/css-licence';
-@import 'languages/hungarian';
+#breadcrumbs div.home {
+  width: 100px; // hungarian translation is longer than the english default.
+}
