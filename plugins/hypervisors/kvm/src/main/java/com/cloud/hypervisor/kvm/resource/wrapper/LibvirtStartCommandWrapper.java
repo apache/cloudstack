@@ -108,7 +108,6 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
 
             // pass cmdline info to system vms
             if (vmSpec.getType() != VirtualMachine.Type.User) {
-                //wait and try passCmdLine for 5 minutes at most for CLOUDSTACK-2823
                 String controlIp = null;
                 for (final NicTO nic : nics) {
                     if (nic.getType() == TrafficType.Control) {
@@ -116,9 +115,11 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                         break;
                     }
                 }
-                for (int count = 0; count < 30; count++) {
+                // try to patch and SSH into the systemvm for up to 5 minutes
+                for (int count = 0; count < 10; count++) {
+                    // wait and try passCmdLine for 30 seconds at most for CLOUDSTACK-2823
                     libvirtComputingResource.passCmdLine(vmName, vmSpec.getBootArgs());
-                    //check router is up?
+                    // check router is up?
                     final VirtualRoutingResource virtRouterResource = libvirtComputingResource.getVirtRouterResource();
                     final boolean result = virtRouterResource.connect(controlIp, 1, 5000);
                     if (result) {
