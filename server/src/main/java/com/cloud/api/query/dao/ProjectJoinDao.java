@@ -16,8 +16,10 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.EnumSet;
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.response.ProjectResponse;
 
 import com.cloud.api.query.vo.ProjectJoinVO;
@@ -26,7 +28,7 @@ import com.cloud.utils.db.GenericDao;
 
 public interface ProjectJoinDao extends GenericDao<ProjectJoinVO, Long> {
 
-    ProjectResponse newProjectResponse(ProjectJoinVO proj);
+    ProjectResponse newProjectResponse(EnumSet<DomainDetails> details, ProjectJoinVO proj);
 
     List<ProjectJoinVO> newProjectView(Project proj);
 
