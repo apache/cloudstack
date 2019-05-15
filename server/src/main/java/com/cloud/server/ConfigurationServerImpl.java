@@ -620,7 +620,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 s_logger.error("Cannot read the private key file", e);
                 throw new CloudRuntimeException("Cannot read the private key file");
             }
-            String privateKey = new String(arr1).trim();
+            String privateKey = new String(arr1).trim() + "\n";
             byte[] arr2 = new byte[4094]; // configuration table column value size
             try (DataInputStream dis = new DataInputStream(new FileInputStream(pubkeyfile))) {
                 dis.readFully(arr2);
@@ -630,7 +630,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 s_logger.warn("Cannot read the public key file", e);
                 throw new CloudRuntimeException("Cannot read the public key file");
             }
-            String publicKey = new String(arr2).trim();
+            String publicKey = new String(arr2).trim() + "\n";
 
             final String insertSql1 =
                     "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
