@@ -116,7 +116,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                     }
                 }
                 // try to patch and SSH into the systemvm for up to 5 minutes
-                for (int count = 0; count < 10; count++) {
+                for (int count = 0; count < 30; count++) {
                     // wait and try passCmdLine for 30 seconds at most for CLOUDSTACK-2823
                     libvirtComputingResource.passCmdLine(vmName, vmSpec.getBootArgs());
                     // check router is up?
