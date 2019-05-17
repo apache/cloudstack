@@ -399,32 +399,32 @@ class TestVolumes(cloudstackTestCase):
         # 3. disk should be  attached to instance successfully
 
         self.debug(
-                "Attaching volume (ID: %s) to VM (ID: %s)" % (
-                                                    self.volume.id,
-                                                    self.virtual_machine.id
-                                                    ))
+            "Attaching volume (ID: %s) to VM (ID: %s)" % (
+                self.volume.id,
+                self.virtual_machine.id
+            ))
         self.virtual_machine.attach_volume(self.apiClient, self.volume)
         self.attached = True
         list_volume_response = Volume.list(
-                                                self.apiClient,
-                                                id=self.volume.id
-                                                )
+            self.apiClient,
+            id=self.volume.id
+        )
         self.assertEqual(
-                            isinstance(list_volume_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
+            isinstance(list_volume_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
         self.assertNotEqual(
-                            list_volume_response,
-                            None,
-                            "Check if volume exists in ListVolumes"
-                            )
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes"
+        )
         volume = list_volume_response[0]
         self.assertNotEqual(
-                            volume.virtualmachineid,
-                            None,
-                            "Check if volume state (attached) is reflected"
-                            )
+            volume.virtualmachineid,
+            None,
+            "Check if volume state (attached) is reflected"
+        )
         try:
             #Format the attached volume to a known fs
             format_volume_to_ext3(self.virtual_machine.get_ssh_client())
@@ -432,7 +432,7 @@ class TestVolumes(cloudstackTestCase):
         except Exception as e:
 
             self.fail("SSH failed for VM: %s - %s" %
-                                    (self.virtual_machine.ipaddress, e))
+                      (self.virtual_machine.ipaddress, e))
         return
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
@@ -857,6 +857,60 @@ class TestVolumes(cloudstackTestCase):
 
         self.assertTrue(hasattr(root_volume, "podname"))
         self.assertEqual(root_volume.podname, list_pods.name)
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_11_attach_volume_with_unstarted_vm(self):
+        """Attach a created Volume to a unstarted VM
+        """
+        # Validate the following
+        # 1. Attach to a vm in startvm=false state works and vm can be started afterwards.
+        # 2. shows list of volumes
+        # 3. "Attach Disk" pop-up box will display with list of  instances
+        # 4. disk should be  attached to instance successfully
+
+        test_vm = VirtualMachine.create(
+            self.apiclient,
+            self.services,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            mode=self.services["mode"],
+            startvm=False
+        )
+
+        self.debug(
+            "Attaching volume (ID: %s) to VM (ID: %s)" % (
+                self.volume.id,
+                test_vm.id
+            ))
+        test_vm.attach_volume(self.apiClient, self.volume)
+        test_vm.start(self.apiClient)
+
+        list_volume_response = Volume.list(
+            self.apiClient,
+            id=self.volume.id
+        )
+        self.assertEqual(
+            isinstance(list_volume_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes"
+        )
+        volume = list_volume_response[0]
+        self.assertNotEqual(
+            volume.virtualmachineid,
+            None,
+            "Check if volume state (attached) is reflected"
+        )
+
+        test_vm.detach_volume(self.apiClient, self.volume)
+        self.cleanup.append(test_vm)
+
+        return
 
     def wait_for_attributes_and_return_root_vol(self):
         def checkVolumeResponse():

@@ -1171,7 +1171,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
             vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
-            setNuageVspVrIpInExtraConfig(vmConfigSpec.getExtraConfig(), nicTo, dvSwitchUuid);
             if (!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Failed to configure devices when running PlugNicCommand");
             }
@@ -1252,7 +1251,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
 
             vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
-            setNuageVspVrIpInExtraConfig(vmConfigSpec.getExtraConfig(), nicTo, dvSwitchUuid);
             if (!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Failed to configure devices when running ReplugNicCommand");
             }
@@ -2632,33 +2630,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 newVal.setKey("nvp.iface-id." + nicNum);
                 newVal.setValue(nicTo.getUuid());
                 extraOptions.add(newVal);
-                setNuageVspVrIpInExtraConfig(extraOptions, nicTo, nicUuidToDvSwitchUuid.get(nicTo.getUuid()));
             }
             nicNum++;
-        }
-    }
-
-    private static void setNuageVspVrIpInExtraConfig(List<OptionValue> extraOptions, NicTO nicTo, String dvSwitchUuid) {
-        if (nicTo.getBroadcastType() != BroadcastDomainType.Vsp) {
-            return;
-        }
-
-        OptionValue newVal;
-        if (nicTo.getType().equals(TrafficType.Guest) && dvSwitchUuid != null && nicTo.getGateway() != null && nicTo.getNetmask() != null) {
-            String vrIp = nicTo.getBroadcastUri().getPath().substring(1);
-            newVal = new OptionValue();
-            newVal.setKey("vsp.vr-ip." + nicTo.getMac());
-            newVal.setValue(vrIp);
-            extraOptions.add(newVal);
-            newVal = new OptionValue();
-            newVal.setKey("vsp.dvswitch." + nicTo.getMac());
-            newVal.setValue(dvSwitchUuid);
-            extraOptions.add(newVal);
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("NIC with MAC " + nicTo.getMac() + " and BroadcastDomainType " + nicTo.getBroadcastType() + " in network(" + nicTo.getGateway() + "/"
-                        + nicTo.getNetmask() + ") is " + nicTo.getType() + " traffic type. So, vsp-vr-ip is set in the extraconfig");
-            }
         }
     }
 

@@ -261,7 +261,7 @@ public class LibvirtVMDefTest extends TestCase {
     public void testChannelDef() {
         ChannelDef.ChannelType type = ChannelDef.ChannelType.UNIX;
         ChannelDef.ChannelState state = ChannelDef.ChannelState.CONNECTED;
-        String name = "v-136-VM.vport";
+        String name = "v-136-VM.org.qemu.guest_agent.0";
         File path = new File("/var/lib/libvirt/qemu/" + name);
 
         ChannelDef channelDef = new ChannelDef(name, type, state, path);
@@ -292,23 +292,4 @@ public class LibvirtVMDefTest extends TestCase {
                 "</controller>\n";
         assertEquals(str, expected);
     }
-
-    @Test
-    public void testMetadataDef() {
-        LibvirtVMDef.MetadataDef metadataDef = new LibvirtVMDef.MetadataDef();
-
-        metadataDef.getMetadataNode(LibvirtVMDef.NuageExtensionDef.class).addNuageExtension("mac1", "ip1");
-        metadataDef.getMetadataNode(LibvirtVMDef.NuageExtensionDef.class).addNuageExtension("mac2", "ip2");
-
-        String xmlDef = metadataDef.toString();
-        String expectedXml = "<metadata>\n" +
-                "<nuage-extension xmlns='nuagenetworks.net/nuage/cna'>\n" +
-                "  <interface mac='mac2' vsp-vr-ip='ip2'></interface>\n" +
-                "  <interface mac='mac1' vsp-vr-ip='ip1'></interface>\n" +
-                "</nuage-extension>\n" +
-                "</metadata>\n";
-
-        assertEquals(xmlDef, expectedXml);
-    }
-
 }

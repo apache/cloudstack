@@ -2424,7 +2424,7 @@
                                         //p.s. Netscaler is supported in both vpc and non-vpc
                                         if ($useVpc.is(':visible') && $useVpcCb.is(':checked')) { //*** vpc ***
                                             $optionsOfProviders.each(function(index) {
-                                                if ($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter' || $(this).val() == 'Netscaler'  || $(this).val() == 'NuageVsp' || $(this).val() == 'NuageVspVpc' || $(this).val() == 'BigSwitchBcf' || $(this).val() == 'ConfigDrive') {
+                                                if ($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter' || $(this).val() == 'Netscaler'  || $(this).val() == 'BigSwitchBcf' || $(this).val() == 'ConfigDrive') {
                                                     $(this).attr('disabled', false);
                                                 } else {
                                                     $(this).attr('disabled', true);
@@ -2700,17 +2700,12 @@
                                         }
 
                                         //PublicAccess checkbox should be displayed only when 'Connectivity' service is checked
-                                        if (args.$form.find('.form-item[rel=\"service.Connectivity.isEnabled\"]').find('input[type=checkbox]').is(':checked') && $guestTypeField.val() == 'Shared' &&
-                                            args.$form.find('.form-item[rel=\"service.Connectivity.provider\"]').find('select').val() == 'NuageVsp') {
+                                        if (args.$form.find('.form-item[rel=\"service.Connectivity.isEnabled\"]').find('input[type=checkbox]').is(':checked')
+                                            && $guestTypeField.val() == 'Shared'
+                                            && args.$form.find('.form-item[rel=\"service.Connectivity.provider\"]').find('select').val() == 'NuageVsp') {
                                             $supportspublicaccess.css('display', 'inline-block');
                                         } else {
                                             $supportspublicaccess.hide();
-                                        }
-
-                                        //Uncheck specifyVlan checkbox when (1)guest type is Shared and (2)NuageVsp is selected as a Connectivity provider
-                                        if ($guestTypeField.val() == 'Shared') {
-                                            var $specifyVlanCheckbox = args.$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]');
-                                            $specifyVlanCheckbox.attr('checked', args.$form.find('.form-item[rel=\"service.Connectivity.provider\"]').find('select').val() != 'NuageVsp')
                                         }
                                     });
 
@@ -3350,7 +3345,7 @@
                                         inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'StretchedL2Subnet';
                                         inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
                                         serviceCapabilityIndex++;
-                                    } else if (k == 'supportspublicaccess' && ("Connectivity" in serviceProviderMap) && serviceProviderMap['Connectivity'] == 'NuageVsp') {
+                                    } else if (k == 'supportspublicaccess' && ("Connectivity" in serviceProviderMap)) {
                                         inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'Connectivity';
                                         inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'PublicAccess';
                                         inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
@@ -3902,8 +3897,8 @@
                                             networkServiceObjs.push({
                                                 name: 'Dhcp',
                                                 provider: [
-                                                       {name: 'VpcVirtualRouter'},
-                                                       {name: 'NuageVsp'}]
+                                                       {name: 'VpcVirtualRouter'}
+                                                ]
                                             });
                                             networkServiceObjs.push({
                                                 name: 'Dns',
@@ -3925,21 +3920,18 @@
                                                 name: 'StaticNat',
                                                 provider: [
                                                        {name: 'VpcVirtualRouter'},
-                                                       {name: 'NuageVsp'},
                                                        {name: 'BigSwitchBcf'}]
                                             });
                                             networkServiceObjs.push({
                                                 name: 'SourceNat',
                                                 provider: [
                                                        {name: 'VpcVirtualRouter'},
-                                                       {name: 'NuageVsp'},
                                                        {name: 'BigSwitchBcf'}]
                                             });
                                             networkServiceObjs.push({
                                                 name: 'NetworkACL',
                                                 provider: [
                                                        {name: 'VpcVirtualRouter'},
-                                                       {name: 'NuageVsp'},
                                                        {name: 'BigSwitchBcf'}]
                                             });
                                             networkServiceObjs.push({
@@ -3963,8 +3955,7 @@
                                                     {name: 'BigSwitchBcf'},
                                                     {name: 'NiciraNvp'},
                                                     {name: 'Ovs'},
-                                                    {name: 'JuniperContrailVpcRouter'},
-                                                    {name: 'NuageVsp'}
+                                                    {name: 'JuniperContrailVpcRouter'}
                                                 ]
                                             });
 

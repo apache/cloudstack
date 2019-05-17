@@ -18,6 +18,7 @@ package com.cloud.api.query.dao;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.query.QueryManagerImpl;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
 import com.cloud.service.ServiceOfferingDetailsVO;
@@ -305,11 +306,19 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
         // set resource details map
         // Allow passing details to end user
-        List<UserVmDetailVO> vmDetails = _userVmDetailsDao.listDetails(userVm.getId());
+        // Honour the display field and only return if display is set to true
+        List<UserVmDetailVO> vmDetails = _userVmDetailsDao.listDetails(userVm.getId(), true);
         if (vmDetails != null) {
             Map<String, String> resourceDetails = new HashMap<String, String>();
             for (UserVmDetailVO userVmDetailVO : vmDetails) {
                 resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
+            }
+            // Remove blacklisted settings if user is not admin
+            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                String[] userVmSettingsToHide = QueryManagerImpl.UserVMBlacklistedDetails.value().split(",");
+                for (String key : userVmSettingsToHide) {
+                    resourceDetails.remove(key.trim());
+                }
             }
             userVmResponse.setDetails(resourceDetails);
         }

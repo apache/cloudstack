@@ -17,16 +17,14 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import com.cloud.utils.net.NetUtils;
-import com.google.common.collect.Maps;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
 public class LibvirtVMDef {
     private static final Logger s_logger = Logger.getLogger(LibvirtVMDef.class);
@@ -1665,28 +1663,6 @@ public class LibvirtVMDef {
             }
             fsBuilder.append("</metadata>\n");
             return fsBuilder.toString();
-        }
-    }
-
-    public static class NuageExtensionDef {
-        private Map<String, String> addresses = Maps.newHashMap();
-
-        public void addNuageExtension(String macAddress, String vrIp) {
-            addresses.put(macAddress, vrIp);
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder fsBuilder = new StringBuilder();
-            fsBuilder.append("<nuage-extension xmlns='nuagenetworks.net/nuage/cna'>\n");
-            for (Map.Entry<String, String> address : addresses.entrySet()) {
-                fsBuilder.append("  <interface mac='")
-                         .append(address.getKey())
-                         .append("' vsp-vr-ip='")
-                         .append(address.getValue())
-                         .append("'></interface>\n");
-            }
-            return fsBuilder.append("</nuage-extension>\n").toString();
         }
     }
 

@@ -480,9 +480,6 @@ public class EventTypes {
     public static final String EVENT_EXTERNAL_OVS_CONTROLLER_DELETE = "PHYSICAL.OVSCONTROLLER.DELETE";
 
     // external network mapping events
-    public static final String EVENT_EXTERNAL_VSP_VSD_ADD = "PHYSICAL.NUAGE.VSD.ADD";
-    public static final String EVENT_EXTERNAL_VSP_VSD_UPDATE = "PHYSICAL.NUAGE.VSD.UPDATE";
-    public static final String EVENT_EXTERNAL_VSP_VSD_DELETE = "PHYSICAL.NUAGE.VSD.DELETE";
     // AutoScale
     public static final String EVENT_COUNTER_CREATE = "COUNTER.CREATE";
     public static final String EVENT_COUNTER_DELETE = "COUNTER.DELETE";
@@ -924,8 +921,6 @@ public class EventTypes {
         entityEventDetails.put(EVENT_EXTERNAL_NVP_CONTROLLER_CONFIGURE, "NvpController");
 
         // external network mapping events
-        entityEventDetails.put(EVENT_EXTERNAL_VSP_VSD_ADD,  "NuageVsp");
-        entityEventDetails.put(EVENT_EXTERNAL_VSP_VSD_DELETE,  "NuageVsp");
 
         // AutoScale
         entityEventDetails.put(EVENT_COUNTER_CREATE, AutoScaleCounter.class);

@@ -24,11 +24,13 @@ import java.util.List;
 
 
 import javax.inject.Inject;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 
@@ -55,6 +57,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     protected final SearchBuilder<VMTemplateStoragePoolVO> TemplateStatusSearch;
     protected final SearchBuilder<VMTemplateStoragePoolVO> TemplatePoolStatusSearch;
     protected final SearchBuilder<VMTemplateStoragePoolVO> TemplateStatesSearch;
+    protected final SearchBuilder<VMTemplateStoragePoolVO> TemplatePoolStateSearch;
     protected final SearchBuilder<VMTemplateStoragePoolVO> updateStateSearch;
 
     protected static final String UPDATE_TEMPLATE_HOST_REF = "UPDATE template_spool_ref SET download_state = ?, download_pct= ?, last_updated = ? "
@@ -96,6 +99,11 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
         TemplatePoolStatusSearch.and("download_state", TemplatePoolStatusSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
         TemplatePoolStatusSearch.done();
 
+        TemplatePoolStateSearch = createSearchBuilder();
+        TemplatePoolStateSearch.and("pool_id", TemplatePoolStateSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
+        TemplatePoolStateSearch.and("state", TemplatePoolStateSearch.entity().getState(), SearchCriteria.Op.EQ);
+        TemplatePoolStateSearch.done();
+
         TemplateStatesSearch = createSearchBuilder();
         TemplateStatesSearch.and("template_id", TemplateStatesSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
         TemplateStatesSearch.and("states", TemplateStatesSearch.entity().getDownloadState(), SearchCriteria.Op.IN);
@@ -135,6 +143,14 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
         SearchCriteria<VMTemplateStoragePoolVO> sc = TemplateStatusSearch.create();
         sc.setParameters("template_id", templateId);
         sc.setParameters("download_state", downloadState.toString());
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<VMTemplateStoragePoolVO> listByPoolIdAndState(long poolId, ObjectInDataStoreStateMachine.State state) {
+        SearchCriteria<VMTemplateStoragePoolVO> sc = TemplatePoolStateSearch.create();
+        sc.setParameters("pool_id", poolId);
+        sc.setParameters("state", state);
         return listIncludingRemovedBy(sc);
     }
 
