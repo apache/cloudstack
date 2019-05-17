@@ -332,6 +332,9 @@
                                         $step.find('.select-iso').show();
                                     }
                                     var makeIsos = function(type, append) {
+
+                                        sortArrayByKey(args.data.templates[type], 'name');
+
                                         var $selects = makeSelects('templateid', args.data.templates[type], {
                                             name: 'name',
                                             desc: 'displaytext',
@@ -491,6 +494,9 @@
                         return {
                             response: {
                                 success: function(args) {
+
+                                    sortArrayByKey(args.data.serviceOfferings, 'cpuspeed');
+
                                     $step.find('.content .select-container').append(
                                         makeSelects('serviceofferingid', args.data.serviceOfferings, {
                                             name: 'name',
@@ -556,6 +562,8 @@
                                     $step.find('.multi-disk-select-container').remove();
                                     $step.removeClass('custom-disk-size');
                                     $step.find('.main-desc, p.no-datadisk').remove();
+
+                                    sortArrayByKey(args.data.diskOfferings, 'disksize');
 
                                     if (!multiDisk){
                                             if (args.required) {
@@ -749,6 +757,9 @@
                                     $step.find('.main-desc, p.no-affinity-groups').remove();
 
                                     if (args.data.affinityGroups && args.data.affinityGroups.length) {
+
+                                        sortArrayByKey(args.data.affinityGroups, 'name');
+
                                         $step.prepend(
                                             $('<div>').addClass('main-desc').append(
                                                 $('<p>').html(_l('message.select.affinity.groups'))
@@ -795,6 +806,9 @@
                                     $step.find('.main-desc, p.no-sshkey-pairs').remove();
 
                                     if (args.data.sshkeyPairs && args.data.sshkeyPairs.length) {
+
+                                        sortArrayByKey(args.data.sshkeyPairs, 'name');
+
                                         $step.prepend(
                                             $('<div>').addClass('main-desc').append(
                                                 $('<p>').html(_l('message.please.select.ssh.key.pair.use.with.this.vm'))
@@ -964,6 +978,9 @@
 
                                     // Populate VPC drop-down
                                     $vpcSelect.html('');
+
+                                    sortArrayByKey(vpcs, 'name');
+
                                     $(vpcs).map(function(index, vpc) {
                                         var $option = $('<option>');
                                         var id = vpc.id;
@@ -978,6 +995,8 @@
                                     $('<option>').attr('value', '-1').html(_l('ui.listView.filters.all')).prependTo($vpcSelect);
 
                                     $vpcSelect.val(-1);
+
+                                    sortArrayByKey(args.data.networkOfferings, 'name');
 
                                     // Populate network offering drop-down
                                     $(args.data.networkOfferings).each(function() {
