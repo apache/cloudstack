@@ -108,8 +108,10 @@ EOF
       echo 0 > /var/cache/cloud/dnsmasq_managed_lease
   fi
 
-  #setup hourly logrotate
-  mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
+  # Setup hourly logrotate
+  if [ -f /etc/cron.daily/logrotate ]; then
+    mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
+  fi
 }
 
 routing_svcs
