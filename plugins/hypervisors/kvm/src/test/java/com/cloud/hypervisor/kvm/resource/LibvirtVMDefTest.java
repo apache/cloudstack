@@ -20,6 +20,8 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 import junit.framework.TestCase;
@@ -137,6 +139,31 @@ public class LibvirtVMDefTest extends TestCase {
         String expected3 = "<cpu mode='host-passthrough'></cpu>";
         assertEquals(expected3, cpuModeDef.toString());
 
+    }
+
+    @Test
+    public void testCpuModeDefCpuFeatures() {
+        LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
+        cpuModeDef.setMode("custom");
+        cpuModeDef.setModel("Nehalem");
+
+        String expected_start = "<cpu mode='custom' match='exact'><model fallback='allow'>Nehalem</model>";
+        String expected_end = "</cpu>";
+
+        List<String> features1 = Arrays.asList("feature1", "feature2");
+        cpuModeDef.setFeatures(features1);
+        String expected1 = "<feature policy='require' name='feature1'/><feature policy='require' name='feature2'/>";
+        assertEquals(expected_start + expected1 + expected_end, cpuModeDef.toString());
+
+        List<String> features2 = Arrays.asList("-feature1", "-feature2");
+        cpuModeDef.setFeatures(features2);
+        String expected2 = "<feature policy='disable' name='feature1'/><feature policy='disable' name='feature2'/>";
+        assertEquals(expected_start + expected2 + expected_end, cpuModeDef.toString());
+
+        List<String> features3 = Arrays.asList("-feature1", "feature2");
+        cpuModeDef.setFeatures(features3);
+        String expected3 = "<feature policy='disable' name='feature1'/><feature policy='require' name='feature2'/>";
+        assertEquals(expected_start + expected3 + expected_end, cpuModeDef.toString());
     }
 
     @Test
