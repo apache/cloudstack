@@ -152,13 +152,6 @@ patch() {
   local logfile="/var/log/patchsystemvm.log"
   if [ "$TYPE" == "consoleproxy" ] || [ "$TYPE" == "secstorage" ]  && [ -f ${PATCH_MOUNT}/agent.zip ] && [ -f /var/cache/cloud/patch.required ]
   then
-    log_it "Patching cloud service"
-    rm -f /var/cache/cloud/patch.required
-
-    # Refresh and setup systemd
-    chmod -x /etc/systemd/system/cloud*.service
-    systemctl daemon-reload
-
     echo "Patching systemvm for cloud service with mount=$PATCH_MOUNT for type=$TYPE" >> $logfile
     patch_systemvm ${PATCH_MOUNT}/agent.zip
     if [ $? -gt 0 ]
@@ -167,7 +160,12 @@ patch() {
       exit 1
     fi
   fi
+
+  rm -f /var/cache/cloud/patch.required
+  chmod -x /etc/systemd/system/cloud*.service
+  systemctl daemon-reload
   umount $PATCH_MOUNT || true
+
   if [ -f /mnt/cmdline ]; then
     cat /mnt/cmdline > $CMDLINE
   fi
@@ -184,7 +182,7 @@ bootstrap() {
   config_guest
   get_boot_params
   get_systemvm_type
-  patch_agent
+  patch
   sync
   sysctl -p
 
