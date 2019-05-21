@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -35,6 +34,8 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.usage.Usage;
+
+import com.cloud.utils.Pair;
 
 @APICommand(name = ListUsageRecordsCmd.APINAME,
         description = "Lists usage records for accounts",
@@ -80,6 +81,10 @@ public class ListUsageRecordsCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.INCLUDE_TAGS, type = CommandType.BOOLEAN, description = "Flag to enable display of Tags for a resource")
     private Boolean includeTags;
+
+    @Parameter(name = ApiConstants.OLD_FORMAT, type = CommandType.BOOLEAN, description = "Flag to enable description rendered in old format with no processing")
+    private Boolean oldFormat;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -145,6 +150,9 @@ public class ListUsageRecordsCmd extends BaseListCmd {
         this.usageId = usageId;
     }
 
+    public boolean getOldFormat() {
+        return oldFormat != null && oldFormat;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -167,7 +175,7 @@ public class ListUsageRecordsCmd extends BaseListCmd {
                 resourceTagResponseMap = _responseGenerator.getUsageResourceTags();
             }
             for (Usage usageRecord : usageRecords.first()) {
-                UsageRecordResponse usageResponse = _responseGenerator.createUsageResponse(usageRecord, resourceTagResponseMap);
+                UsageRecordResponse usageResponse = _responseGenerator.createUsageResponse(usageRecord, resourceTagResponseMap, getOldFormat());
                 usageResponse.setObjectName("usagerecord");
                 usageResponses.add(usageResponse);
             }

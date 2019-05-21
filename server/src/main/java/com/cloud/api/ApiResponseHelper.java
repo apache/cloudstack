@@ -16,9 +16,153 @@
 // under the License.
 package com.cloud.api;
 
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.CapabilityResponse;
+import org.apache.cloudstack.api.response.CapacityResponse;
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.ConditionResponse;
+import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.ControlledEntityResponse;
+import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
+import org.apache.cloudstack.api.response.CounterResponse;
+import org.apache.cloudstack.api.response.CreateCmdResponse;
+import org.apache.cloudstack.api.response.CreateSSHKeyPairResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.api.response.FirewallResponse;
+import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
+import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.GuestOsMappingResponse;
+import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
+import org.apache.cloudstack.api.response.HostForMigrationResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
+import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.IsolationMethodResponse;
+import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
+import org.apache.cloudstack.api.response.LBHealthCheckResponse;
+import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
+import org.apache.cloudstack.api.response.LBStickinessResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.LoadBalancerResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
+import org.apache.cloudstack.api.response.NetworkACLItemResponse;
+import org.apache.cloudstack.api.response.NetworkACLResponse;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
+import org.apache.cloudstack.api.response.NicResponse;
+import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.OvsProviderResponse;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.PortableIpRangeResponse;
+import org.apache.cloudstack.api.response.PortableIpResponse;
+import org.apache.cloudstack.api.response.PrivateGatewayResponse;
+import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.api.response.ProjectInvitationResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ProviderResponse;
+import org.apache.cloudstack.api.response.RegionResponse;
+import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
+import org.apache.cloudstack.api.response.ResourceCountResponse;
+import org.apache.cloudstack.api.response.ResourceLimitResponse;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.SSHKeyPairResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.ServiceResponse;
+import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
+import org.apache.cloudstack.api.response.Site2SiteVpnConnectionResponse;
+import org.apache.cloudstack.api.response.Site2SiteVpnGatewayResponse;
+import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
+import org.apache.cloudstack.api.response.StaticRouteResponse;
+import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
+import org.apache.cloudstack.api.response.SystemVmResponse;
+import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.TrafficMonitorResponse;
+import org.apache.cloudstack.api.response.TrafficTypeResponse;
+import org.apache.cloudstack.api.response.UpgradeRouterTemplateResponse;
+import org.apache.cloudstack.api.response.UsageRecordResponse;
+import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VMSnapshotResponse;
+import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
+import org.apache.cloudstack.api.response.VlanIpRangeResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.VpcOfferingResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.cloudstack.api.response.VpnUsersResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.management.ManagementServerHost;
-import com.cloud.utils.crypt.DBEncryptionUtil;
-import com.cloud.tags.dao.ResourceTagDao;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
+import org.apache.cloudstack.region.PortableIp;
+import org.apache.cloudstack.region.PortableIpRange;
+import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.usage.Usage;
+import org.apache.cloudstack.usage.UsageService;
+import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -154,6 +298,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.storage.snapshot.SnapshotSchedule;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -163,11 +308,12 @@ import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
@@ -183,150 +329,6 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.affinity.AffinityGroup;
-import org.apache.cloudstack.affinity.AffinityGroupResponse;
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
-import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
-import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
-import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
-import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
-import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
-import org.apache.cloudstack.api.response.CapabilityResponse;
-import org.apache.cloudstack.api.response.CapacityResponse;
-import org.apache.cloudstack.api.response.ClusterResponse;
-import org.apache.cloudstack.api.response.ConditionResponse;
-import org.apache.cloudstack.api.response.ConfigurationResponse;
-import org.apache.cloudstack.api.response.ControlledEntityResponse;
-import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
-import org.apache.cloudstack.api.response.CounterResponse;
-import org.apache.cloudstack.api.response.CreateCmdResponse;
-import org.apache.cloudstack.api.response.CreateSSHKeyPairResponse;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.DomainRouterResponse;
-import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.response.ExtractResponse;
-import org.apache.cloudstack.api.response.FirewallResponse;
-import org.apache.cloudstack.api.response.FirewallRuleResponse;
-import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
-import org.apache.cloudstack.api.response.GuestOSResponse;
-import org.apache.cloudstack.api.response.GuestOsMappingResponse;
-import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
-import org.apache.cloudstack.api.response.HostForMigrationResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
-import org.apache.cloudstack.api.response.IPAddressResponse;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
-import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
-import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
-import org.apache.cloudstack.api.response.IsolationMethodResponse;
-import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
-import org.apache.cloudstack.api.response.LBHealthCheckResponse;
-import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
-import org.apache.cloudstack.api.response.LBStickinessResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.LoadBalancerResponse;
-import org.apache.cloudstack.api.response.ManagementServerResponse;
-import org.apache.cloudstack.api.response.NetworkACLItemResponse;
-import org.apache.cloudstack.api.response.NetworkACLResponse;
-import org.apache.cloudstack.api.response.NetworkOfferingResponse;
-import org.apache.cloudstack.api.response.NetworkResponse;
-import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
-import org.apache.cloudstack.api.response.NicResponse;
-import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
-import org.apache.cloudstack.api.response.OvsProviderResponse;
-import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
-import org.apache.cloudstack.api.response.PodResponse;
-import org.apache.cloudstack.api.response.PortableIpRangeResponse;
-import org.apache.cloudstack.api.response.PortableIpResponse;
-import org.apache.cloudstack.api.response.PrivateGatewayResponse;
-import org.apache.cloudstack.api.response.ProjectAccountResponse;
-import org.apache.cloudstack.api.response.ProjectInvitationResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.response.ProviderResponse;
-import org.apache.cloudstack.api.response.RegionResponse;
-import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
-import org.apache.cloudstack.api.response.ResourceCountResponse;
-import org.apache.cloudstack.api.response.ResourceLimitResponse;
-import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.SSHKeyPairResponse;
-import org.apache.cloudstack.api.response.SecurityGroupResponse;
-import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.ServiceResponse;
-import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
-import org.apache.cloudstack.api.response.Site2SiteVpnConnectionResponse;
-import org.apache.cloudstack.api.response.Site2SiteVpnGatewayResponse;
-import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
-import org.apache.cloudstack.api.response.SnapshotResponse;
-import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
-import org.apache.cloudstack.api.response.StaticRouteResponse;
-import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
-import org.apache.cloudstack.api.response.SystemVmResponse;
-import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.TrafficMonitorResponse;
-import org.apache.cloudstack.api.response.TrafficTypeResponse;
-import org.apache.cloudstack.api.response.UpgradeRouterTemplateResponse;
-import org.apache.cloudstack.api.response.UsageRecordResponse;
-import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VMSnapshotResponse;
-import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
-import org.apache.cloudstack.api.response.VlanIpRangeResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.VpcOfferingResponse;
-import org.apache.cloudstack.api.response.VpcResponse;
-import org.apache.cloudstack.api.response.VpnUsersResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.config.Configuration;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
-import org.apache.cloudstack.region.PortableIp;
-import org.apache.cloudstack.region.PortableIpRange;
-import org.apache.cloudstack.region.Region;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.usage.Usage;
-import org.apache.cloudstack.usage.UsageService;
-import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.stream.Collectors;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -3277,11 +3279,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public UsageRecordResponse createUsageResponse(Usage usageRecord) {
-        return createUsageResponse(usageRecord, null);
+        return createUsageResponse(usageRecord, null, false);
     }
 
     @Override
-    public UsageRecordResponse createUsageResponse(Usage usageRecord, Map<String, Set<ResourceTagResponse>> resourceTagResponseMap) {
+    public UsageRecordResponse createUsageResponse(Usage usageRecord, Map<String, Set<ResourceTagResponse>> resourceTagResponseMap, boolean oldFormat) {
         UsageRecordResponse usageRecResponse = new UsageRecordResponse();
         Account account = ApiDBUtils.findAccountById(usageRecord.getAccountId());
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
@@ -3311,15 +3313,17 @@ public class ApiResponseHelper implements ResponseGenerator {
         usageRecResponse.setDescription(usageRecord.getDescription());
         usageRecResponse.setUsage(usageRecord.getUsageDisplay());
         usageRecResponse.setUsageType(usageRecord.getUsageType());
+        VMInstanceVO vmInstance = null;
         if (usageRecord.getVmInstanceId() != null) {
-            VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId());
-            if (vm != null) {
-                usageRecResponse.setVirtualMachineId(vm.getUuid());
+            vmInstance = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId());
+            if (vmInstance != null) {
+                usageRecResponse.setVirtualMachineId(vmInstance.getUuid());
             }
         }
         usageRecResponse.setVmName(usageRecord.getVmName());
+        VMTemplateVO template = null;
         if (usageRecord.getTemplateId() != null) {
-            VMTemplateVO template = ApiDBUtils.findTemplateById(usageRecord.getTemplateId());
+            template = ApiDBUtils.findTemplateById(usageRecord.getTemplateId());
             if (template != null) {
                 usageRecResponse.setTemplateId(template.getUuid());
             }
@@ -3334,7 +3338,12 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setOfferingId(svcOffering.getUuid());
             }
             //VM Instance ID
-            VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
+            VMInstanceVO vm = null;
+            if (usageRecord.getUsageId() != null && usageRecord.getUsageId().equals(usageRecord.getVmInstanceId())) {
+                vm = vmInstance;
+            } else {
+                vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
+            }
             if (vm != null) {
                 resourceType = ResourceTag.ResourceObjectType.UserVm;
                 usageRecResponse.setUsageId(vm.getUuid());
@@ -3358,7 +3367,24 @@ public class ApiResponseHelper implements ResponseGenerator {
             } else if(svcOffering.getRamSize() != null) {
                 usageRecResponse.setMemory(svcOffering.getRamSize().longValue());
             }
-
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                if (usageRecord.getUsageType() == UsageTypes.RUNNING_VM) {
+                    builder.append("Running VM usage ");
+                } else if(usageRecord.getUsageType() == UsageTypes.ALLOCATED_VM) {
+                    builder.append("Allocated VM usage ");
+                }
+                if (vm != null) {
+                    builder.append("for ").append(vm.getHostName()).append(" (").append(vm.getInstanceName()).append(", ").append(vm.getUuid()).append(") ");
+                }
+                if (svcOffering != null) {
+                    builder.append("using service offering ").append(svcOffering.getName()).append(" (").append(svcOffering.getUuid()).append(") ");
+                }
+                if (template != null) {
+                    builder.append("and template ").append(template.getName()).append(" (").append(template.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.IP_ADDRESS) {
             //isSourceNAT
             usageRecResponse.setSourceNat((usageRecord.getType().equals("SourceNat")) ? true : false);
@@ -3371,51 +3397,83 @@ public class ApiResponseHelper implements ResponseGenerator {
                 resourceId = ip.getId();
                 usageRecResponse.setUsageId(ip.getUuid());
             }
-
         } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_SENT || usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_RECEIVED) {
             //Device Type
             resourceType = ResourceObjectType.UserVm;
             usageRecResponse.setType(usageRecord.getType());
+            VMInstanceVO vm = null;
+            HostVO host = null;
             if (usageRecord.getType().equals("DomainRouter") || usageRecord.getType().equals("UserVm")) {
                 //Domain Router Id
-                VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
+                vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
                 if (vm != null) {
                     resourceId = vm.getId();
                     usageRecResponse.setUsageId(vm.getUuid());
                 }
             } else {
                 //External Device Host Id
-                HostVO host = _entityMgr.findByIdIncludingRemoved(HostVO.class, usageRecord.getUsageId().toString());
+                host = _entityMgr.findByIdIncludingRemoved(HostVO.class, usageRecord.getUsageId().toString());
                 if (host != null) {
                     usageRecResponse.setUsageId(host.getUuid());
                 }
             }
             //Network ID
+            NetworkVO network = null;
             if((usageRecord.getNetworkId() != null) && (usageRecord.getNetworkId() != 0)) {
-                NetworkVO network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
+                network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
                 if (network != null) {
                     resourceType = ResourceObjectType.Network;
                     resourceId = network.getId();
                     usageRecResponse.setNetworkId(network.getUuid());
                 }
             }
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_SENT) {
+                    builder.append("Bytes sent by network ");
+                } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_RECEIVED) {
+                    builder.append("Bytes received by network ");
+                }
+                if (network != null) {
+                    builder.append(network.getName()).append(" (").append(network.getUuid()).append(") ");
+                }
+                if (vm != null) {
+                    builder.append("using domain router ").append(vm.getInstanceName()).append(" (").append(vm.getUuid()).append(") ");
+                } else if (host != null) {
+                    builder.append("using host ").append(host.getName()).append(" (").append(host.getUuid()).append(") ");
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE
                 || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
             //Device Type
             usageRecResponse.setType(usageRecord.getType());
             resourceType = ResourceObjectType.Volume;
-            //VM Instance Id
-            VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId().toString());
-            if (vm != null) {
-                usageRecResponse.setVirtualMachineId(vm.getUuid());
-            }
             //Volume ID
             VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
             if (volume != null) {
                 usageRecResponse.setUsageId(volume.getUuid());
                 resourceId = volume.getId();
             }
-
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ) {
+                    builder.append("Disk I/O read requests ");
+                } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE) {
+                    builder.append("Disk I/O write requests ");
+                } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ) {
+                    builder.append("Disk I/O read bytes ");
+                } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
+                    builder.append("Disk I/O write bytes ");
+                }
+                if (vmInstance != null) {
+                    builder.append("for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ");
+                }
+                if (volume != null) {
+                    builder.append("and volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.VOLUME) {
             //Volume ID
             VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
@@ -3427,11 +3485,25 @@ public class ApiResponseHelper implements ResponseGenerator {
             //Volume Size
             usageRecResponse.setSize(usageRecord.getSize());
             //Disk Offering Id
+            DiskOfferingVO diskOff = null;
             if (usageRecord.getOfferingId() != null) {
-                DiskOfferingVO diskOff = _entityMgr.findByIdIncludingRemoved(DiskOfferingVO.class, usageRecord.getOfferingId().toString());
+                diskOff = _entityMgr.findByIdIncludingRemoved(DiskOfferingVO.class, usageRecord.getOfferingId().toString());
                 usageRecResponse.setOfferingId(diskOff.getUuid());
             }
-
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("Volume usage ");
+                if (volume != null) {
+                    builder.append("for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(") ");
+                }
+                if (diskOff != null) {
+                    builder.append("with disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(") ");
+                }
+                if (template != null) {
+                    builder.append("and template ").append(template.getName()).append(" (").append(template.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.TEMPLATE || usageRecord.getUsageType() == UsageTypes.ISO) {
             //Template/ISO ID
             VMTemplateVO tmpl = _entityMgr.findByIdIncludingRemoved(VMTemplateVO.class, usageRecord.getUsageId().toString());
@@ -3448,7 +3520,19 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
                 resourceType = ResourceObjectType.Template;
             }
-
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                if (usageRecord.getUsageType() == UsageTypes.TEMPLATE) {
+                    builder.append("Template usage ");
+                } else if (usageRecord.getUsageType() == UsageTypes.ISO) {
+                    builder.append("ISO usage ");
+                }
+                if (tmpl != null) {
+                    builder.append("for ").append(tmpl.getName()).append(" (").append(tmpl.getUuid()).append(") ")
+                            .append("with size ").append(usageRecord.getSize()).append(" and virtual size ").append(usageRecord.getVirtualSize());
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.SNAPSHOT) {
             //Snapshot ID
             SnapshotVO snap = _entityMgr.findByIdIncludingRemoved(SnapshotVO.class, usageRecord.getUsageId().toString());
@@ -3459,7 +3543,15 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             //Snapshot Size
             usageRecResponse.setSize(usageRecord.getSize());
-
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("Snapshot usage ");
+                if (snap != null) {
+                    builder.append("for ").append(snap.getName()).append(" (").append(snap.getUuid()).append(") ")
+                            .append("with size ").append(usageRecord.getSize());
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.LOAD_BALANCER_POLICY) {
             //Load Balancer Policy ID
             LoadBalancerVO lb = _entityMgr.findByIdIncludingRemoved(LoadBalancerVO.class, usageRecord.getUsageId().toString());
@@ -3467,6 +3559,14 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (lb != null) {
                 usageRecResponse.setUsageId(lb.getUuid());
                 resourceId = lb.getId();
+            }
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("Loadbalancer policy usage ");
+                if (lb != null) {
+                    builder.append(lb.getName()).append(" (").append(lb.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.PORT_FORWARDING_RULE) {
             //Port Forwarding Rule ID
@@ -3476,19 +3576,44 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setUsageId(pf.getUuid());
                 resourceId = pf.getId();
             }
-
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("Port forwarding rule usage ");
+                if (pf != null) {
+                    builder.append(pf.getUuid());
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_OFFERING) {
             //Network Offering Id
             NetworkOfferingVO netOff = _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, usageRecord.getOfferingId().toString());
             usageRecResponse.setOfferingId(netOff.getUuid());
             //is Default
-            usageRecResponse.setDefault((usageRecord.getUsageId() == 1) ? true : false);
-
+            usageRecResponse.setDefault(usageRecord.getUsageId() == 1);
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("Network offering ");
+                if (netOff != null) {
+                    builder.append(netOff.getName()).append(" (").append(netOff.getUuid()).append(") usage ");
+                }
+                if (vmInstance != null) {
+                    builder.append("for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ");
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.VPN_USERS) {
             //VPN User ID
             VpnUserVO vpnUser = _entityMgr.findByIdIncludingRemoved(VpnUserVO.class, usageRecord.getUsageId().toString());
             if (vpnUser != null) {
                 usageRecResponse.setUsageId(vpnUser.getUuid());
+            }
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("VPN usage ");
+                if (vpnUser != null) {
+                    builder.append("for user ").append(vpnUser.getUsername()).append(" (").append(vpnUser.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.SECURITY_GROUP) {
             //Security Group Id
@@ -3498,17 +3623,46 @@ public class ApiResponseHelper implements ResponseGenerator {
                 resourceId = sg.getId();
                 usageRecResponse.setUsageId(sg.getUuid());
             }
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("Security group ");
+                if (sg != null) {
+                    builder.append(sg.getName()).append(" (").append(sg.getUuid()).append(") usage ");
+                }
+                if (vmInstance != null) {
+                    builder.append("for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
-            VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId().toString());
             resourceType = ResourceObjectType.UserVm;
-            if (vm != null) {
-                resourceId = vm.getId();
-                usageRecResponse.setVmName(vm.getInstanceName());
-                usageRecResponse.setUsageId(vm.getUuid());
+            if (vmInstance != null) {
+                resourceId = vmInstance.getId();
+                usageRecResponse.setVmName(vmInstance.getInstanceName());
+                usageRecResponse.setUsageId(vmInstance.getUuid());
             }
             usageRecResponse.setSize(usageRecord.getSize());
             if (usageRecord.getOfferingId() != null) {
                 usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
+            }
+            if (!oldFormat) {
+                VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+                DiskOfferingVO diskOff = null;
+                if (usageRecord.getOfferingId() != null) {
+                    diskOff = _entityMgr.findByIdIncludingRemoved(DiskOfferingVO.class, usageRecord.getOfferingId());
+                }
+                final StringBuilder builder = new StringBuilder();
+                builder.append("VMSnapshot usage ");
+                if (vmInstance != null) {
+                    builder.append("for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ");
+                }
+                if (volume != null) {
+                    builder.append("with volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(") ");
+                }
+                if (diskOff != null) {
+                    builder.append("using disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
             }
         }
 
