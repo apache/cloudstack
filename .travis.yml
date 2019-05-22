@@ -114,8 +114,9 @@ env:
 
     - TESTS="component/test_allocation_states
              component/test_acl_sharednetwork_deployVM-impersonation
-             component/test_affinity_groups_projects
-             component/test_cpu_domain_limits
+             component/test_affinity_groups_projects"
+
+    - TESTS="component/test_cpu_domain_limits
              component/test_cpu_limits"
 
     - TESTS="component/test_cpu_max_limits
