@@ -2597,7 +2597,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             isCustomized = true;
         }
 
-        if (Boolean.TRUE.equals(isCustomizedIops)) {
+        if (Boolean.TRUE.equals(isCustomizedIops) || isCustomizedIops == null) {
             minIops = null;
             maxIops = null;
         } else {
