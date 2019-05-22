@@ -3438,9 +3438,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                     builder.append(network.getName()).append(" (").append(network.getUuid()).append(") ");
                 }
                 if (vm != null) {
-                    builder.append("using domain router ").append(vm.getInstanceName()).append(" (").append(vm.getUuid()).append(") ");
+                    builder.append("using router ").append(vm.getInstanceName()).append(" (").append(vm.getUuid()).append(")");
                 } else if (host != null) {
-                    builder.append("using host ").append(host.getName()).append(" (").append(host.getUuid()).append(") ");
+                    builder.append("using host ").append(host.getName()).append(" (").append(host.getUuid()).append(")");
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -3494,13 +3494,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 final StringBuilder builder = new StringBuilder();
                 builder.append("Volume usage ");
                 if (volume != null) {
-                    builder.append("for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(") ");
+                    builder.append("for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
                 }
                 if (diskOff != null) {
-                    builder.append("with disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(") ");
+                    builder.append(" with disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
                 }
                 if (template != null) {
-                    builder.append("and template ").append(template.getName()).append(" (").append(template.getUuid()).append(")");
+                    builder.append(" and template ").append(template.getName()).append(" (").append(template.getUuid()).append(")");
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -3523,12 +3523,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (!oldFormat) {
                 final StringBuilder builder = new StringBuilder();
                 if (usageRecord.getUsageType() == UsageTypes.TEMPLATE) {
-                    builder.append("Template usage ");
+                    builder.append("Template usage");
                 } else if (usageRecord.getUsageType() == UsageTypes.ISO) {
-                    builder.append("ISO usage ");
+                    builder.append("ISO usage");
                 }
                 if (tmpl != null) {
-                    builder.append("for ").append(tmpl.getName()).append(" (").append(tmpl.getUuid()).append(") ")
+                    builder.append(" for ").append(tmpl.getName()).append(" (").append(tmpl.getUuid()).append(") ")
                             .append("with size ").append(usageRecord.getSize()).append(" and virtual size ").append(usageRecord.getVirtualSize());
                 }
                 usageRecResponse.setDescription(builder.toString());
