@@ -165,6 +165,11 @@ if [[ "$templateId" == "" ]]; then
   if [[ "$hyper" == "kvm" ]]; then
     ext="qcow2"
     templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"KVM\" and removed is null"`)
+    if [[ $(which qemu-img) ]]; then
+      qemuimgcmd=$(which qemu-img)
+    else
+      failed 2 "Please install qemu-img: command\non CentOS run \"yum install qemu-img\"\non Ubuntu/Debian run \"apt-get install qemu-utils\""
+    fi
   elif [[ "$hyper" == "xenserver" ]]; then
     ext="vhd"
     templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"XenServer\" and removed is null"`)
@@ -252,15 +257,13 @@ if [[ $? -ne 0 ]]; then
   failed 2 "Failed to install system vm template $tmpltimg to $destdir: $installrslt"
 fi
 
-if [[ $(which qemu-img) ]]; then
-  qemuimgcmd=$(which qemu-img)
-else
-  failed 2 "Please install qemu-img command"
-fi
-
 tmpltfile=$destdir/$localfile
 tmpltsize=$(ls -l $tmpltfile | awk -F" " '{print $5}')
-vrtmpltsize=$($qemuimgcmd info $tmpltfile | grep -i 'virtual size' | sed -ne 's/.*(\([0-9]*\).*/\1/p' | xargs)
+if [[ "$ext" == "qcow2" ]]; then
+  vrtmpltsize=$($qemuimgcmd info $tmpltfile | grep -i 'virtual size' | sed -ne 's/.*(\([0-9]*\).*/\1/p' | xargs)
+else
+  vrtmpltsize=$tmpltsize
+fi
 
 touch $destdir/template.properties
 echo -n "" > $destdir/template.properties
