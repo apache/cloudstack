@@ -35,12 +35,11 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.google.common.collect.Sets;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -232,6 +231,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
@@ -2218,6 +2218,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
     public ServiceOffering createServiceOffering(final CreateServiceOfferingCmd cmd) {
         final Long userId = CallContext.current().getCallingUserId();
+        final Map<String, String> details = cmd.getDetails();
+        final String offeringName = cmd.getServiceOfferingName();
 
         final String name = cmd.getServiceOfferingName();
         if (name == null || name.length() == 0) {
@@ -2233,21 +2235,54 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Integer cpuSpeed = cmd.getCpuSpeed();
         final Integer memory = cmd.getMemory();
 
-        //restricting the createserviceoffering to allow setting all or none of the dynamic parameters to null
-        if (cpuNumber == null || cpuSpeed == null || memory == null) {
-            if (cpuNumber != null || cpuSpeed != null || memory != null) {
-                throw new InvalidParameterValueException("For creating a custom compute offering cpu, cpu speed and memory all should be null");
-            }
-        }
+        // Optional Custom Parameters
+        Integer maxCPU = cmd.getMaxCPUs();
+        Integer minCPU = cmd.getMinCPUs();
+        Integer maxMemory = cmd.getMaxMemory();
+        Integer minMemory = cmd.getMinMemory();
 
-        if (cpuNumber != null && (cpuNumber.intValue() <= 0 || cpuNumber.longValue() > Integer.MAX_VALUE)) {
-            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the cpu number value between 1 and " + Integer.MAX_VALUE);
-        }
-        if (cpuSpeed != null && (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE)) {
-            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the cpu speed value between 0 and " + Integer.MAX_VALUE);
-        }
-        if (memory != null && (memory.intValue() < 32 || memory.longValue() > Integer.MAX_VALUE)) {
-            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the memory value between 32 and " + Integer.MAX_VALUE + " MB");
+        // Check if service offering is Custom,
+        // If Customized, the following conditions must hold
+        // 1. cpuNumber, cpuSpeed and memory should be all null
+        // 2. minCPU, maxCPU, minMemory and maxMemory should all be null or all specified
+        boolean isCustomized = cmd.isCustomized();
+        if (isCustomized) {
+            // validate specs
+            //restricting the createserviceoffering to allow setting all or none of the dynamic parameters to null
+            if (cpuNumber != null || memory != null) {
+                throw new InvalidParameterValueException("For creating a custom compute offering cpu and memory all should be null");
+            }
+            // if any of them is null, then all of them shoull be null
+            if (maxCPU == null || minCPU == null || maxMemory == null || minMemory == null) {
+                if (maxCPU != null || minCPU != null || maxMemory != null || minMemory != null) {
+                    throw new InvalidParameterValueException("For creating a custom compute offering min/max cpu and min/max memory should all be specified");
+                }
+            } else {
+                if (cpuSpeed != null && (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE)) {
+                    throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu speed value between 1 and " + Integer.MAX_VALUE);
+                }
+                if ((maxCPU <= 0 || maxCPU.longValue() > Integer.MAX_VALUE) || (minCPU <= 0 || minCPU.longValue() > Integer.MAX_VALUE )  ) {
+                    throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the minimum or minimum cpu number value between 1 and " + Integer.MAX_VALUE);
+                }
+                if (minMemory < 32 || (minMemory.longValue() > Integer.MAX_VALUE) || (maxMemory.longValue() > Integer.MAX_VALUE)) {
+                    throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the memory value between 32 and " + Integer.MAX_VALUE + " MB");
+                }
+                // Persist min/max CPU and Memory parameters in the service_offering_details table
+                details.put(ApiConstants.MIN_MEMORY, minMemory.toString());
+                details.put(ApiConstants.MAX_MEMORY, maxMemory.toString());
+                details.put(ApiConstants.MIN_CPU_NUMBER, minCPU.toString());
+                details.put(ApiConstants.MAX_CPU_NUMBER, maxCPU.toString());
+            }
+        } else {
+            if (cpuNumber != null && (cpuNumber.intValue() <= 0 || cpuNumber.longValue() > Integer.MAX_VALUE)) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu number value between 1 and " + Integer.MAX_VALUE);
+            }
+            if (cpuSpeed != null && (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE)) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu speed value between 0 and " + Integer.MAX_VALUE);
+            }
+            if (memory != null && (memory.intValue() < 32 || memory.longValue() > Integer.MAX_VALUE)) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the memory value between 32 and " + Integer.MAX_VALUE + " MB");
+            }
         }
 
         // check if valid domain
@@ -2330,7 +2365,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(),
-                cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
+                cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
                 cmd.getBytesReadRate(), cmd.getBytesReadRateMax(), cmd.getBytesReadRateMaxLength(),
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),

@@ -206,7 +206,7 @@
                                 </div>
 
                                 <!-- Custom size slider -->
-                                <div class="section custom-size">
+                                <div class="section custom-size custom-no-limits">
                                     <div class="field">
                                         <label><translate key="label.num.cpu.cores"/></label>
                                         <input type="text" class="required disallowSpecialCharacters" name="compute-cpu-cores" />
@@ -218,6 +218,31 @@
                                     <div class="field">
                                         <label><translate key="label.memory.mb"/></label>
                                         <input type="text" class="required disallowSpecialCharacters" name="compute-memory" />
+                                    </div>
+                                </div>
+
+                                <!-- Custom size slider -->
+                                <div class="section custom-size custom-slider-container">
+                                    <div class="slider-cpu-cores">
+                                        <label><translate key="label.num.cpu.cores"/></label>
+                                        <!-- Slider -->
+                                        <label class="size min"><span></span></label>
+                                        <div class="slider custom-size"></div>
+                                        <label class="size max"><span></span></label>
+                                        <input type="text" class="required digits" name="slider-compute-cpu-cores" value="0" />
+                                        <label class="size">Cores</label>
+                                    </div>
+                                    <div class="slider-memory-mb">
+                                        <label><translate key="label.memory.mb"/></label>
+                                        <!-- Slider -->
+                                        <label class="size min"><span></span></label>
+                                        <div class="slider custom-size"></div>
+                                        <label class="size max"><span></span></label>
+                                        <input type="text" class="required disallowSpecialCharacters" name="slider-compute-memory" value="0"/>
+                                        <label class="size">MB</label>
+                                    </div>
+                                    <div class="slider-cpu-speed">
+                                        <input type="text" style="display:none;" name="slider-compute-cpu-speed" value="0" />
                                     </div>
                                 </div>
 
@@ -248,7 +273,7 @@
                                 </div>
 
                                 <!-- Custom size slider -->
-                                <div class="section custom-size custom-disk-size">
+                                <div class="section custom-size custom-slider-container">
                                     <label><translate key="label.disk.size"/></label>
 
                                     <!-- Slider -->

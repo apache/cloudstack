@@ -136,11 +136,70 @@
                                             });
                                         }
                                     },
-                                    isCustomized: {
-                                        label: 'label.custom',
-                                        isBoolean: true,
-                                        isReverse: true,
-                                        isChecked: false
+                                    offeringType: {
+                                        label: 'label.compute.offering.type',
+                                        docID: 'helpComputeOfferingType',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'fixed',
+                                                description: _l('label.compute.offering.fixed')
+                                            });
+                                            items.push({
+                                                id: 'customConstrained',
+                                                description: _l('label.compute.offering.custom.constrained')
+                                            });
+                                            items.push({
+                                                id: 'customUnconstrained',
+                                                description: _l('label.compute.offering.custom.unconstrained')
+                                            });
+
+                                            args.response.success({
+                                                data: items
+                                            });
+
+                                            args.$select.change(function() {
+                                                var $form = $(this).closest('form');
+
+                                                var $cpuNumber = $form.find('.form-item[rel=cpuNumber]');
+                                                var $cpuSpeed = $form.find('.form-item[rel=cpuSpeed]');
+                                                var $memory = $form.find('.form-item[rel=memory]');
+
+                                                var $minCPUNumber = $form.find('.form-item[rel=minCPUNumber]');
+                                                var $maxCPUNumber = $form.find('.form-item[rel=maxCPUNumber]');
+                                                var $minMemory = $form.find('.form-item[rel=minMemory]');
+                                                var $maxMemory = $form.find('.form-item[rel=maxMemory]');
+
+                                                var type = $(this).val();
+                                                if (type == 'fixed') {
+                                                    $minCPUNumber.hide();
+                                                    $maxCPUNumber.hide();
+                                                    $minMemory.hide();
+                                                    $maxMemory.hide();
+
+                                                    $cpuNumber.css('display', 'inline-block');
+                                                    $cpuSpeed.css('display', 'inline-block');
+                                                    $memory.css('display', 'inline-block');
+                                                } else if (type == 'customConstrained') {
+                                                    $cpuNumber.hide();
+                                                    $memory.hide();
+
+                                                    $cpuSpeed.css('display', 'inline-block');
+                                                    $minCPUNumber.css('display', 'inline-block');
+                                                    $maxCPUNumber.css('display', 'inline-block');
+                                                    $minMemory.css('display', 'inline-block');
+                                                    $maxMemory.css('display', 'inline-block');
+                                                } else {
+                                                    $cpuNumber.hide();
+                                                    $memory.hide();
+                                                    $cpuSpeed.hide();
+                                                    $minCPUNumber.hide();
+                                                    $maxCPUNumber.hide();
+                                                    $minMemory.hide();
+                                                    $maxMemory.hide();
+                                                }
+                                            });
+                                        }
                                     },
                                     cpuNumber: {
                                         label: 'label.num.cpu.cores',
@@ -164,6 +223,39 @@
                                         label: 'label.memory.mb',
                                         dependsOn: 'isCustomized',
                                         docID: 'helpComputeOfferingMemory',
+                                        validation: {
+                                            required: true,
+                                            number: true
+                                        }
+                                    },
+                                    // Custom Compute Offering
+                                    minCPUNumber: {
+                                        label: 'label.min.cpu.cores',
+                                        docID: 'helpComputeOfferingMinCPUCores',
+                                        validation: {
+                                            required: true,
+                                            number: true
+                                        }
+                                    },
+                                    maxCPUNumber: {
+                                        label: 'label.max.cpu.cores',
+                                        docID: 'helpComputeOfferingMaxCPUCores',
+                                        validation: {
+                                            required: true,
+                                            number: true
+                                        }
+                                    },
+                                    minMemory: {
+                                        label: 'label.memory.minimum.mb',
+                                        docID: 'helpComputeOfferingMinMemory',
+                                        validation: {
+                                            required: true,
+                                            number: true
+                                        }
+                                    },
+                                    maxMemory: {
+                                        label: 'label.memory.maximum.mb',
+                                        docID: 'helpComputeOfferingMaxMemory',
                                         validation: {
                                             required: true,
                                             number: true
@@ -588,17 +680,18 @@
                             },
 
                             action: function(args) {
+                                var isFixedOfferingType = args.data.offeringType == 'fixed';
                                 var data = {
                                     issystem: false,
                                     name: args.data.name,
                                     displaytext: args.data.description,
                                     storageType: args.data.storageType,
                                     provisioningType :args.data.provisioningType,
-                                    customized: (args.data.isCustomized == "on")
+                                    customized: !isFixedOfferingType
                                 };
 
                                 //custom fields (begin)
-                                if (args.data.isCustomized != "on") {
+                                if (isFixedOfferingType) {
                                     $.extend(data, {
                                         cpuNumber: args.data.cpuNumber
                                     });
@@ -608,6 +701,24 @@
                                     $.extend(data, {
                                         memory: args.data.memory
                                     });
+                                } else {
+                                    if(args.data.cpuSpeed != null && args.data.minCPUNumber != null && args.data.maxCPUNumber != null && args.data.minMemory != null && args.data.maxMemory != null){
+                                        $.extend(data, {
+                                            cpuSpeed: args.data.cpuSpeed
+                                        });
+                                        $.extend(data, {
+                                            mincpunumber: args.data.minCPUNumber
+                                        });
+                                        $.extend(data, {
+                                            maxcpunumber: args.data.maxCPUNumber
+                                        });
+                                        $.extend(data, {
+                                            minmemory: args.data.minMemory
+                                        });
+                                        $.extend(data, {
+                                            maxmemory: args.data.maxMemory
+                                        });
+                                    }
                                 }
                                 //custom fields (end)
 

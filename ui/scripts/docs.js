@@ -1326,5 +1326,30 @@ cloudStack.docs = {
     helpL2UserData: {
         desc: 'Pass user and meta data to VMs (via ConfigDrive)',
         externalLink: ''
+    },
+
+    helpComputeOfferingMinCPUCores: {
+        desc: 'This will be used for the setting the range (min-max) of the number of cpu cores that should be allowed for VMs using this custom offering.',
+        externalLink: ''
+    },
+
+    helpComputeOfferingMaxCPUCores: {
+        desc: 'This will be used for the setting the range (min-max) of the number of cpu cores that should be allowed for VMs using this custom offering.',
+        externalLink: ''
+    },
+
+    helpComputeOfferingMinMemory: {
+        desc: 'This will be used for the setting the range (min-max) amount of memory that should be allowed for VMs using this custom offering.',
+        externalLink: ''
+    },
+
+    helpComputeOfferingMaxMemory: {
+        desc: 'This will be used for the setting the range (min-max) amount of memory that should be allowed for VMs using this custom offering.',
+        externalLink: ''
+    },
+
+    helpComputeOfferingType: {
+        desc: 'This will be used for setting the type of compute offering - whether it is fixed, custom constrained or custom unconstrained.',
+        externalLink: ''
     }
 };

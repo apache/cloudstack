@@ -1017,14 +1017,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public void validateCustomParameters(ServiceOfferingVO serviceOffering, Map<String, String> customParameters) {
+        //TODO need to validate custom cpu, and memory against min/max CPU/Memory ranges from service_offering_details table
         if (customParameters.size() != 0) {
+            Map<String, String> offeringDetails = serviceOfferingDetailsDao.listDetailsKeyPairs(serviceOffering.getId());
             if (serviceOffering.getCpu() == null) {
-                String cpuNumber = customParameters.get(UsageEventVO.DynamicParameters.cpuNumber.name());
-                if ((cpuNumber == null) || (NumbersUtil.parseInt(cpuNumber, -1) <= 0)) {
-                    throw new InvalidParameterValueException("Invalid cpu cores value, specify a value between 1 and " + Integer.MAX_VALUE);
+                int minCPU = NumbersUtil.parseInt(offeringDetails.get(ApiConstants.MIN_CPU_NUMBER), 1);
+                int maxCPU = NumbersUtil.parseInt(offeringDetails.get(ApiConstants.MAX_CPU_NUMBER), Integer.MAX_VALUE);
+                int cpuNumber = NumbersUtil.parseInt(customParameters.get(UsageEventVO.DynamicParameters.cpuNumber.name()), -1);
+                if (cpuNumber < minCPU || cpuNumber > maxCPU) {
+                    throw new InvalidParameterValueException(String.format("Invalid cpu cores value, specify a value between %d and %d", minCPU, maxCPU));
                 }
             } else if (customParameters.containsKey(UsageEventVO.DynamicParameters.cpuNumber.name())) {
-                throw new InvalidParameterValueException("The cpu cores of this offering id:" + serviceOffering.getId()
+                throw new InvalidParameterValueException("The cpu cores of this offering id:" + serviceOffering.getUuid()
                 + " is not customizable. This is predefined in the template.");
             }
 
@@ -1033,18 +1037,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if ((cpuSpeed == null) || (NumbersUtil.parseInt(cpuSpeed, -1) <= 0)) {
                     throw new InvalidParameterValueException("Invalid cpu speed value, specify a value between 1 and " + Integer.MAX_VALUE);
                 }
-            } else if (customParameters.containsKey(UsageEventVO.DynamicParameters.cpuSpeed.name())) {
-                throw new InvalidParameterValueException("The cpu speed of this offering id:" + serviceOffering.getId()
+            } else if (!serviceOffering.isCustomCpuSpeedSupported() && customParameters.containsKey(UsageEventVO.DynamicParameters.cpuSpeed.name())) {
+                throw new InvalidParameterValueException("The cpu speed of this offering id:" + serviceOffering.getUuid()
                 + " is not customizable. This is predefined in the template.");
             }
 
             if (serviceOffering.getRamSize() == null) {
-                String memory = customParameters.get(UsageEventVO.DynamicParameters.memory.name());
-                if (memory == null || (NumbersUtil.parseInt(memory, -1) < 32)) {
-                    throw new InvalidParameterValueException("Invalid memory value, specify a value between 32 and " + Integer.MAX_VALUE + " MB");
+                int minMemory = NumbersUtil.parseInt(offeringDetails.get(ApiConstants.MIN_MEMORY), 32);
+                int maxMemory = NumbersUtil.parseInt(offeringDetails.get(ApiConstants.MAX_MEMORY), Integer.MAX_VALUE);
+                int memory = NumbersUtil.parseInt(customParameters.get(UsageEventVO.DynamicParameters.memory.name()), -1);
+                if (memory < minMemory || memory > maxMemory) {
+                    throw new InvalidParameterValueException(String.format("Invalid memory value, specify a value between %d and %d", minMemory, maxMemory));
                 }
             } else if (customParameters.containsKey(UsageEventVO.DynamicParameters.memory.name())) {
-                throw new InvalidParameterValueException("The memory of this offering id:" + serviceOffering.getId() + " is not customizable. This is predefined in the template.");
+                throw new InvalidParameterValueException("The memory of this offering id:" + serviceOffering.getUuid() + " is not customizable. This is predefined in the template.");
             }
         } else {
             throw new InvalidParameterValueException("Need to specify custom parameter values cpu, cpu speed and memory when using custom offering");

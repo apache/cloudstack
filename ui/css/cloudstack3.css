@@ -6117,11 +6117,11 @@ label.error {
   margin-top: 9px !important;
 }
 
-.multi-wizard.instance-wizard .custom-disk-size .select-container {
+.multi-wizard.instance-wizard .custom-slider-container .select-container {
   height: 279px;
 }
 
-.multi-wizard.instance-wizard .custom-disk-size .select-container {
+.multi-wizard.instance-wizard .custom-slider-container .select-container {
   height: 213px;
   margin: -7px 6px 0 8px;
   /*+border-radius:6px;*/
@@ -6220,7 +6220,11 @@ label.error {
   font-size: 10px;
 }
 
-.instance-wizard .step.data-disk-offering.custom-disk-size .select-container {
+.instance-wizard .step.data-disk-offering.custom-slider-container .select-container {
+  height: 272px;
+}
+
+.instance-wizard .step.service-offering.custom-slider-container .select-container {
   height: 272px;
 }
 
@@ -6228,11 +6232,15 @@ label.error {
   height: 240px;
 }
 
-.instance-wizard .step.data-disk-offering.custom-disk-size.custom-iops-do .select-container {
+.instance-wizard .step.data-disk-offering.custom-slider-container.custom-iops-do .select-container {
   height: 176px;
 }
 
-.instance-wizard .step.data-disk-offering.required.custom-disk-size .select-container {
+.instance-wizard .step.service-offering.required.custom-slider-container .select-container {
+  height: 315px;
+}
+
+.instance-wizard .step.data-disk-offering.required.custom-slider-container .select-container {
   height: 315px;
 }
 
@@ -6240,7 +6248,7 @@ label.error {
   height: 295px;
 }
 
-.instance-wizard .step.data-disk-offering.required.custom-disk-size.custom-iops-do .select-container {
+.instance-wizard .step.data-disk-offering.required.custom-slider-container.custom-iops-do .select-container {
   height: 223px;
 }
 
