@@ -15,5 +15,43 @@
 // specific language governing permissions and limitations
 // under the License.
 
-@import 'licences/AL-css';
-@import 'languages/hungarian';
+.tooltip-info {
+  display: inline-block;
+  position: absolute;
+  z-index: $z-index-toolbox-info;
+  width: 239px;
+  min-height: 83px;
+  border: 1px solid #beb8b8;
+  border-radius: 22px;
+  /*+border-radius:22px;*/
+  border-radius: 22px 22px 22px 22px;
+  background: #ffffff;
+  -moz-border-radius: 22px;
+  -webkit-border-radius: 22px;
+  -khtml-border-radius: 22px;
+}
+
+.tooltip-info .arrow {
+  position: absolute;
+  top: 17px;
+  left: -18px;
+  width: 27px;
+  height: 47px;
+  background: url('../images/sprites.png') -583px -939px;
+}
+
+.tooltip-info .title {
+  margin: 12px;
+  font-size: 19px;
+  color: #485766;
+}
+
+.tooltip-info .content {
+  width: 182px;
+  margin: auto;
+  padding-bottom: 13px;
+  font-size: 11px;
+  line-height: 19px;
+  overflow: auto;
+  overflow-x: hidden;
+}

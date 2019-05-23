@@ -15,5 +15,38 @@
 // specific language governing permissions and limitations
 // under the License.
 
-@import 'licences/AL-css';
-@import 'languages/hungarian';
+.ui-dialog div.form-container div.value .dynamic-input {
+  clear: both;
+  width: calc(100% + 4px);
+  min-height: 50px;
+  max-height: 211px;
+  border: 1px solid #cdcdcd;
+  border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+  background: #ffffff;
+  /*+border-radius:4px;*/
+  overflow: auto;
+  overflow-x: hidden;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+}
+
+.ui-dialog div.form-container div.value .dynamic-input .form-item {
+  width: 97%;
+  margin: 4px 0 0 5px;
+}
+
+.ui-dialog div.form-container div.value .dynamic-input .name {
+  width: 99px;
+}
+
+.ui-dialog div.form-container div.value .dynamic-input .name label {
+  width: inherit;
+  margin-left: 0;
+  font-size: 12px;
+}
+
+.ui-dialog div.form-container div.value .dynamic-input .value {
+  width: 40%;
+}

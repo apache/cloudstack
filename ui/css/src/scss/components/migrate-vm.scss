@@ -15,5 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-@import 'licences/AL-css';
-@import 'languages/hungarian';
+.migrate-vm-available-host-list div.text-search {
+  right: 30px;
+}
+
+.migrate-vm-available-host-list div.ui-widget-content {
+  display: block !important;
+}
+
+.multi-edit-add-list .ui-button.migrateok,
+.multi-edit-add-list .ui-button.migratecancel {
+  top: -5px !important;
+}

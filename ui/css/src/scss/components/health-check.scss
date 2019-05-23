@@ -15,5 +15,33 @@
 // specific language governing permissions and limitations
 // under the License.
 
-@import 'licences/AL-css';
-@import 'languages/hungarian';
+.ui-dialog .health-check {
+  height: 295px !important;
+  padding-bottom: 93px;
+}
+
+div.ui-dialog div.health-check div.health-check-description {
+  color: #808080;
+}
+
+div.ui-dialog div.health-check div.form-container form div.form-item {
+  width: 58%;
+  margin-top: -16px;
+  margin-bottom: 30px;
+  margin-left: 116px;
+}
+
+div.ui-dialog div.health-check div.health-check-config-title {
+  float: left;
+  margin-left: 15px;
+  font-size: 17px;
+  color: #808080;
+}
+
+div.ui-dialog div.health-check div.health-check-advanced-title {
+  float: left;
+  margin-top: -70px;
+  margin-left: 15px;
+  font-size: 17px;
+  color: #808080;
+}

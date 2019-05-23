@@ -15,5 +15,21 @@
 // specific language governing permissions and limitations
 // under the License.
 
-@import 'licences/AL-css';
-@import 'languages/hungarian';
+input.error {
+  background: #fee5e5;
+}
+
+label.error {
+  color: #ff0000;
+}
+
+.label-hovered {
+  color: #0000ff !important;
+  cursor: pointer;
+}
+
+.button {
+  float: left;
+  background: url('../images/buttons.png') no-repeat;
+  cursor: pointer;
+}

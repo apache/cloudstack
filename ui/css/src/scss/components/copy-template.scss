@@ -15,5 +15,30 @@
 // specific language governing permissions and limitations
 // under the License.
 
-@import 'licences/AL-css';
-@import 'languages/hungarian';
+.copy-template-destination-list div.text-search {
+  right: 5px;
+}
+
+.copy-template-destination-list div.ui-widget-content {
+  display: block !important;
+}
+
+div.panel.copy-template-destination-list div.list-view div.fixed-header {
+  width: 500px;
+}
+
+.copy-template-destination-list.panel div.list-view div.data-table table {
+  width: 595px;
+}
+
+.copy-template-destination-list .list-view .toolbar {
+  width: 654px;
+}
+
+.multi-edit-add-list .ui-button.copytemplateok {
+  left: 330px;
+}
+
+.multi-edit-add-list .ui-button.copytemplatecancel {
+  left: 310px;
+}
