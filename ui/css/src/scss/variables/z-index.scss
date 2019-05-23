@@ -15,5 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-@import 'licences/AL-css';
-@import 'languages/hungarian';
+//TODO rework variable-names, z-index values and set up z-index value-dependencies
+$z-index-behind: -1;
+$z-index-standard: 1;
+$z-index-breadcrumbs1: 2;
+$z-index-system-chart1: 2;
+$z-index-ui-tabs: 2;
+$z-index-system-chart2: 3;
+$z-index-search: 4;
+$z-index-breadcrumbs2: 5;
+$z-index-circle-icon: 5;
+$z-index-toolbar: 6;
+$z-index-install-wizard1: 9;
+$z-index-install-wizard2: 10;
+$z-index-install-wizard3: 11;
+$z-index-notification: 100;
+$z-index-loading-overlay: 500;
+$z-index-toolbox-info: 1000;
+$z-index-vpc-tooltip: 2000;
+$z-index-multi-wizard2: 5000;
+$z-index-region-selector: 5500;
+$z-index-panel-highlight: 10000;
+$z-index-facebook: 2147483647;

@@ -1,75 +1,74 @@
-/*
- * jQuery Plugin: Tokenizing Autocomplete Text Entry
- * Version 1.6.0
- *
- * Copyright (c) 2009 James Smith (http://loopj.com)
- * Licensed jointly under the GPL and MIT licenses,
- * choose which one suits your project best!
- *
- */
-/* Example tokeninput style #2: Facebook style */
+// jQuery Plugin: Tokenizing Autocomplete Text Entry
+// Version 1.6.0
+// 
+// Copyright (c) 2009 James Smith (http://loopj.com)
+// Licensed jointly under the GPL and MIT licenses,
+// choose which one suits your project best!
+
+// Example tokeninput style #2: Facebook style
+
 ul.token-input-list-facebook {
-  overflow: hidden;
+  z-index: $z-index-facebook;
+  clear: left;
+  width: 233px;
   height: auto !important;
   height: 1%;
-  width: 233px;
-  border: 1px solid #AFAFAF;
-  cursor: text;
-  font-size: 12px;
-  font-family: Verdana;
   min-height: 1px;
-  z-index: 2147483647;
   margin: 0;
   padding: 0;
-  background-color: #F6F6F6;
+  border: 1px solid #afafaf;
+  background-color: #f6f6f6;
+  font-family: Verdana;
+  font-size: 12px;
   list-style-type: none;
-  clear: left;
+  cursor: text;
+  overflow: hidden;
 }
 
 ul.token-input-list-facebook li input {
-  border: 0;
   width: 100px;
-  padding: 3px 8px;
-  background-color: white;
   margin: 2px 0;
+  padding: 3px 8px;
+  border: 0;
+  background-color: #ffffff;
   -webkit-appearance: caret;
 }
 
 li.token-input-token-facebook {
-  overflow: hidden;
+  float: left;
   height: auto !important;
   height: 15px;
   margin: 3px;
   padding: 1px 3px;
-  background-color: #eff2f7;
-  color: #000;
-  cursor: default;
   border: 1px solid #ccd5e4;
-  font-size: 11px;
   border-radius: 5px;
+  background-color: #eff2f7;
+  font-size: 11px;
+  white-space: nowrap;
+  color: #000000;
+  cursor: default;
+  overflow: hidden;
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
-  float: left;
-  white-space: nowrap;
 }
 
 li.token-input-token-facebook p {
   display: inline;
-  padding: 0;
   margin: 0;
+  padding: 0;
 }
 
 li.token-input-token-facebook span {
-  color: #a6b3cf;
   margin-left: 5px;
   font-weight: bold;
+  color: #a6b3cf;
   cursor: pointer;
 }
 
 li.token-input-selected-token-facebook {
-  background-color: #5670a6;
   border: 1px solid #3b5998;
-  color: #fff;
+  background-color: #5670a6;
+  color: #ffffff;
 }
 
 li.token-input-input-token-facebook {
@@ -81,24 +80,24 @@ li.token-input-input-token-facebook {
 
 div.token-input-dropdown-facebook {
   position: absolute;
+  z-index: $z-index-facebook;
   width: 233px;
-  background-color: #fff;
-  overflow: hidden;
-  border-left: 1px solid #ccc;
-  border-right: 1px solid #ccc;
-  border-bottom: 1px solid #ccc;
-  cursor: default;
-  font-size: 11px;
+  border-right: 1px solid #cccccc;
+  border-bottom: 1px solid #cccccc;
+  border-left: 1px solid #cccccc;
+  background-color: #ffffff;
   font-family: Verdana;
-  z-index: 2147483647;
+  font-size: 11px;
+  cursor: default;
+  overflow: hidden;
 }
 
 div.token-input-dropdown-facebook p {
-  margin: 0;
   width: 233px;
+  margin: 0;
   padding: 5px;
   font-weight: bold;
-  color: #777;
+  color: #777777;
 }
 
 div.token-input-dropdown-facebook ul {
@@ -107,18 +106,18 @@ div.token-input-dropdown-facebook ul {
 }
 
 div.token-input-dropdown-facebook ul li {
-  background-color: #fff;
-  padding: 3px;
   margin: 0;
+  padding: 3px;
+  background-color: #ffffff;
   list-style-type: none;
 }
 
 div.token-input-dropdown-facebook ul li.token-input-dropdown-item-facebook {
-  background-color: #fff;
+  background-color: #ffffff;
 }
 
 div.token-input-dropdown-facebook ul li.token-input-dropdown-item2-facebook {
-  background-color: #fff;
+  background-color: #ffffff;
 }
 
 div.token-input-dropdown-facebook ul li em {
@@ -128,7 +127,5 @@ div.token-input-dropdown-facebook ul li em {
 
 div.token-input-dropdown-facebook ul li.token-input-selected-dropdown-item-facebook {
   background-color: #3b5998;
-  color: #fff;
+  color: #ffffff;
 }
-
-/*# sourceMappingURL=src/sourcemaps/token-input-facebook.css.map */

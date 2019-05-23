@@ -15,5 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-@import 'licences/AL-css';
-@import 'languages/hungarian';
+body {
+  min-width: 1224px;
+  background: #ede8e8;
+  font-family: sans-serif;
+  overflow: auto;
+}

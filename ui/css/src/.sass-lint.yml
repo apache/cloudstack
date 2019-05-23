@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -26,29 +26,35 @@ options:
   optOut: true
 
 files:
-  include: 'theme-ewerk/core/css/src/sass/**/*.s+(a|c)ss'
+  include: '**/*.scss'
+  ignore:
+    - node_modules/**
+
+syntax:
+  include:
+    - scss
 
 rules:
-  attribute-quotes: 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+  attribute-quotes: 2
   bem-depth:
     - 0
     - max-depth: 1
-  border-zero: 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+  border-zero: 2
   brace-style: 1
   class-name-format:
-    - 1
-    - convention: hyphenatedbem
+    - 0
+    - convention: hyphenatedlowercase
   clean-import-paths:
     - 1
     - filename-extension: false
       leading-underscore: false
   empty-line-between-blocks:
-    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+    - 2
     - ignore-single-line-rulesets: true
   extends-before-declarations: 2
   extends-before-mixins: 2
   final-newline:
-    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+    - 2
     - include: true
   force-attribute-nesting: 0
   force-element-nesting: 0
@@ -58,20 +64,20 @@ rules:
     - allow-leading-underscore: true
       convention: hyphenatedlowercase
   hex-length:
-    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+    - 2
     - style: long
   hex-notation:
-    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+    - 2
     - style: lowercase
   id-name-format:
-    - 1
+    - 0
     - convention: hyphenatedlowercase
   indentation:
-    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+    - 1 #!todo set this to 2, when autofix with sass-lint-auto-fix is possible
     - size: 2
   leading-zero:
-    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
-    - include: false
+    - 1 #!todo set this to 2, when autofix with sass-lint-auto-fix is possible
+    - include: true
   mixin-name-format:
     - 1
     - allow-leading-underscore: true
@@ -85,18 +91,18 @@ rules:
     - 1
     - max-depth: 3
   no-color-keywords: 1
-  no-color-literals: 1
-  no-css-comments: 1
+  no-color-literals: 0
+  no-css-comments: 0
   no-debug: 1
-  no-duplicate-properties: 1
+  no-duplicate-properties: 0
   no-empty-rulesets: 1
   no-extends: 0
   no-ids: 0
   no-important: 0
   no-invalid-hex: 1
-  no-mergeable-selectors: 1
+  no-mergeable-selectors: 0
   no-misspelled-properties:
-    - 1
+    - 0
     - extra-properties:
         - caret-color
   no-qualifying-elements:
@@ -107,16 +113,16 @@ rules:
   no-trailing-zero: 1
   no-transition-all: 0
   no-url-protocols: 1
-  # no-vendor-prefixes: bugs
-  #   - 1
-  #   - ignore-non-standard: true
+  no-vendor-prefixes:
+    - 0
+    - ignore-non-standard: true
   no-warn: 1
   placeholder-in-extend: 1
   placeholder-name-format:
     - 1
     - convention: hyphenatedlowercase
   property-sort-order:
-    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+    - 2
     -
       order:
         # visibility
@@ -379,10 +385,10 @@ rules:
         - dpi
         - '%'
   quotes:
-    - 1 #!todo set this to 2, after autofix with sass-lint-auto-fix
+    - 1 #!todo set this to 2, when autofix with sass-lint-auto-fix is possible
     - style: single
   shorthand-values:
-    - 1
+    - 0 #!todo set this to 2, when autofix with sass-lint-auto-fix is possible
     - allowed-shorthands:
         - 1
         - 2
@@ -413,11 +419,7 @@ rules:
   variable-for-property:
     - 1
     - properties: [
-      box-shadow,
-      border,
       z-index,
-      color,
-      background-color
     ]
   variable-name-format:
     - 1
@@ -434,20 +436,21 @@ resolvers:
   final-newline: 1
   hex-length: 1
   hex-notation: 1
-  indentation: 1
+  leading-zero: 1 #not implemented yet for sass-lint-auto-fix
+  indentation: 1 #not implemented yet for sass-lint-auto-fix
   no-color-keywords: 1
   no-css-comments: 0
   no-important: 0
   no-trailing-zero: 1
   property-sort-order: 1
+  shorthand-values: 1 #not implemented yet for sass-lint-auto-fix
   space-after-bang: 1
   space-after-colon: 1
-  #space-after-comma: 1 not implemented yet for sass-lint-auto-fix
+  space-after-comma: 1 #not implemented yet for sass-lint-auto-fix
   space-before-bang: 1
   space-before-colon: 1
   space-between-parens: 1
-  #trailing-semicolon: 1 not implemented yet for sass-lint-auto-fix
-  #space-after-comma: 1 not implemented yet for sass-lint-auto-fix
+  trailing-semicolon: 1 #not implemented yet for sass-lint-auto-fix
   url-quotes: 1
-  #quotes: 1 not implemented yet for sass-lint-auto-fix
+  quotes: 1 #not implemented yet for sass-lint-auto-fix
   zero-unit: 1

@@ -15,5 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-@import 'licences/AL-css';
-@import 'languages/hungarian';
+//* Use custom.scss to override the default CloudStack styles
+//* Use it as your global @import file for many scss files.
+//* Use lines like @import "database.scss"; inside here only.
+//* Custom scss is imported on bottom of cloudstack3.scss

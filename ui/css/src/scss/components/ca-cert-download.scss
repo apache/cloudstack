@@ -15,5 +15,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-@import 'licences/AL-css';
-@import 'languages/hungarian';
+.cacert-download {
+  display: inline-block;
+  position: relative;
+  position: absolute;
+  float: right;
+  top: 20px;
+  left: 1175px;
+  height: 30px;
+  cursor: pointer;
+}
+
+.cacert-download .icon {
+  display: inline-block;
+  display: block;
+  position: absolute;
+  float: left;
+  width: 32px;
+  height: 30px;
+  background: url('../images/sprites.png') -142px -348px;
+}
+
+.cacert-download:hover .icon,
+.cacert-download.active .icon {
+  background-position: -368px -348px;
+}

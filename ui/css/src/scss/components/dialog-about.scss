@@ -15,5 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-@import 'licences/AL-css';
-@import 'languages/hungarian';
+.dialog-about .ui-widget-content {
+  width: 100% !important;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.dialog-about .logo {
+  padding-top: 20px;
+  font-size: 26px;
+  color: #636363;
+}
+
+.dialog-about .version {
+  padding-top: 10px;
+  font-size: 12px;
+}
+
+.dialog-about .ui-button {
+  float: none;
+  margin: 0 auto;
+}
