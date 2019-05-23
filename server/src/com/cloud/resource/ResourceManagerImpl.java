@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.Pair;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.lang.ObjectUtils;
@@ -2344,45 +2345,76 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
 
+        handleAgentIfNotConnected(host, vms_migrating);
+
         try {
             resourceStateTransitTo(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
             _agentMgr.pullAgentOutMaintenance(hostId);
             retryHostMaintenance.remove(hostId);
-
-            // for kvm, need to log into kvm host, restart cloudstack-agent
-            if ((host.getHypervisorType() == HypervisorType.KVM && !vms_migrating) || host.getHypervisorType() == HypervisorType.LXC) {
-
-                final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(Config.KvmSshToAgentEnabled.key()));
-                if (!sshToAgent) {
-                    s_logger.info("Configuration tells us not to SSH into Agents. Please restart the Agent (" + hostId + ")  manually");
-                    return true;
-                }
-
-                _hostDao.loadDetails(host);
-                final String password = host.getDetail("password");
-                final String username = host.getDetail("username");
-                if (password == null || username == null) {
-                    s_logger.debug("Can't find password/username");
-                    return false;
-                }
-                final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(host.getPrivateIpAddress(), 22, username, password);
-                if (connection == null) {
-                    s_logger.debug("Failed to connect to host: " + host.getPrivateIpAddress());
-                    return false;
-                }
-
-                try {
-                    SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloudstack-agent restart");
-                    s_logger.debug("cloudstack-agent restart result: " + result.toString());
-                } catch (final SshException e) {
-                    return false;
-                }
-            }
-
-            return true;
         } catch (final NoTransitionException e) {
             s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);
             return false;
+        }
+
+        return true;
+
+    }
+
+    /**
+     * Handle agent (if available) if its not connected before cancelling maintenance.
+     * Agent must be connected before cancelling maintenance.
+     * If the host status is not Up:
+     * - If kvm.ssh.to.agent is true, then SSH into the host and restart the agent.
+     * - If kvm.shh.to.agent is false, then fail cancelling maintenance
+     */
+    protected void handleAgentIfNotConnected(HostVO host, boolean vmsMigrating) {
+        final boolean isAgentOnHost = host.getHypervisorType() == HypervisorType.KVM ||
+                host.getHypervisorType() == HypervisorType.LXC;
+        if (!isAgentOnHost || vmsMigrating || host.getStatus() == Status.Up) {
+            return;
+        }
+        final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(KvmSshToAgentEnabled.key()));
+        if (sshToAgent) {
+            Pair<String, String> credentials = getHostCredentials(host);
+            connectAndRestartAgentOnHost(host, credentials.first(), credentials.second());
+        } else {
+            throw new CloudRuntimeException("SSH access is disabled, cannot cancel maintenance mode as " +
+                    "host agent is not connected");
+        }
+    }
+
+    /**
+     * Get host credentials
+     * @throws CloudRuntimeException if username or password are not found
+     */
+    protected Pair<String, String> getHostCredentials(HostVO host) {
+        _hostDao.loadDetails(host);
+        final String password = host.getDetail("password");
+        final String username = host.getDetail("username");
+        if (password == null || username == null) {
+            throw new CloudRuntimeException("SSH to agent is enabled, but username/password credentials are not found");
+        }
+        return new Pair<>(username, password);
+    }
+
+    /**
+     * True if agent is restarted via SSH. Assumes kvm.ssh.to.agent = true and host status is not Up
+     */
+    protected void connectAndRestartAgentOnHost(HostVO host, String username, String password) {
+        final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(
+                host.getPrivateIpAddress(), 22, username, password);
+        if (connection == null) {
+            throw new CloudRuntimeException("SSH to agent is enabled, but failed to connect to host: " + host.getPrivateIpAddress());
+        }
+        try {
+            SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(
+                    connection, "service cloudstack-agent restart");
+            if (result.getReturnCode() != 0) {
+                throw new CloudRuntimeException("Could not restart agent on host " + host.getId() + " due to: " + result.getStdErr());
+            }
+            s_logger.debug("cloudstack-agent restart result: " + result.toString());
+        } catch (final SshException e) {
+            throw new CloudRuntimeException("SSH to agent is enabled, but agent restart failed", e);
         }
     }
 
