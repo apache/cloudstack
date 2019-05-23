@@ -52,6 +52,11 @@ public interface ResourceManager extends ResourceService, Configurable {
             "Number of retries when preparing a host into Maintenance Mode is faulty before failing",
             true, ConfigKey.Scope.Cluster);
 
+    ConfigKey<Boolean> KvmSshToAgentEnabled = new ConfigKey<>("Advanced", Boolean.class,
+            "kvm.ssh.to.agent","true",
+            "Number of retries when preparing a host into Maintenance Mode is faulty before failing",
+            false);
+
     /**
      * Register a listener for different types of resource life cycle events.
      * There can only be one type of listener per type of host.
