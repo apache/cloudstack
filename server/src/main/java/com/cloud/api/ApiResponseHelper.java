@@ -3458,19 +3458,19 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (!oldFormat) {
                 final StringBuilder builder = new StringBuilder();
                 if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ) {
-                    builder.append("Disk I/O read requests ");
+                    builder.append("Disk I/O read requests");
                 } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE) {
-                    builder.append("Disk I/O write requests ");
+                    builder.append("Disk I/O write requests");
                 } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ) {
-                    builder.append("Disk I/O read bytes ");
+                    builder.append("Disk I/O read bytes");
                 } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
-                    builder.append("Disk I/O write bytes ");
+                    builder.append("Disk I/O write bytes");
                 }
                 if (vmInstance != null) {
-                    builder.append("for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ");
+                    builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
                 }
                 if (volume != null) {
-                    builder.append("and volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
+                    builder.append(" and volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -3578,9 +3578,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             if (!oldFormat) {
                 final StringBuilder builder = new StringBuilder();
-                builder.append("Port forwarding rule usage ");
+                builder.append("Port forwarding rule usage");
                 if (pf != null) {
-                    builder.append(pf.getUuid());
+                    builder.append(" (").append(pf.getUuid()).append(")");
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -3625,12 +3625,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             if (!oldFormat) {
                 final StringBuilder builder = new StringBuilder();
-                builder.append("Security group ");
+                builder.append("Security group");
                 if (sg != null) {
-                    builder.append(sg.getName()).append(" (").append(sg.getUuid()).append(") usage ");
+                    builder.append(" ").append(sg.getName()).append(" (").append(sg.getUuid()).append(") usage");
                 }
                 if (vmInstance != null) {
-                    builder.append("for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
+                    builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -3652,20 +3652,40 @@ public class ApiResponseHelper implements ResponseGenerator {
                     diskOff = _entityMgr.findByIdIncludingRemoved(DiskOfferingVO.class, usageRecord.getOfferingId());
                 }
                 final StringBuilder builder = new StringBuilder();
-                builder.append("VMSnapshot usage ");
+                builder.append("VMSnapshot usage");
                 if (vmInstance != null) {
-                    builder.append("for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ");
+                    builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
                 }
                 if (volume != null) {
-                    builder.append("with volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(") ");
+                    builder.append(" with volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
                 }
                 if (diskOff != null) {
-                    builder.append("using disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
+                    builder.append(" using disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
+        } else if (usageRecord.getUsageType() == UsageTypes.VOLUME_SECONDARY) {
+            VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("Volume on secondary storage usage");
+                if (volume != null) {
+                    builder.append(" for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(") ")
+                            .append("with size ").append(usageRecord.getSize());
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
+        } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT_ON_PRIMARY) {
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("VMSnapshot on primary storage usage");
+                if (vmInstance != null) {
+                    builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ")
+                            .append("with size ").append(usageRecord.getVirtualSize());
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
         }
-
         if(resourceTagResponseMap != null && resourceTagResponseMap.get(resourceId + ":" + resourceType) != null) {
              usageRecResponse.setTags(resourceTagResponseMap.get(resourceId + ":" + resourceType));
         }
