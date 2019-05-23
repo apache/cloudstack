@@ -11808,7 +11808,7 @@
                                 },
                                 createForm: {
                                     title: 'label.action.get.diagnostics',
-                                    desc: '',
+                                    desc: 'label.get.diagnostics.desc',
                                     fields: {
                                         files: {
                                             label: 'label.get.diagnostics.files'
