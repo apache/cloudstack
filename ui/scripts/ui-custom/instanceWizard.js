@@ -431,7 +431,7 @@
 
                                     if (custom) {
                                         $step.find('.section.custom-size').hide();
-                                        $step.removeClass('custom-disk-size');
+                                        $step.removeClass('custom-slider-container');
                                     }
 
                                     $step.find('input[type=radio]').bind('change', function() {
@@ -464,10 +464,10 @@
                                         var hypervisor = item['hypervisor'];
                                         if (hypervisor == 'KVM' || hypervisor == 'XenServer' || hypervisor == 'VMware') {
                                             $step.find('.section.custom-size').show();
-                                            $step.addClass('custom-disk-size');
+                                            $step.addClass('custom-slider-container');
                                         } else {
                                             $step.find('.section.custom-size').hide();
-                                            $step.removeClass('custom-disk-size');
+                                            $step.removeClass('custom-slider-container');
                                         }
 
                                         return true;
@@ -516,8 +516,65 @@
                                         var custom = item[args.customFlag];
 
                                         if (custom) {
+                                            // contains min/max CPU and Memory values
                                             $step.addClass('custom-size');
-                                        } else {
+                                            var offeringDetails = item['serviceofferingdetails'];
+                                            var offeringCpuSpeed = item['cpuspeed'];
+                                            $step.find('.custom-no-limits').hide();
+                                            $step.find('.custom-slider-container').hide();
+
+                                            var minCpuNumber = 0, maxCpuNumber = 0, minMemory = 0, maxMemory = 0;
+                                            if (offeringDetails){
+                                                minCpuNumber = offeringDetails['mincpunumber'];
+                                                maxCpuNumber = offeringDetails['maxcpunumber'];
+                                                minMemory = offeringDetails['minmemory'];
+                                                maxMemory = offeringDetails['maxmemory'];
+                                            }
+
+                                            if (minCpuNumber > 0 && maxCpuNumber > 0 && minMemory > 0 && maxMemory > 0) {
+                                                $step.find('.custom-slider-container.slider-cpu-speed input[type=text]').val(parseInt(offeringCpuSpeed));
+                                                $step.find('.custom-slider-container').show();
+                                                var setupSlider = function(sliderClassName, minVal, maxVal) {
+                                                    $step.find('.custom-slider-container .' + sliderClassName + ' .size.min span').html(minVal);
+                                                    $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(minVal);
+                                                    $step.find('.custom-slider-container .' + sliderClassName + ' .size.max span').html(maxVal);
+                                                    $step.find('.custom-slider-container .' + sliderClassName + ' .slider').each(function() {
+                                                        var $slider = $(this);
+                                                        $slider.slider({
+                                                            min: parseInt(minVal),
+                                                            max: parseInt(maxVal),
+                                                            slide: function(event, ui) {
+                                                                $slider.closest('.section.custom-size .' + sliderClassName + '').find('input[type=text]').val(ui.value);
+                                                                $step.find('span.custom-slider-container .' + sliderClassName + '').html(ui.value);
+                                                            }
+                                                        });
+                                                    });
+
+                                                    $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').bind('change', function() {
+                                                        var val = $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val();
+                                                        if (val < minVal || val > maxVal) {
+                                                            cloudStack.dialog.notice({ message: $.validator.format(_l('message.validate.range'), [minVal, maxVal]) });
+                                                        }
+                                                        if (val < minVal) {
+                                                            val = minVal;
+                                                            $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(val);
+                                                        }
+                                                        if(val > maxVal) {
+                                                            val = maxVal;
+                                                            $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(val);
+                                                        }
+                                                        $step.find('span.custom-slider-container .' + sliderClassName).html(_s(val));
+                                                    });
+                                                }
+                                                setupSlider('slider-cpu-cores', minCpuNumber, maxCpuNumber);
+                                                setupSlider('slider-memory-mb', minMemory, maxMemory);
+                                            } else {
+                                                $step.find('.custom-slider-container.slider-cpu-speed.slider-compute-cpu-speed').val(0);
+                                                $step.find('.custom-no-limits').show();
+                                            }
+                                        } else {                                            
+                                            $step.find('.custom-no-limits').hide();
+                                            $step.find('.custom-slider-container').hide();
                                             $step.removeClass('custom-size');
                                         }
 
@@ -557,7 +614,7 @@
                                     var multiDisk = args.multiDisk;
 
                                     $step.find('.multi-disk-select-container').remove();
-                                    $step.removeClass('custom-disk-size');
+                                    $step.removeClass('custom-slider-container');
                                     $step.find('.main-desc, p.no-datadisk').remove();
 
                                     if (!multiDisk){
@@ -675,7 +732,7 @@
                                             } else {
                                                 // handle removal of custom size controls
                                                 $step.find('.section.custom-size').hide();
-                                                $step.removeClass('custom-disk-size');
+                                                $step.removeClass('custom-slider-container');
 
                                                 // handle removal of custom IOPS controls
                                                 $step.removeClass('custom-iops-do');
@@ -694,7 +751,7 @@
                                                 $('<span>').addClass('custom-size-label')
                                                 .append(': ')
                                                 .append(
-                                                    $('<span>').addClass('custom-disk-size').html(
+                                                    $('<span>').addClass('custom-slider-container').html(
                                                         $step.find('.custom-size input[name=size]').val()
                                                 )
                                                 )
@@ -705,14 +762,14 @@
                                                 $('<span>').addClass('custom-size-label')
                                                 .append(', ')
                                                 .append(
-                                                    $('<span>').addClass('custom-disk-size').html(
+                                                    $('<span>').addClass('custom-slider-container').html(
                                                         $step.find('.custom-size input[name=size]').val()
                                                 )
                                                 )
                                                 .append(' GB')
                                             );
                                             $step.find('.section.custom-size').show();
-                                            $step.addClass('custom-disk-size');
+                                            $step.addClass('custom-slider-container');
                                             $target.closest('.select-container').scrollTop(
                                                 $target.position().top
                                             );
@@ -723,7 +780,7 @@
                                                 $(this).closest('.disk-select-group').removeClass('custom-size');
                                             } else {
                                                 $step.find('.section.custom-size').hide();
-                                                $step.removeClass('custom-disk-size');
+                                                $step.removeClass('custom-slider-container');
                                             }
                                         }
 
@@ -1333,9 +1390,9 @@
                     args.maxDiskOfferingSize() : 100;
 
                 // Setup tabs and slider
-                $wizard.find('.section.custom-size.custom-disk-size .size.min span').html(minCustomDiskSize);
-                $wizard.find('.section.custom-size.custom-disk-size input[type=text]').val(minCustomDiskSize);
-                $wizard.find('.section.custom-size.custom-disk-size .size.max span').html(maxCustomDiskSize);
+                $wizard.find('.section.custom-size.custom-slider-container .size.min span').html(minCustomDiskSize);
+                $wizard.find('.section.custom-size.custom-slider-container input[type=text]').val(minCustomDiskSize);
+                $wizard.find('.section.custom-size.custom-slider-container .size.max span').html(maxCustomDiskSize);
                 $wizard.find('.tab-view').tabs();
                 $wizard.find('.slider').each(function() {
                    var $slider = $(this);
@@ -1350,7 +1407,7 @@
                             $slider.closest('.section.custom-size').find('input[type=text]').val(
                                 ui.value
                             );
-                            $slider.closest('.step').find('span.custom-disk-size').html(
+                            $slider.closest('.step').find('span.custom-slider-container').html(
                                 ui.value
                             );
                         }
@@ -1359,9 +1416,8 @@
 
                 $wizard.find('div.data-disk-offering div.custom-size input[type=text]').bind('change', function() {
                     var old = $wizard.find('div.data-disk-offering div.custom-size input[type=text]').val();
-                    $wizard.find('div.data-disk-offering span.custom-disk-size').html(_s(old));
+                    $wizard.find('div.data-disk-offering span.custom-slider-container').html(_s(old));
                 });
-
                 
                 var wizardDialog = $wizard.dialog({
                     title: _l('label.vm.add'),
