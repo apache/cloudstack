@@ -262,6 +262,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "Vm details in key/value pairs.", since = "4.2.1")
     private Map details;
 
+    @SerializedName("readonlyuidetails")
+    @Param(description = "List of UI read-only Vm details as comma separated string.", since = "4.13.0")
+    private String readOnlyUIDetails;
+
     @SerializedName(ApiConstants.SSH_KEYPAIR)
     @Param(description = "ssh key-pair")
     private String keyPairName;
@@ -810,6 +814,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.details = details;
     }
 
+    public void setReadOnlyUIDetails(String readOnlyUIDetails) {
+        this.readOnlyUIDetails = readOnlyUIDetails;
+    }
+
     public void setOsTypeId(String osTypeId) {
         this.osTypeId = osTypeId;
     }
@@ -824,6 +832,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public Map getDetails() {
         return details;
+    }
+
+    public String getReadOnlyUIDetails() {
+        return readOnlyUIDetails;
     }
 
     public Boolean getDynamicallyScalable() {

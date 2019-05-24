@@ -847,10 +847,6 @@
                     if (includingSecurityGroupService == false) {
                         hiddenTabs.push("securityGroups");
                     }
-					
-					if (args.context.instances[0].state == 'Running') {
-						hiddenTabs.push("settings");
-					}
 
                     return hiddenTabs;
                 },
@@ -3216,10 +3212,31 @@
 								$.ajax({
 									url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
 									success: function(json) {
-										var details = json.listvirtualmachinesresponse.virtualmachine[0].details;
-										args.response.success({
-											data: parseDetails(details)
-										});
+                                        var virtualMachine = json.listvirtualmachinesresponse.virtualmachine[0];
+                                        args.response.success({
+                                            data: parseDetails(virtualMachine.details)
+                                        });
+
+                                        if (virtualMachine.state != 'Stopped') {
+                                            $('#details-tab-settings').append($('<div>').addClass('blocking-overlay'));
+                                            cloudStack.dialog.notice({
+                                                message: _l('message.action.settings.warning.vm.running')
+                                            });
+                                        } else {
+                                            if(virtualMachine && virtualMachine.readonlyuidetails && virtualMachine.readonlyuidetails.length > 0) {
+                                                var readOnlyUIDetails = []
+                                                $.each(virtualMachine.readonlyuidetails.split(","), function(){
+                                                    readOnlyUIDetails.push($.trim(this));
+                                                });
+                                                $('#details-tab-settings tr').each(function() {
+                                                    if($.inArray($.trim($(this).find('td:first').text()), readOnlyUIDetails) >= 0) {
+                                                        $(this).find('td:last div.action').each(function() {
+                                                            $(this).addClass("disabled")
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        };
 									},
 
 									error: function(json) {
@@ -3234,85 +3251,100 @@
 										name: args.data.jsonObj.name,
 										value: args.data.value
 									};
-									var existingDetails;
+									var virtualMachine;
 									$.ajax({
 										url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
 										async:false,
 										success: function(json) {
-											var details = json.listvirtualmachinesresponse.virtualmachine[0].details;
-											console.log(details);
-											existingDetails = details;
+											virtualMachine = json.listvirtualmachinesresponse.virtualmachine[0];
 										},
 
 										error: function(json) {
 											args.response.error(parseXMLHttpResponse(json));
 										}
 									});
-									console.log(existingDetails);
-									var newDetails = '';
-									for (d in existingDetails) {
-										if (d != data.name) {
-											newDetails += 'details[0].' + d + '=' + existingDetails[d] + '&';
-										}
-									}
-									newDetails += 'details[0].' + data.name + '=' + data.value;
-									
-									$.ajax({
-										url: createURL('updateVirtualMachine&id=' + args.context.instances[0].id + '&' + newDetails),
-										async:false,
-										success: function(json) {
-											var items = json.updatevirtualmachineresponse.virtualmachine.details;
-											args.response.success({
-												data: parseDetails(items)
-											});
-										},
-
-										error: function(json) {
-											args.response.error(parseXMLHttpResponse(json));
-										}
-									});
-								},
+                                    if (virtualMachine && virtualMachine.state == "Stopped") {
+                                        // It could happen that a stale web page has been opened up when VM was stopped but
+                                        // vm was turned on through another route - UI or API. so we should check again.
+                                        var existingDetails = virtualMachine.details;
+                                        console.log(existingDetails);
+                                        var newDetails = {};
+                                        for (d in existingDetails) {
+                                            if (d != data.name) {
+                                                newDetails['details[0].' + d] = existingDetails[d];
+                                            }
+                                        }
+                                        newDetails['details[0].' + data.name] = data.value;
+                                        var postData = {'id' : args.context.instances[0].id};
+                                        $.extend(postData, newDetails);
+                                        $.ajax({
+                                            url: createURL('updateVirtualMachine'),
+                                            data: postData,
+                                            async:false,
+                                            success: function(json) {
+                                                var items = json.updatevirtualmachineresponse.virtualmachine.details;
+                                                args.response.success({
+                                                    data: parseDetails(items)
+                                                });
+                                            },
+                                            error: function(json) {
+                                                args.response.error(parseXMLHttpResponse(json));
+                                            }
+                                        });
+                                    } else {
+                                        $('#details-tab-settings').append($('<div>').addClass('blocking-overlay'));
+                                        cloudStack.dialog.notice({
+                                            message: _l('message.action.settings.warning.vm.started')
+                                        });
+                                    }
+                                },
 								remove: function(args) {
-									var existingDetails;
+									var virtualMachine;
 									$.ajax({
 										url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
 										async:false,
 										success: function(json) {
-											var details = json.listvirtualmachinesresponse.virtualmachine[0].details;
-											existingDetails = details;
+											virtualMachine = json.listvirtualmachinesresponse.virtualmachine[0];
 										},
 
 										error: function(json) {
 											args.response.error(parseXMLHttpResponse(json));
 										}
 									});
-									
-									var detailToDelete = args.data.jsonObj.name;
-									var newDetails = ''
-									for (detail in existingDetails) {
-										if (detail != detailToDelete) {
-											newDetails += 'details[0].' + detail + '=' + existingDetails[detail] + '&';
-										}
-									}
-									if (newDetails != '') {
-										newDetails = newDetails.substring(0, newDetails.length - 1);
-									}
-									else {
-										newDetails += 'cleanupdetails=true'
-									}
-									$.ajax({
-										url: createURL('updateVirtualMachine&id=' + args.context.instances[0].id + '&' + newDetails),
-										async:false,
-										success: function(json) {
-											var items = json.updatevirtualmachineresponse.virtualmachine.details;
-											args.response.success({
-												data: parseDetails(items)
-											});
-										},
-										error: function(json) {
-											args.response.error(parseXMLHttpResponse(json));
-										}
-									});
+                                    if (virtualMachine && virtualMachine.state == "Stopped") {
+                                        // It could happen that a stale web page has been opened up when VM was stopped but
+                                        // vm was turned on through another route - UI or API. so we should check again.
+                                        var detailToDelete = args.data.jsonObj.name;
+                                        var existingDetails = virtualMachine.details;
+                                        var newDetails = {};
+                                        for (detail in existingDetails) {
+                                            if (detail != detailToDelete) {
+                                                newDetails['details[0].' + detail] = existingDetails[detail];
+                                            }
+                                        }
+
+                                        var postData = $.isEmptyObject(newDetails) ? {'cleanupdetails': true} : newDetails;
+                                        $.extend(postData, {'id' : args.context.instances[0].id});
+                                        $.ajax({
+                                            url: createURL('updateVirtualMachine'),
+                                            data: postData,
+                                            async:false,
+                                            success: function(json) {
+                                                var items = json.updatevirtualmachineresponse.virtualmachine.details;
+                                                args.response.success({
+                                                    data: parseDetails(items)
+                                                });
+                                            },
+                                            error: function(json) {
+                                                args.response.error(parseXMLHttpResponse(json));
+                                            }
+                                        });
+                                    } else {
+                                        $('#details-tab-settings').append($('<div>').addClass('blocking-overlay'));
+                                        cloudStack.dialog.notice({
+                                            message: _l('message.action.settings.warning.vm.started')
+                                        });
+                                    }
 								},
 								add: function(args) {
 									var name = args.data.name;
