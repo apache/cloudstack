@@ -114,8 +114,23 @@ class CsDhcp(CsDataBag):
             idx += 1
 
     def delete_leases(self):
+        macs_dhcphosts = []
         try:
-            open(LEASES, 'w').close()
+            logging.info("Attempting to delete entries from dnsmasq.leases file for VMs which are not on dhcphosts file")
+            for host in open(DHCP_HOSTS):
+                macs_dhcphosts.append(host.split(',')[0])
+
+            removed = 0
+            for leaseline in open(LEASES):
+                lease = leaseline.split(' ')
+                mac = lease[1]
+                ip = lease[2]
+                if mac not in macs_dhcphosts:
+                    cmd = "dhcp_release %s %s" % (ip, mac)
+                    logging.info(cmd)
+                    CsHelper.execute(cmd)
+                    removed = removed + 1
+            logging.info("Deleted %s entries from dnsmasq.leases file" % str(removed))
         except IOError:
             return
 
