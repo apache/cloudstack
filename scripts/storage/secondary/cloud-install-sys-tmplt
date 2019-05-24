@@ -24,17 +24,22 @@ usage() {
   printf "\nUsage: %s:\n\t-m secondary storage mount point\n\t-u http url for system vm template\n\t-h hypervisor name: kvm|vmware|xenserver|hyperv|ovm3\n\t-s mgmt server secret key\n\n" $(basename $0) >&2
 }
 
+# Usage: e.g. failed $? "this is an error"
 failed() {
-  if [[ -z $2 ]]; then
+  local returnval=$1
+  local returnmsg=$2
+  
+  # check for an message, if there is no one dont print anything
+  if [[ -z $returnmsg ]]; then
     :
   else
-    echo -e $2
+    echo -e $returnmsg
   fi
-  if [[ $1 -eq 0 ]]; then
+  if [[ $returnval -eq 0 ]]; then
     return 0
   else
     echo "Installation failed"
-    exit $1
+    exit $returnval
   fi
 }
 
@@ -54,8 +59,8 @@ dbPort=3306
 jasypt='/usr/share/cloudstack-common/lib/jasypt-1.9.2.jar'
 tmpldescr='SystemVM Template'
 
-if [[ ! $@ =~ ^\-.+ ]]
-then
+# check if first parameter is not a dash (-) then print the usage block
+if [[ ! $@ =~ ^\-.+ ]]; then
 	usage
 	exit 0
 fi
