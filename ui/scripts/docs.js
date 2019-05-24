@@ -298,7 +298,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpComputeOfferingDomain: {
-        desc: 'The domain to associate this compute offering with'
+        desc: 'Select the domains in which this offering is available (Tip: Use Ctrl to choose multiple domains)',
     },
     helpComputeOfferingZone: {
         desc: 'Select the zones in which this offering is available (Tip: Use Ctrl to choose multiple zones)',
@@ -646,7 +646,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpNetworkOfferingDomain: {
-        desc: 'The domain to associate this compute offering with'
+        desc: 'Select the domains in which this offering is available (Tip: Use Ctrl to choose multiple domains)',
     },
     helpNetworkOfferingZone: {
         desc: 'Select the zones in which this offering is available (Tip: Use Ctrl to choose multiple zones)',
@@ -1321,7 +1321,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpVpcOfferingDomain: {
-        desc: 'The domain to associate this compute offering with'
+        desc: 'Select the domains in which this offering is available (Tip: Use Ctrl to choose multiple domains)',
     },
     helpVpcOfferingZone: {
         desc: 'Select the zones in which this offering is available (Tip: Use Ctrl to choose multiple zones)',
