@@ -157,11 +157,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     public static final ConfigKey<Boolean> VmwareReserveCpu = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.cpu", "Advanced", "false",
-        "Specify whether or not to reserve CPU when not overprovisioning.", true, ConfigKey.Scope.Cluster,
+        "Specify whether or not to reserve CPU when deploying an instance.", true, ConfigKey.Scope.Cluster,
         null);
 
     public static final ConfigKey<Boolean> VmwareReserveMemory = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.mem", "Advanced", "false",
-        "Specify whether or not to reserve memory when not overprovisioning.", true,
+        "Specify whether or not to reserve memory when deploying an instance.", true,
         ConfigKey.Scope.Cluster, null);
 
     protected ConfigKey<Boolean> VmwareEnableNestedVirtualization = new ConfigKey<Boolean>(Boolean.class, "vmware.nested.virtualization", "Advanced", "false",
