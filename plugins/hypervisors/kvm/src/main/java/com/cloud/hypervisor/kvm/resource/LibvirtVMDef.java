@@ -1360,7 +1360,11 @@ public class LibvirtVMDef {
 
             if (_features != null) {
                 for (String feature : _features) {
-                    modeBuilder.append("<feature policy='require' name='" + feature + "'/>");
+                    if (feature.startsWith("-")) {
+                        modeBuilder.append("<feature policy='disable' name='" + feature.substring(1) + "'/>");
+                    } else {
+                        modeBuilder.append("<feature policy='require' name='" + feature + "'/>");
+                    }
                 }
             }
 
