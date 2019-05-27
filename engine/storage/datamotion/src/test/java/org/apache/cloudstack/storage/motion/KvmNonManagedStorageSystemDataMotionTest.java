@@ -50,10 +50,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreateCommand;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudException;
 import com.cloud.exception.OperationTimedoutException;
@@ -61,18 +57,13 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineManager;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -200,64 +191,6 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         Assert.assertEquals(MigrateCommand.MigrateDiskInfo.Source.FILE, migrateDiskInfo.getSource());
         Assert.assertEquals("destPath", migrateDiskInfo.getSourceText());
         Assert.assertEquals("volume path", migrateDiskInfo.getSerialNumber());
-    }
-
-    @Test
-    public void generateDestPathTest() {
-        configureAndVerifygenerateDestPathTest(true, false);
-    }
-
-    @Test(expected = CloudRuntimeException.class)
-    public void generateDestPathTestExpectCloudRuntimeException() {
-        configureAndVerifygenerateDestPathTest(false, false);
-    }
-
-    @Test(expected = CloudRuntimeException.class)
-    public void generateDestPathTestExpectCloudRuntimeException2() {
-        configureAndVerifygenerateDestPathTest(false, true);
-    }
-
-    private void configureAndVerifygenerateDestPathTest(boolean answerResult, boolean answerIsNull) {
-        String uuid = "f3d49ecc-870c-475a-89fa-fd0124420a9b";
-        String destPath = "/var/lib/libvirt/images/";
-
-        VirtualMachineTO vmTO = Mockito.mock(VirtualMachineTO.class);
-        Mockito.when(vmTO.getName()).thenReturn("vmName");
-
-        VolumeVO srcVolume = Mockito.spy(new VolumeVO("name", 0l, 0l, 0l, 0l, 0l, "folder", "path", Storage.ProvisioningType.THIN, 0l, Volume.Type.ROOT));
-        StoragePoolVO destStoragePool = Mockito.spy(new StoragePoolVO());
-
-        VolumeInfo destVolumeInfo = Mockito.spy(new VolumeObject());
-        Mockito.doReturn(0l).when(destVolumeInfo).getTemplateId();
-        Mockito.doReturn(0l).when(destVolumeInfo).getId();
-        Mockito.doReturn(Volume.Type.ROOT).when(destVolumeInfo).getVolumeType();
-        Mockito.doReturn("name").when(destVolumeInfo).getName();
-        Mockito.doReturn(0l).when(destVolumeInfo).getSize();
-        Mockito.doReturn(uuid).when(destVolumeInfo).getUuid();
-
-        DiskOfferingVO diskOffering = Mockito.spy(new DiskOfferingVO());
-        Mockito.doReturn(0l).when(diskOffering).getId();
-        Mockito.doReturn(diskOffering).when(diskOfferingDao).findById(0l);
-        DiskProfile diskProfile = Mockito.spy(new DiskProfile(destVolumeInfo, diskOffering, HypervisorType.KVM));
-
-        String templateUuid = Mockito.doReturn("templateUuid").when(kvmNonManagedStorageDataMotionStrategy).getTemplateUuid(0l);
-        CreateCommand rootImageProvisioningCommand = new CreateCommand(diskProfile, templateUuid, destStoragePool, true);
-        CreateAnswer createAnswer = Mockito.spy(new CreateAnswer(rootImageProvisioningCommand, "details"));
-        Mockito.doReturn(answerResult).when(createAnswer).getResult();
-
-        VolumeTO volumeTo = Mockito.mock(VolumeTO.class);
-        Mockito.doReturn(destPath).when(volumeTo).getName();
-        Mockito.doReturn(volumeTo).when(createAnswer).getVolume();
-
-        if (answerIsNull) {
-            Mockito.doReturn(null).when(agentManager).easySend(0l, rootImageProvisioningCommand);
-        } else {
-            Mockito.doReturn(createAnswer).when(agentManager).easySend(0l, rootImageProvisioningCommand);
-        }
-
-        String generatedDestPath = kvmNonManagedStorageDataMotionStrategy.generateDestPath(vmTO, srcVolume, new HostVO("sourceHostUuid"), destStoragePool, destVolumeInfo);
-
-        Assert.assertEquals(destPath + uuid, generatedDestPath);
     }
 
     @Test

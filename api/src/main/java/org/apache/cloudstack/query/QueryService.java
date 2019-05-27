@@ -88,6 +88,14 @@ public interface QueryService {
     static final ConfigKey<Boolean> AllowUserViewDestroyedVM = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.user.view.destroyed.vm", "false",
             "Determines whether users can view their destroyed or expunging vm ", true, ConfigKey.Scope.Account);
 
+    static final ConfigKey<String> UserVMBlacklistedDetails = new ConfigKey<String>("Advanced", String.class,
+            "user.vm.blacklisted.details", "rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag",
+            "Determines whether users can view certain VM settings", true);
+
+    static final ConfigKey<String> UserVMReadOnlyUIDetails = new ConfigKey<String>("Advanced", String.class,
+            "user.vm.readonly.ui.details", "dataDiskController, rootDiskController",
+            "List of UI read-only VM settings/details as comma separated string", true);
+
     ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
 
     ListResponse<EventResponse> searchForEvents(ListEventsCmd cmd);

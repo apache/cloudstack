@@ -21,22 +21,16 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.spy;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -52,10 +46,8 @@ import org.junit.Test;
 
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
-import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.element.NetworkElement;
 import com.cloud.user.Account;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -151,54 +143,6 @@ public class NetworkModelTest {
         Assert.assertNotNull(answer);
         Assert.assertEquals(answer.getAddress().addr(), "76.75.75.75");
 
-    }
-
-    @Test
-    public void testCapabilityForProvider() {
-        NetworkModelImpl modelImpl = spy(NetworkModelImpl.class);
-        Set<Provider> providers = new HashSet<>();
-        providers.add(Provider.NuageVsp);
-        NetworkElement nuageVspElement = mock(NetworkElement.class);
-        HashMap<Network.Service, Map<Network.Capability, String>> nuageVspCap = new HashMap<Network.Service, Map<Network.Capability, String>>();
-        HashMap<Network.Capability, String> nuageVspConnectivity = new HashMap<Network.Capability, String>();
-        nuageVspConnectivity.put(Network.Capability.NoVlan, "FindMe");
-        nuageVspConnectivity.put(Network.Capability.PublicAccess, "");
-
-        nuageVspCap.put(Network.Service.Connectivity, nuageVspConnectivity);
-        when(nuageVspElement.getName()).thenReturn("NuageVsp");
-        doReturn(nuageVspCap).when(nuageVspElement).getCapabilities();
-        doReturn(nuageVspElement).when(modelImpl).getElementImplementingProvider("NuageVsp");
-
-        try {
-            modelImpl.checkCapabilityForProvider(providers, Network.Service.UserData, null, null);
-            Assert.fail();
-        } catch (UnsupportedServiceException e) {
-            Assert.assertEquals(e.getMessage(), "Service " + Network.Service.UserData.getName() + " is not supported by the element=NuageVsp implementing Provider=" + Provider.NuageVsp.getName());
-        }
-
-        try {
-            modelImpl.checkCapabilityForProvider(providers, Network.Service.Connectivity, Network.Capability.ElasticIp, null);
-            Assert.fail();
-        } catch (UnsupportedServiceException e) {
-            Assert.assertEquals(e.getMessage(), "Service " + Network.Service.Connectivity.getName() + " doesn't have capability " + Network.Capability.ElasticIp.getName() + " for element=NuageVsp implementing Provider=" + Provider.NuageVsp.getName());
-        }
-        try {
-            modelImpl.checkCapabilityForProvider(providers, Network.Service.Connectivity, Network.Capability.PublicAccess, "NonExistingVal");
-            Assert.fail();
-        } catch (UnsupportedServiceException e){
-            Assert.assertEquals(e.getMessage(),"Service Connectivity doesn't have capability PublicAccess for element=NuageVsp implementing Provider=NuageVsp");
-        }
-
-        modelImpl.checkCapabilityForProvider(providers, Network.Service.Connectivity, Network.Capability.NoVlan, "FindMe");
-
-        NetworkElement nuageVspElement2 = mock(NetworkElement.class);
-        doReturn(null).when(nuageVspElement).getCapabilities();
-        try {
-            modelImpl.checkCapabilityForProvider(providers, Network.Service.Connectivity, Network.Capability.PublicAccess, "");
-            Assert.fail();
-        } catch (UnsupportedServiceException e) {
-            Assert.assertEquals(e.getMessage(), "Service Connectivity is not supported by the element=NuageVsp implementing Provider=NuageVsp");
-        }
     }
 
     @Test

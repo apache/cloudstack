@@ -40,15 +40,11 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreateCommand;
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -57,7 +53,6 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineManager;
 
 /**
@@ -111,28 +106,8 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
      * Example: /var/lib/libvirt/images/f3d49ecc-870c-475a-89fa-fd0124420a9b
      */
     @Override
-    protected String generateDestPath(VirtualMachineTO vmTO, VolumeVO srcVolume, Host destHost, StoragePoolVO destStoragePool, VolumeInfo destVolumeInfo) {
-        DiskOfferingVO diskOffering = _diskOfferingDao.findById(srcVolume.getDiskOfferingId());
-        DiskProfile diskProfile = new DiskProfile(destVolumeInfo, diskOffering, HypervisorType.KVM);
-        String templateUuid = getTemplateUuid(destVolumeInfo.getTemplateId());
-        CreateCommand rootImageProvisioningCommand = new CreateCommand(diskProfile, templateUuid, destStoragePool, true);
-
-        Answer rootImageProvisioningAnswer = agentManager.easySend(destHost.getId(), rootImageProvisioningCommand);
-
-        if (rootImageProvisioningAnswer == null) {
-            throw new CloudRuntimeException(String.format("Migration with storage of vm [%s] failed while provisioning root image", vmTO.getName()));
-        }
-
-        if (!rootImageProvisioningAnswer.getResult()) {
-            throw new CloudRuntimeException(String.format("Unable to modify target volume on the host [host id:%s, name:%s]", destHost.getId(), destHost.getName()));
-        }
-
-        String libvirtDestImgsPath = null;
-        if (rootImageProvisioningAnswer instanceof CreateAnswer) {
-            libvirtDestImgsPath = ((CreateAnswer)rootImageProvisioningAnswer).getVolume().getName();
-        }
-        // File.getAbsolutePath is used to keep the file separator as it should be and eliminate a verification to check if exists a file separator in the last character of libvirtDestImgsPath.
-        return new File(libvirtDestImgsPath, destVolumeInfo.getUuid()).getAbsolutePath();
+    protected String generateDestPath(Host destHost, StoragePoolVO destStoragePool, VolumeInfo destVolumeInfo) {
+        return new File(destStoragePool.getPath(), destVolumeInfo.getUuid()).getAbsolutePath();
     }
 
     /**

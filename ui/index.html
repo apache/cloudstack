@@ -23,13 +23,9 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title></title>
         <link rel="shortcut icon" href="images/cloud.ico" />
+        <link type="text/css" rel="stylesheet" href="lib/jquery-ui/css/jquery-ui.css" />
         <link type="text/css" rel="stylesheet" href="lib/reset.css"/>
         <link type="text/css" rel="stylesheet" href="css/cloudstack3.css" />
-        <link type="text/css" rel="stylesheet" href="css/token-input-facebook.css" />
-        <!--[if IE 7]>
-            <link type="text/css" rel="stylesheet" href="css/cloudstack3-ie7.css" />
-            <![endif]-->
-    <link type="text/css" rel="stylesheet" href="css/custom.css" />
     </head>
     <body>
         <!-- CloudStack widget content -->
@@ -205,7 +201,7 @@
                                 </div>
 
                                 <!-- Custom size slider -->
-                                <div class="section custom-size">
+                                <div class="section custom-size custom-no-limits">
                                     <div class="field">
                                         <label><translate key="label.num.cpu.cores"/></label>
                                         <input type="text" class="required disallowSpecialCharacters" name="compute-cpu-cores" />
@@ -217,6 +213,31 @@
                                     <div class="field">
                                         <label><translate key="label.memory.mb"/></label>
                                         <input type="text" class="required disallowSpecialCharacters" name="compute-memory" />
+                                    </div>
+                                </div>
+
+                                <!-- Custom size slider -->
+                                <div class="section custom-size custom-slider-container">
+                                    <div class="slider-cpu-cores">
+                                        <label><translate key="label.num.cpu.cores"/></label>
+                                        <!-- Slider -->
+                                        <label class="size min"><span></span></label>
+                                        <div class="slider custom-size"></div>
+                                        <label class="size max"><span></span></label>
+                                        <input type="text" class="required digits" name="slider-compute-cpu-cores" value="0" />
+                                        <label class="size">Cores</label>
+                                    </div>
+                                    <div class="slider-memory-mb">
+                                        <label><translate key="label.memory.mb"/></label>
+                                        <!-- Slider -->
+                                        <label class="size min"><span></span></label>
+                                        <div class="slider custom-size"></div>
+                                        <label class="size max"><span></span></label>
+                                        <input type="text" class="required disallowSpecialCharacters" name="slider-compute-memory" value="0"/>
+                                        <label class="size">MB</label>
+                                    </div>
+                                    <div class="slider-cpu-speed">
+                                        <input type="text" style="display:none;" name="slider-compute-cpu-speed" value="0" />
                                     </div>
                                 </div>
 
@@ -247,7 +268,7 @@
                                 </div>
 
                                 <!-- Custom size slider -->
-                                <div class="section custom-size custom-disk-size">
+                                <div class="section custom-size custom-slider-container">
                                     <label><translate key="label.disk.size"/></label>
 
                                     <!-- Slider -->
@@ -557,7 +578,7 @@
                                             <span><translate key="label.add.userdata"/> (<translate key="label.optional"/>)</span>
                                         </div>
                                         <div class="value">
-                                            <textarea name="userdata" class="disallowSpecialCharacters"></textarea>
+                                            <textarea name="userdata"></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -1425,7 +1446,7 @@
                         <ul data-item="zoneCapacities">
                             <li concat-value="25">
                                 <div class="label">
-                                    <translate key="label.zone"/>: <span data-list-item="zoneName"></span>
+                                    <label><translate key="label.zone"/></label>: <span data-list-item="zoneName"></span>
                                 </div>
                                 <div class="pie-chart-container">
                                     <div class="percent-label"><span data-list-item="percent"></span>%</div>

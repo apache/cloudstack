@@ -20,6 +20,8 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 import junit.framework.TestCase;
@@ -137,6 +139,31 @@ public class LibvirtVMDefTest extends TestCase {
         String expected3 = "<cpu mode='host-passthrough'></cpu>";
         assertEquals(expected3, cpuModeDef.toString());
 
+    }
+
+    @Test
+    public void testCpuModeDefCpuFeatures() {
+        LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
+        cpuModeDef.setMode("custom");
+        cpuModeDef.setModel("Nehalem");
+
+        String expected_start = "<cpu mode='custom' match='exact'><model fallback='allow'>Nehalem</model>";
+        String expected_end = "</cpu>";
+
+        List<String> features1 = Arrays.asList("feature1", "feature2");
+        cpuModeDef.setFeatures(features1);
+        String expected1 = "<feature policy='require' name='feature1'/><feature policy='require' name='feature2'/>";
+        assertEquals(expected_start + expected1 + expected_end, cpuModeDef.toString());
+
+        List<String> features2 = Arrays.asList("-feature1", "-feature2");
+        cpuModeDef.setFeatures(features2);
+        String expected2 = "<feature policy='disable' name='feature1'/><feature policy='disable' name='feature2'/>";
+        assertEquals(expected_start + expected2 + expected_end, cpuModeDef.toString());
+
+        List<String> features3 = Arrays.asList("-feature1", "feature2");
+        cpuModeDef.setFeatures(features3);
+        String expected3 = "<feature policy='disable' name='feature1'/><feature policy='require' name='feature2'/>";
+        assertEquals(expected_start + expected3 + expected_end, cpuModeDef.toString());
     }
 
     @Test
@@ -261,7 +288,7 @@ public class LibvirtVMDefTest extends TestCase {
     public void testChannelDef() {
         ChannelDef.ChannelType type = ChannelDef.ChannelType.UNIX;
         ChannelDef.ChannelState state = ChannelDef.ChannelState.CONNECTED;
-        String name = "v-136-VM.vport";
+        String name = "v-136-VM.org.qemu.guest_agent.0";
         File path = new File("/var/lib/libvirt/qemu/" + name);
 
         ChannelDef channelDef = new ChannelDef(name, type, state, path);
@@ -292,23 +319,4 @@ public class LibvirtVMDefTest extends TestCase {
                 "</controller>\n";
         assertEquals(str, expected);
     }
-
-    @Test
-    public void testMetadataDef() {
-        LibvirtVMDef.MetadataDef metadataDef = new LibvirtVMDef.MetadataDef();
-
-        metadataDef.getMetadataNode(LibvirtVMDef.NuageExtensionDef.class).addNuageExtension("mac1", "ip1");
-        metadataDef.getMetadataNode(LibvirtVMDef.NuageExtensionDef.class).addNuageExtension("mac2", "ip2");
-
-        String xmlDef = metadataDef.toString();
-        String expectedXml = "<metadata>\n" +
-                "<nuage-extension xmlns='nuagenetworks.net/nuage/cna'>\n" +
-                "  <interface mac='mac2' vsp-vr-ip='ip2'></interface>\n" +
-                "  <interface mac='mac1' vsp-vr-ip='ip1'></interface>\n" +
-                "</nuage-extension>\n" +
-                "</metadata>\n";
-
-        assertEquals(xmlDef, expectedXml);
-    }
-
 }

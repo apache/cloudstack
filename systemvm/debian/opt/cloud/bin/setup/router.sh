@@ -96,7 +96,9 @@ setup_router() {
   sed -i "s/-A INPUT -i eth0 -p tcp -m tcp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p tcp -m tcp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules.v4
 
   # Setup hourly logrotate
-  mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
+  if [ -f /etc/cron.daily/logrotate ]; then
+    mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
+  fi
 }
 
 routing_svcs

@@ -178,7 +178,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         final List<SnapshotScheduleVO> snapshotSchedules = _snapshotScheduleDao.search(sc, null);
         for (final SnapshotScheduleVO snapshotSchedule : snapshotSchedules) {
             final Long asyncJobId = snapshotSchedule.getAsyncJobId();
-            final AsyncJobVO asyncJob = _asyncJobDao.findById(asyncJobId);
+            final AsyncJobVO asyncJob = _asyncJobDao.findByIdIncludingRemoved(asyncJobId);
             switch (asyncJob.getStatus()) {
                 case SUCCEEDED:
                     // The snapshot has been successfully backed up.
