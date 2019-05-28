@@ -3303,8 +3303,7 @@
                                             }
                                         }
                                         newDetails['details[0].' + data.name] = data.value;
-
-									var postData = {'id' : args.context.instances[0].id};
+                                        var postData = {'id' : args.context.instances[0].id};
                                         $.extend(postData, newDetails);
                                         $.ajax({
                                             url: createURL('updateVirtualMachine'),
