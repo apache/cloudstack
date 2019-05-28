@@ -25,13 +25,22 @@ usage() {
 #set -x
 ulimit -c 0
 
+# Usage: e.g. failed $? "this is an error"
 failed() {
-  echo $2
-  if [[ $1 -eq 0 ]]; then
+  local returnval=$1
+  local returnmsg=$2
+  
+  # check for an message, if there is no one dont print anything
+  if [[ -z $returnmsg ]]; then
+    :
+  else
+    echo -e $returnmsg
+  fi
+  if [[ $returnval -eq 0 ]]; then
     return 0
   else
     echo "Installation failed"
-    exit $1
+    exit $returnval
   fi
 }
 
@@ -95,6 +104,13 @@ tflag=
 nflag=
 fflag=
 
+# check if first parameter is not a dash (-) then print the usage block
+if [[ ! $@ =~ ^\-.+ ]]; then
+	usage
+	exit 0
+fi
+
+OPTERR=0
 while getopts 't:n:f:' OPTION
 do
   case $OPTION in
