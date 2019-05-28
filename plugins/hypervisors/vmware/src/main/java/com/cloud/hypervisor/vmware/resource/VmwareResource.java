@@ -5907,7 +5907,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         } else if (objProp.getName().contains(instanceNameCustomField)) {
                             if (objProp.getVal() != null)
                                 vmInternalCSName = ((CustomFieldStringValue)objProp.getVal()).getValue();
-                        } else if (objProp.getName().equals(guestMemusage)) {
+                        } else if (objProp.getName().equals(guestMemUseStr)) {
                             guestMemusage = objProp.getVal().toString();
                         } else if (objProp.getName().equals(numCpuStr)) {
                             numberCPUs = objProp.getVal().toString();
