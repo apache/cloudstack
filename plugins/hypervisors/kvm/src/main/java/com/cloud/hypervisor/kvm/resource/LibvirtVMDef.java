@@ -1019,8 +1019,9 @@ public class LibvirtVMDef {
         private String _dpdkSourcePort;
         private String _dpdkExtraLines;
 
-        /* ----- BRIDGE NET ----- */
-
+        /**
+         * Bridge Net
+         */
         public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model) {
             defBridgeNet(brName, targetBrName, macAddr, model, 0, null);
         }
@@ -1035,8 +1036,9 @@ public class LibvirtVMDef {
             _mtu = mtu;
         }
 
-        /* ----- DPDK-NET ----- */
-
+        /**
+         * Dpdk Net
+         */
         public void defDpdkNet(String dpdkSourcePath, String dpdkPort, String macAddress, NicModel model, Integer networkRateKBps, String extra, Integer mtu) {
             _netType = GuestNetType.VHOSTUSER;
             _dpdkSourcePath = dpdkSourcePath;
@@ -1048,8 +1050,9 @@ public class LibvirtVMDef {
             _mtu = mtu;
         }
 
-        /* ----- DIRECT-NET ----- */
-
+        /**
+         * Direct Net
+         */
         public void defDirectNet(String sourceName, String targetName, String macAddr, NicModel model, String sourceMode, Integer networkRateKBps, Integer mtu) {
             _netType = GuestNetType.DIRECT;
             _netSourceMode = sourceMode;
@@ -1061,8 +1064,9 @@ public class LibvirtVMDef {
             _mtu = mtu;
         }
 
-        /* ----- PRIVATE NET ----- */
-
+        /**
+         * Private Net
+         */
         public void defPrivateNet(String networkName, String targetName, String macAddr, NicModel model, Integer networkRateKBps, Integer mtu) {
             _netType = GuestNetType.NETWORK;
             _sourceName = networkName;
@@ -1073,8 +1077,9 @@ public class LibvirtVMDef {
             _mtu = mtu;
         }
 
-        /* ----- ETHER NET ----- */
-
+        /**
+         * Ethernet
+         */
         public void defEthernet(String targetName, String macAddr, NicModel model, String scriptPath, Integer networkRateKBps, Integer mtu) {
             _netType = GuestNetType.ETHERNET;
             _networkName = targetName;
