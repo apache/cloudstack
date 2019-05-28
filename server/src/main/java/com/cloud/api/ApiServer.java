@@ -152,8 +152,10 @@ import java.io.InterruptedIOException;
 import java.lang.reflect.Type;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -1238,20 +1240,23 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     // modify the
     // code to be very specific to our needs
     static class ListenerThread extends Thread {
-        private HttpService _httpService = null;
-        private ServerSocket _serverSocket = null;
-        private HttpParams _params = null;
+        private HttpService httpService = null;
+        private ServerSocket serverSocket = null;
+        private HttpParams params = null;
 
         public ListenerThread(final ApiServer requestHandler, final int port) {
             try {
-                _serverSocket = new ServerSocket(port);
+                InetAddress inetAddress = InetAddress.getLoopbackAddress();
+                SocketAddress socketAddress = new InetSocketAddress(inetAddress, port);
+                serverSocket = new ServerSocket();
+                serverSocket.bind(socketAddress);
             } catch (final IOException ioex) {
                 s_logger.error("error initializing api server", ioex);
                 return;
             }
 
-            _params = new BasicHttpParams();
-            _params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 30000)
+            params = new BasicHttpParams();
+            params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 30000)
             .setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024)
             .setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK, false)
             .setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true)
@@ -1269,23 +1274,23 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             reqistry.register("*", requestHandler);
 
             // Set up the HTTP service
-            _httpService = new HttpService(httpproc, new NoConnectionReuseStrategy(), new DefaultHttpResponseFactory());
-            _httpService.setParams(_params);
-            _httpService.setHandlerResolver(reqistry);
+            httpService = new HttpService(httpproc, new NoConnectionReuseStrategy(), new DefaultHttpResponseFactory());
+            httpService.setParams(params);
+            httpService.setHandlerResolver(reqistry);
         }
 
         @Override
         public void run() {
-            s_logger.info("ApiServer listening on port " + _serverSocket.getLocalPort());
+            s_logger.info("ApiServer listening on port " + serverSocket.getLocalPort());
             while (!Thread.interrupted()) {
                 try {
                     // Set up HTTP connection
-                    final Socket socket = _serverSocket.accept();
+                    final Socket socket = serverSocket.accept();
                     final DefaultHttpServerConnection conn = new DefaultHttpServerConnection();
-                    conn.bind(socket, _params);
+                    conn.bind(socket, params);
 
                     // Execute a new worker task to handle the request
-                    s_executor.execute(new WorkerTask(_httpService, conn, s_workerCount++));
+                    s_executor.execute(new WorkerTask(httpService, conn, s_workerCount++));
                 } catch (final InterruptedIOException ex) {
                     break;
                 } catch (final IOException e) {
