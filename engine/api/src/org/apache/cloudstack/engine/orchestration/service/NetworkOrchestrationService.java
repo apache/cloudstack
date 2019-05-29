@@ -309,4 +309,8 @@ public interface NetworkOrchestrationService {
      */
     boolean areRoutersRunning(final List<? extends VirtualRouter> routers);
 
+    /**
+     * Remove entry from /etc/dhcphosts file on virtual routers
+     */
+    void cleanupNicDhcpHelperEntry(long networkId, String macAddress, String ip);
 }

@@ -38,6 +38,9 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.routing.CleanupEntryCommand;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
@@ -221,6 +224,8 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
+
+import static com.cloud.agent.api.routing.CleanupEntryCommand.CleanupEntryType.DHCP_HOSTS;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -2910,6 +2915,30 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
         return true;
+    }
+
+    @Override
+    public void cleanupNicDhcpHelperEntry(long networkId, String macAddress, String ip) {
+        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(networkId, VirtualRouter.Role.VIRTUAL_ROUTER);
+        for (DomainRouterVO router : routers) {
+            if (router.getState() != VirtualMachine.State.Running) {
+                continue;
+            }
+            s_logger.debug("Cleaning up /etc/dhcphosts file for router " + router.getInstanceName() +
+                    ", removing mac " + macAddress + " ip = " + ip);
+            CleanupEntryCommand cmd = new CleanupEntryCommand(DHCP_HOSTS, macAddress, ip);
+            VMInstanceVO routerVm = _vmDao.findById(router.getId());
+            final Map<String, String> sshAccessDetails = getSystemVMAccessDetails(routerVm);
+            if (sshAccessDetails != null && !sshAccessDetails.isEmpty()) {
+                cmd.setAccessDetail(sshAccessDetails);
+            }
+            try {
+                _agentMgr.send(router.getHostId(), cmd);
+            } catch (AgentUnavailableException | OperationTimedoutException e) {
+                e.printStackTrace();
+            }
+
+        }
     }
 
     /**

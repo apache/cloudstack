@@ -22,6 +22,9 @@ package com.cloud.agent.resource.virtualnetwork;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
+
+import com.cloud.agent.api.routing.CleanupEntryCommand;
+import com.cloud.agent.api.routing.CleanupEntryCommand.CleanupEntryType;
 import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -113,6 +116,10 @@ public class VirtualRoutingResource {
                 return executeQueryCommand(cmd);
             }
 
+            if (cmd instanceof CleanupEntryCommand) {
+                return execute((CleanupEntryCommand) cmd);
+            }
+
             if (cmd instanceof SetupKeyStoreCommand) {
                 return execute((SetupKeyStoreCommand) cmd);
             }
@@ -150,6 +157,22 @@ public class VirtualRoutingResource {
                 }
             }
         }
+    }
+
+    private Answer execute(CleanupEntryCommand cmd) {
+        CleanupEntryType type = cmd.getType();
+        String args = null;
+        if (type == CleanupEntryType.DHCP_HOSTS) {
+            args = String.format("-m %s -t %s", cmd.getMacAddress(), type.getDesc());
+        } else if (type == CleanupEntryType.DNS_HOSTS) {
+            args = String.format("-i %s -t %s", cmd.getIp(), type.getDesc());
+        } else {
+            s_logger.error("Unknown cleanup entry type " + type);
+            throw new CloudRuntimeException("Unknown cleanup entry type " + type);
+        }
+        s_logger.debug("Performing cleanup entry type " + type.getDesc());
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VR_HOSTS_CLEANUP, args);
+        return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
     private Answer execute(final SetupKeyStoreCommand cmd) {
