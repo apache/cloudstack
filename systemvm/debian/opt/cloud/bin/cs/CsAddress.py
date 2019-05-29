@@ -258,7 +258,7 @@ class CsIP:
 
     def __init__(self, dev, config):
         self.dev = dev
-        self.dnum = hex(int(dev[3:]))
+        self.dnum = hex(100 + int(dev[3:]))
         self.iplist = {}
         self.address = {}
         self.list()
