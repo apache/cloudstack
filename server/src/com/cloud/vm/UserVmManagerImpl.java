@@ -4383,6 +4383,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (network.getTrafficType() == TrafficType.Guest) {
                 String nicIp = StringUtils.isNotBlank(nic.getIPv4Address()) ? nic.getIPv4Address() : nic.getIPv6Address();
                 _networkMgr.cleanupNicDhcpHelperEntry(nic.getNetworkId(), nic.getMacAddress(), nicIp);
+                _networkMgr.cleanupNicDnsEntry(nic.getNetworkId(), nic.getMacAddress(), nicIp);
                 if (nic.getBroadcastUri() != null && nic.getBroadcastUri().getScheme().equals("pvlan")) {
                     NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
                     setupVmForPvlan(false, vm.getHostId(), nicProfile);

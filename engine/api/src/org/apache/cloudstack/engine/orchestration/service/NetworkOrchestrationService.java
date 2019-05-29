@@ -313,4 +313,6 @@ public interface NetworkOrchestrationService {
      * Remove entry from /etc/dhcphosts file on virtual routers
      */
     void cleanupNicDhcpHelperEntry(long networkId, String macAddress, String ip);
+
+    void cleanupNicDnsEntry(long networkId, String macAddress, String ip);
 }

@@ -39,6 +39,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.routing.CleanupEntryCommand;
+import com.cloud.agent.api.routing.CleanupEntryCommand.CleanupEntryType;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -226,6 +227,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
 
 import static com.cloud.agent.api.routing.CleanupEntryCommand.CleanupEntryType.DHCP_HOSTS;
+import static com.cloud.agent.api.routing.CleanupEntryCommand.CleanupEntryType.DNS_HOSTS;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -2917,16 +2919,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return true;
     }
 
-    @Override
-    public void cleanupNicDhcpHelperEntry(long networkId, String macAddress, String ip) {
+    /**
+     * Cleanup entry on VR file specified by type
+     */
+    private void cleanupEntryInternal(long networkId, CleanupEntryType type, String macAddress, String ip) {
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(networkId, VirtualRouter.Role.VIRTUAL_ROUTER);
+        CleanupEntryCommand cmd = new CleanupEntryCommand(type, macAddress, ip);
+
         for (DomainRouterVO router : routers) {
             if (router.getState() != VirtualMachine.State.Running) {
                 continue;
             }
-            s_logger.debug("Cleaning up /etc/dhcphosts file for router " + router.getInstanceName() +
-                    ", removing mac " + macAddress + " ip = " + ip);
-            CleanupEntryCommand cmd = new CleanupEntryCommand(DHCP_HOSTS, macAddress, ip);
+
             VMInstanceVO routerVm = _vmDao.findById(router.getId());
             final Map<String, String> sshAccessDetails = getSystemVMAccessDetails(routerVm);
             if (sshAccessDetails != null && !sshAccessDetails.isEmpty()) {
@@ -2939,6 +2943,16 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
 
         }
+    }
+
+    @Override
+    public void cleanupNicDhcpHelperEntry(long networkId, String macAddress, String ip) {
+        cleanupEntryInternal(networkId, DHCP_HOSTS, macAddress, ip);
+    }
+
+    @Override
+    public void cleanupNicDnsEntry(long networkId, String macAddress, String ip) {
+        cleanupEntryInternal(networkId, DNS_HOSTS, macAddress, ip);
     }
 
     /**

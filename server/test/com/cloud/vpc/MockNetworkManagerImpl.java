@@ -929,6 +929,10 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public void cleanupNicDnsEntry(long networkId, String macAddress, String ip) {
+    }
+
+    @Override
     public void finalizeUpdateInSequence(Network network, boolean success) {
         return;
     }
