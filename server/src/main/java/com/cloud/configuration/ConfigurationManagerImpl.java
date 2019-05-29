@@ -16,8 +16,10 @@
 // under the License.
 package com.cloud.configuration;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
@@ -2492,17 +2494,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
             for (final Entry<String, String> detailEntry : details.entrySet()) {
+                String detailEntryValue = detailEntry.getValue();
                 if (detailEntry.getKey().equals(GPU.Keys.pciDevice.toString())) {
-                    if (detailEntry.getValue() == null) {
+                    if (detailEntryValue == null) {
                         throw new InvalidParameterValueException("Please specify a GPU Card.");
                     }
                 }
                 if (detailEntry.getKey().equals(GPU.Keys.vgpuType.toString())) {
-                    if (detailEntry.getValue() == null) {
+                    if (detailEntryValue == null) {
                         throw new InvalidParameterValueException("vGPUType value cannot be null");
                     }
                 }
-                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntry.getValue(), true));
+                if (detailEntry.getKey().startsWith(ApiConstants.EXTRA_CONFIG)) {
+                    try {
+                        detailEntryValue = URLDecoder.decode(detailEntry.getValue(), "UTF-8");
+                    } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+                        s_logger.error("Cannot decode extra configuration value for key: " + detailEntry.getKey() + ", skipping it");
+                        continue;
+                    }
+                }
+                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntryValue, true));
             }
         }
 

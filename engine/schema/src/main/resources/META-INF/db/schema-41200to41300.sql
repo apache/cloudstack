@@ -19,3 +19,5 @@
 -- Schema upgrade from 4.12.0.0 to 4.13.0.0
 --;
 
+-- DPDK client and server mode support
+ALTER TABLE `cloud`.`service_offering_details` CHANGE COLUMN `value` `value` TEXT NOT NULL;
