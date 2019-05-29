@@ -36,9 +36,8 @@ import javax.naming.directory.SearchControls;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-
 @RunWith(MockitoJUnitRunner.class)
-public class LdapConnectionTest {
+public class LdapUnboundidZapdotConnectionTest {
     private static final String DOMAIN_DSN;
 
     static {

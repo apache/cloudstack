@@ -27,31 +27,12 @@
         <version>4.14.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
+
+    <properties>
+        <ads.version>2.0.0.AM26-SNAPSHOT</ads.version>
+    </properties>
+
     <build>
-<!--
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>2.0.2</version>
-                    <configuration>
-                        <source>1.8</source>
-                        <target>1.8</target>
-                        <optimize>true</optimize>
-                        <showDeprecation>true</showDeprecation>
-                        <encoding>ISO-8859-1</encoding>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <configuration>
-                        <argLine>-Xmx1024m</argLine>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
--->
         <plugins>
             <plugin>
                 <groupId>org.codehaus.gmaven</groupId>
@@ -115,7 +96,7 @@
             <plugin>
                 <groupId>com.btmatthews.maven.plugins</groupId>
                 <artifactId>ldap-maven-plugin</artifactId>
-                <version>1.1.0</version>
+                <version>1.1.3</version>
                 <configuration>
                     <monitorPort>11389</monitorPort>
                     <monitorKey>ldap</monitorKey>
@@ -131,19 +112,14 @@
     <dependencies>
         <!-- Mandatory dependencies for using Spock -->
         <dependency>
-            <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-all</artifactId>
-            <version>1.5.7</version>
+            <groupId>test</groupId>
+            <artifactId>embeddedLDAP</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-server-integ</artifactId>
-            <version>1.5.7</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-core-integ</artifactId>
-            <version>1.5.7</version>
+            <groupId>com.btmatthews.ldapunit</groupId>
+            <artifactId>ldapunit</artifactId>
+            <version>1.1.3</version>
         </dependency>
         <dependency>
             <groupId>org.spockframework</groupId>
@@ -179,6 +155,62 @@
             <artifactId>junit</artifactId>
             <version>4.12</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-server-integ</artifactId>
+            <version>${ads.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <!--
+                 shared-ldap-schema module needs to be excluded to avoid multiple schema resources on the classpath
+                -->
+                <exclusion>
+                    <groupId>org.apache.directory.shared</groupId>
+                    <artifactId>shared-ldap-schema</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-core-constants</artifactId>
+            <version>${ads.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-core-annotations</artifactId>
+            <version>${ads.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-core</artifactId>
+            <version>${ads.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-protocol-ldap</artifactId>
+            <version>${ads.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-jdbm-partition</artifactId>
+            <version>${ads.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-ldif-partition</artifactId>
+            <version>${ads.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${cs.commons-io.version}</version>
         </dependency>
     </dependencies>
 </project>
