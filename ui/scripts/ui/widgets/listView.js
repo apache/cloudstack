@@ -862,6 +862,8 @@
         if (groupableColumns) {
             $tr.addClass('groupable-header-columns').addClass('groupable-header');
             $.each(fields, function(key) {
+                if ($.inArray(key, hiddenFields) != -1)
+                    return true;
                 var field = this;
                 if (field.columns) {
                     var colspan = Object.keys(field.columns).length;
@@ -1205,6 +1207,8 @@
             var reducedFields = {};
             var idx = 0;
             $.each(fields, function(key) {
+                if ($.inArray(key, hiddenFields) != -1)
+                    return true;
                 var field = this;
                 if (field.columns) {
                     $.each(field.columns, function(innerKey) {

@@ -1762,6 +1762,7 @@
         <script src="lib/jquery.cookies.js" type="text/javascript"></script>
         <script src="lib/jquery.md5.js" type="text/javascript" ></script>
         <script src="lib/require.js" type="text/javascript"></script>
+        <script type="text/javascript" src="config.js"></script>
 
         <!-- localized messages -->
         <script type="text/javascript">
@@ -1824,10 +1825,9 @@
 
             // Inject translated keyboard options
             var keyboardDropdown = $($.find('#keyboard-options'));
-            keyboardDropdown.append($('<option>', {value: 'us', text: 'Standard (US) keyboard'}));
-            keyboardDropdown.append($('<option>', {value: 'uk', text: 'UK keyboard'}));
-            keyboardDropdown.append($('<option>', {value: 'jp', text: '日本語キーボード'}));
-            keyboardDropdown.append($('<option>', {value: 'sc', text: '简体中文键盘'}));
+            for (var key in cloudStackOptions.keyboardOptions) {
+                keyboardDropdown.append($('<option>', {value: key, text: translate(cloudStackOptions.keyboardOptions[key])}));
+            }
         </script>
 
         <script src="lib/excanvas.js" type="text/javascript"></script>
@@ -1920,5 +1920,8 @@
         <script type="text/javascript" src="plugins/plugins.js"></script>
         <script type="text/javascript" src="modules/modules.js"></script>
         <script type="text/javascript" src="scripts/plugins.js"></script>
+
+        <!-- Load this script after all scripts have executed to populate data -->
+        <script type="text/javascript" src="scripts/postLoad.js"></script>
     </body>
 </html>

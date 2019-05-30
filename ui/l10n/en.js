@@ -789,6 +789,7 @@ var dictionary = {
 "label.format":"Format",
 "label.format.lower":"format",
 "label.friday":"Friday",
+"label.french.azerty.keyboard":"French AZERTY keyboard",
 "label.full":"Full",
 "label.full.path":"Full path",
 "label.gateway":"Gateway",

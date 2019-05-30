@@ -482,6 +482,6 @@
 
         cloudStack.uiCustom.login(loginArgs);
 
-        document.title = _l('label.app.name');
+        document.title = _l(cloudStackOptions.docTitle);
     });
 })(cloudStack, jQuery);

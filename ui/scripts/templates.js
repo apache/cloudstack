@@ -449,22 +449,12 @@
                                                 id: "",
                                                 description: ""
                                             });
-                                            items.push({
-                                                id: "us",
-                                                description: "US Keboard"
-                                            });
-                                            items.push({
-                                                id: "uk",
-                                                description: "UK Keyboard"
-                                            });
-                                            items.push({
-                                                id: "jp",
-                                                description: "Japanese Keyboard"
-                                            });
-                                            items.push({
-                                                id: "sc",
-                                                description: "Simplified Chinese"
-                                            });
+                                            for (var key in cloudStackOptions.keyboardOptions) {
+                                                items.push({
+                                                    id: key,
+                                                    description: _l(cloudStackOptions.keyboardOptions[key])
+                                                });
+                                            }
                                             args.response.success({
                                                 data: items
                                             });
