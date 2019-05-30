@@ -34,6 +34,8 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Volume;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -62,6 +64,8 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
 
         final NicTO[] nics = vm.getNics();
 
+        Map<String, DPDKTO> dpdkInterfaceMapping = new HashMap<>();
+
         boolean skipDisconnect = false;
 
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
@@ -69,7 +73,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vm.getName());
-            Map<String, DPDKTO> dpdkInterfaceMapping = new HashMap<>();
+
             for (final NicTO nic : nics) {
                 LibvirtVMDef.InterfaceDef interfaceDef = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).plug(nic, null, "", vm.getExtraConfig());
                 if (interfaceDef != null && interfaceDef.getNetType() == GuestNetType.VHOSTUSER) {
@@ -97,11 +101,14 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
                 answer.setDpdkInterfaceMapping(dpdkInterfaceMapping);
             }
             return answer;
-        } catch (final LibvirtException e) {
-            return new PrepareForMigrationAnswer(command, e.toString());
-        } catch (final InternalErrorException e) {
-            return new PrepareForMigrationAnswer(command, e.toString());
-        } catch (final URISyntaxException e) {
+        } catch (final LibvirtException | CloudRuntimeException | InternalErrorException | URISyntaxException e) {
+            if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
+                for (DPDKTO to : dpdkInterfaceMapping.values()) {
+                    String cmd = String.format("ovs-vsctl del-port %s", to.getPort());
+                    s_logger.debug("Removing DPDK port: " + to.getPort());
+                    Script.runSimpleBashScript(cmd);
+                }
+            }
             return new PrepareForMigrationAnswer(command, e.toString());
         } finally {
             if (!skipDisconnect) {
