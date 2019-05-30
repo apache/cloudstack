@@ -183,14 +183,14 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 
     @Override
     public boolean checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException {
-        boolean isAccess = false;
+        boolean hasAccess = false;
         // Check fo domains
         if (account == null || dof == null) {
-            isAccess = true;
+            hasAccess = true;
         } else {
             //admin has all permissions
             if (_accountService.isRootAdmin(account.getId())) {
-                isAccess = true;
+                hasAccess = true;
             }
             //if account is normal user or domain admin
             //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for disk offering)
@@ -200,11 +200,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                 final List<Long> doDomainIds = diskOfferingDetailsDao.findDomainIds(dof.getId());
                 if (doDomainIds.isEmpty()) {
-                    isAccess = true;
+                    hasAccess = true;
                 } else {
                     for (Long domainId : doDomainIds) {
                         if (_domainDao.isChildDomain(domainId, account.getDomainId())) {
-                            isAccess = true;
+                            hasAccess = true;
                             break;
                         }
                     }
@@ -212,23 +212,23 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             }
         }
         // Check for zones
-        if (isAccess && dof != null && zone != null) {
+        if (hasAccess && dof != null && zone != null) {
             final List<Long> doZoneIds = diskOfferingDetailsDao.findZoneIds(dof.getId());
-            isAccess = doZoneIds.isEmpty() || doZoneIds.contains(zone.getId());
+            hasAccess = doZoneIds.isEmpty() || doZoneIds.contains(zone.getId());
         }
-        return isAccess;
+        return hasAccess;
     }
 
     @Override
     public boolean checkAccess(Account account, ServiceOffering so, DataCenter zone) throws PermissionDeniedException {
-        boolean isAccess = false;
+        boolean hasAccess = false;
         // Check fo domains
         if (account == null || so == null) {
-            isAccess = true;
+            hasAccess = true;
         } else {
             //admin has all permissions
             if (_accountService.isRootAdmin(account.getId())) {
-                isAccess = true;
+                hasAccess = true;
             }
             //if account is normal user or domain admin
             //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for service offering)
@@ -238,11 +238,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                 final List<Long> soDomainIds = serviceOfferingDetailsDao.findDomainIds(so.getId());
                 if (soDomainIds.isEmpty()) {
-                    isAccess = true;
+                    hasAccess = true;
                 } else {
                     for (Long domainId : soDomainIds) {
                         if (_domainDao.isChildDomain(domainId, account.getDomainId())) {
-                            isAccess = true;
+                            hasAccess = true;
                             break;
                         }
                     }
@@ -250,23 +250,23 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             }
         }
         // Check for zones
-        if (isAccess && so != null && zone != null) {
+        if (hasAccess && so != null && zone != null) {
             final List<Long> soZoneIds = serviceOfferingDetailsDao.findZoneIds(so.getId());
-            isAccess = soZoneIds.isEmpty() || soZoneIds.contains(zone.getId());
+            hasAccess = soZoneIds.isEmpty() || soZoneIds.contains(zone.getId());
         }
-        return isAccess;
+        return hasAccess;
     }
 
     @Override
     public boolean checkAccess(Account account, NetworkOffering nof, DataCenter zone) throws PermissionDeniedException {
-        boolean isAccess = false;
-        // Check fo domains
+        boolean hasAccess = false;
+        // Check for domains
         if (account == null || nof == null) {
-            isAccess = true;
+            hasAccess = true;
         } else {
             //admin has all permissions
             if (_accountService.isRootAdmin(account.getId())) {
-                isAccess = true;
+                hasAccess = true;
             }
             //if account is normal user or domain admin
             //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for disk offering)
@@ -276,11 +276,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                 final List<Long> noDomainIds = networkOfferingDetailsDao.findDomainIds(nof.getId());
                 if (noDomainIds.isEmpty()) {
-                    isAccess = true;
+                    hasAccess = true;
                 } else {
                     for (Long domainId : noDomainIds) {
                         if (_domainDao.isChildDomain(domainId, account.getDomainId())) {
-                            isAccess = true;
+                            hasAccess = true;
                             break;
                         }
                     }
@@ -288,23 +288,23 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             }
         }
         // Check for zones
-        if (isAccess && nof != null && zone != null) {
+        if (hasAccess && nof != null && zone != null) {
             final List<Long> doZoneIds = networkOfferingDetailsDao.findZoneIds(nof.getId());
-            isAccess = doZoneIds.isEmpty() || doZoneIds.contains(zone.getId());
+            hasAccess = doZoneIds.isEmpty() || doZoneIds.contains(zone.getId());
         }
-        return isAccess;
+        return hasAccess;
     }
 
     @Override
     public boolean checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException {
-        boolean isAccess = false;
-        // Check fo domains
+        boolean hasAccess = false;
+        // Check for domains
         if (account == null || vof == null) {
-            isAccess = true;
+            hasAccess = true;
         } else {
             //admin has all permissions
             if (_accountService.isRootAdmin(account.getId())) {
-                isAccess = true;
+                hasAccess = true;
             }
             //if account is normal user or domain admin
             //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for disk offering)
@@ -314,11 +314,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                 final List<Long> voDomainIds = vpcOfferingDetailsDao.findDomainIds(vof.getId());
                 if (voDomainIds.isEmpty()) {
-                    isAccess = true;
+                    hasAccess = true;
                 } else {
                     for (Long domainId : voDomainIds) {
                         if (_domainDao.isChildDomain(domainId, account.getDomainId())) {
-                            isAccess = true;
+                            hasAccess = true;
                             break;
                         }
                     }
@@ -326,11 +326,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             }
         }
         // Check for zones
-        if (isAccess && vof != null && zone != null) {
+        if (hasAccess && vof != null && zone != null) {
             final List<Long> doZoneIds = vpcOfferingDetailsDao.findZoneIds(vof.getId());
-            isAccess = doZoneIds.isEmpty() || doZoneIds.contains(zone.getId());
+            hasAccess = doZoneIds.isEmpty() || doZoneIds.contains(zone.getId());
         }
-        return isAccess;
+        return hasAccess;
     }
 
     @Override

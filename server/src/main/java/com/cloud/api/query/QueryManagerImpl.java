@@ -2609,7 +2609,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Pair<List<DiskOfferingJoinVO>, Integer> result = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
         // Remove offerings that are not associated with caller's domain
-        // TODO: Better approach
         if (account.getType() != Account.ACCOUNT_TYPE_ADMIN && CollectionUtils.isNotEmpty(result.first())) {
             ListIterator<DiskOfferingJoinVO> it = result.first().listIterator();
             while (it.hasNext()) {
@@ -2823,7 +2822,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         //Couldn't figure out a smart way to filter offerings based on tags in sql so doing it in Java.
         List<ServiceOfferingJoinVO> filteredOfferings = filterOfferingsOnCurrentTags(result.first(), currentVmOffering);
         // Remove offerings that are not associated with caller's domain
-        // TODO: Better approach
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && CollectionUtils.isNotEmpty(filteredOfferings)) {
             ListIterator<ServiceOfferingJoinVO> it = filteredOfferings.listIterator();
             while (it.hasNext()) {
