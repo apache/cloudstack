@@ -184,7 +184,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Override
     public boolean checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException {
         boolean hasAccess = false;
-        // Check fo domains
+        // Check for domains
         if (account == null || dof == null) {
             hasAccess = true;
         } else {
@@ -222,7 +222,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Override
     public boolean checkAccess(Account account, ServiceOffering so, DataCenter zone) throws PermissionDeniedException {
         boolean hasAccess = false;
-        // Check fo domains
+        // Check for domains
         if (account == null || so == null) {
             hasAccess = true;
         } else {
