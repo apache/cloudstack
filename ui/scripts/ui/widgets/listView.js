@@ -2495,6 +2495,8 @@
                 this.data('view-args').sections[activeSection].listView :
                 this.data('view-args').listView;
 
+            toggleMultiSelectActions(this, false);
+
             loadBody(
                 this.find('table:last'),
                 listViewArgs.dataProvider,
