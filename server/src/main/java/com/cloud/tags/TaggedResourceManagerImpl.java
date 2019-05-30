@@ -85,6 +85,7 @@ import org.apache.commons.collections.MapUtils;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -314,7 +315,11 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                         }
 
                         ResourceTagVO resourceTag = new ResourceTagVO(key, value, accountDomainPair.first(), accountDomainPair.second(), id, resourceType, customer, resourceUuid);
-                        resourceTag = _resourceTagDao.persist(resourceTag);
+                        try {
+                            resourceTag = _resourceTagDao.persist(resourceTag);
+                        } catch (EntityExistsException e) {
+                            throw new CloudRuntimeException(String.format("tag %s already on %s with id %s", resourceTag.getKey(), resourceType.toString(), resourceId),e);
+                        }
                         resourceTags.add(resourceTag);
                     }
                 }
