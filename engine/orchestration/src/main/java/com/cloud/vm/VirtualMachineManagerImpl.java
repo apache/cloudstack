@@ -39,7 +39,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.ApiConstants;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
+import com.cloud.agent.api.to.DPDKTO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
@@ -1118,8 +1119,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 
-                    addExtraConfig(vmTO);
-
                     work = _workDao.findById(work.getId());
                     if (work == null || work.getStep() != Step.Prepare) {
                         throw new ConcurrentOperationException("Work steps have been changed: " + work);
@@ -1281,15 +1280,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (startedVm == null) {
             throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName() + "' (" + vm.getUuid() + "), see management server log for details");
-        }
-    }
-
-    private void addExtraConfig(VirtualMachineTO vmTO) {
-        Map<String, String> details = vmTO.getDetails();
-        for (String key : details.keySet()) {
-            if (key.startsWith(ApiConstants.EXTRA_CONFIG)) {
-                vmTO.addExtraConfig(key, details.get(key));
-            }
         }
     }
 
@@ -2369,6 +2359,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
             mc.setAutoConvergence(kvmAutoConvergence);
             mc.setHostGuid(dest.getHost().getGuid());
+
+            Map<String, DPDKTO> dpdkInterfaceMapping = ((PrepareForMigrationAnswer) pfma).getDpdkInterfaceMapping();
+            if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
+                mc.setDpdkInterfaceMapping(dpdkInterfaceMapping);
+            }
 
             try {
                 final Answer ma = _agentMgr.send(vm.getLastHostId(), mc);

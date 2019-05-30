@@ -2706,7 +2706,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem);
 
-        final String capabilities = String.join(",", info.getCapabilities());
+        String capabilities = String.join(",", info.getCapabilities());
+        if (dpdkSupport) {
+            capabilities += ",dpdk";
+        }
 
         final StartupRoutingCommand cmd =
                 new StartupRoutingCommand(info.getCpus(), info.getCpuSpeed(), info.getTotalMemory(), info.getReservedMemory(), capabilities, _hypervisorType,

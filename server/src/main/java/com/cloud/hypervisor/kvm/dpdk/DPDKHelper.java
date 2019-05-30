@@ -63,4 +63,19 @@ public interface DPDKHelper {
      */
     void setDpdkVhostUserMode(VirtualMachineTO to, VirtualMachineProfile vm);
 
+    /**
+     * True if VM is a guest DPDK enabled VM, false if not.
+     * It is determined by:
+     *      - VM type is guest
+     *      - VM details contains NUMA and Huge pages configurations for DPDK
+     *      - VM host contains the DPDK capability
+     */
+    boolean isVMDPDKEnabled(long vmId);
+
+    /**
+     * True if host is DPDK enabled, false if not.
+     * Host is DPDK enabled when:
+     *      - 'dpdk' is part of the host capabilities
+     */
+    boolean isHostDPDKEnabled(long hostId);
 }

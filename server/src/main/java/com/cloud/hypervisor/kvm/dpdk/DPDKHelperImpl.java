@@ -17,19 +17,35 @@
 package com.cloud.hypervisor.kvm.dpdk;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.util.List;
 
 public class DPDKHelperImpl implements DPDKHelper {
 
     @Inject
-    ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Inject
+    private HostDao hostDao;
+    @Inject
+    private VMInstanceDao vmInstanceDao;
+    @Inject
+    private UserVmDetailsDao userVmDetailsDao;
 
     public static final Logger s_logger = Logger.getLogger(DPDKHelperImpl.class);
 
@@ -64,5 +80,75 @@ public class DPDKHelperImpl implements DPDKHelper {
                         VHostUserMode.CLIENT.toString(), VHostUserMode.SERVER.toString()));
             }
         }
+    }
+
+    @Override
+    public boolean isVMDPDKEnabled(long vmId) {
+        VMInstanceVO vm = vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            throw new CloudRuntimeException("Could not find VM with id " + vmId);
+        }
+
+        if (vm.getType() != VirtualMachine.Type.User) {
+            return false;
+        }
+
+        List<UserVmDetailVO> details = userVmDetailsDao.listDetails(vm.getId());
+        List<ServiceOfferingDetailsVO> offeringDetails = serviceOfferingDetailsDao.listDetails(vm.getServiceOfferingId());
+
+        if (!hasRequiredDPDKConfigurations(details, offeringDetails)) {
+            return false;
+        }
+
+        return isHostDPDKEnabled(vm.getHostId());
+    }
+
+    /**
+     * True if VM is DPDK enabled. NUMA and HUGEPAGES configurations must be present on VM or service offering details
+     */
+    private boolean hasRequiredDPDKConfigurations(List<UserVmDetailVO> details, List<ServiceOfferingDetailsVO> offeringDetails) {
+        if (CollectionUtils.isEmpty(details)) {
+            return hasValidDPDKConfigurationsOnServiceOffering(false, false, offeringDetails);
+        } else {
+            boolean isNumaSet = false;
+            boolean isHugePagesSet = false;
+            for (UserVmDetailVO detail : details) {
+                if (detail.getName().equals(DPDK_NUMA)) {
+                    isNumaSet = true;
+                } else if (detail.getName().equals(DPDK_HUGE_PAGES)) {
+                    isHugePagesSet = true;
+                }
+            }
+            boolean valid = isNumaSet && isHugePagesSet;
+            if (!valid) {
+                return hasValidDPDKConfigurationsOnServiceOffering(isNumaSet, isHugePagesSet, offeringDetails);
+            }
+            return true;
+        }
+    }
+
+    /**
+     * True if DPDK required configurations are set
+     */
+    private boolean hasValidDPDKConfigurationsOnServiceOffering(boolean isNumaSet, boolean isHugePagesSet, List<ServiceOfferingDetailsVO> offeringDetails) {
+        if (!CollectionUtils.isEmpty(offeringDetails)) {
+            for (ServiceOfferingDetailsVO detail : offeringDetails) {
+                if (detail.getName().equals(DPDK_NUMA)) {
+                    isNumaSet = true;
+                } else if (detail.getName().equals(DPDK_HUGE_PAGES)) {
+                    isHugePagesSet = true;
+                }
+            }
+        }
+        return isNumaSet && isHugePagesSet;
+    }
+
+    @Override
+    public boolean isHostDPDKEnabled(long hostId) {
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            throw new CloudRuntimeException("Could not find host with id " + hostId);
+        }
+        return StringUtils.isNotBlank(host.getCapabilities()) && host.getCapabilities().contains("dpdk");
     }
 }

@@ -19,7 +19,15 @@
 
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.DPDKTO;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class PrepareForMigrationAnswer extends Answer {
+
+    private Map<String, DPDKTO> dpdkInterfaceMapping = new HashMap<>();
+
     protected PrepareForMigrationAnswer() {
     }
 
@@ -33,5 +41,13 @@ public class PrepareForMigrationAnswer extends Answer {
 
     public PrepareForMigrationAnswer(PrepareForMigrationCommand cmd) {
         super(cmd, true, null);
+    }
+
+    public void setDpdkInterfaceMapping(Map<String, DPDKTO> mapping) {
+        this.dpdkInterfaceMapping = mapping;
+    }
+
+    public Map<String, DPDKTO> getDpdkInterfaceMapping() {
+        return this.dpdkInterfaceMapping;
     }
 }

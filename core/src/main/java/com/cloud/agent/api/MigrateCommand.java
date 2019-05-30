@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.to.DPDKTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 
 public class MigrateCommand extends Command {
@@ -37,6 +38,15 @@ public class MigrateCommand extends Command {
     private VirtualMachineTO vmTO;
     private boolean executeInSequence = false;
     private List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<>();
+    private Map<String, DPDKTO> dpdkInterfaceMapping = new HashMap<>();
+
+    public Map<String, DPDKTO> getDpdkInterfaceMapping() {
+        return dpdkInterfaceMapping;
+    }
+
+    public void setDpdkInterfaceMapping(Map<String, DPDKTO> dpdkInterfaceMapping) {
+        this.dpdkInterfaceMapping = dpdkInterfaceMapping;
+    }
 
     protected MigrateCommand() {
     }

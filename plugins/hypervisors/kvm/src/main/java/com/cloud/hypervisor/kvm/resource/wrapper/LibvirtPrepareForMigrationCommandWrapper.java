@@ -22,20 +22,26 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.to.DPDKTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.GuestNetType;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Volume;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 
 @ResourceWrapper(handles =  PrepareForMigrationCommand.class)
 public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapper<PrepareForMigrationCommand, Answer, LibvirtComputingResource> {
@@ -63,8 +69,13 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vm.getName());
+            Map<String, DPDKTO> dpdkInterfaceMapping = new HashMap<>();
             for (final NicTO nic : nics) {
-                libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).plug(nic, null, "", null);
+                LibvirtVMDef.InterfaceDef interfaceDef = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).plug(nic, null, "", vm.getExtraConfig());
+                if (interfaceDef != null && interfaceDef.getNetType() == GuestNetType.VHOSTUSER) {
+                    DPDKTO to = new DPDKTO(interfaceDef.getDpdkOvsPath(), interfaceDef.getDpdkSourcePort(), interfaceDef.getInterfaceMode());
+                    dpdkInterfaceMapping.put(nic.getMac(), to);
+                }
             }
 
             /* setup disks, e.g for iso */
@@ -81,7 +92,11 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
                 return new PrepareForMigrationAnswer(command, "failed to connect physical disks to host");
             }
 
-            return new PrepareForMigrationAnswer(command);
+            PrepareForMigrationAnswer answer = new PrepareForMigrationAnswer(command);
+            if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
+                answer.setDpdkInterfaceMapping(dpdkInterfaceMapping);
+            }
+            return answer;
         } catch (final LibvirtException e) {
             return new PrepareForMigrationAnswer(command, e.toString());
         } catch (final InternalErrorException e) {

@@ -129,17 +129,4 @@ public class KVMGuruTest {
         guru.setVmQuotaPercentage(vmTO, vmProfile);
         Mockito.verify(vmTO).setCpuQuotaPercentage(1d);
     }
-
-    @Test
-    public void testAddServiceOfferingExtraConfigurationDpdkDetails() {
-        guru.addServiceOfferingExtraConfiguration(vmTO, vmProfile);
-        Mockito.verify(vmTO).addExtraConfig(detail1Key, detail1Value);
-    }
-
-    @Test
-    public void testAddServiceOfferingExtraConfigurationEmptyDetails() {
-        Mockito.when(serviceOfferingDetailsDao.listDetails(offeringId)).thenReturn(null);
-        guru.addServiceOfferingExtraConfiguration(vmTO, vmProfile);
-        Mockito.verify(vmTO, Mockito.never()).addExtraConfig(Mockito.anyString(), Mockito.anyString());
-    }
 }
