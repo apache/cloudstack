@@ -92,6 +92,10 @@ public interface QueryService {
             "user.vm.blacklisted.details", "rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag",
             "Determines whether users can view certain VM settings", true);
 
+    static final ConfigKey<String> UserVMReadOnlyUIDetails = new ConfigKey<String>("Advanced", String.class,
+            "user.vm.readonly.ui.details", "dataDiskController, rootDiskController",
+            "List of UI read-only VM settings/details as comma separated string", true);
+
     ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
 
     ListResponse<EventResponse> searchForEvents(ListEventsCmd cmd);

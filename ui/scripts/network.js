@@ -91,7 +91,7 @@
                 url: createURL('listNics'),
                 data: {
                     virtualmachineid: instance.id,
-                    networkId: network.id
+                    networkid: (args.context.networkid != undefined) ? args.context.networkid : network.id
                 },
                 success: function(json) {
                     var nic = json.listnicsresponse.nic[0];
@@ -2462,6 +2462,10 @@
 
                                                     if ('vpc' in args.context) {
                                                         $.extend(data, {
+                                                            networkid: $tierSelect.val(),
+                                                            vpcid: args.context.vpc[0].id
+                                                        });
+                                                        $.extend(args.context, {
                                                             networkid: $tierSelect.val(),
                                                             vpcid: args.context.vpc[0].id
                                                         });

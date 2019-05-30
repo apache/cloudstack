@@ -46,8 +46,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.hypervisor.kvm.dpdk.DPDKHelper;
 import com.cloud.resource.RequestWrapper;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -524,9 +524,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
-    protected static final String DPDK_NUMA = ApiConstants.EXTRA_CONFIG + "-dpdk-numa";
-    protected static final String DPDK_HUGE_PAGES = ApiConstants.EXTRA_CONFIG + "-dpdk-hugepages";
-    protected static final String DPDK_INTERFACE_PREFIX = ApiConstants.EXTRA_CONFIG + "-dpdk-interface-";
 
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
         final String[] tokens = startIp.split("[.]");
@@ -2073,7 +2070,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.setPlatformEmulator(vmTO.getPlatformEmulator());
 
         Map<String, String> extraConfig = vmTO.getExtraConfig();
-        if (dpdkSupport && (!extraConfig.containsKey(DPDK_NUMA) || !extraConfig.containsKey(DPDK_HUGE_PAGES))) {
+        if (dpdkSupport && (!extraConfig.containsKey(DPDKHelper.DPDK_NUMA) || !extraConfig.containsKey(DPDKHelper.DPDK_HUGE_PAGES))) {
             s_logger.info("DPDK is enabled but it needs extra configurations for CPU NUMA and Huge Pages for VM deployment");
         }
 
@@ -2110,7 +2107,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         grd.setVcpuNum(vcpus);
         vm.addComp(grd);
 
-        if (!extraConfig.containsKey(DPDK_NUMA)) {
+        if (!extraConfig.containsKey(DPDKHelper.DPDK_NUMA)) {
             final CpuModeDef cmd = new CpuModeDef();
             cmd.setMode(_guestCpuMode);
             cmd.setModel(_guestCpuModel);
@@ -2238,7 +2235,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (MapUtils.isNotEmpty(extraConfig)) {
             StringBuilder extraConfigBuilder = new StringBuilder();
             for (String key : extraConfig.keySet()) {
-                if (!key.startsWith(DPDK_INTERFACE_PREFIX)) {
+                if (!key.startsWith(DPDKHelper.DPDK_INTERFACE_PREFIX) && !key.equals(DPDKHelper.DPDK_VHOST_USER_MODE)) {
                     extraConfigBuilder.append(extraConfig.get(key));
                 }
             }

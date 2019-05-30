@@ -1764,7 +1764,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 _volumeService.grantAccess(destVolumeInfo, destHost, destDataStore);
 
-                String destPath = generateDestPath(vmTO, srcVolume, destHost, destStoragePool, destVolumeInfo);
+                String destPath = generateDestPath(destHost, destStoragePool, destVolumeInfo);
 
                 MigrateCommand.MigrateDiskInfo migrateDiskInfo = configureMigrateDiskInfo(srcVolumeInfo, destPath);
                 migrateDiskInfo.setSourceDiskOnStorageFileSystem(isStoragePoolTypeOfFile(sourceStoragePool));
@@ -1855,7 +1855,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     /**
      * Returns the iScsi connection path.
      */
-    protected String generateDestPath(VirtualMachineTO vmTO, VolumeVO srcVolume, Host destHost, StoragePoolVO destStoragePool, VolumeInfo destVolumeInfo) {
+    protected String generateDestPath(Host destHost, StoragePoolVO destStoragePool, VolumeInfo destVolumeInfo) {
         return connectHostToVolume(destHost, destVolumeInfo.getPoolId(), destVolumeInfo.get_iScsiName());
     }
 

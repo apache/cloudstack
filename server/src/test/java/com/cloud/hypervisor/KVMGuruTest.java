@@ -19,9 +19,13 @@ package com.cloud.hypervisor;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingDetailsVO;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.api.ApiConstants;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,11 +35,16 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+
 @RunWith(MockitoJUnitRunner.class)
 public class KVMGuruTest {
 
     @Mock
     HostDao hostDao;
+    @Mock
+    ServiceOfferingDetailsDao serviceOfferingDetailsDao;
 
     @Spy
     @InjectMocks
@@ -49,18 +58,42 @@ public class KVMGuruTest {
     VirtualMachine vm;
     @Mock
     HostVO host;
+    @Mock
+    ServiceOffering serviceOffering;
+    @Mock
+    ServiceOfferingDetailsVO detail1;
+    @Mock
+    ServiceOfferingDetailsVO detail2;
 
-    private static final long hostId = 1l;
+    private static final long hostId = 1L;
+    private static final Long offeringId = 1L;
+
+    private static final String detail1Key = ApiConstants.EXTRA_CONFIG + "-config-1";
+    private static final String detail1Value = "value1";
+    private static final String detail2Key = "detail2";
+    private static final String detail2Value = "value2";
 
     @Before
-    public void setup() {
+    public void setup() throws UnsupportedEncodingException {
         Mockito.when(vmTO.getLimitCpuUse()).thenReturn(true);
         Mockito.when(vmProfile.getVirtualMachine()).thenReturn(vm);
         Mockito.when(vm.getHostId()).thenReturn(hostId);
         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
         Mockito.when(host.getCpus()).thenReturn(3);
-        Mockito.when(host.getSpeed()).thenReturn(1995l);
+        Mockito.when(host.getSpeed()).thenReturn(1995L);
         Mockito.when(vmTO.getMaxSpeed()).thenReturn(500);
+        Mockito.when(serviceOffering.getId()).thenReturn(offeringId);
+        Mockito.when(vmProfile.getServiceOffering()).thenReturn(serviceOffering);
+
+        Mockito.when(detail1.getName()).thenReturn(detail1Key);
+        Mockito.when(detail1.getValue()).thenReturn(detail1Value);
+        Mockito.when(detail1.getResourceId()).thenReturn(offeringId);
+        Mockito.when(detail2.getName()).thenReturn(detail2Key);
+        Mockito.when(detail2.getResourceId()).thenReturn(offeringId);
+        Mockito.when(detail2.getValue()).thenReturn(detail2Value);
+
+        Mockito.when(serviceOfferingDetailsDao.listDetails(offeringId)).thenReturn(
+                Arrays.asList(detail1, detail2));
     }
 
     @Test
@@ -95,5 +128,18 @@ public class KVMGuruTest {
         Mockito.when(vmTO.getMaxSpeed()).thenReturn(3000);
         guru.setVmQuotaPercentage(vmTO, vmProfile);
         Mockito.verify(vmTO).setCpuQuotaPercentage(1d);
+    }
+
+    @Test
+    public void testAddServiceOfferingExtraConfigurationDpdkDetails() {
+        guru.addServiceOfferingExtraConfiguration(vmTO, vmProfile);
+        Mockito.verify(vmTO).addExtraConfig(detail1Key, detail1Value);
+    }
+
+    @Test
+    public void testAddServiceOfferingExtraConfigurationEmptyDetails() {
+        Mockito.when(serviceOfferingDetailsDao.listDetails(offeringId)).thenReturn(null);
+        guru.addServiceOfferingExtraConfiguration(vmTO, vmProfile);
+        Mockito.verify(vmTO, Mockito.never()).addExtraConfig(Mockito.anyString(), Mockito.anyString());
     }
 }

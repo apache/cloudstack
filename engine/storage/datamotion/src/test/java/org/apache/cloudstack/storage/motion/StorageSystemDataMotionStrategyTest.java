@@ -47,7 +47,6 @@ import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ImageStore;
@@ -164,8 +163,7 @@ public class StorageSystemDataMotionStrategyTest {
         Mockito.doReturn(0l).when(destVolumeInfo).getPoolId();
         Mockito.doReturn("expected").when(storageSystemDataMotionStrategy).connectHostToVolume(destHost, 0l, "iScsiName");
 
-        String expected = storageSystemDataMotionStrategy.generateDestPath(Mockito.mock(VirtualMachineTO.class), Mockito.mock(VolumeVO.class), destHost,
-                Mockito.mock(StoragePoolVO.class), destVolumeInfo);
+        String expected = storageSystemDataMotionStrategy.generateDestPath(destHost, Mockito.mock(StoragePoolVO.class), destVolumeInfo);
 
         Assert.assertEquals(expected, "expected");
         Mockito.verify(storageSystemDataMotionStrategy).connectHostToVolume(destHost, 0l, "iScsiName");

@@ -19,6 +19,9 @@
 -- Schema upgrade from 4.12.0.0 to 4.13.0.0
 --;
 
+-- DPDK client and server mode support
+ALTER TABLE `cloud`.`service_offering_details` CHANGE COLUMN `value` `value` TEXT NOT NULL;
+
 -- Move domain_id to disk offering details and drop the domain_id column
 INSERT INTO `cloud`.`disk_offering_details` (offering_id, name, value, display) SELECT id, 'domainid', domain_id, 0 FROM `cloud`.`disk_offering` WHERE domain_id IS NOT NULL AND type='Disk';
 INSERT INTO `cloud`.`service_offering_details` (service_offering_id, name, value, display) SELECT id, 'domainid', domain_id, 0 FROM `cloud`.`disk_offering` WHERE domain_id IS NOT NULL AND type='Service';

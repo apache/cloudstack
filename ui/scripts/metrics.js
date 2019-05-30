@@ -478,6 +478,9 @@
                     columns: {
                         memorytotal: {
                             label: 'label.metrics.allocated'
+                        },
+                        memoryused: {
+                            label: 'label.metrics.memory.used.avg'
                         }
                     }
                 },
@@ -525,6 +528,12 @@
                     url: createURL('listVirtualMachinesMetrics'),
                     data: data,
                     success: function(json) {
+                        json.listvirtualmachinesmetricsresponse.virtualmachine.forEach(function(vm) {
+                            var memUsedPercent = (vm.memorykbs && vm.memoryintfreekbs) ? (Math.round((vm.memorykbs - vm.memoryintfreekbs) * 10000 / vm.memorykbs) / 100).toString() + "%" : "";
+                            $.extend(vm,{
+                                memoryused: memUsedPercent
+                            })
+                        });
                         args.response.success({
                             data: json.listvirtualmachinesmetricsresponse.virtualmachine
                         });
