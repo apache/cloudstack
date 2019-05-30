@@ -2974,3 +2974,83 @@ class TestResourceTags(cloudstackTestCase):
             self.fail("User1 has access to create tags for User2.")
                                 
         return
+
+    @attr(tags=["advanced", "basic"], required_hardware="false")
+    def test_33_duplicate_vm_tag(self):
+        """
+         Test creation of a duplicate tag on UserVM and verify error return.
+         cleanup by deleting
+        """
+        # Validate the following
+        # 1. Create  a tag on VM using createTags API
+        # 2. Create the same tag on VM using createTags API
+        # 3. check the return for the right error message
+
+        tag_key = 'scope'
+        tag_value = 'test_33_duplicate_vm_tag'
+
+        self.debug("Creating a tag for user VM")
+        # use vm_2 as vm_1 is deleted in other tests :(
+        tag = Tag.create(
+            self.apiclient,
+            resourceIds=self.vm_2.id,
+            resourceType='userVM',
+            tags={tag_key: tag_value}
+        )
+        self.debug("Tag created: %s" % tag.__dict__)
+
+        self.debug("Trying second tag witgh the same key for user VM")
+        try:
+            erronousTag = Tag.create(
+                self.apiclient,
+                resourceIds=self.vm_2.id,
+                resourceType='userVM',
+                tags={tag_key: tag_value}
+            )
+        except Exception as e:
+            # verify e.message
+            assert "tag scope already on UserVm with id" in e.message, \
+                "neat error message missing from error result"
+            pass
+
+
+        # we should still find the tag
+        vms = VirtualMachine.list(
+            self.apiclient,
+            listall=True,
+            key=tag_key,
+            value=tag_value
+        )
+
+        self.assertEqual(
+            isinstance(vms, list),
+            True,
+            "Tag based VMs listing failed")
+
+        self.debug("Deleting the created tag..")
+        try:
+            Tag.delete(
+                self.apiclient,
+                resourceIds=self.vm_2.id,
+                resourceType='userVM',
+                tags={tag_key: tag_value}
+            )
+        except Exception as e:
+            self.fail("Failed to delete the tag - %s" % e)
+
+        self.debug("Verifying if tag is actually deleted!")
+        tags = Tag.list(
+            self.apiclient,
+            listall=True,
+            resourceType='userVM',
+            account=self.account.name,
+            domainid=self.account.domainid,
+            key=tag_key,
+            value=tag_value
+        )
+        self.assertEqual(
+            tags,
+            None,
+            "List tags should return empty response"
+        )
+        return
