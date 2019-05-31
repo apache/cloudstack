@@ -30,12 +30,15 @@ public class VmDhcpConfig extends ConfigBase {
     private String staticRoutes;
     private boolean defaultEntry;
 
+    // Indicate if the entry should be removed when set to true
+    private boolean remove;
+
     public VmDhcpConfig() {
         super(VM_DHCP);
     }
 
     public VmDhcpConfig(String hostName, String macAddress, String ipv4Address, String ipv6Address, String ipv6Duid, String dnsAddresses, String defaultGateway,
-            String staticRoutes, boolean defaultEntry) {
+            String staticRoutes, boolean defaultEntry, boolean remove) {
         super(VM_DHCP);
         this.hostName = hostName;
         this.macAddress = macAddress;
@@ -46,6 +49,7 @@ public class VmDhcpConfig extends ConfigBase {
         this.defaultGateway = defaultGateway;
         this.staticRoutes = staticRoutes;
         this.defaultEntry = defaultEntry;
+        this.remove = remove;
     }
 
     public String getHostName() {
@@ -62,6 +66,14 @@ public class VmDhcpConfig extends ConfigBase {
 
     public void setMacAddress(String macAddress) {
         this.macAddress = macAddress;
+    }
+
+    public boolean isRemove() {
+        return remove;
+    }
+
+    public void setRemove(boolean remove) {
+        this.remove = remove;
     }
 
     public String getIpv4Address() {

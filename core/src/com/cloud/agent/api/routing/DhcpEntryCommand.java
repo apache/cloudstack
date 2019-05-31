@@ -35,6 +35,15 @@ public class DhcpEntryCommand extends NetworkElementCommand {
     String duid;
     private boolean isDefault;
     boolean executeInSequence = false;
+    boolean remove;
+
+    public boolean isRemove() {
+        return remove;
+    }
+
+    public void setRemove(boolean remove) {
+        this.remove = remove;
+    }
 
     protected DhcpEntryCommand() {
 

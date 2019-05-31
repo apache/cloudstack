@@ -947,6 +947,34 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     }
 
     @Override
+    public boolean removeDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vmProfile) throws ResourceUnavailableException {
+        boolean result = true;
+        if (canHandle(network, Service.Dhcp)) {
+            if (vmProfile.getType() != VirtualMachine.Type.User) {
+                return false;
+            }
+
+            final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
+
+            if (CollectionUtils.isEmpty(routers)) {
+                throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
+            }
+
+            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            for (final DomainRouterVO domainRouterVO : routers) {
+                if (domainRouterVO.getState() != VirtualMachine.State.Running) {
+                    continue;
+                }
+
+                result = result && networkTopology.removeDhcpEntry(network, nic, vmProfile, domainRouterVO);
+            }
+        }
+        return result;
+    }
+
+    @Override
     public boolean removeDnsSupportForSubnet(Network network) throws ResourceUnavailableException {
         // Ignore if virtual router is already dhcp provider
         if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, getProvider())) {

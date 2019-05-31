@@ -312,5 +312,5 @@ public interface NetworkOrchestrationService {
     /**
      * Remove entry from /etc/dhcphosts and /etc/hosts on virtual routers
      */
-    void cleanupNicDhcpDnsEntry(long networkId, String macAddress, String ip);
+    void cleanupNicDhcpDnsEntry(Network network, VirtualMachineProfile vmProfile, NicProfile nicProfile);
 }

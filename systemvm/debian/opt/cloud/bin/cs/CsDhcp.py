@@ -47,7 +47,8 @@ class CsDhcp(CsDataBag):
         for item in self.dbag:
             if item == "id":
                 continue
-            self.add(self.dbag[item])
+            if not self.dbag[item]['remove']:
+                self.add(self.dbag[item])
 
         self.configure_server()
 

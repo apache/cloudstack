@@ -52,7 +52,6 @@ import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetRouterAlertsAnswer;
 import com.cloud.agent.api.routing.AggregationControlCommand;
 import com.cloud.agent.api.routing.AggregationControlCommand.Action;
-import com.cloud.agent.api.routing.CleanupUserVMDhcpDnsCommand;
 import com.cloud.agent.api.routing.GetRouterAlertsCommand;
 import com.cloud.agent.api.routing.GroupAnswer;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -114,10 +113,6 @@ public class VirtualRoutingResource {
                 return executeQueryCommand(cmd);
             }
 
-            if (cmd instanceof CleanupUserVMDhcpDnsCommand) {
-                return execute((CleanupUserVMDhcpDnsCommand) cmd);
-            }
-
             if (cmd instanceof SetupKeyStoreCommand) {
                 return execute((SetupKeyStoreCommand) cmd);
             }
@@ -155,13 +150,6 @@ public class VirtualRoutingResource {
                 }
             }
         }
-    }
-
-    private Answer execute(CleanupUserVMDhcpDnsCommand cmd) {
-        s_logger.debug("Performing dhcp-dns entry cleanup for IP address: " + cmd.getIp() + " and mac address: " + cmd.getMacAddress());
-        final String args = String.format("-i %s -m %s", cmd.getIp(), cmd.getMacAddress());
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VR_HOSTS_CLEANUP, args);
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
     private Answer execute(final SetupKeyStoreCommand cmd) {

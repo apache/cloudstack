@@ -62,7 +62,6 @@ import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.routing.CleanupUserVMDhcpDnsCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
@@ -83,14 +82,12 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.Domain;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
@@ -2919,24 +2916,26 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
      * Cleanup entry on VR file specified by type
      */
     @Override
-    public void cleanupNicDhcpDnsEntry(long networkId, String macAddress, String ip) {
-        final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(networkId, VirtualRouter.Role.VIRTUAL_ROUTER);
-        for (final DomainRouterVO router : routers) {
-            if (router.getState() != VirtualMachine.State.Running) {
-                continue;
-            }
+    public void cleanupNicDhcpDnsEntry(Network network, VirtualMachineProfile vmProfile, NicProfile nicProfile) {
 
-            final VMInstanceVO routerVm = _vmDao.findById(router.getId());
-            final CleanupUserVMDhcpDnsCommand cmd = new CleanupUserVMDhcpDnsCommand(macAddress, ip);
-            final Map<String, String> sshAccessDetails = getSystemVMAccessDetails(routerVm);
-            if (sshAccessDetails != null && !sshAccessDetails.isEmpty()) {
-                cmd.setAccessDetail(sshAccessDetails);
-            }
-
-            try {
-                _agentMgr.send(router.getHostId(), cmd);
-            } catch (AgentUnavailableException | OperationTimedoutException e) {
-                s_logger.warn("Failed to send dhcp-dns cleanup command to the router due to:", e);
+        final List<Provider> networkProviders = getNetworkProviders(network.getId());
+        for (final NetworkElement element : networkElements) {
+            if (networkProviders.contains(element.getProvider())) {
+                if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
+                    throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: "
+                            + network.getPhysicalNetworkId());
+                }
+                if (vmProfile.getType() == Type.User && element.getProvider() != null) {
+                    if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)
+                            && _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider()) && element instanceof DhcpServiceProvider) {
+                        final DhcpServiceProvider sp = (DhcpServiceProvider) element;
+                        try {
+                            sp.removeDhcpEntry(network, nicProfile, vmProfile);
+                        } catch (ResourceUnavailableException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
             }
         }
     }

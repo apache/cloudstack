@@ -173,6 +173,21 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     }
 
     @Override
+    public boolean removeDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile profile, VirtualRouter virtualRouter) throws ResourceUnavailableException {
+        s_logger.debug("REMOVE VPC DHCP ENTRY RULES");
+
+        final String typeString = "dhcp entry";
+        final Long podId = null;
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+
+        final DhcpEntryRules dhcpRules = new DhcpEntryRules(network, nic, profile, null);
+        dhcpRules.setRemove(true);
+
+        return applyRules(network, virtualRouter, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(dhcpRules));
+    }
+
+    @Override
     public boolean associatePublicIP(final Network network, final List<? extends PublicIpAddress> ipAddresses, final VirtualRouter router)
             throws ResourceUnavailableException {
 
