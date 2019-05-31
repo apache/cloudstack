@@ -62,7 +62,7 @@ def delete_hosts(hostsfile, param):
             content = filter(lambda x: param != x.split(delimiter)[0], f.readlines())
             f.seek(0)
             f.truncate()
-            f.write(content)
+            f.writelines(content)
             f.flush()
             fcntl.flock(f, fcntl.LOCK_UN)
 
