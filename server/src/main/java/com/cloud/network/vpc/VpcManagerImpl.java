@@ -364,7 +364,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final String displayText = cmd.getDisplayText();
         final List<String> supportedServices = cmd.getSupportedServices();
         final Map<String, List<String>> serviceProviderList = cmd.getServiceProviders();
-        final Map<String, List<String>> serviceCapabilitystList = cmd.getServiceCapabilitystList();
+        final Map serviceCapabilitystList = cmd.getServiceCapabilitystList();
         final Long serviceOfferingId = cmd.getServiceOfferingId();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
@@ -387,7 +387,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         return createVpcOffering(vpcOfferingName, displayText, supportedServices,
-                serviceCapabilitystList, serviceCapabilitystList, serviceOfferingId,
+                serviceProviderList, serviceCapabilitystList, serviceOfferingId,
                 domainIds, zoneIds);
     }
 
