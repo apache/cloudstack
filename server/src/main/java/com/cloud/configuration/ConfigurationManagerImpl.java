@@ -3698,9 +3698,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         boolean isDomainSpecific = false;
-        List<DomainVlanMapVO> domainVln = _domainVlanMapDao.listDomainVlanMapsByVlan(vlanRange.getId());
+        List<DomainVlanMapVO> domainVlan = _domainVlanMapDao.listDomainVlanMapsByVlan(vlanRange.getId());
         // Check for domain wide pool. It will have an entry for domain_vlan_map.
-        if (domainVln != null && !domainVln.isEmpty()) {
+        if (domainVlan != null && !domainVlan.isEmpty()) {
             isDomainSpecific = true;
         }
 
@@ -3857,10 +3857,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             forSystemVms = ip.isForSystemVms();
             final Long allocatedToAccountId = ip.getAllocatedToAccountId();
             if (allocatedToAccountId != null) {
-                final Account accountAllocatedTo = _accountMgr.getActiveAccountById(allocatedToAccountId);
-                if (!accountAllocatedTo.getAccountName().equalsIgnoreCase(accountName)) {
+                if (vlanOwner != null && allocatedToAccountId != vlanOwner.getId()) {
                     throw new InvalidParameterValueException(ip.getAddress() + " Public IP address in range is allocated to another account ");
                 }
+                final Account accountAllocatedTo = _accountMgr.getActiveAccountById(allocatedToAccountId);
                 if (vlanOwner == null && domain != null && domain.getId() != accountAllocatedTo.getDomainId()){
                     throw new InvalidParameterValueException(ip.getAddress()
                             + " Public IP address in range is allocated to another domain/account ");
@@ -3921,9 +3921,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         boolean isDomainSpecific = false;
-        final List<DomainVlanMapVO> domainVln = _domainVlanMapDao.listDomainVlanMapsByVlan(vlanDbId);
+        final List<DomainVlanMapVO> domainVlan = _domainVlanMapDao.listDomainVlanMapsByVlan(vlanDbId);
         // Check for domain wide pool. It will have an entry for domain_vlan_map.
-        if (domainVln != null && !domainVln.isEmpty()) {
+        if (domainVlan != null && !domainVlan.isEmpty()) {
             isDomainSpecific = true;
         }
 
@@ -3976,7 +3976,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // decrement resource count for dedicated public ip's
             _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, new Long(ips.size()));
             return true;
-        } else if (isDomainSpecific && _domainVlanMapDao.remove(domainVln.get(0).getId())) {
+        } else if (isDomainSpecific && _domainVlanMapDao.remove(domainVlan.get(0).getId())) {
             s_logger.debug("Remove the vlan from domain_vlan_map successfully.");
             return true;
         } else {

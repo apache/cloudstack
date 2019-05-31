@@ -1460,6 +1460,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     newNetworkOfferingId, null, 0L, VirtualMachine.class.getName(), vmInstance.getUuid(), vmInstance.isDisplay());
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(), vmInstance.getId(),
                     oldNicIdString, oldNetworkOfferingId, null, 0L, VirtualMachine.class.getName(), vmInstance.getUuid(), vmInstance.isDisplay());
+
+            if (vmInstance.getState() != State.Stopped) {
+                try {
+                    VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vmInstance);
+                    User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+                    ReservationContext context = new ReservationContextImpl(null, null, callerUser, caller);
+                    DeployDestination dest = new DeployDestination(dc, null, null, null);
+                    _networkMgr.prepare(vmProfile, dest, context);
+                } catch (final Exception e) {
+                    s_logger.info("Got exception: ", e);
+                }
+            }
+
             return _vmDao.findById(vmInstance.getId());
         }
 
