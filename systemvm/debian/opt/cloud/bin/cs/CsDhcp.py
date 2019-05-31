@@ -16,6 +16,7 @@
 # under the License.
 import CsHelper
 import logging
+import os
 from netaddr import *
 from random import randint
 from CsGuestNetwork import CsGuestNetwork
@@ -115,6 +116,7 @@ class CsDhcp(CsDataBag):
 
     def delete_leases(self):
         macs_dhcphosts = []
+        interfaces = filter(lambda x: x.startswith('eth'), os.listdir('/sys/class/net'))
         try:
             logging.info("Attempting to delete entries from dnsmasq.leases file for VMs which are not on dhcphosts file")
             for host in open(DHCP_HOSTS):
@@ -126,13 +128,14 @@ class CsDhcp(CsDataBag):
                 mac = lease[1]
                 ip = lease[2]
                 if mac not in macs_dhcphosts:
-                    cmd = "dhcp_release %s %s" % (ip, mac)
-                    logging.info(cmd)
-                    CsHelper.execute(cmd)
+                    for interface in interfaces:
+                        cmd = "dhcp_release %s %s %s" % (interface, ip, mac)
+                        logging.info(cmd)
+                        CsHelper.execute(cmd)
                     removed = removed + 1
             logging.info("Deleted %s entries from dnsmasq.leases file" % str(removed))
-        except IOError:
-            return
+        except Exception as e:
+            logging.error("Caught error while trying to delete entries from dnsmasq.leases file: %s" % e)
 
     def preseed(self):
         self.add_host("127.0.0.1", "localhost %s" % CsHelper.get_hostname())
