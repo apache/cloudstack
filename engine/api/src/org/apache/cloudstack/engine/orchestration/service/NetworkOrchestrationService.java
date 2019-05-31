@@ -310,9 +310,7 @@ public interface NetworkOrchestrationService {
     boolean areRoutersRunning(final List<? extends VirtualRouter> routers);
 
     /**
-     * Remove entry from /etc/dhcphosts file on virtual routers
+     * Remove entry from /etc/dhcphosts and /etc/hosts on virtual routers
      */
-    void cleanupNicDhcpHelperEntry(long networkId, String macAddress, String ip);
-
-    void cleanupNicDnsEntry(long networkId, String macAddress, String ip);
+    void cleanupNicDhcpDnsEntry(long networkId, String macAddress, String ip);
 }

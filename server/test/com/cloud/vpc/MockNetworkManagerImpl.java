@@ -925,11 +925,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public void cleanupNicDhcpHelperEntry(long networkId, String macAddress, String ip) {
-    }
-
-    @Override
-    public void cleanupNicDnsEntry(long networkId, String macAddress, String ip) {
+    public void cleanupNicDhcpDnsEntry(long networkId, String macAddress, String ip) {
     }
 
     @Override

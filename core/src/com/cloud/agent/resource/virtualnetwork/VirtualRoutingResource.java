@@ -22,10 +22,6 @@ package com.cloud.agent.resource.virtualnetwork;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
-
-import com.cloud.agent.api.routing.CleanupEntryCommand;
-import com.cloud.agent.api.routing.CleanupEntryCommand.CleanupEntryType;
-import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +40,7 @@ import org.apache.cloudstack.ca.SetupKeyStoreCommand;
 import org.apache.cloudstack.ca.SetupKeystoreAnswer;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.log4j.Logger;
+import org.joda.time.Duration;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -55,6 +52,7 @@ import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetRouterAlertsAnswer;
 import com.cloud.agent.api.routing.AggregationControlCommand;
 import com.cloud.agent.api.routing.AggregationControlCommand.Action;
+import com.cloud.agent.api.routing.CleanupUserVMDhcpDnsCommand;
 import com.cloud.agent.api.routing.GetRouterAlertsCommand;
 import com.cloud.agent.api.routing.GroupAnswer;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -116,8 +114,8 @@ public class VirtualRoutingResource {
                 return executeQueryCommand(cmd);
             }
 
-            if (cmd instanceof CleanupEntryCommand) {
-                return execute((CleanupEntryCommand) cmd);
+            if (cmd instanceof CleanupUserVMDhcpDnsCommand) {
+                return execute((CleanupUserVMDhcpDnsCommand) cmd);
             }
 
             if (cmd instanceof SetupKeyStoreCommand) {
@@ -159,19 +157,10 @@ public class VirtualRoutingResource {
         }
     }
 
-    private Answer execute(CleanupEntryCommand cmd) {
-        CleanupEntryType type = cmd.getType();
-        String args = null;
-        if (type == CleanupEntryType.DHCP_HOSTS) {
-            args = String.format("-m %s -t %s", cmd.getMacAddress(), type.getDesc());
-        } else if (type == CleanupEntryType.DNS_HOSTS) {
-            args = String.format("-i %s -t %s", cmd.getIp(), type.getDesc());
-        } else {
-            s_logger.error("Unknown cleanup entry type " + type);
-            throw new CloudRuntimeException("Unknown cleanup entry type " + type);
-        }
-        s_logger.debug("Performing cleanup entry type " + type.getDesc());
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VR_HOSTS_CLEANUP, args);
+    private Answer execute(CleanupUserVMDhcpDnsCommand cmd) {
+        s_logger.debug("Performing dhcp-dns entry cleanup for IP address: " + cmd.getIp() + " and mac address: " + cmd.getMacAddress());
+        final String args = String.format("-i %s -m %s", cmd.getIp(), cmd.getMacAddress());
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VR_HOSTS_CLEANUP, args);
         return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 

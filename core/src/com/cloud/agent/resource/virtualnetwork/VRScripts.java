@@ -69,6 +69,6 @@ public class VRScripts {
 
     public static final String VR_CFG = "vr_cfg.sh";
 
-    //Cleanup scripts
+    // Cleanup scripts
     public static final String VR_HOSTS_CLEANUP = "cleanuphosts.py";
 }

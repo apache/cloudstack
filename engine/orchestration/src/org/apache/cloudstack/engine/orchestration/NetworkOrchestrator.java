@@ -38,10 +38,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.routing.CleanupEntryCommand;
-import com.cloud.agent.api.routing.CleanupEntryCommand.CleanupEntryType;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.OperationTimedoutException;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
@@ -66,6 +62,7 @@ import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.routing.CleanupUserVMDhcpDnsCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
@@ -86,12 +83,14 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.Domain;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
@@ -225,9 +224,6 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
-
-import static com.cloud.agent.api.routing.CleanupEntryCommand.CleanupEntryType.DHCP_HOSTS;
-import static com.cloud.agent.api.routing.CleanupEntryCommand.CleanupEntryType.DNS_HOSTS;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -2922,37 +2918,27 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     /**
      * Cleanup entry on VR file specified by type
      */
-    private void cleanupEntryInternal(long networkId, CleanupEntryType type, String macAddress, String ip) {
-        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(networkId, VirtualRouter.Role.VIRTUAL_ROUTER);
-        CleanupEntryCommand cmd = new CleanupEntryCommand(type, macAddress, ip);
-
-        for (DomainRouterVO router : routers) {
+    @Override
+    public void cleanupNicDhcpDnsEntry(long networkId, String macAddress, String ip) {
+        final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(networkId, VirtualRouter.Role.VIRTUAL_ROUTER);
+        for (final DomainRouterVO router : routers) {
             if (router.getState() != VirtualMachine.State.Running) {
                 continue;
             }
 
-            VMInstanceVO routerVm = _vmDao.findById(router.getId());
+            final VMInstanceVO routerVm = _vmDao.findById(router.getId());
+            final CleanupUserVMDhcpDnsCommand cmd = new CleanupUserVMDhcpDnsCommand(macAddress, ip);
             final Map<String, String> sshAccessDetails = getSystemVMAccessDetails(routerVm);
             if (sshAccessDetails != null && !sshAccessDetails.isEmpty()) {
                 cmd.setAccessDetail(sshAccessDetails);
             }
+
             try {
                 _agentMgr.send(router.getHostId(), cmd);
             } catch (AgentUnavailableException | OperationTimedoutException e) {
-                e.printStackTrace();
+                s_logger.warn("Failed to send dhcp-dns cleanup command to the router due to:", e);
             }
-
         }
-    }
-
-    @Override
-    public void cleanupNicDhcpHelperEntry(long networkId, String macAddress, String ip) {
-        cleanupEntryInternal(networkId, DHCP_HOSTS, macAddress, ip);
-    }
-
-    @Override
-    public void cleanupNicDnsEntry(long networkId, String macAddress, String ip) {
-        cleanupEntryInternal(networkId, DNS_HOSTS, macAddress, ip);
     }
 
     /**

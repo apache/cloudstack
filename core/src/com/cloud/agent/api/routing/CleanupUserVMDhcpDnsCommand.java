@@ -19,35 +19,13 @@
 
 package com.cloud.agent.api.routing;
 
-public class CleanupEntryCommand extends NetworkElementCommand {
-
-    public enum CleanupEntryType {
-        DHCP_HOSTS("dhcphosts"), DNS_HOSTS("dnshosts");
-
-        private String desc;
-
-        CleanupEntryType(String desc) {
-            this.desc = desc;
-        }
-
-        public String getDesc() {
-            return this.desc;
-        }
-
-    }
-
-    private CleanupEntryType type;
+public class CleanupUserVMDhcpDnsCommand extends NetworkElementCommand {
     private String macAddress;
     private String ip;
 
-    public CleanupEntryCommand(final CleanupEntryType type, final String macAddress, final String ip) {
-        this.type = type;
+    public CleanupUserVMDhcpDnsCommand(final String macAddress, final String ip) {
         this.macAddress = macAddress;
         this.ip = ip;
-    }
-
-    public CleanupEntryType getType() {
-        return type;
     }
 
     public String getMacAddress() {

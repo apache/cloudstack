@@ -48,7 +48,6 @@ class CsDhcp(CsDataBag):
             if item == "id":
                 continue
             self.add(self.dbag[item])
-        self.write_hosts()
 
         self.configure_server()
 
@@ -64,6 +63,8 @@ class CsDhcp(CsDataBag):
 
         if restart_dnsmasq:
             self.delete_leases()
+
+        self.write_hosts()
 
         if not self.cl.is_redundant() or self.cl.is_master():
             if restart_dnsmasq:
@@ -133,6 +134,7 @@ class CsDhcp(CsDataBag):
                         logging.info(cmd)
                         CsHelper.execute(cmd)
                     removed = removed + 1
+                    self.del_host(ip)
             logging.info("Deleted %s entries from dnsmasq.leases file" % str(removed))
         except Exception as e:
             logging.error("Caught error while trying to delete entries from dnsmasq.leases file: %s" % e)
@@ -188,3 +190,7 @@ class CsDhcp(CsDataBag):
 
     def add_host(self, ip, hosts):
         self.hosts[ip] = hosts
+
+    def del_host(self, ip):
+        if ip in self.hosts:
+            self.hosts.pop(ip)

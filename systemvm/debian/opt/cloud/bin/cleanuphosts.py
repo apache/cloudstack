@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -- coding: utf-8 --
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,26 +17,24 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import sys
+import base64
 import getopt
 import json
 import os
-import base64
-from fcntl import flock, LOCK_EX, LOCK_UN
+import sys
 
-DHCP_HOSTS = "/etc/dhcphosts.txt"
 DNS_HOSTS = "/etc/hosts"
+DHCP_HOSTS = "/etc/dhcphosts.txt"
 
 
 def main(argv):
     macaddr = ''
     ip = ''
-    type = ''
 
     try:
-        opts, args = getopt.getopt(argv, "m:i:t:")
+        opts, args = getopt.getopt(argv, "i:m:")
     except getopt.GetoptError:
-        print 'params: -m <MAC> -i <IP> -t <TYPE>'
+        print "usage: cleanuphosts.py -i <IP> -m <MAC>"
         sys.exit(2)
 
     for opt, arg in opts:
@@ -43,34 +42,26 @@ def main(argv):
             macaddr = arg
         elif opt == '-i':
             ip = arg
-        elif opt == '-t':
-            type = arg
 
-    if type == "dhcphosts":
-        delete_hosts(DHCP_HOSTS, macaddr)
-    elif type == "dnshosts":
+    if ip:
         delete_hosts(DNS_HOSTS, ip)
+
+    if macaddr:
+        delete_hosts(DHCP_HOSTS, macaddr)
 
 
 def delete_hosts(hostsfile, param):
     try:
-        persist = []
         delimiter = ','
         if hostsfile == DNS_HOSTS:
             delimiter = '\t'
 
-        read = open(hostsfile, 'r')
-        for line in read:
-            opts = line.split(delimiter)
-            if param != opts[0]:
-                persist.append(line)
-        read.close()
+        with open(hostsfile, 'rw+') as f:
+            content = filter(lambda x: param != x.split(delimiter)[0], f.readlines())
+            f.seek(0)
+            f.truncate()
+            f.write(content)
 
-        write = open(hostsfile, 'w')
-        for line in persist:
-            write.write(line)
-        write.close()
-        return True
     except Exception as e:
         print "Failed to cleanup entry on file " + hostsfile + " due to : " + str(e)
         sys.exit(1)
