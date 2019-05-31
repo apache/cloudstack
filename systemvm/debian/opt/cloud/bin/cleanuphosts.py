@@ -18,6 +18,7 @@
 # under the License.
 
 import base64
+import fcntl
 import getopt
 import json
 import os
@@ -57,10 +58,13 @@ def delete_hosts(hostsfile, param):
             delimiter = '\t'
 
         with open(hostsfile, 'rw+') as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
             content = filter(lambda x: param != x.split(delimiter)[0], f.readlines())
             f.seek(0)
             f.truncate()
             f.write(content)
+            f.flush()
+            fcntl.flock(f, fcntl.LOCK_UN)
 
     except Exception as e:
         print "Failed to cleanup entry on file " + hostsfile + " due to : " + str(e)
