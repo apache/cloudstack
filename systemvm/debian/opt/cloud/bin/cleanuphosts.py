@@ -72,7 +72,7 @@ def delete_hosts(hostsfile, param):
         write.close()
         return True
     except Exception as e:
-        print "Failed to cleanup entry on file " + hostsfile + " due to : " + e.strerror
+        print "Failed to cleanup entry on file " + hostsfile + " due to : " + str(e)
         sys.exit(1)
 
 
