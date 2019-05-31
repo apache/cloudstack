@@ -110,7 +110,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
 
     static final ConfigKey<Integer> UploadMonitoringInterval = new ConfigKey<Integer>("Advanced", Integer.class, "upload.monitoring.interval", "60",
             "Interval (in seconds) to check the status of volumes that are uploaded using HTTP POST request", true);
-    static final ConfigKey<Integer> UploadOperationTimeout = new ConfigKey<Integer>("Advanced", Integer.class, "upload.operation.timeout", "10",
+    static final ConfigKey<Integer> UploadOperationTimeout = new ConfigKey<Integer>("Advanced", Integer.class, "upload.operation.timeout", "60",
             "Time (in minutes) to wait before abandoning volume upload using HTTP POST request", true);
 
     @Override
