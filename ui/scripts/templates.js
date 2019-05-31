@@ -311,6 +311,7 @@
                                     },
                                     // Direct Download - End
 
+                                    //XenServer only (starts here)
                                     xenserverToolsVersion61plus: {
                                         label: 'label.xenserver.tools.version.61.plus',
                                         isBoolean: true,
@@ -334,6 +335,7 @@
                                         },
                                         isHidden: true
                                     },
+                                    //XenServer only (ends here)
 
                                     //fields for hypervisor == "KVM" (starts here)
                                     rootDiskControllerTypeKVM: {
@@ -366,6 +368,7 @@
                                             });
                                         }
                                     },
+                                    //fields for hypervisor == "KVM" (ends here)
 
                                     //fields for hypervisor == "VMware" (starts here)
                                     rootDiskControllerType: {
@@ -732,6 +735,40 @@
                                             hypervisor: args.data.hypervisor
                                         };
 
+                                        //XenServer only (starts here)
+                                        if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css("display") != "none") {
+                                            $.extend(data, {
+                                                'details[0].hypervisortoolsversion': (args.data.xenserverToolsVersion61plus == "on") ? "xenserver61" : "xenserver56"
+                                            });
+                                        }
+                                        //XenServer only (ends here)
+
+                                        // KVM only (starts here)
+                                        if (args.$form.find('.form-item[rel=rootDiskControllerTypeKVM]').css("display") != "none" && args.data.rootDiskControllerTypeKVM != "") {
+                                            $.extend(data, {
+                                                'details[0].rootDiskController': args.data.rootDiskControllerTypeKVM
+                                            });
+                                        }
+                                        // KVM only (ends here)
+
+                                        //VMware only (starts here)
+                                        if (args.$form.find('.form-item[rel=rootDiskControllerType]').css("display") != "none" && args.data.rootDiskControllerType != "") {
+                                            $.extend(data, {
+                                                'details[0].rootDiskController': args.data.rootDiskControllerType
+                                            });
+                                        }
+                                        if (args.$form.find('.form-item[rel=nicAdapterType]').css("display") != "none" && args.data.nicAdapterType != "") {
+                                            $.extend(data, {
+                                                'details[0].nicAdapter': args.data.nicAdapterType
+                                            });
+                                        }
+                                        if (args.$form.find('.form-item[rel=keyboardType]').css("display") != "none" && args.data.keyboardType != "") {
+                                            $.extend(data, {
+                                                'details[0].keyboard': args.data.keyboardType
+                                            });
+                                        }
+                                        //VMware only (ends here)
+
                                         if (args.$form.find('.form-item[rel=isPublic]').css("display") != "none") {
                                             $.extend(data, {
                                                 ispublic: (args.data.isPublic == "on")
@@ -865,8 +902,198 @@
                                                     });
                                                 }
                                             });
+                                            args.$select.change(function() {
+                                                var $form = $(this).closest('form');
+                                                if ($(this).val() == "VMware") {
+                                                    $form.find('.form-item[rel=rootDiskControllerType]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=nicAdapterType]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=keyboardType]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
+                                                    $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
+                                                    $form.find('.form-item[rel=requireshvm]').hide();
+                                                } else if ($(this).val() == "XenServer") {
+                                                    $form.find('.form-item[rel=rootDiskControllerType]').hide();
+                                                    $form.find('.form-item[rel=nicAdapterType]').hide();
+                                                    $form.find('.form-item[rel=keyboardType]').hide();
+                                                    $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
+                                                    $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
+                                                    if (isAdmin()) {
+                                                        $form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
+                                                    }
+                                                } else if ($(this).val() == "KVM") {
+                                                    $form.find('.form-item[rel=rootDiskControllerType]').hide();
+                                                    $form.find('.form-item[rel=nicAdapterType]').hide();
+                                                    $form.find('.form-item[rel=keyboardType]').hide();
+                                                    $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
+                                                    $form.find('.form-item[rel=rootDiskControllerTypeKVM]').css('display', 'inline-block');
+                                                    $('#label_root_disk_controller').prop('selectedIndex', 2);
+                                                    $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
+                                                } else {
+                                                    $form.find('.form-item[rel=rootDiskControllerType]').hide();
+                                                    $form.find('.form-item[rel=nicAdapterType]').hide();
+                                                    $form.find('.form-item[rel=keyboardType]').hide();
+                                                    $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
+                                                    $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
+                                                    $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
+                                                }
+                                            });
+                                            args.$select.trigger('change');
                                         }
                                     },
+
+                                    //XenServer only (starts here)
+                                    xenserverToolsVersion61plus: {
+                                        label: 'label.xenserver.tools.version.61.plus',
+                                        isBoolean: true,
+                                        isChecked: function (args) {
+                                             var b = true;
+                                            if (isAdmin()) {
+                                                $.ajax({
+                                                    url: createURL('listConfigurations'),
+                                                    data: {
+                                                        name: 'xenserver.pvdriver.version'
+                                                    },
+                                                    async: false,
+                                                    success: function (json) {
+                                                        if (json.listconfigurationsresponse.configuration != null && json.listconfigurationsresponse.configuration[0].value != 'xenserver61') {
+                                                            b = false;
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                            return b;
+                                        },
+                                        isHidden: true
+                                    },
+                                    //XenServer only (ends here)
+
+                                    //fields for hypervisor == "KVM" (starts here)
+                                    rootDiskControllerTypeKVM: {
+                                        label: 'label.root.disk.controller',
+                                        isHidden: true,
+                                        select: function(args) {
+                                            var items = []
+                                            items.push({
+                                                id: "",
+                                                description: ""
+                                            });
+                                            items.push({
+                                                id: "ide",
+                                                description: "ide"
+                                            });
+                                            items.push({
+                                                id: "osdefault",
+                                                description: "osdefault"
+                                            });
+                                            items.push({
+                                                id: "scsi",
+                                                description: "virtio-scsi"
+                                            });
+                                            items.push({
+                                                id: "virtio",
+                                                description: "virtio"
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    //fields for hypervisor == "KVM" (ends here)
+
+                                    //fields for hypervisor == "VMware" (starts here)
+                                    rootDiskControllerType: {
+                                        label: 'label.root.disk.controller',
+                                        isHidden: true,
+                                        select: function(args) {
+                                            var items = []
+                                            items.push({
+                                                id: "",
+                                                description: ""
+                                            });
+                                            items.push({
+                                                id: "scsi",
+                                                description: "scsi"
+                                            });
+                                            items.push({
+                                                id: "ide",
+                                                description: "ide"
+                                            });
+                                            items.push({
+                                                id: "osdefault",
+                                                description: "osdefault"
+                                            });
+                                            items.push({
+                                                id: "pvscsi",
+                                                description: "pvscsi"
+                                            });
+                                            items.push({
+                                                id: "lsilogic",
+                                                description: "lsilogic"
+                                            });
+                                            items.push({
+                                                id: "lsisas1068",
+                                                description: "lsilogicsas"
+                                            });
+                                            items.push({
+                                                id: "buslogic",
+                                                description: "buslogic"
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    nicAdapterType: {
+                                        label: 'label.nic.adapter.type',
+                                        isHidden: true,
+                                        select: function(args) {
+                                            var items = []
+                                            items.push({
+                                                id: "",
+                                                description: ""
+                                            });
+                                            items.push({
+                                                id: "E1000",
+                                                description: "E1000"
+                                            });
+                                            items.push({
+                                                id: "PCNet32",
+                                                description: "PCNet32"
+                                            });
+                                            items.push({
+                                                id: "Vmxnet2",
+                                                description: "Vmxnet2"
+                                            });
+                                            items.push({
+                                                id: "Vmxnet3",
+                                                description: "Vmxnet3"
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    keyboardType: {
+                                        label: 'label.keyboard.type',
+                                        isHidden: true,
+                                        select: function(args) {
+                                            var items = []
+                                            items.push({
+                                                id: "",
+                                                description: ""
+                                            });
+                                            for (var key in cloudStackOptions.keyboardOptions) {
+                                                items.push({
+                                                    id: key,
+                                                    description: _l(cloudStackOptions.keyboardOptions[key])
+                                                });
+                                            }
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    //fields for hypervisor == "VMware" (ends here)
 
                                     format: {
                                         label: 'label.format',
