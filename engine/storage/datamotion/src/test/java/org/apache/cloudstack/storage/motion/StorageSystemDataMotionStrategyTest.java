@@ -47,7 +47,6 @@ import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ImageStore;

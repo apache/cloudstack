@@ -21,7 +21,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import org.apache.commons.lang.NotImplementedException;
 
 import com.cloud.storage.Storage;
 import com.cloud.utils.script.OutputInterpreter;

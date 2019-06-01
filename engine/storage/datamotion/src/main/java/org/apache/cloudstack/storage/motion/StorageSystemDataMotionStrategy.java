@@ -70,7 +70,6 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -2216,7 +2215,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             LOGGER.debug("Verifying source pools are already available on destination host " + destHost.getUuid());
             CheckStorageAvailabilityCommand cmd = new CheckStorageAvailabilityCommand(sourcePools);
             try {
-                Answer answer = _agentMgr.send(destHost.getId(), cmd);
+                Answer answer = agentManager.send(destHost.getId(), cmd);
                 if (answer == null || !answer.getResult()) {
                     throw new CloudRuntimeException("Storage verification failed on host "
                             + destHost.getUuid() +": " + answer.getDetails());

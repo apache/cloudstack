@@ -604,7 +604,7 @@ public class LibvirtMigrateCommandWrapperTest {
 
         MigrateDiskInfo diskInfo = new MigrateDiskInfo("123456", DiskType.BLOCK, DriverType.RAW, Source.FILE, "sourctest");
         mapMigrateStorage.put("/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6", diskInfo);
-        final String result = libvirtMigrateCmdWrapper.replaceStorage(fullfile, mapMigrateStorage);
+        final String result = libvirtMigrateCmdWrapper.replaceStorage(fullfile, mapMigrateStorage, true);
 
         InputStream in = IOUtils.toInputStream(result);
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
