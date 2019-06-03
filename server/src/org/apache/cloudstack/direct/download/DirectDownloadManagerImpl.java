@@ -25,8 +25,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -64,7 +62,6 @@ import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
-import org.apache.cloudstack.agent.directdownload.RevokeDirectDownloadCertificateCommand;
 import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificateCommand;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -406,31 +403,4 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         return true;
     }
 
-    @Override
-    public boolean revokeCertificateAlias(String certificateAlias, String hypervisor) {
-        HypervisorType hypervisorType = HypervisorType.getType(hypervisor);
-        List<HostVO> hosts = getRunningHostsToUploadCertificate(hypervisorType);
-        s_logger.info("Attempting to revoke certificate alias: " + certificateAlias + " from " + hosts.size() + " hosts");
-        if (CollectionUtils.isNotEmpty(hosts)) {
-            for (HostVO host : hosts) {
-                if (!revokeCertificateAliasFromHost(certificateAlias, host.getId())) {
-                    String msg = "Could not revoke certificate from host: " + host.getName() + " (" + host.getUuid() + ")";
-                    s_logger.error(msg);
-                    throw new CloudRuntimeException(msg);
-                }
-            }
-        }
-        return true;
-    }
-
-    protected boolean revokeCertificateAliasFromHost(String alias, Long hostId) {
-        RevokeDirectDownloadCertificateCommand cmd = new RevokeDirectDownloadCertificateCommand(alias);
-        try {
-            Answer answer = agentManager.send(hostId, cmd);
-            return answer != null && answer.getResult();
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
-            s_logger.error("Error revoking certificate " + alias + " from host " + hostId, e);
-        }
-        return false;
-    }
 }

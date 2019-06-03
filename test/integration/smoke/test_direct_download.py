@@ -27,7 +27,7 @@ from marvin.lib.base import (ServiceOffering,
 from marvin.lib.common import (get_pod,
                                get_zone)
 from nose.plugins.attrib import attr
-from marvin.cloudstackAPI import (uploadTemplateDirectDownloadCertificate, revokeTemplateDirectDownloadCertificate)
+from marvin.cloudstackAPI import uploadTemplateDirectDownloadCertificate
 from marvin.lib.decoratorGenerators import skipTestIf
 
 
@@ -120,7 +120,6 @@ class TestUploadDirectDownloadCertificates(cloudstackTestCase):
 
         # Validate the following
         # 1. Valid certificates are uploaded to hosts
-        # 2. Revoke uploaded certificate from hosts
 
         cmd = uploadTemplateDirectDownloadCertificate.uploadTemplateDirectDownloadCertificateCmd()
         cmd.hypervisor = self.hypervisor
@@ -131,15 +130,6 @@ class TestUploadDirectDownloadCertificates(cloudstackTestCase):
             self.apiclient.uploadTemplateDirectDownloadCertificate(cmd)
         except Exception as e:
             self.fail("Valid certificate must be uploaded")
-
-        revokecmd = revokeTemplateDirectDownloadCertificate.revokeTemplateDirectDownloadCertificateCmd()
-        revokecmd.hypervisor = self.hypervisor
-        revokecmd.name = cmd.name
-
-        try:
-            self.apiclient.revokeTemplateDirectDownloadCertificate(cmd)
-        except Exception as e:
-            self.fail("Uploaded certificates should be revoked when needed")
 
         return
 

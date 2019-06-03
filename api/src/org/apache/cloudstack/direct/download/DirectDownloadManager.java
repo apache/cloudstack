@@ -22,8 +22,4 @@ import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadServi
 
 public interface DirectDownloadManager extends DirectDownloadService, PluggableService {
 
-    /**
-     * Revoke direct download certificate with alias 'alias' from hosts of hypervisor type 'hypervisor'
-     */
-    boolean revokeCertificateAlias(String certificateAlias, String hypervisor);
 }
