@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
@@ -56,10 +57,15 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
      * Get the property 'keystore.passphrase' value from agent.properties file
      */
     private String getKeystorePassword(File agentFile) {
-        s_logger.debug("Retrieving keystore password from agent.properties file");
-        String privatePasswordFormat = "sed -n '/keystore.passphrase/p' '%s' 2>/dev/null  | sed 's/keystore.passphrase=//g' 2>/dev/null";
-        String privatePasswordCmd = String.format(privatePasswordFormat, agentFile.getAbsolutePath());
-        return Script.runSimpleBashScript(privatePasswordCmd);
+        String pass = null;
+        if (agentFile != null) {
+            try {
+                pass = PropertiesUtil.loadFromFile(agentFile).getProperty(KeyStoreUtils.KS_PASSPHRASE_PROPERTY);
+            } catch (IOException e) {
+                s_logger.error("Could not get 'keystore.passphrase' property value due to: " + e.getMessage());
+            }
+        }
+        return pass;
     }
 
     /**

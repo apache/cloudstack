@@ -357,11 +357,12 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
             try {
                 x509Cert.checkValidity();
             } catch (CertificateExpiredException | CertificateNotYetValidException e) {
-                e.printStackTrace();
-                throw new CloudRuntimeException("Certificate is invalid. Please provide a valid certificate. Error: " + e.getMessage());
+                String msg = "Certificate is invalid. Please provide a valid certificate. Error: " + e.getMessage();
+                s_logger.error(msg);
+                throw new CloudRuntimeException(msg);
             }
             if (x509Cert.getSubjectDN() != null) {
-                s_logger.info("Valid certificate for domain name: " + x509Cert.getSubjectDN().getName());
+                s_logger.debug("Valid certificate for domain name: " + x509Cert.getSubjectDN().getName());
             }
         }
     }
@@ -378,8 +379,9 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         if (CollectionUtils.isNotEmpty(hosts)) {
             for (HostVO host : hosts) {
                 if (!uploadCertificate(certificatePem, alias, host.getId())) {
-                    s_logger.error("Could not upload certificate on host: " + host.getName() + " (" + host.getUuid() + ")");
-                    throw new CloudRuntimeException("Uploading certificate " + alias + " failed on host: " + host.getUuid());
+                    String msg = "Could not upload certificate " + alias + " on host: " + host.getName() + " (" + host.getUuid() + ")";
+                    s_logger.error(msg);
+                    throw new CloudRuntimeException(msg);
                 }
             }
         }
@@ -397,7 +399,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
             if (answer != null) {
                 msg += " due to: " + answer.getDetails();
             }
-            s_logger.info(msg);
+            s_logger.error(msg);
             return false;
         }
         s_logger.info("Certificate " + certificateName + " successfully uploaded to host: " + hostId);
@@ -412,8 +414,9 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         if (CollectionUtils.isNotEmpty(hosts)) {
             for (HostVO host : hosts) {
                 if (!revokeCertificateAliasFromHost(certificateAlias, host.getId())) {
-                    s_logger.error("Could not revoke certificate from host: " + host.getName() + " (" + host.getUuid() + ")");
-                    throw new CloudRuntimeException("Revoking certificate " + certificateAlias + " failed from host: " + host.getUuid());
+                    String msg = "Could not revoke certificate from host: " + host.getName() + " (" + host.getUuid() + ")";
+                    s_logger.error(msg);
+                    throw new CloudRuntimeException(msg);
                 }
             }
         }
