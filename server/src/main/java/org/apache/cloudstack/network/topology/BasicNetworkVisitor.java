@@ -196,9 +196,10 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         final NicVO nicVo = dhcp.getNicVo();
         final UserVmVO userVM = dhcp.getUserVM();
         final DeployDestination destination = dhcp.getDestination();
+        final boolean remove = dhcp.isRemove();
 
         if (router.getPodIdToDeployIn().longValue() == destination.getPod().getId()) {
-            _commandSetupHelper.createDhcpEntryCommand(router, userVM, nicVo, commands);
+            _commandSetupHelper.createDhcpEntryCommand(router, userVM, nicVo, remove, commands);
 
             return _networkGeneralHelper.sendCommandsToRouter(router, commands);
         }

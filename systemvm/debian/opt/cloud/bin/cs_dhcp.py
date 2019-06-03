@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import logging
 from netaddr import *
 
 
@@ -35,6 +36,9 @@ def merge(dbag, data):
             if key != 'id' and entry['mac_address'] == data['mac_address']:
                 remove_keys.add(key)
                 break
+
+        if data['remove'] and key not in remove_keys:
+            remove_keys.add(key)
 
         for remove_key in remove_keys:
             del(dbag[remove_key])
