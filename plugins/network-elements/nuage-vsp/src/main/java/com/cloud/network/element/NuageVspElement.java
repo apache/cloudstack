@@ -542,6 +542,11 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     }
 
     @Override
+    public boolean removeDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vmProfile) {
+        return false;
+    }
+
+    @Override
     public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
         List<VspStaticNat> vspStaticNatDetails = new ArrayList<VspStaticNat>();
         for (StaticNat staticNat : rules) {

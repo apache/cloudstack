@@ -185,4 +185,9 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
         return false;
     }
 
+    @Override
+    public boolean removeDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vmProfile) throws ResourceUnavailableException {
+        return false;
+    }
+
 }
