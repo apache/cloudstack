@@ -2913,6 +2913,34 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     /**
+     * Cleanup entry on VR file specified by type
+     */
+    @Override
+    public void cleanupNicDhcpDnsEntry(Network network, VirtualMachineProfile vmProfile, NicProfile nicProfile) {
+
+        final List<Provider> networkProviders = getNetworkProviders(network.getId());
+        for (final NetworkElement element : networkElements) {
+            if (networkProviders.contains(element.getProvider())) {
+                if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
+                    throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: "
+                            + network.getPhysicalNetworkId());
+                }
+                if (vmProfile.getType() == Type.User && element.getProvider() != null) {
+                    if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)
+                            && _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider()) && element instanceof DhcpServiceProvider) {
+                        final DhcpServiceProvider sp = (DhcpServiceProvider) element;
+                        try {
+                            sp.removeDhcpEntry(network, nicProfile, vmProfile);
+                        } catch (ResourceUnavailableException e) {
+                            s_logger.error("Failed to remove dhcp-dns entry due to: ", e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * rollingRestartRouters performs restart of routers of a network by first
      * deploying a new VR and then destroying old VRs in rolling fashion. For
      * non-redundant network, it will re-program the new router as final step

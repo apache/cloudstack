@@ -37,4 +37,6 @@ public interface DhcpServiceProvider extends NetworkElement {
     boolean removeDhcpSupportForSubnet(Network network) throws ResourceUnavailableException;
 
     boolean setExtraDhcpOptions(Network network, long nicId, Map<Integer, String> dhcpOptions);
+
+    boolean removeDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vmProfile) throws ResourceUnavailableException;
 }

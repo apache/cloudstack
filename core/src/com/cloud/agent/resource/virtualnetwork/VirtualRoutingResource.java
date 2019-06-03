@@ -22,7 +22,6 @@ package com.cloud.agent.resource.virtualnetwork;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
-import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +40,7 @@ import org.apache.cloudstack.ca.SetupKeyStoreCommand;
 import org.apache.cloudstack.ca.SetupKeystoreAnswer;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.log4j.Logger;
+import org.joda.time.Duration;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckRouterAnswer;
