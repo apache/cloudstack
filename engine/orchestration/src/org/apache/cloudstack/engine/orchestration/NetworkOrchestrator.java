@@ -2932,7 +2932,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         try {
                             sp.removeDhcpEntry(network, nicProfile, vmProfile);
                         } catch (ResourceUnavailableException e) {
-                            e.printStackTrace();
+                            s_logger.error("Failed to remove dhcp-dns entry due to: ", e);
                         }
                     }
                 }
