@@ -258,6 +258,30 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     /**
+     * Applies MTU per the "mtu" value from params
+     * @param params
+     */
+    public static void applyMtu(Map<String, Object> params) {
+        if (params == null || params.get("mtu") == null) {
+            return;
+        }
+        final Integer mtu = NumbersUtil.parseInt((String) params.get("mtu"), 0);
+        if (mtu > 0) {
+            final Script command = new Script("/sbin/ip", s_logger);
+            command.add("link");
+            command.add("set");
+            command.add("dev");
+            command.add("eth1");
+            command.add("mtu");
+            command.add(String.valueOf(mtu));
+            final String result = command.execute();
+            if (result != null) {
+                s_logger.warn("Error in setting MTU on storage/management nic: " + result);
+            }
+        }
+    }
+
+    /**
      * Retrieve converted "nfsVersion" value from params
      * @param params
      * @return nfsVersion value if exists, null in other case
@@ -2605,6 +2629,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
 
             startAdditionalServices();
+            applyMtu(params);
             _params.put("install.numthreads", "50");
             _params.put("secondary.storage.vm", "true");
             _nfsVersion = retrieveNfsVersionFromParams(params);
