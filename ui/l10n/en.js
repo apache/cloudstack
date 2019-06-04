@@ -1949,7 +1949,7 @@ var dictionary = {
 "message.action.take.snapshot":"Please confirm that you want to take a snapshot of this volume.",
 "message.action.unmanage.cluster":"Please confirm that you want to unmanage the cluster.",
 "message.action.vmsnapshot.create":"Please confirm that you want to take a snapshot of this instance. <br>Please notice that the instance will be paused during the snapshoting, and resumed after snapshotting, if it runs on KVM.",
-"message.action.vmsnapshot.delete":"Please confirm that you want to delete this VM snapshot.",
+"message.action.vmsnapshot.delete":"Please confirm that you want to delete this VM snapshot. <br>Please notice that the instance will be paused before the snapshot deletion, and resumed after deletion, if it runs on KVM.",
 "message.action.vmsnapshot.revert":"Revert VM snapshot",
 "message.activate.project":"Are you sure you want to activate this project?",
 "message.add.VPN.gateway":"Please confirm that you want to add a VPN Gateway",
