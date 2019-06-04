@@ -35,19 +35,19 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = UploadTemplateDirectDownloadCertificate.APINAME,
+@APICommand(name = UploadTemplateDirectDownloadCertificateCmd.APINAME,
         description = "Upload a certificate for HTTPS direct template download on KVM hosts",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = true,
         responseHasSensitiveInfo = true,
         since = "4.11.0",
         authorized = {RoleType.Admin})
-public class UploadTemplateDirectDownloadCertificate extends BaseCmd {
+public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
 
     @Inject
     DirectDownloadManager directDownloadManager;
 
-    private static final Logger LOG = Logger.getLogger(UploadTemplateDirectDownloadCertificate.class);
+    private static final Logger LOG = Logger.getLogger(UploadTemplateDirectDownloadCertificateCmd.class);
     public static final String APINAME = "uploadTemplateDirectDownloadCertificate";
 
     @Parameter(name = ApiConstants.CERTIFICATE, type = BaseCmd.CommandType.STRING, required = true, length = 65535,

@@ -41,6 +41,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +54,7 @@ import java.util.Collections;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 
+import com.cloud.utils.security.CertificateHelper;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand.DownloadProtocol;
@@ -57,7 +62,7 @@ import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
-import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificate;
+import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificateCommand;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -69,6 +74,7 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
+import sun.security.x509.X509CertImpl;
 
 public class DirectDownloadManagerImpl extends ManagerBase implements DirectDownloadManager {
 
@@ -313,14 +319,66 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Return pretified PEM certificate
+     */
+    protected String getPretifiedCertificate(String certificateCer) {
+        String cert = certificateCer.replaceAll("(.{64})", "$1\n");
+        if (!cert.startsWith(BEGIN_CERT) && !cert.endsWith(END_CERT)) {
+            cert = BEGIN_CERT + LINE_SEPARATOR + cert + LINE_SEPARATOR + END_CERT;
+        }
+        return cert;
+    }
+
+    /**
+     * Generate and return certificate from the string
+     * @throws CloudRuntimeException if the certificate is not well formed
+     */
+    private Certificate getCertificateFromString(String certificatePem) {
+        try {
+            return CertificateHelper.buildCertificate(certificatePem);
+        } catch (CertificateException e) {
+            e.printStackTrace();
+            throw new CloudRuntimeException("Cannot parse the certificate provided, please provide a PEM certificate. Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Perform sanity of string parsed certificate
+     */
+    protected void certificateSanity(String certificatePem) {
+        Certificate certificate = getCertificateFromString(certificatePem);
+
+        if (certificate instanceof X509CertImpl) {
+            X509CertImpl x509Cert = (X509CertImpl) certificate;
+            try {
+                x509Cert.checkValidity();
+            } catch (CertificateExpiredException | CertificateNotYetValidException e) {
+                String msg = "Certificate is invalid. Please provide a valid certificate. Error: " + e.getMessage();
+                s_logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+            if (x509Cert.getSubjectDN() != null) {
+                s_logger.debug("Valid certificate for domain name: " + x509Cert.getSubjectDN().getName());
+            }
+        }
+    }
+
     @Override
-    public boolean uploadCertificateToHosts(String certificateCer, String certificateName, String hypervisor) {
+    public boolean uploadCertificateToHosts(String certificateCer, String alias, String hypervisor) {
         HypervisorType hypervisorType = HypervisorType.getType(hypervisor);
         List<HostVO> hosts = getRunningHostsToUploadCertificate(hypervisorType);
+
+        String certificatePem = getPretifiedCertificate(certificateCer);
+        certificateSanity(certificatePem);
+
+        s_logger.info("Attempting to upload certificate: " + alias + " to " + hosts.size() + " hosts");
         if (CollectionUtils.isNotEmpty(hosts)) {
             for (HostVO host : hosts) {
-                if (!uploadCertificate(certificateCer, certificateName, host.getId())) {
-                    throw new CloudRuntimeException("Uploading certificate " + certificateName + " failed on host: " + host.getId());
+                if (!uploadCertificate(certificatePem, alias, host.getId())) {
+                    String msg = "Could not upload certificate " + alias + " on host: " + host.getName() + " (" + host.getUuid() + ")";
+                    s_logger.error(msg);
+                    throw new CloudRuntimeException(msg);
                 }
             }
         }
@@ -331,14 +389,18 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
      * Upload and import certificate to hostId on keystore
      */
     protected boolean uploadCertificate(String certificate, String certificateName, long hostId) {
-        String cert = certificate.replaceAll("(.{64})", "$1\n");
-        final String prettified_cert = BEGIN_CERT + LINE_SEPARATOR + cert + LINE_SEPARATOR + END_CERT;
-        SetupDirectDownloadCertificate cmd = new SetupDirectDownloadCertificate(prettified_cert, certificateName);
+        SetupDirectDownloadCertificateCommand cmd = new SetupDirectDownloadCertificateCommand(certificate, certificateName);
         Answer answer = agentManager.easySend(hostId, cmd);
         if (answer == null || !answer.getResult()) {
+            String msg = "Certificate " + certificateName + " could not be added to host " + hostId;
+            if (answer != null) {
+                msg += " due to: " + answer.getDetails();
+            }
+            s_logger.error(msg);
             return false;
         }
         s_logger.info("Certificate " + certificateName + " successfully uploaded to host: " + hostId);
         return true;
     }
+
 }
