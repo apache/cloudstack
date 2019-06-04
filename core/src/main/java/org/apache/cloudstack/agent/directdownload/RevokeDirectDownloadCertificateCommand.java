@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,16 +15,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+package org.apache.cloudstack.agent.directdownload;
 
-package org.apache.cloudstack.direct.download;
+import com.cloud.agent.api.Command;
 
-import com.cloud.utils.component.PluggableService;
-import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadService;
+public class RevokeDirectDownloadCertificateCommand extends Command {
 
-public interface DirectDownloadManager extends DirectDownloadService, PluggableService {
+    private String certificateAlias;
 
-    /**
-     * Revoke direct download certificate with alias 'alias' from hosts of hypervisor type 'hypervisor'
-     */
-    boolean revokeCertificateAlias(String certificateAlias, String hypervisor);
+    public RevokeDirectDownloadCertificateCommand(final String alias) {
+        this.certificateAlias = alias;
+    }
+
+    public String getCertificateAlias() {
+        return certificateAlias;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }
