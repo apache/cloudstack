@@ -43,7 +43,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.query.QueryManagerImpl;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
 import com.cloud.service.ServiceOfferingDetailsVO;
