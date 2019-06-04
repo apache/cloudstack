@@ -111,10 +111,6 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
     }
 
     public int getMtu () {
-        return mtu;
-    }
-
-    public int getMtu () {
         if (mtu != 0) {
             return mtu;
         } else {
