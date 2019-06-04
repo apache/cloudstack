@@ -118,7 +118,6 @@ class CsDhcp(CsDataBag):
 
     def delete_leases(self):
         macs_dhcphosts = []
-        interfaces = filter(lambda x: x.startswith('eth'), os.listdir('/sys/class/net'))
         try:
             logging.info("Attempting to delete entries from dnsmasq.leases file for VMs which are not on dhcphosts file")
             for host in open(DHCP_HOSTS):
@@ -130,10 +129,9 @@ class CsDhcp(CsDataBag):
                 mac = lease[1]
                 ip = lease[2]
                 if mac not in macs_dhcphosts:
-                    for interface in interfaces:
-                        cmd = "dhcp_release %s %s %s" % (interface, ip, mac)
-                        logging.info(cmd)
-                        CsHelper.execute(cmd)
+                    cmd = "dhcp_release $(ip route get %s | grep eth | head -1 | awk '{print $3}') %s %s" % (ip, ip, mac)
+                    logging.info(cmd)
+                    CsHelper.execute(cmd)
                     removed = removed + 1
                     self.del_host(ip)
             logging.info("Deleted %s entries from dnsmasq.leases file" % str(removed))
