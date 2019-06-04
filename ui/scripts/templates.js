@@ -296,22 +296,8 @@
 
                                         }
                                     },
-                                    // For KVM only: Direct Download
-                                    directdownload : {
-                                        label: 'label.direct.download',
-                                        docID: 'helpRegisterTemplateDirectDownload',
-                                        isBoolean: true,
-                                        dependsOn: 'hypervisor',
-                                        isHidden: true
-                                    },
-                                    checksum: {
-                                        label: 'label.checksum',
-                                        dependsOn: 'directdownload',
-                                        isHidden: true
-                                    },
-                                    // Direct Download - End
 
-                                    //XenServer only (starts here)
+                                    // fields for hypervisor == XenServer (starts here)
                                     xenserverToolsVersion61plus: {
                                         label: 'label.xenserver.tools.version.61.plus',
                                         isBoolean: true,
@@ -335,9 +321,23 @@
                                         },
                                         isHidden: true
                                     },
-                                    //XenServer only (ends here)
+                                    // fields for hypervisor == XenServer (ends here)
 
-                                    //fields for hypervisor == "KVM" (starts here)
+                                    // fields for hypervisor == "KVM" (starts here)
+                                    // Direct Download
+                                    directdownload : {
+                                        label: 'label.direct.download',
+                                        docID: 'helpRegisterTemplateDirectDownload',
+                                        isBoolean: true,
+                                        dependsOn: 'hypervisor',
+                                        isHidden: true
+                                    },
+                                    checksum: {
+                                        label: 'label.checksum',
+                                        dependsOn: 'directdownload',
+                                        isHidden: true
+                                    },
+                                    // Direct Download - End
                                     rootDiskControllerTypeKVM: {
                                         label: 'label.root.disk.controller',
                                         isHidden: true,
@@ -368,9 +368,9 @@
                                             });
                                         }
                                     },
-                                    //fields for hypervisor == "KVM" (ends here)
+                                    // fields for hypervisor == "KVM" (ends here)
 
-                                    //fields for hypervisor == "VMware" (starts here)
+                                    // fields for hypervisor == "VMware" (starts here)
                                     rootDiskControllerType: {
                                         label: 'label.root.disk.controller',
                                         isHidden: true,
@@ -463,7 +463,7 @@
                                             });
                                         }
                                     },
-                                    //fields for hypervisor == "VMware" (ends here)
+                                    // fields for hypervisor == "VMware" (ends here)
 
                                     format: {
                                         label: 'label.format',
@@ -644,15 +644,15 @@
                                     });
                                 }
 
-                                //XenServer only (starts here)
+                                // for hypervisor == XenServer (starts here)
                                 if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css("display") != "none") {
                                     $.extend(data, {
                                         'details[0].hypervisortoolsversion': (args.data.xenserverToolsVersion61plus == "on") ? "xenserver61" : "xenserver56"
                                     });
                                 }
-                                //XenServer only (ends here)
+                                // for hypervisor == XenServer (ends here)
 
-                                // KVM only (starts here)
+                                // for hypervisor == KVM (starts here)
                                 if (args.$form.find('.form-item[rel=rootDiskControllerTypeKVM]').css("display") != "none" && args.data.rootDiskControllerTypeKVM != "") {
                                     $.extend(data, {
                                         'details[0].rootDiskController': args.data.rootDiskControllerTypeKVM
@@ -665,9 +665,9 @@
                                         'checksum': args.data.checksum
                                     });
                                 }
-                                // KVM only (ends here)
+                                // for hypervisor == KVM (ends here)
 
-                                //VMware only (starts here)
+                                // for hypervisor == VMware (starts here)
                                 if (args.$form.find('.form-item[rel=rootDiskControllerType]').css("display") != "none" && args.data.rootDiskControllerType != "") {
                                     $.extend(data, {
                                         'details[0].rootDiskController': args.data.rootDiskControllerType
@@ -683,7 +683,7 @@
                                         'details[0].keyboard': args.data.keyboardType
                                     });
                                 }
-                                //VMware only (ends here)
+                                // for hypervisor == VMware (ends here)
 
                                 $.ajax({
                                     url: createURL('registerTemplate'),
@@ -735,23 +735,23 @@
                                             hypervisor: args.data.hypervisor
                                         };
 
-                                        //XenServer only (starts here)
+                                        // for hypervisor == XenServer (starts here)
                                         if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css("display") != "none") {
                                             $.extend(data, {
                                                 'details[0].hypervisortoolsversion': (args.data.xenserverToolsVersion61plus == "on") ? "xenserver61" : "xenserver56"
                                             });
                                         }
-                                        //XenServer only (ends here)
+                                        // for hypervisor == XenServer (ends here)
 
-                                        // KVM only (starts here)
+                                        // for hypervisor == KVM (starts here)
                                         if (args.$form.find('.form-item[rel=rootDiskControllerTypeKVM]').css("display") != "none" && args.data.rootDiskControllerTypeKVM != "") {
                                             $.extend(data, {
                                                 'details[0].rootDiskController': args.data.rootDiskControllerTypeKVM
                                             });
                                         }
-                                        // KVM only (ends here)
+                                        // for hypervisor == KVM (ends here)
 
-                                        //VMware only (starts here)
+                                        // for hypervisor == VMware (starts here)
                                         if (args.$form.find('.form-item[rel=rootDiskControllerType]').css("display") != "none" && args.data.rootDiskControllerType != "") {
                                             $.extend(data, {
                                                 'details[0].rootDiskController': args.data.rootDiskControllerType
@@ -767,7 +767,7 @@
                                                 'details[0].keyboard': args.data.keyboardType
                                             });
                                         }
-                                        //VMware only (ends here)
+                                        // for hypervisor == VMware (ends here)
 
                                         if (args.$form.find('.form-item[rel=isPublic]').css("display") != "none") {
                                             $.extend(data, {
@@ -941,7 +941,7 @@
                                         }
                                     },
 
-                                    //XenServer only (starts here)
+                                    // fields for hypervisor == XenServer (starts here)
                                     xenserverToolsVersion61plus: {
                                         label: 'label.xenserver.tools.version.61.plus',
                                         isBoolean: true,
@@ -965,9 +965,9 @@
                                         },
                                         isHidden: true
                                     },
-                                    //XenServer only (ends here)
+                                    // fields for hypervisor == XenServer (ends here)
 
-                                    //fields for hypervisor == "KVM" (starts here)
+                                    // fields for hypervisor == "KVM" (starts here)
                                     rootDiskControllerTypeKVM: {
                                         label: 'label.root.disk.controller',
                                         isHidden: true,
@@ -998,9 +998,9 @@
                                             });
                                         }
                                     },
-                                    //fields for hypervisor == "KVM" (ends here)
+                                    // fields for hypervisor == "KVM" (ends here)
 
-                                    //fields for hypervisor == "VMware" (starts here)
+                                    // fields for hypervisor == "VMware" (starts here)
                                     rootDiskControllerType: {
                                         label: 'label.root.disk.controller',
                                         isHidden: true,
@@ -1093,7 +1093,7 @@
                                             });
                                         }
                                     },
-                                    //fields for hypervisor == "VMware" (ends here)
+                                    // fields for hypervisor == "VMware" (ends here)
 
                                     format: {
                                         label: 'label.format',
