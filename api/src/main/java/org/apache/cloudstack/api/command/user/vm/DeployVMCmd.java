@@ -206,7 +206,6 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = "copyimagetagstovm", type = CommandType.BOOLEAN, description = "if true we copy the image tags to the deployed Vm; defaulted to false if not specified")
     private Boolean copyImageTagsToVm;
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
