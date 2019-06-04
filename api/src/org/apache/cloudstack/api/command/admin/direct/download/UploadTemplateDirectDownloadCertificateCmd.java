@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.log4j.Logger;
@@ -35,7 +34,7 @@ import javax.inject.Inject;
         description = "Upload a certificate for HTTPS direct template download on KVM hosts",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = true,
-        responseHasSensitiveInfo = false,
+        responseHasSensitiveInfo = true,
         since = "4.11.0",
         authorized = {RoleType.Admin})
 public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
@@ -57,23 +56,15 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
     @Parameter(name = ApiConstants.HYPERVISOR, type = BaseCmd.CommandType.STRING, required = true, description = "Hypervisor type")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
-            description = "Zone to upload certificate", required = true)
-    private Long zoneId;
-
     @Override
     public void execute() {
         if (!hypervisor.equalsIgnoreCase("kvm")) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Currently supporting KVM hosts only");
         }
 
-        if (name.equalsIgnoreCase("cloud")) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please provide a different alias name for the certificate");
-        }
-
         try {
             LOG.debug("Uploading certificate " + name + " to agents for Direct Download");
-            boolean result = directDownloadManager.uploadCertificateToHosts(certificate, name, hypervisor, zoneId);
+            boolean result = directDownloadManager.uploadCertificateToHosts(certificate, name, hypervisor);
             SuccessResponse response = new SuccessResponse(getCommandName());
             response.setSuccess(result);
             setResponseObject(response);

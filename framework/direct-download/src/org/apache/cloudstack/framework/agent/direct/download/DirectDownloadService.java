@@ -27,7 +27,5 @@ public interface DirectDownloadService {
     /**
      * Upload client certificate to each running host
      */
-    boolean uploadCertificateToHosts(String certificateCer, String certificateName, String hypervisor, Long zoneId);
-
-    boolean uploadCertificate(long certificateId, long hostId);
+    boolean uploadCertificateToHosts(String certificateCer, String certificateName, String hypervisor);
 }
