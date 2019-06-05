@@ -366,7 +366,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
 
     @Override
     public boolean uploadCertificateToHosts(String certificateCer, String alias, String hypervisor) {
-        if (alias.equalsIgnoreCase("cloud")) {
+        if (alias != null && (alias.equalsIgnoreCase("cloud") || alias.startsWith("cloudca"))) {
             throw new CloudRuntimeException("Please provide a different alias name for the certificate");
         }
 
