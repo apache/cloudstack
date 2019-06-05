@@ -2544,6 +2544,180 @@
                                     args.complete();
                                 }
                             }
+                        },
+                        uploadISOFromLocal: {
+                            isHeader: true,
+                            label: 'label.upload.from.local',
+                            messages: {
+                                notification: function(args) {
+                                    return 'label.upload.iso.from.local';
+                                }
+                            },
+                            createForm: {
+                                title: 'label.upload.iso.from.local',
+                                preFilter: cloudStack.preFilter.createTemplate,
+                                fileUpload: {
+                                    getURL: function(args) {
+                                        args.data = args.formData;
+
+                                        var data = {
+                                            name: args.data.name,
+                                            displayText: args.data.description,
+                                            zoneid: args.data.zone,
+                                            format: "ISO",
+                                            isextractable: (args.data.isExtractable == "on"),
+                                            bootable: (args.data.isBootable == "on"),
+                                            ispublic: (args.data.isPublic == "on"),
+                                            isfeatured: (args.data.isFeatured == "on")
+                                        };
+
+                                        if (args.$form.find('.form-item[rel=osTypeId]').is(':visible')) {
+                                            $.extend(data, {
+                                                osTypeId: args.data.osTypeId,
+                                            });
+                                        }
+
+                                        $.ajax({
+                                            url: createURL('getUploadParamsForIso'),
+                                            data: data,
+                                            async: false,
+                                            success: function(json) {
+                                                var uploadparams = json.postuploadisoresponse.getuploadparams;
+                                                var templateId = uploadparams.id;
+
+                                                args.response.success({
+                                                    url: uploadparams.postURL,
+                                                    ajaxPost: true,
+                                                    data: {
+                                                        'X-signature': uploadparams.signature,
+                                                        'X-expires': uploadparams.expires,
+                                                        'X-metadata': uploadparams.metadata
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    },
+                                    postUpload: function(args) {
+                                        if(args.error) {
+                                            args.response.error(args.errorMsg);
+                                        } else {
+                                            cloudStack.dialog.notice({
+                                                message: "This ISO file has been uploaded. Please check its status at Templates menu > " + args.data.name + " > Zones tab > click a zone > Status field and Ready field."
+                                            });
+                                            args.response.success();
+                                        }
+                                    }
+                                },
+                                fields: {
+                                    templateFileUpload: {
+                                        label: 'label.local.file',
+                                        isFileUpload: true,
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    name: {
+                                        label: 'label.name',
+                                        docID: 'helpRegisterISOName',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    description: {
+                                        label: 'label.description',
+                                        docID: 'helpRegisterISODescription',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+
+                                    zone: {
+                                        label: 'label.zone',
+                                        docID: 'helpRegisterISOZone',
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listZones&available=true"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var zoneObjs = json.listzonesresponse.zone;
+                                                    args.response.success({
+                                                        descriptionField: 'name',
+                                                        data: zoneObjs
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    },
+
+                                    isBootable: {
+                                        label: "label.bootable",
+                                        docID: 'helpRegisterISOBootable',
+                                        isBoolean: true,
+                                        isChecked: true
+                                    },
+
+                                    osTypeId: {
+                                        label: 'label.os.type',
+                                        docID: 'helpRegisterISOOSType',
+                                        dependsOn: 'isBootable',
+                                        isHidden: false,
+                                        validation: {
+                                            required: true
+                                        },
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listOsTypes"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var ostypeObjs = json.listostypesresponse.ostype;
+                                                    var items = [];
+                                                    $(ostypeObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.description
+                                                        });
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    },
+
+                                    isExtractable: {
+                                        label: "label.extractable",
+                                        docID: 'helpRegisterISOExtractable',
+                                        isBoolean: true
+                                    },
+
+                                    isPublic: {
+                                        label: "label.public",
+                                        docID: 'helpRegisterISOPublic',
+                                        isBoolean: true,
+                                        isHidden: true
+                                    },
+
+                                    isFeatured: {
+                                        label: "label.featured",
+                                        docID: 'helpRegisterISOFeatured',
+                                        isBoolean: true,
+                                        isHidden: true
+                                    }
+                                }
+                            },
+
+                            action: function(args) {
+                                return;
+                            },
+
+                            notification: {
+                                poll: function(args) {
+                                    args.complete();
+                                }
+                            }
                         }
                     },
 

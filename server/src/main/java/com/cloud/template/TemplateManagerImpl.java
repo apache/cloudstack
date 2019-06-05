@@ -43,6 +43,7 @@ import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
@@ -349,11 +350,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating post upload template")
-    public GetUploadParamsResponse registerTemplateForPostUpload(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException, MalformedURLException {
-        TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
-        TemplateProfile profile = adapter.prepare(cmd);
+    /**
+     * Internal register template or ISO method - post local upload
+     * @param adapter
+     * @param profile
+     */
+    private GetUploadParamsResponse registerPostUploadInternal(TemplateAdapter adapter,
+                                                               TemplateProfile profile) throws MalformedURLException {
+
         List<TemplateOrVolumePostUploadCommand> payload = adapter.createTemplateForPostUpload(profile);
 
         if(CollectionUtils.isNotEmpty(payload)) {
@@ -403,6 +407,21 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ISO_CREATE, eventDescription = "creating post upload iso")
+    public GetUploadParamsResponse registerIsoForPostUpload(GetUploadParamsForIsoCmd cmd) throws ResourceAllocationException, MalformedURLException {
+        TemplateAdapter adapter = getAdapter(HypervisorType.None);
+        TemplateProfile profile = adapter.prepare(cmd);
+        return registerPostUploadInternal(adapter, profile);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating post upload template")
+    public GetUploadParamsResponse registerTemplateForPostUpload(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException, MalformedURLException {
+        TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
+        TemplateProfile profile = adapter.prepare(cmd);
+        return registerPostUploadInternal(adapter, profile);
+    }
 
     @Override
     public DataStore getImageStore(String storeUuid, Long zoneId) {

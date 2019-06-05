@@ -1726,6 +1726,7 @@ var dictionary = {
 "label.upgrade.router.newer.template":"Upgrade Router to Use Newer Template",
 "label.upload":"Upload",
 "label.upload.from.local":"Upload from Local",
+"label.upload.iso.from.local":"Upload ISO from Local",
 "label.upload.template.from.local":"Upload Template from Local",
 "label.upload.volume":"Upload volume",
 "label.upload.volume.from.local":"Upload Volume from Local",

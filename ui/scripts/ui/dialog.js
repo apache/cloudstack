@@ -131,7 +131,7 @@
                         }
                     }]
                 });
-                
+
                 return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
             };
 
@@ -818,7 +818,16 @@
                                             $form.find('.loading-overlay').remove();
                                             $('div.loading-overlay').remove();
 
-                                            cloudStack.dialog.error({ message: msg });
+                                            if (!msg) {
+                                                msg = "Failed to upload file due to system misconfiguration. Please contact admin.";
+                                            }
+                                            cloudStack.dialog.notice({ message: msg });
+
+                                            $('.tooltip-box').remove();
+                                            $formContainer.remove();
+                                            $(this).dialog('destroy');
+
+                                            $('.hovered-elem').hide();
                                         }
                                     }
                                 };
@@ -1080,7 +1089,7 @@
                     }
                 }]
             });
-            
+
             return  cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
         },
 
@@ -1108,7 +1117,7 @@
                         }
                     }]
                 });
-                             
+
                 return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog, 5001);
             }
             return false;
