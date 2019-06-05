@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -1188,6 +1189,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         } catch (SQLException e) {
             throw new CloudRuntimeException(e);
         }
+    }
+
+    @Override
+    public List<HostVO> listAllHostsUpByZoneAndHypervisor(long zoneId, HypervisorType hypervisorType) {
+        return listByDataCenterIdAndHypervisorType(zoneId, hypervisorType)
+                .stream()
+                .filter(x -> x.getStatus().equals(Status.Up) &&
+                        x.getType() == Host.Type.Routing)
+                .collect(Collectors.toList());
     }
 
     private ResultSet executeSqlGetResultsetForMethodFindHostInZoneToExecuteCommand(HypervisorType hypervisorType, long zoneId, TransactionLegacy tx, String sql) throws SQLException {

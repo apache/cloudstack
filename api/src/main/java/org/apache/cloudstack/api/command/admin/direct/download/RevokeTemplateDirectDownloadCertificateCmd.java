@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.log4j.Logger;
@@ -60,6 +61,10 @@ public class RevokeTemplateDirectDownloadCertificateCmd extends BaseCmd {
             description = "Hypervisor type")
     private String hypervisor;
 
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
+            description = "Zone to upload certificate", required = true)
+    private Long zoneId;
+
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         if (!hypervisor.equalsIgnoreCase("kvm")) {
@@ -68,7 +73,7 @@ public class RevokeTemplateDirectDownloadCertificateCmd extends BaseCmd {
         SuccessResponse response = new SuccessResponse(getCommandName());
         try {
             LOG.debug("Revoking certificate " + certificateAlias + " from " + hypervisor + " hosts");
-            boolean result = directDownloadManager.revokeCertificateAlias(certificateAlias, hypervisor);
+            boolean result = directDownloadManager.revokeCertificateAlias(certificateAlias, hypervisor, zoneId);
             response.setSuccess(result);
             setResponseObject(response);
         } catch (Exception e) {

@@ -107,4 +107,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
      * Side note: this method is currently only used in XenServerGuru; therefore, it was designed to meet XenServer deployment scenarios requirements.
      */
     HostVO findHostInZoneToExecuteCommand(long zoneId, HypervisorType hypervisorType);
+
+    List<HostVO> listAllHostsUpByZoneAndHypervisor(long zoneId, HypervisorType hypervisorType);
 }
