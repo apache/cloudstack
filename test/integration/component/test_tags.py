@@ -1751,18 +1751,10 @@ class TestResourceTags(cloudstackTestCase):
         )
         self.debug("Tag created: %s" % tag.__dict__)
 
-        tag2 = Tag.list(
-            self.apiclient,
-            listall=True,
-            resourceType='project',
-            resourceIds=project.id,
-            key=tag_key,
-        )
         tags = Tag.list(
             self.apiclient,
             listall=True,
             resourceType='project',
-            resourceIds=project.id,
             projectid=project.id,
             key=tag_key,
         )
@@ -1771,7 +1763,7 @@ class TestResourceTags(cloudstackTestCase):
             self.apiclient,
             listall=True,
             resourceType='project',
-            resourceIds=project.id,
+            resourceId=project.id,
             key=tag_key,
         )
         self.debug("tag2 = %s" % tags)
