@@ -48,7 +48,7 @@ public class LdapUnboundidZapdotConnectionTest {
     public EmbeddedLdapRule embeddedLdapRule = EmbeddedLdapRuleBuilder
             .newInstance()
             .usingDomainDsn(DOMAIN_DSN)
-            .importingLdifs("cloudstack.org.ldif")
+            .importingLdifs("unboundid.ldif")
             .build();
 
     @Test

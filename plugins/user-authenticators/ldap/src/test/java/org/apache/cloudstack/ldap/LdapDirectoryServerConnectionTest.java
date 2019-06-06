@@ -16,6 +16,8 @@
  */
 package org.apache.cloudstack.ldap;
 
+import org.apache.directory.api.ldap.model.exception.LdapException;
+import org.apache.directory.api.ldap.model.ldif.LdifReader;
 import org.apache.directory.server.core.api.DirectoryService;
 import org.apache.directory.server.core.api.changelog.ChangeLog;
 import org.apache.directory.server.ldap.LdapServer;
@@ -23,8 +25,10 @@ import org.apache.directory.server.xdbm.IndexNotFoundException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 import software.apacheds.embedded.EmbeddedLdapServer;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,10 +36,14 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 public class LdapDirectoryServerConnectionTest {
 
     EmbeddedLdapServer embeddedLdapServer;
+
+    @Mock
+    LdapConfiguration configuration = new LdapConfiguration();
 
     @Before
     public void setup() throws Exception {
@@ -76,5 +84,20 @@ public class LdapDirectoryServerConnectionTest {
         List checkList = Arrays.asList("uid");
         assertEquals(userList, checkList);
 //        assertEquals(["uid"].sort(), embeddedLdapServer.getUserIndexMap().keySet().sort());
+    }
+
+    @Test
+    public void testEmbeddedLdifLoading() {
+        try {
+            embeddedLdapServer.addSchemaFromClasspath("minimal.ldif");
+            LdapManagerImpl ldapManager = new LdapManagerImpl();
+            ldapManager.getUser("dahn", LdapManager.LinkType.GROUP.toString(), "DAHN", 1L);
+        } catch (LdapException e) {
+            fail(e.getLocalizedMessage());
+        } catch (IOException e) {
+            fail(e.getLocalizedMessage());
+        } catch (NoLdapUserMatchingQueryException e) {
+            fail(e.getLocalizedMessage());
+        }
     }
 }

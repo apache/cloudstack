@@ -34,7 +34,7 @@ import com.btmatthews.ldapunit.DirectoryServerRule;
         authDN = LdapUnitConnectionTest.BIND_DN,
 authPassword = LdapUnitConnectionTest.SECRET)
 public class LdapUnitConnectionTest {
-    static final String LDIF_FILE_NAME = "minimal.ldif";
+    static final String LDIF_FILE_NAME = "ldapunit.ldif";
     static final String DOMAIN_DSN = "dc=am,dc=echt,dc=net";
     static final String BIND_DN = "uid=admin,ou=cloudstack";
     static final String SECRET = "secretzz";
