@@ -240,7 +240,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         for (int i = 0; i < storagePoolTypes.length; i++) {
             Mockito.doReturn(storagePoolTypes[i]).when(sourceStoragePool).getPoolType();
             boolean result = kvmNonManagedStorageDataMotionStrategy.shouldMigrateVolume(sourceStoragePool, destHost, destStoragePool);
-            if (storagePoolTypes[i] == StoragePoolType.Filesystem) {
+            if (storagePoolTypes[i] == StoragePoolType.Filesystem || storagePoolTypes[i] == StoragePoolType.NetworkFilesystem) {
                 Assert.assertTrue(result);
             } else {
                 Assert.assertFalse(result);
