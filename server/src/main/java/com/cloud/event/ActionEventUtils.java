@@ -34,6 +34,7 @@ import com.cloud.utils.db.EntityManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.cadf.Cadf;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventBus;
@@ -50,7 +51,7 @@ import java.util.Map;
 
 public class ActionEventUtils {
     private static final Logger s_logger = Logger.getLogger(ActionEventUtils.class);
-    private static final Logger s_el_logger = Logger.getLogger("com.cadf.el"); //el stands for event_logger
+    private static final Logger s_el_logger = Logger.getLogger("com.apache.cloudstack.cadf");
 
     private String _resourceUuid;
 

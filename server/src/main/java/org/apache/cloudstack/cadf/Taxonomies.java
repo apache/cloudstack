@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.event;
+package org.apache.cloudstack.cadf;
 
 import java.util.HashMap;
 import java.util.UUID;

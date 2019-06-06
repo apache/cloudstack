@@ -15,8 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.event;
+package org.apache.cloudstack.cadf;
 
+import com.cloud.event.EventVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.google.gson.annotations.Expose;
 import org.apache.log4j.Logger;

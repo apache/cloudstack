@@ -199,7 +199,7 @@ under the License.
       <appender-ref ref="ALERTSYSLOG"/>
    </logger>
 
-   <logger name="com.cadf.el" additivity="false">
+   <logger name="org.apache.cloudstack.cadf" additivity="false">
       <level value="INFO" />
       <appender-ref ref="EVENTLOGGER" />
    </logger>
