@@ -1751,6 +1751,13 @@ class TestResourceTags(cloudstackTestCase):
         )
         self.debug("Tag created: %s" % tag.__dict__)
 
+        tag2 = Tag.list(
+            self.apiclient,
+            listall=True,
+            resourceType='project',
+            resourceIds=project.id,
+            key=tag_key,
+        )
         tags = Tag.list(
             self.apiclient,
             listall=True,
@@ -1760,6 +1767,14 @@ class TestResourceTags(cloudstackTestCase):
             key=tag_key,
         )
         self.debug("tags = %s" % tags)
+        tag2 = Tag.list(
+            self.apiclient,
+            listall=True,
+            resourceType='project',
+            resourceIds=project.id,
+            key=tag_key,
+        )
+        self.debug("tag2 = %s" % tags)
 
         self.assertEqual(
             isinstance(tags, list),
@@ -1767,7 +1782,17 @@ class TestResourceTags(cloudstackTestCase):
             "List tags should not return empty response"
         )
         self.assertEqual(
+            isinstance(tag2, list),
+            True,
+            "List tags should not return empty response"
+        )
+        self.assertEqual(
             tags[0].value,
+            tag_value,
+            'The tag should have original value'
+        )
+        self.assertEqual(
+            tag2[0].value,
             tag_value,
             'The tag should have original value'
         )
