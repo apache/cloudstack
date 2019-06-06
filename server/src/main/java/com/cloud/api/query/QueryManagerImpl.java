@@ -2822,7 +2822,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
         }
 
-        Filter searchFilter = new Filter(DataCenterJoinVO.class, null, false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(DataCenterJoinVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<DataCenterJoinVO> sc = sb.create();
 
         if (networkType != null) {
