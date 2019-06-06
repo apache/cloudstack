@@ -217,7 +217,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         }
 
         if (resourceType == ResourceObjectType.Project) {
-            accountId = ((ProjectVO)entity).getProjectId();
+            accountId = ((ProjectVO)entity).getProjectAccountId();
         }
 
         if (entity instanceof OwnedBy) {
