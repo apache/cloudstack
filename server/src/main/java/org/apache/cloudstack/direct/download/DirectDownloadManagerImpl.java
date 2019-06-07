@@ -85,17 +85,17 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     protected final static String LINE_SEPARATOR = "\n";
 
     @Inject
-    VMTemplateDao vmTemplateDao;
+    private VMTemplateDao vmTemplateDao;
     @Inject
-    PrimaryDataStoreDao primaryDataStoreDao;
+    private PrimaryDataStoreDao primaryDataStoreDao;
     @Inject
-    HostDao hostDao;
+    private HostDao hostDao;
     @Inject
-    AgentManager agentManager;
+    private AgentManager agentManager;
     @Inject
-    VMTemplatePoolDao vmTemplatePoolDao;
+    private VMTemplatePoolDao vmTemplatePoolDao;
     @Inject
-    DataStoreManager dataStoreManager;
+    private DataStoreManager dataStoreManager;
 
     @Override
     public List<Class<?>> getCommands() {
@@ -366,6 +366,10 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
 
     @Override
     public boolean uploadCertificateToHosts(String certificateCer, String alias, String hypervisor) {
+        if (alias != null && (alias.equalsIgnoreCase("cloud") || alias.startsWith("cloudca"))) {
+            throw new CloudRuntimeException("Please provide a different alias name for the certificate");
+        }
+
         HypervisorType hypervisorType = HypervisorType.getType(hypervisor);
         List<HostVO> hosts = getRunningHostsToUploadCertificate(hypervisorType);
 
@@ -373,6 +377,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         certificateSanity(certificatePem);
 
         s_logger.info("Attempting to upload certificate: " + alias + " to " + hosts.size() + " hosts");
+        int hostCount = 0;
         if (CollectionUtils.isNotEmpty(hosts)) {
             for (HostVO host : hosts) {
                 if (!uploadCertificate(certificatePem, alias, host.getId())) {
@@ -380,8 +385,10 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
                     s_logger.error(msg);
                     throw new CloudRuntimeException(msg);
                 }
+                hostCount++;
             }
         }
+        s_logger.info("Certificate was successfully uploaded to " + hostCount + " hosts");
         return true;
     }
 
@@ -389,6 +396,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
      * Upload and import certificate to hostId on keystore
      */
     protected boolean uploadCertificate(String certificate, String certificateName, long hostId) {
+        s_logger.debug("Uploading certificate: " + certificateName + " to host " + hostId);
         SetupDirectDownloadCertificateCommand cmd = new SetupDirectDownloadCertificateCommand(certificate, certificateName);
         Answer answer = agentManager.easySend(hostId, cmd);
         if (answer == null || !answer.getResult()) {
