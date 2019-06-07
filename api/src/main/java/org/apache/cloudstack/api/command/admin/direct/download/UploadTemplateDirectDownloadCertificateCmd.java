@@ -16,11 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.direct.download;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.NetworkRuleConflictException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -62,15 +57,15 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
     private String hypervisor;
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() {
         if (!hypervisor.equalsIgnoreCase("kvm")) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Currently supporting KVM hosts only");
         }
 
-        SuccessResponse response = new SuccessResponse(getCommandName());
         try {
             LOG.debug("Uploading certificate " + name + " to agents for Direct Download");
             boolean result = directDownloadManager.uploadCertificateToHosts(certificate, name, hypervisor);
+            SuccessResponse response = new SuccessResponse(getCommandName());
             response.setSuccess(result);
             setResponseObject(response);
         } catch (Exception e) {
