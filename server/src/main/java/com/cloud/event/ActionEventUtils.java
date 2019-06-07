@@ -51,7 +51,7 @@ import java.util.Map;
 
 public class ActionEventUtils {
     private static final Logger s_logger = Logger.getLogger(ActionEventUtils.class);
-    private static final Logger s_el_logger = Logger.getLogger("com.apache.cloudstack.cadf");
+    private static final Logger s_el_logger = Logger.getLogger("org.apache.cloudstack.cadf");
 
     private String _resourceUuid;
 

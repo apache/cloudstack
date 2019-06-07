@@ -28,7 +28,6 @@ public class Taxonomies {
     public static HashMap<String, String> eventResourcetoUuidMapping = new HashMap<String, String>();
 
 
-
     public Taxonomies() {
 
     }

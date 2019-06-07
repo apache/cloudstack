@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.api;
 
-import com.cloud.event.Cadf;
+
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
+import org.apache.cloudstack.cadf.Cadf;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.log4j.Logger;
