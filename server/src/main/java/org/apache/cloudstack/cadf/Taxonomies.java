@@ -54,6 +54,7 @@ public class Taxonomies {
         CREATE("create"),
         READ("read"),
         UPDATE("update"),
+        UPGRADE("update/upgrade"),
         DELETE("delete"),
 
         //Monitoring
@@ -414,6 +415,7 @@ public class Taxonomies {
 
         eventActionToTypeMapping.put(Action.CREATE, EventType.ACTIVITY);
         eventActionToTypeMapping.put(Action.UPDATE, EventType.ACTIVITY);
+        eventActionToTypeMapping.put(Action.UPGRADE, EventType.ACTIVITY);
         eventActionToTypeMapping.put(Action.DELETE, EventType.ACTIVITY);
         eventActionToTypeMapping.put(Action.BACKUP, EventType.ACTIVITY);
         eventActionToTypeMapping.put(Action.CAPTURE, EventType.ACTIVITY);

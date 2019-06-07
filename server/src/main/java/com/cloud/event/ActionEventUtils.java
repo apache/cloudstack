@@ -317,14 +317,8 @@ public class ActionEventUtils {
 
     private static void createCadfRecord(EventVO event) {
 
-        /*for (Map.Entry <String, String> entry : eventExtraInformation.entrySet()) {
-            System.out.println("key " + entry.getKey());
-            System.out.println("value " + entry.getValue());
-        }*/
-
         Gson gson = new GsonBuilder()
                 .excludeFieldsWithoutExposeAnnotation()
-                //.setPrettyPrinting()
                 .create();
 
         Cadf cadf = new Cadf(event);
@@ -337,7 +331,5 @@ public class ActionEventUtils {
         }
 
         s_el_logger.info(gson.toJson(cadf));
-
-        //System.out.println(gson.toJson(cadf));
     }
 }
