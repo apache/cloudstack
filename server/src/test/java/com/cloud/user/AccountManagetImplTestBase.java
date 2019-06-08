@@ -198,6 +198,7 @@ public class AccountManagetImplTestBase {
     @Mock
     UsageEventDao _usageEventDao;
 
+
     @Before
     public void setup() {
         accountManagerImpl.setUserAuthenticators(Arrays.asList(userAuthenticator));

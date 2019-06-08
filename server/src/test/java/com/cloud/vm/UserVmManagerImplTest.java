@@ -17,8 +17,14 @@
 package com.cloud.vm;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
+import com.cloud.server.ResourceTag;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.TaggedResourceManagerImpl;
+import com.cloud.tags.dao.ResourceTagDao;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -26,6 +32,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -75,6 +82,13 @@ public class UserVmManagerImplTest {
 
     @Mock
     private NetworkModel networkModel;
+
+    @Mock
+    private TaggedResourceManagerImpl taggedResourceManagerMock;
+
+    @Mock
+    private ResourceTagDao resourceTagDaoMock;
+
 
     private long vmId = 1l;
 
@@ -275,5 +289,44 @@ public class UserVmManagerImplTest {
 
         Mockito.verify(networkModel, Mockito.times(times)).getNextAvailableMacAddressInNetwork(Mockito.anyLong());
         Assert.assertEquals(expectedMacAddress, returnedMacAddress);
+    }
+
+    @Test
+    public void validateRemoveTagsWhenExists() {
+
+        List<ResourceTag> resourceTags = Arrays.asList(new ResourceTagVO("test", "test", 1l, 2l,
+                Long.valueOf(123), ResourceTag.ResourceObjectType.UserVm, "", "test"));
+
+        List<String> resourceIds = Arrays.asList("123");
+
+        Mockito.when(taggedResourceManagerMock.getUuid("123", ResourceTag.ResourceObjectType.UserVm)).thenReturn("123");
+        Mockito.when(taggedResourceManagerMock.getResourceId("123", ResourceTag.ResourceObjectType.UserVm)).thenReturn(Long.valueOf(123));
+
+        Mockito.<List<? extends ResourceTag>>when(taggedResourceManagerMock.listByResourceTypeAndId(ResourceTag.ResourceObjectType.UserVm, Long.valueOf(123))).thenReturn(resourceTags);
+        Mockito.when(taggedResourceManagerMock.deleteTags(resourceIds, ResourceTag.ResourceObjectType.UserVm, null)).thenReturn(true);
+
+        Mockito.when(userVmDao.findById(123l)).thenReturn(userVmVoMock);
+        Mockito.when(userVmVoMock.getUuid()).thenReturn("123");
+
+
+        userVmManagerImpl.removeTagsFromVm(Long.valueOf(123));
+        Assert.assertTrue(taggedResourceManagerMock.deleteTags(resourceIds, ResourceTag.ResourceObjectType.UserVm, null));
+    }
+
+
+    @Test
+    public void validateWhenRemoveTagsNoExists() {
+
+        List<ResourceTag> resourceTags = Arrays.asList();
+
+        Mockito.when(taggedResourceManagerMock.getResourceId("1l", ResourceTag.ResourceObjectType.UserVm)).thenReturn(1l);
+        Mockito.<List<? extends ResourceTag>>when(taggedResourceManagerMock.listByResourceTypeAndId(ResourceTag.ResourceObjectType.UserVm, 1l)).thenReturn(resourceTags);
+
+        Mockito.when(userVmVoMock.getUuid()).thenReturn("1l");
+
+        Mockito.when(userVmDao.findById(Mockito.eq(vmId))).thenReturn(userVmVoMock);
+
+        userVmManagerImpl.removeTagsFromVm(1l);
+        Assert.assertEquals(0, taggedResourceManagerMock.listByResourceTypeAndId(ResourceTag.ResourceObjectType.UserVm, 1l).size());
     }
 }

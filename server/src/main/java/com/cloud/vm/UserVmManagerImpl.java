@@ -39,6 +39,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.server.ResourceTag;
+import com.cloud.server.TaggedResourceService;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -472,6 +474,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private TemplateApiService _tmplService;
     @Inject
     private ConfigurationDao _configDao;
+    @Inject
+    private TaggedResourceService _taggedResourceService;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -2818,6 +2822,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return destroyedVm;
     }
 
+    protected void removeTagsFromVm(long vmId) {
+        UserVmVO vm = _vmDao.findById(vmId);
+        Long resourceId = _taggedResourceService.getResourceId(vm.getUuid(), ResourceTag.ResourceObjectType.UserVm);
+        List<? extends ResourceTag> resourceTags = _taggedResourceService.listByResourceTypeAndId(ResourceTag.ResourceObjectType.UserVm, resourceId);
+        if (resourceTags.size() > 0) {
+            List<String> resourceIds = Arrays.asList(vm.getUuid());
+            _taggedResourceService.deleteTags(resourceIds, ResourceTag.ResourceObjectType.UserVm, null);
+        }
+    }
+
     private List<VolumeVO> getVolumesFromIds(DestroyVMCmd cmd) {
         List<VolumeVO> volumes = new ArrayList<>();
         if (cmd.getVolumeIds() != null) {
@@ -4606,6 +4620,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
             status = vmEntity.destroy(Long.toString(userId), expunge);
+            removeTagsFromVm(vmId);
         } catch (CloudException e) {
             CloudRuntimeException ex = new CloudRuntimeException("Unable to destroy with specified vmId", e);
             ex.addProxyObject(vm.getUuid(), "vmId");

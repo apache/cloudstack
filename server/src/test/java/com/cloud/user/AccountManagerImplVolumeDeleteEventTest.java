@@ -33,6 +33,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.server.ResourceTag;
+import com.cloud.tags.TaggedResourceManagerImpl;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
@@ -68,6 +70,8 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
     UserVmManagerImpl _vmMgr;
     Map<String, Object> oldFields = new HashMap<>();
     UserVmVO vm = mock(UserVmVO.class);
+    TaggedResourceManagerImpl taggedResourceManager = mock(TaggedResourceManagerImpl.class);
+
 
     // Configures the static fields of the UsageEventUtils class, Storing the
     // previous values to be restored during the cleanup phase, to avoid
@@ -138,6 +142,9 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
         when(_serviceOfferingDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(offering);
 
         when(_domainMgr.getDomain(anyLong())).thenReturn(domain);
+        Mockito.when(vm.getUuid()).thenReturn("1l");
+        Mockito.when(taggedResourceManager.getResourceId("123", ResourceTag.ResourceObjectType.UserVm)).thenReturn(Long.valueOf(123));
+
 
         Mockito.doReturn(true).when(_vmMgr).expunge(any(UserVmVO.class), anyLong(), any(Account.class));
 
