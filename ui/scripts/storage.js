@@ -949,7 +949,7 @@
                                                         var volumeId = json.queryasyncjobresultresponse.jobresult.snapshot.volumeid;
                                                         var snapshotId = json.queryasyncjobresultresponse.jobresult.snapshot.id;
                                                         cloudStack.dialog.notice({
-                                                            message: "Created snapshot for volume " + volumeId + " with snapshot id " + snapshotId
+                                                            message: "Created snapshot for volume " + volumeId + " with snapshot ID " + snapshotId
                                                         });
                                                     }
                                                 }
