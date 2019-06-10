@@ -20,21 +20,16 @@ package com.cloud.upgrade.dao;
 import java.io.InputStream;
 import java.sql.Connection;
 
-import org.apache.log4j.Logger;
-
-import com.cloud.utils.exception.CloudRuntimeException;
-
-public class Upgrade41110to41120 implements DbUpgrade {
-    final static Logger LOG = Logger.getLogger(Upgrade41110to41120.class);
+public class Upgrade41120to41130 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[]{"4.11.1.0", "4.11.2.0"};
+        return new String[]{"4.11.2.0", "4.11.3.0"};
     }
 
     @Override
     public String getUpgradedVersion() {
-        return "4.11.2.0";
+        return "4.11.3.0";
     }
 
     @Override
@@ -44,13 +39,7 @@ public class Upgrade41110to41120 implements DbUpgrade {
 
     @Override
     public InputStream[] getPrepareScripts() {
-        final String scriptFile = "META-INF/db/schema-41110to41120.sql";
-        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
-        if (script == null) {
-            throw new CloudRuntimeException("Unable to find " + scriptFile);
-        }
-
-        return new InputStream[] {script};
+        return new InputStream[] {};
     }
 
     @Override
@@ -59,12 +48,6 @@ public class Upgrade41110to41120 implements DbUpgrade {
 
     @Override
     public InputStream[] getCleanupScripts() {
-        final String scriptFile = "META-INF/db/schema-41110to41120-cleanup.sql";
-        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
-        if (script == null) {
-            throw new CloudRuntimeException("Unable to find " + scriptFile);
-        }
-
-        return new InputStream[] {script};
+        return new InputStream[] {};
     }
 }
