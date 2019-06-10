@@ -105,11 +105,11 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     @Inject
     private DataCenterDao dataCenterDao;
 
-    // This 2 settings should require a restart of the management server?
+    // These 2 settings should require a restart of the management server
     private static final ConfigKey<Boolean> EnableGarbageCollector = new ConfigKey<>("Advanced", Boolean.class,
-            "diagnostics.data.gc.enable", "true", "enable the diagnostics data files garbage collector", true);
+            "diagnostics.data.gc.enable", "true", "enable the diagnostics data files garbage collector", false);
     private static final ConfigKey<Integer> GarbageCollectionInterval = new ConfigKey<>("Advanced", Integer.class,
-            "diagnostics.data.gc.interval", "86400", "garbage collection interval in seconds", true);
+            "diagnostics.data.gc.interval", "86400", "garbage collection interval in seconds", false);
 
     // These are easily computed properties and need not need a restart of the management server
     private static final ConfigKey<Long> DataRetrievalTimeout = new ConfigKey<>("Advanced", Long.class,
@@ -217,14 +217,16 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         }
 
         if (!zipFilesAnswer.getResult()) {
-            throw new CloudRuntimeException(String.format("Failed to generate diagnostics zip file file in VM %s due to %s", vmInstance.getUuid(), zipFilesAnswer.getDetails()));
+            throw new CloudRuntimeException(String.format("Failed to generate diagnostics zip file in VM %s due to: %s", vmInstance.getUuid(), zipFilesAnswer.getDetails()));
         }
 
-        // Copy zip file from system VM to secondary storage
         String zipFileInSystemVm = zipFilesAnswer.getDetails().replace("\n", "");
         Pair<Boolean, String> copyToSecondaryStorageResults = copyZipFileToSecondaryStorage(vmInstance, vmHostId, zipFileInSystemVm, store);
 
-        // Send cleanup zip file cleanup command to system VM
+        if (!copyToSecondaryStorageResults.first()) {
+            throw new CloudRuntimeException(String.format("Failed to copy %s to secondary storage %s due to: %s.", zipFileInSystemVm, store.getUri(), copyToSecondaryStorageResults.second()));
+        }
+
         Answer fileCleanupAnswer = deleteDiagnosticsZipFileInsystemVm(vmInstance, zipFileInSystemVm);
         if (fileCleanupAnswer == null) {
             LOGGER.error(String.format("Failed to cleanup diagnostics zip file on vm: %s", vmInstance.getUuid()));
@@ -234,10 +236,6 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             }
         }
 
-        if (!copyToSecondaryStorageResults.first()) {
-            throw new CloudRuntimeException(String.format("Failed to copy %s to secondary storage %s due to %s.", zipFileInSystemVm, store.getUri(), copyToSecondaryStorageResults.second()));
-        }
-
         // Now we need to create the file download URL
         // Find ssvm of store
         VMInstanceVO ssvm = getSecondaryStorageVmInZone(zoneId);
@@ -245,7 +243,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             throw new CloudRuntimeException("No ssvm found in Zone with ID: " + zoneId);
         }
         // Secondary Storage install path = "diagnostics_data/diagnostics_files_xxxx.tar
-        String installPath = DIAGNOSTICS_DATA_DIRECTORY + "/" + zipFileInSystemVm.replace("/root", "");
+        String installPath = DIAGNOSTICS_DATA_DIRECTORY + File.separator + zipFileInSystemVm.replace("/root", "");
         return createFileDownloadUrl(store, ssvm.getHypervisorType(), installPath);
     }
 
@@ -371,7 +369,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     }
 
     /**
-     * Iterate through all Image stores in the current running zone and select any that has less than 95% disk usage
+     * Iterate through all Image stores in the current running zone and select any that has less than DiskQuotaPercentageThreshold.value() disk usage
      *
      * @param zoneId of the current running zone
      * @return a valid secondary storage with less than DiskQuotaPercentageThreshold set by global config
