@@ -2403,16 +2403,19 @@
 
                                 dataProvider: function(args) {
                                     var data = {
+                                        isrecursive: true,
                                         id: args.context.diskOfferings[0].id
                                     };
-                                    var listDiskOfferingsOptions = {
-                                        isRecursive: true,
-                                        data: data
-                                    };
-                                    var diskOfferings = cloudStack.listDiskOfferings(listDiskOfferingsOptions);
-                                    args.response.success({
-                                        actionFilter: diskOfferingActionfilter,
-                                        data: diskOfferings[0]
+                                    $.ajax({
+                                        url: createURL('listDiskOfferings'),
+                                        dataType: "json",
+                                        data: data,
+                                        success: function(json) {
+                                            var item = json.listdiskofferingsresponse.diskoffering[0];
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
                                     });
                                 }
                             }
