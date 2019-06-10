@@ -20,16 +20,23 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.NotImplementedException;
+
 import com.cloud.storage.Storage;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import org.apache.commons.lang.NotImplementedException;
 
 public class QemuImg {
 
     /* The qemu-img binary. We expect this to be in $PATH */
     public String _qemuImgPath = "qemu-img";
+    private String cloudQemuImgPath = "cloud-qemu-img";
     private int timeout;
+
+    private String getQemuImgPathScript = String.format("which %s >& /dev/null; " +
+                    "if [ $? -gt 0 ]; then echo \"%s\"; else echo \"%s\"; fi",
+            cloudQemuImgPath, _qemuImgPath, cloudQemuImgPath);
 
     /* Shouldn't we have KVMPhysicalDisk and LibvirtVMDef read this? */
     public static enum PhysicalDiskFormat {
@@ -220,10 +227,18 @@ public class QemuImg {
      * @param options
      *            Options for the convert. Takes a Map<String, String> with key value
      *            pairs which are passed on to qemu-img without validation.
+     * @param snapshotName
+     *            If it is provided, convertion uses it as parameter
      * @return void
      */
-    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile, final Map<String, String> options) throws QemuImgException {
-        final Script script = new Script(_qemuImgPath, timeout);
+    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
+                        final Map<String, String> options, final String snapshotName) throws QemuImgException {
+        Script script = new Script(_qemuImgPath, timeout);
+        if (StringUtils.isNotBlank(snapshotName)) {
+            String qemuPath = Script.runSimpleBashScript(getQemuImgPathScript);
+            script = new Script(qemuPath, timeout);
+        }
+
         script.add("convert");
         // autodetect source format. Sometime int he future we may teach KVMPhysicalDisk about more formats, then we can explicitly pass them if necessary
         //s.add("-f");
@@ -240,6 +255,13 @@ public class QemuImg {
             String optionsStr = optionsBuffer.toString();
             optionsStr = optionsStr.replaceAll(",$", "");
             script.add(optionsStr);
+        }
+
+        if (StringUtils.isNotBlank(snapshotName)) {
+            script.add("-f");
+            script.add(srcFile.getFormat().toString());
+            script.add("-s");
+            script.add(snapshotName);
         }
 
         script.add(srcFile.getFileName());
@@ -269,7 +291,26 @@ public class QemuImg {
      * @return void
      */
     public void convert(final QemuImgFile srcFile, final QemuImgFile destFile) throws QemuImgException {
-        this.convert(srcFile, destFile, null);
+        this.convert(srcFile, destFile, null, null);
+    }
+
+    /**
+     * Convert a image from source to destination
+     *
+     * This method calls 'qemu-img convert' and takes three objects
+     * as an argument.
+     *
+     *
+     * @param srcFile
+     *            The source file
+     * @param destFile
+     *            The destination file
+     * @param snapshotName
+     *            The snapshot name
+     * @return void
+     */
+    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile, String snapshotName) throws QemuImgException {
+        this.convert(srcFile, destFile, null, snapshotName);
     }
 
     /**
