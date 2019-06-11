@@ -89,7 +89,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         PublicCpuRamSearch = createSearchBuilder();
         PublicCpuRamSearch.and("cpu", PublicCpuRamSearch.entity().getCpu(), SearchCriteria.Op.EQ);
         PublicCpuRamSearch.and("ram", PublicCpuRamSearch.entity().getRamSize(), SearchCriteria.Op.EQ);
-        PublicCpuRamSearch.and("system_use", PublicCpuRamSearch.entity().getSystemUse(), SearchCriteria.Op.EQ);
+        PublicCpuRamSearch.and("system_use", PublicCpuRamSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
         PublicCpuRamSearch.done();
     }
 
