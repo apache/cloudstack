@@ -22,7 +22,6 @@ import com.cloud.utils.db.GenericDao;
 import java.util.List;
 
 public interface DirectDownloadCertificateDao extends GenericDao<DirectDownloadCertificateVO, Long> {
-    DirectDownloadCertificateVO findByAlias(String alias);
-    List<DirectDownloadCertificateVO> listByHypervisorType(Hypervisor.HypervisorType hypervisorType);
+    DirectDownloadCertificateVO findByAlias(String alias, Hypervisor.HypervisorType hypervisorType, long zoneId);
     List<DirectDownloadCertificateVO> listByZone(long zoneId);
 }

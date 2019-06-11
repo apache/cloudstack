@@ -36,17 +36,12 @@ public class DirectDownloadCertificateDaoImpl extends GenericDaoBase<DirectDownl
     }
 
     @Override
-    public DirectDownloadCertificateVO findByAlias(String alias) {
+    public DirectDownloadCertificateVO findByAlias(String alias, Hypervisor.HypervisorType hypervisorType, long zoneId) {
         SearchCriteria<DirectDownloadCertificateVO> sc = certificateSearchBuilder.create();
         sc.setParameters("alias", alias);
-        return findOneBy(sc);
-    }
-
-    @Override
-    public List<DirectDownloadCertificateVO> listByHypervisorType(Hypervisor.HypervisorType hypervisorType) {
-        SearchCriteria<DirectDownloadCertificateVO> sc = certificateSearchBuilder.create();
         sc.setParameters("hypervisor_type", hypervisorType);
-        return listBy(sc);
+        sc.setParameters("zone_id", zoneId);
+        return findOneBy(sc);
     }
 
     @Override

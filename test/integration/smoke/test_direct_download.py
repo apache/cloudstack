@@ -92,6 +92,7 @@ class TestUploadDirectDownloadCertificates(cloudstackTestCase):
         cmd.hypervisor = self.hypervisor
         cmd.name = "marvin-test-verify-certs"
         cmd.certificate = self.certificates["invalid"]
+        cmd.zoneid = self.zone.id
 
         invalid_cert_uploadFails = False
         expired_cert_upload_fails = False
@@ -126,6 +127,7 @@ class TestUploadDirectDownloadCertificates(cloudstackTestCase):
         cmd.hypervisor = self.hypervisor
         cmd.name = "marvin-test-verify-certs"
         cmd.certificate = self.certificates["valid"]
+        cmd.zoneid = self.zone.id
 
         try:
             self.apiclient.uploadTemplateDirectDownloadCertificate(cmd)
@@ -135,9 +137,10 @@ class TestUploadDirectDownloadCertificates(cloudstackTestCase):
         revokecmd = revokeTemplateDirectDownloadCertificate.revokeTemplateDirectDownloadCertificateCmd()
         revokecmd.hypervisor = self.hypervisor
         revokecmd.name = cmd.name
+        revokecmd.zoneid = self.zone.id
 
         try:
-            self.apiclient.revokeTemplateDirectDownloadCertificate(cmd)
+            self.apiclient.revokeTemplateDirectDownloadCertificate(revokecmd)
         except Exception as e:
             self.fail("Uploaded certificates should be revoked when needed")
 

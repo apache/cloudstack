@@ -20,6 +20,8 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+import java.util.List;
+
 public class DirectDownloadCertificateHostMapDaoImpl extends GenericDaoBase<DirectDownloadCertificateHostMapVO, Long> implements DirectDownloadCertificateHostMapDao {
     private final SearchBuilder<DirectDownloadCertificateHostMapVO> mapSearchBuilder;
 
@@ -35,5 +37,12 @@ public class DirectDownloadCertificateHostMapDaoImpl extends GenericDaoBase<Dire
         sc.setParameters("certificate_id", certificateId);
         sc.setParameters("host_id", hostId);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<DirectDownloadCertificateHostMapVO> listByCertificateId(long certificateId) {
+        SearchCriteria<DirectDownloadCertificateHostMapVO> sc = mapSearchBuilder.create();
+        sc.setParameters("certificate_id", certificateId);
+        return listBy(sc);
     }
 }

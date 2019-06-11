@@ -18,6 +18,9 @@ package org.apache.cloudstack.direct.download;
 
 import com.cloud.utils.db.GenericDao;
 
+import java.util.List;
+
 public interface DirectDownloadCertificateHostMapDao extends GenericDao<DirectDownloadCertificateHostMapVO, Long> {
     DirectDownloadCertificateHostMapVO findByCertificateAndHost(long certificateId, long hostId);
+    List<DirectDownloadCertificateHostMapVO> listByCertificateId(long certificateId);
 }

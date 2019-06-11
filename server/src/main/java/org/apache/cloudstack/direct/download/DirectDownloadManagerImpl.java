@@ -391,7 +391,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         String certificatePem = getPretifiedCertificate(certificateCer);
         certificateSanity(certificatePem);
 
-        DirectDownloadCertificateVO certificateVO = directDownloadCertificateDao.findByAlias(alias);
+        DirectDownloadCertificateVO certificateVO = directDownloadCertificateDao.findByAlias(alias, hypervisorType, zoneId);
         if (certificateVO != null) {
             throw new CloudRuntimeException("Certificate alias " + alias + " has been already created");
         }
@@ -453,15 +453,22 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     @Override
     public boolean revokeCertificateAlias(String certificateAlias, String hypervisor, Long zoneId) {
         HypervisorType hypervisorType = HypervisorType.getType(hypervisor);
-        List<HostVO> hosts = getRunningHostsToUploadCertificate(zoneId, hypervisorType);
-        s_logger.info("Attempting to revoke certificate alias: " + certificateAlias + " from " + hosts.size() + " hosts");
-        if (CollectionUtils.isNotEmpty(hosts)) {
-            for (HostVO host : hosts) {
-                if (!revokeCertificateAliasFromHost(certificateAlias, host.getId())) {
-                    String msg = "Could not revoke certificate from host: " + host.getName() + " (" + host.getUuid() + ")";
+        DirectDownloadCertificateVO certificateVO = directDownloadCertificateDao.findByAlias(certificateAlias, hypervisorType, zoneId);
+        if (certificateVO == null) {
+            throw new CloudRuntimeException("Certificate alias " + certificateAlias + " does not exist");
+        }
+
+        List<DirectDownloadCertificateHostMapVO> maps = directDownloadCertificateHostMapDao.listByCertificateId(certificateVO.getId());
+        s_logger.info("Attempting to revoke certificate alias: " + certificateAlias + " from " + maps.size() + " hosts");
+        if (CollectionUtils.isNotEmpty(maps)) {
+            for (DirectDownloadCertificateHostMapVO map : maps) {
+                Long hostId = map.getHostId();
+                if (!revokeCertificateAliasFromHost(certificateAlias, hostId)) {
+                    String msg = "Could not revoke certificate from host: " + hostId;
                     s_logger.error(msg);
                     throw new CloudRuntimeException(msg);
                 }
+                directDownloadCertificateHostMapDao.remove(map.getId());
             }
         }
         return true;
