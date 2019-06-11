@@ -172,7 +172,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating snapshot for volume: " + this._uuidMgr.getUuid(Volume.class, getVolumeId());
+        return "creating snapshot for volume: " + getVolumeUuid();
     }
 
     @Override
@@ -187,7 +187,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             setEntityId(snapshot.getId());
             setEntityUuid(snapshot.getUuid());
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot for volume" + _uuidMgr.getUuid(Volume.class, getVolumeId()));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot for volume" + getVolumeUuid());
         }
     }
 
@@ -203,10 +203,10 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + _uuidMgr.getUuid(Volume.class, getVolumeId()));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + getVolumeUuid());
             }
         } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + _uuidMgr.getUuid(Volume.class, getVolumeId()));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + getVolumeUuid());
         }
     }
 
@@ -249,5 +249,9 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         } else {
             return asyncBackup;
         }
+    }
+
+    protected String getVolumeUuid() {
+        return _uuidMgr.getUuid(Volume.class, getVolumeId());
     }
 }
