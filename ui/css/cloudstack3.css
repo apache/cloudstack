@@ -7594,7 +7594,6 @@ textarea {
 div.toolbar,
 .multi-wizard.zone-wizard .select-container .field .select-array-item {
   display: block;
-  height: 1px;
 }
 
 div.toolbar:after,
@@ -7815,7 +7814,7 @@ div.toolbar:after,
 
 .ui-dialog .list-view .toolbar {
   top: 50px;
-  width: 854px;
+  width: 100%;
 }
 
 div.panel.ui-dialog div.list-view div.fixed-header {
