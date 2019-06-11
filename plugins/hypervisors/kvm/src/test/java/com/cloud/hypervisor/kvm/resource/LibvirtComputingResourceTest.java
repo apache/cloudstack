@@ -26,8 +26,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.UUID;
 import java.util.Vector;
 
@@ -44,7 +47,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuTuneDef;
 import org.apache.commons.lang.SystemUtils;
 import org.joda.time.Duration;
 import org.junit.Assert;
-import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.Connect;
@@ -62,7 +65,9 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -176,29 +181,47 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(value = {MemStat.class})
 public class LibvirtComputingResourceTest {
 
     @Mock
     private LibvirtComputingResource libvirtComputingResource;
     @Mock
     VirtualMachineTO vmTO;
+    @Mock
+    LibvirtVMDef vmDef;
 
     String hyperVisorType = "kvm";
     Random random = new Random();
+    final String memInfo = "MemTotal:        5830236 kB\n" +
+            "MemFree:          156752 kB\n" +
+            "Buffers:          326836 kB\n" +
+            "Cached:          2606764 kB\n" +
+            "SwapCached:            0 kB\n" +
+            "Active:          4260808 kB\n" +
+            "Inactive:         949392 kB\n";
+
+    @Before
+    public void setup() throws Exception {
+        Scanner scanner = new Scanner(memInfo);
+        PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
+    }
 
     /**
-        This test tests if the Agent can handle a vmSpec coming
-        from a <=4.1 management server.
+     This test tests if the Agent can handle a vmSpec coming
+     from a <=4.1 management server.
 
-        The overcommit feature has not been merged in there and thus
-        only 'speed' is set.
+     The overcommit feature has not been merged in there and thus
+     only 'speed' is set.
      */
     @Test
     public void testCreateVMFromSpecLegacy() {
@@ -216,6 +239,8 @@ public class LibvirtComputingResourceTest {
         final String vncPassword = "mySuperSecretPassword";
 
         final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        lcr._qemuSocketsPath = new File("/var/run/qemu");
+
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, speed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
@@ -227,7 +252,7 @@ public class LibvirtComputingResourceTest {
     }
 
     /**
-        This test verifies that CPU topology is properly set for hex-core
+     This test verifies that CPU topology is properly set for hex-core
      */
     @Test
     public void testCreateVMFromSpecWithTopology6() {
@@ -246,6 +271,8 @@ public class LibvirtComputingResourceTest {
         final String vncPassword = "mySuperSecretPassword";
 
         final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        lcr._qemuSocketsPath = new File("/var/run/qemu");
+
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
@@ -257,7 +284,7 @@ public class LibvirtComputingResourceTest {
     }
 
     /**
-        This test verifies that CPU topology is properly set for quad-core
+     This test verifies that CPU topology is properly set for quad-core
      */
     @Test
     public void testCreateVMFromSpecWithTopology4() {
@@ -276,6 +303,8 @@ public class LibvirtComputingResourceTest {
         final String vncPassword = "mySuperSecretPassword";
 
         final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        lcr._qemuSocketsPath = new File("/var/run/qemu");
+
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
@@ -287,11 +316,11 @@ public class LibvirtComputingResourceTest {
     }
 
     /**
-        This test tests if the Agent can handle a vmSpec coming
-        from a >4.1 management server.
+     This test tests if the Agent can handle a vmSpec coming
+     from a >4.1 management server.
 
-        It tests if the Agent can handle a vmSpec with overcommit
-        data like minSpeed and maxSpeed in there
+     It tests if the Agent can handle a vmSpec with overcommit
+     data like minSpeed and maxSpeed in there
      */
     @Test
     public void testCreateVMFromSpec() {
@@ -310,6 +339,8 @@ public class LibvirtComputingResourceTest {
         final String vncPassword = "mySuperSecretPassword";
 
         final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        lcr._qemuSocketsPath = new File("/var/run/qemu");
+
         final VirtualMachineTO to =
                 new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
@@ -353,7 +384,7 @@ public class LibvirtComputingResourceTest {
            Calling configure is also not possible since that looks for certain files on the system which are not present
            during testing
          */
-        assertXpath(domainDoc, "/domain/devices/channel/source/@path", "null/" + to.getName() + ".org.qemu.guest_agent.0");
+        assertXpath(domainDoc, "/domain/devices/channel/source/@path", "/var/run/qemu/" + to.getName() + ".org.qemu.guest_agent.0");
         assertXpath(domainDoc, "/domain/devices/channel/target/@name", "org.qemu.guest_agent.0");
 
         assertXpath(domainDoc, "/domain/memory/text()", String.valueOf( to.getMaxRam() / 1024 ));
@@ -396,7 +427,7 @@ public class LibvirtComputingResourceTest {
     }
 
     static void assertXpath(final Document doc, final String xPathExpr,
-            final String expected) {
+                            final String expected) {
         try {
             Assert.assertEquals(expected, XPathFactory.newInstance().newXPath()
                     .evaluate(xPathExpr, doc));
@@ -410,10 +441,11 @@ public class LibvirtComputingResourceTest {
     public void testGetNicStats() {
         //this test is only working on linux because of the loopback interface name
         //also the tested code seems to work only on linux
-        Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
-        final LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
-        final Pair<Double, Double> stats = libvirtComputingResource.getNicStats("lo");
-        assertNotNull(stats);
+        if(SystemUtils.IS_OS_LINUX) {
+            final LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+            final Pair<Double, Double> stats = libvirtComputingResource.getNicStats("lo");
+            assertNotNull(stats);
+        } // else SUCCESS
     }
 
     @Test
@@ -518,13 +550,6 @@ public class LibvirtComputingResourceTest {
         Assert.assertTrue(vmStat.getIntFreeMemoryKBs() >= 0);
         Assert.assertTrue(vmStat.getMemoryKBs() >= 0);
         Assert.assertTrue(vmStat.getTargetMemoryKBs() >= vmStat.getMemoryKBs());
-    }
-
-    @Test
-    public void getCpuSpeed() {
-        Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
-        final NodeInfo nodeInfo = Mockito.mock(NodeInfo.class);
-        LibvirtComputingResource.getCpuSpeed(nodeInfo);
     }
 
     /*
@@ -974,8 +999,8 @@ public class LibvirtComputingResourceTest {
         when(libvirtComputingResource.getMemStat()).thenReturn(memStat);
         when(libvirtComputingResource.getNicStats(Mockito.anyString())).thenReturn(new Pair<Double, Double>(1.0d, 1.0d));
         when(cpuStat.getCpuUsedPercent()).thenReturn(0.5d);
-        when(memStat.getAvailable()).thenReturn(1500.5d);
-        when(memStat.getTotal()).thenReturn(15000d);
+        when(memStat.getAvailable()).thenReturn(1500L);
+        when(memStat.getTotal()).thenReturn(15000L);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -1751,8 +1776,7 @@ public class LibvirtComputingResourceTest {
         when(poolManager.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
 
         when(primary.getPhysicalDisk(command.getTemplateUrl())).thenReturn(baseVol);
-        when(poolManager.createDiskFromTemplate(baseVol,
-                diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), primary, 0)).thenReturn(vol);
+        when(poolManager.createDiskFromTemplate(baseVol, diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), primary, baseVol.getSize(), 0)).thenReturn(vol);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -3165,7 +3189,7 @@ public class LibvirtComputingResourceTest {
 
             when(libvirtComputingResource.getVifDriver(nic.getType(), nic.getName())).thenReturn(vifDriver);
 
-            when(vifDriver.plug(nic, "Other PV", "")).thenReturn(interfaceDef);
+            when(vifDriver.plug(nic, "Other PV", "", null)).thenReturn(interfaceDef);
             when(interfaceDef.toString()).thenReturn("Interface");
 
             final String interfaceDefStr = interfaceDef.toString();
@@ -3188,7 +3212,7 @@ public class LibvirtComputingResourceTest {
             verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(command.getVmName());
             verify(libvirtComputingResource, times(1)).getDomain(conn, instanceName);
             verify(libvirtComputingResource, times(1)).getVifDriver(nic.getType(), nic.getName());
-            verify(vifDriver, times(1)).plug(nic, "Other PV", "");
+            verify(vifDriver, times(1)).plug(nic, "Other PV", "", null);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         } catch (final InternalErrorException e) {
@@ -3262,7 +3286,7 @@ public class LibvirtComputingResourceTest {
 
             when(libvirtComputingResource.getVifDriver(nic.getType(), nic.getName())).thenReturn(vifDriver);
 
-            when(vifDriver.plug(nic, "Other PV", "")).thenThrow(InternalErrorException.class);
+            when(vifDriver.plug(nic, "Other PV", "", null)).thenThrow(InternalErrorException.class);
 
         } catch (final LibvirtException e) {
             fail(e.getMessage());
@@ -3281,7 +3305,7 @@ public class LibvirtComputingResourceTest {
             verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(command.getVmName());
             verify(libvirtComputingResource, times(1)).getDomain(conn, instanceName);
             verify(libvirtComputingResource, times(1)).getVifDriver(nic.getType(), nic.getName());
-            verify(vifDriver, times(1)).plug(nic, "Other PV", "");
+            verify(vifDriver, times(1)).plug(nic, "Other PV", "", null);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         } catch (final InternalErrorException e) {
@@ -5112,7 +5136,13 @@ public class LibvirtComputingResourceTest {
         final LibvirtComputingResource lvcr = new LibvirtComputingResource();
         assertFalse(lvcr.isInterface("bla"));
         assertTrue(lvcr.isInterface("p99p00"));
-        for  (final String ifNamePattern : lvcr._ifNamePatterns) {
+        assertTrue(lvcr.isInterface("lo1"));
+        assertTrue(lvcr.isInterface("lo_11"));
+        assertTrue(lvcr.isInterface("lo_public_1"));
+        assertTrue(lvcr.isInterface("dummy0"));
+        assertTrue(lvcr.isInterface("dummy_0"));
+        assertTrue(lvcr.isInterface("dummy_private_0"));
+        for  (final String ifNamePattern : lvcr.ifNamePatterns) {
             // excluding regexps as "\\\\d+" won't replace with String.replaceAll(String,String);
             if (!ifNamePattern.contains("\\")) {
                 final String ifName = ifNamePattern.replaceFirst("\\^", "") + "0";
@@ -5216,5 +5246,23 @@ public class LibvirtComputingResourceTest {
         Answer ans = libvirtComputingResource.executeRequest(cmd);
         assertFalse(ans instanceof UnsupportedAnswer);
         assertTrue(ans instanceof Answer);
+    }
+
+    @Test
+    public void testAddExtraConfigComponentEmptyExtraConfig() {
+        libvirtComputingResource = new LibvirtComputingResource();
+        libvirtComputingResource.addExtraConfigComponent(new HashMap<>(), vmDef);
+        Mockito.verify(vmDef, never()).addComp(any());
+    }
+
+    @Test
+    public void testAddExtraConfigComponentNotEmptyExtraConfig() {
+        libvirtComputingResource = new LibvirtComputingResource();
+        Map<String, String> extraConfig = new HashMap<>();
+        extraConfig.put("extraconfig-1", "value1");
+        extraConfig.put("extraconfig-2", "value2");
+        extraConfig.put("extraconfig-3", "value3");
+        libvirtComputingResource.addExtraConfigComponent(extraConfig, vmDef);
+        Mockito.verify(vmDef, times(1)).addComp(any());
     }
 }

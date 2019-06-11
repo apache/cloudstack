@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificate;
 import org.apache.cloudstack.agent.lb.SetupMSListAnswer;
 import org.apache.cloudstack.agent.lb.SetupMSListCommand;
 import org.apache.cloudstack.ca.PostCertificateRenewalCommand;
@@ -303,6 +302,7 @@ public class Agent implements HandlerFactory, IAgentControl {
 
     public void stop(final String reason, final String detail) {
         s_logger.info("Stopping the agent: Reason = " + reason + (detail != null ? ": Detail = " + detail : ""));
+        _reconnectAllowed = false;
         if (_connection != null) {
             final ShutdownCommand cmd = new ShutdownCommand(reason, detail);
             try {
@@ -509,8 +509,8 @@ public class Agent implements HandlerFactory, IAgentControl {
             _shell.getBackoffAlgorithm().waitBeforeRetry();
         }
 
-        final String host = _shell.getNextHost();
         do {
+            final String host = _shell.getNextHost();
             _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
             s_logger.info("Reconnecting to host:" + host);
             try {
@@ -605,9 +605,7 @@ public class Agent implements HandlerFactory, IAgentControl {
                         System.exit(1);
                         return;
                     } else if (cmd instanceof MaintainCommand) {
-                        s_logger.debug("Received maintainCommand");
-                        cancelTasks();
-                        _reconnectAllowed = false;
+                        s_logger.debug("Received maintainCommand, do not cancel current tasks");
                         answer = new MaintainAnswer((MaintainCommand)cmd);
                     } else if (cmd instanceof AgentControlCommand) {
                         answer = null;
@@ -631,8 +629,6 @@ public class Agent implements HandlerFactory, IAgentControl {
                         if (Host.Type.Routing.equals(_resource.getType())) {
                             scheduleServicesRestartTask();
                         }
-                    } else if (cmd instanceof SetupDirectDownloadCertificate) {
-                        answer = setupDirectDownloadCertificate((SetupDirectDownloadCertificate) cmd);
                     } else if (cmd instanceof SetupMSListCommand) {
                         answer = setupManagementServerList((SetupMSListCommand) cmd);
                     } else {
@@ -684,31 +680,6 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
     }
 
-    private Answer setupDirectDownloadCertificate(SetupDirectDownloadCertificate cmd) {
-        String certificate = cmd.getCertificate();
-        String certificateName = cmd.getCertificateName();
-        s_logger.info("Importing certificate " + certificateName + " into keystore");
-
-        final File agentFile = PropertiesUtil.findConfigFile("agent.properties");
-        if (agentFile == null) {
-            return new Answer(cmd, false, "Failed to find agent.properties file");
-        }
-
-        final String keyStoreFile = agentFile.getParent() + "/" + KeyStoreUtils.KS_FILENAME;
-
-        String cerFile = agentFile.getParent() + "/" + certificateName + ".cer";
-        Script.runSimpleBashScript(String.format("echo '%s' > %s", certificate, cerFile));
-
-        String privatePasswordFormat = "sed -n '/keystore.passphrase/p' '%s' 2>/dev/null  | sed 's/keystore.passphrase=//g' 2>/dev/null";
-        String privatePasswordCmd = String.format(privatePasswordFormat, agentFile.getAbsolutePath());
-        String privatePassword = Script.runSimpleBashScript(privatePasswordCmd);
-
-        String importCommandFormat = "keytool -importcert -file %s -keystore %s -alias '%s' -storepass '%s' -noprompt";
-        String importCmd = String.format(importCommandFormat, cerFile, keyStoreFile, certificateName, privatePassword);
-        Script.runSimpleBashScript(importCmd);
-        return new Answer(cmd, true, "Certificate " + certificateName + " imported");
-    }
-
     public Answer setupAgentKeystore(final SetupKeyStoreCommand cmd) {
         final String keyStorePassword = cmd.getKeystorePassword();
         final long validityDays = cmd.getValidityDays();
@@ -728,7 +699,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             _shell.setPersistentProperty(null, KeyStoreUtils.KS_PASSPHRASE_PROPERTY, storedPassword);
         }
 
-        Script script = new Script(_keystoreSetupPath, 60000, s_logger);
+        Script script = new Script(_keystoreSetupPath, 300000, s_logger);
         script.add(agentFile.getAbsolutePath());
         script.add(keyStoreFile);
         script.add(storedPassword);
@@ -772,7 +743,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             throw new CloudRuntimeException("Unable to save received agent client and ca certificates", e);
         }
 
-        Script script = new Script(_keystoreCertImportPath, 60000, s_logger);
+        Script script = new Script(_keystoreCertImportPath, 300000, s_logger);
         script.add(agentFile.getAbsolutePath());
         script.add(keyStoreFile);
         script.add(KeyStoreUtils.AGENT_MODE);

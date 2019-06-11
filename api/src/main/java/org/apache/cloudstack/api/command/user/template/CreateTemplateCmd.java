@@ -92,6 +92,9 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
                description = "true if the template supports the password reset feature; default is false")
     private Boolean passwordEnabled;
 
+    @Parameter(name = ApiConstants.SSHKEY_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports the sshkey upload feature; default is false")
+    private Boolean sshKeyEnabled;
+
     @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "true if the template requres HVM, false otherwise")
     private Boolean requiresHvm;
 
@@ -161,6 +164,10 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
 
     public Boolean isPasswordEnabled() {
         return passwordEnabled;
+    }
+
+    public Boolean isSshKeyEnabled() {
+        return sshKeyEnabled;
     }
 
     public Boolean getRequiresHvm() {

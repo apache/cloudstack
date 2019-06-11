@@ -27,6 +27,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.SnapshotVO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -37,8 +39,6 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -54,6 +54,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private static final Logger s_logger = Logger.getLogger(SnapshotDataStoreDaoImpl.class);
     private SearchBuilder<SnapshotDataStoreVO> updateStateSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSearch;
+    private SearchBuilder<SnapshotDataStoreVO> storeStateSearch;
     private SearchBuilder<SnapshotDataStoreVO> destroyedSearch;
     private SearchBuilder<SnapshotDataStoreVO> cacheSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotSearch;
@@ -91,6 +92,11 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         storeSearch.and("store_role", storeSearch.entity().getRole(), SearchCriteria.Op.EQ);
         storeSearch.and("state", storeSearch.entity().getState(), SearchCriteria.Op.NEQ);
         storeSearch.done();
+
+        storeStateSearch = createSearchBuilder();
+        storeStateSearch.and("store_id", storeStateSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeStateSearch.and("state", storeStateSearch.entity().getState(), SearchCriteria.Op.EQ);
+        storeStateSearch.done();
 
         destroyedSearch = createSearchBuilder();
         destroyedSearch.and("store_id", destroyedSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
@@ -218,6 +224,14 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters("store_id", id);
         sc.setParameters("store_role", role);
         sc.setParameters("state", ObjectInDataStoreStateMachine.State.Destroyed);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listByStoreIdAndState(long id, ObjectInDataStoreStateMachine.State state) {
+        SearchCriteria<SnapshotDataStoreVO> sc = storeStateSearch.create();
+        sc.setParameters("store_id", id);
+        sc.setParameters("state", state);
         return listBy(sc);
     }
 

@@ -26,6 +26,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.OffsetDateTime;
+
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DateUtil {
@@ -33,19 +37,33 @@ public class DateUtil {
     public static final String YYYYMMDD_FORMAT = "yyyyMMddHHmmss";
     private static final DateFormat s_outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
+    private static final DateTimeFormatter[] parseFormats = new DateTimeFormatter[]{
+        DateTimeFormatter.ISO_OFFSET_DATE_TIME,
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ"),
+        DateTimeFormatter.ISO_INSTANT,
+        // with milliseconds
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSX"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"),
+        // legacy and non-sensical format
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'Z")
+    };
+
     public static Date currentGMTTime() {
         // Date object always stores miliseconds offset based on GMT internally
         return new Date();
     }
 
-    // yyyy-MM-ddTHH:mm:ssZZZZ or yyyy-MM-ddTHH:mm:ssZxxxx
     public static Date parseTZDateString(String str) throws ParseException {
-        try {
-            return s_outputFormat.parse(str);
-        } catch (ParseException e) {
-            final DateFormat dfParse = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'Z");
-            return dfParse.parse(str);
+        for (DateTimeFormatter formatter : parseFormats) {
+            try {
+                OffsetDateTime dt = OffsetDateTime.parse(str, formatter);
+                return Date.from(dt.toInstant());
+            } catch (DateTimeParseException e) {
+                // do nothing
+            }
         }
+        throw new ParseException("Unparseable date: \"" + str + "\"", 0);
     }
 
     public static Date parseDateString(TimeZone tz, String dateString) {

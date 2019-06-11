@@ -58,6 +58,9 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PASSWORD_ENABLED, type = CommandType.BOOLEAN, description = "true if the image supports the password reset feature; default is false")
     private Boolean passwordEnabled;
 
+    @Parameter(name = ApiConstants.SSHKEY_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports the sshkey upload feature; default is false")
+    private Boolean sshKeyEnabled;
+
     @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the template, integer")
     private Integer sortKey;
 
@@ -107,6 +110,10 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
 
     public Boolean getPasswordEnabled() {
         return passwordEnabled;
+    }
+
+    public Boolean isSshKeyEnabled() {
+        return sshKeyEnabled;
     }
 
     public String getFormat() {

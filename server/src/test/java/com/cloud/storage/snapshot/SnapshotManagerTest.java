@@ -23,6 +23,7 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
@@ -335,5 +336,18 @@ public class SnapshotManagerTest {
         when(vmSnapshotMock.getName()).thenReturn("VM_SNAPSHOT_NAME");
         Snapshot snapshot = _snapshotMgr.backupSnapshotFromVmSnapshot(TEST_SNAPSHOT_ID, TEST_VM_ID, TEST_VOLUME_ID, TEST_VM_SNAPSHOT_ID);
         Assert.assertNull(snapshot);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testArchiveSnapshotSnapshotNotOnPrimary() {
+        when(snapshotFactory.getSnapshot(anyLong(), Mockito.eq(DataStoreRole.Primary))).thenReturn(null);
+        _snapshotMgr.archiveSnapshot(TEST_SNAPSHOT_ID);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testArchiveSnapshotSnapshotNotReady() {
+        when(snapshotFactory.getSnapshot(anyLong(), Mockito.eq(DataStoreRole.Primary))).thenReturn(snapshotInfoMock);
+        when(snapshotInfoMock.getStatus()).thenReturn(ObjectInDataStoreStateMachine.State.Destroyed);
+        _snapshotMgr.archiveSnapshot(TEST_SNAPSHOT_ID);
     }
 }

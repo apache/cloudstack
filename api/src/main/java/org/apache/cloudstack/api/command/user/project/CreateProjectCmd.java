@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -51,10 +52,10 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a project")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the project")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, validations = ApiArgValidator.NotNullOrEmpty, description = "name of the project")
     private String name;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "display text of the project")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, validations = ApiArgValidator.NotNullOrEmpty, description = "display text of the project")
     private String displayText;
 
     // ///////////////////////////////////////////////////

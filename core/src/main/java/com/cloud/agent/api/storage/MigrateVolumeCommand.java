@@ -31,6 +31,7 @@ public class MigrateVolumeCommand extends Command {
     long volumeId;
     String volumePath;
     StorageFilerTO pool;
+    StorageFilerTO sourcePool;
     String attachedVmName;
     Volume.Type volumeType;
 
@@ -47,12 +48,15 @@ public class MigrateVolumeCommand extends Command {
     }
 
     public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool pool, String attachedVmName, Volume.Type volumeType, int timeout) {
-        this.volumeId = volumeId;
-        this.volumePath = volumePath;
-        this.pool = new StorageFilerTO(pool);
+        this(volumeId,volumePath,pool,timeout);
         this.attachedVmName = attachedVmName;
         this.volumeType = volumeType;
         this.setWait(timeout);
+    }
+
+    public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool sourcePool, StoragePool targetPool) {
+        this(volumeId,volumePath,targetPool, null, Volume.Type.UNKNOWN, -1);
+        this.sourcePool = new StorageFilerTO(sourcePool);
     }
 
     public MigrateVolumeCommand(DataTO srcData, DataTO destData, Map<String, String> srcDetails, Map<String, String> destDetails, int timeout) {
@@ -78,6 +82,14 @@ public class MigrateVolumeCommand extends Command {
     }
 
     public StorageFilerTO getPool() {
+        return pool;
+    }
+
+    public StorageFilerTO getSourcePool() {
+        return sourcePool;
+    }
+
+    public StorageFilerTO getTargetPool() {
         return pool;
     }
 

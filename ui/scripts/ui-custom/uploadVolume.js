@@ -30,7 +30,7 @@
 
             if (!$uploadVolume.find(
                 'input[type=radio]:checked, input[type=checkbox]:checked'
-            ).size()) {
+            ).length) {
                 cloudStack.dialog.notice({
                     message: _l('message.select.instance')
                 });

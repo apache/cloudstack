@@ -52,7 +52,9 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
+import com.cloud.agent.api.MigrateVmToPoolCommand;
 import com.cloud.agent.api.UnregisterNicCommand;
+import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.CreateVolumeOVACommand;
@@ -63,7 +65,9 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
@@ -109,6 +113,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
@@ -165,11 +170,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Inject
     private GuestOSDao _guestOsDao;
     @Inject
-    GuestOSHypervisorDao _guestOsHypervisorDao;
+    private GuestOSHypervisorDao _guestOsHypervisorDao;
     @Inject
     private HostDao _hostDao;
     @Inject
     private HostDetailsDao _hostDetailsDao;
+    @Inject
+    private ClusterDetailsDao _clusterDetailsDao;
     @Inject
     private CommandExecLogDao _cmdExecLogDao;
     @Inject
@@ -216,11 +223,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     public static final ConfigKey<Boolean> VmwareReserveCpu = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.cpu", "Advanced", "false",
-        "Specify whether or not to reserve CPU when not overprovisioning, In case of cpu overprovisioning we will always reserve cpu.", true, ConfigKey.Scope.Cluster,
+        "Specify whether or not to reserve CPU when deploying an instance.", true, ConfigKey.Scope.Cluster,
         null);
 
     public static final ConfigKey<Boolean> VmwareReserveMemory = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.mem", "Advanced", "false",
-        "Specify whether or not to reserve memory when not overprovisioning, In case of memory overprovisioning we will always reserve memory.", true,
+        "Specify whether or not to reserve memory when deploying an instance.", true,
         ConfigKey.Scope.Cluster, null);
 
     protected ConfigKey<Boolean> VmwareEnableNestedVirtualization = new ConfigKey<Boolean>(Boolean.class, "vmware.nested.virtualization", "Advanced", "false",
@@ -1380,5 +1387,36 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
         }
         return null;
+    }
+
+    @Override
+    public List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination) {
+        List<Command> commands = new ArrayList<Command>();
+
+        // OfflineVmwareMigration: specialised migration command
+        List<VolumeVO> volumes = _volumeDao.findByInstance(vm.getId());
+        List<VolumeTO> vols = new ArrayList<>();
+        for (Volume volume : volumes) {
+            VolumeTO vol = new VolumeTO(volume,destination);
+            vols.add(vol);
+        }
+        MigrateVmToPoolCommand migrateVmToPoolCommand = new MigrateVmToPoolCommand(vm.getInstanceName(), vols, destination.getUuid(), true);
+        commands.add(migrateVmToPoolCommand);
+
+        // OfflineVmwareMigration: cleanup if needed
+        final Long destClusterId = destination.getClusterId();
+        final Long srcClusterId = getClusterId(vm.getId());
+
+        if (srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId)) {
+            final String srcDcName = _clusterDetailsDao.getVmwareDcName(srcClusterId);
+            final String destDcName = _clusterDetailsDao.getVmwareDcName(destClusterId);
+            if (srcDcName != null && destDcName != null && !srcDcName.equals(destDcName)) {
+                final UnregisterVMCommand unregisterVMCommand = new UnregisterVMCommand(vm.getInstanceName(), true);
+                unregisterVMCommand.setCleanupVmFiles(true);
+
+                commands.add(unregisterVMCommand);
+            }
+        }
+        return commands;
     }
 }

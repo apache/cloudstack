@@ -42,6 +42,7 @@ public class SnapshotStateMachineManagerImpl implements SnapshotStateMachineMana
         stateMachine.addTransition(Snapshot.State.CreatedOnPrimary, Event.OperationNotPerformed, Snapshot.State.BackedUp);
         stateMachine.addTransition(Snapshot.State.BackingUp, Event.OperationSucceeded, Snapshot.State.BackedUp);
         stateMachine.addTransition(Snapshot.State.BackingUp, Event.OperationFailed, Snapshot.State.Error);
+        stateMachine.addTransition(Snapshot.State.BackingUp, Event.OperationNotPerformed, State.BackedUp);
         stateMachine.addTransition(Snapshot.State.BackedUp, Event.DestroyRequested, Snapshot.State.Destroying);
         stateMachine.addTransition(Snapshot.State.BackedUp, Event.CopyingRequested, Snapshot.State.Copying);
         stateMachine.addTransition(Snapshot.State.BackedUp, Event.BackupToSecondary, Snapshot.State.BackingUp);

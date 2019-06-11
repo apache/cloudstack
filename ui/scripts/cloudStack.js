@@ -450,10 +450,10 @@
                 });
 
                 // Logout action
-                $('#user-options a').live('click', function() {
-                    loginArgs.logoutAction({
-                        context: cloudStack.context
-                    });
+                $(document).on('click', '#user-options a', function() {
+                  loginArgs.logoutAction({
+                    context: cloudStack.context
+                  });
                 });
 
                 window._reloadUI = function() {
@@ -482,6 +482,6 @@
 
         cloudStack.uiCustom.login(loginArgs);
 
-        document.title = _l('label.app.name');
+        document.title = _l(cloudStackOptions.docTitle);
     });
 })(cloudStack, jQuery);

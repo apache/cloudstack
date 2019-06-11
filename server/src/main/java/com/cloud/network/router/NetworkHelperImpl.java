@@ -479,7 +479,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                     continue;
                 }
 
-                final boolean offerHA = routerOffering.getOfferHA();
+                final boolean offerHA = routerOffering.isOfferHA();
 
                 // routerDeploymentDefinition.getVpc().getId() ==> do not use
                 // VPC because it is not a VPC offering.

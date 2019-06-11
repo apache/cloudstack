@@ -85,6 +85,7 @@ import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
@@ -151,6 +152,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
@@ -477,7 +479,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         cfgResponse.setCategory(cfg.getCategory());
         cfgResponse.setDescription(cfg.getDescription());
         cfgResponse.setName(cfg.getName());
-        if(cfg.isEncrypted()) {
+        if (cfg.isEncrypted()) {
             cfgResponse.setValue(DBEncryptionUtil.encrypt(cfg.getValue()));
         } else {
             cfgResponse.setValue(cfg.getValue());
@@ -622,6 +624,14 @@ public class ApiResponseHelper implements ResponseGenerator {
             vmSnapshotResponse.setDomainId(domain.getUuid());
             vmSnapshotResponse.setDomainName(domain.getName());
         }
+
+        List<? extends ResourceTag> tags = _resourceTagDao.listBy(vmSnapshot.getId(), ResourceObjectType.VMSnapshot);
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, false);
+            CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
+        }
+        vmSnapshotResponse.setTags(new HashSet<>(tagResponses));
 
         vmSnapshotResponse.setCurrent(vmSnapshot.getCurrent());
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());
@@ -986,7 +996,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 endIp.add(((existingPodIpRange.length > 1) && (existingPodIpRange[1] != null)) ? existingPodIpRange[1] : "");
                 forSystemVms.add((existingPodIpRange.length > 2) && (existingPodIpRange[2] != null) ? existingPodIpRange[2] : "0");
                 vlanIds.add((existingPodIpRange.length > 3) &&
-                        (existingPodIpRange[3] != null && !existingPodIpRange.equals("untagged")) ?
+                        (existingPodIpRange[3] != null && !existingPodIpRange[3].equals("untagged")) ?
                         BroadcastDomainType.Vlan.toUri(existingPodIpRange[3]).toString() :
                         BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString());
             }
@@ -1397,7 +1407,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                           * IP allocated for EIP. So return the guest/public IP accordingly.
                           * */
                         NetworkOffering networkOffering = ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
-                        if (networkOffering.getElasticIp()) {
+                        if (networkOffering.isElasticIp()) {
                             IpAddress ip = ApiDBUtils.findIpByAssociatedVmId(vm.getId());
                             if (ip != null) {
                                 Vlan vlan = ApiDBUtils.findVlanById(ip.getVlanId());
@@ -1914,16 +1924,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setTags(offering.getTags());
         response.setTrafficType(offering.getTrafficType().toString());
         response.setIsDefault(offering.isDefault());
-        response.setSpecifyVlan(offering.getSpecifyVlan());
+        response.setSpecifyVlan(offering.isSpecifyVlan());
         response.setConserveMode(offering.isConserveMode());
-        response.setSpecifyIpRanges(offering.getSpecifyIpRanges());
+        response.setSpecifyIpRanges(offering.isSpecifyIpRanges());
         response.setAvailability(offering.getAvailability().toString());
-        response.setIsPersistent(offering.getIsPersistent());
+        response.setIsPersistent(offering.isPersistent());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
-        response.setEgressDefaultPolicy(offering.getEgressDefaultPolicy());
+        response.setEgressDefaultPolicy(offering.isEgressDefaultPolicy());
         response.setConcurrentConnections(offering.getConcurrentConnections());
-        response.setSupportsStrechedL2Subnet(offering.getSupportsStrechedL2());
-        response.setSupportsPublicAccess(offering.getSupportsPublicAccess());
+        response.setSupportsStrechedL2Subnet(offering.isSupportingStrechedL2());
+        response.setSupportsPublicAccess(offering.isSupportingPublicAccess());
         Long so = null;
         if (offering.getServiceOfferingId() != null) {
             so = offering.getServiceOfferingId();
@@ -1969,12 +1979,12 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                 CapabilityResponse lbIsoaltion = new CapabilityResponse();
                 lbIsoaltion.setName(Capability.SupportedLBIsolation.getName());
-                lbIsoaltion.setValue(offering.getDedicatedLB() ? "dedicated" : "shared");
+                lbIsoaltion.setValue(offering.isDedicatedLB() ? "dedicated" : "shared");
                 lbCapResponse.add(lbIsoaltion);
 
                 CapabilityResponse eLb = new CapabilityResponse();
                 eLb.setName(Capability.ElasticLb.getName());
-                eLb.setValue(offering.getElasticLb() ? "true" : "false");
+                eLb.setValue(offering.isElasticLb() ? "true" : "false");
                 lbCapResponse.add(eLb);
 
                 CapabilityResponse inline = new CapabilityResponse();
@@ -1987,12 +1997,12 @@ public class ApiResponseHelper implements ResponseGenerator {
                 List<CapabilityResponse> capabilities = new ArrayList<CapabilityResponse>();
                 CapabilityResponse sharedSourceNat = new CapabilityResponse();
                 sharedSourceNat.setName(Capability.SupportedSourceNatTypes.getName());
-                sharedSourceNat.setValue(offering.getSharedSourceNat() ? "perzone" : "peraccount");
+                sharedSourceNat.setValue(offering.isSharedSourceNat() ? "perzone" : "peraccount");
                 capabilities.add(sharedSourceNat);
 
                 CapabilityResponse redundantRouter = new CapabilityResponse();
                 redundantRouter.setName(Capability.RedundantRouter.getName());
-                redundantRouter.setValue(offering.getRedundantRouter() ? "true" : "false");
+                redundantRouter.setValue(offering.isRedundantRouter() ? "true" : "false");
                 capabilities.add(redundantRouter);
 
                 svcRsp.setCapabilities(capabilities);
@@ -2001,12 +2011,12 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                 CapabilityResponse eIp = new CapabilityResponse();
                 eIp.setName(Capability.ElasticIp.getName());
-                eIp.setValue(offering.getElasticIp() ? "true" : "false");
+                eIp.setValue(offering.isElasticIp() ? "true" : "false");
                 staticNatCapResponse.add(eIp);
 
                 CapabilityResponse associatePublicIp = new CapabilityResponse();
                 associatePublicIp.setName(Capability.AssociatePublicIP.getName());
-                associatePublicIp.setValue(offering.getAssociatePublicIP() ? "true" : "false");
+                associatePublicIp.setValue(offering.isAssociatePublicIP() ? "true" : "false");
                 staticNatCapResponse.add(associatePublicIp);
 
                 svcRsp.setCapabilities(staticNatCapResponse);
@@ -2133,7 +2143,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetworkOfferingConserveMode(networkOffering.isConserveMode());
             response.setIsSystem(networkOffering.isSystemOnly());
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
-            response.setIsPersistent(networkOffering.getIsPersistent());
+            response.setIsPersistent(networkOffering.isPersistent());
         }
 
         if (network.getAclType() != null) {
@@ -2566,7 +2576,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (Network.Provider serviceProvider : serviceProviders) {
             // return only Virtual Router/JuniperSRX/CiscoVnmc as a provider for the firewall
             if (service == Service.Firewall
-                    && !(serviceProvider == Provider.VirtualRouter || serviceProvider == Provider.JuniperSRX || serviceProvider == Provider.CiscoVnmc || serviceProvider == Provider.PaloAlto || serviceProvider == Provider.NuageVsp || serviceProvider == Provider.BigSwitchBcf)) {
+                    && !(serviceProvider == Provider.VirtualRouter || serviceProvider == Provider.JuniperSRX || serviceProvider == Provider.CiscoVnmc || serviceProvider == Provider.PaloAlto || serviceProvider == Provider.BigSwitchBcf)) {
                 continue;
             }
 
@@ -3210,7 +3220,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         GuestOSResponse response = new GuestOSResponse();
         response.setDescription(guestOS.getDisplayName());
         response.setId(guestOS.getUuid());
-        response.setIsUserDefined(guestOS.getIsUserDefined());
+        response.setIsUserDefined(guestOS.isUserDefined());
         GuestOSCategoryVO category = ApiDBUtils.findGuestOsCategoryById(guestOS.getCategoryId());
         if (category != null) {
             response.setOsCategoryId(category.getUuid());
@@ -3632,11 +3642,22 @@ public class ApiResponseHelper implements ResponseGenerator {
         NicVO nic = _entityMgr.findById(NicVO.class, result.getNicId());
         NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
         response.setId(result.getUuid());
-        response.setIpAddr(result.getIp4Address());
+        setResponseIpAddress(result, response);
         response.setNicId(nic.getUuid());
         response.setNwId(network.getUuid());
         response.setObjectName("nicsecondaryip");
         return response;
+    }
+
+    /**
+     * Set the NicSecondaryIpResponse object with the IP address that is not null (IPv4 or IPv6)
+     */
+    public static void setResponseIpAddress(NicSecondaryIp result, NicSecondaryIpResponse response) {
+        if (result.getIp4Address() != null) {
+            response.setIpAddr(result.getIp4Address());
+        } else if (result.getIp6Address() != null) {
+            response.setIpAddr(result.getIp6Address());
+        }
     }
 
     /**
@@ -3715,7 +3736,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 for (NicSecondaryIpVO ip : secondaryIps) {
                     NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
                     ipRes.setId(ip.getUuid());
-                    ipRes.setIpAddr(ip.getIp4Address());
+                    setResponseIpAddress(ip, ipRes);
                     ipList.add(ipRes);
                 }
                 response.setSecondaryIps(ipList);
@@ -3982,5 +4003,14 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public BackupPolicyResponse createBackupPolicyResponse(BackupPolicy policy) {
         return ApiDBUtils.newBackupPolicyResponse(policy);
+    }
+
+    public ManagementServerResponse createManagementResponse(ManagementServerHost mgmt) {
+        ManagementServerResponse response = new ManagementServerResponse();
+        response.setId(mgmt.getUuid());
+        response.setName(mgmt.getName());
+        response.setVersion(mgmt.getVersion());
+        response.setState(mgmt.getState());
+        return response;
     }
 }

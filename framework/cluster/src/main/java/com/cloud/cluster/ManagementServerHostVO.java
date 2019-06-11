@@ -17,6 +17,7 @@
 package com.cloud.cluster;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,6 +30,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -39,6 +41,9 @@ public class ManagementServerHostVO implements ManagementServerHost {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
+
+    @Column(name = "uuid")
+    private String uuid;
 
     @Column(name = "msid", updatable = true, nullable = false)
     private long msid;
@@ -81,6 +86,7 @@ public class ManagementServerHostVO implements ManagementServerHost {
         this.serviceIP = serviceIP;
         this.servicePort = servicePort;
         lastUpdateTime = updateTime;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -90,6 +96,15 @@ public class ManagementServerHostVO implements ManagementServerHost {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    @Override
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     public long getRunid() {
@@ -109,6 +124,7 @@ public class ManagementServerHostVO implements ManagementServerHost {
         this.msid = msid;
     }
 
+    @Override
     public String getName() {
         return name;
     }

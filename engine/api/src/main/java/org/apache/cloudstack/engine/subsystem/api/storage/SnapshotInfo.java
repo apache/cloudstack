@@ -17,6 +17,7 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import com.cloud.storage.Snapshot;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public interface SnapshotInfo extends DataObject, Snapshot {
     SnapshotInfo getParent();
@@ -42,4 +43,6 @@ public interface SnapshotInfo extends DataObject, Snapshot {
     boolean isRevertable();
 
     long getPhysicalSize();
+
+    void markBackedUp() throws CloudRuntimeException;
 }

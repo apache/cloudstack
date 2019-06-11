@@ -612,9 +612,15 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 usedMemory +=
                     ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.memory.name())) * 1024L * 1024L) / ramOvercommitRatio) *
                         clusterRamOvercommitRatio;
-                usedCpu +=
-                    ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
-                        clusterCpuOvercommitRatio;
+                if(vmDetails.containsKey(UsageEventVO.DynamicParameters.cpuSpeed.name())) {
+                    usedCpu +=
+                            ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
+                                    clusterCpuOvercommitRatio;
+                } else {
+                    usedCpu +=
+                            ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * so.getSpeed()) / cpuOvercommitRatio) *
+                                    clusterCpuOvercommitRatio;
+                }
                 usedCpuCore += Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name()));
             } else {
                 usedMemory += ((so.getRamSize() * 1024L * 1024L) / ramOvercommitRatio) * clusterRamOvercommitRatio;
@@ -645,9 +651,15 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     reservedMemory +=
                         ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.memory.name())) * 1024L * 1024L) / ramOvercommitRatio) *
                             clusterRamOvercommitRatio;
-                    reservedCpu +=
-                        ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
-                            clusterCpuOvercommitRatio;
+                    if(vmDetails.containsKey(UsageEventVO.DynamicParameters.cpuSpeed.name())) {
+                        reservedCpu +=
+                                ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
+                                        clusterCpuOvercommitRatio;
+                    } else {
+                        reservedCpu +=
+                                ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * so.getSpeed()) / cpuOvercommitRatio) *
+                                        clusterCpuOvercommitRatio;
+                    }
                     reservedCpuCore += Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name()));
                 } else {
                     reservedMemory += ((so.getRamSize() * 1024L * 1024L) / ramOvercommitRatio) * clusterRamOvercommitRatio;
@@ -1126,10 +1138,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         String hypervisorVersion = host.getHypervisorVersion();
         Long maxGuestLimit = _hypervisorCapabilitiesDao.getMaxGuestsLimit(hypervisorType, hypervisorVersion);
         if (vmCount.longValue() >= maxGuestLimit.longValue()) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() + " already reached max Running VMs(count includes system VMs), limit is: " +
-                    maxGuestLimit + ",Running VM counts is: " + vmCount.longValue());
-            }
+            s_logger.info("Host name: " + host.getName() + ", hostId: " + host.getId() + " already reached max Running VMs(count includes system VMs), limit: " +
+                maxGuestLimit + ", Running VM count: " + vmCount.longValue());
             return true;
         }
         return false;

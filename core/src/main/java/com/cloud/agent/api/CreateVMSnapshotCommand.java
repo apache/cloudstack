@@ -32,6 +32,10 @@ public class CreateVMSnapshotCommand extends VMSnapshotBaseCommand {
         this.vmUuid = vmUuid;
     }
 
+    public CreateVMSnapshotCommand(String vmName, VMSnapshotTO snapshot) {
+        super(vmName, snapshot, null, null);
+    }
+
     public String getVmUuid() {
         return vmUuid;
     }

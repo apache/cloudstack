@@ -187,14 +187,6 @@ public enum Config {
             "3600",
             "Timeout (in seconds) to synchronize storage pool operations.",
             null),
-    PrimaryStorageDownloadWait(
-            "Storage",
-            TemplateManager.class,
-            Integer.class,
-            "primary.storage.download.wait",
-            "10800",
-            "In second, timeout for download template to primary storage",
-            null),
     CreateVolumeFromSnapshotWait(
             "Storage",
             StorageManager.class,
@@ -566,7 +558,6 @@ public enum Config {
             "The interval (in milliseconds) when host stats are retrieved from agents.",
             null),
     HostRetry("Advanced", AgentManager.class, Integer.class, "host.retry", "2", "Number of times to retry hosts for creating a volume", null),
-    IntegrationAPIPort("Advanced", ManagementServer.class, Integer.class, "integration.api.port", null, "Default API port. To disable set it to 0 or negative.", null),
     InvestigateRetryInterval(
             "Advanced",
             HighAvailabilityManager.class,
@@ -683,8 +674,8 @@ public enum Config {
             String.class,
             "hypervisor.list",
             HypervisorType.Hyperv + "," + HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware + "," + HypervisorType.BareMetal + "," +
-                HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3,
-            "The list of hypervisors that this deployment will use.",
+                    HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3,
+                    "The list of hypervisors that this deployment will use.",
             "hypervisorList"),
     ManagementNetwork("Advanced", ManagementServer.class, String.class, "management.network.cidr", null, "The cidr of management server network", null),
     EventPurgeDelay(
@@ -898,14 +889,6 @@ public enum Config {
             "vm.disk.throttling.bytes_write_rate",
             "0",
             "Default disk I/O writerate in bytes per second allowed in User vm's disk.",
-            null),
-    KvmAutoConvergence(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "kvm.auto.convergence",
-            "false",
-            "Setting this to 'true' allows KVM to use auto convergence to complete VM migration (libvirt version 1.2.3+ and QEMU version 1.6+)",
             null),
     ControlCidr(
             "Advanced",
@@ -1211,14 +1194,6 @@ public enum Config {
     KvmPublicNetwork("Hidden", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),
     KvmPrivateNetwork("Hidden", ManagementServer.class, String.class, "kvm.private.network.device", null, "Specify the private bridge on host for private network", null),
     KvmGuestNetwork("Hidden", ManagementServer.class, String.class, "kvm.guest.network.device", null, "Specify the private bridge on host for private network", null),
-    KvmSshToAgentEnabled(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "kvm.ssh.to.agent",
-            "true",
-            "Specify whether or not the management server is allowed to SSH into KVM Agents",
-            null),
 
     // Hyperv
     HypervPublicNetwork(
@@ -1439,7 +1414,6 @@ public enum Config {
             "true",
             "Allow subdomains to use networks dedicated to their parent domain(s)",
             null),
-    EncodeApiResponse("Advanced", ManagementServer.class, Boolean.class, "encode.api.response", "false", "Do URL encoding for the api response, false by default", null),
     DnsBasicZoneUpdates(
             "Advanced",
             NetworkOrchestrationService.class,
@@ -1693,14 +1667,6 @@ public enum Config {
             null),
     VpcMaxNetworks("Advanced", ManagementServer.class, Integer.class, "vpc.max.networks", "3", "Maximum number of networks per vpc", null),
     DetailBatchQuerySize("Advanced", ManagementServer.class, Integer.class, "detail.batch.query.size", "2000", "Default entity detail batch query size for listing", null),
-    ConcurrentSnapshotsThresholdPerHost(
-            "Advanced",
-            ManagementServer.class,
-            Long.class,
-            "concurrent.snapshots.threshold.perhost",
-            null,
-            "Limits number of snapshots that can be handled by the host concurrently; default is NULL - unlimited",
-            null),
     NetworkIPv6SearchRetryMax(
             "Network",
             ManagementServer.class,
@@ -1814,8 +1780,8 @@ public enum Config {
             "s3.singleupload.max.size",
             "5",
             "The maximum size limit for S3 single part upload API(in GB). If it is set to 0, then it means always use multi-part upload to upload object to S3. "
-                + "If it is set to -1, then it means always use single-part upload to upload object to S3. ",
-            null),
+                    + "If it is set to -1, then it means always use single-part upload to upload object to S3. ",
+                    null),
 
     // VMSnapshots
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
@@ -1836,9 +1802,9 @@ public enum Config {
             Boolean.class,
             "execute.in.sequence.network.element.commands",
             "false",
-            "If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side."
-                + " If set to false, these commands become asynchronous. Default value is false.",
-            null),
+            "If set to true, DhcpEntryCommand, SavePasswordCommand, VmDataCommand will be synchronized on the agent side."
+                    + " If set to false, these commands become asynchronous. Default value is false.",
+                    null),
 
     UCSSyncBladeInterval(
             "Advanced",

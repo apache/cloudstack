@@ -78,29 +78,35 @@ public class DeployDestination implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (!(obj instanceof DeployDestination)) {
+            return false;
+        }
         DeployDestination that = (DeployDestination)obj;
-        if (_dc == null || that._dc == null) {
+        if (this._dc == null || that._dc == null) {
             return false;
         }
-        if (_dc.getId() != that._dc.getId()) {
+        if (this._dc.getId() != that._dc.getId()) {
             return false;
         }
-        if (_pod == null || that._pod == null) {
+        if (this._pod == null || that._pod == null) {
             return false;
         }
-        if (_pod.getId() != that._pod.getId()) {
+        if (this._pod.getId() != that._pod.getId()) {
             return false;
         }
-        if (_cluster == null || that._cluster == null) {
+        if (this._cluster == null || that._cluster == null) {
             return false;
         }
-        if (_cluster.getId() != that._cluster.getId()) {
+        if (this._cluster.getId() != that._cluster.getId()) {
             return false;
         }
-        if (_host == null || that._host == null) {
+        if (this._host == null || that._host == null) {
             return false;
         }
-        return _host.getId() == that._host.getId();
+        return this._host.getId() == that._host.getId();
     }
 
     @Override

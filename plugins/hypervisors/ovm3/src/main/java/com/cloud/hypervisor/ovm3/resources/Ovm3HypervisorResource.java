@@ -27,8 +27,6 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.log4j.Logger;
 
@@ -195,18 +193,12 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             return storageprocessor.execute((CopyCommand)cmd);
         } else if (cmd instanceof StorageSubSystemCommand) {
             return storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
-        } else if (clazz == DeleteCommand.class) {
-            return storageprocessor.execute((DeleteCommand)cmd);
         } else if (clazz == CreateCommand.class) {
             return storageprocessor.execute((CreateCommand)cmd);
         } else if (clazz == CreateObjectCommand.class) {
             return storageprocessor.execute((CreateObjectCommand)cmd);
         } else if (clazz == AttachIsoCommand.class) {
             return storageprocessor.attachIso((AttachCommand)cmd);
-        } else if (clazz == DettachCommand.class) {
-            return storageprocessor.execute((DettachCommand)cmd);
-        } else if (clazz == AttachCommand.class) {
-            return storageprocessor.execute((AttachCommand)cmd);
         } else if (clazz == CreatePrivateTemplateFromVolumeCommand.class) {
             return storageprocessor.execute((CreatePrivateTemplateFromVolumeCommand)cmd);
         } else if (clazz == DestroyCommand.class) {

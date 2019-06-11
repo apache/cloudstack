@@ -294,7 +294,7 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool) {
+    public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool, int timeout) {
         throw new UnsupportedOperationException("Creating a disk from a snapshot is not supported in this configuration.");
     }
 
@@ -311,6 +311,11 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
             return f.mkdirs();
         }
         return true;
+    }
+
+    @Override
+    public KVMPhysicalDisk createDiskFromTemplateBacking(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout) {
+        return null;
     }
 
     @Override

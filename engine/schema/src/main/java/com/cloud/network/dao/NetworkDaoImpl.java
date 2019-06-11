@@ -119,7 +119,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         AllFieldsSearch.and("redundant", AllFieldsSearch.entity().isRedundant(), Op.EQ);
         final SearchBuilder<NetworkOfferingVO> join1 = _ntwkOffDao.createSearchBuilder();
         join1.and("isSystem", join1.entity().isSystemOnly(), Op.EQ);
-        join1.and("isRedundant", join1.entity().getRedundantRouter(), Op.EQ);
+        join1.and("isRedundant", join1.entity().isRedundantRouter(), Op.EQ);
         AllFieldsSearch.join("offerings", join1, AllFieldsSearch.entity().getNetworkOfferingId(), join1.entity().getId(), JoinBuilder.JoinType.INNER);
         AllFieldsSearch.done();
 
@@ -196,7 +196,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         NetworksRegularUserCanCreateSearch.join("accounts", join4, NetworksRegularUserCanCreateSearch.entity().getId(), join4.entity().getNetworkId(),
                 JoinBuilder.JoinType.INNER);
         final SearchBuilder<NetworkOfferingVO> join5 = _ntwkOffDao.createSearchBuilder();
-        join5.and("specifyVlan", join5.entity().getSpecifyVlan(), Op.EQ);
+        join5.and("specifyVlan", join5.entity().isSpecifyVlan(), Op.EQ);
         NetworksRegularUserCanCreateSearch.join("ntwkOff", join5, NetworksRegularUserCanCreateSearch.entity().getNetworkOfferingId(), join5.entity().getId(),
                 JoinBuilder.JoinType.INNER);
         NetworksRegularUserCanCreateSearch.done();
@@ -242,7 +242,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         join7.and("check", join7.entity().isCheckForGc(), Op.EQ);
         GarbageCollectedSearch.join("ntwkOpGC", join7, GarbageCollectedSearch.entity().getId(), join7.entity().getId(), JoinBuilder.JoinType.INNER);
         final SearchBuilder<NetworkOfferingVO> join8 = _ntwkOffDao.createSearchBuilder();
-        join8.and("isPersistent", join8.entity().getIsPersistent(), Op.EQ);
+        join8.and("isPersistent", join8.entity().isPersistent(), Op.EQ);
         GarbageCollectedSearch.join("ntwkOffGC", join8, GarbageCollectedSearch.entity().getNetworkOfferingId(), join8.entity().getId(), JoinBuilder.JoinType.INNER);
         GarbageCollectedSearch.done();
 

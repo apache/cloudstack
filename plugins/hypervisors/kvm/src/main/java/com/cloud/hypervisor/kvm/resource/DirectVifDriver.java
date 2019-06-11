@@ -26,6 +26,8 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.Networks;
 
+import java.util.Map;
+
 public class DirectVifDriver extends VifDriverBase {
 
     private static final Logger s_logger = Logger.getLogger(DirectVifDriver.class);
@@ -36,12 +38,13 @@ public class DirectVifDriver extends VifDriverBase {
      *
      * @param nic
      * @param guestOsType
+     * @param extraConfig
      * @return
      * @throws InternalErrorException
      * @throws LibvirtException
      */
     @Override
-    public LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType, String nicAdapter) throws InternalErrorException, LibvirtException {
+    public LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType, String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
         LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
 
         if (nic.getType() == Networks.TrafficType.Guest) {

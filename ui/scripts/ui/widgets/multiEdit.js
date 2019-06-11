@@ -229,7 +229,7 @@
                             $td.append($select);
                         }
                         else {
-                            var matchingValue = $matchingOption.size() ?
+                            var matchingValue = $matchingOption.length ?
                                 $matchingOption.html() : data[fieldName];
 
                             $td.append($('<span>').html(_s(matchingValue)));
@@ -243,7 +243,7 @@
 
                                 var $subItems = $td.closest('.data-item').find('.expandable-listing tr');
 
-                                if ($subItems.size()) {
+                                if ($subItems.length) {
                                     context.subItemData = $subItems.map(function() {
                                         return $(this).data('json-obj');
                                     });
@@ -598,7 +598,7 @@
                     text: _l('label.apply'),
                     'class': 'ok',
                     click: function() {
-                        if (!$listView.find('input[type=radio]:checked, input[type=checkbox]:checked').size()) {
+                        if (!$listView.find('input[type=radio]:checked, input[type=checkbox]:checked').length) {
                             cloudStack.dialog.notice({
                                 message: _l('message.select.item')
                             });
@@ -660,7 +660,7 @@
             );
 
             $multi.find('.data tr').filter(function() {
-                return !$(this).closest('.expandable-listing').size();
+                return !$(this).closest('.expandable-listing').length;
             }).each(function() {
                 var $tr = $(this);
 
@@ -929,8 +929,8 @@
                     $loading.prependTo($multi);
                     reorder.moveDrag.action({
                         targetIndex: ui.item.index(),
-                        nextItem: ui.item.next().size() ? ui.item.next().data('json-obj') : null,
-                        prevItem: ui.item.prev().size() ? ui.item.prev().data('json-obj') : null,
+                        nextItem: ui.item.next().length ? ui.item.next().data('json-obj') : null,
+                        prevItem: ui.item.prev().length ? ui.item.prev().data('json-obj') : null,
                         context: $.extend(true, {}, context, {
                             // Passes all rules, so that each index can be updated
                             multiRule: [ui.item.data('json-obj')]
@@ -1121,7 +1121,7 @@
 	        $addVM.bind('click', function() {
 	            // Validate form first
 	            if (!$multiForm.valid()) {
-	                if ($multiForm.find('input.error:visible').size()) {
+	                if ($multiForm.find('input.error:visible').length) {
 	                    return false;
 	                }
 	            }

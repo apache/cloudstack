@@ -811,6 +811,17 @@
                         'details[0].memory' : args.$wizard.find('input[name=compute-memory]').val()
                     });
                 }
+            } else if (args.$wizard.find('input[name=slider-compute-cpu-cores]').parent().parent().css('display') != 'none') {
+                if (args.$wizard.find('input[name=slider-compute-cpu-cores]').val().length > 0)  {
+                    $.extend(deployVmData, {
+                        'details[0].cpuNumber' : args.$wizard.find('input[name=slider-compute-cpu-cores]').val()
+                    });
+                }
+                if (args.$wizard.find('input[name=slider-compute-memory]').val().length > 0)  {
+                    $.extend(deployVmData, {
+                        'details[0].memory' : args.$wizard.find('input[name=slider-compute-memory]').val()
+                    });
+                }
             }
 
             if (args.$wizard.find('input[name=disk-min-iops]').parent().parent().css('display') != 'none') {
@@ -1094,8 +1105,9 @@
 
             var userdata = args.data.userdata;
             if (userdata != null && userdata.length > 0) {
+
                 $.extend(deployVmData, {
-                    userdata : encodeURIComponent(btoa(userdata))
+                    userdata : encodeURIComponent(btoa(cloudStack.sanitizeReverse(userdata)))
                 });
             }
 

@@ -347,6 +347,10 @@ var addGuestNetworkDialog = {
                     label: 'label.vlan.id',
                     docID: 'helpGuestNetworkZoneVLANID'
                 },
+                bypassVlanOverlapCheck: {
+                    label: 'label.bypass.vlan.overlap.check',
+                    isBoolean: true
+                },
                 isolatedpvlanId: {
                     label: 'label.secondary.isolated.vlan.id'
                 },
@@ -672,7 +676,7 @@ var addGuestNetworkDialog = {
                     label: 'label.ipv6.gateway',
                     docID: 'helpGuestNetworkZoneGateway',
                     validation: {
-                        ipv6: true
+                    	ipv6CustomJqueryValidator: true
                     }
                 },
                 ip6cidr: {
@@ -685,14 +689,14 @@ var addGuestNetworkDialog = {
                     label: 'label.ipv6.start.ip',
                     docID: 'helpGuestNetworkZoneStartIP',
                     validation: {
-                        ipv6: true
+                    	ipv6CustomJqueryValidator: true
                     }
                 },
                 endipv6: {
                     label: 'label.ipv6.end.ip',
                     docID: 'helpGuestNetworkZoneEndIP',
                     validation: {
-                        ipv6: true
+                    	ipv6CustomJqueryValidator: true
                     }
                },
                 //IPv6 (end)
@@ -739,6 +743,9 @@ var addGuestNetworkDialog = {
             if ($form.find('.form-item[rel=vlanId]').css("display") != "none"){
                 cloudStack.addVlanToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, args.data.vlanId)
             }
+            if ($form.find('.form-item[rel=bypassVlanOverlapCheck]').css("display") != "none"){
+                array1.push("&bypassVlanOverlapCheck=" + encodeURIComponent((args.data.bypassVlanOverlapCheck == "on")));
+            }
             if (($form.find('.form-item[rel=isolatedpvlanId]').css("display") != "none") && (args.data.isolatedpvlanId != null && args.data.isolatedpvlanId.length > 0)){
                 array1.push("&isolatedpvlan=" + encodeURIComponent(args.data.isolatedpvlanId));
             }
@@ -754,7 +761,7 @@ var addGuestNetworkDialog = {
                 } else { //domain-specific
                     array1.push("&acltype=domain");
 
-                    if ($form.find('.form-item[rel=subdomainaccess]:visible input:checked').size())
+                    if ($form.find('.form-item[rel=subdomainaccess]:visible input:checked').length)
                         array1.push("&subdomainaccess=true");
                     else
                         array1.push("&subdomainaccess=false");
@@ -824,13 +831,6 @@ var addL2GuestNetwork = {
             }
         },
 
-        preFilter: function(args) {
-            if (isAdmin())
-                return true;
-            else
-                return false;
-        },
-
         createForm: {
             title: 'label.add.l2.guest.network',
             fields: {
@@ -860,7 +860,7 @@ var addL2GuestNetwork = {
                             url: createURL('listZones'),
                             success: function(json) {
                                 var zones = $.grep(json.listzonesresponse.zone, function(zone) {
-                                    return (zone.networktype == 'Advanced' && zone.securitygroupsenabled != true); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
+                                    return (zone.networktype == 'Advanced'); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
                                 });
 
                                 args.response.success({
@@ -929,6 +929,7 @@ var addL2GuestNetwork = {
                                 var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
                                 args.$select.change(function() {
                                     var $vlan = args.$select.closest('form').find('[rel=vlan]');
+                                    var $bypassVlanOverlapCheck = args.$select.closest('form').find('[rel=bypassVlanOverlapCheck]');
                                     var networkOffering = $.grep(
                                         networkOfferingObjs, function(netoffer) {
                                             return netoffer.id == args.$select.val();
@@ -937,8 +938,10 @@ var addL2GuestNetwork = {
 
                                     if (networkOffering.specifyvlan) {
                                         $vlan.css('display', 'inline-block');
+                                        $bypassVlanOverlapCheck.css('display', 'inline-block');
                                     } else {
                                         $vlan.hide();
+                                        $bypassVlanOverlapCheck.hide();
                                     }
                                 });
 
@@ -962,6 +965,11 @@ var addL2GuestNetwork = {
                     },
                     isHidden: true
                 },
+                bypassVlanOverlapCheck: {
+                    label: 'label.bypass.vlan.overlap.check',
+                    isBoolean: true,
+                    isHidden: true
+                  },
 
                 domain: {
                     label: 'label.domain',
@@ -1036,7 +1044,8 @@ var addL2GuestNetwork = {
 
             if (args.$form.find('.form-item[rel=vlan]').css('display') != 'none') {
                 $.extend(dataObj, {
-                    vlan: args.data.vlan
+                    vlan: args.data.vlan,
+                    bypassVlanOverlapCheck: (args.data.bypassVlanOverlapCheck == "on")
                 });
             }
 
@@ -2566,7 +2575,7 @@ $.validator.addMethod("ipv6cidr", function(value, element) {
         return false;
     }
 
-    if (!$.validator.methods.ipv6.call(this, parts[0], element))
+    if (!$.validator.methods.ipv6CustomJqueryValidator.call(this, parts[0], element))
         return false;
 
     if (parts[1] != Number(parts[1]).toString()) //making sure that "", " ", "00", "0 ","2  ", etc. will not pass
@@ -2599,6 +2608,19 @@ $.validator.addMethod("ipv4cidr", function(value, element) {
     return true;
 }, "The specified IPv4 CIDR is invalid.");
 
+$.validator.addMethod("ipv46cidrs", function(value, element) {
+    var result = true;
+    if (value) {
+        var validatorThis = this;
+        value.split(',').forEach(function(item){
+            if (result && !$.validator.methods.ipv46cidr.call(validatorThis, item.trim(), element)) {
+                result = false;
+            }
+        })
+    }
+    return result;
+}, "The specified IPv4/IPv6 CIDR input is invalid.");
+
 $.validator.addMethod("ipv46cidr", function(value, element) {
     if (this.optional(element) && value.length == 0)
         return true;
@@ -2608,6 +2630,23 @@ $.validator.addMethod("ipv46cidr", function(value, element) {
 
     return false;
 }, "The specified IPv4/IPv6 CIDR is invalid.");
+
+jQuery.validator.addMethod("ipv4AndIpv6AddressValidator", function(value, element) {
+    if (this.optional(element) && value.length == 0) {
+        return true;
+	}
+    if (jQuery.validator.methods.ipv4.call(this, value, element) || jQuery.validator.methods.ipv6CustomJqueryValidator.call(this, value, element)) {
+        return true;
+    }
+    return false;
+}, "The specified IPv4/IPv6 address is invalid.");
+
+jQuery.validator.addMethod("ipv6CustomJqueryValidator", function(value, element) {
+    if (value == '::'){
+    	return true;
+    }
+    return jQuery.validator.methods.ipv6.call(this, value, element);
+}, "The specified IPv6 address is invalid.");
 
 
 $.validator.addMethod("allzonesonly", function(value, element){

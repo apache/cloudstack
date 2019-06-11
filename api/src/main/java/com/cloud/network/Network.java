@@ -21,6 +21,9 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
@@ -95,6 +98,12 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
             return success;
         }
 
+        @Override public String toString() {
+            return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+                    .append("name", name)
+                    .toString();
+        }
+
         public static Service getService(String serviceName) {
             for (Service service : supportedServices) {
                 if (service.getName().equalsIgnoreCase(serviceName)) {
@@ -135,8 +144,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         // add new Ovs provider
         public static final Provider Ovs = new Provider("Ovs", false);
         public static final Provider Opendaylight = new Provider("Opendaylight", false);
-        // add Nuage Vsp Providers
-        public static final Provider NuageVsp = new Provider("NuageVsp", false);
         public static final Provider BrocadeVcs = new Provider("BrocadeVcs", false);
         // add GloboDns provider
         public static final Provider GloboDns = new Provider("GloboDns", true);
@@ -185,6 +192,12 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
                 }
             }
             return null;
+        }
+
+        @Override public String toString() {
+            return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+                    .append("name", name)
+                    .toString();
         }
     }
 
@@ -240,6 +253,12 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
                 }
             }
             return null;
+        }
+
+        @Override public String toString() {
+            return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+                    .append("name", name)
+                    .toString();
         }
     }
 

@@ -34,6 +34,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.vpc.Vpc;
@@ -155,15 +156,6 @@ public interface NetworkService {
 
     List<? extends Network> getIsolatedNetworksWithSourceNATOwnedByAccountInZone(long zoneId, Account owner);
 
-    /**
-     * @param networkId
-     * @param entityId
-     * @return
-     * @throws ConcurrentOperationException
-     * @throws ResourceUnavailableException
-     * @throws ResourceAllocationException
-     * @throws InsufficientAddressCapacityException
-     */
     IpAddress associateIPToNetwork(long ipId, long networkId) throws InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException,
         ConcurrentOperationException;
 
@@ -189,12 +181,16 @@ public interface NetworkService {
         String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId) throws ResourceAllocationException, ConcurrentOperationException,
         InsufficientCapacityException;
 
-    /* Requests an IP address for the guest nic */
-    NicSecondaryIp allocateSecondaryGuestIP(long nicId, String ipaddress) throws InsufficientAddressCapacityException;
+    /**
+     * Requests an IP address for the guest NIC
+     */
+    NicSecondaryIp allocateSecondaryGuestIP(long nicId, IpAddresses requestedIpPair) throws InsufficientAddressCapacityException;
 
     boolean releaseSecondaryIpFromNic(long ipAddressId);
 
-    /* lists the nic informaton */
+    /**
+     * lists the NIC information
+     */
     List<? extends Nic> listNics(ListNicsCmd listNicsCmd);
 
     Map<Network.Capability, String> getNetworkOfferingServiceCapabilities(NetworkOffering offering, Service service);

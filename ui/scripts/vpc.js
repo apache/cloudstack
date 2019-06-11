@@ -90,7 +90,7 @@
                             url: createURL('listNics'),
                             data: {
                                 virtualmachineid: instance.id,
-                                nicId: instance.nic[0].id
+                                networkId: network.id
                             },
                             success: function(json) {
                                 var nic = json.listnicsresponse.nic[0];
@@ -1430,7 +1430,7 @@
                                                     args.response.success({
                                                         data: items
                                                     });
-                                                    if(jQuery('#details-tab-aclRules').siblings('div.toolbar').children('div.add').size() === 0){
+                                                    if(jQuery('#details-tab-aclRules').siblings('div.toolbar').children('div.add').length === 0){
                                                         var $addAclRuleDivButton = jQuery('<div>').addClass('button add');
                                                         var $spanAddAclRuleButtonMessage = jQuery('<span>').html(_l('label.add.ACL'));
                                                         
@@ -1474,7 +1474,7 @@
                                                         });
                                                         jQuery('#details-tab-aclRules').siblings('div.toolbar').append($addAclRuleDivButton);
                                                     }
-                                                    if(jQuery('#details-tab-aclRules').siblings('div.toolbar').children('div.export').size() === 0){
+                                                    if(jQuery('#details-tab-aclRules').siblings('div.toolbar').children('div.export').length === 0){
                                                         var $exportAclsDivButton = jQuery('<div>').addClass('button export');
                                                         var $linkExportAclRulesButtonMessage = jQuery('<a>').html(_l('label.acl.export'));
                                                         
@@ -3339,7 +3339,7 @@
                                     }
                                 });
                                 if (zoneObj.networktype == "Basic") {
-                                    args.$form.find('.form-item[rel=cleanup]').find('input').removeAttr('checked'); //unchecked
+                                    args.$form.find('.form-item[rel=cleanup]').find('input').prop('checked', false); //unchecked
                                     args.$form.find('.form-item[rel=cleanup]').hide(); //hidden
                                 } else {
                                     args.$form.find('.form-item[rel=cleanup]').find('input').attr('checked', 'checked'); //checked

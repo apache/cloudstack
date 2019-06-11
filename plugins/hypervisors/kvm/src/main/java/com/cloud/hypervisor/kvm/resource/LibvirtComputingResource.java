@@ -19,13 +19,12 @@ package com.cloud.hypervisor.kvm.resource;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
 import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -47,16 +46,19 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.hypervisor.kvm.dpdk.DPDKHelper;
 import com.cloud.resource.RequestWrapper;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
+import org.apache.cloudstack.utils.linux.KVMHostInfo;
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
@@ -70,6 +72,7 @@ import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
+import org.libvirt.Network;
 import org.libvirt.NodeInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -198,7 +201,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private String _modifyVlanPath;
     private String _versionstringpath;
-    private String _patchViaSocketPath;
+    private String _patchScriptPath;
     private String _createvmPath;
     private String _manageSnapshotPath;
     private String _resizeVolumePath;
@@ -275,7 +278,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _rngPath = "/dev/random";
     protected int _rngRatePeriod = 1000;
     protected int _rngRateBytes = 2048;
-    private File _qemuSocketsPath;
+    protected File _qemuSocketsPath;
     private final String _qemuGuestAgentSocketName = "org.qemu.guest_agent.0";
     protected WatchDogAction _watchDogAction = WatchDogAction.NONE;
     protected WatchDogModel _watchDogModel = WatchDogModel.I6300ESB;
@@ -307,8 +310,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected int _cmdsTimeout;
     protected int _stopTimeout;
     protected CPUStat _cpuStat = new CPUStat();
-    protected MemStat _memStat = new MemStat();
-
+    protected MemStat _memStat = new MemStat(_dom0MinMem, _dom0OvercommitMem);
     private final LibvirtUtilitiesHelper libvirtUtilitiesHelper = new LibvirtUtilitiesHelper();
 
     @Override
@@ -520,6 +522,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected StorageSubsystemCommandHandler storageHandler;
 
+    protected boolean dpdkSupport = false;
+    protected String dpdkOvsPath;
+
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
         final String[] tokens = startIp.split("[.]");
         assert tokens.length == 4;
@@ -636,6 +641,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             _bridgeType = BridgeType.valueOf(bridgeType.toUpperCase());
         }
 
+        String dpdk = (String) params.get("openvswitch.dpdk.enabled");
+        if (_bridgeType == BridgeType.OPENVSWITCH && Boolean.parseBoolean(dpdk)) {
+            dpdkSupport = true;
+            dpdkOvsPath = (String) params.get("openvswitch.dpdk.ovs.path");
+            if (dpdkOvsPath != null && !dpdkOvsPath.endsWith("/")) {
+                dpdkOvsPath += "/";
+            }
+        }
+
         params.put("domr.scripts.dir", domrScriptsDir);
 
         _virtRouterResource = new VirtualRoutingResource(this);
@@ -677,9 +691,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find versions.sh");
         }
 
-        _patchViaSocketPath = Script.findScript(kvmScriptsDir + "/patch/", "patchviasocket.py");
-        if (_patchViaSocketPath == null) {
-            throw new ConfigurationException("Unable to find patchviasocket.py");
+        _patchScriptPath = Script.findScript(kvmScriptsDir, "patch.sh");
+        if (_patchScriptPath == null) {
+            throw new ConfigurationException("Unable to find patch.sh");
         }
 
         _heartBeatPath = Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
@@ -852,7 +866,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         value = (String)params.get("host.reserved.mem.mb");
         // Reserve 1GB unless admin overrides
-        _dom0MinMem = NumbersUtil.parseInt(value, 1024) * 1024 * 1024L;
+        _dom0MinMem = NumbersUtil.parseInt(value, 1024) * 1024* 1024L;
 
         value = (String)params.get("host.overcommit.mem.mb");
         // Support overcommit memory for host if host uses ZSWAP, KSM and other memory
@@ -907,6 +921,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         } catch (final LibvirtException e) {
             throw new CloudRuntimeException(e.getMessage());
+        }
+
+        // destroy default network, see https://libvirt.org/sources/java/javadoc/org/libvirt/Network.html
+        try {
+            Network network = conn.networkLookupByName("default");
+            s_logger.debug("Found libvirt default network, destroying it and setting autostart to false");
+            if (network.isActive() == 1) {
+                network.destroy();
+            }
+            if (network.getAutostart()) {
+                network.setAutostart(false);
+            }
+        } catch (final LibvirtException e) {
+            s_logger.warn("Ignoring libvirt error.", e);
         }
 
         if (HypervisorType.KVM == _hypervisorType) {
@@ -997,21 +1025,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         */
 
         if (_pifs.get("private") == null) {
-            s_logger.debug("Failed to get private nic name");
+            s_logger.error("Failed to get private nic name");
             throw new ConfigurationException("Failed to get private nic name");
         }
 
         if (_pifs.get("public") == null) {
-            s_logger.debug("Failed to get public nic name");
+            s_logger.error("Failed to get public nic name");
             throw new ConfigurationException("Failed to get public nic name");
         }
         s_logger.debug("Found pif: " + _pifs.get("private") + " on " + _privBridgeName + ", pif: " + _pifs.get("public") + " on " + _publicBridgeName);
 
         _canBridgeFirewall = canBridgeFirewall(_pifs.get("public"));
 
-        _localGateway = Script.runSimpleBashScript("ip route |grep default|awk '{print $3}'");
+        _localGateway = Script.runSimpleBashScript("ip route show default 0.0.0.0/0|head -1|awk '{print $3}'");
         if (_localGateway == null) {
-            s_logger.debug("Failed to found the local gateway");
+            s_logger.warn("No default IPv4 gateway found");
         }
 
         _mountPoint = (String)params.get("mount.path");
@@ -1290,7 +1318,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return "";
     }
 
-    String [] _ifNamePatterns = {
+    static String [] ifNamePatterns = {
             "^eth",
             "^bond",
             "^vlan",
@@ -1301,15 +1329,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             "^enp",
             "^team",
             "^enx",
+            "^dummy",
+            "^lo",
             "^p\\d+p\\d+"
     };
+
     /**
      * @param fname
      * @return
      */
-    boolean isInterface(final String fname) {
+    protected static boolean isInterface(final String fname) {
         StringBuffer commonPattern = new StringBuffer();
-        for (final String ifNamePattern : _ifNamePatterns) {
+        for (final String ifNamePattern : ifNamePatterns) {
             commonPattern.append("|(").append(ifNamePattern).append(".*)");
         }
         if(fname.matches(commonPattern.toString())) {
@@ -1357,13 +1388,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean passCmdLine(final String vmName, final String cmdLine) throws InternalErrorException {
-        final Script command = new Script(_patchViaSocketPath, 5 * 1000, s_logger);
+        final Script command = new Script(_patchScriptPath, 300 * 1000, s_logger);
         String result;
         command.add("-n", vmName);
-        command.add("-p", cmdLine.replaceAll(" ", "%"));
+        command.add("-c", cmdLine);
         result = command.execute();
         if (result != null) {
-            s_logger.error("passcmd failed:" + result);
+            s_logger.error("Passing cmdline failed:" + result);
             return false;
         }
         return true;
@@ -1484,7 +1515,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public synchronized boolean configureTunnelNetwork(final long networkId,
-            final long hostId, final String nwName) {
+                                                       final long hostId, final String nwName) {
         try {
             final boolean findResult = findOrCreateTunnelNetwork(nwName);
             if (!findResult) {
@@ -1514,7 +1545,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (result != null) {
                     throw new CloudRuntimeException(
                             "Unable to pre-configure OVS bridge " + nwName
-                            + " for network ID:" + networkId);
+                                    + " for network ID:" + networkId);
                 }
             }
         } catch (final Exception e) {
@@ -1633,7 +1664,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         final Domain vm = getDomain(conn, vmName);
-        vm.attachDevice(getVifDriver(nicTO.getType()).plug(nicTO, "Other PV", "").toString());
+        vm.attachDevice(getVifDriver(nicTO.getType()).plug(nicTO, "Other PV", "", null).toString());
     }
 
 
@@ -2016,6 +2047,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
+    protected void enlightenWindowsVm(VirtualMachineTO vmTO, FeaturesDef features) {
+        if (vmTO.getOs().contains("Windows PV")) {
+            // If OS is Windows PV, then enable the features. Features supported on Windows 2008 and later
+            LibvirtVMDef.HyperVEnlightenmentFeatureDef hyv = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
+            hyv.setFeature("relaxed", true);
+            hyv.setFeature("vapic", true);
+            hyv.setFeature("spinlocks", true);
+            hyv.setRetries(8096);
+            features.addHyperVFeature(hyv);
+            s_logger.info("Enabling KVM Enlightment Features to VM domain " + vmTO.getUuid());
+        }
+    }
+
     public LibvirtVMDef createVMFromSpec(final VirtualMachineTO vmTO) {
         final LibvirtVMDef vm = new LibvirtVMDef();
         vm.setDomainName(vmTO.getName());
@@ -2024,6 +2068,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.setDomUUID(uuid);
         vm.setDomDescription(vmTO.getOs());
         vm.setPlatformEmulator(vmTO.getPlatformEmulator());
+
+        Map<String, String> extraConfig = vmTO.getExtraConfig();
+        if (dpdkSupport && (!extraConfig.containsKey(DPDKHelper.DPDK_NUMA) || !extraConfig.containsKey(DPDKHelper.DPDK_HUGE_PAGES))) {
+            s_logger.info("DPDK is enabled but it needs extra configurations for CPU NUMA and Huge Pages for VM deployment");
+        }
 
         final GuestDef guest = new GuestDef();
 
@@ -2058,21 +2107,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         grd.setVcpuNum(vcpus);
         vm.addComp(grd);
 
-        final CpuModeDef cmd = new CpuModeDef();
-        cmd.setMode(_guestCpuMode);
-        cmd.setModel(_guestCpuModel);
-        if (vmTO.getType() == VirtualMachine.Type.User) {
-            cmd.setFeatures(_cpuFeatures);
+        if (!extraConfig.containsKey(DPDKHelper.DPDK_NUMA)) {
+            final CpuModeDef cmd = new CpuModeDef();
+            cmd.setMode(_guestCpuMode);
+            cmd.setModel(_guestCpuModel);
+            if (vmTO.getType() == VirtualMachine.Type.User) {
+                cmd.setFeatures(_cpuFeatures);
+            }
+            // multi cores per socket, for larger core configs
+            if (vcpus % 6 == 0) {
+                final int sockets = vcpus / 6;
+                cmd.setTopology(6, sockets);
+            } else if (vcpus % 4 == 0) {
+                final int sockets = vcpus / 4;
+                cmd.setTopology(4, sockets);
+            }
+            vm.addComp(cmd);
         }
-        // multi cores per socket, for larger core configs
-        if (vcpus % 6 == 0) {
-            final int sockets = vcpus / 6;
-            cmd.setTopology(6, sockets);
-        } else if (vcpus % 4 == 0) {
-            final int sockets = vcpus / 4;
-            cmd.setTopology(4, sockets);
-        }
-        vm.addComp(cmd);
 
         if (_hypervisorLibvirtVersion >= 9000) {
             final CpuTuneDef ctd = new CpuTuneDef();
@@ -2101,14 +2152,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         features.addFeatures("pae");
         features.addFeatures("apic");
         features.addFeatures("acpi");
-        //for rhel 6.5 and above, hyperv enlightment feature is added
-        /*
-         * if (vmTO.getOs().contains("Windows Server 2008") && hostOsVersion != null && ((hostOsVersion.first() == 6 && hostOsVersion.second() >= 5) || (hostOsVersion.first() >= 7))) {
-         *    LibvirtVMDef.HyperVEnlightenmentFeatureDef hyv = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
-         *    hyv.setRelaxed(true);
-         *    features.addHyperVFeature(hyv);
-         * }
-         */
+
+        //KVM hyperv enlightenment features based on OS Type
+        enlightenWindowsVm(vmTO, features);
+
         vm.addComp(features);
 
         final TermPolicy term = new TermPolicy();
@@ -2120,7 +2167,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final ClockDef clock = new ClockDef();
         if (vmTO.getOs().startsWith("Windows")) {
             clock.setClockOffset(ClockDef.ClockOffset.LOCALTIME);
-            clock.setTimer("rtc", "catchup", null);
+            clock.setTimer("hypervclock", null, null);
         } else if (vmTO.getType() != VirtualMachine.Type.User || isGuestPVEnabled(vmTO.getOs())) {
             if (_hypervisorLibvirtVersion >= 9 * 1000 + 10) {
                 clock.setTimer("kvmclock", null, null, _noKvmClock);
@@ -2136,20 +2183,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final SerialDef serial = new SerialDef("pty", null, (short)0);
         devices.addDevice(serial);
 
-        /* Add a VirtIO channel for SystemVMs for communication and provisioning */
-        if (vmTO.getType() != VirtualMachine.Type.User) {
-            devices.addDevice(new ChannelDef(vmTO.getName() + ".vport", ChannelDef.ChannelType.UNIX,
-                              new File(_qemuSocketsPath + "/" + vmTO.getName() + ".agent")));
-        }
-
         if (_rngEnable) {
             final RngDef rngDevice = new RngDef(_rngPath, _rngBackendModel, _rngRateBytes, _rngRatePeriod);
             devices.addDevice(rngDevice);
         }
 
         /* Add a VirtIO channel for the Qemu Guest Agent tools */
-        devices.addDevice(new ChannelDef(_qemuGuestAgentSocketName, ChannelDef.ChannelType.UNIX,
-                          new File(_qemuSocketsPath + "/" + vmTO.getName() + "." + _qemuGuestAgentSocketName)));
+        File virtIoChannel = Paths.get(_qemuSocketsPath.getPath(), vmTO.getName() + "." + _qemuGuestAgentSocketName).toFile();
+        devices.addDevice(new ChannelDef(_qemuGuestAgentSocketName, ChannelDef.ChannelType.UNIX, virtIoChannel));
 
         devices.addDevice(new WatchDogDef(_watchDogAction, _watchDogModel));
 
@@ -2176,13 +2217,33 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         // If we're using virtio scsi, then we need to add a virtual scsi controller
         if (busT == DiskDef.DiskBus.SCSI) {
-            final SCSIDef sd = new SCSIDef((short)0, 0, 0, 9, 0);
+            final SCSIDef sd = new SCSIDef((short)0, 0, 0, 9, 0, vcpus);
             devices.addDevice(sd);
         }
 
         vm.addComp(devices);
 
+        addExtraConfigComponent(extraConfig, vm);
+
         return vm;
+    }
+
+    /**
+     * Add extra configurations (if any) as a String component to the domain XML
+     */
+    protected void addExtraConfigComponent(Map<String, String> extraConfig, LibvirtVMDef vm) {
+        if (MapUtils.isNotEmpty(extraConfig)) {
+            StringBuilder extraConfigBuilder = new StringBuilder();
+            for (String key : extraConfig.keySet()) {
+                if (!key.startsWith(DPDKHelper.DPDK_INTERFACE_PREFIX) && !key.equals(DPDKHelper.DPDK_VHOST_USER_MODE)) {
+                    extraConfigBuilder.append(extraConfig.get(key));
+                }
+            }
+            String comp = extraConfigBuilder.toString();
+            if (org.apache.commons.lang.StringUtils.isNotBlank(comp)) {
+                vm.addComp(comp);
+            }
+        }
     }
 
     public void createVifs(final VirtualMachineTO vmSpec, final LibvirtVMDef vm) throws InternalErrorException, LibvirtException {
@@ -2192,10 +2253,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (params != null && params.get("nicAdapter") != null && !params.get("nicAdapter").isEmpty()) {
             nicAdapter = params.get("nicAdapter");
         }
+        Map<String, String> extraConfig = vmSpec.getExtraConfig();
         for (int i = 0; i < nics.length; i++) {
             for (final NicTO nic : vmSpec.getNics()) {
                 if (nic.getDeviceId() == i) {
-                    createVif(vm, nic, nicAdapter);
+                    createVif(vm, nic, nicAdapter, extraConfig);
                 }
             }
         }
@@ -2205,7 +2267,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final DataTO data = volume.getData();
         final DataStoreTO store = data.getDataStore();
 
-        if (volume.getType() == Volume.Type.ISO && data.getPath() != null && (store instanceof NfsTO || store instanceof PrimaryDataStoreTO)) {
+        if (volume.getType() == Volume.Type.ISO && data.getPath() != null && (store instanceof NfsTO ||
+                store instanceof PrimaryDataStoreTO && data instanceof TemplateObjectTO && !((TemplateObjectTO) data).isDirectDownload())) {
             final String isoPath = store.getUrl().split("\\?")[0] + File.separator + data.getPath();
             final int index = isoPath.lastIndexOf("/");
             final String path = isoPath.substring(0, index);
@@ -2327,18 +2390,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (data instanceof VolumeObjectTO) {
                 final VolumeObjectTO volumeObjectTO = (VolumeObjectTO)data;
                 disk.setSerial(diskUuidToSerial(volumeObjectTO.getUuid()));
-                if (volumeObjectTO.getBytesReadRate() != null && volumeObjectTO.getBytesReadRate() > 0) {
-                    disk.setBytesReadRate(volumeObjectTO.getBytesReadRate());
-                }
-                if (volumeObjectTO.getBytesWriteRate() != null && volumeObjectTO.getBytesWriteRate() > 0) {
-                    disk.setBytesWriteRate(volumeObjectTO.getBytesWriteRate());
-                }
-                if (volumeObjectTO.getIopsReadRate() != null && volumeObjectTO.getIopsReadRate() > 0) {
-                    disk.setIopsReadRate(volumeObjectTO.getIopsReadRate());
-                }
-                if (volumeObjectTO.getIopsWriteRate() != null && volumeObjectTO.getIopsWriteRate() > 0) {
-                    disk.setIopsWriteRate(volumeObjectTO.getIopsWriteRate());
-                }
+                setBurstProperties(volumeObjectTO, disk);
+
                 if (volumeObjectTO.getCacheMode() != null) {
                     disk.setCacheMode(DiskDef.DiskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString().toUpperCase()));
                 }
@@ -2389,22 +2442,51 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     }
 
-    private void createVif(final LibvirtVMDef vm, final NicTO nic, final String nicAdapter) throws InternalErrorException, LibvirtException {
-
-        if (nic.getType().equals(TrafficType.Guest) && nic.getBroadcastType().equals(BroadcastDomainType.Vsp)) {
-            String vrIp = nic.getBroadcastUri().getPath().substring(1);
-            vm.getMetaData().getMetadataNode(LibvirtVMDef.NuageExtensionDef.class).addNuageExtension(nic.getMac(), vrIp);
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("NIC with MAC " + nic.getMac() + " and BroadcastDomainType " + nic.getBroadcastType() + " in network(" + nic.getGateway() + "/" + nic.getNetmask()
-                        + ") is " + nic.getType() + " traffic type. So, vsp-vr-ip " + vrIp + " is set in the metadata");
-            }
+    private void setBurstProperties(final VolumeObjectTO volumeObjectTO, final DiskDef disk ) {
+        if (volumeObjectTO.getBytesReadRate() != null && volumeObjectTO.getBytesReadRate() > 0) {
+            disk.setBytesReadRate(volumeObjectTO.getBytesReadRate());
         }
+        if (volumeObjectTO.getBytesReadRateMax() != null && volumeObjectTO.getBytesReadRateMax() > 0) {
+            disk.setBytesReadRateMax(volumeObjectTO.getBytesReadRateMax());
+        }
+        if (volumeObjectTO.getBytesReadRateMaxLength() != null && volumeObjectTO.getBytesReadRateMaxLength() > 0) {
+            disk.setBytesReadRateMaxLength(volumeObjectTO.getBytesReadRateMaxLength());
+        }
+        if (volumeObjectTO.getBytesWriteRate() != null && volumeObjectTO.getBytesWriteRate() > 0) {
+            disk.setBytesWriteRate(volumeObjectTO.getBytesWriteRate());
+        }
+        if (volumeObjectTO.getBytesWriteRateMax() != null && volumeObjectTO.getBytesWriteRateMax() > 0) {
+            disk.setBytesWriteRateMax(volumeObjectTO.getBytesWriteRateMax());
+        }
+        if (volumeObjectTO.getBytesWriteRateMaxLength() != null && volumeObjectTO.getBytesWriteRateMaxLength() > 0) {
+            disk.setBytesWriteRateMaxLength(volumeObjectTO.getBytesWriteRateMaxLength());
+        }
+        if (volumeObjectTO.getIopsReadRate() != null && volumeObjectTO.getIopsReadRate() > 0) {
+            disk.setIopsReadRate(volumeObjectTO.getIopsReadRate());
+        }
+        if (volumeObjectTO.getIopsReadRateMax() != null && volumeObjectTO.getIopsReadRateMax() > 0) {
+            disk.setIopsReadRateMax(volumeObjectTO.getIopsReadRateMax());
+        }
+        if (volumeObjectTO.getIopsReadRateMaxLength() != null && volumeObjectTO.getIopsReadRateMaxLength() > 0) {
+            disk.setIopsReadRateMaxLength(volumeObjectTO.getIopsReadRateMaxLength());
+        }
+        if (volumeObjectTO.getIopsWriteRate() != null && volumeObjectTO.getIopsWriteRate() > 0) {
+            disk.setIopsWriteRate(volumeObjectTO.getIopsWriteRate());
+        }
+        if (volumeObjectTO.getIopsWriteRateMax() != null && volumeObjectTO.getIopsWriteRateMax() > 0) {
+            disk.setIopsWriteRateMax(volumeObjectTO.getIopsWriteRateMax());
+        }
+        if (volumeObjectTO.getIopsWriteRateMaxLength() != null && volumeObjectTO.getIopsWriteRateMaxLength() > 0) {
+            disk.setIopsWriteRateMaxLength(volumeObjectTO.getIopsWriteRateMaxLength());
+        }
+    }
+
+    private void createVif(final LibvirtVMDef vm, final NicTO nic, final String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
         if (vm.getDevices() == null) {
             s_logger.error("LibvirtVMDef object get devices with null result");
             throw new InternalErrorException("LibvirtVMDef object get devices with null result");
         }
-        vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter));
+        vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter, extraConfig));
     }
 
     public boolean cleanupDisk(Map<String, String> volumeToDisconnect) {
@@ -2432,7 +2514,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, final Integer diskSeq) throws LibvirtException, URISyntaxException,
-    InternalErrorException {
+            InternalErrorException {
         final DiskDef iso = new DiskDef();
         if (isoPath != null && isAttach) {
             final int index = isoPath.lastIndexOf("/");
@@ -2462,8 +2544,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public synchronized String attachOrDetachDisk(final Connect conn,
-            final boolean attach, final String vmName, final KVMPhysicalDisk attachingDisk,
-            final int devId, final Long bytesReadRate, final Long bytesWriteRate, final Long iopsReadRate, final Long iopsWriteRate, final String cacheMode) throws LibvirtException, InternalErrorException {
+                                                  final boolean attach, final String vmName, final KVMPhysicalDisk attachingDisk,
+                                                  final int devId, final Long bytesReadRate, final Long bytesReadRateMax, final Long bytesReadRateMaxLength, final Long bytesWriteRate, final Long bytesWriteRateMax, final Long bytesWriteRateMaxLength, final Long iopsReadRate, final Long iopsReadRateMax, final Long iopsReadRateMaxLength, final Long iopsWriteRate, final Long iopsWriteRateMax, final Long iopsWriteRateMaxLength, final String cacheMode) throws LibvirtException, InternalErrorException {
         List<DiskDef> disks = null;
         Domain dm = null;
         DiskDef diskdef = null;
@@ -2516,14 +2598,35 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (bytesReadRate != null && bytesReadRate > 0) {
                     diskdef.setBytesReadRate(bytesReadRate);
                 }
+                if (bytesReadRateMax != null && bytesReadRateMax > 0) {
+                    diskdef.setBytesReadRateMax(bytesReadRateMax);
+                }
+                if (bytesReadRateMaxLength != null && bytesReadRateMaxLength > 0) {
+                    diskdef.setBytesReadRateMaxLength(bytesReadRateMaxLength);
+                }
                 if (bytesWriteRate != null && bytesWriteRate > 0) {
                     diskdef.setBytesWriteRate(bytesWriteRate);
+                }
+                if (bytesWriteRateMax != null && bytesWriteRateMax > 0) {
+                    diskdef.setBytesWriteRateMax(bytesWriteRateMax);
+                }
+                if (bytesWriteRateMaxLength != null && bytesWriteRateMaxLength > 0) {
+                    diskdef.setBytesWriteRateMaxLength(bytesWriteRateMaxLength);
                 }
                 if (iopsReadRate != null && iopsReadRate > 0) {
                     diskdef.setIopsReadRate(iopsReadRate);
                 }
+                if (iopsReadRateMax != null && iopsReadRateMax > 0) {
+                    diskdef.setIopsReadRateMax(iopsReadRateMax);
+                }
+                if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > 0) {
+                    diskdef.setIopsReadRateMaxLength(iopsReadRateMaxLength);
+                }
                 if (iopsWriteRate != null && iopsWriteRate > 0) {
                     diskdef.setIopsWriteRate(iopsWriteRate);
+                }
+                if (iopsWriteRateMax != null && iopsWriteRateMax > 0) {
+                    diskdef.setIopsWriteRateMax(iopsWriteRateMax);
                 }
 
                 if (cacheMode != null) {
@@ -2601,12 +2704,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     @Override
     public StartupCommand[] initialize() {
 
-        final List<Object> info = getHostInfo();
+        final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem);
+
+        final String capabilities = String.join(",", info.getCapabilities());
 
         final StartupRoutingCommand cmd =
-                new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), _hypervisorType,
+                new StartupRoutingCommand(info.getCpus(), info.getCpuSpeed(), info.getTotalMemory(), info.getReservedMemory(), capabilities, _hypervisorType,
                         RouterPrivateIpStrategy.HostLocal);
-        cmd.setCpuSockets((Integer)info.get(5));
+        cmd.setCpuSockets(info.getCpuSockets());
         fillNetworkInformation(cmd);
         _privateIp = cmd.getPrivateIpAddress();
         cmd.getHostDetails().putAll(getVersionStrings());
@@ -2824,71 +2929,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return vmStates;
-    }
-
-    protected List<Object> getHostInfo() {
-        final ArrayList<Object> info = new ArrayList<Object>();
-        long speed = 0;
-        long cpus = 0;
-        long ram = 0;
-        int cpuSockets = 0;
-        String cap = null;
-        try {
-            final Connect conn = LibvirtConnection.getConnection();
-            final NodeInfo hosts = conn.nodeInfo();
-            speed = getCpuSpeed(hosts);
-
-            /*
-            * Some CPUs report a single socket and multiple NUMA cells.
-            * We need to multiply them to get the correct socket count.
-            */
-            cpuSockets = hosts.sockets;
-            if (hosts.nodes > 0) {
-                cpuSockets = hosts.sockets * hosts.nodes;
-            }
-            cpus = hosts.cpus;
-            ram = hosts.memory * 1024L;
-            final LibvirtCapXMLParser parser = new LibvirtCapXMLParser();
-            parser.parseCapabilitiesXML(conn.getCapabilities());
-            final ArrayList<String> oss = parser.getGuestOsType();
-            for (final String s : oss) {
-                /*
-                 * Even host supports guest os type more than hvm, we only
-                 * report hvm to management server
-                 */
-                if (s.equalsIgnoreCase("hvm")) {
-                    cap = "hvm";
-                }
-            }
-        } catch (final LibvirtException e) {
-            s_logger.trace("Ignoring libvirt error.", e);
-        }
-
-        if (isSnapshotSupported()) {
-            cap = cap + ",snapshot";
-        }
-
-        info.add((int)cpus);
-        info.add(speed);
-        // Report system's RAM as actual RAM minus host OS reserved RAM
-        ram = ram - _dom0MinMem + _dom0OvercommitMem;
-        info.add(ram);
-        info.add(cap);
-        info.add(_dom0MinMem);
-        info.add(cpuSockets);
-        s_logger.debug("cpus=" + cpus + ", speed=" + speed + ", ram=" + ram + ", _dom0MinMem=" + _dom0MinMem + ", _dom0OvercommitMem=" + _dom0OvercommitMem + ", cpu sockets=" + cpuSockets);
-
-        return info;
-    }
-
-    protected static long getCpuSpeed(final NodeInfo nodeInfo) {
-        try (final Reader reader = new FileReader(
-                "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq")) {
-            return Long.parseLong(IOUtils.toString(reader).trim()) / 1000;
-        } catch (IOException | NumberFormatException e) {
-            s_logger.warn("Could not read cpuinfo_max_freq");
-            return nodeInfo.mhz;
-        }
     }
 
     public String rebootVM(final Connect conn, final String vmName) {
@@ -3414,12 +3454,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-    * This method retrieves the memory statistics from the domain given as parameters.
-    * If no memory statistic is found, it will return {@link NumberUtils#LONG_ZERO} as the value of free memory in the domain.
-    * If it can retrieve the domain memory statistics, it will return the free memory statistic; that means, it returns the value at the first position of the array returned by {@link Domain#memoryStats(int)}.
-    *
-    * @return the amount of free memory in KBs
-    */
+     * This method retrieves the memory statistics from the domain given as parameters.
+     * If no memory statistic is found, it will return {@link NumberUtils#LONG_ZERO} as the value of free memory in the domain.
+     * If it can retrieve the domain memory statistics, it will return the free memory statistic; that means, it returns the value at the first position of the array returned by {@link Domain#memoryStats(int)}.
+     *
+     * @return the amount of free memory in KBs
+     */
     protected long getMemoryFreeInKBs(Domain dm) throws LibvirtException {
         MemoryStatistic[] mems = dm.memoryStats(NUMMEMSTATS);
         if (ArrayUtils.isEmpty(mems)) {
@@ -3431,7 +3471,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private boolean canBridgeFirewall(final String prvNic) {
         final Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
         cmd.add("can_bridge_firewall");
-        cmd.add(prvNic);
+        cmd.add("--privnic", prvNic);
         final String result = cmd.execute();
         if (result != null) {
             return false;
@@ -3549,7 +3589,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean addNetworkRules(final String vmName, final String vmId, final String guestIP, final String guestIP6, final String sig, final String seq, final String mac, final String rules, final String vif, final String brname,
-            final String secIps) {
+                                   final String secIps) {
         if (!_canBridgeFirewall) {
             return false;
         }
@@ -3797,7 +3837,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean isHostSecured() {
         // Test for host certificates
         final File confFile = PropertiesUtil.findConfigFile(KeyStoreUtils.AGENT_PROPSFILE);
-        if (confFile == null || !confFile.exists() || !new File(confFile.getParent() + "/" + KeyStoreUtils.CERT_FILENAME).exists()) {
+        if (confFile == null || !confFile.exists() || !Paths.get(confFile.getParent(), KeyStoreUtils.CERT_FILENAME).toFile().exists()) {
             return false;
         }
 

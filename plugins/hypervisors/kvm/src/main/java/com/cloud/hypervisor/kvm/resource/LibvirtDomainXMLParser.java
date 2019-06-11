@@ -133,20 +133,60 @@ public class LibvirtDomainXMLParser {
                         Long bytesReadRate = Long.parseLong(bytesReadRateStr);
                         def.setBytesReadRate(bytesReadRate);
                     }
+                    String bytesReadRateMaxStr = getTagValue("read_bytes_sec_max", (Element)iotune.item(0));
+                    if (bytesReadRateMaxStr != null) {
+                        Long bytesReadRateMax = Long.parseLong(bytesReadRateMaxStr);
+                        def.setBytesReadRateMax(bytesReadRateMax);
+                    }
+                    String bytesReadRateMaxLengthStr = getTagValue("read_bytes_sec_max_length", (Element)iotune.item(0));
+                    if (bytesReadRateMaxLengthStr != null) {
+                        Long bytesReadRateMaxLength = Long.parseLong(bytesReadRateMaxLengthStr);
+                        def.setBytesReadRateMaxLength(bytesReadRateMaxLength);
+                    }
                     String bytesWriteRateStr = getTagValue("write_bytes_sec", (Element)iotune.item(0));
                     if (bytesWriteRateStr != null) {
                         Long bytesWriteRate = Long.parseLong(bytesWriteRateStr);
                         def.setBytesWriteRate(bytesWriteRate);
+                    }
+                    String bytesWriteRateMaxStr = getTagValue("write_bytes_sec_max", (Element)iotune.item(0));
+                    if (bytesWriteRateMaxStr != null) {
+                        Long bytesWriteRateMax = Long.parseLong(bytesWriteRateMaxStr);
+                        def.setBytesWriteRateMax(bytesWriteRateMax);
+                    }
+                    String bytesWriteRateMaxLengthStr = getTagValue("write_bytes_sec_max_length", (Element)iotune.item(0));
+                    if (bytesWriteRateMaxLengthStr != null) {
+                        Long bytesWriteRateMaxLength = Long.parseLong(bytesWriteRateMaxLengthStr);
+                        def.setBytesWriteRateMaxLength(bytesWriteRateMaxLength);
                     }
                     String iopsReadRateStr = getTagValue("read_iops_sec", (Element)iotune.item(0));
                     if (iopsReadRateStr != null) {
                         Long iopsReadRate = Long.parseLong(iopsReadRateStr);
                         def.setIopsReadRate(iopsReadRate);
                     }
+                    String iopsReadRateMaxStr = getTagValue("read_iops_sec_max", (Element)iotune.item(0));
+                    if (iopsReadRateMaxStr != null) {
+                        Long iopsReadRateMax = Long.parseLong(iopsReadRateMaxStr);
+                        def.setIopsReadRateMax(iopsReadRateMax);
+                    }
+                    String iopsReadRateMaxLengthStr = getTagValue("read_iops_sec_max_length", (Element)iotune.item(0));
+                    if (iopsReadRateMaxLengthStr != null) {
+                        Long iopsReadRateMaxLength = Long.parseLong(iopsReadRateMaxLengthStr);
+                        def.setIopsReadRateMaxLength(iopsReadRateMaxLength);
+                    }
                     String iopsWriteRateStr = getTagValue("write_iops_sec", (Element)iotune.item(0));
                     if (iopsWriteRateStr != null) {
                         Long iopsWriteRate = Long.parseLong(iopsWriteRateStr);
                         def.setIopsWriteRate(iopsWriteRate);
+                    }
+                    String iopsWriteRateMaxStr = getTagValue("write_iops_sec_max", (Element)iotune.item(0));
+                    if (iopsWriteRateMaxStr != null) {
+                        Long iopsWriteRateMax = Long.parseLong(iopsWriteRateMaxStr);
+                        def.setIopsWriteRateMax(iopsWriteRateMax);
+                    }
+                    String iopsWriteRateMaxLengthStr = getTagValue("write_iops_sec_max_length", (Element)iotune.item(0));
+                    if (iopsWriteRateMaxLengthStr != null) {
+                        Long iopsWriteRateMaxLength = Long.parseLong(iopsWriteRateMaxLengthStr);
+                        def.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
                     }
                 }
 
@@ -182,6 +222,11 @@ public class LibvirtDomainXMLParser {
                 } else if (type.equalsIgnoreCase("ethernet")) {
                     String scriptPath = getAttrValue("script", "path", nic);
                     def.defEthernet(dev, mac, NicModel.valueOf(model.toUpperCase()), scriptPath, networkRateKBps);
+                } else if (type.equals("vhostuser")) {
+                    String sourcePort = getAttrValue("source", "path", nic);
+                    String[] sourcePathParts = sourcePort.split("/");
+                    String port = sourcePathParts[sourcePathParts.length - 1];
+                    def.setDpdkSourcePort(port);
                 }
 
                 if (StringUtils.isNotBlank(slot)) {

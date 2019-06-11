@@ -41,7 +41,7 @@ public class PrivateIpAddress implements PrivateIp {
         this.netmask = netmask;
         this.macAddress = macAddress;
         this.networkId = privateIp.getNetworkId();
-        this.sourceNat = privateIp.getSourceNat();
+        this.sourceNat = privateIp.isSourceNat();
     }
 
     @Override

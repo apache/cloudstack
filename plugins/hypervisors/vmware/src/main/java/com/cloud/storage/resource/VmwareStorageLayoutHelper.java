@@ -143,7 +143,7 @@ public class VmwareStorageLayoutHelper {
     }
 
     public static void syncVolumeToRootFolder(DatacenterMO dcMo, DatastoreMO ds, String vmdkName, String vmName) throws Exception {
-        syncVolumeToRootFolder(dcMo, ds, vmdkName, null);
+        syncVolumeToRootFolder(dcMo, ds, vmdkName, vmName, null);
     }
 
     public static void syncVolumeToRootFolder(DatacenterMO dcMo, DatastoreMO ds, String vmdkName, String vmName, String excludeFolders) throws Exception {

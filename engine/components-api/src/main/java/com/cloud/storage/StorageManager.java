@@ -87,18 +87,44 @@ public interface StorageManager extends StorageService {
     ConfigKey<Integer> KvmStorageOnlineMigrationWait = new ConfigKey<>(Integer.class,
             "kvm.storage.online.migration.wait",
             "Storage",
-            "10800",
+            "86400",
             "Timeout in seconds for online (live) storage migration to complete on KVM (migrateVirtualMachineWithVolume)",
             true,
             ConfigKey.Scope.Global,
             null);
+    ConfigKey<Boolean> KvmAutoConvergence = new ConfigKey<>(Boolean.class,
+            "kvm.auto.convergence",
+            "Storage",
+            "false",
+            "Setting this to 'true' allows KVM to use auto convergence to complete VM migration (libvirt version 1.2.3+ and QEMU version 1.6+)",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<Integer> MaxNumberOfManagedClusteredFileSystems = new ConfigKey<>(Integer.class,
+            "max.number.managed.clustered.file.systems",
+            "Storage",
+            "200",
+            "XenServer and VMware only: Maximum number of managed SRs or datastores per compute cluster",
+            true,
+            ConfigKey.Scope.Cluster,
+            null);
+
+    ConfigKey<Integer> PRIMARY_STORAGE_DOWNLOAD_WAIT = new ConfigKey<Integer>("Storage", Integer.class, "primary.storage.download.wait", "10800",
+            "In second, timeout for download template to primary storage", false);
 
     /**
      * Returns a comma separated list of tags for the specified storage pool
      * @param poolId
      * @return comma separated list of tags
      */
-    public String getStoragePoolTags(long poolId);
+    String getStoragePoolTags(long poolId);
+
+    /**
+     * Returns a list of Strings with tags for the specified storage pool
+     * @param poolId
+     * @return comma separated list of tags
+     */
+    List<String> getStoragePoolTagList(long poolId);
 
     Answer sendToPool(long poolId, Command cmd) throws StorageUnavailableException;
 
@@ -177,6 +203,8 @@ public interface StorageManager extends StorageService {
      *  Cloning volumes on the back-end instead of copying down a new template for each new volume helps to alleviate load on the hypervisors.
      */
     boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool, Long clusterId);
+
+    boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSiz);
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 

@@ -19,10 +19,9 @@ package com.cloud.vm.dao;
 import java.util.ArrayList;
 import java.util.List;
 
-
-import com.cloud.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -32,16 +31,18 @@ import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
 public class NicSecondaryIpDaoImpl extends GenericDaoBase<NicSecondaryIpVO, Long> implements NicSecondaryIpDao {
+
     private final SearchBuilder<NicSecondaryIpVO> AllFieldsSearch;
     private final GenericSearchBuilder<NicSecondaryIpVO, String> IpSearch;
     protected GenericSearchBuilder<NicSecondaryIpVO, Long> CountByNicId;
 
-    protected NicSecondaryIpDaoImpl() {
+    public NicSecondaryIpDaoImpl() {
         super();
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("instanceId", AllFieldsSearch.entity().getVmId(), Op.EQ);
         AllFieldsSearch.and("network", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
         AllFieldsSearch.and("address", AllFieldsSearch.entity().getIp4Address(), Op.LIKE);
+        AllFieldsSearch.and("ip6address", AllFieldsSearch.entity().getIp6Address(), Op.LIKE);
         AllFieldsSearch.and("nicId", AllFieldsSearch.entity().getNicId(), Op.EQ);
         AllFieldsSearch.done();
 
@@ -129,6 +130,14 @@ public class NicSecondaryIpDaoImpl extends GenericDaoBase<NicSecondaryIpVO, Long
         SearchCriteria<NicSecondaryIpVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
         sc.setParameters("address", ip4Address);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public NicSecondaryIpVO findByIp6AddressAndNetworkId(String ip6Address, long networkId) {
+        SearchCriteria<NicSecondaryIpVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("ip6address", ip6Address);
         return findOneBy(sc);
     }
 

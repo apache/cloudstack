@@ -197,6 +197,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "if root disk template, then ids of the datas disk templates this template owns")
     private Set<ChildTemplateResponse> childTemplates;
 
+    @SerializedName(ApiConstants.REQUIRES_HVM)
+    @Param(description = "true if template requires HVM enabled, false otherwise")
+    private Boolean requiresHvm;
+
     public TemplateResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
@@ -391,4 +395,11 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
         this.childTemplates = childTemplateIds;
     }
 
+    public Boolean isRequiresHvm() {
+        return requiresHvm;
+    }
+
+    public void setRequiresHvm(Boolean requiresHvm) {
+        this.requiresHvm = requiresHvm;
+    }
 }

@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
 import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
 
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.ResourceInUseException;
@@ -30,9 +31,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public interface VmwareDatacenterService extends PluggableService {
 
-    public VmwareDatacenterVO addVmwareDatacenter(AddVmwareDcCmd cmd) throws IllegalArgumentException, DiscoveryException, ResourceInUseException;
+    VmwareDatacenterVO addVmwareDatacenter(AddVmwareDcCmd cmd) throws IllegalArgumentException, DiscoveryException, ResourceInUseException;
 
-    public boolean removeVmwareDatacenter(RemoveVmwareDcCmd cmd) throws IllegalArgumentException, ResourceInUseException;
+    VmwareDatacenter updateVmwareDatacenter(UpdateVmwareDcCmd updateVmwareDcCmd);
 
-    public List<? extends VmwareDatacenter> listVmwareDatacenters(ListVmwareDcsCmd cmd) throws IllegalArgumentException, CloudRuntimeException;
+    boolean removeVmwareDatacenter(RemoveVmwareDcCmd cmd) throws IllegalArgumentException, ResourceInUseException;
+
+    List<? extends VmwareDatacenter> listVmwareDatacenters(ListVmwareDcsCmd cmd) throws IllegalArgumentException, CloudRuntimeException;
 }

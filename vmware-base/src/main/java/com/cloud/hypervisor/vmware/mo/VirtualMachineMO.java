@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -443,6 +444,23 @@ public class VirtualMachineMO extends BaseMO {
         } else {
             s_logger.error("VMware RelocateVM_Task to change host failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
+        return false;
+    }
+
+    public boolean changeDatastore(ManagedObjectReference morDataStore) throws Exception {
+        VirtualMachineRelocateSpec relocateSpec = new VirtualMachineRelocateSpec();
+        relocateSpec.setDatastore(morDataStore);
+
+        ManagedObjectReference morTask = _context.getService().relocateVMTask(_mor, relocateSpec, null);
+
+        boolean result = _context.getVimClient().waitForTask(morTask);
+        if (result) {
+            _context.waitForTaskProgressDone(morTask);
+            return true;
+        } else {
+            s_logger.error("VMware change datastore relocateVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+        }
+
         return false;
     }
 
@@ -930,6 +948,38 @@ public class VirtualMachineMO extends BaseMO {
         }
 
         return networks;
+    }
+
+    public List<DatastoreMO> getAllDatastores() throws Exception {
+        PropertySpec pSpec = new PropertySpec();
+        pSpec.setType("Datastore");
+        pSpec.getPathSet().add("name");
+
+        TraversalSpec vmDatastoreTraversal = new TraversalSpec();
+        vmDatastoreTraversal.setType("VirtualMachine");
+        vmDatastoreTraversal.setPath("datastore");
+        vmDatastoreTraversal.setName("vmDatastoreTraversal");
+
+        ObjectSpec oSpec = new ObjectSpec();
+        oSpec.setObj(_mor);
+        oSpec.setSkip(Boolean.TRUE);
+        oSpec.getSelectSet().add(vmDatastoreTraversal);
+
+        PropertyFilterSpec pfSpec = new PropertyFilterSpec();
+        pfSpec.getPropSet().add(pSpec);
+        pfSpec.getObjectSet().add(oSpec);
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        pfSpecArr.add(pfSpec);
+
+        List<ObjectContent> ocs = _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
+
+        List<DatastoreMO> datastores = new ArrayList<DatastoreMO>();
+        if (CollectionUtils.isNotEmpty(ocs)) {
+            for (ObjectContent oc : ocs) {
+                datastores.add(new DatastoreMO(_context, oc.getObj()));
+            }
+        }
+        return datastores;
     }
 
     /**
@@ -3248,7 +3298,7 @@ public class VirtualMachineMO extends BaseMO {
         virtualHardwareVersion = getVirtualHardwareVersion();
 
         // Check if guest operating system supports memory hotadd
-        if (guestOsDescriptor.isSupportsMemoryHotAdd()) {
+        if (guestOsDescriptor != null && guestOsDescriptor.isSupportsMemoryHotAdd()) {
             guestOsSupportsMemoryHotAdd = true;
         }
         // Check if virtual machine is using hardware version 7 or later.

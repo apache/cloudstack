@@ -211,7 +211,7 @@ public class CommandSetupHelper {
         cmds.addCommand("users", cmd);
     }
 
-    public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, final Commands cmds) {
+    public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, boolean remove, final Commands cmds) {
         final DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIPv4Address(), vm.getHostName(), nic.getIPv6Address(),
                 _networkModel.getExecuteInSeqNtwkElmtCmd());
 
@@ -229,6 +229,7 @@ public class CommandSetupHelper {
         dhcpCommand.setDefaultDns(ipaddress);
         dhcpCommand.setDuid(NetUtils.getDuidLL(nic.getMacAddress()));
         dhcpCommand.setDefault(nic.isDefaultNic());
+        dhcpCommand.setRemove(remove);
 
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -406,7 +407,7 @@ public class CommandSetupHelper {
                 } else if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
                     final NetworkVO network = _networkDao.findById(guestNetworkId);
                     final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-                    defaultEgressPolicy = offering.getEgressDefaultPolicy();
+                    defaultEgressPolicy = offering.isEgressDefaultPolicy();
                     assert rule.getSourceIpAddressId() == null : "ipAddressId should be null for egress firewall rule. ";
                     final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, "", Purpose.Firewall, traffictype, defaultEgressPolicy);
                     rulesTO.add(ruleTO);
@@ -450,7 +451,7 @@ public class CommandSetupHelper {
                 } else if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
                     final NetworkVO network = _networkDao.findById(guestNetworkId);
                     final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-                    defaultEgressPolicy = offering.getEgressDefaultPolicy();
+                    defaultEgressPolicy = offering.isEgressDefaultPolicy();
                     assert rule.getSourceIpAddressId() == null : "ipAddressId should be null for egress firewall rule. ";
                     final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, "", Purpose.Firewall, traffictype, defaultEgressPolicy);
                     rulesTO.add(ruleTO);
@@ -622,7 +623,7 @@ public class CommandSetupHelper {
             final NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
             if (nic != null) {
                 s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
-                createDhcpEntryCommand(router, vm, nic, cmds);
+                createDhcpEntryCommand(router, vm, nic, false, cmds);
             }
         }
     }
@@ -1066,7 +1067,7 @@ public class CommandSetupHelper {
         }
 
         final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(defaultNic.getNetworkId()).getNetworkOfferingId());
-        if (offering.getRedundantRouter()) {
+        if (offering.isRedundantRouter()) {
             return findGatewayIp(userVmId);
         }
 

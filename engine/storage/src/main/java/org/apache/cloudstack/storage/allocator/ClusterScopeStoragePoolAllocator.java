@@ -70,7 +70,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
 
         if (s_logger.isTraceEnabled()) {
             // Log the pools details that are ignored because they are in disabled state
-            List<StoragePoolVO> disabledPools = _storagePoolDao.findDisabledPoolsByScope(dcId, podId, clusterId, ScopeType.CLUSTER);
+            List<StoragePoolVO> disabledPools = storagePoolDao.findDisabledPoolsByScope(dcId, podId, clusterId, ScopeType.CLUSTER);
             if (disabledPools != null && !disabledPools.isEmpty()) {
                 for (StoragePoolVO pool : disabledPools) {
                     s_logger.trace("Ignoring pool " + pool + " as it is in disabled state.");
@@ -78,11 +78,11 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             }
         }
 
-        List<StoragePoolVO> pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags());
+        List<StoragePoolVO> pools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags());
         s_logger.debug("Found pools matching tags: " + pools);
 
         // add remaining pools in cluster, that did not match tags, to avoid set
-        List<StoragePoolVO> allPools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, null);
+        List<StoragePoolVO> allPools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, null);
         allPools.removeAll(pools);
         for (StoragePoolVO pool : allPools) {
             s_logger.debug("Adding pool " + pool + " to avoid set since it did not match tags");
@@ -119,11 +119,11 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        if (_configDao != null) {
-            Map<String, String> configs = _configDao.getConfiguration(params);
+        if (configDao != null) {
+            Map<String, String> configs = configDao.getConfiguration(params);
             String allocationAlgorithm = configs.get("vm.allocation.algorithm");
             if (allocationAlgorithm != null) {
-                _allocationAlgorithm = allocationAlgorithm;
+                this.allocationAlgorithm = allocationAlgorithm;
             }
         }
         return true;

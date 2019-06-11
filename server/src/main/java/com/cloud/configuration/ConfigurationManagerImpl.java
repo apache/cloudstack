@@ -16,8 +16,10 @@
 // under the License.
 package com.cloud.configuration;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
@@ -35,12 +37,11 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.google.common.collect.Sets;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -232,6 +233,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
@@ -2218,6 +2220,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
     public ServiceOffering createServiceOffering(final CreateServiceOfferingCmd cmd) {
         final Long userId = CallContext.current().getCallingUserId();
+        final Map<String, String> details = cmd.getDetails();
+        final String offeringName = cmd.getServiceOfferingName();
 
         final String name = cmd.getServiceOfferingName();
         if (name == null || name.length() == 0) {
@@ -2233,21 +2237,54 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Integer cpuSpeed = cmd.getCpuSpeed();
         final Integer memory = cmd.getMemory();
 
-        //restricting the createserviceoffering to allow setting all or none of the dynamic parameters to null
-        if (cpuNumber == null || cpuSpeed == null || memory == null) {
-            if (cpuNumber != null || cpuSpeed != null || memory != null) {
-                throw new InvalidParameterValueException("For creating a custom compute offering cpu, cpu speed and memory all should be null");
-            }
-        }
+        // Optional Custom Parameters
+        Integer maxCPU = cmd.getMaxCPUs();
+        Integer minCPU = cmd.getMinCPUs();
+        Integer maxMemory = cmd.getMaxMemory();
+        Integer minMemory = cmd.getMinMemory();
 
-        if (cpuNumber != null && (cpuNumber.intValue() <= 0 || cpuNumber.longValue() > Integer.MAX_VALUE)) {
-            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the cpu number value between 1 and " + Integer.MAX_VALUE);
-        }
-        if (cpuSpeed != null && (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE)) {
-            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the cpu speed value between 0 and " + Integer.MAX_VALUE);
-        }
-        if (memory != null && (memory.intValue() < 32 || memory.longValue() > Integer.MAX_VALUE)) {
-            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the memory value between 32 and " + Integer.MAX_VALUE + " MB");
+        // Check if service offering is Custom,
+        // If Customized, the following conditions must hold
+        // 1. cpuNumber, cpuSpeed and memory should be all null
+        // 2. minCPU, maxCPU, minMemory and maxMemory should all be null or all specified
+        boolean isCustomized = cmd.isCustomized();
+        if (isCustomized) {
+            // validate specs
+            //restricting the createserviceoffering to allow setting all or none of the dynamic parameters to null
+            if (cpuNumber != null || memory != null) {
+                throw new InvalidParameterValueException("For creating a custom compute offering cpu and memory all should be null");
+            }
+            // if any of them is null, then all of them shoull be null
+            if (maxCPU == null || minCPU == null || maxMemory == null || minMemory == null) {
+                if (maxCPU != null || minCPU != null || maxMemory != null || minMemory != null) {
+                    throw new InvalidParameterValueException("For creating a custom compute offering min/max cpu and min/max memory should all be specified");
+                }
+            } else {
+                if (cpuSpeed != null && (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE)) {
+                    throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu speed value between 1 and " + Integer.MAX_VALUE);
+                }
+                if ((maxCPU <= 0 || maxCPU.longValue() > Integer.MAX_VALUE) || (minCPU <= 0 || minCPU.longValue() > Integer.MAX_VALUE )  ) {
+                    throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the minimum or minimum cpu number value between 1 and " + Integer.MAX_VALUE);
+                }
+                if (minMemory < 32 || (minMemory.longValue() > Integer.MAX_VALUE) || (maxMemory.longValue() > Integer.MAX_VALUE)) {
+                    throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the memory value between 32 and " + Integer.MAX_VALUE + " MB");
+                }
+                // Persist min/max CPU and Memory parameters in the service_offering_details table
+                details.put(ApiConstants.MIN_MEMORY, minMemory.toString());
+                details.put(ApiConstants.MAX_MEMORY, maxMemory.toString());
+                details.put(ApiConstants.MIN_CPU_NUMBER, minCPU.toString());
+                details.put(ApiConstants.MAX_CPU_NUMBER, maxCPU.toString());
+            }
+        } else {
+            if (cpuNumber != null && (cpuNumber.intValue() <= 0 || cpuNumber.longValue() > Integer.MAX_VALUE)) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu number value between 1 and " + Integer.MAX_VALUE);
+            }
+            if (cpuSpeed != null && (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE)) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu speed value between 0 and " + Integer.MAX_VALUE);
+            }
+            if (memory != null && (memory.intValue() < 32 || memory.longValue() > Integer.MAX_VALUE)) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the memory value between 32 and " + Integer.MAX_VALUE + " MB");
+            }
         }
 
         // check if valid domain
@@ -2330,15 +2367,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(),
-                cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
-                cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate(), cmd.getHypervisorSnapshotReserve());
+                cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
+                cmd.getBytesReadRate(), cmd.getBytesReadRateMax(), cmd.getBytesReadRateMaxLength(),
+                cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
+                cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
+                cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
+                cmd.getHypervisorSnapshotReserve());
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
             final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, final boolean localStorageRequired,
             final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm,  String tags, final Long domainId, final String hostTag,
             final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, final Boolean isCustomizedIops, Long minIops, Long maxIops,
-            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate, final Integer hypervisorSnapshotReserve) {
+            Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
+            Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
+            Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
+            Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
+            final Integer hypervisorSnapshotReserve) {
 
         // Check if user exists in the system
         final User user = _userDao.findById(userId);
@@ -2368,37 +2413,28 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 limitResourceUse, volatileVm, displayText, typedProvisioningType, localStorageRequired, false, tags, isSystem, vmType,
                 domainId, hostTag, deploymentPlanner);
 
-        if (isCustomizedIops != null) {
-            bytesReadRate = null;
-            bytesWriteRate = null;
-            iopsReadRate = null;
-            iopsWriteRate = null;
-
-            if (isCustomizedIops) {
+        if (Boolean.TRUE.equals(isCustomizedIops) || isCustomizedIops == null) {
                 minIops = null;
                 maxIops = null;
+        } else {
+            if (minIops == null && maxIops == null) {
+                minIops = 0L;
+                maxIops = 0L;
             } else {
-                if (minIops == null && maxIops == null) {
-                    minIops = 0L;
+                if (minIops == null || minIops <= 0) {
+                    throw new InvalidParameterValueException("The min IOPS must be greater than 0.");
+                }
+
+                if (maxIops == null) {
                     maxIops = 0L;
-                } else {
-                    if (minIops == null || minIops <= 0) {
-                        throw new InvalidParameterValueException("The min IOPS must be greater than 0.");
-                    }
+                }
 
-                    if (maxIops == null) {
-                        maxIops = 0L;
-                    }
-
-                    if (minIops > maxIops) {
-                        throw new InvalidParameterValueException("The min IOPS must be less than or equal to the max IOPS.");
-                    }
+                if (minIops > maxIops) {
+                    throw new InvalidParameterValueException("The min IOPS must be less than or equal to the max IOPS.");
                 }
             }
-        } else {
-            minIops = null;
-            maxIops = null;
         }
+
 
         offering.setCustomizedIops(isCustomizedIops);
         offering.setMinIops(minIops);
@@ -2407,14 +2443,38 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (bytesReadRate != null && bytesReadRate > 0) {
             offering.setBytesReadRate(bytesReadRate);
         }
+        if (bytesReadRateMax != null && bytesReadRateMax > 0) {
+            offering.setBytesReadRateMax(bytesReadRateMax);
+        }
+        if (bytesReadRateMaxLength != null && bytesReadRateMaxLength > 0) {
+            offering.setBytesReadRateMaxLength(bytesReadRateMaxLength);
+        }
         if (bytesWriteRate != null && bytesWriteRate > 0) {
             offering.setBytesWriteRate(bytesWriteRate);
+        }
+        if (bytesWriteRateMax != null && bytesWriteRateMax > 0) {
+            offering.setBytesWriteRateMax(bytesWriteRateMax);
+        }
+        if (bytesWriteRateMaxLength != null && bytesWriteRateMaxLength > 0) {
+            offering.setBytesWriteRateMaxLength(bytesWriteRateMaxLength);
         }
         if (iopsReadRate != null && iopsReadRate > 0) {
             offering.setIopsReadRate(iopsReadRate);
         }
+        if (iopsReadRateMax != null && iopsReadRateMax > 0) {
+            offering.setIopsReadRateMax(iopsReadRateMax);
+        }
+        if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > 0) {
+            offering.setIopsReadRateMaxLength(iopsReadRateMaxLength);
+        }
         if (iopsWriteRate != null && iopsWriteRate > 0) {
             offering.setIopsWriteRate(iopsWriteRate);
+        }
+        if (iopsWriteRateMax != null && iopsWriteRateMax > 0) {
+            offering.setIopsWriteRateMax(iopsWriteRateMax);
+        }
+        if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > 0) {
+            offering.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
         }
 
         if (hypervisorSnapshotReserve != null && hypervisorSnapshotReserve < 0) {
@@ -2434,17 +2494,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
             for (final Entry<String, String> detailEntry : details.entrySet()) {
+                String detailEntryValue = detailEntry.getValue();
                 if (detailEntry.getKey().equals(GPU.Keys.pciDevice.toString())) {
-                    if (detailEntry.getValue() == null) {
+                    if (detailEntryValue == null) {
                         throw new InvalidParameterValueException("Please specify a GPU Card.");
                     }
                 }
                 if (detailEntry.getKey().equals(GPU.Keys.vgpuType.toString())) {
-                    if (detailEntry.getValue() == null) {
+                    if (detailEntryValue == null) {
                         throw new InvalidParameterValueException("vGPUType value cannot be null");
                     }
                 }
-                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntry.getValue(), true));
+                if (detailEntry.getKey().startsWith(ApiConstants.EXTRA_CONFIG)) {
+                    try {
+                        detailEntryValue = URLDecoder.decode(detailEntry.getValue(), "UTF-8");
+                    } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+                        s_logger.error("Cannot decode extra configuration value for key: " + detailEntry.getKey() + ", skipping it");
+                        continue;
+                    }
+                }
+                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntryValue, true));
             }
         }
 
@@ -2553,7 +2622,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected DiskOfferingVO createDiskOffering(final Long userId, final Long domainId, final String name, final String description, final String provisioningType,
             final Long numGibibytes, String tags, boolean isCustomized, final boolean localStorageRequired,
             final boolean isDisplayOfferingEnabled, final Boolean isCustomizedIops, Long minIops, Long maxIops,
-            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate,
+            Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
+            Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
+            Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
+            Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
             final Integer hypervisorSnapshotReserve) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && numGibibytes <= 0) {
@@ -2571,37 +2643,28 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             isCustomized = true;
         }
 
-        if (isCustomizedIops != null) {
-            bytesReadRate = null;
-            bytesWriteRate = null;
-            iopsReadRate = null;
-            iopsWriteRate = null;
-
-            if (isCustomizedIops) {
-                minIops = null;
-                maxIops = null;
-            } else {
-                if (minIops == null && maxIops == null) {
-                    minIops = 0L;
-                    maxIops = 0L;
-                } else {
-                    if (minIops == null || minIops <= 0) {
-                        throw new InvalidParameterValueException("The min IOPS must be greater than 0.");
-                    }
-
-                    if (maxIops == null) {
-                        maxIops = 0L;
-                    }
-
-                    if (minIops > maxIops) {
-                        throw new InvalidParameterValueException("The min IOPS must be less than or equal to the max IOPS.");
-                    }
-                }
-            }
-        } else {
+        if (Boolean.TRUE.equals(isCustomizedIops) || isCustomizedIops == null) {
             minIops = null;
             maxIops = null;
+        } else {
+            if (minIops == null && maxIops == null) {
+                minIops = 0L;
+                maxIops = 0L;
+            } else {
+                if (minIops == null || minIops <= 0) {
+                    throw new InvalidParameterValueException("The min IOPS must be greater than 0.");
+                }
+
+                if (maxIops == null) {
+                    maxIops = 0L;
+                }
+
+                if (minIops > maxIops) {
+                    throw new InvalidParameterValueException("The min IOPS must be less than or equal to the max IOPS.");
+                }
+            }
         }
+
 
         // Check if user exists in the system
         final User user = _userDao.findById(userId);
@@ -2632,14 +2695,38 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (bytesReadRate != null && bytesReadRate > 0) {
             newDiskOffering.setBytesReadRate(bytesReadRate);
         }
+        if (bytesReadRateMax != null && bytesReadRateMax > 0) {
+            newDiskOffering.setBytesReadRateMax(bytesReadRateMax);
+        }
+        if (bytesReadRateMaxLength != null && bytesReadRateMaxLength > 0) {
+            newDiskOffering.setBytesReadRateMaxLength(bytesReadRateMaxLength);
+        }
         if (bytesWriteRate != null && bytesWriteRate > 0) {
             newDiskOffering.setBytesWriteRate(bytesWriteRate);
+        }
+        if (bytesWriteRateMax != null && bytesWriteRateMax > 0) {
+            newDiskOffering.setBytesWriteRateMax(bytesWriteRateMax);
+        }
+        if (bytesWriteRateMaxLength != null && bytesWriteRateMaxLength > 0) {
+            newDiskOffering.setBytesWriteRateMaxLength(bytesWriteRateMaxLength);
         }
         if (iopsReadRate != null && iopsReadRate > 0) {
             newDiskOffering.setIopsReadRate(iopsReadRate);
         }
+        if (iopsReadRateMax != null && iopsReadRateMax > 0) {
+            newDiskOffering.setIopsReadRateMax(iopsReadRateMax);
+        }
+        if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > 0) {
+            newDiskOffering.setIopsReadRateMaxLength(iopsReadRateMaxLength);
+        }
         if (iopsWriteRate != null && iopsWriteRate > 0) {
             newDiskOffering.setIopsWriteRate(iopsWriteRate);
+        }
+        if (iopsWriteRateMax != null && iopsWriteRateMax > 0) {
+            newDiskOffering.setIopsWriteRateMax(iopsWriteRateMax);
+        }
+        if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > 0) {
+            newDiskOffering.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
         }
 
         if (hypervisorSnapshotReserve != null && hypervisorSnapshotReserve < 0) {
@@ -2698,15 +2785,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long minIops = cmd.getMinIops();
         final Long maxIops = cmd.getMaxIops();
         final Long bytesReadRate = cmd.getBytesReadRate();
+        final Long bytesReadRateMax = cmd.getBytesReadRateMax();
+        final Long bytesReadRateMaxLength = cmd.getBytesReadRateMaxLength();
         final Long bytesWriteRate = cmd.getBytesWriteRate();
+        final Long bytesWriteRateMax = cmd.getBytesWriteRateMax();
+        final Long bytesWriteRateMaxLength = cmd.getBytesWriteRateMaxLength();
         final Long iopsReadRate = cmd.getIopsReadRate();
+        final Long iopsReadRateMax = cmd.getIopsReadRateMax();
+        final Long iopsReadRateMaxLength = cmd.getIopsReadRateMaxLength();
         final Long iopsWriteRate = cmd.getIopsWriteRate();
+        final Long iopsWriteRateMax = cmd.getIopsWriteRateMax();
+        final Long iopsWriteRateMaxLength = cmd.getIopsWriteRateMaxLength();
         final Integer hypervisorSnapshotReserve = cmd.getHypervisorSnapshotReserve();
 
         final Long userId = CallContext.current().getCallingUserId();
         return createDiskOffering(userId, domainId, name, description, provisioningType, numGibibytes, tags, isCustomized,
                 localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops,
-                maxIops, bytesReadRate, bytesWriteRate, iopsReadRate, iopsWriteRate, hypervisorSnapshotReserve);
+                maxIops, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
+                iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength,
+                hypervisorSnapshotReserve);
     }
 
     @Override
@@ -3569,10 +3666,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                     // increment resource count for dedicated public ip's
                     _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, new Long(ips.size()));
-                } else if (domain != null) {
+                } else if (domain != null && !forSystemVms) {
                     // This VLAN is domain-wide, so create a DomainVlanMapVO entry
-                    //final DomainVlanMapVO domainVlanMapVO = new DomainVlanMapVO(domain.getId(), vlan.getId());
-                    //_domainVlanMapDao.persist(domainVlanMapVO);
+                    final DomainVlanMapVO domainVlanMapVO = new DomainVlanMapVO(domain.getId(), vlan.getId());
+                    _domainVlanMapDao.persist(domainVlanMapVO);
                 } else if (podId != null) {
                     // This VLAN is pod-wide, so create a PodVlanMapVO entry
                     final PodVlanMapVO podVlanMapVO = new PodVlanMapVO(podId, vlan.getId());
@@ -3601,9 +3698,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         boolean isDomainSpecific = false;
-        List<DomainVlanMapVO> domainVln = _domainVlanMapDao.listDomainVlanMapsByVlan(vlanRange.getId());
+        List<DomainVlanMapVO> domainVlan = _domainVlanMapDao.listDomainVlanMapsByVlan(vlanRange.getId());
         // Check for domain wide pool. It will have an entry for domain_vlan_map.
-        if (domainVln != null && !domainVln.isEmpty()) {
+        if (domainVlan != null && !domainVlan.isEmpty()) {
             isDomainSpecific = true;
         }
 
@@ -3754,14 +3851,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Check if any of the Public IP addresses is allocated to another
         // account
+        boolean forSystemVms = false;
         final List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
         for (final IPAddressVO ip : ips) {
+            forSystemVms = ip.isForSystemVms();
             final Long allocatedToAccountId = ip.getAllocatedToAccountId();
             if (allocatedToAccountId != null) {
-                final Account accountAllocatedTo = _accountMgr.getActiveAccountById(allocatedToAccountId);
-                if (!accountAllocatedTo.getAccountName().equalsIgnoreCase(accountName)) {
+                if (vlanOwner != null && allocatedToAccountId != vlanOwner.getId()) {
                     throw new InvalidParameterValueException(ip.getAddress() + " Public IP address in range is allocated to another account ");
                 }
+                final Account accountAllocatedTo = _accountMgr.getActiveAccountById(allocatedToAccountId);
                 if (vlanOwner == null && domain != null && domain.getId() != accountAllocatedTo.getDomainId()){
                     throw new InvalidParameterValueException(ip.getAddress()
                             + " Public IP address in range is allocated to another domain/account ");
@@ -3779,7 +3878,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, vlanOwner.getId(), ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(),
                         vlan.getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
             }
-        } else if (domain != null) {
+        } else if (domain != null && !forSystemVms) {
             // Create an DomainVlanMapVO entry
             DomainVlanMapVO domainVlanMapVO = new DomainVlanMapVO(domain.getId(), vlan.getId());
             _domainVlanMapDao.persist(domainVlanMapVO);
@@ -3822,9 +3921,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         boolean isDomainSpecific = false;
-        final List<DomainVlanMapVO> domainVln = _domainVlanMapDao.listDomainVlanMapsByVlan(vlanDbId);
+        final List<DomainVlanMapVO> domainVlan = _domainVlanMapDao.listDomainVlanMapsByVlan(vlanDbId);
         // Check for domain wide pool. It will have an entry for domain_vlan_map.
-        if (domainVln != null && !domainVln.isEmpty()) {
+        if (domainVlan != null && !domainVlan.isEmpty()) {
             isDomainSpecific = true;
         }
 
@@ -3877,7 +3976,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // decrement resource count for dedicated public ip's
             _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, new Long(ips.size()));
             return true;
-        } else if (isDomainSpecific && _domainVlanMapDao.remove(domainVln.get(0).getId())) {
+        } else if (isDomainSpecific && _domainVlanMapDao.remove(domainVlan.get(0).getId())) {
             s_logger.debug("Remove the vlan from domain_vlan_map successfully.");
             return true;
         } else {
@@ -5105,7 +5204,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public boolean isOfferingForVpc(final NetworkOffering offering) {
-        return offering.getForVpc();
+        return offering.isForVpc();
     }
 
     @DB

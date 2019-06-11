@@ -26,6 +26,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.StoragePool;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.NicProfile;
@@ -33,7 +34,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface HypervisorGuru extends Adapter {
-    static final ConfigKey<Boolean> VmwareFullClone = new ConfigKey<Boolean>("Advanced", Boolean.class, "vmware.create.full.clone", "true",
+    ConfigKey<Boolean> VmwareFullClone = new ConfigKey<Boolean>("Advanced", Boolean.class, "vmware.create.full.clone", "true",
             "If set to true, creates guest VMs as full clones on ESX", false);
     HypervisorType getHypervisorType();
 
@@ -91,4 +92,12 @@ public interface HypervisorGuru extends Adapter {
 
     boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, VMBackup.VolumeInfo volumeInfo,
                                                  VirtualMachine vm, long poolId, VMBackup backup) throws Exception;
+    /**
+     * Will generate commands to migrate a vm to a pool. For now this will only work for stopped VMs on Vmware.
+     *
+     * @param vm the stopped vm to migrate
+     * @param destination the primary storage pool to migrate to
+     * @return a list of commands to perform for a successful migration
+     */
+    List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination);
 }

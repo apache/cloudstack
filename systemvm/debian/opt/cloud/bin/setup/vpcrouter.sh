@@ -84,6 +84,7 @@ EOF
   enable_vpc_rpsrfs 1
   disable_rpfilter
   enable_fwding 1
+  enable_passive_ftp 1
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules.v4
   setup_sshd $ETH0_IP "eth0"
   cp /etc/vpcdnsmasq.conf /etc/dnsmasq.conf
@@ -107,8 +108,10 @@ EOF
       echo 0 > /var/cache/cloud/dnsmasq_managed_lease
   fi
 
-  #setup hourly logrotate
-  mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
+  # Setup hourly logrotate
+  if [ -f /etc/cron.daily/logrotate ]; then
+    mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
+  fi
 }
 
 routing_svcs

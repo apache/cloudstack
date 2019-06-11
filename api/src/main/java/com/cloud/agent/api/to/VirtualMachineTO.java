@@ -28,6 +28,7 @@ public class VirtualMachineTO {
     private long id;
     private String name;
     private BootloaderType bootloader;
+    private VirtualMachine.State state;
     Type type;
     int cpus;
 
@@ -73,6 +74,7 @@ public class VirtualMachineTO {
     Double cpuQuotaPercentage = null;
 
     Map<String, String> guestOsDetails = new HashMap<String, String>();
+    Map<String, String> extraConfig = new HashMap<>();
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -144,6 +146,14 @@ public class VirtualMachineTO {
 
     public void setBootloader(BootloaderType bootloader) {
         this.bootloader = bootloader;
+    }
+
+    public VirtualMachine.State getState() {
+        return state;
+    }
+
+    public void setState(VirtualMachine.State state) {
+        this.state = state;
     }
 
     public int getCpus() {
@@ -349,5 +359,12 @@ public class VirtualMachineTO {
 
     public void setCpuQuotaPercentage(Double cpuQuotaPercentage) {
         this.cpuQuotaPercentage = cpuQuotaPercentage;
+    }
+
+    public void addExtraConfig(String key, String value) {
+        extraConfig.put(key, value);
+    }
+    public Map<String, String> getExtraConfig() {
+        return extraConfig;
     }
 }

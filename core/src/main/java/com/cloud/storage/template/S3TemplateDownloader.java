@@ -184,7 +184,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
         PutObjectRequest putObjectRequest = new PutObjectRequest(s3TO.getBucketName(), s3Key, inputStream, objectMetadata);
 
         // If reduced redundancy is enabled, set it.
-        if (s3TO.getEnableRRS()) {
+        if (s3TO.isEnableRRS()) {
             putObjectRequest.withStorageClass(StorageClass.ReducedRedundancy);
         }
 

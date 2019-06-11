@@ -49,6 +49,9 @@
                         account: {
                             label: 'label.account'
                         },
+                        username: {
+                            label: 'label.username'
+                        },
                         domain: {
                             label: 'label.domain'
                         },
@@ -325,6 +328,15 @@
 
                         account: {
                             label: 'label.account',
+                            isHidden: function(args) {
+                                if (isAdmin() || isDomainAdmin())
+                                    return false;
+                                else
+                                    return true;
+                            }
+                        },
+                        username: {
+                            label: 'label.username',
                             isHidden: function(args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;

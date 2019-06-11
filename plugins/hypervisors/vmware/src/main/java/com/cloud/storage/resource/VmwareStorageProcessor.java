@@ -983,6 +983,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 throw new Exception(msg);
             }
 
+            boolean clonedWorkerVMNeeded = true;
             vmMo = hyperHost.findVmOnHyperHost(vmName);
             if (vmMo == null || VmwareResource.getVmState(vmMo) == PowerState.PowerOff) {
                 // create a dummy worker vm for attaching the volume
@@ -999,15 +1000,18 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 String datastoreVolumePath = getVolumePathInDatastore(dsMo, volumePath + ".vmdk", searchExcludedFolders);
                 workerVm.attachDisk(new String[] {datastoreVolumePath}, morDs);
                 vmMo = workerVm;
+                clonedWorkerVMNeeded = false;
+            } else {
+                vmMo.createSnapshot(exportName, "Temporary snapshot for copy-volume command", false, false);
             }
 
-            vmMo.createSnapshot(exportName, "Temporary snapshot for copy-volume command", false, false);
-
-            exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, destVolumePath, exportName, hostService.getWorkerName(hyperHost.getContext(), cmd, 1), _nfsVersion);
+            exportVolumeToSecondaryStorage(vmMo, volumePath, secStorageUrl, destVolumePath, exportName, hostService.getWorkerName(hyperHost.getContext(), cmd, 1), _nfsVersion, clonedWorkerVMNeeded);
             return new Pair<>(destVolumePath, exportName);
 
         } finally {
-            vmMo.removeSnapshot(exportName, false);
+            if (vmMo != null && vmMo.getSnapshotMor(exportName) != null) {
+                vmMo.removeSnapshot(exportName, false);
+            }
             if (workerVm != null) {
                 //detach volume and destroy worker vm
                 workerVm.detachAllDisks();
@@ -1657,8 +1661,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     // return Pair<String(divice bus name), String[](disk chain)>
-    private Pair<String, String[]> exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath, String secStorageUrl, String secStorageDir,
-                                                                  String exportName, String workerVmName, Integer nfsVersion) throws Exception {
+    private Pair<String, String[]> exportVolumeToSecondaryStorage(VirtualMachineMO vmMo, String volumePath, String secStorageUrl, String secStorageDir,
+                                                                  String exportName, String workerVmName, Integer nfsVersion, boolean clonedWorkerVMNeeded) throws Exception {
 
         String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, nfsVersion);
         String exportPath = secondaryMountPoint + "/" + secStorageDir + "/" + exportName;
@@ -1684,14 +1688,18 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 throw new Exception(msg);
             }
 
-            // 4 MB is the minimum requirement for VM memory in VMware
-            Pair<VirtualMachineMO, String[]> cloneResult =
-                    vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
-            clonedVm = cloneResult.first();
-            String disks[] = cloneResult.second();
-
-            clonedVm.exportVm(exportPath, exportName, false, false);
-            return new Pair<>(volumeDeviceInfo.second(), disks);
+            String diskDevice = volumeDeviceInfo.second();
+            String disks[] = vmMo.getCurrentSnapshotDiskChainDatastorePaths(diskDevice);
+            if (clonedWorkerVMNeeded) {
+                // 4 MB is the minimum requirement for VM memory in VMware
+                Pair<VirtualMachineMO, String[]> cloneResult =
+                        vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, diskDevice, VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
+                clonedVm = cloneResult.first();
+                clonedVm.exportVm(exportPath, exportName, false, false);
+            } else {
+                vmMo.exportVm(exportPath, exportName, false, false);
+            }
+            return new Pair<>(diskDevice, disks);
         } finally {
             if (clonedVm != null) {
                 clonedVm.detachAllDisks();
@@ -1706,7 +1714,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                                                                                Integer nfsVersion) throws Exception {
 
         String backupUuid = UUID.randomUUID().toString();
-        Pair<String, String[]> snapshotInfo = exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, installPath, backupUuid, workerVmName, nfsVersion);
+        Pair<String, String[]> snapshotInfo = exportVolumeToSecondaryStorage(vmMo, volumePath, secStorageUrl, installPath, backupUuid, workerVmName, nfsVersion, true);
         return new Ternary<>(backupUuid, snapshotInfo.first(), snapshotInfo.second());
     }
 

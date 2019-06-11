@@ -45,7 +45,7 @@
                         roletype: {
                             label: 'label.roletype'
                         },
-                        domain: {
+                        domainpath: {
                             label: 'label.domain'
                         },
                         state: {
@@ -697,7 +697,7 @@
                                     roletype: {
                                         label: 'label.roletype'
                                     },
-                                    domain: {
+                                    domainpath: {
                                         label: 'label.domain'
                                     },
                                     state: {

@@ -19,6 +19,9 @@ package com.cloud.api;
 import com.cloud.domain.DomainVO;
 import com.cloud.usage.UsageVO;
 import com.cloud.user.AccountVO;
+import com.cloud.vm.NicSecondaryIp;
+
+import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.usage.UsageService;
 import org.junit.Before;
@@ -37,6 +40,7 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.when;
 
@@ -109,4 +113,32 @@ public class ApiResponseHelperTest {
         UsageRecordResponse MockResponse = helper.createUsageResponse(usage);
         assertEquals("DomainName",MockResponse.getDomainName());
     }
+
+    @Test
+    public void setResponseIpAddressTestIpv4() {
+        NicSecondaryIp result = Mockito.mock(NicSecondaryIp.class);
+        NicSecondaryIpResponse response = new NicSecondaryIpResponse();
+        setResult(result, "ipv4", "ipv6");
+
+        ApiResponseHelper.setResponseIpAddress(result, response);
+
+        assertTrue(response.getIpAddr().equals("ipv4"));
+    }
+
+    private void setResult(NicSecondaryIp result, String ipv4, String ipv6) {
+        when(result.getIp4Address()).thenReturn(ipv4);
+        when(result.getIp6Address()).thenReturn(ipv6);
+    }
+
+    @Test
+    public void setResponseIpAddressTestIpv6() {
+        NicSecondaryIp result = Mockito.mock(NicSecondaryIp.class);
+        NicSecondaryIpResponse response = new NicSecondaryIpResponse();
+        setResult(result, null, "ipv6");
+
+        ApiResponseHelper.setResponseIpAddress(result, response);
+
+        assertTrue(response.getIpAddr().equals("ipv6"));
+    }
+
 }

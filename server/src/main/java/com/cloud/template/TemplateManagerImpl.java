@@ -43,6 +43,7 @@ import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
@@ -50,6 +51,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -348,11 +350,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating post upload template")
-    public GetUploadParamsResponse registerTemplateForPostUpload(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException, MalformedURLException {
-        TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
-        TemplateProfile profile = adapter.prepare(cmd);
+    /**
+     * Internal register template or ISO method - post local upload
+     * @param adapter
+     * @param profile
+     */
+    private GetUploadParamsResponse registerPostUploadInternal(TemplateAdapter adapter,
+                                                               TemplateProfile profile) throws MalformedURLException {
+
         List<TemplateOrVolumePostUploadCommand> payload = adapter.createTemplateForPostUpload(profile);
 
         if(CollectionUtils.isNotEmpty(payload)) {
@@ -402,6 +407,21 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ISO_CREATE, eventDescription = "creating post upload iso")
+    public GetUploadParamsResponse registerIsoForPostUpload(GetUploadParamsForIsoCmd cmd) throws ResourceAllocationException, MalformedURLException {
+        TemplateAdapter adapter = getAdapter(HypervisorType.None);
+        TemplateProfile profile = adapter.prepare(cmd);
+        return registerPostUploadInternal(adapter, profile);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating post upload template")
+    public GetUploadParamsResponse registerTemplateForPostUpload(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException, MalformedURLException {
+        TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
+        TemplateProfile profile = adapter.prepare(cmd);
+        return registerPostUploadInternal(adapter, profile);
+    }
 
     @Override
     public DataStore getImageStore(String storeUuid, Long zoneId) {
@@ -557,13 +577,19 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (vm.getIsoId() != null) {
             Map<Volume, StoragePool> storageForDisks = dest.getStorageForDisks();
             Long poolId = null;
-            for (StoragePool storagePool : storageForDisks.values()) {
-                if (poolId != null && storagePool.getId() != poolId) {
-                    throw new CloudRuntimeException("Cannot determine where to download iso");
+            TemplateInfo template;
+            if (MapUtils.isNotEmpty(storageForDisks)) {
+                for (StoragePool storagePool : storageForDisks.values()) {
+                    if (poolId != null && storagePool.getId() != poolId) {
+                        throw new CloudRuntimeException("Cannot determine where to download iso");
+                    }
+                    poolId = storagePool.getId();
                 }
-                poolId = storagePool.getId();
+                template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
+            } else {
+                template = _tmplFactory.getTemplate(vm.getIsoId(), DataStoreRole.Primary, dest.getDataCenter().getId());
             }
-            TemplateInfo template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
+
             if (template == null){
                 s_logger.error("Failed to prepare ISO on secondary or cache storage");
                 throw new CloudRuntimeException("Failed to prepare ISO on secondary or cache storage");
@@ -579,6 +605,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
 
             TemplateObjectTO iso = (TemplateObjectTO)template.getTO();
+            iso.setDirectDownload(template.isDirectDownload());
             iso.setGuestOsType(displayName);
             DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
             profile.addDisk(disk);
@@ -1546,7 +1573,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             permit.put(ApiConstants.ENTITY_TYPE, VirtualMachineTemplate.class);
             permit.put(ApiConstants.ENTITY_ID, id);
             permit.put(ApiConstants.ACCESS_TYPE, AccessType.UseEntry);
-            permit.put(ApiConstants.IAM_ACTION, "listTemplates");
             permit.put(ApiConstants.ACCOUNTS, accountIds);
             _messageBus.publish(_name, EntityManager.MESSAGE_GRANT_ENTITY_EVENT, PublishScope.LOCAL, permit);
         } else if ("remove".equalsIgnoreCase(operation)) {
@@ -1563,7 +1589,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             permit.put(ApiConstants.ENTITY_TYPE, VirtualMachineTemplate.class);
             permit.put(ApiConstants.ENTITY_ID, id);
             permit.put(ApiConstants.ACCESS_TYPE, AccessType.UseEntry);
-            permit.put(ApiConstants.IAM_ACTION, "listTemplates");
             permit.put(ApiConstants.ACCOUNTS, accountIds);
             _messageBus.publish(_name, EntityManager.MESSAGE_REVOKE_ENTITY_EVENT, PublishScope.LOCAL, permit);
         } else if ("reset".equalsIgnoreCase(operation)) {
@@ -1738,11 +1763,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Integer bits = cmd.getBits();
         Boolean requiresHvm = cmd.getRequiresHvm();
         Boolean passwordEnabled = cmd.isPasswordEnabled();
+        Boolean sshKeyEnabled = cmd.isSshKeyEnabled();
         Boolean isPublic = cmd.isPublic();
         Boolean featured = cmd.isFeatured();
         int bitsValue = ((bits == null) ? 64 : bits.intValue());
         boolean requiresHvmValue = ((requiresHvm == null) ? true : requiresHvm.booleanValue());
         boolean passwordEnabledValue = ((passwordEnabled == null) ? false : passwordEnabled.booleanValue());
+        boolean sshKeyEnabledValue = ((sshKeyEnabled == null) ? false : sshKeyEnabled.booleanValue());
         if (isPublic == null) {
             isPublic = Boolean.FALSE;
         }
@@ -1851,7 +1878,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
                 TemplateType.USER, null, requiresHvmValue, bitsValue, templateOwner.getId(), null, description,
-                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), false, isDynamicScalingEnabled, false);
+                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false);
 
         if (sourceTemplateId != null) {
             if (s_logger.isDebugEnabled()) {
@@ -2012,6 +2039,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String format = cmd.getFormat();
         Long guestOSId = cmd.getOsTypeId();
         Boolean passwordEnabled = cmd.getPasswordEnabled();
+        Boolean sshKeyEnabled = cmd.isSshKeyEnabled();
         Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
         Boolean isRoutingTemplate = cmd.isRoutingType();
         Boolean bootable = cmd.getBootable();
@@ -2047,6 +2075,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   guestOSId == null &&
                   passwordEnabled == null &&
                   bootable == null &&
+                  sshKeyEnabled == null &&
                   requiresHvm == null &&
                   sortKey == null &&
                   isDynamicallyScalable == null &&
@@ -2108,6 +2137,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         if (passwordEnabled != null) {
             template.setEnablePassword(passwordEnabled);
+        }
+
+        if (sshKeyEnabled != null) {
+            template.setEnableSshKey(sshKeyEnabled);
         }
 
         if (bootable != null) {

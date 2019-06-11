@@ -17,9 +17,18 @@
 // under the License.
 package org.apache.cloudstack.diagnostics;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+import javax.inject.Inject;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.component.ManagerBase;
@@ -34,12 +43,6 @@ import org.apache.cloudstack.api.command.admin.diagnostics.RunDiagnosticsCmd;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-
 public class DiagnosticsServiceImpl extends ManagerBase implements PluggableService, DiagnosticsService {
     private static final Logger LOGGER = Logger.getLogger(DiagnosticsServiceImpl.class);
 
@@ -53,6 +56,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     private NetworkOrchestrationService networkManager;
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_SYSTEM_VM_DIAGNOSTICS, eventDescription = "running diagnostics on system vm", async = true)
     public Map<String, String> runDiagnosticsCommand(final RunDiagnosticsCmd cmd) {
         final Long vmId = cmd.getId();
         final String cmdType = cmd.getType().getValue();

@@ -25,6 +25,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -188,7 +189,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             templateResponse.setPhysicalSize(templatePhysicalSize);
         }
 
-        templateResponse.setChecksum(template.getChecksum());
+        templateResponse.setChecksum(DigestHelper.getHashValueFromChecksumValue(template.getChecksum()));
         if (template.getSourceTemplateId() != null) {
             templateResponse.setSourceTemplateId(template.getSourceTemplateUuid());
         }
@@ -212,6 +213,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
 
         templateResponse.setDirectDownload(template.isDirectDownload());
+        templateResponse.setRequiresHvm(template.isRequiresHvm());
 
         //set template children disks
         Set<ChildTemplateResponse> childTemplatesSet = new HashSet<ChildTemplateResponse>();
@@ -320,11 +322,12 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         isoResponse.setFeatured(iso.isFeatured());
         isoResponse.setCrossZones(iso.isCrossZones());
         isoResponse.setPublic(iso.isPublicTemplate());
-        isoResponse.setChecksum(iso.getChecksum());
+        isoResponse.setChecksum(DigestHelper.getHashValueFromChecksumValue(iso.getChecksum()));
 
         isoResponse.setOsTypeId(iso.getGuestOSUuid());
         isoResponse.setOsTypeName(iso.getGuestOSName());
         isoResponse.setBits(iso.getBits());
+        isoResponse.setPasswordEnabled(iso.isEnablePassword());
 
         // populate owner.
         ApiResponseHelper.populateOwner(isoResponse, iso);

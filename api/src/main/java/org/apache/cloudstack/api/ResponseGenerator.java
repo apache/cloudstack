@@ -65,6 +65,7 @@ import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
@@ -121,6 +122,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupPolicy;
 import org.apache.cloudstack.backup.VMBackup;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
@@ -470,4 +472,6 @@ public interface ResponseGenerator {
     VMBackupResponse createBackupResponse(VMBackup backup);
 
     BackupPolicyResponse createBackupPolicyResponse(BackupPolicy policy);
+
+    ManagementServerResponse createManagementResponse(ManagementServerHost mgmt);
 }

@@ -24,14 +24,12 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.utils.net.NetUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import com.cloud.network.router.NetworkHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.google.gson.Gson;
 
@@ -83,6 +81,7 @@ import com.cloud.network.dao.OvsProviderDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
@@ -103,6 +102,7 @@ import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -231,7 +231,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         final List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
 
         int expectedRouters = 1;
-        if (offering.getRedundantRouter() || network.isRollingRestart()) {
+        if (offering.isRedundantRouter() || network.isRollingRestart()) {
             expectedRouters = 2;
         }
         if (routers == null || routers.size() < expectedRouters) {
@@ -703,7 +703,14 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         // save the password in DB
         for (final VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
-                return networkTopology.savePasswordToRouter(network, nic, uservm, router);
+                final boolean result = networkTopology.savePasswordToRouter(network, nic, uservm, router);
+                if (result) {
+                    // Explicit password reset, while VM hasn't generated a password yet.
+                    final UserVmVO userVmVO = _userVmDao.findById(vm.getId());
+                    userVmVO.setUpdateParameters(false);
+                    _userVmDao.update(userVmVO.getId(), userVmVO);
+                }
+                return result;
             }
         }
         final String password = (String) uservm.getParameter(VirtualMachineProfile.Param.VmPassword);
@@ -888,6 +895,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     @Override
     public boolean release(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final ReservationContext context) throws ConcurrentOperationException,
     ResourceUnavailableException {
+        removeDhcpEntry(network, nic, vm);
         return true;
     }
 
@@ -937,6 +945,34 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     @Override
     public boolean setExtraDhcpOptions(Network network, long nicId, Map<Integer, String> dhcpOptions) {
         return false;
+    }
+
+    @Override
+    public boolean removeDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vmProfile) throws ResourceUnavailableException {
+        boolean result = true;
+        if (canHandle(network, Service.Dhcp)) {
+            if (vmProfile.getType() != VirtualMachine.Type.User) {
+                return false;
+            }
+
+            final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
+
+            if (CollectionUtils.isEmpty(routers)) {
+                throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
+            }
+
+            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            for (final DomainRouterVO domainRouterVO : routers) {
+                if (domainRouterVO.getState() != VirtualMachine.State.Running) {
+                    continue;
+                }
+
+                result = result && networkTopology.removeDhcpEntry(network, nic, vmProfile, domainRouterVO);
+            }
+        }
+        return result;
     }
 
     @Override
@@ -1013,11 +1049,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         if (canHandle(network, Service.UserData)) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
-            }
-
-            if (network.getIp6Gateway() != null) {
-                s_logger.info("Skip password and userdata service setup for IPv6 VM");
-                return true;
             }
 
             final VirtualMachineProfile uservm = vm;

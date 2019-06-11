@@ -262,6 +262,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         SnapshotObject snapObj = (SnapshotObject)snapshot;
         AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
         SnapshotResult result = new SnapshotResult(snapshot, null);
+        Snapshot.State origState = snapObj.getState();
         try {
             snapObj.processEvent(Snapshot.Event.BackupToSecondary);
 
@@ -281,7 +282,13 @@ public class SnapshotServiceImpl implements SnapshotService {
             s_logger.debug("Failed to copy snapshot", e);
             result.setResult("Failed to copy snapshot:" + e.toString());
             try {
-                snapObj.processEvent(Snapshot.Event.OperationFailed);
+                // When error archiving an already existing snapshot, emit OperationNotPerformed.
+                // This will ensure that the original snapshot does not get deleted
+                if (origState.equals(Snapshot.State.BackedUp)) {
+                    snapObj.processEvent(Snapshot.Event.OperationNotPerformed);
+                } else {
+                    snapObj.processEvent(Snapshot.Event.OperationFailed);
+                }
             } catch (NoTransitionException e1) {
                 s_logger.debug("Failed to change state: " + e1.toString());
             }

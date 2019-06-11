@@ -38,7 +38,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManagerListener;
-import com.cloud.cluster.ManagementServerHost;
+import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenterVO;
@@ -266,7 +266,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
         for (VMInstanceVO vm : reorderedVMList) {
             ServiceOfferingVO vmOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
-            if (vmOffering.getUseLocalStorage()) {
+            if (vmOffering.isUseLocalStorage()) {
                 if (s_logger.isDebugEnabled()){
                     s_logger.debug("Skipping HA on vm " + vm + ", because it uses local storage. Its fate is tied to the host.");
                 }

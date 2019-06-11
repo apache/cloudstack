@@ -349,8 +349,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         String search4 = "-lun-";
 
         if (!localPath.contains(search3)) {
-            // this volume doesn't below to this adaptor, so just return true
-            return true;
+            return false;
         }
 
         int index = localPath.indexOf(search2);
@@ -428,7 +427,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool) {
+    public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool, int timeout) {
         throw new UnsupportedOperationException("Creating a disk from a snapshot is not supported in this configuration.");
     }
 
@@ -440,5 +439,10 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     @Override
     public boolean createFolder(String uuid, String path) {
         throw new UnsupportedOperationException("A folder cannot be created in this configuration.");
+    }
+
+    @Override
+    public KVMPhysicalDisk createDiskFromTemplateBacking(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout) {
+        return null;
     }
 }

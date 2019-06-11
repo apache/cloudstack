@@ -124,16 +124,13 @@ echo "checking out correct branch"
 git checkout $branch
 
 echo "determining current POM version"
-export currentversion=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -v '\['`
+export currentversion=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version -B | grep -v '\['`
 echo "found $currentversion"
 
 echo "setting new version numbers"
 mvn versions:set -DnewVersion=$version -P vmware -P developer -P systemvm -P simulator -Dnoredist versions:commit
 
 perl -pi -e "s/$currentversion/$version/" debian/changelog
-perl -pi -e "s/$currentversion/$version/" services/iam/plugin/pom.xml
-perl -pi -e "s/$currentversion/$version/" services/iam/pom.xml
-perl -pi -e "s/$currentversion/$version/" services/iam/server/pom.xml
 perl -pi -e "s/$currentversion/$version/" tools/apidoc/pom.xml
 perl -pi -e "s/$currentversion/$version/" tools/checkstyle/pom.xml
 perl -pi -e "s/$currentversion/$version/" tools/marvin/setup.py

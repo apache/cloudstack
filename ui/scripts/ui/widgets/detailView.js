@@ -23,7 +23,7 @@
 
         var $listView = $row.closest('.list-view');
 
-        if (!$listView.parents('html').size()) return;
+        if (!$listView.parents('html').length) return;
 
         var $newRow;
         var jsonObj = $row.data('json-obj');
@@ -53,6 +53,15 @@
                 detailViewArgs.section;
 
             $.extend($detailView.data('view-args').context[contextID][0], newData);
+        }
+    };
+
+    var tabEvents = {
+        create: function(event, ui) {
+          manageTabsContent(event, ui);
+        },
+        activate: function(event, ui) {
+          manageTabsContent(event, ui);
         }
     };
 
@@ -114,7 +123,7 @@
                     }
                 ).appendTo($detailView);
 
-                $detailView.tabs();
+                $detailView.tabs(tabEvents);
             };
 
             var performAction = function(data, options) {
@@ -172,7 +181,7 @@
                                         viewArgs.onActionComplete();
                                     }
 
-                                    if (!$detailView.parents('html').size()) {
+                                    if (!$detailView.parents('html').length) {
                                         replaceListViewItem(null, args.data, {
                                             $row: $row
                                         });
@@ -222,7 +231,7 @@
                                 cloudStack.ui.notifications.add(
                                     notification,
                                     function(args2) { //name parameter as "args2" instead of "args" to avoid override "args" from success: function(args) {
-                                        if ($detailView.parents('html').size()) {
+                                        if ($detailView.parents('html').length) {
                                             $loading.remove();
 
                                             if (!noRefresh && !viewArgs.compact) {
@@ -376,7 +385,7 @@
                             var $tbody = $row.closest('tbody');
 
                             $row.remove();
-                            if (!$tbody.find('tr').size()) {
+                            if (!$tbody.find('tr').length) {
                                 $("<tr>").addClass('empty').append(
                                     $("<td>").html(_l('label.no.data'))
                                 ).appendTo($tbody);
@@ -413,7 +422,7 @@
                                 var $tbody = $row.closest('tbody');
 
                                 $row.remove();
-                                if (!$tbody.find('tr').size()) {
+                                if (!$tbody.find('tr').length) {
                                     $("<tr>").addClass('empty').append(
                                         $("<td>").html(_l('label.no.data'))
                                     ).appendTo($tbody);
@@ -439,11 +448,11 @@
             $detailView.addClass('edit-mode');
             var token_value = "";
 
-            if ($detailView.find('.button.done').size()) return false;
+            if ($detailView.find('.button.done').length) return false;
 
             // Convert value TDs
             var $inputs = $detailView.find('input, select, textarea').filter(function() {
-                return !$(this).closest('.tagger').size() && !$(this).attr('type') == 'submit';
+                return !$(this).closest('.tagger').length && !$(this).attr('type') == 'submit';
             });
             var action = args.actions[args.actionName];
             var id = $detailView.data('view-args').id;
@@ -476,7 +485,7 @@
                 var $token;
                 var tags_value = "";
                 $inputs.each(function() {
-                    if ($(this).closest('.tagger').size()) return true;
+                    if ($(this).closest('.tagger').length) return true;
 
                     var $input = $(this);
                     var $value = $input.closest('td.value span');
@@ -525,9 +534,9 @@
 
                 // Remove Edit form
                 var $form = $detailView.find('form').filter(function() {
-                    return !$(this).closest('.tagger').size();
+                    return !$(this).closest('.tagger').length;
                 });
-                if ($form.size()) {
+                if ($form.length) {
                     var $mainGroups = $form.find('div.main-groups').detach();
                     $form.parent('div').append($mainGroups);
                     $form.remove();
@@ -539,7 +548,7 @@
             // Put in original values
             var cancelEdits = function($inputs, $editButton) {
                 $inputs.each(function() {
-                    if ($(this).closest('.tagger').size()) return true;
+                    if ($(this).closest('.tagger').length) return true;
 
                     var $input = $(this);
                     var $value = $input.closest('td.value span');
@@ -561,7 +570,7 @@
             };
 
             var applyEdits = function($inputs, $editButton) {
-                if ($inputs.size()) {
+                if ($inputs.length) {
                     $inputs.animate({
                         opacity: 0.5
                     }, 500);
@@ -634,16 +643,16 @@
 
             $editButton.click(function() {
                 var $inputs = $detailView.find('input, select, textarea').filter(function() {
-                    return !$(this).closest('.tagger').size();
+                    return !$(this).closest('.tagger').length;
                 });
                 var $form = $detailView.find('form').filter(function() {
-                    return !$(this).closest('.tagger').size();
+                    return !$(this).closest('.tagger').length;
                 });
 
                 if ($(this).hasClass('done')) {
                     if (!$form.valid()) {
                         // Ignore hidden field validation
-                        if ($form.find('input.error:visible, select.error:visible').size()) {
+                        if ($form.find('input.error:visible, select.error:visible').length) {
                             return false;
                         }
                     }
@@ -796,7 +805,7 @@
                 return true;
             });
 
-            if ($detailView.find('td.value span:data(detail-view-is-editable)').size()) {
+            if ($detailView.find('td.value span:data(detail-view-is-editable)').length) {
                 var $detailsEdit = $detailView.find('div.main-groups').detach(),
                     $detailsEditForm = $('<form>').append($detailsEdit);
 
@@ -805,7 +814,7 @@
 
             // Setup form validation
             var $form = $detailView.find('form').filter(function() {
-                return !$(this).closest('.tagger').size();
+                return !$(this).closest('.tagger').length;
             });
             $form.validate();
             $form.find('input, select').each(function() {
@@ -976,7 +985,7 @@
             });
 
             var $actionButtons = $actions.find('div.action:not(.text)');
-            if ($actionButtons.size() == 1)
+            if ($actionButtons.length == 1)
                 $actionButtons.addClass('single');
             else {
                 $actionButtons.filter(':first').addClass('first');
@@ -1180,7 +1189,7 @@
                     context: context
                 }) : true
             ) : true;
-            if ($actions && ($actions.find('div.action').size() || (detailViewArgs.viewAll && showViewAll))) {
+            if ($actions && ($actions.find('div.action').length || (detailViewArgs.viewAll && showViewAll))) {
                 $actions.prependTo($firstRow.closest('div.detail-group').closest('.details'));
             }
             if (detailViewArgs.viewAll && showViewAll) {
@@ -1559,12 +1568,14 @@
             }
         }
 
-        $detailView.tabs({
-            select: function() {
+        $detailView.tabs(
+            $.extend(true, {}, tabEvents, {
+              select: function() {
                 // Cleanup old tab content
                 $detailView.find('.detail-group').children().remove();
-            }
-        });
+              }}
+            )
+        );
 
         return $detailView;
     };
@@ -1588,16 +1599,13 @@
         return true;
     };
 
-    $(document).bind('tabscreate',manageTabsContent);
-    $(document).bind('tabsactivate',manageTabsContent);
-
     // View all links
-    $('a').live('click', function(event) {
+    $(document).on('click', 'a', function(event) {
         var $target = $(event.target);
         var $viewAll = $target.closest('td.view-all a');
         var viewAllArgs;
 
-        if ($target.closest('div.detail-view').size() && $target.closest('td.view-all a').size()) {
+        if ($target.closest('div.detail-view').length && $target.closest('td.view-all a').length) {
             viewAllArgs = $viewAll.data('detail-view-link-view-all');
             viewAll(
                 viewAllArgs.custom ?
@@ -1625,7 +1633,7 @@
         var $target = $(event.target);
 
         // Refresh
-        if ($target.closest('div.toolbar div.refresh').size()) {
+        if ($target.closest('div.toolbar div.refresh').length) {
             loadTabContent(
                 $target.closest('div.detail-view').find('div.detail-group:visible'),
                 $target.closest('div.detail-view').data('view-args'),
@@ -1636,8 +1644,8 @@
         }
 
         // Detail action
-        if ($target.closest('div.detail-view [detail-action], div.detail-view .action.text').size() &&
-            !$target.closest('.list-view').size()) {
+        if ($target.closest('div.detail-view [detail-action], div.detail-view .action.text').length &&
+            !$target.closest('.list-view').length) {
             var $action = $target.closest('.action').find('[detail-action]');
             var actionName = $action.attr('detail-action');
             var actionCallback = $action.data('detail-view-action-callback');

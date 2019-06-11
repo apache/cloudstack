@@ -16,15 +16,20 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.diagnostics;
 
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
-import com.cloud.vm.VirtualMachine;
+import java.util.Collections;
+import java.util.Map;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -36,9 +41,11 @@ import org.apache.cloudstack.diagnostics.DiagnosticsType;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.util.Collections;
-import java.util.Map;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
+import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = RunDiagnosticsCmd.APINAME, responseObject = RunDiagnosticsResponse.class, entityType = {VirtualMachine.class},
         responseHasSensitiveInfo = false,
@@ -46,7 +53,7 @@ import java.util.Map;
         description = "Execute network-utility command (ping/arping/tracert) on system VMs remotely",
         authorized = {RoleType.Admin},
         since = "4.12.0.0")
-public class RunDiagnosticsCmd extends BaseCmd {
+public class RunDiagnosticsCmd extends BaseAsyncCmd {
     private static final Logger LOGGER = Logger.getLogger(RunDiagnosticsCmd.class);
     public static final String APINAME = "runDiagnostics";
 
@@ -56,6 +63,7 @@ public class RunDiagnosticsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
     @Parameter(name = ApiConstants.TARGET_ID, type = CommandType.UUID, required = true, entityType = SystemVmResponse.class,
             validations = {ApiArgValidator.PositiveNumber},
             description = "The ID of the system VM instance to diagnose")
@@ -114,6 +122,34 @@ public class RunDiagnosticsCmd extends BaseCmd {
             return account.getId();
         }
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getEventType() {
+        VirtualMachine.Type vmType = _entityMgr.findById(VirtualMachine.class, getId()).getType();
+        String eventType = "";
+        switch (vmType) {
+            case ConsoleProxy:
+                eventType =  EventTypes.EVENT_PROXY_DIAGNOSTICS;
+            break;
+            case SecondaryStorageVm:
+                eventType = EventTypes.EVENT_SSVM_DIAGNOSTICS;
+                break;
+            case DomainRouter:
+                eventType = EventTypes.EVENT_ROUTER_DIAGNOSTICS;
+                break;
+        }
+        return eventType;
+    }
+
+    @Override
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.SystemVm;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Executing diagnostics on system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
     }
 
     @Override

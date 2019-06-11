@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.storage.to;
 
+import com.cloud.storage.MigrationOptions;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.agent.api.to.DataObjectType;
@@ -46,11 +47,20 @@ public class VolumeObjectTO implements DataTO {
 
     private Long deviceId;
     private Long bytesReadRate;
+    private Long bytesReadRateMax;
+    private Long bytesReadRateMaxLength;
     private Long bytesWriteRate;
+    private Long bytesWriteRateMax;
+    private Long bytesWriteRateMaxLength;
     private Long iopsReadRate;
+    private Long iopsReadRateMax;
+    private Long iopsReadRateMaxLength;
     private Long iopsWriteRate;
+    private Long iopsWriteRateMax;
+    private Long iopsWriteRateMaxLength;
     private DiskCacheMode cacheMode;
     private Hypervisor.HypervisorType hypervisorType;
+    private MigrationOptions migrationOptions;
 
     public VolumeObjectTO() {
 
@@ -75,12 +85,21 @@ public class VolumeObjectTO implements DataTO {
         format = volume.getFormat();
         provisioningType = volume.getProvisioningType();
         bytesReadRate = volume.getBytesReadRate();
+        bytesReadRateMax = volume.getBytesReadRateMax();
+        bytesReadRateMaxLength = volume.getBytesReadRateMaxLength();
         bytesWriteRate = volume.getBytesWriteRate();
+        bytesWriteRateMax = volume.getBytesWriteRateMax();
+        bytesWriteRateMaxLength = volume.getBytesWriteRateMaxLength();
         iopsReadRate = volume.getIopsReadRate();
+        iopsReadRateMax = volume.getIopsReadRateMax();
+        iopsReadRateMaxLength = volume.getIopsReadRateMaxLength();
         iopsWriteRate = volume.getIopsWriteRate();
+        iopsWriteRateMax = volume.getIopsWriteRateMax();
+        iopsWriteRateMaxLength = volume.getIopsWriteRateMaxLength();
         cacheMode = volume.getCacheMode();
         hypervisorType = volume.getHypervisorType();
         setDeviceId(volume.getDeviceId());
+        this.migrationOptions = volume.getMigrationOptions();
     }
 
     public String getUuid() {
@@ -213,6 +232,14 @@ public class VolumeObjectTO implements DataTO {
         return bytesReadRate;
     }
 
+    public Long getBytesReadRateMax() { return bytesReadRateMax; }
+
+    public void setBytesReadRateMax(Long bytesReadRateMax) { this.bytesReadRateMax = bytesReadRateMax; }
+
+    public Long getBytesReadRateMaxLength() { return bytesReadRateMaxLength; }
+
+    public void setBytesReadRateMaxLength(Long bytesReadRateMaxLength) { this.bytesReadRateMaxLength = bytesReadRateMaxLength; }
+
     public void setBytesWriteRate(Long bytesWriteRate) {
         this.bytesWriteRate = bytesWriteRate;
     }
@@ -220,6 +247,14 @@ public class VolumeObjectTO implements DataTO {
     public Long getBytesWriteRate() {
         return bytesWriteRate;
     }
+
+    public Long getBytesWriteRateMax() { return bytesWriteRateMax; }
+
+    public void setBytesWriteRateMax(Long bytesWriteRateMax) { this.bytesWriteRateMax = bytesWriteRateMax; }
+
+    public Long getBytesWriteRateMaxLength() { return bytesWriteRateMaxLength; }
+
+    public void setBytesWriteRateMaxLength(Long bytesWriteRateMaxLength) { this.bytesWriteRateMaxLength = bytesWriteRateMaxLength; }
 
     public void setIopsReadRate(Long iopsReadRate) {
         this.iopsReadRate = iopsReadRate;
@@ -229,6 +264,14 @@ public class VolumeObjectTO implements DataTO {
         return iopsReadRate;
     }
 
+    public Long getIopsReadRateMax() { return iopsReadRateMax; }
+
+    public void setIopsReadRateMax(Long iopsReadRateMax) { this.iopsReadRateMax = iopsReadRateMax; }
+
+    public Long getIopsReadRateMaxLength() { return iopsReadRateMaxLength; }
+
+    public void setIopsReadRateMaxLength(Long iopsReadRateMaxLength) { this.iopsReadRateMaxLength = iopsReadRateMaxLength; }
+
     public void setIopsWriteRate(Long iopsWriteRate) {
         this.iopsWriteRate = iopsWriteRate;
     }
@@ -236,6 +279,14 @@ public class VolumeObjectTO implements DataTO {
     public Long getIopsWriteRate() {
         return iopsWriteRate;
     }
+
+    public Long getIopsWriteRateMax() { return iopsWriteRateMax; }
+
+    public void setIopsWriteRateMax(Long iopsWriteRateMax) { this.iopsWriteRateMax = iopsWriteRateMax; }
+
+    public Long getIopsWriteRateMaxLength() { return iopsWriteRateMaxLength; }
+
+    public void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength) { this.iopsWriteRateMaxLength = iopsWriteRateMaxLength; }
 
     public Long getDeviceId() {
         return deviceId;
@@ -251,5 +302,9 @@ public class VolumeObjectTO implements DataTO {
 
     public DiskCacheMode getCacheMode() {
         return cacheMode;
+    }
+
+    public MigrationOptions getMigrationOptions() {
+        return migrationOptions;
     }
 }

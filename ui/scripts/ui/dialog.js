@@ -131,7 +131,7 @@
                         }
                     }]
                 });
-                
+
                 return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
             };
 
@@ -382,7 +382,7 @@
 
                                 // Make sure all data is loaded to pass to select fn
                                 dependsOnLoaded = $.inArray(
-                                    true, $dependsOn.map(function(index, item) { return $(item).find('option').size() ? true : false; })
+                                    true, $dependsOn.map(function(index, item) { return $(item).find('option').length ? true : false; })
                                 ) > -1;
 
                                 if (!dependsOnLoaded) {
@@ -433,6 +433,68 @@
                             );
                         });
 
+                    } else if (field.multiDataArray) {
+
+                        $input = $('<div>');
+
+                        multiArgs = {
+                            context: args.context,
+                            response: {
+                                success: function(args) {
+                                    if (args.data == undefined || args.data.length == 0) {
+
+                                        var label = field.emptyMessage != null ? field.emptyMessage : 'No data available';
+
+                                        $input
+                                            .addClass('value')
+                                            .appendTo($value)
+                                            .append(
+                                                $('<label>').html(_l(label))
+                                            );
+
+                                    } else {
+
+                                        $input.addClass('multi-array').addClass(key).appendTo($value);
+
+                                        $(args.data).each(function() {
+
+                                            var id;
+                                            if (field.valueField)
+                                                id = this[field.valueField];
+                                             else
+                                                id = this.id !== undefined ? this.id : this.name;
+
+                                            var desc;
+                                            if (args.descriptionField)
+                                                desc = this[args.descriptionField];
+                                            else
+                                                desc = _l(this.description);
+
+                                            $input.append(
+                                                $('<div>')
+                                                    .addClass('item')
+                                                    .append(
+                                                        $.merge(
+                                                            $('<div>').addClass('name').html(_l(desc)),
+                                                            $('<div>').addClass('value').append(
+                                                                $('<input>').attr({
+                                                                    name: id,
+                                                                    type: 'checkbox'
+                                                                })
+                                                                .data('json-obj', this)
+                                                                .appendTo($value)
+                                                            )
+                                                        )
+                                                    )
+                                            );
+                                        });
+                                    }
+                                }
+                            }
+                        }
+
+                        multiFn = field.multiData;
+                        multiFn(multiArgs);
                     } else {
                         $input = $('<input>').attr({
                             name: key,
@@ -714,7 +776,7 @@
 
                 if (!$formContainer.find('form').valid()) {
                     // Ignore hidden field validation
-                    if ($formContainer.find('input.error:visible, select.error:visible').size()) {
+                    if ($formContainer.find('input.error:visible, select.error:visible').length) {
                         return false;
                     }
                 }
@@ -756,7 +818,16 @@
                                             $form.find('.loading-overlay').remove();
                                             $('div.loading-overlay').remove();
 
-                                            cloudStack.dialog.error({ message: msg });
+                                            if (!msg) {
+                                                msg = "Failed to upload file due to system misconfiguration. Please contact admin.";
+                                            }
+                                            cloudStack.dialog.notice({ message: msg });
+
+                                            $('.tooltip-box').remove();
+                                            $formContainer.remove();
+                                            $(this).dialog('destroy');
+
+                                            $('.hovered-elem').hide();
                                         }
                                     }
                                 };
@@ -908,7 +979,7 @@
                     click: function() {
                         if (!$listView.find(
                             'input[type=radio]:checked, input[type=checkbox]:checked'
-                        ).size()) {
+                        ).length) {
                             cloudStack.dialog.notice({
                                 message: _l('message.select.instance')
                             });
@@ -1018,7 +1089,7 @@
                     }
                 }]
             });
-            
+
             return  cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
         },
 
@@ -1046,7 +1117,7 @@
                         }
                     }]
                 });
-                             
+
                 return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog, 5001);
             }
             return false;

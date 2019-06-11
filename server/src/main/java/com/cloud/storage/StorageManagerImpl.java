@@ -80,6 +80,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
@@ -115,7 +116,6 @@ import com.cloud.capacity.CapacityState;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManagerListener;
-import com.cloud.cluster.ManagementServerHost;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationManagerImpl;
@@ -522,7 +522,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public String getStoragePoolTags(long poolId) {
-        return com.cloud.utils.StringUtils.listToCsvTags(_storagePoolDao.searchForStoragePoolTags(poolId));
+        return StringUtils.listToCsvTags(getStoragePoolTagList(poolId));
+    }
+
+    @Override
+    public List<String> getStoragePoolTagList(long poolId) {
+        return _storagePoolDao.searchForStoragePoolTags(poolId);
     }
 
     @Override
@@ -1790,8 +1795,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Destination pool id: " + pool.getId());
         }
-
-        StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
+        // allocated space includes templates
+        final StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
         long allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
         long totalAskingSize = 0;
 
@@ -1832,6 +1837,32 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
 
+        return checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize);
+    }
+
+    @Override
+    public boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSiz) {
+        if (!checkUsagedSpace(pool)) {
+            return false;
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Destination pool id: " + pool.getId());
+        }
+        long totalAskingSize = newSiz - currentSize;
+
+        if (totalAskingSize <= 0) {
+            return true;
+        } else {
+            final StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
+            final long allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
+            return checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize);
+        }
+    }
+
+    private boolean checkPoolforSpace(StoragePool pool, long allocatedSizeWithTemplate, long totalAskingSize) {
+        // allocated space includes templates
+        StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
+
         long totalOverProvCapacity;
 
         if (pool.getPoolType().supportsOverProvisioning()) {
@@ -1852,16 +1883,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         double storageAllocatedThreshold = CapacityManager.StorageAllocatedCapacityDisableThreshold.valueIn(pool.getDataCenterId());
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Checking pool with ID " + pool.getId() + " for volume allocation " + volumes.toString() + ", maxSize: " + totalOverProvCapacity + ", totalAllocatedSize: "
-                    + allocatedSizeWithTemplate + ", askingSize: " + totalAskingSize + ", allocated disable threshold: " + storageAllocatedThreshold);
+            s_logger.debug("Checking pool: " + pool.getId() + " for storage allocation , maxSize : " + totalOverProvCapacity + ", totalAllocatedSize : " + allocatedSizeWithTemplate
+                    + ", askingSize : " + totalAskingSize + ", allocated disable threshold: " + storageAllocatedThreshold);
         }
 
         double usedPercentage = (allocatedSizeWithTemplate + totalAskingSize) / (double)(totalOverProvCapacity);
 
         if (usedPercentage > storageAllocatedThreshold) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Insufficient un-allocated capacity on the pool with ID " + pool.getId() + " for volume allocation: " + volumes.toString() + " since its allocated percentage "
-                        + usedPercentage + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold " + storageAllocatedThreshold + ", skipping this pool");
+                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for storage allocation since its allocated percentage: " + usedPercentage
+                        + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: " + storageAllocatedThreshold + ", skipping this pool");
             }
 
             return false;
@@ -1869,8 +1900,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         if (totalOverProvCapacity < (allocatedSizeWithTemplate + totalAskingSize)) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Insufficient un-allocated capacity on the pool with ID " + pool.getId() + " for volume allocation: " + volumes.toString() + "; not enough storage, maxSize: "
-                        + totalOverProvCapacity + ", totalAllocatedSize: " + allocatedSizeWithTemplate + ", askingSize: " + totalAskingSize);
+                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for storage allocation, not enough storage, maxSize : " + totalOverProvCapacity
+                        + ", totalAllocatedSize : " + allocatedSizeWithTemplate + ", askingSize : " + totalAskingSize);
             }
 
             return false;
@@ -2065,6 +2096,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         } else {
             // populate template_store_ref table
             _imageSrv.addSystemVMTemplatesToSecondary(store);
+            _imageSrv.handleTemplateSync(store);
         }
 
         // associate builtin template with zones associated with this image store
@@ -2395,7 +2427,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return diskOffering.getBytesReadRate();
         } else {
             Long bytesReadRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingBytesReadRate.key()));
-            if ((bytesReadRate > 0) && ((offering == null) || (!offering.getSystemUse()))) {
+            if ((bytesReadRate > 0) && ((offering == null) || (!offering.isSystemUse()))) {
                 return bytesReadRate;
             }
         }
@@ -2411,7 +2443,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return diskOffering.getBytesWriteRate();
         } else {
             Long bytesWriteRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingBytesWriteRate.key()));
-            if ((bytesWriteRate > 0) && ((offering == null) || (!offering.getSystemUse()))) {
+            if ((bytesWriteRate > 0) && ((offering == null) || (!offering.isSystemUse()))) {
                 return bytesWriteRate;
             }
         }
@@ -2427,7 +2459,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return diskOffering.getIopsReadRate();
         } else {
             Long iopsReadRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingIopsReadRate.key()));
-            if ((iopsReadRate > 0) && ((offering == null) || (!offering.getSystemUse()))) {
+            if ((iopsReadRate > 0) && ((offering == null) || (!offering.isSystemUse()))) {
                 return iopsReadRate;
             }
         }
@@ -2443,7 +2475,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return diskOffering.getIopsWriteRate();
         } else {
             Long iopsWriteRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingIopsWriteRate.key()));
-            if ((iopsWriteRate > 0) && ((offering == null) || (!offering.getSystemUse()))) {
+            if ((iopsWriteRate > 0) && ((offering == null) || (!offering.isSystemUse()))) {
                 return iopsWriteRate;
             }
         }
@@ -2457,7 +2489,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {StorageCleanupInterval, StorageCleanupDelay, StorageCleanupEnabled, TemplateCleanupEnabled};
+        return new ConfigKey<?>[]{
+                StorageCleanupInterval,
+                StorageCleanupDelay,
+                StorageCleanupEnabled,
+                TemplateCleanupEnabled,
+                KvmStorageOfflineMigrationWait,
+                KvmStorageOnlineMigrationWait,
+                KvmAutoConvergence,
+                MaxNumberOfManagedClusteredFileSystems,
+                PRIMARY_STORAGE_DOWNLOAD_WAIT
+        };
     }
 
     @Override

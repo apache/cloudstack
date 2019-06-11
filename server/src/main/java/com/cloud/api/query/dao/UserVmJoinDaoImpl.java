@@ -41,6 +41,8 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.query.QueryManagerImpl;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
 import com.cloud.service.ServiceOfferingDetailsVO;
@@ -267,15 +269,14 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                     for (NicSecondaryIpVO ip : secondaryIps) {
                         NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
                         ipRes.setId(ip.getUuid());
-                        ipRes.setIpAddr(ip.getIp4Address());
+                        ApiResponseHelper.setResponseIpAddress(ip, ipRes);
                         ipList.add(ipRes);
                     }
                     nicResponse.setSecondaryIps(ipList);
                 }
                 nicResponse.setObjectName("nic");
 
-                List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = _nicExtraDhcpOptionDao.listByNicId(nic_id)
-                        .stream()
+                List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = _nicExtraDhcpOptionDao.listByNicId(nic_id).stream()
                         .map(vo -> new NicExtraDhcpOptionResponse(Dhcp.DhcpOptionCode.valueOfInt(vo.getCode()).getName(), vo.getCode(), vo.getValue()))
                         .collect(Collectors.toList());
                 nicResponse.setExtraDhcpOptions(nicExtraDhcpOptionResponses);
@@ -305,13 +306,24 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
         // set resource details map
         // Allow passing details to end user
-        List<UserVmDetailVO> vmDetails = _userVmDetailsDao.listDetails(userVm.getId());
+        // Honour the display field and only return if display is set to true
+        List<UserVmDetailVO> vmDetails = _userVmDetailsDao.listDetails(userVm.getId(), true);
         if (vmDetails != null) {
             Map<String, String> resourceDetails = new HashMap<String, String>();
             for (UserVmDetailVO userVmDetailVO : vmDetails) {
                 resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
             }
+            // Remove blacklisted settings if user is not admin
+            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                String[] userVmSettingsToHide = QueryManagerImpl.UserVMBlacklistedDetails.value().split(",");
+                for (String key : userVmSettingsToHide) {
+                    resourceDetails.remove(key.trim());
+                }
+            }
             userVmResponse.setDetails(resourceDetails);
+            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                userVmResponse.setReadOnlyUIDetails(QueryManagerImpl.UserVMReadOnlyUIDetails.value());
+            }
         }
 
         userVmResponse.setObjectName(objectName);
@@ -400,7 +412,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 for (NicSecondaryIpVO ip : secondaryIps) {
                     NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
                     ipRes.setId(ip.getUuid());
-                    ipRes.setIpAddr(ip.getIp4Address());
+                    ApiResponseHelper.setResponseIpAddress(ip, ipRes);
                     ipList.add(ipRes);
                 }
                 nicResponse.setSecondaryIps(ipList);

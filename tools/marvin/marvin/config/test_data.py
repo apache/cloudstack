@@ -473,6 +473,12 @@ test_data = {
         "supportedservices":
             "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat,NetworkACL"
     },
+    "vpc_offering_reduced": {
+        "name": "VPC reduced off",
+        "displaytext": "VPC reduced off",
+        "supportedservices":
+            "Dhcp,Dns,SourceNat,UserData,StaticNat,NetworkACL"
+    },
     "vpc_offering_multi_lb": {
         "name": "VPC offering with multiple Lb service providers",
         "displaytext": "VPC offering with multiple Lb service providers",
@@ -636,6 +642,26 @@ test_data = {
             "StaticNat": "VpcVirtualRouter",
             "NetworkACL": "VpcVirtualRouter",
             "Lb": "VpcVirtualRouter"
+        }
+    },
+    "nw_offering_reduced_vpc": {
+        "name": 'Reduced Network for VPC',
+        "displaytext": 'Reduced Network for VPC',
+        "guestiptype": 'Isolated',
+        "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,UserData,'
+                             'Dns',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "tags": "native",
+        "useVpc": 'on',
+        "ispersistent": 'True',
+        "serviceProviderList": {
+            "Dhcp": "VpcVirtualRouter",
+            "StaticNat": "VpcVirtualRouter",
+            "SourceNat": "VpcVirtualRouter",
+            "NetworkACL": "VpcVirtualRouter",
+            "UserData": "VpcVirtualRouter",
+            "Dns": "VpcVirtualRouter"
         }
     },
     "nw_off_persistent_VPCVR_LB": {
@@ -1212,6 +1238,24 @@ test_data = {
             "Fat Type Disk offering",
         "disksize": 1,  # in GB
         "provisioningtype": "fat"
+    },
+    "ioburst": {
+        "name": "io burst disk offering",
+        "displaytext": "io burst disk offering",
+        "disksize": 1,
+        "provisioningtype": "sparse",
+        "bytesReadRate": 500,
+        "bytesReadRateMax": 2000,
+        "bytesReadRateMaxLength": 120,
+        "bytesWriteRate": 501,
+        "bytesWriteRateMax": 2001,
+        "bytesWriteRateMaxLength": 121,
+        "iopsReadRate": 1000,
+        "iopsReadRateMax": 2500,
+        "iopsReadRateMaxLength": 122,
+        "iopsWriteRate": 1001,
+        "iopsWriteRateMax": 2501,
+        "iopsWriteRateMaxLength": 123
     },
     "sparse_disk_offering": {
         "displaytext": "Sparse",

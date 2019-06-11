@@ -212,7 +212,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     private List<VpcProvider> vpcElements = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
     private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp, Provider.InternalLbVm, Provider.Netscaler,
-            Provider.JuniperContrailVpcRouter, Provider.Ovs, Provider.NuageVsp, Provider.BigSwitchBcf, Provider.ConfigDrive);
+            Provider.JuniperContrailVpcRouter, Provider.Ovs, Provider.BigSwitchBcf, Provider.ConfigDrive);
 
     int _cleanupInterval;
     int _maxNetworks;
@@ -353,7 +353,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Set<Network.Provider> sdnProviders = new HashSet<Network.Provider>();
         sdnProviders.add(Provider.NiciraNvp);
         sdnProviders.add(Provider.JuniperContrailVpcRouter);
-        sdnProviders.add(Provider.NuageVsp);
 
         boolean sourceNatSvc = false;
         boolean firewallSvs = false;
@@ -1262,7 +1261,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 4) Only one network in the VPC can support public LB inside the VPC.
         // Internal LB can be supported on multiple VPC tiers
-        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb) && guestNtwkOff.getPublicLb()) {
+        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb) && guestNtwkOff.isPublicLb()) {
             final List<? extends Network> networks = getVpcNetworks(vpc.getId());
             for (final Network network : networks) {
                 if (networkId != null && network.getId() == networkId.longValue()) {
@@ -1272,7 +1271,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     final NetworkOffering otherOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
                     // throw only if networks have different offerings with
                     // public lb support
-                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb) && otherOff.getPublicLb() && guestNtwkOff.getId() != otherOff.getId()) {
+                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb) && otherOff.isPublicLb() && guestNtwkOff.getId() != otherOff.getId()) {
                         throw new InvalidParameterValueException("Public LB service is already supported " + "by network " + network + " in VPC " + vpc);
                     }
                 }
@@ -1319,7 +1318,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         // 5) If Netscaler is LB provider make sure it is in dedicated mode
-        if (providers.contains(Provider.Netscaler) && !guestNtwkOff.getDedicatedLB()) {
+        if (providers.contains(Provider.Netscaler) && !guestNtwkOff.isDedicatedLB()) {
             throw new InvalidParameterValueException("Netscaler only with Dedicated LB can belong to VPC");
         }
         return;
@@ -2458,6 +2457,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
      * @throws InsufficientCapacityException
      */
     private boolean rollingRestartVpc(final Vpc vpc, final ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
+        if (!NetworkOrchestrationService.RollingRestartEnabled.value()) {
+            if (shutdownVpc(vpc.getId())) {
+                return startVpc(vpc.getId(), false);
+            }
+            s_logger.warn("Failed to shutdown vpc as a part of VPC " + vpc + " restart process");
+            return false;
+        }
         s_logger.debug("Performing rolling restart of routers of VPC " + vpc);
         _ntwkMgr.destroyExpendableRouters(_routerDao.listByVpcId(vpc.getId()), context);
 
@@ -2483,6 +2489,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // Destroy old routers
         for (final DomainRouterVO oldRouter : oldRouters) {
+            _routerService.stopRouter(oldRouter.getId(), true);
             _routerService.destroyRouter(oldRouter.getId(), context.getAccount(), context.getCaller().getId());
         }
 

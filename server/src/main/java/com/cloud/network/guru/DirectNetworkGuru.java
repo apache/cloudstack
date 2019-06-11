@@ -22,6 +22,7 @@ import javax.inject.Inject;
 
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
@@ -38,13 +39,13 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.IpAddressManager;
-import com.cloud.network.Ipv6AddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
+import com.cloud.network.NetworkService;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -53,9 +54,7 @@ import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
@@ -65,6 +64,7 @@ import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
@@ -74,6 +74,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
+import com.cloud.vm.dao.NicSecondaryIpVO;
 
 
 public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
@@ -90,12 +91,6 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject
     IPAddressDao _ipAddressDao;
     @Inject
-    NetworkOfferingDao _networkOfferingDao;
-    @Inject
-    UserIpv6AddressDao _ipv6Dao;
-    @Inject
-    Ipv6AddressManager _ipv6Mgr;
-    @Inject
     NicSecondaryIpDao _nicSecondaryIpDao;
     @Inject
     NicDao _nicDao;
@@ -105,6 +100,10 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
+    @Inject
+    private NetworkService networkService;
+    @Inject
+    private NicSecondaryIpDao nicSecondaryIpDao;
 
     private static final TrafficType[] TrafficTypes = {TrafficType.Guest};
     protected IsolationMethod[] _isolationMethods;
@@ -119,10 +118,19 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         return false;
     }
 
+    /**
+     * Return true if the physical network isolation method contains the expected isolation method for this guru
+     */
     protected boolean isMyIsolationMethod(PhysicalNetwork physicalNetwork) {
-        for (IsolationMethod m : _isolationMethods) {
-            if (physicalNetwork.getIsolationMethods().contains(m.toString())) {
-                return true;
+        for (IsolationMethod m : this.getIsolationMethods()) {
+            List<String> isolationMethods = physicalNetwork.getIsolationMethods();
+            if (CollectionUtils.isNotEmpty(isolationMethods)) {
+                for (String method : isolationMethods) {
+                    s_logger.debug(method + ": " + m.toString());
+                    if (method.equalsIgnoreCase(m.toString())) {
+                        return true;
+                    }
+                }
             }
         }
         return false;
@@ -133,21 +141,11 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         return TrafficTypes;
     }
 
-    /**
-     * True for Advanced zones, with VXLAN isolation method and Security Groups enabled
-     */
-    private boolean isMyIsolationMethodVxlanWithSecurityGroups(NetworkOffering offering, DataCenter dc, PhysicalNetwork physnet) {
-        return dc.getNetworkType().equals(NetworkType.Advanced) &&
-                _networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Service.SecurityGroup) &&
-                physnet.getIsolationMethods().contains("VXLAN");
-    }
-
     protected boolean canHandle(NetworkOffering offering, DataCenter dc, PhysicalNetwork physnet) {
-        // this guru handles only Guest networks in Advance zone with source nat service disabled
-        boolean vxlanWithSecurityGroups = isMyIsolationMethodVxlanWithSecurityGroups(offering, dc, physnet);
-        if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) &&
-                (isMyIsolationMethod(physnet) || vxlanWithSecurityGroups) && offering.getGuestType() == GuestType.Shared
-                && !_ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.NuageVsp)
+        if (dc.getNetworkType() == NetworkType.Advanced
+                && isMyTrafficType(offering.getTrafficType())
+                && isMyIsolationMethod(physnet)
+                && offering.getGuestType() == GuestType.Shared
                 && !_ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.NiciraNvp)) {
             return true;
         } else {
@@ -162,6 +160,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
 
         if (!canHandle(offering, dc, physnet)) {
+            s_logger.info("Refusing to design this network");
             return null;
         }
 
@@ -172,7 +171,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
         NetworkVO config =
             new NetworkVO(offering.getTrafficType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), state, plan.getDataCenterId(),
-                    plan.getPhysicalNetworkId(), offering.getRedundantRouter());
+                    plan.getPhysicalNetworkId(), offering.isRedundantRouter());
 
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) || (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
@@ -206,9 +205,6 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
         boolean isSecurityGroupEnabled = _networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Service.SecurityGroup);
         if (isSecurityGroupEnabled) {
-            if (userSpecified.getIp6Cidr() != null) {
-                throw new InvalidParameterValueException("Didn't support security group with IPv6");
-            }
             config.setName("SecurityGroupEnabledNetwork");
             config.setDisplayText("SecurityGroupEnabledNetwork");
         }
@@ -218,7 +214,11 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
     protected DirectNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] { new IsolationMethod("VLAN") };
+        _isolationMethods = new IsolationMethod[] { new IsolationMethod("VLAN"), new IsolationMethod("VXLAN") };
+    }
+
+    public IsolationMethod[] getIsolationMethods() {
+        return _isolationMethods;
     }
 
     @Override
@@ -338,18 +338,22 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                         List<String> nicSecIps = null;
                         nicSecIps = _nicSecondaryIpDao.getSecondaryIpAddressesForNic(nic.getId());
                         for (String secIp : nicSecIps) {
-                            IPAddressVO pubIp = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), secIp);
-                            _ipAddrMgr.markIpAsUnavailable(pubIp.getId());
-                            _ipAddressDao.unassignIpAddress(pubIp.getId());
+                            if (NetUtils.isValidIp4(secIp)) {
+                                IPAddressVO pubIp = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), secIp);
+                                _ipAddrMgr.markIpAsUnavailable(pubIp.getId());
+                                _ipAddressDao.unassignIpAddress(pubIp.getId());
+                            } else {
+                                NicSecondaryIpVO nicSecIp = nicSecondaryIpDao.findByIp6AddressAndNetworkId(secIp, nic.getNetworkId());
+                                if (nicSecIp != null) {
+                                    networkService.releaseSecondaryIpFromNic(nicSecIp.getId());
+                                }
+                            }
                         }
                     }
                 });
             }
         }
 
-        if (nic.getIPv6Address() != null) {
-            _ipv6Mgr.revokeDirectIpv6Address(nic.getNetworkId(), nic.getIPv6Address());
-        }
         nic.deallocate();
     }
 

@@ -93,6 +93,9 @@ public interface NetworkOrchestrationService {
     ConfigKey<Boolean> ForgedTransmits = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.forged.transmits", "true",
             "Whether to allow or deny forged transmits on nics for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
+    ConfigKey<Boolean> RollingRestartEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.rolling.restart", "true",
+            "Whether to allow or deny rolling restart of network routers.", true);
+
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
 
@@ -306,4 +309,8 @@ public interface NetworkOrchestrationService {
      */
     boolean areRoutersRunning(final List<? extends VirtualRouter> routers);
 
+    /**
+     * Remove entry from /etc/dhcphosts and /etc/hosts on virtual routers
+     */
+    void cleanupNicDhcpDnsEntry(Network network, VirtualMachineProfile vmProfile, NicProfile nicProfile);
 }

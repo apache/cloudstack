@@ -22,14 +22,19 @@ package com.cloud.agent.api;
 public class UnregisterVMCommand extends Command {
     String vmName;
     boolean cleanupVmFiles = false;
+    boolean executeInSequence;
 
     public UnregisterVMCommand(String vmName) {
+        this(vmName, false);
+    }
+    public UnregisterVMCommand(String vmName, boolean executeInSequence) {
         this.vmName = vmName;
+        this.executeInSequence = executeInSequence;
     }
 
     @Override
     public boolean executeInSequence() {
-        return false;
+        return executeInSequence;
     }
 
     public String getVmName() {
