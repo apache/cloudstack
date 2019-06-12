@@ -1190,13 +1190,14 @@
                     .addClass('multiSelectCheckbox')
                     .click(function() {
                         var checked = $(this).is(':checked');
-                        var numRows = $(this).parents('tbody').find('input.multiSelectCheckbox').length;
-                        var numRowsChecked = $(this).parents('tbody').find('input.multiSelectCheckbox:checked').length;
+                        var $tbody = $(this).closest('tbody');
+                        var numRows = $tbody.find('input.multiSelectCheckbox').length;
+                        var numRowsChecked = $tbody.find('input.multiSelectCheckbox:checked').length;
                         var enabled = checked || (numRowsChecked > 0);
 
-                        toggleMultiSelectActions($td.closest('.list-view'), enabled);
+                        toggleMultiSelectActions($(this).closest('.list-view'), enabled);
 
-                        $td.closest('.list-view').find('input.multiSelectMasterCheckbox').attr('checked', (numRows === numRowsChecked));
+                        $(this).closest('.list-view').find('input.multiSelectMasterCheckbox').prop('checked', (numRows === numRowsChecked));
                     });
 
                 $td.append(
@@ -2454,8 +2455,8 @@
     var toggleMultiSelectActions = function($listView, enabled) {
         var $multiSelectActions = $listView.find('div.main-action.multiSelectAction');
 
-        $listView.find('div.action.add')[enabled ? 'hide' : 'show']();
-        $listView.find('div.main-action:not(.multiSelectAction)')[enabled ? 'hide' : 'show']();
+        $listView.find('div.action.add').toggle(!enabled);
+        $listView.find('div.main-action:not(.multiSelectAction)').toggle(!enabled);
         $multiSelectActions.hide();
 
         if (enabled) {
@@ -2466,7 +2467,7 @@
 
                 if (preFilter) {
                     $selectedVMs = $listView.find('tbody tr').filter(function() {
-                        return $(this).find('td.multiselect input[type=checkbox]:checked').length
+                        return $(this).find('td.multiselect input[type=checkbox]:checked').length;
                     });
                     context[$listView.data('view-args').activeSection] = $selectedVMs.map(function(index, item) {
                         return $(item).data('json-obj');
@@ -2478,7 +2479,7 @@
                 return true;
             }).show();
         }
-    }
+    };
 
     $.fn.listView = function(args, options) {
         if (!options) options = {};
