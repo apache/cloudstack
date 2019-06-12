@@ -92,11 +92,12 @@
   display: none !important;
 }
 
-.quick-view-tooltip .detail-view .ui-tabs-panel {
+.quick-view-tooltip .detail-view.ui-tabs div.ui-tabs-panel {
   display: inline-block;
   float: left;
   width: 100% !important;
   height: auto;
+  background-color: inherit;
   overflow: hidden;
 }
 
