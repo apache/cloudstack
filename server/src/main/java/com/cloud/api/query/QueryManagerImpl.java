@@ -646,7 +646,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
 
-        Long projectId = cmd.getProjectId() == null ? cmd.getResourceId() : cmd.getProjectId();
+        Long projectId = cmd.getProjectId();
+        if (resourceType.equalsIgnoreCase("project") && projectId == null) {
+            projectId = Long.parseLong(resourceId);
+        }
         _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), projectId, permittedAccounts, domainIdRecursiveListProject, listAll, false);
 
         Long domainId = domainIdRecursiveListProject.first();
