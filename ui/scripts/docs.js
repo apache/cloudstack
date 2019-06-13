@@ -1363,11 +1363,14 @@ cloudStack.docs = {
     helpUpdateTemplateOperation: {
         desc: 'Select the permission operator. Add is for sharing with user/project and Reset simply removes all the accounts and projects which template has been shared with.'
     },
+    helpUpdateTemplateShareWith: {
+        desc: 'Select account or project with which template is to be shared with.'
+    },
     helpUpdateTemplateAccounts: {
-        desc: 'Choose one or more accounts to share this template. Ctrl+Click to select multiple accounts to share with. Accounts is mutually exclusive with Projects and only one of the 2 can be specified, do not select any projects when sharing templates with accounts.'
+        desc: 'Choose one or more accounts to share this template. Ctrl+Click to select multiple accounts to share with. Selecting "Add > Accounts" shows list of accounts that do not have permissions. Selecting "Remove > Accounts" shows list of accounts that already have permissions.'
     },
     helpUpdateTemplateProjectIds: {
-        desc: 'Choose one or more projects to share this template. Ctrl+Click to select multiple projects to share with. Projects is mutually exclusive with Accounts and only one of the 2 can be specified, do not select any accounts when sharing templates with projects.'
+        desc: 'Choose one or more projects to share this template. Ctrl+Click to select multiple projects to share with. Selecting "Add > Projects" shows list of projects that do not have permissions. Selecting "Remove > Projects" shows list of projects that already have permissions.'
     },
     helpUpdateTemplateAccountList: {
         desc: 'A comma seperated list of accounts to share the template with. Must be specified with the Add/Remove operation, leave Project ID blank if this is specified.'

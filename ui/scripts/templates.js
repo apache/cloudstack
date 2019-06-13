@@ -1541,17 +1541,24 @@
                                                     id: "reset",
                                                     description: "Reset"
                                                 });
+
+                                                args.response.success({
+                                                    data: items
+                                                });
+
                                                 // Select change
                                                 args.$select.change(function () {
                                                     var $form = $(this).closest('form');
                                                     var selectedOperation = $(this).val();
                                                     if (selectedOperation === "reset") {
                                                         $form.find('[rel=projects]').hide();
+                                                        $form.find('[rel=sharewith]').hide();
                                                         $form.find('[rel=accounts]').hide();
                                                         $form.find('[rel=accountlist]').hide();
                                                     } else {
                                                         // allow.user.view.domain.accounts = true
                                                         // Populate List of accounts in domain as dropdown multiselect
+                                                        $form.find('[rel=sharewith]').css('display', 'inline-block');
                                                         if (g_allowUserViewAllDomainAccounts === true) {
                                                             $form.find('[rel=projects]').css('display', 'inline-block');
                                                             $form.find('[rel=accounts]').css('display', 'inline-block');
@@ -1565,67 +1572,54 @@
                                                         }
                                                     }
                                                 });
-
-                                                args.$select.trigger("change");
-                                                args.response.success({
-                                                    data: items
-                                                });
                                             }
                                         },
-                                        accounts: {
-                                            label: 'label.accounts',
-                                            docID: 'helpUpdateTemplateAccounts',
-                                            isMultiple: true,
+                                        shareWith: {
+                                            label: 'label.share.with',
+                                            docID: 'helpUpdateTemplateShareWith',
+                                            validation: {
+                                                required: true
+                                            },
                                             dependsOn: 'operation',
                                             select: function (args) {
-                                                var urlString = "";
-                                                var operation = args.operation;
-                                                if (operation !== "reset") {
-                                                    if (operation === "add") {
-                                                        urlString = "listAccounts&listall=true";
-                                                    } else {
-                                                        // operation = remove
-                                                        // Only display accounts which template has been shared with
-                                                        urlString = 'listTemplatePermissions&id=' + args.context.templates[0].id;
-                                                    }
-                                                    $.ajax({
-                                                        url: createURL(urlString),
-                                                        dataType: "json",
-                                                        async: true,
-                                                        success: function (json) {
-                                                            var accountObjs = [];
-                                                            var items;
-                                                            if (operation === "add") {
-                                                                items = json.listaccountsresponse.account;
-                                                                if (items != null) {
-                                                                    for (var i = 0; i < items.length; i++) {
-                                                                        if (items[i].name !== g_account) {
-                                                                            accountObjs.push({
-                                                                                name: items[i].name,
-                                                                                description: items[i].name
-                                                                            });
-                                                                        }
-                                                                    }
-                                                                }
+                                                var items = [];
+                                                items.push({
+                                                    id: "account",
+                                                    description: "Account"
+                                                });
+                                                items.push({
+                                                    id: "project",
+                                                    description: "Project"
+                                                });
+
+                                                args.response.success({ data: items });
+
+                                                // Select change
+                                                args.$select.change(function () {
+                                                    var $form = $(this).closest('form');
+                                                    var sharedWith = $(this).val();
+                                                    if (args.operation !== "reset") {
+                                                        if (sharedWith === "project") {
+                                                            $form.find('[rel=accounts]').hide();
+                                                            $form.find('[rel=accountlist]').hide();
+                                                            $form.find('[rel=projects]').css('display', 'inline-block');
+                                                        } else {
+                                                            // allow.user.view.domain.accounts = true
+                                                            // Populate List of accounts in domain as dropdown multiselect
+                                                            if (g_allowUserViewAllDomainAccounts === true) {
+                                                                $form.find('[rel=projects]').hide();
+                                                                $form.find('[rel=accountlist]').hide();
+                                                                $form.find('[rel=accounts]').css('display', 'inline-block');
                                                             } else {
-                                                                items = json.listtemplatepermissionsresponse.templatepermission.account;
-                                                                if (items != null) {
-                                                                    for (var j = 0; j < items.length; j++) {
-                                                                        if (items[j] !== g_account) {
-                                                                            accountObjs.push({
-                                                                                name: items[j],
-                                                                                description: items[j]
-                                                                            });
-                                                                        }
-                                                                    }
-                                                                }
+                                                                // If users are not allowed to see accounts in the domain, show input text field for Accounts
+                                                                // Projects will always be shown as dropdown multiselect
+                                                                $form.find('[rel=projects]').hide();
+                                                                $form.find('[rel=accounts]').hide();
+                                                                $form.find('[rel=accountlist]').css('display', 'inline-block');
                                                             }
-                                                            args.response.success({
-                                                                data: accountObjs
-                                                            });
                                                         }
-                                                    });
-                                                }
+                                                    }
+                                                });
                                             }
                                         },
 
@@ -1634,56 +1628,127 @@
                                             docID: 'helpUpdateTemplateAccountList'
                                         },
 
+                                        accounts: {
+                                            label: 'label.accounts',
+                                            docID: 'helpUpdateTemplateAccounts',
+                                            dependsOn: 'shareWith',
+                                            isMultiple: true,
+                                            select: function (args) {
+                                                var operation = args.operation;
+                                                if (operation !== "reset") {
+                                                    $.ajax({
+                                                        url: createURL("listAccounts&listall=true"),
+                                                        dataType: "json",
+                                                        async: true,
+                                                        success: function (jsonProjects) {
+                                                            var accounts = jsonProjects.listaccountsresponse.account;
+                                                            var accountByName = {};
+                                                            for (var i = 0; i < accounts.length; i++) {
+                                                                accountByName[accounts[i].name] = {
+                                                                    projName: accounts[i].name,
+                                                                    hasPermission: false
+                                                                };
+                                                            }
+                                                            $.ajax({
+                                                                url: createURL('listTemplatePermissions&id=' + args.context.templates[0].id),
+                                                                dataType: "json",
+                                                                async: true,
+                                                                success: function (json) {
+                                                                    items = json.listtemplatepermissionsresponse.templatepermission.account;
+                                                                    $.each(items, function(idx, accountName) {
+                                                                        accountByName[accountName].hasPermission = true;
+                                                                    });
+
+                                                                    var accountObjs = [];
+                                                                    if (operation === "add") {
+                                                                        if (accounts != null) {
+                                                                            $.each(accounts, function(idx, account) {
+                                                                                // Skip already permitted accounts
+                                                                                if (!accountByName[account.name] || accountByName[account.name].hasPermission == false) {
+                                                                                    accountObjs.push({
+                                                                                        name: account.name,
+                                                                                        description: account.name
+                                                                                    });
+                                                                                }
+                                                                            });
+                                                                        }
+                                                                    } else if (items != null) {
+                                                                        $.each(items, function(idx, accountName) {
+                                                                            if (accountName !== g_account) {
+                                                                                accountObjs.push({
+                                                                                    name: accountName,
+                                                                                    description: accountName
+                                                                                });
+                                                                            }
+                                                                        });
+                                                                    }
+                                                                    args.$select.html('');
+                                                                    args.response.success({data: accountObjs});
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        },
+
                                         projects: {
                                             label: 'label.projects',
                                             docID: 'helpUpdateTemplateProjectIds',
-                                            dependsOn: 'operation',
+                                            dependsOn: 'shareWith',
                                             isMultiple: true,
                                             select: function (args) {
-                                                var urlString = "";
                                                 var operation = args.operation;
                                                 if (operation !== "reset") {
-                                                    if (operation === "add") {
-                                                        urlString = "listProjects&listall=true";
-                                                    } else {
-                                                        // operation = remove
-                                                        // Only display accounts which template has been shared with
-                                                        urlString = 'listTemplatePermissions&id=' + args.context.templates[0].id;
-                                                    }
                                                     $.ajax({
-                                                        url: createURL(urlString),
+                                                        url: createURL("listProjects&listall=true"),
                                                         dataType: "json",
                                                         async: true,
-                                                        success: function (json) {
-                                                            var projectObjs = [];
-                                                            var items;
-                                                            if (operation === "add") {
-                                                                items = json.listprojectsresponse.project;
-                                                                if (items != null) {
-                                                                    for (var i = 0; i < items.length; i++) {
-                                                                        projectObjs.push({
-                                                                            id: items[i].id,
-                                                                            description: items[i].name
-                                                                        });
-                                                                    }
-                                                                }
-                                                            } else {
-                                                                // Return and array of project IDs
-                                                                items = json.listtemplatepermissionsresponse.templatepermission.projectids;
-                                                                if (items != null) {
-                                                                    for (var j = 0; j < items.length; j++) {
-                                                                        if (items[j] !== g_account) {
-                                                                            projectObjs.push({
-                                                                                id: items[j],
-                                                                                description: items[j]
+                                                        success: function (jsonProjects) {
+                                                            var projects = jsonProjects.listprojectsresponse.project;
+                                                            var projectsByIds = {};
+                                                            for (var i = 0; i < projects.length; i++) {
+                                                                projectsByIds[projects[i].id] = {
+                                                                    projName: projects[i].name,
+                                                                    hasPermission: false
+                                                                };
+                                                            }
+                                                            $.ajax({
+                                                                url: createURL('listTemplatePermissions&id=' + args.context.templates[0].id),
+                                                                dataType: "json",
+                                                                async: true,
+                                                                success: function (json) {
+                                                                    items = json.listtemplatepermissionsresponse.templatepermission.projectids;
+                                                                    $.each(items, function(idx, projectId) {
+                                                                        projectsByIds[projectId].hasPermission = true;
+                                                                    });
+
+                                                                    var projectObjs = [];
+                                                                    if (operation === "add") {
+                                                                        if (projects != null) {
+                                                                            $.each(projects, function(idx, project) {
+                                                                                // Skip already permitted projects
+                                                                                if (!projectsByIds[project.id] || projectsByIds[project.id].hasPermission == false) {
+                                                                                    projectObjs.push({
+                                                                                        id: project.id,
+                                                                                        description: project.name
+                                                                                    });
+                                                                                }
                                                                             });
                                                                         }
+                                                                    } else if (items != null) {
+                                                                        $.each(items, function(idx, projectId) {
+                                                                            if (projectId !== g_account) {
+                                                                                projectObjs.push({
+                                                                                    id: projectId,
+                                                                                    description: projectsByIds[projectId] ? projectsByIds[projectId].projName : projectId
+                                                                                });
+                                                                            }
+                                                                        });
                                                                     }
+                                                                    args.$select.html('');
+                                                                    args.response.success({data: projectObjs});
                                                                 }
-                                                            }
-
-                                                            args.response.success({
-                                                                data: projectObjs
                                                             });
                                                         }
                                                     });

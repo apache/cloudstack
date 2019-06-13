@@ -1574,6 +1574,7 @@ var dictionary = {
 "label.setup.network":"Set up Network",
 "label.setup.zone":"Set up Zone",
 "label.shared":"Shared",
+"label.share.with":"Share With",
 "label.show.advanced.settings":"Show advanced settings",
 "label.show.ingress.rule":"Show Ingress Rule",
 "label.shutdown.provider":"Shutdown provider",
