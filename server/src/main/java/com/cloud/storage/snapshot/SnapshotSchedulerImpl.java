@@ -297,7 +297,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
                 final Long eventId =
                     ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:" +
-                        volumeId, true, 0);
+                        volume.getUuid(), true, 0);
 
                 final Map<String, String> params = new HashMap<String, String>();
                 params.put(ApiConstants.VOLUME_ID, "" + volumeId);
