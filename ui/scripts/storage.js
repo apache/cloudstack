@@ -2114,36 +2114,37 @@
                                         snapshotid: args.context.snapshots[0].id
                                     };
 
-                                    if (args.data.diskOffering) {
-                                        $.extend(data, {
-                                            diskofferingid: args.data.diskOffering
-                                        });
-                                    }
-
                                     if (args.$form.find('.form-item[rel=zoneid]').css("display") != "none" && args.data.zoneid != '') {
                                         $.extend(data, {
                                             zoneId: args.data.zoneid
                                         });
                                     }
 
-                                    if (selectedDiskOfferingObj) {
-                                        if(selectedDiskOfferingObj.iscustomized == true) {
+                                    if (args.$form.find('.form-item[rel=diskOffering]').css("display") != "none") {
+                                        if (args.data.diskOffering) {
                                             $.extend(data, {
-                                                size: args.data.diskSize
+                                                diskofferingid: args.data.diskOffering
                                             });
                                         }
-
-                                        if (selectedDiskOfferingObj.iscustomizediops == true) {
-                                            if (args.data.minIops != "" && args.data.minIops > 0) {
+                                        if (selectedDiskOfferingObj) {
+                                            if(selectedDiskOfferingObj.iscustomized == true) {
                                                 $.extend(data, {
-                                                    miniops: args.data.minIops
+                                                    size: args.data.diskSize
                                                 });
                                             }
 
-                                            if (args.data.maxIops != "" && args.data.maxIops > 0) {
-                                                $.extend(data, {
-                                                    maxiops: args.data.maxIops
-                                                });
+                                            if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                                if (args.data.minIops != "" && args.data.minIops > 0) {
+                                                    $.extend(data, {
+                                                        miniops: args.data.minIops
+                                                    });
+                                                }
+
+                                                if (args.data.maxIops != "" && args.data.maxIops > 0) {
+                                                    $.extend(data, {
+                                                        maxiops: args.data.maxIops
+                                                    });
+                                                }
                                             }
                                         }
                                     }
