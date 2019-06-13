@@ -1022,7 +1022,7 @@ public class LibvirtVMDef {
         /**
          * Bridge Net
          */
-        public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model) {
+        public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model, Integer mtu) {
             defBridgeNet(brName, targetBrName, macAddr, model, 0, null);
         }
 
