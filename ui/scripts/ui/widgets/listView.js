@@ -1585,10 +1585,10 @@
                             $('<span>').html(_l('label.quickview') + ': '),
                             $('<span>').addClass('title').html(
                                 cloudStack.concat(
-                                    $tr.find('td:first span').html(), 30
+                                    $tr.find('td.first span').html(), 30
                                 )
                             ).attr({
-                                title: $tr.find('td:first span').html()
+                                title: $tr.find('td.first span').html()
                             }),
                             $('<span>').addClass('icon').html('&nbsp;')
                         );
