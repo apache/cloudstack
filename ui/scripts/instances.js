@@ -1054,6 +1054,111 @@
                         }
                     },
                     snapshot: vmSnapshotAction(),
+                    storageSnapshot: {
+                      messages: {
+                        notification: function() {
+                          return 'label.action.take.snapshot';
+                        }
+                      },
+                      label: 'label.action.vmstoragesnapshot.create',
+                      createForm: {
+                        title: 'label.action.vmstoragesnapshot.create',
+                        desc: 'message.action.vmstoragesnapshot.create',
+                        fields: {
+                          volume: {
+                            label: 'label.volume',
+                            docID: 'helpCreateInstanceStorageSnapshotVolume',
+                            select: function(args) {
+                              var items = [];
+                              var data = {
+                                virtualMachineId: args.context.instances[0].id
+                              };
+
+                              $.ajax({
+                                url: createURL('listVolumes'),
+                                data: data,
+                                dataType: 'json',
+                                async: false,
+                                success: function(json) {
+                                  var volumes = json.listvolumesresponse.volume;
+                                  args.context['volumes'] = volumes;
+                                  $(volumes).each(function(index, volume) {
+                                    items.push({
+                                      id: volume.id,
+                                      description: volume.name
+                                    });
+                                  });
+
+                                  args.response.success({
+                                    data: items
+                                  });
+                                }
+                              });
+                            }
+                          },
+                          quiescevm: {
+                            label: 'label.quiesce.vm',
+                            isBoolean: true,
+                            dependsOn: 'volume',
+                            isHidden: function(args) {
+                              var selectedVolumeId = $('div[role=dialog] form .form-item[rel=volume] select').val();
+                              for (var i = 0; i < args.context.volumes.length; i++) {
+                                var volume = args.context.volumes[i];
+                                if (volume.id === selectedVolumeId) {
+                                  return volume.quiescevm !== true;
+                                }
+                              }
+                              return false;
+                            }
+                          },
+                          name: {
+                            label: 'label.name',
+                            docID: 'helpCreateInstanceStorageSnapshotName',
+                            isInput: true
+                          },
+                          asyncBackup: {
+                            label: 'label.async.backup',
+                            isBoolean: true
+                          }
+                        }
+                      },
+                      action: function(args) {
+                        var data = {
+                          volumeId: args.data.volume,
+                          quiescevm: args.data.quiescevm === 'on',
+                          asyncBackup:  args.data.asyncBackup === 'on'
+                        };
+                        if (args.data.name != null && args.data.name.length > 0) {
+                          $.extend(data, {
+                            name: args.data.name
+                          });
+                        }
+                        $.ajax({
+                          url: createURL('createSnapshot'),
+                          data: data,
+                          dataType: 'json',
+                          async: true,
+                          success: function(json) {
+                            var jid = json.createsnapshotresponse.jobid;
+                            args.response.success({
+                              _custom: {
+                                jobId: jid,
+                                onComplete: function(json) {
+                                  var volumeId = json.queryasyncjobresultresponse.jobresult.snapshot.volumeid;
+                                  var snapshotId = json.queryasyncjobresultresponse.jobresult.snapshot.id;
+                                  cloudStack.dialog.notice({
+                                    message: 'Created snapshot for volume ' + volumeId + ' with snapshot ID ' + snapshotId
+                                  });
+                                }
+                              }
+                            });
+                          }
+                        });
+                      },
+                      notification: {
+                        poll: pollAsyncJobResult
+                      }
+                    },
                     destroy: vmDestroyAction(),
                     expunge: {
                         label: 'label.action.expunge.instance',
@@ -3437,6 +3542,7 @@
 
             if (jsonObj.hypervisor != 'LXC') {
                 allowedActions.push("snapshot");
+                allowedActions.push("storageSnapshot");
             }
 
             allowedActions.push("destroy");
@@ -3474,6 +3580,7 @@
 
             if (jsonObj.hypervisor != 'KVM' && jsonObj.hypervisor != 'LXC') {
                 allowedActions.push("snapshot");
+                allowedActions.push("storageSnapshot");
             }
 
             allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors
