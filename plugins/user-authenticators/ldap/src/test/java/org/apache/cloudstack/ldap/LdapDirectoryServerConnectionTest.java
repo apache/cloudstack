@@ -18,14 +18,26 @@ package org.apache.cloudstack.ldap;
 
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.ldap.dao.LdapConfigurationDao;
+import org.apache.directory.api.ldap.model.entry.Attribute;
+import org.apache.directory.api.ldap.model.entry.DefaultEntry;
+import org.apache.directory.api.ldap.model.entry.Entry;
+import org.apache.directory.api.ldap.model.entry.ImmutableEntry;
+import org.apache.directory.api.ldap.model.entry.Value;
 import org.apache.directory.api.ldap.model.exception.LdapException;
+import org.apache.directory.api.ldap.model.exception.LdapInvalidDnException;
 import org.apache.directory.api.ldap.model.ldif.LdifReader;
+import org.apache.directory.api.ldap.model.name.Dn;
+import org.apache.directory.api.ldap.model.schema.AttributeType;
+import org.apache.directory.ldap.client.api.LdapConnection;
+import org.apache.directory.ldap.client.api.LdapNetworkConnection;
+import org.apache.directory.server.core.annotations.ApplyLdifFiles;
 import org.apache.directory.server.core.api.DirectoryService;
 import org.apache.directory.server.core.api.changelog.ChangeLog;
 import org.apache.directory.server.ldap.LdapServer;
 import org.apache.directory.server.xdbm.IndexNotFoundException;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -36,9 +48,13 @@ import software.apacheds.embedded.EmbeddedLdapServer;
 import javax.naming.ldap.LdapContext;
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -53,7 +69,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 @RunWith(MockitoJUnitRunner.class)
 public class LdapDirectoryServerConnectionTest {
 
-    EmbeddedLdapServer embeddedLdapServer;
+    static EmbeddedLdapServer embeddedLdapServer;
 
     @Mock
     LdapConfigurationDao configurationDao;
@@ -71,12 +87,13 @@ public class LdapDirectoryServerConnectionTest {
 
     private final LdapTestConfigTool ldapTestConfigTool = new LdapTestConfigTool();
 
+    @BeforeClass
+    public static void start() throws Exception {
+        embeddedLdapServer = new EmbeddedLdapServer();
+        embeddedLdapServer.init();
+    }
     @Before
     public void setup() throws Exception {
-        this.embeddedLdapServer = new EmbeddedLdapServer();
-//        embeddedLdapServer.addSchemaFromPath(new File("src/test/resources/"), "minimal.ldif");
-        embeddedLdapServer.init();
-
         LdapConfigurationVO configurationVO = new LdapConfigurationVO("localhost",10389,null);
         when(configurationDao.find("localhost",10389,null)).thenReturn(configurationVO);
         ldapTestConfigTool.overrideConfigValue(configuration, "ldapBaseDn", "ou=system");
@@ -127,17 +144,65 @@ public class LdapDirectoryServerConnectionTest {
     }
 
     @Test
-    public void testEmbeddedLdifLoading() {
+    public void testEmbeddedLdapAvailable() {
         try {
-            embeddedLdapServer.addSchemaFromClasspath("minimal.ldif");
             List<LdapUser> usahs = ldapManager.getUsers(1L);
             assertFalse("should find some users", usahs.isEmpty());
-            ldapManager.getUser("dahn", LdapManager.LinkType.GROUP.toString(), "admins", 1L);
-        } catch (LdapException e) {
-            fail(e.getLocalizedMessage());
-        } catch (IOException e) {
-            fail(e.getLocalizedMessage());
         } catch (NoLdapUserMatchingQueryException e) {
+            fail(e.getLocalizedMessage());
+        }
+    }
+
+    @Test
+    public void testSchemaLoading() {
+        try {
+            assertTrue(embeddedLdapServer.addSchemaFromClasspath("other"));
+            List<LdapUser> usahs = ldapManager.getUsers(1L);
+            assertFalse("should find at least the admin user", usahs.isEmpty());
+        } catch (LdapException | IOException | NoLdapUserMatchingQueryException e) {
+            fail(e.getLocalizedMessage());
+        }
+    }
+
+    @Test
+    public void testUserCreation() {
+        LdapConnection connection = new LdapNetworkConnection( "localhost", 10389 );
+        try {
+            connection.bind( "uid=admin,ou=system", "secret" );
+
+            connection.add(new DefaultEntry(
+                    "ou=acsadmins,ou=users,ou=system",
+            "objectClass: organizationalUnit",
+// might also need to be           objectClass: top
+            "ou: acsadmins"
+
+            ));
+            connection.add(new DefaultEntry(
+                    "uid=dahn,ou=acsadmins,ou=users,ou=system",
+                    "objectClass: inetOrgPerson",
+                    "objectClass: top",
+                    "cn: dahn",
+                    "sn: Hoogland",
+                    "givenName: Daan",
+                    "mail: d@b.c",
+                    "uid: dahn"
+            ));
+
+            connection.add(
+                    new DefaultEntry(
+                            " cn=JuniorAdmins,ou=groups,ou=system", // The Dn
+                            "objectClass: groupOfUniqueNames",
+                            "ObjectClass: top",
+                            "cn: JuniorAdmins",
+                            "uniqueMember: uid=dahn,ou=acsadmins,ou=system,ou=users") );
+
+            assertTrue( connection.exists( "cn=JuniorAdmins,ou=groups,ou=system" ) );
+            assertTrue( connection.exists( "uid=dahn,ou=acsadmins,ou=users,ou=system" ) );
+
+            List<LdapUser> usahs = ldapManager.getUsers(1L);
+            assertEquals("now an admin and a normal user should be present",2, usahs.size());
+
+        } catch (LdapException | NoLdapUserMatchingQueryException e) {
             fail(e.getLocalizedMessage());
         }
     }
