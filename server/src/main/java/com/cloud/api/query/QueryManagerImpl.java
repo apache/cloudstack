@@ -648,7 +648,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Long projectId = cmd.getProjectId();
         if (resourceType.equalsIgnoreCase("project") && projectId == null) {
-            projectId = Long.parseLong(resourceId);
+            try {
+                projectId = Long.parseLong(resourceId);
+            } catch (NumberFormatException e) {
+                projectId = _projectDao.findByUuid(resourceId).getId();
+            }
         }
         _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), projectId, permittedAccounts, domainIdRecursiveListProject, listAll, false);
 
