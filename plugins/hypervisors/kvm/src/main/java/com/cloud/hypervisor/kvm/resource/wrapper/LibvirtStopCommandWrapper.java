@@ -23,7 +23,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.agent.api.to.DPDKTO;
+import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
@@ -111,9 +111,9 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
                 }
 
                 if (CollectionUtils.isEmpty(ifaces)) {
-                    Map<String, DPDKTO> dpdkInterfaceMapping = command.getDpdkInterfaceMapping();
+                    Map<String, DpdkTO> dpdkInterfaceMapping = command.getDpdkInterfaceMapping();
                     if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
-                        for (DPDKTO to : dpdkInterfaceMapping.values()) {
+                        for (DpdkTO to : dpdkInterfaceMapping.values()) {
                             String portToRemove = to.getPort();
                             String cmd = String.format("ovs-vsctl del-port %s", portToRemove);
                             s_logger.debug("Removing DPDK port: " + portToRemove);

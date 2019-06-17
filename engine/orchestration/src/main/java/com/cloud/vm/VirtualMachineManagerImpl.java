@@ -40,7 +40,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.PrepareForMigrationAnswer;
-import com.cloud.agent.api.to.DPDKTO;
+import com.cloud.agent.api.to.DpdkTO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
@@ -2352,7 +2352,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         boolean migrated = false;
-        Map<String, DPDKTO> dpdkInterfaceMapping = null;
+        Map<String, DpdkTO> dpdkInterfaceMapping = null;
         try {
             final boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
             final MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, getExecuteInSequence(vm.getHypervisorType()));
@@ -3102,7 +3102,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    public Command cleanup(final VirtualMachine vm, Map<String, DPDKTO> dpdkInterfaceMapping) {
+    public Command cleanup(final VirtualMachine vm, Map<String, DpdkTO> dpdkInterfaceMapping) {
         StopCommand cmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
         cmd.setControlIp(getControlNicIpForVM(vm));
         if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {

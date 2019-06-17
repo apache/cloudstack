@@ -96,7 +96,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.kvm.dpdk.DPDKHelper;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -474,7 +474,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private ConfigurationDao _configDao;
     @Inject
-    private DPDKHelper dpdkHelper;
+    private DpdkHelper dpdkHelper;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -5228,7 +5228,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        if (dpdkHelper.isVMDPDKEnabled(vm.getId()) && !dpdkHelper.isHostDPDKEnabled(destinationHost.getId())) {
+        if (dpdkHelper.isVMDpdkEnabled(vm.getId()) && !dpdkHelper.isHostDpdkEnabled(destinationHost.getId())) {
             throw new CloudRuntimeException("Cannot migrate VM, VM is DPDK enabled VM but destination host is not DPDK enabled");
         }
 

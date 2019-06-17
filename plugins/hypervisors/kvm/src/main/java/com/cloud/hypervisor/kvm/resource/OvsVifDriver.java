@@ -24,9 +24,9 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.hypervisor.kvm.dpdk.DPDKDriver;
-import com.cloud.hypervisor.kvm.dpdk.DPDKDriverImpl;
-import com.cloud.hypervisor.kvm.dpdk.DPDKHelper;
+import com.cloud.hypervisor.kvm.dpdk.DpdkDriver;
+import com.cloud.hypervisor.kvm.dpdk.DpdkDriverImpl;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -44,7 +44,7 @@ import com.cloud.utils.script.Script;
 public class OvsVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger.getLogger(OvsVifDriver.class);
     private int _timeout;
-    private DPDKDriver dpdkDriver;
+    private DpdkDriver dpdkDriver;
 
     @Override
     public void configure(Map<String, Object> params) throws ConfigurationException {
@@ -59,7 +59,7 @@ public class OvsVifDriver extends VifDriverBase {
 
         String dpdk = (String) params.get("openvswitch.dpdk.enabled");
         if (StringUtils.isNotBlank(dpdk) && Boolean.parseBoolean(dpdk)) {
-            dpdkDriver = new DPDKDriverImpl();
+            dpdkDriver = new DpdkDriverImpl();
         }
 
         String value = (String)params.get("scripts.timeout");
@@ -100,9 +100,9 @@ public class OvsVifDriver extends VifDriverBase {
             throw new CloudRuntimeException("DPDK is enabled on the host but no OVS path has been provided");
         }
         String port = dpdkDriver.getNextDpdkPort();
-        DPDKHelper.VHostUserMode dpdKvHostUserMode = dpdkDriver.getDPDKvHostUserMode(extraConfig);
+        DpdkHelper.VHostUserMode dpdKvHostUserMode = dpdkDriver.getDpdkvHostUserMode(extraConfig);
         dpdkDriver.addDpdkPort(_pifs.get(trafficLabel), port, vlanId, dpdKvHostUserMode, dpdkOvsPath);
-        String interfaceMode = dpdkDriver.getGuestInterfacesModeFromDPDKVhostUserMode(dpdKvHostUserMode);
+        String interfaceMode = dpdkDriver.getGuestInterfacesModeFromDpdkVhostUserMode(dpdKvHostUserMode);
         intf.defDpdkNet(dpdkOvsPath, port, nic.getMac(),
                 getGuestNicModel(guestOsType, nicAdapter), 0,
                 dpdkDriver.getExtraDpdkProperties(extraConfig),

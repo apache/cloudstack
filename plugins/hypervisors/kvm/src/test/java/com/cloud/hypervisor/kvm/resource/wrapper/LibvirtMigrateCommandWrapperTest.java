@@ -37,7 +37,7 @@ import javax.xml.transform.TransformerException;
 
 import org.junit.Assert;
 import org.junit.Before;
-import com.cloud.agent.api.to.DPDKTO;
+import com.cloud.agent.api.to.DpdkTO;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.Connect;
@@ -781,8 +781,8 @@ public class LibvirtMigrateCommandWrapperTest {
     @Test
     public void testReplaceDPDKPorts() throws ParserConfigurationException, IOException, SAXException, TransformerException {
         final LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
-        Map<String, DPDKTO> dpdkPortMapping = new HashMap<>();
-        DPDKTO to = new DPDKTO("/var/run/libvirt-vhost-user", "csdpdk-7", "client");
+        Map<String, DpdkTO> dpdkPortMapping = new HashMap<>();
+        DpdkTO to = new DpdkTO("/var/run/libvirt-vhost-user", "csdpdk-7", "client");
         dpdkPortMapping.put("02:00:18:91:00:10", to);
         String replaced = lw.replaceDpdkInterfaces(sourceDPDKVMToMigrate, dpdkPortMapping);
         Assert.assertTrue(replaced.contains("csdpdk-7"));

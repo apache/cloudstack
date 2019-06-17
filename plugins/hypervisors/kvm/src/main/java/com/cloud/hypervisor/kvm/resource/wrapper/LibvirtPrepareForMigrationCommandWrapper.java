@@ -22,7 +22,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.to.DPDKTO;
+import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -64,7 +64,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
 
         final NicTO[] nics = vm.getNics();
 
-        Map<String, DPDKTO> dpdkInterfaceMapping = new HashMap<>();
+        Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
 
         boolean skipDisconnect = false;
 
@@ -77,7 +77,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
             for (final NicTO nic : nics) {
                 LibvirtVMDef.InterfaceDef interfaceDef = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).plug(nic, null, "", vm.getExtraConfig());
                 if (interfaceDef != null && interfaceDef.getNetType() == GuestNetType.VHOSTUSER) {
-                    DPDKTO to = new DPDKTO(interfaceDef.getDpdkOvsPath(), interfaceDef.getDpdkSourcePort(), interfaceDef.getInterfaceMode());
+                    DpdkTO to = new DpdkTO(interfaceDef.getDpdkOvsPath(), interfaceDef.getDpdkSourcePort(), interfaceDef.getInterfaceMode());
                     dpdkInterfaceMapping.put(nic.getMac(), to);
                 }
             }
@@ -103,7 +103,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
             return answer;
         } catch (final LibvirtException | CloudRuntimeException | InternalErrorException | URISyntaxException e) {
             if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
-                for (DPDKTO to : dpdkInterfaceMapping.values()) {
+                for (DpdkTO to : dpdkInterfaceMapping.values()) {
                     String cmd = String.format("ovs-vsctl del-port %s", to.getPort());
                     s_logger.debug("Removing DPDK port: " + to.getPort());
                     Script.runSimpleBashScript(cmd);

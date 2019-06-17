@@ -36,7 +36,7 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import java.util.List;
 
-public class DPDKHelperImpl implements DPDKHelper {
+public class DpdkHelperImpl implements DpdkHelper {
 
     @Inject
     private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
@@ -47,7 +47,7 @@ public class DPDKHelperImpl implements DPDKHelper {
     @Inject
     private UserVmDetailsDao userVmDetailsDao;
 
-    public static final Logger s_logger = Logger.getLogger(DPDKHelperImpl.class);
+    public static final Logger s_logger = Logger.getLogger(DpdkHelperImpl.class);
 
     private ServiceOffering getServiceOfferingFromVMProfile(VirtualMachineProfile virtualMachineProfile) {
         ServiceOffering offering = virtualMachineProfile.getServiceOffering();
@@ -58,7 +58,7 @@ public class DPDKHelperImpl implements DPDKHelper {
     }
 
     @Override
-    public boolean isDPDKvHostUserModeSettingOnServiceOffering(VirtualMachineProfile vm) {
+    public boolean isDpdkvHostUserModeSettingOnServiceOffering(VirtualMachineProfile vm) {
         ServiceOffering offering = getServiceOfferingFromVMProfile(vm);
         ServiceOfferingDetailsVO detail = serviceOfferingDetailsDao.findDetail(offering.getId(), DPDK_VHOST_USER_MODE);
         return detail != null;
@@ -83,7 +83,7 @@ public class DPDKHelperImpl implements DPDKHelper {
     }
 
     @Override
-    public boolean isVMDPDKEnabled(long vmId) {
+    public boolean isVMDpdkEnabled(long vmId) {
         VMInstanceVO vm = vmInstanceDao.findById(vmId);
         if (vm == null) {
             throw new CloudRuntimeException("Could not find VM with id " + vmId);
@@ -100,7 +100,7 @@ public class DPDKHelperImpl implements DPDKHelper {
             return false;
         }
 
-        return isHostDPDKEnabled(vm.getHostId());
+        return isHostDpdkEnabled(vm.getHostId());
     }
 
     /**
@@ -144,7 +144,7 @@ public class DPDKHelperImpl implements DPDKHelper {
     }
 
     @Override
-    public boolean isHostDPDKEnabled(long hostId) {
+    public boolean isHostDpdkEnabled(long hostId) {
         HostVO host = hostDao.findById(hostId);
         if (host == null) {
             throw new CloudRuntimeException("Could not find host with id " + hostId);

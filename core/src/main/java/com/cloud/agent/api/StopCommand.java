@@ -19,7 +19,7 @@
 
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.to.DPDKTO;
+import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.vm.VirtualMachine;
 
@@ -35,13 +35,13 @@ public class StopCommand extends RebootCommand {
     boolean checkBeforeCleanup = false;
     String controlIp = null;
     boolean forceStop = false;
-    private Map<String, DPDKTO> dpdkInterfaceMapping;
+    private Map<String, DpdkTO> dpdkInterfaceMapping;
 
-    public Map<String, DPDKTO> getDpdkInterfaceMapping() {
+    public Map<String, DpdkTO> getDpdkInterfaceMapping() {
         return dpdkInterfaceMapping;
     }
 
-    public void setDpdkInterfaceMapping(Map<String, DPDKTO> dpdkInterfaceMapping) {
+    public void setDpdkInterfaceMapping(Map<String, DpdkTO> dpdkInterfaceMapping) {
         this.dpdkInterfaceMapping = dpdkInterfaceMapping;
     }
     /**

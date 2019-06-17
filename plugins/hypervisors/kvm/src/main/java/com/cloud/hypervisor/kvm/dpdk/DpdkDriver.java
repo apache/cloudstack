@@ -22,7 +22,7 @@ import com.cloud.utils.component.Adapter;
 
 import java.util.Map;
 
-public interface DPDKDriver extends Adapter {
+public interface DpdkDriver extends Adapter {
 
     /**
      * Get the next DPDK port name to be created
@@ -37,17 +37,17 @@ public interface DPDKDriver extends Adapter {
     /**
      * Add OVS port (if it does not exist) to bridge with DPDK support
      */
-    void addDpdkPort(String bridgeName, String port, String vlan, DPDKHelper.VHostUserMode vHostUserMode, String dpdkOvsPath);
+    void addDpdkPort(String bridgeName, String port, String vlan, DpdkHelper.VHostUserMode vHostUserMode, String dpdkOvsPath);
 
     /**
      * Since DPDK user client/server mode, retrieve the guest interfaces mode from the DPDK vHost User mode
      */
-    String getGuestInterfacesModeFromDPDKVhostUserMode(DPDKHelper.VHostUserMode dpdKvHostUserMode);
+    String getGuestInterfacesModeFromDpdkVhostUserMode(DpdkHelper.VHostUserMode dpdKvHostUserMode);
 
     /**
      * Get DPDK vHost User mode from extra config. If it is not present, server is returned as default
      */
-    DPDKHelper.VHostUserMode getDPDKvHostUserMode(Map<String, String> extraConfig);
+    DpdkHelper.VHostUserMode getDpdkvHostUserMode(Map<String, String> extraConfig);
 
     /**
      * Check for additional extra 'dpdk-interface' configurations, return them appended

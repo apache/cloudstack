@@ -38,7 +38,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.storage.ScopeType;
-import com.cloud.hypervisor.kvm.dpdk.DPDKHelper;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -813,7 +813,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private KeystoreManager _ksMgr;
     @Inject
-    private DPDKHelper dpdkHelper;
+    private DpdkHelper dpdkHelper;
 
     private LockMasterListener _lockMasterListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -1305,7 +1305,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
 
-        if (dpdkHelper.isVMDPDKEnabled(vm.getId())) {
+        if (dpdkHelper.isVMDpdkEnabled(vm.getId())) {
             excludeNonDPDKEnabledHosts(plan, excludes);
         }
 
@@ -1350,7 +1350,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Long podId = plan.getPodId();
         List<HostVO> hosts = _hostDao.listAllUpAndEnabledNonHAHosts(Type.Routing, clusterId, podId, dataCenterId, null);
         for (HostVO host : hosts) {
-            if (!dpdkHelper.isHostDPDKEnabled(host.getId())) {
+            if (!dpdkHelper.isHostDpdkEnabled(host.getId())) {
                 excludes.addHost(host.getId());
             }
         }

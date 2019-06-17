@@ -16,16 +16,16 @@
 // under the License.
 package com.cloud.agent.api.to;
 
-public class DPDKTO {
+public class DpdkTO {
 
     private String path;
     private String port;
     private String mode;
 
-    public DPDKTO() {
+    public DpdkTO() {
     }
 
-    public DPDKTO(String path, String port, String mode) {
+    public DpdkTO(String path, String port, String mode) {
         this.path = path;
         this.port = port;
         this.mode = mode;

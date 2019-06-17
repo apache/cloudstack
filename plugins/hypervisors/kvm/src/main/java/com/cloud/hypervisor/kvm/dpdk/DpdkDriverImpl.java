@@ -25,15 +25,15 @@ import org.apache.log4j.Logger;
 
 import java.util.Map;
 
-public class DPDKDriverImpl extends AdapterBase implements DPDKDriver {
+public class DpdkDriverImpl extends AdapterBase implements DpdkDriver {
     static final String DPDK_PORT_PREFIX = "csdpdk-";
 
     private final String dpdkPortVhostUserType = "dpdkvhostuser";
     private final String dpdkPortVhostUserClientType = "dpdkvhostuserclient";
 
-    private static final Logger s_logger = Logger.getLogger(DPDKDriver.class);
+    private static final Logger s_logger = Logger.getLogger(DpdkDriver.class);
 
-    public DPDKDriverImpl() {
+    public DpdkDriverImpl() {
     }
 
     /**
@@ -64,8 +64,8 @@ public class DPDKDriverImpl extends AdapterBase implements DPDKDriver {
     /**
      * Add OVS port (if it does not exist) to bridge with DPDK support
      */
-    public void addDpdkPort(String bridgeName, String port, String vlan, DPDKHelper.VHostUserMode vHostUserMode, String dpdkOvsPath) {
-        String type = vHostUserMode == DPDKHelper.VHostUserMode.SERVER ?
+    public void addDpdkPort(String bridgeName, String port, String vlan, DpdkHelper.VHostUserMode vHostUserMode, String dpdkOvsPath) {
+        String type = vHostUserMode == DpdkHelper.VHostUserMode.SERVER ?
                 dpdkPortVhostUserType :
                 dpdkPortVhostUserClientType;
 
@@ -74,7 +74,7 @@ public class DPDKDriverImpl extends AdapterBase implements DPDKDriver {
                 "vlan_mode=access tag=%s " +
                 "-- set Interface %s type=%s", bridgeName, port, vlan, port, type));
 
-        if (vHostUserMode == DPDKHelper.VHostUserMode.CLIENT) {
+        if (vHostUserMode == DpdkHelper.VHostUserMode.CLIENT) {
             stringBuilder.append(String.format(" options:vhost-server-path=%s/%s",
                     dpdkOvsPath, port));
         }
@@ -87,17 +87,17 @@ public class DPDKDriverImpl extends AdapterBase implements DPDKDriver {
     /**
      * Since DPDK user client/server mode, retrieve the guest interfaces mode from the DPDK vHost User mode
      */
-    public String getGuestInterfacesModeFromDPDKVhostUserMode(DPDKHelper.VHostUserMode dpdKvHostUserMode) {
-        return dpdKvHostUserMode == DPDKHelper.VHostUserMode.CLIENT ? "server" : "client";
+    public String getGuestInterfacesModeFromDpdkVhostUserMode(DpdkHelper.VHostUserMode dpdKvHostUserMode) {
+        return dpdKvHostUserMode == DpdkHelper.VHostUserMode.CLIENT ? "server" : "client";
     }
 
     /**
      * Get DPDK vHost User mode from extra config. If it is not present, server is returned as default
      */
-    public DPDKHelper.VHostUserMode getDPDKvHostUserMode(Map<String, String> extraConfig) {
-        return extraConfig.containsKey(DPDKHelper.DPDK_VHOST_USER_MODE) ?
-                DPDKHelper.VHostUserMode.fromValue(extraConfig.get(DPDKHelper.DPDK_VHOST_USER_MODE)) :
-                DPDKHelper.VHostUserMode.SERVER;
+    public DpdkHelper.VHostUserMode getDpdkvHostUserMode(Map<String, String> extraConfig) {
+        return extraConfig.containsKey(DpdkHelper.DPDK_VHOST_USER_MODE) ?
+                DpdkHelper.VHostUserMode.fromValue(extraConfig.get(DpdkHelper.DPDK_VHOST_USER_MODE)) :
+                DpdkHelper.VHostUserMode.SERVER;
     }
 
     /**
@@ -106,7 +106,7 @@ public class DPDKDriverImpl extends AdapterBase implements DPDKDriver {
     public String getExtraDpdkProperties(Map<String, String> extraConfig) {
         StringBuilder stringBuilder = new StringBuilder();
         for (String key : extraConfig.keySet()) {
-            if (key.startsWith(DPDKHelper.DPDK_INTERFACE_PREFIX)) {
+            if (key.startsWith(DpdkHelper.DPDK_INTERFACE_PREFIX)) {
                 stringBuilder.append(extraConfig.get(key));
             }
         }

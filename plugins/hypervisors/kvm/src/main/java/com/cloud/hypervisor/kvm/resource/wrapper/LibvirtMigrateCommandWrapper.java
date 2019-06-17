@@ -43,7 +43,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import com.cloud.agent.api.to.DPDKTO;
+import com.cloud.agent.api.to.DpdkTO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -154,7 +154,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 xmlDesc = replaceStorage(xmlDesc, mapMigrateStorage, migrateStorageManaged);
             }
 
-            Map<String, DPDKTO> dpdkPortsMapping = command.getDpdkInterfaceMapping();
+            Map<String, DpdkTO> dpdkPortsMapping = command.getDpdkInterfaceMapping();
             if (MapUtils.isNotEmpty(dpdkPortsMapping)) {
                 xmlDesc = replaceDpdkInterfaces(xmlDesc, dpdkPortsMapping);
             }
@@ -292,7 +292,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     /**
      * Replace DPDK source path and target before migrations
      */
-    protected String replaceDpdkInterfaces(String xmlDesc, Map<String, DPDKTO> dpdkPortsMapping) throws TransformerException, ParserConfigurationException, IOException, SAXException {
+    protected String replaceDpdkInterfaces(String xmlDesc, Map<String, DpdkTO> dpdkPortsMapping) throws TransformerException, ParserConfigurationException, IOException, SAXException {
         InputStream in = IOUtils.toInputStream(xmlDesc);
 
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
@@ -331,7 +331,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                             }
 
                             if (StringUtils.isNotBlank(mac)) {
-                                DPDKTO to = dpdkPortsMapping.get(mac);
+                                DpdkTO to = dpdkPortsMapping.get(mac);
 
                                 for (int z = 0; z < diskChildNodes.getLength(); z++) {
                                     Node diskChildNode = diskChildNodes.item(z);
