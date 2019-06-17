@@ -2430,7 +2430,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
         if (cleanupDetails){
-            if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
                 userVmDetailsDao.removeDetails(id);
             } else {
                 for (final UserVmDetailVO detail : userVmDetailsDao.listDetails(id)) {
@@ -2441,7 +2441,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         } else {
             if (MapUtils.isNotEmpty(details)) {
-                if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                if (caller != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                     // Ensure blacklisted detail is not passed by non-root-admin user
                     for (final String detailName : details.keySet()) {
                         if (userBlacklistedSettings.contains(detailName)) {
