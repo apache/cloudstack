@@ -35,6 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -85,6 +86,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -2423,11 +2425,36 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (isDisplayVm != null && isDisplayVm != vmInstance.isDisplay()) {
             updateDisplayVmFlag(isDisplayVm, id, vmInstance);
         }
+        final Account caller = CallContext.current().getCallingAccount();
+        final List<String> userBlacklistedSettings = Stream.of(QueryService.UserVMBlacklistedDetails.value().split(","))
+                .map(item -> (item).trim())
+                .collect(Collectors.toList());
         if (cleanupDetails){
-            userVmDetailsDao.removeDetails(id);
-        }
-        else {
+            if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+                userVmDetailsDao.removeDetails(id);
+            } else {
+                for (final UserVmDetailVO detail : userVmDetailsDao.listDetails(id)) {
+                    if (detail != null && !userBlacklistedSettings.contains(detail.getName())) {
+                        userVmDetailsDao.removeDetail(id, detail.getName());
+                    }
+                }
+            }
+        } else {
             if (MapUtils.isNotEmpty(details)) {
+                if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                    // Ensure blacklisted detail is not passed by non-root-admin user
+                    for (final String detailName : details.keySet()) {
+                        if (userBlacklistedSettings.contains(detailName)) {
+                            throw new InvalidParameterValueException("You're not allowed to add or edit the restricted setting: " + detailName);
+                        }
+                    }
+                    // Add any hidden/blacklisted detail
+                    for (final UserVmDetailVO detail : userVmDetailsDao.listDetails(id)) {
+                        if (userBlacklistedSettings.contains(detail.getName())) {
+                            details.put(detail.getName(), detail.getValue());
+                        }
+                    }
+                }
                 vmInstance.setDetails(details);
                 _vmDao.saveDetails(vmInstance);
             }
