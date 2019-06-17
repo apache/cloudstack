@@ -25,6 +25,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -3426,6 +3428,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 break;
             default:
                 throw new CloudRuntimeException("Resource type not supported.");
+        }
+        if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            final List<String> userBlacklistedSettings = Stream.of(QueryService.UserVMBlacklistedDetails.value().split(","))
+                    .map(item -> (item).trim())
+                    .collect(Collectors.toList());
+            for (final String detail: options.keySet()) {
+                if (userBlacklistedSettings.contains(detail)) {
+                    options.remove(detail);
+                }
+            }
         }
         return new DetailOptionsResponse(options);
     }
