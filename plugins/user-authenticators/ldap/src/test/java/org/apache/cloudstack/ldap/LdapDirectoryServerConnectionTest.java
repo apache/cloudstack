@@ -26,6 +26,10 @@ import org.apache.directory.api.ldap.model.entry.Value;
 import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.api.ldap.model.exception.LdapInvalidDnException;
 import org.apache.directory.api.ldap.model.ldif.LdifReader;
+import org.apache.directory.api.ldap.model.message.AddRequest;
+import org.apache.directory.api.ldap.model.message.AddRequestImpl;
+import org.apache.directory.api.ldap.model.message.AddResponse;
+import org.apache.directory.api.ldap.model.message.ResultCodeEnum;
 import org.apache.directory.api.ldap.model.name.Dn;
 import org.apache.directory.api.ldap.model.schema.AttributeType;
 import org.apache.directory.ldap.client.api.LdapConnection;
@@ -99,6 +103,7 @@ public class LdapDirectoryServerConnectionTest {
         ldapTestConfigTool.overrideConfigValue(configuration, "ldapBaseDn", "ou=system");
         ldapTestConfigTool.overrideConfigValue(configuration, "ldapBindPassword", "secret");
         ldapTestConfigTool.overrideConfigValue(configuration, "ldapBindPrincipal", "uid=admin,ou=system");
+        ldapTestConfigTool.overrideConfigValue(configuration, "ldapMemberOfAttribute", "memberOf");
         when(userManagerFactory.getInstance(LdapUserManager.Provider.OPENLDAP)).thenReturn(new OpenLdapUserManagerImpl(configuration));
         // construct an ellaborate structure around a single object
         Pair<List<LdapConfigurationVO>, Integer> vos = new Pair<List<LdapConfigurationVO>, Integer>( Collections.singletonList(configurationVO),1);
@@ -147,7 +152,7 @@ public class LdapDirectoryServerConnectionTest {
     public void testEmbeddedLdapAvailable() {
         try {
             List<LdapUser> usahs = ldapManager.getUsers(1L);
-            assertFalse("should find some users", usahs.isEmpty());
+            assertFalse("should find at least the admin user", usahs.isEmpty());
         } catch (NoLdapUserMatchingQueryException e) {
             fail(e.getLocalizedMessage());
         }
@@ -156,10 +161,9 @@ public class LdapDirectoryServerConnectionTest {
     @Test
     public void testSchemaLoading() {
         try {
-            assertTrue(embeddedLdapServer.addSchemaFromClasspath("other"));
-            List<LdapUser> usahs = ldapManager.getUsers(1L);
-            assertFalse("should find at least the admin user", usahs.isEmpty());
-        } catch (LdapException | IOException | NoLdapUserMatchingQueryException e) {
+            assertTrue("standard not loaded", embeddedLdapServer.addSchemaFromClasspath("other"));
+            assertTrue("memberOf schema not loaded", embeddedLdapServer.addSchemaFromPath(new File("src/test/resources/memberOf"), "microsoft"));
+        } catch (LdapException | IOException e) {
             fail(e.getLocalizedMessage());
         }
     }
@@ -175,7 +179,6 @@ public class LdapDirectoryServerConnectionTest {
             "objectClass: organizationalUnit",
 // might also need to be           objectClass: top
             "ou: acsadmins"
-
             ));
             connection.add(new DefaultEntry(
                     "uid=dahn,ou=acsadmins,ou=users,ou=system",
@@ -190,7 +193,7 @@ public class LdapDirectoryServerConnectionTest {
 
             connection.add(
                     new DefaultEntry(
-                            " cn=JuniorAdmins,ou=groups,ou=system", // The Dn
+                            "cn=JuniorAdmins,ou=groups,ou=system", // The Dn
                             "objectClass: groupOfUniqueNames",
                             "ObjectClass: top",
                             "cn: JuniorAdmins",
@@ -198,6 +201,14 @@ public class LdapDirectoryServerConnectionTest {
 
             assertTrue( connection.exists( "cn=JuniorAdmins,ou=groups,ou=system" ) );
             assertTrue( connection.exists( "uid=dahn,ou=acsadmins,ou=users,ou=system" ) );
+
+            Entry ourUser = connection.lookup("uid=dahn,ou=acsadmins,ou=users,ou=system");
+            ourUser.add("memberOf", "cn=JuniorAdmins,ou=groups,ou=system");
+            AddRequest addRequest = new AddRequestImpl();
+            addRequest.setEntry( ourUser );
+            AddResponse response = connection.add( addRequest );
+            assertNotNull( response );
+            assertEquals( ResultCodeEnum.SUCCESS, response.getLdapResult().getResultCode() );
 
             List<LdapUser> usahs = ldapManager.getUsers(1L);
             assertEquals("now an admin and a normal user should be present",2, usahs.size());
