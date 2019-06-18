@@ -3433,8 +3433,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             final List<String> userBlacklistedSettings = Stream.of(QueryService.UserVMBlacklistedDetails.value().split(","))
                     .map(item -> (item).trim())
                     .collect(Collectors.toList());
-            for (final String detail: options.keySet()) {
-                if (userBlacklistedSettings.contains(detail)) {
+            for (final String detail : userBlacklistedSettings) {
+                if (options.containsKey(detail)) {
                     options.remove(detail);
                 }
             }
