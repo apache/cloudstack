@@ -163,14 +163,6 @@ under the License.
      used.
 
     -->
-    <cacheManagerPeerProviderFactory
-            class="net.sf.ehcache.distribution.RMICacheManagerPeerProviderFactory"
-            properties="peerDiscovery=automatic,
-                        multicastGroupAddress=230.0.0.1,
-                        multicastGroupPort=4446, timeToLive=1"
-            propertySeparator=","
-            />
-
 
     <!--
     CacheManagerPeerListener
@@ -209,9 +201,6 @@ under the License.
       If not specified it defaults 120000ms.
 
     -->
-    <cacheManagerPeerListenerFactory
-            class="net.sf.ehcache.distribution.RMICacheManagerPeerListenerFactory"/>
-
 
     <!--
     Cache configuration

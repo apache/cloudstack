@@ -72,8 +72,6 @@ import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
@@ -120,6 +118,7 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotApiService;
@@ -254,7 +253,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     private StorageManager storageMgr;
     @Inject
-    private StoragePoolDetailsDao storagePoolDetailsDao;
+    private StoragePoolTagsDao storagePoolTagsDao;
     @Inject
     private StorageUtil storageUtil;
 
@@ -2076,11 +2075,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // OfflineVmwareMigration: check storage tags on disk(offering)s in comparison to destination storage pool
         // OfflineVmwareMigration: if no match return a proper error now
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
-        if(diskOffering.equals(null)) {
-            throw new CloudRuntimeException("volume '" + vol.getUuid() +"', has no diskoffering. Migration target cannot be checked.");
+        if (diskOffering.equals(null)) {
+            throw new CloudRuntimeException("volume '" + vol.getUuid() + "', has no diskoffering. Migration target cannot be checked.");
         }
-        if(! doesTargetStorageSupportDiskOffering(destPool, diskOffering)) {
-            throw new CloudRuntimeException("Migration target has no matching tags for volume '" +vol.getName() + "(" + vol.getUuid() + ")'");
+        if (!doesTargetStorageSupportDiskOffering(destPool, diskOffering)) {
+            throw new CloudRuntimeException(String.format("Migration target pool [%s, tags:%s] has no matching tags for volume [%s, uuid:%s, tags:%s]", destPool.getName(),
+                    getStoragePoolTags(destPool), vol.getName(), vol.getUuid(), diskOffering.getTags()));
         }
 
         if (liveMigrateVolume && destPool.getClusterId() != null && srcClusterId != null) {
@@ -2275,15 +2275,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      *  Retrieves the storage pool tags as a {@link String}. If the storage pool does not have tags we return a null value.
      */
     protected String getStoragePoolTags(StoragePool destPool) {
-        List<StoragePoolDetailVO> storagePoolDetails = storagePoolDetailsDao.listDetails(destPool.getId());
-        if (CollectionUtils.isEmpty(storagePoolDetails)) {
+        List<String> destPoolTags = storagePoolTagsDao.getStoragePoolTags(destPool.getId());
+        if (CollectionUtils.isEmpty(destPoolTags)) {
             return null;
         }
-        String storageTags = "";
-        for (StoragePoolDetailVO storagePoolDetailVO : storagePoolDetails) {
-            storageTags = storageTags + storagePoolDetailVO.getName() + ",";
-        }
-        return storageTags.substring(0, storageTags.length() - 1);
+        return StringUtils.join(destPoolTags, ",");
     }
 
     private Volume orchestrateMigrateVolume(VolumeVO volume, StoragePool destPool, boolean liveMigrateVolume, DiskOfferingVO newDiskOffering) {

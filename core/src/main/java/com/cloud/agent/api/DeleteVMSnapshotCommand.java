@@ -27,4 +27,8 @@ public class DeleteVMSnapshotCommand extends VMSnapshotBaseCommand {
     public DeleteVMSnapshotCommand(String vmName, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType) {
         super(vmName, snapshot, volumeTOs, guestOSType);
     }
+
+    public DeleteVMSnapshotCommand(String vmName, VMSnapshotTO snapshot) {
+        super(vmName, snapshot, null, null);
+    }
 }

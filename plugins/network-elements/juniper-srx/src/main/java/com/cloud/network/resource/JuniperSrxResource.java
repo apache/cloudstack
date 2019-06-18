@@ -2078,11 +2078,11 @@ public class JuniperSrxResource implements ServerResource {
                         xml = replaceXmlValue(xml, "rule-set", _privateZone);
                         xml = replaceXmlValue(xml, "from-zone", _privateZone);
                         xml = replaceXmlValue(xml, "rule-name", ruleName_private);
-                    }
 
-                    if (!sendRequestAndCheckResponse(command, xml, "name", ruleName_private))
-                    {
-                        throw new ExecutionException("Failed to delete trust static NAT rule from public IP " + publicIp + " to private IP " + privateIp);
+                        if (!sendRequestAndCheckResponse(command, xml, "name", ruleName_private))
+                        {
+                            throw new ExecutionException("Failed to delete trust static NAT rule from public IP " + publicIp + " to private IP " + privateIp);
+                        }
                     }
                     return true;
                 }
@@ -3568,6 +3568,7 @@ public class JuniperSrxResource implements ServerResource {
 
             case CHECK_IF_EXISTS:
             case CHECK_IF_IN_USE:
+            case CHECK_PRIVATE_IF_EXISTS:
                 assert (keyAndValue != null && keyAndValue.length == 2) : "If the SrxCommand is " + command + ", both a key and value must be specified.";
 
                 key = keyAndValue[0];

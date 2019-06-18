@@ -16,15 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.projects.Project;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Volume;
-import com.cloud.user.Account;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -38,6 +29,16 @@ import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.log4j.Logger;
+
+import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.projects.Project;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
+import com.cloud.user.Account;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "createSnapshot", description = "Creates an instant snapshot of a volume.", responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -171,7 +172,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating snapshot for volume: " + this._uuidMgr.getUuid(Volume.class, getVolumeId());
+        return "creating snapshot for volume: " + getVolumeUuid();
     }
 
     @Override
@@ -186,7 +187,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             setEntityId(snapshot.getId());
             setEntityUuid(snapshot.getUuid());
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot for volume" + getVolumeUuid());
         }
     }
 
@@ -202,10 +203,10 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + getVolumeId());
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + getVolumeUuid());
             }
         } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + getVolumeId());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + getVolumeUuid());
         }
     }
 
@@ -248,5 +249,9 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         } else {
             return asyncBackup;
         }
+    }
+
+    protected String getVolumeUuid() {
+        return _uuidMgr.getUuid(Volume.class, getVolumeId());
     }
 }

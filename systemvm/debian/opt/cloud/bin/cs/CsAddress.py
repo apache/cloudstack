@@ -258,7 +258,7 @@ class CsIP:
 
     def __init__(self, dev, config):
         self.dev = dev
-        self.dnum = hex(int(dev[3:]))
+        self.dnum = hex(100 + int(dev[3:]))
         self.iplist = {}
         self.address = {}
         self.list()
@@ -518,12 +518,11 @@ class CsIP:
 
         if method == "add":
             if not self.config.is_vpc():
-                # treat the first IP on a interface as special case to set up the routing rules
-                if self.get_type() in ["public"] and (len(self.iplist) == 1):
-                    CsHelper.execute("sudo ip route add throw " + self.config.address().dbag['eth0'][0]['network'] + " table " + tableName + " proto static")
-                    CsHelper.execute("sudo ip route add throw " + self.config.address().dbag['eth1'][0]['network'] + " table " + tableName + " proto static")
+                if self.get_type() in ["public"]:
+                    route.set_route("table %s throw %s proto static" % (tableName, self.config.address().dbag['eth0'][0]['network']))
+                    route.set_route("table %s throw %s proto static" % (tableName, self.config.address().dbag['eth1'][0]['network']))
 
-                # add 'defaul via gateway' rule in the device specific routing table
+                # add 'default via gateway' rule in the device specific routing table
                 if "gateway" in self.address and self.address["gateway"] and self.address["gateway"] != "None":
                     route.add_route(self.dev, self.address["gateway"])
                 if "network" in self.address and self.address["network"]:

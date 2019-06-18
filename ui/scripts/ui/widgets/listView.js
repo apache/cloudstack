@@ -862,6 +862,8 @@
         if (groupableColumns) {
             $tr.addClass('groupable-header-columns').addClass('groupable-header');
             $.each(fields, function(key) {
+                if ($.inArray(key, hiddenFields) != -1)
+                    return true;
                 var field = this;
                 if (field.columns) {
                     var colspan = Object.keys(field.columns).length;
@@ -1188,13 +1190,14 @@
                     .addClass('multiSelectCheckbox')
                     .click(function() {
                         var checked = $(this).is(':checked');
-                        var numRows = $(this).parents('tbody').find('input.multiSelectCheckbox').length;
-                        var numRowsChecked = $(this).parents('tbody').find('input.multiSelectCheckbox:checked').length;
+                        var $tbody = $(this).closest('tbody');
+                        var numRows = $tbody.find('input.multiSelectCheckbox').length;
+                        var numRowsChecked = $tbody.find('input.multiSelectCheckbox:checked').length;
                         var enabled = checked || (numRowsChecked > 0);
 
-                        toggleMultiSelectActions($td.closest('.list-view'), enabled);
+                        toggleMultiSelectActions($(this).closest('.list-view'), enabled);
 
-                        $td.closest('.list-view').find('input.multiSelectMasterCheckbox').attr('checked', (numRows === numRowsChecked));
+                        $(this).closest('.list-view').find('input.multiSelectMasterCheckbox').prop('checked', (numRows === numRowsChecked));
                     });
 
                 $td.append(
@@ -1205,6 +1208,8 @@
             var reducedFields = {};
             var idx = 0;
             $.each(fields, function(key) {
+                if ($.inArray(key, hiddenFields) != -1)
+                    return true;
                 var field = this;
                 if (field.columns) {
                     $.each(field.columns, function(innerKey) {
@@ -1580,10 +1585,10 @@
                             $('<span>').html(_l('label.quickview') + ': '),
                             $('<span>').addClass('title').html(
                                 cloudStack.concat(
-                                    $tr.find('td:first span').html(), 30
+                                    $tr.find('td.first span').html(), 30
                                 )
                             ).attr({
-                                title: $tr.find('td:first span').html()
+                                title: $tr.find('td.first span').html()
                             }),
                             $('<span>').addClass('icon').html('&nbsp;')
                         );
@@ -2450,8 +2455,8 @@
     var toggleMultiSelectActions = function($listView, enabled) {
         var $multiSelectActions = $listView.find('div.main-action.multiSelectAction');
 
-        $listView.find('div.action.add')[enabled ? 'hide' : 'show']();
-        $listView.find('div.main-action:not(.multiSelectAction)')[enabled ? 'hide' : 'show']();
+        $listView.find('div.action.add').toggle(!enabled);
+        $listView.find('div.main-action:not(.multiSelectAction)').toggle(!enabled);
         $multiSelectActions.hide();
 
         if (enabled) {
@@ -2462,7 +2467,7 @@
 
                 if (preFilter) {
                     $selectedVMs = $listView.find('tbody tr').filter(function() {
-                        return $(this).find('td.multiselect input[type=checkbox]:checked').length
+                        return $(this).find('td.multiselect input[type=checkbox]:checked').length;
                     });
                     context[$listView.data('view-args').activeSection] = $selectedVMs.map(function(index, item) {
                         return $(item).data('json-obj');
@@ -2474,7 +2479,7 @@
                 return true;
             }).show();
         }
-    }
+    };
 
     $.fn.listView = function(args, options) {
         if (!options) options = {};
