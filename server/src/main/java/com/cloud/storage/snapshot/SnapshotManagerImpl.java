@@ -931,10 +931,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     protected boolean deletePolicy(Long policyId) {
         SnapshotPolicyVO snapshotPolicy = _snapshotPolicyDao.findById(policyId);
         _snapSchedMgr.removeSchedule(snapshotPolicy.getVolumeId(), snapshotPolicy.getId());
-        if (taggedResourceService.deleteTags(Collections.singletonList(snapshotPolicy.getUuid()), ResourceObjectType.SnapshotPolicy, null)) {
-            return _snapshotPolicyDao.remove(policyId);
-        }
-        throw new CloudRuntimeException("Unable to delete snapshot policy due to failure to delete tags for the snapshot policy uuid: " + snapshotPolicy.getUuid());
+        taggedResourceService.deleteTags(Collections.singletonList(snapshotPolicy.getUuid()), ResourceObjectType.SnapshotPolicy, null);
+        return _snapshotPolicyDao.remove(policyId);
     }
 
     @Override
