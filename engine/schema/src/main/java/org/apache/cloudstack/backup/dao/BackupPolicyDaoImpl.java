@@ -60,7 +60,9 @@ public class BackupPolicyDaoImpl extends GenericDaoBase<BackupPolicyVO, Long> im
         BackupPolicyResponse response = new BackupPolicyResponse();
         if (policy.isImported()) {
             response.setId(policy.getUuid());
-            response.setZoneId(zone.getUuid());
+            if (zone != null) {
+                response.setZoneId(zone.getUuid());
+            }
         }
         response.setName(policy.getName());
         response.setDescription(policy.getDescription());
