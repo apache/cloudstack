@@ -107,7 +107,9 @@
                             $('div.overlay').remove();
                             $('.tooltip-box').remove();
                             $formContainer.remove();
-                            $(this).dialog('destroy');
+                            if ($(this).data('dialog')) {
+                                $(this).dialog('destroy');
+                            }
 
                             $('.hovered-elem').hide();
 
