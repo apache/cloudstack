@@ -5193,14 +5193,17 @@
                                     },
                                     vpcoffering: {
                                         label: 'label.vpc.offering',
+                                        dependsOn: 'zoneid',
                                         validation: {
                                             required: true
                                         },
                                         select: function(args) {
-                                            var data = {};
+                                            var data = {
+                                                zoneid: args.zoneid
+                                            };
                                             $.ajax({
                                                 url: createURL('listVPCOfferings'),
-                                                data: {},
+                                                data: data,
                                                 success: function(json) {
                                                     var offerings  = json.listvpcofferingsresponse.vpcoffering ? json.listvpcofferingsresponse.vpcoffering : [];
                                                     var filteredofferings = $.grep(offerings, function(offering) {
