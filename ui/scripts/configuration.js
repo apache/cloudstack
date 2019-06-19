@@ -876,7 +876,7 @@
                                     }
                                 }
 
-                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId;
+                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
                                 if (zoneId) {
                                     $.extend(data, {
                                         zoneid: zoneId
@@ -2318,7 +2318,7 @@
                                     }
                                 }
 
-                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId;
+                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
                                 if (zoneId) {
                                     $.extend(data, {
                                         zoneid: zoneId
@@ -3758,7 +3758,7 @@
                                     }
                                 }
 
-                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId;
+                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
                                 if (zoneId) {
                                     $.extend(inputData, {
                                         zoneid: zoneId
@@ -4516,7 +4516,7 @@
                                     }
                                 }
 
-                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId;
+                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
                                 if (zoneId) {
                                     $.extend(inputData, {
                                         zoneid: zoneId
