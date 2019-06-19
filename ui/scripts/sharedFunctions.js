@@ -35,6 +35,7 @@ var g_cloudstackversion = null;
 var g_queryAsyncJobResultInterval = 3000;
 var g_idpList = null;
 var g_appendIdpDomain = false;
+var g_sortKeyIsAscending = false;
 
 //keyboard keycode
 var keycode_Enter = 13;
@@ -2418,7 +2419,7 @@ cloudStack.api = {
                     url: createURL(updateCommand),
                     data: {
                         id: args.context[objType].id,
-                        sortKey: args.index
+                        sortKey: g_sortKeyIsAscending ? (-1 * args.index) : args.index
                     },
                     success: function(json) {
                         args.response.success();
