@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementors
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 
@@ -81,8 +82,7 @@ public interface NetworkService {
 
     IpAddress getIp(long id);
 
-    Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId,
-        Boolean changeCidr, String guestVmCidr, Boolean displayNetwork, String newUUID, boolean updateInSequence, boolean forced);
+    Network updateGuestNetwork(final UpdateNetworkCmd cmd);
 
     /**
      * Migrate a network from one physical network to another physical network

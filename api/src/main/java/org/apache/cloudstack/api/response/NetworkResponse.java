@@ -17,8 +17,9 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.List;
-
+import java.util.Map;
 import java.util.Set;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -200,6 +201,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.TAGS)
     @Param(description = "the list of resource tags associated with network", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
+
+    @SerializedName(ApiConstants.DETAILS)
+    @Param(description = "the details of the network")
+    private Map<String, String> details;
 
     @SerializedName(ApiConstants.IP6_GATEWAY)
     @Param(description = "the gateway of IPv6 network")
@@ -412,6 +417,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 
     public void setIp6Gateway(String ip6Gateway) {

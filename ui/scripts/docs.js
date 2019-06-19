@@ -506,6 +506,10 @@ cloudStack.docs = {
         desc: 'If you want to assign a special domain name to this guest VM network, specify the DNS suffix',
         externalLink: ''
     },
+    helpGuestNetworkHideIpAddressUsage: {
+        desc: 'If you want the IP address usage records hidden for the network',
+        externalLink: ''
+    },
     // Add host
     helpHostZone: {
         desc: 'The zone where you want to add the host',
