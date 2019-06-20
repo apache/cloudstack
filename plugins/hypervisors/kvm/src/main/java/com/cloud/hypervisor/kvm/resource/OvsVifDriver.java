@@ -24,6 +24,9 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.hypervisor.kvm.dpdk.DPDKDriver;
+import com.cloud.hypervisor.kvm.dpdk.DPDKDriverImpl;
+import com.cloud.hypervisor.kvm.dpdk.DPDKHelper;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -41,8 +44,7 @@ import com.cloud.utils.script.Script;
 public class OvsVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger.getLogger(OvsVifDriver.class);
     private int _timeout;
-
-    protected static final String DPDK_PORT_PREFIX = "csdpdk-";
+    private DPDKDriver dpdkDriver;
 
     @Override
     public void configure(Map<String, Object> params) throws ConfigurationException {
@@ -53,6 +55,11 @@ public class OvsVifDriver extends VifDriverBase {
         String networkScriptsDir = (String)params.get("network.scripts.dir");
         if (networkScriptsDir == null) {
             networkScriptsDir = "scripts/vm/network/vnet";
+        }
+
+        String dpdk = (String) params.get("openvswitch.dpdk.enabled");
+        if (StringUtils.isNotBlank(dpdk) && Boolean.parseBoolean(dpdk)) {
+            dpdkDriver = new DPDKDriverImpl();
         }
 
         String value = (String)params.get("scripts.timeout");
@@ -78,55 +85,6 @@ public class OvsVifDriver extends VifDriverBase {
             _pifs.put(bridge, pif);
         }
         s_logger.debug("done looking for pifs, no more bridges");
-    }
-
-    /**
-     * Get the latest DPDK port number created on a DPDK enabled host
-     */
-    protected int getDpdkLatestPortNumberUsed() {
-        s_logger.debug("Checking the last DPDK port created");
-        String cmd = "ovs-vsctl show | grep Port | grep " + DPDK_PORT_PREFIX + " | " +
-                "awk '{ print $2 }' | sort -rV | head -1";
-        String port = Script.runSimpleBashScript(cmd);
-        int portNumber = 0;
-        if (StringUtils.isNotBlank(port)) {
-            String unquotedPort = port.replace("\"", "");
-            String dpdkPortNumber = unquotedPort.split(DPDK_PORT_PREFIX)[1];
-            portNumber = Integer.valueOf(dpdkPortNumber);
-        }
-        return portNumber;
-    }
-
-    /**
-     * Get the next DPDK port name to be created
-     */
-    protected String getNextDpdkPort() {
-        int portNumber = getDpdkLatestPortNumberUsed();
-        return DPDK_PORT_PREFIX + String.valueOf(portNumber + 1);
-    }
-
-    /**
-     * Add OVS port (if it does not exist) to bridge with DPDK support
-     */
-    protected void addDpdkPort(String bridgeName, String port, String vlan) {
-        String cmd = String.format("ovs-vsctl add-port %s %s " +
-                "vlan_mode=access tag=%s " +
-                "-- set Interface %s type=dpdkvhostuser", bridgeName, port, vlan, port);
-        s_logger.debug("DPDK property enabled, executing: " + cmd);
-        Script.runSimpleBashScript(cmd);
-    }
-
-    /**
-     * Check for additional extra 'dpdk-interface' configurations, return them appended
-     */
-    private String getExtraDpdkProperties(Map<String, String> extraConfig) {
-        StringBuilder stringBuilder = new StringBuilder();
-        for (String key : extraConfig.keySet()) {
-            if (key.startsWith(LibvirtComputingResource.DPDK_INTERFACE_PREFIX)) {
-                stringBuilder.append(extraConfig.get(key));
-            }
-        }
-        return stringBuilder.toString();
     }
 
     @Override
@@ -158,12 +116,18 @@ public class OvsVifDriver extends VifDriverBase {
                 if (trafficLabel != null && !trafficLabel.isEmpty()) {
                     if (_libvirtComputingResource.dpdkSupport && !nic.isDpdkDisabled()) {
                         s_logger.debug("DPDK support enabled: configuring per traffic label " + trafficLabel);
-                        if (StringUtils.isBlank(_libvirtComputingResource.dpdkOvsPath)) {
+                        String dpdkOvsPath = _libvirtComputingResource.dpdkOvsPath;
+                        if (StringUtils.isBlank(dpdkOvsPath)) {
                             throw new CloudRuntimeException("DPDK is enabled on the host but no OVS path has been provided");
                         }
-                        String port = getNextDpdkPort();
-                        addDpdkPort(_pifs.get(trafficLabel), port, vlanId);
-                        intf.defDpdkNet(_libvirtComputingResource.dpdkOvsPath, port, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), 0, getExtraDpdkProperties(extraConfig));
+                        String port = dpdkDriver.getNextDpdkPort();
+                        DPDKHelper.VHostUserMode dpdKvHostUserMode = dpdkDriver.getDPDKvHostUserMode(extraConfig);
+                        dpdkDriver.addDpdkPort(_pifs.get(trafficLabel), port, vlanId, dpdKvHostUserMode, dpdkOvsPath);
+                        String interfaceMode = dpdkDriver.getGuestInterfacesModeFromDPDKVhostUserMode(dpdKvHostUserMode);
+                        intf.defDpdkNet(dpdkOvsPath, port, nic.getMac(),
+                                getGuestNicModel(guestOsType, nicAdapter), 0,
+                                dpdkDriver.getExtraDpdkProperties(extraConfig),
+                                interfaceMode);
                     } else {
                         s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
                         intf.defBridgeNet(_pifs.get(trafficLabel), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);

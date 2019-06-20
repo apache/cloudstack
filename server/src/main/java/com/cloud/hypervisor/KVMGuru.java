@@ -22,6 +22,9 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.kvm.dpdk.DPDKHelper;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
@@ -31,13 +34,16 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 import java.util.Map;
 
 public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
@@ -47,6 +53,8 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     GuestOSHypervisorDao _guestOsHypervisorDao;
     @Inject
     HostDao _hostDao;
+    @Inject
+    DPDKHelper dpdkHelper;
 
     public static final Logger s_logger = Logger.getLogger(KVMGuru.class);
 
@@ -106,6 +114,11 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     public VirtualMachineTO implement(VirtualMachineProfile vm) {
         VirtualMachineTO to = toVirtualMachineTO(vm);
         setVmQuotaPercentage(to, vm);
+        addServiceOfferingExtraConfiguration(to, vm);
+
+        if (dpdkHelper.isDPDKvHostUserModeSettingOnServiceOffering(vm)) {
+            dpdkHelper.setDpdkVhostUserMode(to, vm);
+        }
 
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findByIdIncludingRemoved(vm.getVirtualMachine().getGuestOSId());
@@ -122,6 +135,24 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         }
 
         return to;
+    }
+
+    /**
+     * Add extra configurations from service offering to the VM TO.
+     * Extra configuration keys are expected in formats:
+     * - "extraconfig-N"
+     * - "extraconfig-CONFIG_NAME"
+     */
+    protected void addServiceOfferingExtraConfiguration(VirtualMachineTO to, VirtualMachineProfile vmProfile) {
+        ServiceOffering offering = vmProfile.getServiceOffering();
+        List<ServiceOfferingDetailsVO> details = _serviceOfferingDetailsDao.listDetails(offering.getId());
+        if (CollectionUtils.isNotEmpty(details)) {
+            for (ServiceOfferingDetailsVO detail : details) {
+                if (detail.getName().startsWith(ApiConstants.EXTRA_CONFIG)) {
+                    to.addExtraConfig(detail.getName(), detail.getValue());
+                }
+            }
+        }
     }
 
     @Override

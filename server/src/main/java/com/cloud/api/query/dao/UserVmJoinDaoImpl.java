@@ -321,6 +321,9 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 }
             }
             userVmResponse.setDetails(resourceDetails);
+            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                userVmResponse.setReadOnlyUIDetails(QueryManagerImpl.UserVMReadOnlyUIDetails.value());
+            }
         }
 
         userVmResponse.setObjectName(objectName);

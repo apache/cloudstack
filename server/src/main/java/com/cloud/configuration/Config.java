@@ -890,14 +890,6 @@ public enum Config {
             "0",
             "Default disk I/O writerate in bytes per second allowed in User vm's disk.",
             null),
-    KvmAutoConvergence(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "kvm.auto.convergence",
-            "false",
-            "Setting this to 'true' allows KVM to use auto convergence to complete VM migration (libvirt version 1.2.3+ and QEMU version 1.6+)",
-            null),
     ControlCidr(
             "Advanced",
             ManagementServer.class,
@@ -994,14 +986,6 @@ public enum Config {
             "network.loadbalancer.basiczone.elb.gc.interval.minutes",
             "30",
             "Garbage collection interval to destroy unused ELB vms in minutes. Minimum of 5",
-            null),
-    SortKeyAlgorithm(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "sortkey.algorithm",
-            "false",
-            "Sort algorithm for those who use sort key(template, disk offering, service offering, network offering), true means ascending sort while false means descending sort",
             null),
     EnableEC2API("Advanced", ManagementServer.class, Boolean.class, "enable.ec2.api", "false", "enable EC2 API on CloudStack", null),
     EnableS3API("Advanced", ManagementServer.class, Boolean.class, "enable.s3.api", "false", "enable Amazon S3 API on CloudStack", null),
@@ -1202,14 +1186,6 @@ public enum Config {
     KvmPublicNetwork("Hidden", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),
     KvmPrivateNetwork("Hidden", ManagementServer.class, String.class, "kvm.private.network.device", null, "Specify the private bridge on host for private network", null),
     KvmGuestNetwork("Hidden", ManagementServer.class, String.class, "kvm.guest.network.device", null, "Specify the private bridge on host for private network", null),
-    KvmSshToAgentEnabled(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "kvm.ssh.to.agent",
-            "true",
-            "Specify whether or not the management server is allowed to SSH into KVM Agents",
-            null),
 
     // Hyperv
     HypervPublicNetwork(

@@ -72,7 +72,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Inject
     private ResourceManager _resourceMgr;
     @Inject
-    private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     private ServiceOfferingDao _serviceOfferingDao;
 
@@ -172,8 +172,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         }
 
         // Set GPU details
-        ServiceOfferingDetailsVO offeringDetail = null;
-        if ((offeringDetail = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null) {
+        ServiceOfferingDetailsVO offeringDetail = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString());
+        if (offeringDetail != null) {
             ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
             to.setGpuDevice(_resourceMgr.getGPUDevice(vm.getHostId(), groupName.getValue(), offeringDetail.getValue()));
         }

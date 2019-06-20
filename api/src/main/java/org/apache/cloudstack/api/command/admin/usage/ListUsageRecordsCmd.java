@@ -176,11 +176,13 @@ public class ListUsageRecordsCmd extends BaseListCmd {
             }
             for (Usage usageRecord : usageRecords.first()) {
                 UsageRecordResponse usageResponse = _responseGenerator.createUsageResponse(usageRecord, resourceTagResponseMap, getOldFormat());
-                usageResponse.setObjectName("usagerecord");
-                usageResponses.add(usageResponse);
+                if (usageResponse != null) {
+                    usageResponse.setObjectName("usagerecord");
+                    usageResponses.add(usageResponse);
+                }
             }
 
-            response.setResponses(usageResponses, usageRecords.second());
+            response.setResponses(usageResponses, usageResponses.size());
         }
 
         response.setResponseName(getCommandName());

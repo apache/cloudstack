@@ -16,11 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.VolumeApiService;
-import com.cloud.user.Account;
-import com.cloud.user.AccountService;
-import junit.framework.TestCase;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.isNull;
+
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
@@ -32,11 +33,12 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.isNull;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.VolumeApiService;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+
+import junit.framework.TestCase;
 
 public class CreateSnapshotCmdTest extends TestCase {
 
@@ -65,6 +67,11 @@ public class CreateSnapshotCmdTest extends TestCase {
             @Override
             public long getEntityOwnerId(){
                 return 1L;
+            }
+
+            @Override
+            protected String getVolumeUuid() {
+                return "123";
             }
         };
 
@@ -126,7 +133,7 @@ public class CreateSnapshotCmdTest extends TestCase {
         try {
             createSnapshotCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to create snapshot due to an internal error creating snapshot for volume 1", exception.getDescription());
+            Assert.assertEquals("Failed to create snapshot due to an internal error creating snapshot for volume 123", exception.getDescription());
         }
     }
 }

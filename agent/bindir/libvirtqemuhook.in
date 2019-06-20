@@ -78,7 +78,9 @@ def handleMigrateBegin():
 
 
 def executeCustomScripts(sysArgs):
-    createDirectoryIfNotExists(customDir, customDirPermissions)
+    if not os.path.exists(customDir) or not os.path.isdir(customDir):
+        return
+
     scripts = getCustomScriptsFromDirectory()
 
     for scriptName in scripts:
@@ -125,12 +127,6 @@ def getCustomScriptsFromDirectory():
     return sorted(filter(lambda fileName: (fileName is not None) & (fileName != "") & ('_' in fileName) &
                                           (fileName.startswith((action + '_')) | fileName.startswith(('all' + '_'))),
                          os.listdir(customDir)), key=lambda fileName: substringAfter(fileName, '_'))
-
-
-def createDirectoryIfNotExists(dir, permissions):
-    if not os.path.exists(dir):
-        logger.info('Directory %s does not exist; creating it.' % dir)
-        os.makedirs(dir, permissions)
 
 
 def substringAfter(s, delimiter):

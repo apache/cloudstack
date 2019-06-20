@@ -331,4 +331,8 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     public void setDynamicFlag(boolean isdynamic) {
         isDynamic = isdynamic;
     }
+
+    public boolean isCustomCpuSpeedSupported() {
+        return isCustomized() && getDetail("minCPU") != null;
+    }
 }
