@@ -203,7 +203,7 @@
                                             autoFocus: true,
                                             source: options.sort()
                                         }).focus(function() {
-                                            $(this).data("uiAutocomplete").search($(this).val());
+                                            $(this).data("uiAutocomplete").search("");
                                         });
                                         $(row).find('input.edit').blur();
                                     }
