@@ -99,3 +99,4 @@ scripts/.pydevproject
 *.qcow2
 *.raw
 venv
+.vscode
