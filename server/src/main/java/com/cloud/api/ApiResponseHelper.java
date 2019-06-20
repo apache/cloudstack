@@ -3661,7 +3661,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             resourceType = ResourceObjectType.UserVm;
             if (vmInstance != null) {
                 resourceId = vmInstance.getId();
-                usageRecResponse.setResourceName(vm.getInstanceName());
+                usageRecResponse.setResourceName(vmInstance.getInstanceName());
                 usageRecResponse.setUsageId(vmInstance.getUuid());
             }
             usageRecResponse.setSize(usageRecord.getSize());
