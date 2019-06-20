@@ -127,7 +127,7 @@ cloudStack.docs = {
 
     helpIPReservationNetworkCidr: {
         desc: 'The CIDR of the entire network when IP reservation is configured',
-        externalLink: ' '
+        externalLink: ''
 
     },
 
@@ -177,6 +177,10 @@ cloudStack.docs = {
     },
     helpAccountDomain: {
         desc: 'Domain in which the account is to be created',
+        externalLink: ''
+    },
+    helpAccountFilter: {
+        desc: 'Filter to apply to listing of ldap accounts',
         externalLink: ''
     },
     helpAccountAccount: {
