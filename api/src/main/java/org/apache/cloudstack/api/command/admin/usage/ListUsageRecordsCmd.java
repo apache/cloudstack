@@ -82,9 +82,8 @@ public class ListUsageRecordsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.INCLUDE_TAGS, type = CommandType.BOOLEAN, description = "Flag to enable display of Tags for a resource")
     private Boolean includeTags;
 
-    @Parameter(name = ApiConstants.OLD_FORMAT, type = CommandType.BOOLEAN, description = "Flag to enable description rendered in old format with no processing")
+    @Parameter(name = ApiConstants.OLD_FORMAT, type = CommandType.BOOLEAN, description = "Flag to enable description rendered in old format which uses internal database IDs instead of UUIDs. False by default.")
     private Boolean oldFormat;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
