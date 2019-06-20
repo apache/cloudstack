@@ -2042,6 +2042,10 @@
                                                                 });
                                                             }
                                                         });
+                                                        items.unshift({
+                                                            id: undefined,
+                                                            description: ""
+                                                        });
                                                         args.response.success({
                                                             data: items
                                                         });
