@@ -187,6 +187,24 @@
                     }
                 });
 
+                // Update global pagesize for sort key in UI
+                $.ajax({
+                    type: 'GET',
+                    url: createURL('listConfigurations'),
+                    data: {name: 'sortkey.algorithm'},
+                    dataType: 'json',
+                    async: false,
+                    success: function(data, textStatus, xhr) {
+                        if (data && data.listconfigurationsresponse && data.listconfigurationsresponse.configuration) {
+                            var config = data.listconfigurationsresponse.configuration[0];
+                            if (config && config.name == 'sortkey.algorithm') {
+                                g_sortKeyIsAscending = config.value == 'true';
+                            }
+                        }
+                    },
+                    error: function(xhr) { // ignore any errors, fallback to the default
+                    }
+                });
 
                 // Populate IDP list
                 $.ajax({

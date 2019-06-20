@@ -1177,6 +1177,7 @@ var dictionary = {
 "label.network.device.type":"Network Device Type",
 "label.network.domain":"Network Domain",
 "label.network.domain.text":"Network domain",
+"label.network.hideipaddressusage":"Hide IP Address Usage",
 "label.network.id":"Network ID",
 "label.network.label.display.for.blank.value":"Use default gateway",
 "label.network.limits":"Network limits",

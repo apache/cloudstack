@@ -1505,10 +1505,7 @@ div.list-view td.state.notsuitable-storage-migration-required span {
 
 .quick-view-tooltip .loading-overlay {
   opacity: 0.35;
-  top: 94px;
-  left: 1px;
   /*+opacity:35%;*/
-  height: 57px;
   filter: alpha(opacity=35);
   -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=35);
   -moz-opacity: 0.35;
@@ -1516,6 +1513,7 @@ div.list-view td.state.notsuitable-storage-migration-required span {
 
 .quick-view-tooltip .container {
   display: inline-block;
+  position: relative;
   width: 471px;
   height: auto;
   min-height: 100px;
