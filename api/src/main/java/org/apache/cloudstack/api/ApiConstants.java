@@ -155,6 +155,7 @@ public class ApiConstants {
     public static final String HA_PROVIDER = "haprovider";
     public static final String HA_STATE = "hastate";
     public static final String HEALTH = "health";
+    public static final String HIDE_IP_ADDRESS_USAGE = "hideipaddressusage";
     public static final String HOST_ID = "hostid";
     public static final String HOST_NAME = "hostname";
     public static final String HYPERVISOR = "hypervisor";
@@ -207,6 +208,10 @@ public class ApiConstants {
     public static final String MAX = "max";
     public static final String MAC_ADDRESS = "macaddress";
     public static final String MAX_SNAPS = "maxsnaps";
+    public static final String MAX_CPU_NUMBER = "maxcpunumber";
+    public static final String MAX_MEMORY = "maxmemory";
+    public static final String MIN_CPU_NUMBER = "mincpunumber";
+    public static final String MIN_MEMORY = "minmemory";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
     public static final String KEEPALIVE_ENABLED = "keepaliveenabled";

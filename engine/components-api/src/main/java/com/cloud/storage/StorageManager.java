@@ -87,8 +87,16 @@ public interface StorageManager extends StorageService {
     ConfigKey<Integer> KvmStorageOnlineMigrationWait = new ConfigKey<>(Integer.class,
             "kvm.storage.online.migration.wait",
             "Storage",
-            "10800",
+            "86400",
             "Timeout in seconds for online (live) storage migration to complete on KVM (migrateVirtualMachineWithVolume)",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<Boolean> KvmAutoConvergence = new ConfigKey<>(Boolean.class,
+            "kvm.auto.convergence",
+            "Storage",
+            "false",
+            "Setting this to 'true' allows KVM to use auto convergence to complete VM migration (libvirt version 1.2.3+ and QEMU version 1.6+)",
             true,
             ConfigKey.Scope.Global,
             null);

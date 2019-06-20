@@ -120,7 +120,6 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityManager;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.DataCenter;
@@ -2367,11 +2366,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
             final MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, getExecuteInSequence(vm.getHypervisorType()));
 
-            String autoConvergence = _configDao.getValue(Config.KvmAutoConvergence.toString());
-            boolean kvmAutoConvergence = Boolean.parseBoolean(autoConvergence);
-
+            boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
             mc.setAutoConvergence(kvmAutoConvergence);
-
             mc.setHostGuid(dest.getHost().getGuid());
 
             try {
@@ -3897,11 +3893,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
             final MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, getExecuteInSequence(vm.getHypervisorType()));
 
-            String autoConvergence = _configDao.getValue(Config.KvmAutoConvergence.toString());
-            boolean kvmAutoConvergence = Boolean.parseBoolean(autoConvergence);
-
+            boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
             mc.setAutoConvergence(kvmAutoConvergence);
-
             mc.setHostGuid(dest.getHost().getGuid());
 
             try {

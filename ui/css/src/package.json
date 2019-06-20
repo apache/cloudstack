@@ -1,0 +1,41 @@
+{
+  "name": "scss-compiler-cloudstack",
+  "version": "1.0.0",
+  "description": "Compiles scss files into css to manage comprehensive css complexity",
+  "main": "app.js",
+  "scripts": {
+    "start": "gulp",
+    "gulp": "gulp",
+    "fix": "sass-lint-auto-fix"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/apache/cloudstack.git"
+  },
+  "keywords": [
+    "cloudstack",
+    "compiler",
+    "scss",
+    "sass",
+    "css"
+  ],
+  "bugs": {
+    "url": "https://github.com/apache/cloudstack/issues"
+  },
+  "homepage": "https://github.com/apache/cloudstack#readme",
+  "devDependencies": {
+    "fibers": "^3.1.1",
+    "gulp": "^4.0.1",
+    "gulp-autoprefixer": "^6.0.0",
+    "gulp-sass": "^4.0.2",
+    "gulp-sass-lint": "^1.4.0",
+    "gulp-shell": "^0.7.0",
+    "gulp-sourcemaps": "^2.6.5",
+    "node-gyp": "^4.0.0",
+    "node-sass": "^4.11.0",
+    "sass": "^1.18.0",
+    "sass-lint": "^1.12.1",
+    "sass-lint-auto-fix": "^0.17.0",
+    "tar": "^4.4.8"
+  }
+}

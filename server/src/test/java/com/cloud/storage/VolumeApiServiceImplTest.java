@@ -49,8 +49,6 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
@@ -79,6 +77,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
@@ -146,7 +145,7 @@ public class VolumeApiServiceImplTest {
     @Mock
     private HostDao _hostDao;
     @Mock
-    private StoragePoolDetailsDao storagePoolDetailsDao;
+    private StoragePoolTagsDao storagePoolTagsDao;
 
     private DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     private Class<?> _detachCmdClass = detachCmd.getClass();
@@ -516,26 +515,25 @@ public class VolumeApiServiceImplTest {
 
     @Test
     public void getStoragePoolTagsTestStorageWithoutTags() {
-        Mockito.when(storagePoolDetailsDao.listDetails(storagePoolMockId)).thenReturn(new ArrayList<>());
+        Mockito.when(storagePoolTagsDao.getStoragePoolTags(storagePoolMockId)).thenReturn(new ArrayList<>());
 
         String returnedStoragePoolTags = volumeApiServiceImpl.getStoragePoolTags(storagePoolMock);
 
         Assert.assertNull(returnedStoragePoolTags);
-
     }
 
     @Test
     public void getStoragePoolTagsTestStorageWithTags() {
-        ArrayList<StoragePoolDetailVO> tags = new ArrayList<>();
-        StoragePoolDetailVO tag1 = new StoragePoolDetailVO(1l, "tag1", "value", true);
-        StoragePoolDetailVO tag2 = new StoragePoolDetailVO(1l, "tag2", "value", true);
-        StoragePoolDetailVO tag3 = new StoragePoolDetailVO(1l, "tag3", "value", true);
+        ArrayList<String> tags = new ArrayList<>();
+        String tag1 = "tag1";
+        String tag2 = "tag2";
+        String tag3 = "tag3";
 
         tags.add(tag1);
         tags.add(tag2);
         tags.add(tag3);
 
-        Mockito.when(storagePoolDetailsDao.listDetails(storagePoolMockId)).thenReturn(tags);
+        Mockito.when(storagePoolTagsDao.getStoragePoolTags(storagePoolMockId)).thenReturn(tags);
 
         String returnedStoragePoolTags = volumeApiServiceImpl.getStoragePoolTags(storagePoolMock);
 

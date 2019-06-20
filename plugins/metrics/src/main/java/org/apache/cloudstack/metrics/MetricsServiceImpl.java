@@ -38,6 +38,7 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
 import org.apache.cloudstack.response.HostMetricsResponse;
 import org.apache.cloudstack.response.InfrastructureResponse;
@@ -70,6 +71,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -98,6 +101,8 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     private DomainRouterDao domainRouterDao;
     @Inject
     private CapacityDao capacityDao;
+    @Inject
+    private AccountManager accountMgr;
     @Inject
     private ManagementServerHostDao managementServerHostDao;
 
@@ -160,8 +165,11 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             }
 
             metricsResponse.setDiskSizeGB(volumeResponse.getSize());
-            metricsResponse.setStorageType(volumeResponse.getStorageType(), volumeResponse.getVolumeType());
             metricsResponse.setDiskIopsTotal(volumeResponse.getDiskIORead(), volumeResponse.getDiskIOWrite());
+            Account account = CallContext.current().getCallingAccount();
+            if (accountMgr.isAdmin(account.getAccountId())) {
+                metricsResponse.setStorageType(volumeResponse.getStorageType(), volumeResponse.getVolumeType());
+            }
             metricsResponses.add(metricsResponse);
         }
         return metricsResponses;

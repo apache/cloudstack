@@ -18,10 +18,8 @@ package org.apache.cloudstack.api.command.admin.offering;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -30,10 +28,14 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.Storage;
 import com.cloud.user.Account;
+import com.google.common.base.Strings;
 
 @APICommand(name = "createServiceOffering", description = "Creates a service offering.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -162,6 +164,37 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             since = "4.4")
     private Integer hypervisorSnapshotReserve;
 
+    // Introduce 4 new optional paramaters to work custom compute offerings
+    @Parameter(name = ApiConstants.CUSTOMIZED,
+            type = CommandType.BOOLEAN,
+            since = "4.13",
+            description = "Whether service offering size is custom or not")
+    private Boolean customized;
+
+    @Parameter(name = ApiConstants.MAX_CPU_NUMBER,
+            type = CommandType.INTEGER,
+            description = "The maximum number of CPUs to be set with Custom Computer Offering",
+            since = "4.13")
+    private Integer maxCPU;
+
+    @Parameter(name = ApiConstants.MIN_CPU_NUMBER,
+            type = CommandType.INTEGER,
+            description = "The minimum number of CPUs to be set with Custom Computer Offering",
+            since = "4.13")
+    private Integer minCPU;
+
+    @Parameter(name = ApiConstants.MAX_MEMORY,
+            type = CommandType.INTEGER,
+            description = "The maximum memroy size of the custom service offering in MB",
+            since = "4.13")
+    private Integer maxMemory;
+
+    @Parameter(name = ApiConstants.MIN_MEMORY,
+            type = CommandType.INTEGER,
+            description = "The minimum memroy size of the custom service offering in MB",
+            since = "4.13")
+    private Integer minMemory;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -175,6 +208,9 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public String getDisplayText() {
+        if (Strings.isNullOrEmpty(displayText)) {
+            throw new InvalidParameterValueException("Failed to create service offering because the offering display text has not been spified.");
+        }
         return displayText;
     }
 
@@ -187,6 +223,9 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public String getServiceOfferingName() {
+        if (Strings.isNullOrEmpty(serviceOfferingName)) {
+            throw new InvalidParameterValueException("Failed to create service offering because offering name has not been spified.");
+        }
         return serviceOfferingName;
     }
 
@@ -234,18 +273,12 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return deploymentPlanner;
     }
 
-    public boolean isCustomized() {
-        return (cpuNumber == null || memory == null || cpuSpeed == null);
-    }
-
     public Map<String, String> getDetails() {
-        Map<String, String> detailsMap = null;
-        if (details != null && !details.isEmpty()) {
-            detailsMap = new HashMap<String, String>();
+        Map<String, String> detailsMap = new HashMap<>();
+        if (MapUtils.isNotEmpty(details)) {
             Collection<?> props = details.values();
-            Iterator<?> iter = props.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> detail = (HashMap<String, String>) iter.next();
+            for (Object prop : props) {
+                HashMap<String, String> detail = (HashMap<String, String>) prop;
                 detailsMap.put(detail.get("key"), detail.get("value"));
             }
         }
@@ -314,6 +347,36 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public Integer getHypervisorSnapshotReserve() {
         return hypervisorSnapshotReserve;
+    }
+
+    /**
+     * If customized parameter is true, then cpuNumber, memory and cpuSpeed must be null
+     * Check if the optional params min/max CPU/Memory have been specified
+     * @return true if the following conditions are satisfied;
+     * - cpuNumber, memory and cpuSpeed are all null when customized parameter is set to true
+     * - min/max CPU/Memory params are all null or all set
+     */
+    public boolean isCustomized() {
+        if (customized != null){
+            return customized;
+        }
+        return (cpuNumber == null || memory == null);
+    }
+
+    public Integer getMaxCPUs() {
+        return maxCPU;
+    }
+
+    public Integer getMinCPUs() {
+        return minCPU;
+    }
+
+    public Integer getMaxMemory() {
+        return maxMemory;
+    }
+
+    public Integer getMinMemory() {
+        return minMemory;
     }
 
     /////////////////////////////////////////////////////

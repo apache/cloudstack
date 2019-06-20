@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -31,7 +29,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
-import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -39,8 +37,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.user.Account;
-import com.cloud.user.User;
 
 @APICommand(name = "updateNetwork", description = "Updates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -159,17 +155,12 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException {
-        User callerUser = _accountService.getActiveUser(CallContext.current().getCallingUserId());
-        Account callerAccount = _accountService.getActiveAccountById(callerUser.getAccountId());
         Network network = _networkService.getNetwork(id);
         if (network == null) {
             throw new InvalidParameterValueException("Couldn't find network by ID");
         }
 
-        Network result =
-            _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount, callerUser, getNetworkDomain(), getNetworkOfferingId(),
-                getChangeCidr(), getGuestVmCidr(), getDisplayNetwork(), getCustomId(), getUpdateInSequence(), getForced());
-
+        Network result = _networkService.updateGuestNetwork(this);
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(ResponseView.Restricted, result);
             response.setResponseName(getCommandName());

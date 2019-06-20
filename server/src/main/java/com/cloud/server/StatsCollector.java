@@ -51,6 +51,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.BatchPoints;
@@ -1502,6 +1503,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      */
     protected void writeBatches(InfluxDB influxDbConnection, String dbName, List<Point> points) {
         BatchPoints batchPoints = BatchPoints.database(dbName).build();
+        influxDbConnection.enableBatch(BatchOptions.DEFAULTS);
 
         for (Point point : points) {
             batchPoints.point(point);

@@ -79,4 +79,12 @@ public class NetworkDetailVO implements ResourceDetail {
     public boolean isDisplay() {
         return display;
     }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
 }

@@ -1,3 +1,4 @@
+/*[fmt]1C20-1C0D-E*/
 /*
 * Licensed to the Apache Software Foundation (ASF) under one
 * or more contributor license agreements.  See the NOTICE file
@@ -16,11 +17,8 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-
-/*
- * correct the breadcrumbs, hungarian translation is longer
- * than the english default.
- */
 #breadcrumbs div.home {
-	width: 100px;
+  width: 100px;
 }
+
+/*# sourceMappingURL=src/sourcemaps/cloudstack3.hu.css.map */

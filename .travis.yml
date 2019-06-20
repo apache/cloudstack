@@ -107,28 +107,30 @@ env:
              smoke/test_volumes
              smoke/test_vpc_redundant
              smoke/test_vpc_router_nics
-             smoke/test_vpc_vpn
-             smoke/misc/test_deploy_vm
+             smoke/test_vpc_vpn"
+
+    - TESTS="smoke/misc/test_deploy_vm
              smoke/misc/test_escalations_templates
              smoke/misc/test_vm_ha
-             smoke/misc/test_vm_sync"
-
-    - TESTS="component/find_hosts_for_migration
+             smoke/misc/test_vm_sync
+             component/find_hosts_for_migration
              component/test_acl_isolatednetwork_delete
              component/test_acl_listsnapshot
              component/test_acl_listvm
-             component/test_acl_listvolume
-             component/test_acl_sharednetwork"
+             component/test_acl_listvolume"
 
-    - TESTS="component/test_allocation_states
-             component/test_acl_sharednetwork_deployVM-impersonation
-             component/test_affinity_groups_projects
-             component/test_cpu_domain_limits
-             component/test_cpu_limits"
+    - TESTS="component/test_acl_sharednetwork
+             component/test_acl_sharednetwork_deployVM-impersonation"
 
-    - TESTS="component/test_cpu_max_limits
-             component/test_cpu_project_limits
-             component/test_deploy_vm_userdata_multi_nic
+    - TESTS="component/test_affinity_groups_projects
+             component/test_allocation_states"
+
+    - TESTS="component/test_cpu_domain_limits
+             component/test_cpu_limits
+             component/test_cpu_max_limits
+             component/test_cpu_project_limits"
+
+    - TESTS="component/test_deploy_vm_userdata_multi_nic
              component/test_egress_fw_rules
              component/test_invalid_gw_nm
              component/test_ip_reservation
@@ -137,16 +139,18 @@ env:
     - TESTS="component/test_memory_limits
              component/test_mm_domain_limits
              component/test_mm_max_limits
-             component/test_mm_project_limits
-             component/test_network_offering
+             component/test_mm_project_limits"
+
+    - TESTS="component/test_network_offering
              component/test_non_contiguous_vlan
              component/test_persistent_networks"
 
     - TESTS="component/test_project_limits
              component/test_project_configs
              component/test_project_usage
-             component/test_project_resources
-             component/test_regions_accounts
+             component/test_project_resources"
+
+    - TESTS="component/test_regions_accounts
              component/test_routers
              component/test_snapshots
              component/test_stopped_vm"

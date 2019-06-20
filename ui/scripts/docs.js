@@ -506,6 +506,10 @@ cloudStack.docs = {
         desc: 'If you want to assign a special domain name to this guest VM network, specify the DNS suffix',
         externalLink: ''
     },
+    helpGuestNetworkHideIpAddressUsage: {
+        desc: 'If you want the IP address usage records hidden for the network',
+        externalLink: ''
+    },
     // Add host
     helpHostZone: {
         desc: 'The zone where you want to add the host',
@@ -1297,35 +1301,6 @@ cloudStack.docs = {
         desc: 'A short description of the offering that can be displayed to users',
         externalLink: ''
     },
-    // Add Nuage VSP
-    helpVspHostname: {
-        desc: 'The hostname/IP address of Nuage VSD',
-        externalLink: ''
-    },
-    helpVspUsername: {
-        desc: 'A name of the CMS user in Nuage VSD.',
-        externalLink: ''
-    },
-    helpVspPassword: {
-        desc: 'The password for the CMS user in Nuage VSD.',
-        externalLink: ''
-    },
-    helpVspPort: {
-        desc: 'The port to communicate with Nuage VSD. e.g. Unspecified/0 if using HAProxy for load balancing or 8443 if connecting directly to a VSD server.',
-        externalLink: ''
-    },
-    helpVspApiVersion: {
-        desc: 'The API version of Nuage VSD',
-        externalLink: ''
-    },
-    helpVspRetries: {
-        desc: 'Number of times to attempt a command on Nuage VSD before considering the operation failed.  Valid values [1 - 10].',
-        externalLink: ''
-    },
-    helpVspRetryInterval: {
-        desc: 'The interval of time in milliseconds to wait on failure before attempting to resend the command to Nuage VSD.  Valid values [0 - 10000].',
-        externalLink: ''
-    },
     helpOvm3pool: {
         desc: 'Pool the Ovm3 nodes in this cluster, required for vm node migrations',
         externalLink: ''
@@ -1354,6 +1329,31 @@ cloudStack.docs = {
     },
     helpL2UserData: {
         desc: 'Pass user and meta data to VMs (via ConfigDrive)',
+        externalLink: ''
+    },
+
+    helpComputeOfferingMinCPUCores: {
+        desc: 'This will be used for the setting the range (min-max) of the number of cpu cores that should be allowed for VMs using this custom offering.',
+        externalLink: ''
+    },
+
+    helpComputeOfferingMaxCPUCores: {
+        desc: 'This will be used for the setting the range (min-max) of the number of cpu cores that should be allowed for VMs using this custom offering.',
+        externalLink: ''
+    },
+
+    helpComputeOfferingMinMemory: {
+        desc: 'This will be used for the setting the range (min-max) amount of memory that should be allowed for VMs using this custom offering.',
+        externalLink: ''
+    },
+
+    helpComputeOfferingMaxMemory: {
+        desc: 'This will be used for the setting the range (min-max) amount of memory that should be allowed for VMs using this custom offering.',
+        externalLink: ''
+    },
+
+    helpComputeOfferingType: {
+        desc: 'This will be used for setting the type of compute offering - whether it is fixed, custom constrained or custom unconstrained.',
         externalLink: ''
     }
 };

@@ -102,7 +102,6 @@
         <module>network-elements/palo-alto</module>
         <module>network-elements/stratosphere-ssp</module>
         <module>network-elements/brocade-vcs</module>
-        <module>network-elements/nuage-vsp</module>
         <module>network-elements/vxlan</module>
 
         <module>outofbandmanagement-drivers/ipmitool</module>

@@ -16,13 +16,12 @@
 // under the License.
 package com.cloud.server;
 
-import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -608,29 +607,23 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             // FIXME: take a global database lock here for safety.
             boolean onWindows = isOnWindows();
             if(!onWindows) {
-                Script.runSimpleBashScript("if [ -f " + privkeyfile + " ]; then rm -f " + privkeyfile + "; fi; ssh-keygen -t rsa -N '' -f " + privkeyfile + " -q");
+                Script.runSimpleBashScript("if [ -f " + privkeyfile + " ]; then rm -f " + privkeyfile + "; fi; ssh-keygen -t rsa -m PEM -N '' -f " + privkeyfile + " -q 2>/dev/null || ssh-keygen -t rsa -N '' -f " + privkeyfile + " -q");
             }
 
-            byte[] arr1 = new byte[4094]; // configuration table column value size
-            try (DataInputStream dis = new DataInputStream(new FileInputStream(privkeyfile))) {
-                dis.readFully(arr1);
-            } catch (EOFException e) {
-                s_logger.info("[ignored] eof reached");
-            } catch (Exception e) {
+            final String privateKey;
+            final String publicKey;
+            try {
+                privateKey = new String(Files.readAllBytes(privkeyfile.toPath()));
+            } catch (IOException e) {
                 s_logger.error("Cannot read the private key file", e);
                 throw new CloudRuntimeException("Cannot read the private key file");
             }
-            String privateKey = new String(arr1).trim();
-            byte[] arr2 = new byte[4094]; // configuration table column value size
-            try (DataInputStream dis = new DataInputStream(new FileInputStream(pubkeyfile))) {
-                dis.readFully(arr2);
-            } catch (EOFException e) {
-                s_logger.info("[ignored] eof reached");
-            } catch (Exception e) {
-                s_logger.warn("Cannot read the public key file", e);
+            try {
+                publicKey = new String(Files.readAllBytes(pubkeyfile.toPath()));
+            } catch (IOException e) {
+                s_logger.error("Cannot read the public key file", e);
                 throw new CloudRuntimeException("Cannot read the public key file");
             }
-            String publicKey = new String(arr2).trim();
 
             final String insertSql1 =
                     "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +

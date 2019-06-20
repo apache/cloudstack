@@ -26,8 +26,6 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Maps;
-
 public class LibvirtVMDef {
     private static final Logger s_logger = Logger.getLogger(LibvirtVMDef.class);
 
@@ -1019,6 +1017,7 @@ public class LibvirtVMDef {
         private String _dpdkSourcePath;
         private String _dpdkSourcePort;
         private String _dpdkExtraLines;
+        private String _interfaceMode;
 
         public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model) {
             defBridgeNet(brName, targetBrName, macAddr, model, 0);
@@ -1033,7 +1032,8 @@ public class LibvirtVMDef {
             _networkRateKBps = networkRateKBps;
         }
 
-        public void defDpdkNet(String dpdkSourcePath, String dpdkPort, String macAddress, NicModel model, Integer networkRateKBps, String extra) {
+        public void defDpdkNet(String dpdkSourcePath, String dpdkPort, String macAddress, NicModel model,
+                               Integer networkRateKBps, String extra, String interfaceMode) {
             _netType = GuestNetType.VHOSTUSER;
             _dpdkSourcePath = dpdkSourcePath;
             _dpdkSourcePort = dpdkPort;
@@ -1041,6 +1041,7 @@ public class LibvirtVMDef {
             _model = model;
             _networkRateKBps = networkRateKBps;
             _dpdkExtraLines = extra;
+            _interfaceMode = interfaceMode;
         }
 
         public void defDirectNet(String sourceName, String targetName, String macAddr, NicModel model, String sourceMode) {
@@ -1186,7 +1187,8 @@ public class LibvirtVMDef {
             } else if (_netType == GuestNetType.DIRECT) {
                 netBuilder.append("<source dev='" + _sourceName + "' mode='" + _netSourceMode + "'/>\n");
             } else if (_netType == GuestNetType.VHOSTUSER) {
-                netBuilder.append("<source type='unix' path='"+ _dpdkSourcePath + _dpdkSourcePort + "' mode='client'/>\n");
+                netBuilder.append("<source type='unix' path='"+ _dpdkSourcePath + _dpdkSourcePort +
+                        "' mode='" + _interfaceMode + "'/>\n");
             }
             if (_networkName != null) {
                 netBuilder.append("<target dev='" + _networkName + "'/>\n");
@@ -1362,7 +1364,11 @@ public class LibvirtVMDef {
 
             if (_features != null) {
                 for (String feature : _features) {
-                    modeBuilder.append("<feature policy='require' name='" + feature + "'/>");
+                    if (feature.startsWith("-")) {
+                        modeBuilder.append("<feature policy='disable' name='" + feature.substring(1) + "'/>");
+                    } else {
+                        modeBuilder.append("<feature policy='require' name='" + feature + "'/>");
+                    }
                 }
             }
 
@@ -1662,28 +1668,6 @@ public class LibvirtVMDef {
             }
             fsBuilder.append("</metadata>\n");
             return fsBuilder.toString();
-        }
-    }
-
-    public static class NuageExtensionDef {
-        private Map<String, String> addresses = Maps.newHashMap();
-
-        public void addNuageExtension(String macAddress, String vrIp) {
-            addresses.put(macAddress, vrIp);
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder fsBuilder = new StringBuilder();
-            fsBuilder.append("<nuage-extension xmlns='nuagenetworks.net/nuage/cna'>\n");
-            for (Map.Entry<String, String> address : addresses.entrySet()) {
-                fsBuilder.append("  <interface mac='")
-                         .append(address.getKey())
-                         .append("' vsp-vr-ip='")
-                         .append(address.getValue())
-                         .append("'></interface>\n");
-            }
-            return fsBuilder.append("</nuage-extension>\n").toString();
         }
     }
 

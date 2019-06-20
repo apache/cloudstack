@@ -88,12 +88,6 @@
                                         <include>agent.zip</include>
                                     </includes>
                                 </resource>
-                                <resource>
-                                    <directory>debian/root/.ssh</directory>
-                                    <includes>
-                                        <include>authorized_keys</include>
-                                    </includes>
-                                </resource>
                             </resources>
                         </configuration>
                     </execution>
@@ -166,7 +160,6 @@
                         <argument>systemvm.iso</argument>
                         <argument>agent.zip</argument>
                         <argument>cloud-scripts.tgz</argument>
-                        <argument>authorized_keys</argument>
                     </arguments>
                 </configuration>
             </plugin>
