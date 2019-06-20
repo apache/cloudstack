@@ -682,6 +682,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 minIops = snapshotCheck.getMinIops();
                 maxIops = snapshotCheck.getMaxIops();
                 size = snapshotCheck.getSize(); // ; disk offering is used for tags purposes
+            } else {
+                if (size < snapshotCheck.getSize()) {
+                    throw new InvalidParameterValueException(String.format("Invalid size for volume creation: %dGB, snapshot size is: %dGB",
+                            size / (1024 * 1024 * 1024), snapshotCheck.getSize() / (1024 * 1024 * 1024)));
+                }
             }
 
             // check snapshot permissions
