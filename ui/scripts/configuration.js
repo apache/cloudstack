@@ -652,6 +652,9 @@
                                         docID: 'helpComputeOfferingDomain',
                                         dependsOn: 'isPublic',
                                         isMultiple: true,
+                                        validation: {
+                                            required: true
+                                        },
                                         select: function(args) {
                                             $.ajax({
                                                 url: createURL('listDomains'),
@@ -2166,6 +2169,9 @@
                                         docID: 'helpDiskOfferingDomain',
                                         dependsOn: 'isPublic',
                                         isMultiple: true,
+                                        validation: {
+                                            required: true
+                                        },
                                         select: function(args) {
                                             $.ajax({
                                                 url: createURL('listDomains'),
@@ -3470,6 +3476,9 @@
                                         docID: 'helpNetworkOfferingDomain',
                                         dependsOn: 'isPublic',
                                         isMultiple: true,
+                                        validation: {
+                                            required: true
+                                        },
                                         select: function(args) {
                                             $.ajax({
                                                 url: createURL('listDomains'),
@@ -4388,6 +4397,9 @@
                                         docID: 'helpVpcOfferingDomain',
                                         dependsOn: 'isPublic',
                                         isMultiple: true,
+                                        validation: {
+                                            required: true
+                                        },
                                         select: function(args) {
                                             $.ajax({
                                                 url: createURL('listDomains'),
