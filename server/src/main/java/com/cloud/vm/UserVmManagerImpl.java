@@ -4256,11 +4256,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserVmVO vm = _vmDao.findById(profile.getId());
         Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
-        List<Long> pools = new ArrayList<>();
-        for (StoragePool pool : dest.getStorageForDisks().values()) {
-            pools.add(pool.getId());
-        }
-        profile.setParameter(VirtualMachineProfile.Param.StoragePools, pools);
 
         // add userdata info into vm profile
         Nic defaultNic = _networkModel.getDefaultNic(vm.getId());

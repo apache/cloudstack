@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -371,20 +372,42 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         }
 
         if (MapUtils.isNotEmpty(ovfProperties)) {
-            List<Long> pools = (List<Long>) vm.getParameter(VirtualMachineProfile.Param.StoragePools);
+            removeOvfPropertiesFromDetails(ovfProperties, details);
             String templateInstallPath = null;
-            for (Long pool : pools) {
-                VMTemplateStoragePoolVO ref = templateSpoolDao.findByPoolTemplate(pool, vm.getTemplateId());
+            List<DiskTO> rootDiskList = vm.getDisks().stream().filter(x -> x.getType() == Volume.Type.ROOT).collect(Collectors.toList());
+            if (rootDiskList.size() != 1) {
+                throw new CloudRuntimeException("Did not find only one root disk for VM " + vm.getHostName());
+            }
+
+            DiskTO rootDiskTO = rootDiskList.get(0);
+            DataStoreTO dataStore = rootDiskTO.getData().getDataStore();
+            StoragePoolVO storagePoolVO = _storagePoolDao.findByUuid(dataStore.getUuid());
+            long dataCenterId = storagePoolVO.getDataCenterId();
+            List<StoragePoolVO> pools = _storagePoolDao.listByDataCenterId(dataCenterId);
+            for (StoragePoolVO pool : pools) {
+                VMTemplateStoragePoolVO ref = templateSpoolDao.findByPoolTemplate(pool.getId(), vm.getTemplateId());
                 if (ref != null && ref.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
                     templateInstallPath = ref.getInstallPath();
                     break;
                 }
             }
+
+            if (templateInstallPath == null) {
+                throw new CloudRuntimeException("Did not find the template install path for template " +
+                        vm.getTemplateId() + " on zone " + dataCenterId);
+            }
+
             Pair<String, Map<String, String>> pair = new Pair<>(templateInstallPath, ovfProperties);
             to.setOvfProperties(pair);
         }
 
         return to;
+    }
+
+    private void removeOvfPropertiesFromDetails(Map<String, String> ovfProperties, Map<String, String> details) {
+        for (String key : ovfProperties.keySet()) {
+            details.remove(ApiConstants.OVF_PROPERTIES + "-" + key);
+        }
     }
 
     /**
