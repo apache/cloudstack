@@ -36,19 +36,12 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.direct.download.DirectTemplateDownloader;
-import com.cloud.agent.direct.download.DirectTemplateDownloader.DirectTemplateInformation;
-import com.cloud.agent.direct.download.HttpDirectTemplateDownloader;
-import com.cloud.agent.direct.download.MetalinkDirectTemplateDownloader;
-import com.cloud.agent.direct.download.NfsDirectTemplateDownloader;
-import com.cloud.agent.direct.download.HttpsDirectTemplateDownloader;
-import com.cloud.exception.InvalidParameterValueException;
-import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
-import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -95,7 +88,14 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
+import com.cloud.agent.direct.download.DirectTemplateDownloader;
+import com.cloud.agent.direct.download.DirectTemplateDownloader.DirectTemplateInformation;
+import com.cloud.agent.direct.download.HttpDirectTemplateDownloader;
+import com.cloud.agent.direct.download.HttpsDirectTemplateDownloader;
+import com.cloud.agent.direct.download.MetalinkDirectTemplateDownloader;
+import com.cloud.agent.direct.download.NfsDirectTemplateDownloader;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
@@ -105,6 +105,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DeviceType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiscardType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiskProtocol;
 import com.cloud.storage.JavaStorageLayer;
+import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
@@ -114,9 +115,9 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.storage.S3.S3Utils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.storage.S3.S3Utils;
 
 public class KVMStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(KVMStorageProcessor.class);
@@ -1352,6 +1353,32 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
+    /**
+     * Create volume with backing file (linked clone)
+     */
+    protected KVMPhysicalDisk createLinkedCloneVolume(MigrationOptions migrationOptions, KVMStoragePool srcPool, KVMStoragePool primaryPool, VolumeObjectTO volume, PhysicalDiskFormat format, int timeout) {
+        String srcBackingFilePath = migrationOptions.getSrcBackingFilePath();
+        boolean copySrcTemplate = migrationOptions.isCopySrcTemplate();
+        KVMPhysicalDisk srcTemplate = srcPool.getPhysicalDisk(srcBackingFilePath);
+        KVMPhysicalDisk destTemplate;
+        if (copySrcTemplate) {
+            KVMPhysicalDisk copiedTemplate = storagePoolMgr.copyPhysicalDisk(srcTemplate, srcTemplate.getName(), primaryPool, 10000 * 1000);
+            destTemplate = primaryPool.getPhysicalDisk(copiedTemplate.getPath());
+        } else {
+            destTemplate = primaryPool.getPhysicalDisk(srcBackingFilePath);
+        }
+        return storagePoolMgr.createDiskWithTemplateBacking(destTemplate, volume.getUuid(), format, volume.getSize(),
+                primaryPool, timeout);
+    }
+
+    /**
+     * Create full clone volume from VM snapshot
+     */
+    protected KVMPhysicalDisk createFullCloneVolume(MigrationOptions migrationOptions, VolumeObjectTO volume, KVMStoragePool primaryPool, PhysicalDiskFormat format) {
+        s_logger.debug("For VM migration with full-clone volume: Creating empty stub disk for source disk " + migrationOptions.getSrcVolumeUuid() + " and size: " + volume.getSize() + " and format: " + format);
+        return primaryPool.createPhysicalDisk(volume.getUuid(), format, volume.getProvisioningType(), volume.getSize());
+    }
+
     @Override
     public Answer createVolume(final CreateObjectCommand cmd) {
         final VolumeObjectTO volume = (VolumeObjectTO)cmd.getData();
@@ -1369,8 +1396,23 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else {
                 format = PhysicalDiskFormat.valueOf(volume.getFormat().toString().toUpperCase());
             }
-            vol = primaryPool.createPhysicalDisk(volume.getUuid(), format,
-                    volume.getProvisioningType(), disksize);
+
+            MigrationOptions migrationOptions = volume.getMigrationOptions();
+            if (migrationOptions != null) {
+                String srcStoreUuid = migrationOptions.getSrcPoolUuid();
+                StoragePoolType srcPoolType = migrationOptions.getSrcPoolType();
+                KVMStoragePool srcPool = storagePoolMgr.getStoragePool(srcPoolType, srcStoreUuid);
+                int timeout = migrationOptions.getTimeout();
+
+                if (migrationOptions.getType() == MigrationOptions.Type.LinkedClone) {
+                    vol = createLinkedCloneVolume(migrationOptions, srcPool, primaryPool, volume, format, timeout);
+                } else if (migrationOptions.getType() == MigrationOptions.Type.FullClone) {
+                    vol = createFullCloneVolume(migrationOptions, volume, primaryPool, format);
+                }
+            } else {
+                vol = primaryPool.createPhysicalDisk(volume.getUuid(), format,
+                        volume.getProvisioningType(), disksize);
+            }
 
             final VolumeObjectTO newVol = new VolumeObjectTO();
             if(vol != null) {

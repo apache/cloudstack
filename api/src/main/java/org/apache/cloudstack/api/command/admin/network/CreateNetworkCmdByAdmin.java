@@ -43,6 +43,9 @@ public class CreateNetworkCmdByAdmin extends CreateNetworkCmd {
     @Parameter(name=ApiConstants.BYPASS_VLAN_OVERLAP_CHECK, type=CommandType.BOOLEAN, description="when true bypasses VLAN id/range overlap check during network creation for shared and L2 networks")
     private Boolean bypassVlanOverlapCheck;
 
+    @Parameter(name=ApiConstants.HIDE_IP_ADDRESS_USAGE, type=CommandType.BOOLEAN, description="when true ip address usage for the network will not be exported by the listUsageRecords API")
+    private Boolean hideIpAddressUsage;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -54,6 +57,13 @@ public class CreateNetworkCmdByAdmin extends CreateNetworkCmd {
     public Boolean getBypassVlanOverlapCheck() {
         if (bypassVlanOverlapCheck != null) {
             return bypassVlanOverlapCheck;
+        }
+        return false;
+    }
+
+    public Boolean getHideIpAddressUsage() {
+        if (hideIpAddressUsage != null) {
+            return hideIpAddressUsage;
         }
         return false;
     }

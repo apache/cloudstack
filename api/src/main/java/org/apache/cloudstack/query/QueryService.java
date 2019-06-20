@@ -85,7 +85,7 @@ import com.cloud.exception.PermissionDeniedException;
 public interface QueryService {
 
     // Config keys
-    static final ConfigKey<Boolean> AllowUserViewDestroyedVM = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.user.view.destroyed.vm", "false",
+    ConfigKey<Boolean> AllowUserViewDestroyedVM = new ConfigKey<>("Advanced", Boolean.class, "allow.user.view.destroyed.vm", "false",
             "Determines whether users can view their destroyed or expunging vm ", true, ConfigKey.Scope.Account);
 
     static final ConfigKey<String> UserVMBlacklistedDetails = new ConfigKey<String>("Advanced", String.class,
@@ -95,6 +95,11 @@ public interface QueryService {
     static final ConfigKey<String> UserVMReadOnlyUIDetails = new ConfigKey<String>("Advanced", String.class,
             "user.vm.readonly.ui.details", "dataDiskController, rootDiskController",
             "List of UI read-only VM settings/details as comma separated string", true);
+
+    ConfigKey<Boolean> SortKeyAscending = new ConfigKey<>("Advanced", Boolean.class, "sortkey.algorithm", "true",
+            "Sort algorithm - ascending or descending - to use. For entities that use sort key(template, disk offering, service offering, " +
+                    "network offering, zones), we use the flag to determine if the entities should be sorted ascending (when flag is true) " +
+                    "or descending (when flag is false). Within the scope of the config all users see the same result.", true, ConfigKey.Scope.Global);
 
     ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
 

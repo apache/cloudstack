@@ -79,39 +79,47 @@
         },
         action: function(args) {
           var instances = args.context.instances;
-          $(instances).map(function(index, instance) {
-            var data = {
-              id: instance.id
-            };
-            if (args.$form.find('.form-item[rel=hostId]').css("display") != "none" && args.data.hostId != -1) {
-              $.extend(data, {
-                hostid: args.data.hostId
+          var skippedInstances = 0;
+          $(instances).each(function(index, instance) {
+            if (instance.state === 'Running' || instance.state === "Starting") {
+              skippedInstances++;
+            } else {
+              var data = {
+                id: instance.id
+              };
+              if (args.$form.find('.form-item[rel=hostId]').css("display") != "none" && args.data.hostId != -1) {
+                $.extend(data, {
+                  hostid: args.data.hostId
+                });
+              }
+              $.ajax({
+                url: createURL("startVirtualMachine"),
+                data: data,
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var jid = json.startvirtualmachineresponse.jobid;
+                  args.response.success({
+                    _custom: {
+                      jobId: jid,
+                      getUpdatedItem: function(json) {
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                      },
+                      getActionFilter: function() {
+                        return cloudStack.actionFilter.vmActionFilter;
+                      }
+                    }
+                  });
+                },
+                error: function(json) {
+                  args.response.error(parseXMLHttpResponse(json));
+                }
               });
             }
-            $.ajax({
-              url: createURL("startVirtualMachine"),
-              data: data,
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.startvirtualmachineresponse.jobid;
-                args.response.success({
-                  _custom: {
-                    jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return cloudStack.actionFilter.vmActionFilter;
-                    }
-                  }
-                });
-              },
-              error: function(json) {
-                args.response.error(parseXMLHttpResponse(json));
-              }
-            });
           });
+          if (skippedInstances === instances.length) {
+            args.response.error();
+          }
         },
         notification: {
           poll: pollAsyncJobResult
@@ -155,34 +163,42 @@
             },
             action: function(args) {
                 var instances = args.context.instances;
-                $(instances).map(function(index, instance) {
-                    var data = {
-                        id: instance.id,
-                        forced: (args.data.forced == "on")
-                    };
-                    $.ajax({
-                        url: createURL("stopVirtualMachine"),
-                        data: data,
-                        dataType: "json",
-                        success: function(json) {
-                            var jid = json.stopvirtualmachineresponse.jobid;
-                            args.response.success({
-                                _custom: {
-                                    jobId: jid,
-                                    getUpdatedItem: function(json) {
-                                        return $.extend(json.queryasyncjobresultresponse.jobresult.virtualmachine, { hostid: null });
-                                    },
-                                    getActionFilter: function() {
-                                        return vmActionfilter;
+                var skippedInstances = 0;
+                $(instances).each(function(index, instance) {
+                    if (instance.state === 'Stopped' || instance.state === 'Stopping') {
+                        skippedInstances++;
+                    } else {
+                        var data = {
+                            id: instance.id,
+                            forced: (args.data.forced == "on")
+                        };
+                        $.ajax({
+                            url: createURL("stopVirtualMachine"),
+                            data: data,
+                            dataType: "json",
+                            success: function(json) {
+                                var jid = json.stopvirtualmachineresponse.jobid;
+                                args.response.success({
+                                    _custom: {
+                                        jobId: jid,
+                                        getUpdatedItem: function(json) {
+                                            return $.extend(json.queryasyncjobresultresponse.jobresult.virtualmachine, { hostid: null });
+                                        },
+                                        getActionFilter: function() {
+                                            return vmActionfilter;
+                                        }
                                     }
-                                }
-                            });
-                        },
-                        error: function(json) {
-                            args.response.error(parseXMLHttpResponse(json));
-                        }
-                    });
+                                });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
+                            }
+                        });
+                    }
                 });
+                if (skippedInstances === instances.length) {
+                    args.response.error();
+                }
             },
             notification: {
                 poll: pollAsyncJobResult

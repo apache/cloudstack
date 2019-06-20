@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -35,6 +34,8 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.usage.Usage;
+
+import com.cloud.utils.Pair;
 
 @APICommand(name = ListUsageRecordsCmd.APINAME,
         description = "Lists usage records for accounts",
@@ -168,11 +169,13 @@ public class ListUsageRecordsCmd extends BaseListCmd {
             }
             for (Usage usageRecord : usageRecords.first()) {
                 UsageRecordResponse usageResponse = _responseGenerator.createUsageResponse(usageRecord, resourceTagResponseMap);
-                usageResponse.setObjectName("usagerecord");
-                usageResponses.add(usageResponse);
+                if (usageResponse != null) {
+                    usageResponse.setObjectName("usagerecord");
+                    usageResponses.add(usageResponse);
+                }
             }
 
-            response.setResponses(usageResponses, usageRecords.second());
+            response.setResponses(usageResponses, usageResponses.size());
         }
 
         response.setResponseName(getCommandName());

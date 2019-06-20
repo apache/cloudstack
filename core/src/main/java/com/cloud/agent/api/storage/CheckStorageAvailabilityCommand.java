@@ -17,26 +17,27 @@
 // under the License.
 //
 
-package com.cloud.agent.api;
+package com.cloud.agent.api.storage;
 
-import java.util.List;
+import com.cloud.agent.api.Command;
+import com.cloud.storage.Storage;
 
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import java.util.Map;
 
+public class CheckStorageAvailabilityCommand extends Command {
 
-public class CreateVMSnapshotCommand extends VMSnapshotBaseCommand {
-    private String vmUuid;
+    private Map<String, Storage.StoragePoolType> poolsMap;
 
-    public CreateVMSnapshotCommand(String vmName, String vmUuid, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType) {
-        super(vmName, snapshot, volumeTOs, guestOSType);
-        this.vmUuid = vmUuid;
+    public CheckStorageAvailabilityCommand(Map<String, Storage.StoragePoolType> poolsMap) {
+        this.poolsMap = poolsMap;
     }
 
-    public CreateVMSnapshotCommand(String vmName, VMSnapshotTO snapshot) {
-        super(vmName, snapshot, null, null);
+    public Map<String, Storage.StoragePoolType> getPoolsMap() {
+        return poolsMap;
     }
 
-    public String getVmUuid() {
-        return vmUuid;
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
 }

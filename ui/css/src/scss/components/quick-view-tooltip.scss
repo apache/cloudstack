@@ -42,10 +42,7 @@
 
 .quick-view-tooltip .loading-overlay {
   opacity: 0.35;
-  top: 94px;
-  left: 1px;
   /*+opacity:35%;*/
-  height: 57px;
   filter: alpha(opacity=35);
   -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=35);
   -moz-opacity: 0.35;
@@ -53,6 +50,7 @@
 
 .quick-view-tooltip .container {
   display: inline-block;
+  position: relative;
   width: 471px;
   height: auto;
   min-height: 100px;
@@ -92,11 +90,12 @@
   display: none !important;
 }
 
-.quick-view-tooltip .detail-view .ui-tabs-panel {
+.quick-view-tooltip .detail-view.ui-tabs div.ui-tabs-panel {
   display: inline-block;
   float: left;
   width: 100% !important;
   height: auto;
+  background-color: inherit;
   overflow: hidden;
 }
 

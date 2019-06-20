@@ -944,7 +944,14 @@
                                             var jid = json.createsnapshotresponse.jobid;
                                             args.response.success({
                                                 _custom: {
-                                                    jobId: jid //take snapshot from a volume doesn't change any property in this volume. So, don't need to specify getUpdatedItem() to return updated volume. Besides, createSnapshot API doesn't return updated volume.
+                                                    jobId: jid, //take snapshot from a volume doesn't change any property in this volume. So, don't need to specify getUpdatedItem() to return updated volume. Besides, createSnapshot API doesn't return updated volume.
+                                                    onComplete: function(json, customData) {
+                                                        var volumeId = json.queryasyncjobresultresponse.jobresult.snapshot.volumeid;
+                                                        var snapshotId = json.queryasyncjobresultresponse.jobresult.snapshot.id;
+                                                        cloudStack.dialog.notice({
+                                                            message: "Created snapshot for volume " + volumeId + " with snapshot ID " + snapshotId
+                                                        });
+                                                    }
                                                 }
                                             });
                                         }

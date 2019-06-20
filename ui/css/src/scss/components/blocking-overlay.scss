@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,28 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
 
-package com.cloud.agent.api;
-
-import java.util.List;
-
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-
-
-public class CreateVMSnapshotCommand extends VMSnapshotBaseCommand {
-    private String vmUuid;
-
-    public CreateVMSnapshotCommand(String vmName, String vmUuid, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType) {
-        super(vmName, snapshot, volumeTOs, guestOSType);
-        this.vmUuid = vmUuid;
-    }
-
-    public CreateVMSnapshotCommand(String vmName, VMSnapshotTO snapshot) {
-        super(vmName, snapshot, null, null);
-    }
-
-    public String getVmUuid() {
-        return vmUuid;
-    }
+.blocking-overlay {
+  opacity: 0.7;
+  position: absolute;
+  z-index: $z-index-loading-overlay;
+  top: 0;
+  left: 0;
+  width: 100%;
+  /*+opacity:70%;*/
+  height: 100%;
+  background: #f2f2f2;
+  filter: alpha(opacity=70);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=70);
+  -moz-opacity: 0.7;
 }

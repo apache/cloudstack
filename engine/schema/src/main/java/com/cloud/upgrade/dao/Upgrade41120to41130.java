@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,28 +14,40 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
 
-package com.cloud.agent.api;
+package com.cloud.upgrade.dao;
 
-import java.util.List;
+import java.io.InputStream;
+import java.sql.Connection;
 
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
+public class Upgrade41120to41130 implements DbUpgrade {
 
-
-public class CreateVMSnapshotCommand extends VMSnapshotBaseCommand {
-    private String vmUuid;
-
-    public CreateVMSnapshotCommand(String vmName, String vmUuid, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType) {
-        super(vmName, snapshot, volumeTOs, guestOSType);
-        this.vmUuid = vmUuid;
+    @Override
+    public String[] getUpgradableVersionRange() {
+        return new String[]{"4.11.2.0", "4.11.3.0"};
     }
 
-    public CreateVMSnapshotCommand(String vmName, VMSnapshotTO snapshot) {
-        super(vmName, snapshot, null, null);
+    @Override
+    public String getUpgradedVersion() {
+        return "4.11.3.0";
     }
 
-    public String getVmUuid() {
-        return vmUuid;
+    @Override
+    public boolean supportsRollingUpgrade() {
+        return false;
+    }
+
+    @Override
+    public InputStream[] getPrepareScripts() {
+        return new InputStream[] {};
+    }
+
+    @Override
+    public void performDataMigration(Connection conn) {
+    }
+
+    @Override
+    public InputStream[] getCleanupScripts() {
+        return new InputStream[] {};
     }
 }
