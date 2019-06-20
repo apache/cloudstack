@@ -221,6 +221,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             accountId = ((ProjectVO)entity).getProjectAccountId();
         }
 
+        if (resourceType == ResourceObjectType.SnapshotPolicy) {
+            accountId = _entityMgr.findById(VolumeVO.class, ((SnapshotPolicyVO)entity).getVolumeId()).getAccountId();
+        }
+
         if (entity instanceof OwnedBy) {
             accountId = ((OwnedBy)entity).getAccountId();
         }
