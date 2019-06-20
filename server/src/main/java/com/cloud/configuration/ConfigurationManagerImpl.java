@@ -1936,6 +1936,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             guestCidr = zone.getGuestNetworkCidr();
         }
 
+        int sortKey = cmd.getSortKey() != null ? cmd.getSortKey() : zone.getSortKey();
+
         // validate network domain
         if (networkDomain != null && !networkDomain.isEmpty()) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
@@ -1958,6 +1960,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         zone.setInternalDns1(internalDns1);
         zone.setInternalDns2(internalDns2);
         zone.setGuestNetworkCidr(guestCidr);
+        zone.setSortKey(sortKey);
         if (localStorageEnabled != null) {
             zone.setLocalStorageEnabled(localStorageEnabled.booleanValue());
         }

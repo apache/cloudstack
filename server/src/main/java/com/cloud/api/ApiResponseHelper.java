@@ -248,6 +248,8 @@ import com.cloud.network.as.Counter;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.router.VirtualRouter;
@@ -367,6 +369,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private NicExtraDhcpOptionDao _nicExtraDhcpOptionDao;
     @Inject
     private IPAddressDao userIpAddressDao;
+    @Inject
+    NetworkDetailsDao networkDetailsDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -2097,6 +2101,15 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setVlan(vlan);
         }
 
+        // return network details only to Root admin
+        if (view == ResponseView.Full) {
+            Map<String, String> details = new HashMap<>();
+            for (NetworkDetailVO detail: networkDetailsDao.listDetails(network.getId())) {
+                details.put(detail.getName(),detail.getValue());
+            }
+            response.setDetails(details);
+        }
+
         DataCenter zone = ApiDBUtils.findZoneById(network.getDataCenterId());
         if (zone != null) {
             response.setZoneId(zone.getUuid());
@@ -3333,18 +3346,26 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
 
         } else if (usageRecord.getUsageType() == UsageTypes.IP_ADDRESS) {
-            //isSourceNAT
-            usageRecResponse.setSourceNat((usageRecord.getType().equals("SourceNat")) ? true : false);
-            //isSystem
-            usageRecResponse.setSystem((usageRecord.getSize() == 1) ? true : false);
             //IP Address ID
             IPAddressVO ip = _entityMgr.findByIdIncludingRemoved(IPAddressVO.class, usageRecord.getUsageId().toString());
             if (ip != null) {
+                Long networkId = ip.getAssociatedWithNetworkId();
+                if (networkId == null) {
+                    networkId = ip.getSourceNetworkId();
+                }
+                NetworkDetailVO networkDetail = networkDetailsDao.findDetail(networkId, Network.hideIpAddressUsage);
+                if (networkDetail != null && networkDetail.getValue() != null && networkDetail.getValue().equals("true")) {
+                    // Don't export network usage when admin wants it hidden
+                    return null;
+                }
                 resourceType = ResourceObjectType.PublicIpAddress;
                 resourceId = ip.getId();
                 usageRecResponse.setUsageId(ip.getUuid());
             }
-
+            //isSourceNAT
+            usageRecResponse.setSourceNat((usageRecord.getType().equals("SourceNat")) ? true : false);
+            //isSystem
+            usageRecResponse.setSystem((usageRecord.getSize() == 1) ? true : false);
         } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_SENT || usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_RECEIVED) {
             //Device Type
             resourceType = ResourceObjectType.UserVm;

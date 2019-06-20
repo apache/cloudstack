@@ -51,7 +51,6 @@ import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
-import org.apache.cloudstack.api.command.admin.volume.ListVolumesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -171,7 +170,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.org.Grouping;
@@ -211,7 +209,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -224,7 +221,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
 
@@ -341,9 +337,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private DomainRouterDao _routerDao;
 
     @Inject
-    private UserVmDetailsDao _userVmDetailDao;
-
-    @Inject
     private HighAvailabilityManager _haMgr;
 
     @Inject
@@ -376,16 +369,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private AffinityGroupDomainMapDao _affinityGroupDomainMapDao;
 
     @Inject
-    private NetworkDetailsDao _networkDetailsDao;
-
-    @Inject
     private ResourceTagDao _resourceTagDao;
 
     @Inject
     private DataStoreManager dataStoreManager;
-
-    @Inject
-    private EntityManager _entityMgr;
 
     @Inject
     ManagementServerHostDao managementServerHostDao;
@@ -1672,7 +1659,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
 
         ResponseView respView = ResponseView.Restricted;
-        if (cmd instanceof ListVolumesCmdByAdmin) {
+        Account account = CallContext.current().getCallingAccount();
+        if (_accountMgr.isAdmin(account.getAccountId())) {
             respView = ResponseView.Full;
         }
 
@@ -2515,9 +2503,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // till
         // root
 
-        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-        isAscending = (isAscending == null ? true : isAscending);
-        Filter searchFilter = new Filter(DiskOfferingJoinVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(DiskOfferingJoinVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<DiskOfferingJoinVO> sc = _diskOfferingJoinDao.createSearchCriteria();
         sc.addAnd("type", Op.EQ, DiskOfferingVO.Type.Disk);
 
@@ -2676,9 +2662,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // their domains+parent domains ... all the way
         // till
         // root
-        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-        isAscending = (isAscending == null ? true : isAscending);
-        Filter searchFilter = new Filter(ServiceOfferingJoinVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(ServiceOfferingJoinVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
 
         Account caller = CallContext.current().getCallingAccount();
         Object name = cmd.getServiceOfferingName();
@@ -2889,7 +2873,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
         }
 
-        Filter searchFilter = new Filter(DataCenterJoinVO.class, null, false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(DataCenterJoinVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<DataCenterJoinVO> sc = sb.create();
 
         if (networkType != null) {
@@ -3149,10 +3133,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         VMTemplateVO template = null;
 
-        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-        isAscending = (isAscending == null ? Boolean.TRUE : isAscending);
-        Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", isAscending, startIndex, pageSize);
-        searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", isAscending);
+        Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", SortKeyAscending.value(), startIndex, pageSize);
+        searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", SortKeyAscending.value());
 
         SearchBuilder<TemplateJoinVO> sb = _templateJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getTempZonePair()); // select distinct (templateId, zoneId) pair
@@ -3777,6 +3759,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMBlacklistedDetails, UserVMReadOnlyUIDetails};
+        return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMBlacklistedDetails, UserVMReadOnlyUIDetails, SortKeyAscending};
     }
 }
