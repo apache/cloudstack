@@ -2619,38 +2619,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
-        if (CollectionUtils.isNotEmpty(existingDomainIds) && CollectionUtils.isNotEmpty(filteredDomainIds)) {
-            filteredDomainIds.removeIf(existingDomainIds::contains);
-            for (Long domainId : filteredDomainIds) {
-                for (Long existingDomainId : existingDomainIds) {
-                    if (_domainDao.isChildDomain(existingDomainId, domainId)) {
-                        throw new InvalidParameterValueException(String.format("Unable to update service offering for domain %s as offering is already available for parent domain", _domainDao.findById(domainId).getUuid()));
-                    }
-                }
-            }
-        }
 
         List<Long> filteredZoneIds = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(zoneIds)) {
             filteredZoneIds.addAll(zoneIds);
-            List<Long> existingZoneIds = _serviceOfferingDetailsDao.findZoneIds(id);
-            if (CollectionUtils.isNotEmpty(existingZoneIds)) {
-                filteredZoneIds.removeIf(existingZoneIds::contains);
-            }
         }
 
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
             if (existingDomainIds.isEmpty()) {
-                throw new InvalidParameterValueException("Unable to update public service offering by id " + userId + " because it is domain-admin");
+                throw new InvalidParameterValueException(String.format("Unable to update public service offering: %s by user: %s because it is domain-admin", offeringHandle.getUuid(), user.getUuid()));
             }
             for (Long domainId : existingDomainIds) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new InvalidParameterValueException("Unable to update service by another domain admin with id " + userId);
+                    throw new InvalidParameterValueException(String.format("Unable to update service offering: %s by another domain admin: %s", offeringHandle.getUuid(), user.getUuid()));
                 }
             }
             for (Long domainId : filteredDomainIds) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new InvalidParameterValueException("Unable to update service by another domain admin with id " + userId);
+                    Domain domain = _entityMgr.findById(Domain.class, domainId);
+                    throw new InvalidParameterValueException(String.format("Unable to update service offering: %s by domain admin: %s with domain: %s which is not a child domain", offeringHandle.getUuid(), user.getUuid(), domain.getUuid()));
                 }
             }
         } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -2705,11 +2692,27 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return null;
         }
         List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<>();
-        for (Long domainId : filteredDomainIds) {
-            detailsVO.add(new ServiceOfferingDetailsVO(id, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
-        }
-        for (Long zoneId : filteredZoneIds) {
-            detailsVO.add(new ServiceOfferingDetailsVO(id, ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
+        if(!filteredDomainIds.isEmpty() || !filteredZoneIds.isEmpty()) {
+            SearchBuilder<ServiceOfferingDetailsVO> sb = _serviceOfferingDetailsDao.createSearchBuilder();
+            sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+            sb.and("detailName", sb.entity().getName(), SearchCriteria.Op.EQ);
+            sb.done();
+            SearchCriteria<ServiceOfferingDetailsVO> sc = sb.create();
+            sc.setParameters("offeringId", String.valueOf(id));
+            if(!filteredDomainIds.isEmpty()) {
+                sc.setParameters("detailName", ApiConstants.DOMAIN_ID);
+                _serviceOfferingDetailsDao.remove(sc);
+                for (Long domainId : filteredDomainIds) {
+                    detailsVO.add(new ServiceOfferingDetailsVO(id, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
+                }
+            }
+            if(!filteredZoneIds.isEmpty()) {
+                sc.setParameters("detailName", ApiConstants.ZONE_ID);
+                _serviceOfferingDetailsDao.remove(sc);
+                for (Long zoneId : filteredZoneIds) {
+                    detailsVO.add(new ServiceOfferingDetailsVO(id, ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
+                }
+            }
         }
         if (!detailsVO.isEmpty()) {
             for (ServiceOfferingDetailsVO detailVO : detailsVO) {
@@ -2983,38 +2986,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
-        if (CollectionUtils.isNotEmpty(existingDomainIds) && CollectionUtils.isNotEmpty(filteredDomainIds)) {
-            filteredDomainIds.removeIf(existingDomainIds::contains);
-            for (Long domainId : filteredDomainIds) {
-                for (Long existingDomainId : existingDomainIds) {
-                    if (_domainDao.isChildDomain(existingDomainId, domainId)) {
-                        throw new InvalidParameterValueException(String.format("Unable to update disk offering for domain %s as offering is already available for parent domain", _domainDao.findById(domainId).getUuid()));
-                    }
-                }
-            }
-        }
 
         List<Long> filteredZoneIds = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(zoneIds)) {
             filteredZoneIds.addAll(zoneIds);
-            List<Long> existingZoneIds = _serviceOfferingDetailsDao.findZoneIds(diskOfferingId);
-            if (CollectionUtils.isNotEmpty(existingZoneIds)) {
-                filteredZoneIds.removeIf(existingZoneIds::contains);
-            }
         }
 
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
             if (existingDomainIds.isEmpty()) {
-                throw new InvalidParameterValueException("Unable to update public disk offering by id " + userId + " because it is domain-admin");
+                throw new InvalidParameterValueException(String.format("Unable to update public disk offering: %s by user: %s because it is domain-admin", diskOfferingHandle.getUuid(), user.getUuid()));
             }
             for (Long domainId : existingDomainIds) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new InvalidParameterValueException("Unable to update disk offering by another domain admin with id " + userId);
+                    throw new InvalidParameterValueException(String.format("Unable to update disk offering: %s by another domain admin: %s", diskOfferingHandle.getUuid(), user.getUuid()));
                 }
             }
             for (Long domainId : filteredDomainIds) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new InvalidParameterValueException("Unable to update disk offering by another domain admin with id " + userId);
+                    Domain domain = _entityMgr.findById(Domain.class, domainId);
+                    throw new InvalidParameterValueException(String.format("Unable to update disk offering: %s by domain admin: %s with domain: %s which is not a child domain", diskOfferingHandle.getUuid(), user.getUuid(), domain.getUuid()));
                 }
             }
         } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -3074,11 +3064,27 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return null;
         }
         List<DiskOfferingDetailVO> detailsVO = new ArrayList<>();
-        for (Long domainId : filteredDomainIds) {
-            detailsVO.add(new DiskOfferingDetailVO(diskOfferingId, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
-        }
-        for (Long zoneId : filteredZoneIds) {
-            detailsVO.add(new DiskOfferingDetailVO(diskOfferingId, ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
+        if(!filteredDomainIds.isEmpty() || !filteredZoneIds.isEmpty()) {
+            SearchBuilder<DiskOfferingDetailVO> sb = diskOfferingDetailsDao.createSearchBuilder();
+            sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+            sb.and("detailName", sb.entity().getName(), SearchCriteria.Op.EQ);
+            sb.done();
+            SearchCriteria<DiskOfferingDetailVO> sc = sb.create();
+            sc.setParameters("offeringId", String.valueOf(diskOfferingId));
+            if(!filteredDomainIds.isEmpty()) {
+                sc.setParameters("detailName", ApiConstants.DOMAIN_ID);
+                diskOfferingDetailsDao.remove(sc);
+                for (Long domainId : filteredDomainIds) {
+                    detailsVO.add(new DiskOfferingDetailVO(diskOfferingId, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
+                }
+            }
+            if(!filteredZoneIds.isEmpty()) {
+                sc.setParameters("detailName", ApiConstants.ZONE_ID);
+                diskOfferingDetailsDao.remove(sc);
+                for (Long zoneId : filteredZoneIds) {
+                    detailsVO.add(new DiskOfferingDetailVO(diskOfferingId, ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
+                }
+            }
         }
         if (!detailsVO.isEmpty()) {
             for (DiskOfferingDetailVO detailVO : detailsVO) {
@@ -5556,24 +5562,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
-        if (CollectionUtils.isNotEmpty(existingDomainIds) && CollectionUtils.isNotEmpty(filteredDomainIds)) {
-            filteredDomainIds.removeIf(existingDomainIds::contains);
-            for (Long domainId : filteredDomainIds) {
-                for (Long existingDomainId : existingDomainIds) {
-                    if (_domainDao.isChildDomain(existingDomainId, domainId)) {
-                        throw new InvalidParameterValueException(String.format("Unable to update network offering for domain %s as offering is already available for parent domain", _domainDao.findById(domainId).getUuid()));
-                    }
-                }
-            }
-        }
 
         List<Long> filteredZoneIds = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(zoneIds)) {
             filteredZoneIds.addAll(zoneIds);
-            List<Long> existingZoneIds = networkOfferingDetailsDao.findZoneIds(id);
-            if (CollectionUtils.isNotEmpty(existingZoneIds)) {
-                filteredZoneIds.removeIf(existingZoneIds::contains);
-            }
         }
 
         final NetworkOfferingVO offering = _networkOfferingDao.createForUpdate(id);
@@ -5666,11 +5658,27 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         List<NetworkOfferingDetailsVO> detailsVO = new ArrayList<>();
-        for (Long domainId : filteredDomainIds) {
-            detailsVO.add(new NetworkOfferingDetailsVO(id, Detail.domainid, String.valueOf(domainId), false));
-        }
-        for (Long zoneId : filteredZoneIds) {
-            detailsVO.add(new NetworkOfferingDetailsVO(id, Detail.zoneid, String.valueOf(zoneId), false));
+        if(!filteredDomainIds.isEmpty() || !filteredZoneIds.isEmpty()) {
+            SearchBuilder<NetworkOfferingDetailsVO> sb = networkOfferingDetailsDao.createSearchBuilder();
+            sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+            sb.and("detailName", sb.entity().getName(), SearchCriteria.Op.EQ);
+            sb.done();
+            SearchCriteria<NetworkOfferingDetailsVO> sc = sb.create();
+            sc.setParameters("offeringId", String.valueOf(id));
+            if(!filteredDomainIds.isEmpty()) {
+                sc.setParameters("detailName", ApiConstants.DOMAIN_ID);
+                networkOfferingDetailsDao.remove(sc);
+                for (Long domainId : filteredDomainIds) {
+                    detailsVO.add(new NetworkOfferingDetailsVO(id, Detail.domainid, String.valueOf(domainId), false));
+                }
+            }
+            if(!filteredZoneIds.isEmpty()) {
+                sc.setParameters("detailName", ApiConstants.ZONE_ID);
+                networkOfferingDetailsDao.remove(sc);
+                for (Long zoneId : filteredZoneIds) {
+                    detailsVO.add(new NetworkOfferingDetailsVO(id, Detail.zoneid, String.valueOf(zoneId), false));
+                }
+            }
         }
         if (!detailsVO.isEmpty()) {
             for (NetworkOfferingDetailsVO detailVO : detailsVO) {

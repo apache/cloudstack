@@ -841,24 +841,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
-        if (CollectionUtils.isNotEmpty(existingDomainIds) && CollectionUtils.isNotEmpty(filteredDomainIds)) {
-            filteredDomainIds.removeIf(existingDomainIds::contains);
-            for (Long domainId : filteredDomainIds) {
-                for (Long existingDomainId : existingDomainIds) {
-                    if (domainDao.isChildDomain(existingDomainId, domainId)) {
-                        throw new InvalidParameterValueException(String.format("Unable to update VPC offering for domain %s as offering is already available for parent domain", domainDao.findById(domainId).getUuid()));
-                    }
-                }
-            }
-        }
 
         List<Long> filteredZoneIds = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(zoneIds)) {
             filteredZoneIds.addAll(zoneIds);
-            List<Long> existingZoneIds = vpcOfferingDetailsDao.findZoneIds(vpcOffId);
-            if (CollectionUtils.isNotEmpty(existingZoneIds)) {
-                filteredZoneIds.removeIf(existingZoneIds::contains);
-            }
         }
 
         final boolean updateNeeded = vpcOfferingName != null || displayText != null || state != null;
@@ -891,11 +877,27 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
         List<VpcOfferingDetailsVO> detailsVO = new ArrayList<>();
-        for (Long domainId : filteredDomainIds) {
-            detailsVO.add(new VpcOfferingDetailsVO(vpcOffId, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
-        }
-        for (Long zoneId : filteredZoneIds) {
-            detailsVO.add(new VpcOfferingDetailsVO(vpcOffId, ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
+        if(!filteredDomainIds.isEmpty() || !filteredZoneIds.isEmpty()) {
+            SearchBuilder<VpcOfferingDetailsVO> sb = vpcOfferingDetailsDao.createSearchBuilder();
+            sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+            sb.and("detailName", sb.entity().getName(), SearchCriteria.Op.EQ);
+            sb.done();
+            SearchCriteria<VpcOfferingDetailsVO> sc = sb.create();
+            sc.setParameters("offeringId", String.valueOf(vpcOffId));
+            if(!filteredDomainIds.isEmpty()) {
+                sc.setParameters("detailName", ApiConstants.DOMAIN_ID);
+                vpcOfferingDetailsDao.remove(sc);
+                for (Long zoneId : filteredZoneIds) {
+                    detailsVO.add(new VpcOfferingDetailsVO(vpcOffId, ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
+                }
+            }
+            if(!filteredZoneIds.isEmpty()) {
+                sc.setParameters("detailName", ApiConstants.ZONE_ID);
+                vpcOfferingDetailsDao.remove(sc);
+                for (Long domainId : filteredDomainIds) {
+                    detailsVO.add(new VpcOfferingDetailsVO(vpcOffId, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
+                }
+            }
         }
         if (!detailsVO.isEmpty()) {
             for (VpcOfferingDetailsVO detailVO : detailsVO) {
