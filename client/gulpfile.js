@@ -24,11 +24,12 @@ const sassLint = require('gulp-sass-lint');
 const sourcemaps = require('gulp-sourcemaps');
 const autoprefixer = require('gulp-autoprefixer');
 const shell = require('gulp-shell');
+const gulpif = require('gulp-if');
 
-const pathRoot = process.cwd();
-const pathCss = pathRoot + '/../';
-const pathSass = pathRoot + '/scss/';
-const filesSass = pathRoot + '/scss/*.scss';
+const pathRoot = process.cwd() + '/ui/';
+const pathCss = 'target/classes/META-INF/webapp/css';
+const pathSass = pathRoot + 'scss/';
+const filesSass = pathRoot + 'scss/*.scss';
 const browserVersions = [
   "last 1 versions",
   "last 20 firefox versions",
@@ -48,10 +49,10 @@ gulp.task('lintSassFix',
   shell.task('npm run fix')
 );
 
-const buildSass = (style) => {
+const buildSass = (style, task) => {
   const buildSass = () => { // function and name is required here for gulp-task naming-process
     return gulp.src(filesSass)
-      .pipe(sourcemaps.init())
+      .pipe(gulpif(task === 'watch',sourcemaps.init()))
       .pipe(
         sass({
           fiber: Fiber,
@@ -62,9 +63,9 @@ const buildSass = (style) => {
         browsers: browserVersions, //todo remove all current prefix rules from css
         cascade: false // prefix indentation in one line?
       }))
-      .pipe(sourcemaps.write('./src/sourcemaps'))
+      .pipe(gulpif(task === 'watch', sourcemaps.write('sourcemaps')))
       .pipe(gulp.dest(pathCss));
-  }
+  };
 
   return buildSass;
 };
@@ -76,23 +77,30 @@ const lintSass = () => {
 };
 
 const watchSass = () => {
-  gulp.watch(pathSass + '**/*.scss',
+  gulp.watch([pathSass + '**/*.scss'],
     gulp.series(
       'lintSassFix',
       lintSass,
-      buildSass('expanded')
+      buildSass('expanded', 'watch')
     )
   );
 };
 
+gulp.task('watch',
+    gulp.series(
+        'lintSassFix',
+        lintSass,
+        buildSass('expanded', 'watch'),
+        gulp.parallel(
+            watchSass
+        )
+    )
+);
 
 gulp.task('default',
   gulp.series(
     'lintSassFix',
     lintSass,
-    buildSass('expanded'),
-    gulp.parallel(
-      watchSass
-    )
+    buildSass('expanded', 'default')
   )
 );
