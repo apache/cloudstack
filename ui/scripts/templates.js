@@ -1640,15 +1640,17 @@
                                                         url: createURL("listAccounts&listall=true"),
                                                         dataType: "json",
                                                         async: true,
-                                                        success: function (jsonProjects) {
-                                                            var accounts = jsonProjects.listaccountsresponse.account;
+                                                        success: function (jsonAccounts) {
                                                             var accountByName = {};
-                                                            for (var i = 0; i < accounts.length; i++) {
-                                                                accountByName[accounts[i].name] = {
-                                                                    projName: accounts[i].name,
-                                                                    hasPermission: false
-                                                                };
-                                                            }
+                                                            $.each(jsonAccounts.listaccountsresponse.account, function(idx, account) {
+                                                                // Only add current domain's accounts as update template permissions supports that
+                                                                if (account.domainid === g_domainid) {
+                                                                    accountByName[account.name] = {
+                                                                        projName: account.name,
+                                                                        hasPermission: false
+                                                                    };
+                                                                }
+                                                            });
                                                             $.ajax({
                                                                 url: createURL('listTemplatePermissions&id=' + args.context.templates[0].id),
                                                                 dataType: "json",
@@ -1661,17 +1663,15 @@
 
                                                                     var accountObjs = [];
                                                                     if (operation === "add") {
-                                                                        if (accounts != null) {
-                                                                            $.each(accounts, function(idx, account) {
-                                                                                // Skip already permitted accounts
-                                                                                if (!accountByName[account.name] || accountByName[account.name].hasPermission == false) {
-                                                                                    accountObjs.push({
-                                                                                        name: account.name,
-                                                                                        description: account.name
-                                                                                    });
-                                                                                }
-                                                                            });
-                                                                        }
+                                                                        // Skip already permitted accounts
+                                                                        $.each(Object.keys(accountByName), function(idx, accountName) {
+                                                                            if (accountByName[accountName].hasPermission == false) {
+                                                                                accountObjs.push({
+                                                                                    name: accountName,
+                                                                                    description: accountName
+                                                                                });
+                                                                            }
+                                                                        });
                                                                     } else if (items != null) {
                                                                         $.each(items, function(idx, accountName) {
                                                                             if (accountName !== g_account) {
@@ -1705,14 +1705,17 @@
                                                         dataType: "json",
                                                         async: true,
                                                         success: function (jsonProjects) {
-                                                            var projects = jsonProjects.listprojectsresponse.project;
                                                             var projectsByIds = {};
-                                                            for (var i = 0; i < projects.length; i++) {
-                                                                projectsByIds[projects[i].id] = {
-                                                                    projName: projects[i].name,
-                                                                    hasPermission: false
-                                                                };
-                                                            }
+                                                            $.each(jsonProjects.listprojectsresponse.project, function(idx, project) {
+                                                                // Only add current domain's projects as update template permissions supports that
+                                                                if (project.domainid === g_domainid) {
+                                                                    projectsByIds[project.id] = {
+                                                                        projName: project.name,
+                                                                        hasPermission: false
+                                                                    };
+                                                                }
+                                                            });
+
                                                             $.ajax({
                                                                 url: createURL('listTemplatePermissions&id=' + args.context.templates[0].id),
                                                                 dataType: "json",
@@ -1725,17 +1728,15 @@
 
                                                                     var projectObjs = [];
                                                                     if (operation === "add") {
-                                                                        if (projects != null) {
-                                                                            $.each(projects, function(idx, project) {
-                                                                                // Skip already permitted projects
-                                                                                if (!projectsByIds[project.id] || projectsByIds[project.id].hasPermission == false) {
-                                                                                    projectObjs.push({
-                                                                                        id: project.id,
-                                                                                        description: project.name
-                                                                                    });
-                                                                                }
-                                                                            });
-                                                                        }
+                                                                        // Skip already permitted accounts
+                                                                        $.each(Object.keys(projectsByIds), function(idx, projectId) {
+                                                                            if (projectsByIds[projectId].hasPermission == false) {
+                                                                                projectObjs.push({
+                                                                                    id: projectId,
+                                                                                    description: projectsByIds[projectId].projName
+                                                                                });
+                                                                            }
+                                                                        });
                                                                     } else if (items != null) {
                                                                         $.each(items, function(idx, projectId) {
                                                                             if (projectId !== g_account) {
