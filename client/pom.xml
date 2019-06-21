@@ -491,6 +491,40 @@
                     </execution>
                 </executions>
             </plugin>
+          <plugin>
+            <groupId>com.github.eirslett</groupId>
+            <artifactId>frontend-maven-plugin</artifactId>
+            <version>1.7.6</version>
+            <configuration>
+              <nodeVersion>v11.10.0</nodeVersion>
+              <npmVersion>6.7.0</npmVersion>
+            </configuration>
+            <executions>
+              <execution>
+                <id>install node and npm</id>
+                <goals>
+                  <goal>install-node-and-npm</goal>
+                </goals>
+                <phase>generate-resources</phase>
+              </execution>
+              <execution>
+                <id>npm install</id>
+                <goals>
+                  <goal>npm</goal>
+                </goals>
+                <configuration>
+                  <arguments>install</arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>gulp build</id>
+                <goals>
+                  <goal>gulp</goal>
+                </goals>
+                <phase>generate-resources</phase>
+              </execution>
+            </executions>
+          </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -578,7 +612,9 @@
                                     </fileset>
                                 </copy>
                                 <copy todir="${project.build.directory}/classes/META-INF/webapp">
-                                    <fileset dir="${basedir}/../ui" />
+                                    <fileset dir="${basedir}/ui">
+                                      <exclude name="scss/"/>
+                                    </fileset>
                                 </copy>
                                 <copy overwrite="true" todir="${basedir}/target/utilities/bin">
                                     <fileset dir="${basedir}/../setup/bindir">

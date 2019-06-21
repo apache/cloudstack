@@ -85,4 +85,18 @@ ul.ui-autocomplete.ui-menu {
   font-size: 13px;
   overflow-x: hidden;
   overflow-y: auto;
+  text-align: left;
+  z-index: 100;
+}
+
+.ui-menu .ui-menu-item {
+  cursor: pointer;
+}
+
+.ui-menu .ui-menu-item .ui-state-active {
+  background: #CBDDF3;
+}
+
+.ui-helper-hidden-accessible {
+  display: none;
 }
