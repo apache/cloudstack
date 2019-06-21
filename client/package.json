@@ -4,7 +4,7 @@
   "description": "Compiles scss files into css to manage comprehensive css complexity",
   "main": "app.js",
   "scripts": {
-    "start": "gulp",
+    "start": "gulp watch",
     "gulp": "gulp",
     "fix": "sass-lint-auto-fix"
   },
@@ -37,5 +37,8 @@
     "sass-lint": "^1.12.1",
     "sass-lint-auto-fix": "^0.17.0",
     "tar": "^4.4.8"
+  },
+  "dependencies": {
+    "gulp-if": "^2.0.2"
   }
 }
