@@ -113,7 +113,7 @@ def bool_to_yn(val):
 def get_device_info():
     """ Returns all devices on system with their ipv4 ip netmask """
     list = []
-    for i in execute("ip addr show"):
+    for i in execute("ip addr show |grep -v secondary"):
         vals = i.strip().lstrip().rstrip().split()
         if vals[0] == "inet":
             to = {}
