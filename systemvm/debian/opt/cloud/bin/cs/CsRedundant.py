@@ -405,9 +405,6 @@ class CsRedundant(object):
                 cmdline = self.config.get_cmdline_instance()
                 if not interface.is_added():
                     continue
-                if cmdline.get_type() == 'router':
-                    str = "        %s brd %s dev %s\n" % (cmdline.get_guest_gw(), interface.get_broadcast(), interface.get_device())
-                else:
-                    str = "        %s brd %s dev %s\n" % (interface.get_gateway_cidr(), interface.get_broadcast(), interface.get_device())
+                str = "        %s brd %s dev %s\n" % (interface.get_gateway_cidr(), interface.get_broadcast(), interface.get_device())
                 lines.append(str)
         return lines
