@@ -16,9 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,14 +25,15 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.domain.Domain;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
+import com.google.common.base.Strings;
 
 @APICommand(name = "updateServiceOffering", description = "Updates a service offering.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -61,19 +61,15 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     private Integer sortKey;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
-            type = CommandType.LIST,
-            collectionType = CommandType.UUID,
-            entityType = DomainResponse.class,
-            description = "the ID of the containing domain(s), null for public offerings")
-    private List<Long> domainIds;
+            type = CommandType.STRING,
+            description = "the ID of the containing domain(s) as comma separated string, public for public offerings")
+    private String domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,
-            type = CommandType.LIST,
-            collectionType = CommandType.UUID,
-            entityType = ZoneResponse.class,
-            description = "the ID of the containing zone(s), null for public offerings",
+            type = CommandType.STRING,
+            description = "the ID of the containing zone(s) as comma separated string, all for all zones offerings",
             since = "4.13")
-    private List<Long> zoneIds;
+    private String zoneIds;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -96,21 +92,63 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     }
 
     public List<Long> getDomainIds() {
-        if (CollectionUtils.isNotEmpty(domainIds)) {
-            Set<Long> set = new LinkedHashSet<>(domainIds);
-            domainIds.clear();
-            domainIds.addAll(set);
+        List<Long> validDomainIds = new ArrayList<>();
+        if (!Strings.isNullOrEmpty(domainIds)) {
+            if (domainIds.contains(",")) {
+                String[] domains = domainIds.split(",");
+                for (String domain : domains) {
+                    Domain validDomain = _entityMgr.findByUuid(Domain.class, domain.trim());
+                    if (validDomain != null) {
+                        validDomainIds.add(validDomain.getId());
+                    } else {
+                        throw new InvalidParameterValueException("Failed to create service offering because invalid domain has been specified.");
+                    }
+                }
+            } else {
+                domainIds = domainIds.trim();
+                if (!domainIds.matches("public")) {
+                    Domain validDomain = _entityMgr.findByUuid(Domain.class, domainIds.trim());
+                    if (validDomain != null) {
+                        validDomainIds.add(validDomain.getId());
+                    } else {
+                        throw new InvalidParameterValueException("Failed to create service offering because invalid domain has been specified.");
+                    }
+                }
+            }
+        } else {
+            validDomainIds.addAll(_configService.getServiceOfferingDomains(id));
         }
-        return domainIds;
+        return validDomainIds;
     }
 
     public List<Long> getZoneIds() {
-        if (CollectionUtils.isNotEmpty(zoneIds)) {
-            Set<Long> set = new LinkedHashSet<>(zoneIds);
-            zoneIds.clear();
-            zoneIds.addAll(set);
+        List<Long> validZoneIds = new ArrayList<>();
+        if (!Strings.isNullOrEmpty(zoneIds)) {
+            if (zoneIds.contains(",")) {
+                String[] zones = zoneIds.split(",");
+                for (String zone : zones) {
+                    DataCenter validZone = _entityMgr.findByUuid(DataCenter.class, zone.trim());
+                    if (validZone != null) {
+                        validZoneIds.add(validZone.getId());
+                    } else {
+                        throw new InvalidParameterValueException("Failed to create service offering because invalid zone has been specified.");
+                    }
+                }
+            } else {
+                zoneIds = zoneIds.trim();
+                if (!zoneIds.matches("all")) {
+                    DataCenter validZone = _entityMgr.findByUuid(DataCenter.class, zoneIds.trim());
+                    if (validZone != null) {
+                        validZoneIds.add(validZone.getId());
+                    } else {
+                        throw new InvalidParameterValueException("Failed to create service offering because invalid zone has been specified.");
+                    }
+                }
+            }
+        } else {
+            validZoneIds.addAll(_configService.getServiceOfferingZones(id));
         }
-        return zoneIds;
+        return validZoneIds;
     }
 
     /////////////////////////////////////////////////////

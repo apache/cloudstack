@@ -25,6 +25,7 @@ import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -2588,11 +2589,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Verify input parameters
         final ServiceOffering offeringHandle = _entityMgr.findById(ServiceOffering.class, id);
-        List<Long> existingDomainIds = _serviceOfferingDetailsDao.findDomainIds(id);
-
         if (offeringHandle == null) {
             throw new InvalidParameterValueException("unable to find service offering " + id);
         }
+
+        List<Long> existingDomainIds = _serviceOfferingDetailsDao.findDomainIds(id);
+        Collections.sort(existingDomainIds);
+
+        List<Long> existingZoneIds = _serviceOfferingDetailsDao.findZoneIds(id);
+        Collections.sort(existingZoneIds);
 
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
@@ -2619,15 +2624,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        Collections.sort(filteredDomainIds);
 
         List<Long> filteredZoneIds = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(zoneIds)) {
             filteredZoneIds.addAll(zoneIds);
         }
+        Collections.sort(filteredZoneIds);
 
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
             if (existingDomainIds.isEmpty()) {
                 throw new InvalidParameterValueException(String.format("Unable to update public service offering: %s by user: %s because it is domain-admin", offeringHandle.getUuid(), user.getUuid()));
+            } else {
+                if (filteredDomainIds.isEmpty()) {
+                    throw new InvalidParameterValueException(String.format("Unable to update service offering: %s to a public offering by user: %s because it is domain-admin", offeringHandle.getUuid(), user.getUuid()));
+                }
             }
             for (Long domainId : existingDomainIds) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
@@ -2645,7 +2656,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final boolean updateNeeded = name != null || displayText != null || sortKey != null;
-        final boolean detailsUpdateNeeded = !filteredDomainIds.isEmpty() || !filteredZoneIds.isEmpty();
+        final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) || !filteredZoneIds.equals(existingZoneIds);
         if (!updateNeeded && !detailsUpdateNeeded) {
             return _serviceOfferingDao.findById(id);
         }
@@ -2692,21 +2703,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return null;
         }
         List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<>();
-        if(!filteredDomainIds.isEmpty() || !filteredZoneIds.isEmpty()) {
+        if(detailsUpdateNeeded) {
             SearchBuilder<ServiceOfferingDetailsVO> sb = _serviceOfferingDetailsDao.createSearchBuilder();
             sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
             sb.and("detailName", sb.entity().getName(), SearchCriteria.Op.EQ);
             sb.done();
             SearchCriteria<ServiceOfferingDetailsVO> sc = sb.create();
             sc.setParameters("offeringId", String.valueOf(id));
-            if(!filteredDomainIds.isEmpty()) {
+            if(!filteredDomainIds.equals(existingDomainIds)) {
                 sc.setParameters("detailName", ApiConstants.DOMAIN_ID);
                 _serviceOfferingDetailsDao.remove(sc);
                 for (Long domainId : filteredDomainIds) {
                     detailsVO.add(new ServiceOfferingDetailsVO(id, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
                 }
             }
-            if(!filteredZoneIds.isEmpty()) {
+            if(!filteredZoneIds.equals(existingZoneIds)) {
                 sc.setParameters("detailName", ApiConstants.ZONE_ID);
                 _serviceOfferingDetailsDao.remove(sc);
                 for (Long zoneId : filteredZoneIds) {
@@ -2724,14 +2735,32 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return offering;
     }
 
+    @Override
+    public List<Long> getServiceOfferingDomains(Long serviceOfferingId) {
+        final ServiceOffering offeringHandle = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
+        if (offeringHandle == null) {
+            throw new InvalidParameterValueException("Unable to find service offering " + serviceOfferingId);
+        }
+        return _serviceOfferingDetailsDao.findDomainIds(serviceOfferingId);
+    }
+
+    @Override
+    public List<Long> getServiceOfferingZones(Long serviceOfferingId) {
+        final ServiceOffering offeringHandle = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
+        if (offeringHandle == null) {
+            throw new InvalidParameterValueException("Unable to find service offering " + serviceOfferingId);
+        }
+        return _serviceOfferingDetailsDao.findZoneIds(serviceOfferingId);
+    }
+
     protected DiskOfferingVO createDiskOffering(final Long userId, final List<Long> domainIds, final List<Long> zoneIds, final String name, final String description, final String provisioningType,
-            final Long numGibibytes, String tags, boolean isCustomized, final boolean localStorageRequired,
-            final boolean isDisplayOfferingEnabled, final Boolean isCustomizedIops, Long minIops, Long maxIops,
-            Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
-            Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
-            Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
-            Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-            final Integer hypervisorSnapshotReserve) {
+                                                final Long numGibibytes, String tags, boolean isCustomized, final boolean localStorageRequired,
+                                                final boolean isDisplayOfferingEnabled, final Boolean isCustomizedIops, Long minIops, Long maxIops,
+                                                Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
+                                                Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
+                                                Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
+                                                Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
+                                                final Integer hypervisorSnapshotReserve) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && numGibibytes <= 0) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
@@ -2951,11 +2980,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Check if diskOffering exists
         final DiskOffering diskOfferingHandle = _entityMgr.findById(DiskOffering.class, diskOfferingId);
-        List<Long> existingDomainIds = diskOfferingDetailsDao.findDomainIds(diskOfferingId);
-
         if (diskOfferingHandle == null) {
             throw new InvalidParameterValueException("Unable to find disk offering by id " + diskOfferingId);
         }
+
+        List<Long> existingDomainIds = diskOfferingDetailsDao.findDomainIds(diskOfferingId);
+        Collections.sort(existingDomainIds);
+
+        List<Long> existingZoneIds = diskOfferingDetailsDao.findZoneIds(diskOfferingId);
+        Collections.sort(existingZoneIds);
 
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
@@ -2986,15 +3019,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        Collections.sort(filteredDomainIds);
 
         List<Long> filteredZoneIds = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(zoneIds)) {
             filteredZoneIds.addAll(zoneIds);
         }
+        Collections.sort(filteredZoneIds);
 
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
             if (existingDomainIds.isEmpty()) {
                 throw new InvalidParameterValueException(String.format("Unable to update public disk offering: %s by user: %s because it is domain-admin", diskOfferingHandle.getUuid(), user.getUuid()));
+            } else {
+                if (filteredDomainIds.isEmpty()) {
+                    throw new InvalidParameterValueException(String.format("Unable to update disk offering: %s to a public offering by user: %s because it is domain-admin", diskOfferingHandle.getUuid(), user.getUuid()));
+                }
             }
             for (Long domainId : existingDomainIds) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
@@ -3012,7 +3051,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final boolean updateNeeded = name != null || displayText != null || sortKey != null || displayDiskOffering != null;
-        final boolean detailsUpdateNeeded = !filteredDomainIds.isEmpty() || !filteredZoneIds.isEmpty();
+        final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) || !filteredZoneIds.equals(existingZoneIds);
         if (!updateNeeded && !detailsUpdateNeeded) {
             return _diskOfferingDao.findById(diskOfferingId);
         }
@@ -3064,21 +3103,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return null;
         }
         List<DiskOfferingDetailVO> detailsVO = new ArrayList<>();
-        if(!filteredDomainIds.isEmpty() || !filteredZoneIds.isEmpty()) {
+        if(detailsUpdateNeeded) {
             SearchBuilder<DiskOfferingDetailVO> sb = diskOfferingDetailsDao.createSearchBuilder();
             sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
             sb.and("detailName", sb.entity().getName(), SearchCriteria.Op.EQ);
             sb.done();
             SearchCriteria<DiskOfferingDetailVO> sc = sb.create();
             sc.setParameters("offeringId", String.valueOf(diskOfferingId));
-            if(!filteredDomainIds.isEmpty()) {
+            if(!filteredDomainIds.equals(existingDomainIds)) {
                 sc.setParameters("detailName", ApiConstants.DOMAIN_ID);
                 diskOfferingDetailsDao.remove(sc);
                 for (Long domainId : filteredDomainIds) {
                     detailsVO.add(new DiskOfferingDetailVO(diskOfferingId, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
                 }
             }
-            if(!filteredZoneIds.isEmpty()) {
+            if(!filteredZoneIds.equals(existingZoneIds)) {
                 sc.setParameters("detailName", ApiConstants.ZONE_ID);
                 diskOfferingDetailsDao.remove(sc);
                 for (Long zoneId : filteredZoneIds) {
@@ -3136,6 +3175,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             return false;
         }
+    }
+
+    @Override
+    public List<Long> getDiskOfferingDomains(Long diskOfferingId) {
+        final DiskOffering offeringHandle = _entityMgr.findById(DiskOffering.class, diskOfferingId);
+        if (offeringHandle == null) {
+            throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
+        }
+        return diskOfferingDetailsDao.findDomainIds(diskOfferingId);
+    }
+
+    @Override
+    public List<Long> getDiskOfferingZones(Long diskOfferingId) {
+        final DiskOffering offeringHandle = _entityMgr.findById(DiskOffering.class, diskOfferingId);
+        if (offeringHandle == null) {
+            throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
+        }
+        return diskOfferingDetailsDao.findZoneIds(diskOfferingId);
     }
 
     @Override
@@ -5533,10 +5590,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Verify input parameters
         final NetworkOfferingVO offeringToUpdate = _networkOfferingDao.findById(id);
-        List<Long> existingDomainIds = networkOfferingDetailsDao.findDomainIds(id);
         if (offeringToUpdate == null) {
             throw new InvalidParameterValueException("unable to find network offering " + id);
         }
+
+        List<Long> existingDomainIds = networkOfferingDetailsDao.findDomainIds(id);
+        Collections.sort(existingDomainIds);
+
+        List<Long> existingZoneIds = networkOfferingDetailsDao.findZoneIds(id);
+        Collections.sort(existingZoneIds);
 
         // Don't allow to update system network offering
         if (offeringToUpdate.isSystemOnly()) {
@@ -5562,11 +5624,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        Collections.sort(filteredDomainIds);
 
         List<Long> filteredZoneIds = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(zoneIds)) {
             filteredZoneIds.addAll(zoneIds);
         }
+        Collections.sort(filteredZoneIds);
 
         final NetworkOfferingVO offering = _networkOfferingDao.createForUpdate(id);
 
@@ -5658,21 +5722,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         List<NetworkOfferingDetailsVO> detailsVO = new ArrayList<>();
-        if(!filteredDomainIds.isEmpty() || !filteredZoneIds.isEmpty()) {
+        if(!filteredDomainIds.equals(existingDomainIds) || !filteredZoneIds.equals(existingZoneIds)) {
             SearchBuilder<NetworkOfferingDetailsVO> sb = networkOfferingDetailsDao.createSearchBuilder();
             sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
             sb.and("detailName", sb.entity().getName(), SearchCriteria.Op.EQ);
             sb.done();
             SearchCriteria<NetworkOfferingDetailsVO> sc = sb.create();
             sc.setParameters("offeringId", String.valueOf(id));
-            if(!filteredDomainIds.isEmpty()) {
+            if(!filteredDomainIds.equals(existingDomainIds)) {
                 sc.setParameters("detailName", ApiConstants.DOMAIN_ID);
                 networkOfferingDetailsDao.remove(sc);
                 for (Long domainId : filteredDomainIds) {
                     detailsVO.add(new NetworkOfferingDetailsVO(id, Detail.domainid, String.valueOf(domainId), false));
                 }
             }
-            if(!filteredZoneIds.isEmpty()) {
+            if(!filteredZoneIds.equals(existingZoneIds)) {
                 sc.setParameters("detailName", ApiConstants.ZONE_ID);
                 networkOfferingDetailsDao.remove(sc);
                 for (Long zoneId : filteredZoneIds) {
@@ -5687,6 +5751,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return _networkOfferingDao.findById(id);
+    }
+
+    @Override
+    public List<Long> getNetworkOfferingDomains(Long networkOfferingId) {
+        final NetworkOffering offeringHandle = _entityMgr.findById(NetworkOffering.class, networkOfferingId);
+        if (offeringHandle == null) {
+            throw new InvalidParameterValueException("Unable to find network offering " + networkOfferingId);
+        }
+        return networkOfferingDetailsDao.findDomainIds(networkOfferingId);
+    }
+
+    @Override
+    public List<Long> getNetworkOfferingZones(Long networkOfferingId) {
+        final NetworkOffering offeringHandle = _entityMgr.findById(NetworkOffering.class, networkOfferingId);
+        if (offeringHandle == null) {
+            throw new InvalidParameterValueException("Unable to find network offering " + networkOfferingId);
+        }
+        return networkOfferingDetailsDao.findZoneIds(networkOfferingId);
     }
 
     @Override

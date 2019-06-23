@@ -833,19 +833,26 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // Verify input parameters
         final VpcOfferingVO offeringToUpdate = _vpcOffDao.findById(vpcOffId);
-        List<Long> existingDomainIds = vpcOfferingDetailsDao.findDomainIds(vpcOffId);
         if (offeringToUpdate == null) {
             throw new InvalidParameterValueException("Unable to find vpc offering " + vpcOffId);
         }
 
+        List<Long> existingDomainIds = vpcOfferingDetailsDao.findDomainIds(vpcOffId);
+        Collections.sort(existingDomainIds);
+
+        List<Long> existingZoneIds = vpcOfferingDetailsDao.findZoneIds(vpcOffId);
+        Collections.sort(existingZoneIds);
+
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        Collections.sort(filteredDomainIds);
 
         List<Long> filteredZoneIds = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(zoneIds)) {
             filteredZoneIds.addAll(zoneIds);
         }
+        Collections.sort(filteredZoneIds);
 
         final boolean updateNeeded = vpcOfferingName != null || displayText != null || state != null;
 
@@ -877,21 +884,21 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
         List<VpcOfferingDetailsVO> detailsVO = new ArrayList<>();
-        if(!filteredDomainIds.isEmpty() || !filteredZoneIds.isEmpty()) {
+        if(!filteredDomainIds.equals(existingDomainIds) || !filteredZoneIds.equals(existingZoneIds)) {
             SearchBuilder<VpcOfferingDetailsVO> sb = vpcOfferingDetailsDao.createSearchBuilder();
             sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
             sb.and("detailName", sb.entity().getName(), SearchCriteria.Op.EQ);
             sb.done();
             SearchCriteria<VpcOfferingDetailsVO> sc = sb.create();
             sc.setParameters("offeringId", String.valueOf(vpcOffId));
-            if(!filteredDomainIds.isEmpty()) {
+            if(!filteredDomainIds.equals(existingDomainIds)) {
                 sc.setParameters("detailName", ApiConstants.DOMAIN_ID);
                 vpcOfferingDetailsDao.remove(sc);
                 for (Long zoneId : filteredZoneIds) {
                     detailsVO.add(new VpcOfferingDetailsVO(vpcOffId, ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
                 }
             }
-            if(!filteredZoneIds.isEmpty()) {
+            if(!filteredZoneIds.equals(existingZoneIds)) {
                 sc.setParameters("detailName", ApiConstants.ZONE_ID);
                 vpcOfferingDetailsDao.remove(sc);
                 for (Long domainId : filteredDomainIds) {
@@ -906,6 +913,24 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         s_logger.debug("Updated VPC offeirng id=" + vpcOffId);
         return _vpcOffDao.findById(vpcOffId);
+    }
+
+    @Override
+    public List<Long> getVpcOfferingDomains(Long vpcOfferingId) {
+        final VpcOffering offeringHandle = _entityMgr.findById(VpcOffering.class, vpcOfferingId);
+        if (offeringHandle == null) {
+            throw new InvalidParameterValueException("Unable to find VPC offering " + vpcOfferingId);
+        }
+        return vpcOfferingDetailsDao.findDomainIds(vpcOfferingId);
+    }
+
+    @Override
+    public List<Long> getVpcOfferingZones(Long vpcOfferingId) {
+        final VpcOffering offeringHandle = _entityMgr.findById(VpcOffering.class, vpcOfferingId);
+        if (offeringHandle == null) {
+            throw new InvalidParameterValueException("Unable to find VPC offering " + vpcOfferingId);
+        }
+        return vpcOfferingDetailsDao.findZoneIds(vpcOfferingId);
     }
 
     @Override

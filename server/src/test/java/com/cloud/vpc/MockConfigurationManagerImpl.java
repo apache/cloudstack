@@ -125,6 +125,18 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
         return false;
     }
 
+    @Override
+    public List<Long> getServiceOfferingDomains(Long serviceOfferingId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<Long> getServiceOfferingZones(Long serviceOfferingId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationService#updateDiskOffering(org.apache.cloudstack.api.commands.UpdateDiskOfferingCmd)
      */
@@ -148,6 +160,18 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public DiskOffering createDiskOffering(CreateDiskOfferingCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<Long> getDiskOfferingDomains(Long diskOfferingId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<Long> getDiskOfferingZones(Long diskOfferingId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -286,6 +310,18 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     public boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public List<Long> getNetworkOfferingDomains(Long networkOfferingId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<Long> getNetworkOfferingZones(Long networkOfferingId) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     /* (non-Javadoc)

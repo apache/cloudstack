@@ -51,4 +51,17 @@ public interface VpcProvisioningService {
      */
     public VpcOffering updateVpcOffering(UpdateVPCOfferingCmd cmd);
 
+    /**
+     * Retrieve ID of domains for a VPC offering
+     *
+     * @param vpcOfferingId
+     */
+    List<Long> getVpcOfferingDomains(Long vpcOfferingId);
+
+    /**
+     * Retrieve ID of domains for a VPC offering
+     *
+     * @param vpcOfferingId
+     */
+    List<Long> getVpcOfferingZones(Long vpcOfferingId);
 }
