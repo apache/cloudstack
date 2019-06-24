@@ -35,6 +35,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class LdapAuthenticator extends AdapterBase implements UserAuthenticator {
     private static final Logger s_logger = Logger.getLogger(LdapAuthenticator.class.getName());
@@ -135,7 +136,11 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                 } else {
                     // not a new user, check if mapped group has changed
                     if(userAccount.getAccountId() != mapping.getAccountId()) {
-                        _accountManager.moveUser(userAccount.getId(),userAccount.getDomainId(),mapping.getAccountId());
+                        final Account mappedAccount = _accountManager.getAccount(mapping.getAccountId());
+                        if (mappedAccount == null || mappedAccount.getRemoved() != null) {
+                            throw new CloudRuntimeException("Mapped account for users does not exist. Please contact your administrator.");
+                        }
+                        _accountManager.moveUser(userAccount.getId(), userAccount.getDomainId(), mappedAccount);
                     }
                     // else { the user hasn't changed in ldap, the ldap group stayed the same, hurray, pass, fun thou self a lot of fun }
                 }
