@@ -375,8 +375,13 @@ public class NetworkHelperImpl implements NetworkHelper {
         final List<Long> networkIds = _routerDao.getRouterNetworks(router.getId());
 
         DomainRouterVO routerToBeAvoid = null;
+        List<DomainRouterVO> routerList = null;
         if (networkIds.size() != 0) {
-            final List<DomainRouterVO> routerList = _routerDao.findByNetwork(networkIds.get(0));
+            routerList = _routerDao.findByNetwork(networkIds.get(0));
+        } else if (router.getVpcId() != null) {
+            routerList = _routerDao.listByVpcId(router.getVpcId());
+        }
+        if (routerList != null) {
             for (final DomainRouterVO rrouter : routerList) {
                 if (rrouter.getHostId() != null && rrouter.getIsRedundantRouter() && rrouter.getState() == State.Running) {
                     if (routerToBeAvoid != null) {
