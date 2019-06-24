@@ -51,7 +51,6 @@ public interface VmDetailConstants {
     String MEMORY_OVER_COMMIT_RATIO = "memoryOvercommitRatio";
     String MESSAGE_RESERVED_CAPACITY_FREED_FLAG = "Message.ReservedCapacityFreed.Flag";
     String DEPLOY_VM = "deployvm";
-    String ROOT_DISK_SIZE = "rootdisksize";
     String SSH_PUBLIC_KEY = "SSH.PublicKey";
     String PASSWORD = "password";
     String ENCRYPTED_PASSWORD = "Encrypted.Password";
