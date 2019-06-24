@@ -69,10 +69,9 @@ function install_packages() {
     haproxy \
     haveged \
     radvd \
-    sharutils genisoimage \
+    sharutils genisoimage aria2 \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins \
-    virt-what open-vm-tools qemu-guest-agent hyperv-daemons \
-    haveged
+    virt-what open-vm-tools qemu-guest-agent hyperv-daemons
 
   apt-get -q -y -t stretch-backports install nftables
 

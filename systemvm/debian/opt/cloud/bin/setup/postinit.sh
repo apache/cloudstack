@@ -21,7 +21,6 @@
 # Eject cdrom if any
 eject || true
 
-
 # Restart journald for setting changes to apply
 systemctl restart systemd-journald
 
@@ -37,19 +36,14 @@ fi
 [ ! -f /var/cache/cloud/enabled_svcs ] && touch /var/cache/cloud/enabled_svcs
 for svc in $(cat /var/cache/cloud/enabled_svcs)
   do
-    if [[ "$svc" != "cloud" ]]
-    then
-      systemctl start --no-block $svc
-  fi
+    systemctl enable --now --no-block $svc
 done
 
-
-#not required - all services disabled by default
-#[ ! -f /var/cache/cloud/disabled_svcs ] && touch /var/cache/cloud/disabled_svcs
-#for svc in $(cat /var/cache/cloud/disabled_svcs)
-#do
-#   systemctl disable --now --no-block $svc
-#done
+[ ! -f /var/cache/cloud/disabled_svcs ] && touch /var/cache/cloud/disabled_svcs
+for svc in $(cat /var/cache/cloud/disabled_svcs)
+do
+   systemctl disable --now --no-block $svc
+done
 
 # Restore the persistent iptables nat, rules and filters for IPv4 and IPv6 if they exist
 ipv4="/etc/iptables/rules.v4"
@@ -68,13 +62,3 @@ fi
 systemctl start ssh
 
 date > /var/cache/cloud/boot_up_done
-
-# explicitly start cloud service
-
-for svc in $(cat /var/cache/cloud/enabled_svcs)
-do
-  if [[ "$svc" == "cloud" ]]
-  then
-    systemctl start --no-block $svc
-  fi
-done

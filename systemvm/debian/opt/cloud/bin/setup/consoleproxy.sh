@@ -20,6 +20,11 @@
 
 setup_console_proxy() {
   log_it "Setting up console proxy system vm"
+
+  mkdir -p /var/log/cloud
+  echo "cloud" > /var/cache/cloud/enabled_svcs
+  echo "haproxy dnsmasq apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
+
   setup_common eth0 eth1 eth2
   setup_system_rfc1918_internal
 
@@ -39,13 +44,10 @@ setup_console_proxy() {
     setup_sshd $ETH0_IP "eth0"
   fi
 
-  mkdir -p /var/log/cloud
   disable_rpfilter
   enable_fwding 0
   enable_irqbalance 0
   rm -f /etc/logrotate.d/cloud
-  echo "cloud" > /var/cache/cloud/enabled_svcs
-
 }
 
 setup_console_proxy
