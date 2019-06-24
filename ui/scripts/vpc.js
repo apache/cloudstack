@@ -15,6 +15,57 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
+    //The drag and drop function to order ACL rules does not have access to the whole ACL.
+    //Therefore, we store the "state-hash" of the list being displayed for use in the drag and drop function.
+    var accessControlListConsistentyHashForDragAndDropFunction = "";
+
+    var isNumeric = function (n) {
+        return !isNaN(parseFloat(n));
+    };
+    var createSafeCsvValue = function(value){
+        if(value){
+            return '"' + value + '"';
+        }
+        return "";
+    };
+    
+    var generateCsvForAclRules = function(aclRules){
+        var csv = createSafeCsvValue('id') + ',';
+        for(var field in aclRuleFields){
+            var fieldLabel = aclRuleFields[field].label;
+            var fieldLabelTranslated = _l(fieldLabel);
+            csv = csv + createSafeCsvValue(fieldLabelTranslated) + ',';
+        }
+        csv = csv.substr(0, csv.length - 1) + '\n';
+        if(!aclRules){
+            return csv;
+        }
+        aclRules.forEach(function(entry){
+            csv = csv + 
+            createSafeCsvValue(entry.id) + ',' + 
+            createSafeCsvValue(entry.number) + ',' +
+            createSafeCsvValue(entry.cidrlist) + ',' +
+            createSafeCsvValue(entry.action) + ',' ;
+            
+            if(isNumeric(entry.protocol)){
+                csv = csv +
+                createSafeCsvValue(_l('label.protocol.number')) + ',' +
+                createSafeCsvValue(entry.protocol) + ',';
+            }else{
+                csv = csv +
+                createSafeCsvValue(entry.protocol) + ',' +
+                createSafeCsvValue('') + ',';
+            }
+            csv = csv +
+            createSafeCsvValue(entry.startport) + ',' +
+            createSafeCsvValue(entry.endport) + ',' +
+            createSafeCsvValue(entry.icmptype) + ',' +
+            createSafeCsvValue(entry.icmpcode) + ',' +
+            createSafeCsvValue(entry.traffictype) + ',' +
+            createSafeCsvValue(entry.reason) + '\n';
+        });
+        return csv;
+    };
     var assignVMAction = function() {
         return {
             label: 'label.assign.vms',
@@ -39,7 +90,7 @@
                             url: createURL('listNics'),
                             data: {
                                 virtualmachineid: instance.id,
-                                nicId: instance.nic[0].id
+                                networkId: network.id
                             },
                             success: function(json) {
                                 var nic = json.listnicsresponse.nic[0];
@@ -190,63 +241,14 @@
         };
     };
 
-    var aclMultiEdit = {
-        noSelect: true,
-
-        reorder: {
-            moveDrag: {
-                action: function(args) {
-                    var rule = args.context.multiRule[0];
-                    var number = 0;
-                    var prevItem = args.prevItem ? args.prevItem.number : null;
-                    var nextItem = args.nextItem ? args.nextItem.number : null;
-
-                    if (!nextItem) { // Last item
-                        number = prevItem + 100;
-                    } else {
-                        if (nextItem - prevItem <= 10) {
-                            number = nextItem - parseInt(((nextItem - prevItem) / 2));
-                        } else {
-                            number = nextItem > 1 ? nextItem - 10 : 1;
-                        }
-                    }
-
-                    $.ajax({
-                        url: createURL('updateNetworkACLItem'),
-                        data: {
-                            id: rule.id,
-                            number: number
-                        },
-                        success: function(json) {
-                            var pollTimer = setInterval(function() {
-                                pollAsyncJobResult({
-                                    _custom: {
-                                        jobId: json.createnetworkaclresponse.jobid
-                                    },
-                                    complete: function() {
-                                        clearInterval(pollTimer);
-                                        args.response.success();
-                                    },
-                                    error: function(errorMsg) {
-                                        clearInterval(pollTimer);
-                                        args.response.error(errorMsg);
-                                    }
-                                });
-                            }, 1000);
-                        }
-                    });
-                }
-            }
-        },
-        fields: {
-
+    var aclRuleFields = {
             'number': {
-                label: 'label.rule.number',
+                label: 'label.rule.number.short',
+                desc: 'label.rule.number',
                 edit: true,
                 isEditable: true
 
             },
-
             'cidrlist': {
                 edit: true,
                 label: 'label.cidr',
@@ -322,6 +324,13 @@
                                 $portFields.hide();
                             } else if ($(this).val() == 'all') {
                                 $portFields.hide();
+                                $portFields.attr('disabled', 'disabled');
+                                
+                                $icmpFields.hide();
+                                $icmpFields.attr('disabled', 'disabled');
+                                
+                                $protocolFields.attr('disabled', 'disabled');
+                                $protocolFields.hide();
                             } else {
                                 $otherFields.show();
                                 $icmpFields.hide();
@@ -378,8 +387,14 @@
                                 $otherFields.hide();
                                 $otherFields.parent().find('label.error').hide();
                             } else if ($(this).val() == 'all') {
-                                $portFields.attr('disabled', 'disabled');
                                 $portFields.hide();
+                                $portFields.attr('disabled', 'disabled');
+
+                                $icmpFields.hide();
+                                $icmpFields.attr('disabled', 'disabled');
+
+                                $protocolFields.hide();
+                                $protocolFields.attr('disabled', 'disabled');
                             } else {
                                 $otherFields.show();
                                 $otherFields.parent().find('label.error').hide();
@@ -420,7 +435,8 @@
             },
 
             'protocolnumber': {
-                label: 'label.protocol.number',
+                label: 'label.protocol.number.short',
+                desc: 'label.protocol.number',
                 edit: true,
                 isEditable: true
             },
@@ -436,6 +452,45 @@
                 isOptional: true,
                 isEditable: true
             },
+            'icmptype': {
+                edit: true,
+                label: 'ICMP.type',
+                desc: 'ICMP.type.desc',
+                defaultValue: '-1',
+                isEditable: true
+            },
+            'icmpcode': {
+                edit: true,
+                label: 'ICMP.code',
+                desc: 'ICMP.code.desc',
+                defaultValue: '-1',
+                isEditable: true
+            },
+            'traffictype': {
+                label: 'label.traffic.type',
+                isEditable: true,
+                select: function(args) {
+                    args.response.success({
+                        data: [{
+                            name: 'Ingress',
+                            description: 'Ingress'
+                        }, {
+                            name: 'Egress',
+                            description: 'Egress'
+                        }]
+                    });
+                }
+            },
+            'reason': {
+                edit: true,
+                label: 'label.acl.reason',
+                desc: 'label.acl.reason.description',
+                isEditable: true,
+                isTextarea: true
+           }
+    };
+    
+    var aclRuleFieldsForMultiEdit = {
             'networkid': {
                 label: 'label.select.tier',
                 select: function(args) {
@@ -472,43 +527,52 @@
                     });
                 }
             },
-            'icmptype': {
-                edit: true,
-                label: 'ICMP.type',
-                isDisabled: true,
-                desc: 'Please specify -1 if you want to allow all ICMP types',
-                defaultValue: '-1',
-                isEditable: true
-            },
-            'icmpcode': {
-                edit: true,
-                label: 'ICMP.code',
-                isDisabled: true,
-                desc: 'Please specify -1 if you want to allow all ICMP codes',
-                defaultValue: '-1',
-                isEditable: true
-            },
-            'traffictype': {
-                label: 'label.traffic.type',
-                isEditable: true,
-                select: function(args) {
-                    args.response.success({
-                        data: [{
-                            name: 'Ingress',
-                            description: 'Ingress'
-                        }, {
-                            name: 'Egress',
-                            description: 'Egress'
-                        }]
+    };
+    
+    jQuery.extend(aclRuleFieldsForMultiEdit, aclRuleFields);
+    
+    var aclMultiEdit = {
+    	doNotShowInputTable: true,
+    	editOptionsFirst: true,
+        noSelect: true,
+        reorder: {
+            moveDrag: {
+                action: function(args) {
+                    var rule = args.context.multiRule[0];
+                    
+                    var previousRuleId = args.prevItem ? args.prevItem.id : undefined;
+                    var nextRuleId = args.nextItem ? args.nextItem.id : undefined;
+                     
+                    $.ajax({
+                        url: createURL('moveNetworkAclItem'),
+                        data: {
+                            id: rule.id,
+                            previousaclruleid: previousRuleId, 
+                            nextaclruleid: nextRuleId,
+                            aclconsistencyhash: accessControlListConsistentyHashForDragAndDropFunction
+                        },
+                        success: function(json) {
+                            var pollTimer = setInterval(function() {
+                                pollAsyncJobResult({
+                                    _custom: {
+                                        jobId: json.moveNetworkAclItemResponse.jobid
+                                    },
+                                    complete: function() {
+                                        clearInterval(pollTimer);
+                                        args.response.success();
+                                    },
+                                    error: function(errorMsg) {
+                                        clearInterval(pollTimer);
+                                        args.response.error(errorMsg);
+                                    }
+                                });
+                            }, 1000);
+                        }
                     });
                 }
-            },
-            'add-rule': {
-                label: 'label.add.rule',
-                addButton: true
             }
         },
-
+        fields: aclRuleFieldsForMultiEdit,
         tags: cloudStack.api.tags({
             resourceType: 'NetworkACL',
             contextId: 'multiRule'
@@ -580,7 +644,8 @@
                         number: args.data.number,
                         protocol: args.data.protocol,
                         traffictype: args.data.traffictype,
-                        action: args.data.action
+                        action: args.data.action,
+                        reason: args.data.reason
                     };
 
                     if (data.protocol === 'tcp' || data.protocol === 'udp') {
@@ -602,10 +667,11 @@
 
                         delete args.data.protocolnumber;
                     }
-
+                    data.partialupgrade = false;
                     $.ajax({
                         url: createURL('updateNetworkACLItem'),
                         data: data,
+                        type: "POST",
                         success: function(json) {
                             args.response.success({
                                 _custom: {
@@ -983,32 +1049,6 @@
                                     });
                                 }
                             },
-
-                            /*
-              rules: {
-                title: 'label.rules',
-                multiple: true,
-                fields: [
-                  {
-                    sourceport: { label: 'Source Port' },
-                    instanceport: { label: 'Instance Port' }
-                  }
-                ],
-                dataProvider: function(args) {
-                  $.ajax({
-                    url: createURL('listLoadBalancers'),
-                    data: {
-                      id: args.context.internalLoadBalancers[0].id
-                    },
-                    success: function(json) {
-                      var item = json.listloadbalancersresponse.loadbalancer[0];
-                      args.response.success({ data: item.loadbalancerrule });
-                    }
-                  });
-                }
-              },
-              */
-
                             assignedVms: {
                                 title: 'label.assigned.vms',
                                 listView: {
@@ -1286,6 +1326,37 @@
                                 notification: {
                                     poll: pollAsyncJobResult
                                 }
+                            },
+                            edit: {
+                                label: 'label.edit.acl.list',
+                                action: function(args) {
+                                    var data = args.data;
+                                    data.id = args.context.aclLists[0].id;
+                                    $.ajax({
+                                        url: createURL('updateNetworkACLList'),
+                                        type: "POST",
+                                        data: data,
+                                        success: function(json) {
+                                            var jid = json.updatenetworkacllistresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function() {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                        jQuery('div[id=breadcrumbs] ul:visible li span').last().html(data.name);
+                                                    }
+                                                }
+                                            });
+                                        },
+                                        error: function(json) {
+                                            args.response.error(parseXMLHttpResponse(json));
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult,
+                                    desc: 'label.edit.acl.list'
+                                }
                             }
                         },
 
@@ -1298,7 +1369,8 @@
                                         isEditable: true
                                     },
                                     description: {
-                                        label: 'label.description'
+                                        label: 'label.description',
+                                        isEditable: true  
                                     },
                                     id: {
                                         label: 'label.id'
@@ -1313,6 +1385,7 @@
                                                 var allowedActions = [];
                                                 if (items.vpcid != null) {
                                                     allowedActions.push("remove");
+                                                    allowedActions.push("edit");
                                                 }
                                                 return allowedActions;
                                             }
@@ -1330,38 +1403,103 @@
                                             networkid: false
                                         },
                                         dataProvider: function(args) {
+                                            var aclListId = args.context.aclLists[0].id;
                                             $.ajax({
-                                                url: createURL('listNetworkACLs&aclid=' + args.context.aclLists[0].id),
+                                                url: createURL('listNetworkACLs&aclid=' + aclListId),
                                                 success: function(json) {
-                                                    var items = json.listnetworkaclsresponse.networkacl.sort(function(a, b) {
-                                                        return a.number - b.number;
-                                                    }).map(function(acl) {
-                                                        if (parseInt(acl.protocol)) { // protocol number
-                                                            acl.protocolnumber = acl.protocol;
-                                                            acl.protocol = "protocolnumber";
-                                                        }
+                                                    var items = json.listnetworkaclsresponse.networkacl;
 
-                                                        return acl;
-                                                    });
+                                                    if(items){
+                                                        items.sort(function(a, b) {
+                                                            return a.number - b.number;
+                                                        }).map(function(acl) {
+                                                            if (parseInt(acl.protocol)) { // protocol number
+                                                                acl.protocolnumber = acl.protocol;
+                                                                acl.protocol = "protocolnumber";
+                                                            }
+    
+                                                            return acl;
+                                                        });
+                                                        var allUuids = '';
+                                                        items.forEach(function(aclRule){
+                                                                            allUuids += aclRule.id;
+                                                                      });
+                                                        accessControlListConsistentyHashForDragAndDropFunction = $.md5(allUuids);
+                                                    }
 
                                                     args.response.success({
                                                         data: items
-                                                        /* {
-                               cidrlist: '10.1.1.0/24',
-                               protocol: 'TCP',
-                               startport: 22, endport: 22,
-                               networkid: 0,
-                               traffictype: 'Egress'
-                               },
-                               {
-                               cidrlist: '10.2.1.0/24',
-                               protocol: 'UDP',
-                               startport: 56, endport: 72,
-                               networkid: 0,
-                               trafficType: 'Ingress'
-                               }
-                               ]*/
                                                     });
+                                                    if(jQuery('#details-tab-aclRules').siblings('div.toolbar').children('div.add').length === 0){
+                                                        var $addAclRuleDivButton = jQuery('<div>').addClass('button add');
+                                                        var $spanAddAclRuleButtonMessage = jQuery('<span>').html(_l('label.add.ACL'));
+                                                        
+                                                        $addAclRuleDivButton.html($spanAddAclRuleButtonMessage);
+                                                        $addAclRuleDivButton.click(function(){
+                                                        	cloudStack.dialog.createForm({
+                                                        		 form: {
+                                                                     title: 'label.add.rule',
+                                                                     desc: 'label.add.rule.desc',
+                                                                     fields: aclRuleFields
+                                                                 },
+                                                                 after: function(argsLocal) {
+                                                                	 var data = argsLocal.data;
+                                                                	 data.aclid = argsLocal.context.aclLists[0].id;
+                                                                	 if(data.protocol != 'icmp'){
+                                                                		 data.icmpcode = undefined;
+                                                                		 data.icmptype  = undefined;
+                                                                	 }
+                                                                	 if(data.protocol != 'protocolnumber'){
+                                                                		 data.protocolnumber = undefined;
+                                                                	 }else{
+                                                                	     data.protocol = data.protocolnumber;
+                                                                	     data.protocolnumber = undefined;
+                                                                	 }
+                                                                	 if(data.protocol === 'all'){
+                                                                		 data.startport = undefined;
+                                                                		 data.endport = undefined;
+                                                                	 }
+                                                                     $.ajax({
+                                                                         url: createURL('createNetworkACL'),
+                                                                         data: argsLocal.data,
+                                                                         type: "POST",
+                                                                         success: function(json) {
+                                                                        	 jQuery('button.cancel:visible').click();
+                                                                        	 jQuery('div.toolbar:visible div.refresh').click();
+                                                                         }
+                                                                     });
+                                                                 },
+                                                                 context: args.context
+                                                        	});
+                                                        });
+                                                        jQuery('#details-tab-aclRules').siblings('div.toolbar').append($addAclRuleDivButton);
+                                                    }
+                                                    if(jQuery('#details-tab-aclRules').siblings('div.toolbar').children('div.export').length === 0){
+                                                        var $exportAclsDivButton = jQuery('<div>').addClass('button export');
+                                                        var $linkExportAclRulesButtonMessage = jQuery('<a>').html(_l('label.acl.export'));
+                                                        
+                                                        $exportAclsDivButton.html($linkExportAclRulesButtonMessage);
+                                                        $exportAclsDivButton.click(function(){
+                                                            
+                                                            $.ajax({
+                                                                url: createURL('listNetworkACLs&aclid=' + aclListId),
+                                                                type: "GET",
+                                                                async: false,
+                                                                success: function(json) {
+                                                                    var acls = json.listnetworkaclsresponse.networkacl;
+                                                                    var csv = generateCsvForAclRules(acls);
+                                                                    
+                                                                    window.URL = window.URL || window.webkiURL;
+                                                                    var blob = new Blob([csv]);
+                                                                    var blobURL = window.URL.createObjectURL(blob);
+                                                                    
+                                                                    $linkExportAclRulesButtonMessage.attr("href", blobURL);
+                                                                    $linkExportAclRulesButtonMessage.attr("download", "aclRules.csv");
+                                                                }
+                                                            });
+                                                        });
+                                                        jQuery('#details-tab-aclRules').siblings('div.toolbar').append($exportAclsDivButton);
+                                                    }
                                                 }
                                             });
                                         }
@@ -3091,16 +3229,16 @@
                         },
                         action: function(args) {
                             var array1 = [];
-                            array1.push("&name=" + todb(args.data.name));
-                            array1.push("&displaytext=" + todb(args.data.displaytext));
+                            array1.push("&name=" + encodeURIComponent(args.data.name));
+                            array1.push("&displaytext=" + encodeURIComponent(args.data.displaytext));
 
                             //args.data.networkdomain is null when networkdomain field is hidden
                             if (args.data.networkdomain != null && args.data.networkdomain != args.context.networks[0].networkdomain)
-                                array1.push("&networkdomain=" + todb(args.data.networkdomain));
+                                array1.push("&networkdomain=" + encodeURIComponent(args.data.networkdomain));
 
                             //args.data.networkofferingid is null when networkofferingid field is hidden
                             if (args.data.networkofferingid != null && args.data.networkofferingid != args.context.networks[0].networkofferingid) {
-                                array1.push("&networkofferingid=" + todb(args.data.networkofferingid));
+                                array1.push("&networkofferingid=" + encodeURIComponent(args.data.networkofferingid));
 
                                 if (args.context.networks[0].type == "Isolated") { //Isolated network
                                     cloudStack.dialog.confirm({
@@ -3201,7 +3339,7 @@
                                     }
                                 });
                                 if (zoneObj.networktype == "Basic") {
-                                    args.$form.find('.form-item[rel=cleanup]').find('input').removeAttr('checked'); //unchecked
+                                    args.$form.find('.form-item[rel=cleanup]').find('input').prop('checked', false); //unchecked
                                     args.$form.find('.form-item[rel=cleanup]').hide(); //hidden
                                 } else {
                                     args.$form.find('.form-item[rel=cleanup]').find('input').attr('checked', 'checked'); //checked
@@ -4344,18 +4482,6 @@
                                     return capability.name == 'LbSchemes';
                                 }) : [];
 
-                                /*      var lbSchemes = $.grep(
-                  $.grep(
-                    tier.service,
-                    function(service) {
-                      return service.name == 'Lb';
-                    }
-                  )[0].capability,
-                  function(capability) {
-                    return capability.name == 'LbSchemes';
-                  }
-                );*/
-
                                 var hasLbScheme = function(schemeVal) {
                                     return $.grep(
                                         lbSchemes,
@@ -4388,7 +4514,6 @@
                                 });
                             })
                         });
-
                         if (error) {
                             cloudStack.dialog.notice({
                                 message: 'Error loading dashboard data.'

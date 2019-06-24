@@ -21,7 +21,6 @@
 /etc/default/cloudstack-agent
 /etc/profile.d/cloudstack-agent-profile.sh
 /etc/logrotate.d/cloudstack-agent
-/etc/init.d/cloudstack-agent
 /usr/bin/cloudstack-setup-agent
 /usr/bin/cloudstack-ssh
 /usr/bin/cloudstack-agent-upgrade

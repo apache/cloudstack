@@ -60,12 +60,12 @@
                     data['new-network-ip'] = $form.find('.new-network .select.advanced .specify-ip input[type=text]').val();
 
                     // Handle multi-disk service offerings
-                    if ($form.find('.multi-disk-select-container').size()) {
+                    if ($form.find('.multi-disk-select-container').length) {
                         data['disk-offerings-multi'] = [];
 
                         var $diskGroups = $form.find('.disk-select-group');
                         var $selectedDisks = $.grep($diskGroups, function (diskGroup) {
-                            return $(diskGroup).find('input[type=checkbox]:checked').size();
+                            return $(diskGroup).find('input[type=checkbox]:checked').length;
                         });
 
                         $selectedDisks.map(function (disk) {
@@ -86,7 +86,7 @@
                             success: function(args) {
                                 var $listView = $('.list-view.instances');
 
-                                if ($listView.size()) {
+                                if ($listView.length) {
                                     var $loading = $('.list-view.instances').listView('prependItem', {
                                         data: [{
                                             name: data.displayname ? data.displayname : _l('label.new.vm'),
@@ -104,7 +104,7 @@
                                 listViewArgs.complete({
                                     _custom: args._custom,
                                     messageArgs: cloudStack.serializeForm($form),
-                                    $item: $listView.size() ? $loading : $('<div>')
+                                    $item: $listView.length ? $loading : $('<div>')
                                 });
 
                                 close();
@@ -158,17 +158,17 @@
 
                                             var $checkedOtherSelect = $otherSelects.filter(function() {
                                                 return $(this).not('.single-select') &&
-                                                    $(this).find('input[type=checkbox]:checked').size() &&
-                                                    $(this).find('input[type=radio]:checked').size();
+                                                    $(this).find('input[type=checkbox]:checked').length &&
+                                                    $(this).find('input[type=radio]:checked').length;
                                             });
 
-                                            if (!$checkedOtherSelect.size() &&
-                                                !$('.new-network:visible input[type=radio]:checked').size()) {
+                                            if (!$checkedOtherSelect.length &&
+                                                !$('.new-network:visible input[type=radio]:checked').length) {
                                                 $(this).closest('.select').find('input[type=radio]').click();
                                             }
                                         }
 
-                                        if ((!$otherSelects.size()) &&
+                                        if ((!$otherSelects.length) &&
                                             $newNetwork.find('input[type=checkbox]').is(':unchecked')) {
                                             // Set as default
                                             $(this).closest('.select').find('input[type=radio]').click();
@@ -268,10 +268,9 @@
 
                 var dataGenerators = {
                     setup: function($step, formData) {
-                        var originalValues = function(formData) {
-                            $step.find('select').val(
-                                formData.zoneid
-                            );
+                        var originalValues = function(formData, initialValue) {
+                            var selectedValue = formData.zoneid || initialValue;
+                            $step.find('select').val(selectedValue);
 
                             $step.find('input[type=radio]').filter(function() {
                                 return $(this).val() == formData['select-template'];
@@ -282,7 +281,11 @@
                             response: {
                                 success: function(args) {
                                     // Zones
-                                    $(args.data.zones).each(function() {
+                                    var initialValue = '';
+                                    $(args.data.zones).each(function( index ) {
+                                        if(index == 0){
+                                          initialValue = this.id;
+                                        }
                                         $step.find('.select-zone select').append(
                                             $('<option>')
                                             .attr({
@@ -293,7 +296,7 @@
                                         );
                                     });
 
-                                    originalValues(formData);
+                                    originalValues(formData, initialValue);
                                 }
                             }
                         };
@@ -309,7 +312,7 @@
                                 return $(this).val() == formData.templateid;
                             });
 
-                            if (!$selected.size()) {
+                            if (!$selected.length) {
                                 $inputs.filter(':first').click();
                             } else {
                                 $selected.click();
@@ -428,7 +431,7 @@
 
                                     if (custom) {
                                         $step.find('.section.custom-size').hide();
-                                        $step.removeClass('custom-disk-size');
+                                        $step.removeClass('custom-slider-container');
                                     }
 
                                     $step.find('input[type=radio]').bind('change', function() {
@@ -461,10 +464,10 @@
                                         var hypervisor = item['hypervisor'];
                                         if (hypervisor == 'KVM' || hypervisor == 'XenServer' || hypervisor == 'VMware') {
                                             $step.find('.section.custom-size').show();
-                                            $step.addClass('custom-disk-size');
+                                            $step.addClass('custom-slider-container');
                                         } else {
                                             $step.find('.section.custom-size').hide();
-                                            $step.removeClass('custom-disk-size');
+                                            $step.removeClass('custom-slider-container');
                                         }
 
                                         return true;
@@ -513,8 +516,65 @@
                                         var custom = item[args.customFlag];
 
                                         if (custom) {
+                                            // contains min/max CPU and Memory values
                                             $step.addClass('custom-size');
-                                        } else {
+                                            var offeringDetails = item['serviceofferingdetails'];
+                                            var offeringCpuSpeed = item['cpuspeed'];
+                                            $step.find('.custom-no-limits').hide();
+                                            $step.find('.custom-slider-container').hide();
+
+                                            var minCpuNumber = 0, maxCpuNumber = 0, minMemory = 0, maxMemory = 0;
+                                            if (offeringDetails){
+                                                minCpuNumber = offeringDetails['mincpunumber'];
+                                                maxCpuNumber = offeringDetails['maxcpunumber'];
+                                                minMemory = offeringDetails['minmemory'];
+                                                maxMemory = offeringDetails['maxmemory'];
+                                            }
+
+                                            if (minCpuNumber > 0 && maxCpuNumber > 0 && minMemory > 0 && maxMemory > 0) {
+                                                $step.find('.custom-slider-container.slider-cpu-speed input[type=text]').val(parseInt(offeringCpuSpeed));
+                                                $step.find('.custom-slider-container').show();
+                                                var setupSlider = function(sliderClassName, minVal, maxVal) {
+                                                    $step.find('.custom-slider-container .' + sliderClassName + ' .size.min span').html(minVal);
+                                                    $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(minVal);
+                                                    $step.find('.custom-slider-container .' + sliderClassName + ' .size.max span').html(maxVal);
+                                                    $step.find('.custom-slider-container .' + sliderClassName + ' .slider').each(function() {
+                                                        var $slider = $(this);
+                                                        $slider.slider({
+                                                            min: parseInt(minVal),
+                                                            max: parseInt(maxVal),
+                                                            slide: function(event, ui) {
+                                                                $slider.closest('.section.custom-size .' + sliderClassName + '').find('input[type=text]').val(ui.value);
+                                                                $step.find('span.custom-slider-container .' + sliderClassName + '').html(ui.value);
+                                                            }
+                                                        });
+                                                    });
+
+                                                    $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').bind('change', function() {
+                                                        var val = $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val();
+                                                        if (val < minVal || val > maxVal) {
+                                                            cloudStack.dialog.notice({ message: $.validator.format(_l('message.validate.range'), [minVal, maxVal]) });
+                                                        }
+                                                        if (val < minVal) {
+                                                            val = minVal;
+                                                            $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(val);
+                                                        }
+                                                        if(val > maxVal) {
+                                                            val = maxVal;
+                                                            $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(val);
+                                                        }
+                                                        $step.find('span.custom-slider-container .' + sliderClassName).html(_s(val));
+                                                    });
+                                                }
+                                                setupSlider('slider-cpu-cores', minCpuNumber, maxCpuNumber);
+                                                setupSlider('slider-memory-mb', minMemory, maxMemory);
+                                            } else {
+                                                $step.find('.custom-slider-container.slider-cpu-speed.slider-compute-cpu-speed').val(0);
+                                                $step.find('.custom-no-limits').show();
+                                            }
+                                        } else {                                            
+                                            $step.find('.custom-no-limits').hide();
+                                            $step.find('.custom-slider-container').hide();
                                             $step.removeClass('custom-size');
                                         }
 
@@ -541,7 +601,7 @@
                                 return $(this).val() == formData.diskofferingid;
                             }).click();
 
-                            if (!$targetInput.size()) {
+                            if (!$targetInput.length) {
                                 $step.find('input[type=radio]:visible').filter(':first').click();
                             }
                         };
@@ -554,7 +614,7 @@
                                     var multiDisk = args.multiDisk;
 
                                     $step.find('.multi-disk-select-container').remove();
-                                    $step.removeClass('custom-disk-size');
+                                    $step.removeClass('custom-slider-container');
                                     $step.find('.main-desc, p.no-datadisk').remove();
 
                                     if (!multiDisk){
@@ -620,7 +680,7 @@
                                                 $group.toggleClass('selected');
                                                 $group.find('.select:first input[type=radio]').click();
 
-                                                if (!$multiDiskSelect.find('input[type=checkbox]:checked').size()) {
+                                                if (!$multiDiskSelect.find('input[type=checkbox]:checked').length) {
                                                     $step.find('.no-thanks input[type=radio]').click();
                                                 } else {
                                                     $step.find('.no-thanks input[type=radio]').attr('checked', false);
@@ -655,10 +715,10 @@
                                         var item = $.grep(args.data.diskOfferings, function(elem) {
                                             return elem.id == val;
                                         })[0];
-                                        var isMultiDisk = $step.find('.multi-disk-select').size();
+                                        var isMultiDisk = $step.find('.multi-disk-select').length;
 
                                         // Uncheck any multi-select groups
-                                        if ($target.closest('.no-thanks').size() && isMultiDisk) {
+                                        if ($target.closest('.no-thanks').length && isMultiDisk) {
                                             $step.find('.disk-select-group input[type=checkbox]:checked').click();
                                             $(this).attr('checked', true);
 
@@ -672,7 +732,7 @@
                                             } else {
                                                 // handle removal of custom size controls
                                                 $step.find('.section.custom-size').hide();
-                                                $step.removeClass('custom-disk-size');
+                                                $step.removeClass('custom-slider-container');
 
                                                 // handle removal of custom IOPS controls
                                                 $step.removeClass('custom-iops-do');
@@ -691,7 +751,7 @@
                                                 $('<span>').addClass('custom-size-label')
                                                 .append(': ')
                                                 .append(
-                                                    $('<span>').addClass('custom-disk-size').html(
+                                                    $('<span>').addClass('custom-slider-container').html(
                                                         $step.find('.custom-size input[name=size]').val()
                                                 )
                                                 )
@@ -702,14 +762,14 @@
                                                 $('<span>').addClass('custom-size-label')
                                                 .append(', ')
                                                 .append(
-                                                    $('<span>').addClass('custom-disk-size').html(
+                                                    $('<span>').addClass('custom-slider-container').html(
                                                         $step.find('.custom-size input[name=size]').val()
                                                 )
                                                 )
                                                 .append(' GB')
                                             );
                                             $step.find('.section.custom-size').show();
-                                            $step.addClass('custom-disk-size');
+                                            $step.addClass('custom-slider-container');
                                             $target.closest('.select-container').scrollTop(
                                                 $target.position().top
                                             );
@@ -720,7 +780,7 @@
                                                 $(this).closest('.disk-select-group').removeClass('custom-size');
                                             } else {
                                                 $step.find('.section.custom-size').hide();
-                                                $step.removeClass('custom-disk-size');
+                                                $step.removeClass('custom-slider-container');
                                             }
                                         }
 
@@ -881,7 +941,7 @@
                             var $checkbox = $step.find('.new-network input[type=checkbox]');
                             var $newNetwork = $checkbox.closest('.new-network');
 
-                            if ($step.find('.select.my-networks .select-container .select:visible').size()) {
+                            if ($step.find('.select.my-networks .select-container .select:visible').length) {
                                 $checkbox.attr('checked', false);
                                 $newNetwork.addClass('unselected');
                             } else {
@@ -1023,7 +1083,7 @@
                                         );
 
                                         // Cleanup
-                                        if ($select.closest('.new-network').size()) {
+                                        if ($select.closest('.new-network').length) {
                                             $select.find('.advanced-options, .specify-ip').remove();
                                         }
 
@@ -1077,10 +1137,10 @@
                                 fieldName = $input.html();
                             } else if ($input.is('input[type=radio]')) {
                                 // Choosen New network as default
-                                if ($input.parents('div.new-network').size()) {
+                                if ($input.parents('div.new-network').length) {
                                     fieldName = $input.closest('div.new-network').find('input[name="new-network-name"]').val();
                                     // Choosen Network from existed
-                                } else if ($input.parents('div.my-networks').size()) {
+                                } else if ($input.parents('div.my-networks').length) {
                                     fieldName = $input.closest('div.select').find('.select-desc .name').html();
                                 } else {
                                     fieldName = $input.parent().find('.select-desc .name').html();
@@ -1124,7 +1184,7 @@
                     var targetIndex = index - 1;
 
                     if (index <= 1) targetIndex = 0;
-                    if (targetIndex == $steps.size()) {
+                    if (targetIndex == $steps.length) {
                         completeAction();
                         return;
                     }
@@ -1182,7 +1242,7 @@
                     }).fadeOut('slow');
 
                     setTimeout(function() {
-                        if (!$targetStep.find('input[type=radio]:checked').size()) {
+                        if (!$targetStep.find('input[type=radio]:checked').length) {
                             $targetStep.find('input[type=radio]:first').click();
                         }
                     }, 50);
@@ -1194,10 +1254,10 @@
                     var $activeStep = $form.find('.step:visible');
 
                     // Next button
-                    if ($target.closest('div.button.next').size()) {
+                    if ($target.closest('div.button.next').length) {
                         //step 2 - select template/ISO
                         if($activeStep.hasClass('select-iso')) {
-                            if ($activeStep.find('.content:visible input:checked').size() == 0) {
+                            if ($activeStep.find('.content:visible input:checked').length == 0) {
                                 cloudStack.dialog.notice({
                                     message: 'message.step.1.continue'
                                 });
@@ -1210,7 +1270,7 @@
                         }
 
                         //step 6 - select network
-                        if ($activeStep.find('.wizard-step-conditional.select-network:visible').size() > 0) {
+                        if ($activeStep.find('.wizard-step-conditional.select-network:visible').length > 0) {
                             var data = $activeStep.data('my-networks');
 
                             if (!data) {
@@ -1219,7 +1279,7 @@
                                 )['my-networks']);
                             }
 
-                            if ($activeStep.find('input[type=checkbox]:checked').size() == 0) { //if no checkbox is checked
+                            if ($activeStep.find('input[type=checkbox]:checked').length == 0) { //if no checkbox is checked
                                 cloudStack.dialog.notice({
                                     message: 'message.step.4.continue'
                                 });
@@ -1234,7 +1294,7 @@
                                 if (advSGFilter == 0) { //when total number of selected sg networks is 0, then 'Select Security Group' is skipped, go to step 6 directly
                                     showStep(6);
                                 } else { //when total number of selected sg networks > 0
-                                    if ($activeStep.find('input[type=checkbox]:checked').size() > 1) { //when total number of selected networks > 1
+                                    if ($activeStep.find('input[type=checkbox]:checked').length > 1) { //when total number of selected networks > 1
                                         cloudStack.dialog.notice({
                                             message: "Can't create a vm with multiple networks one of which is Security Group enabled"
                                         });
@@ -1246,7 +1306,7 @@
 
                         //step 6 - review (spcifiy displyname, group as well)
                         if ($activeStep.hasClass('review')) {
-                            if ($activeStep.find('input[name=displayname]').size() > 0 && $activeStep.find('input[name=displayname]').val().length > 0) {
+                            if ($activeStep.find('input[name=displayname]').length > 0 && $activeStep.find('input[name=displayname]').val().length > 0) {
                                 //validate
                                 var b = cloudStack.validate.vmHostName($activeStep.find('input[name=displayname]').val());
                                 if (b == false)
@@ -1255,7 +1315,7 @@
                         }
 
                         if (!$form.valid()) {
-                            if ($form.find('input.error:visible, select.error:visible').size()) {
+                            if ($form.find('input.error:visible, select.error:visible').length) {
                                 return false;
                             }
                         }
@@ -1270,7 +1330,7 @@
                     }
 
                     // Previous button
-                    if ($target.closest('div.button.previous').size()) {
+                    if ($target.closest('div.button.previous').length) {
                         var $step = $steps.filter(':visible');
                         var $networkStep = $steps.filter('.network');
                         var index = $step.index();
@@ -1278,10 +1338,10 @@
                         $networkStep.removeClass('next-use-security-groups');
 
                         if (index) {
-                            if (index == $steps.size() - 1 && $networkStep.hasClass('next-use-security-groups')) {
+                            if (index == $steps.length - 1 && $networkStep.hasClass('next-use-security-groups')) {
                                 showStep(5);
-                            } else if ($activeStep.find('.select-security-group:visible').size() &&
-                                $activeStep.find('.select-network.no-add-network').size()) {
+                            } else if ($activeStep.find('.select-security-group:visible').length &&
+                                $activeStep.find('.select-network.no-add-network').length) {
                                 showStep(5);
                             } else {
                                 showStep(index);
@@ -1292,14 +1352,14 @@
                     }
 
                     // Close button
-                    if ($target.closest('div.button.cancel').size()) {
+                    if ($target.closest('div.button.cancel').length) {
                         close();
 
                         return false;
                     }
 
                     // Edit link
-                    if ($target.closest('div.edit').size()) {
+                    if ($target.closest('div.edit').length) {
                         var $edit = $target.closest('div.edit');
 
                         showStep($edit.find('a').attr('href'));
@@ -1330,9 +1390,9 @@
                     args.maxDiskOfferingSize() : 100;
 
                 // Setup tabs and slider
-                $wizard.find('.section.custom-size.custom-disk-size .size.min span').html(minCustomDiskSize);
-                $wizard.find('.section.custom-size.custom-disk-size input[type=text]').val(minCustomDiskSize);
-                $wizard.find('.section.custom-size.custom-disk-size .size.max span').html(maxCustomDiskSize);
+                $wizard.find('.section.custom-size.custom-slider-container .size.min span').html(minCustomDiskSize);
+                $wizard.find('.section.custom-size.custom-slider-container input[type=text]').val(minCustomDiskSize);
+                $wizard.find('.section.custom-size.custom-slider-container .size.max span').html(maxCustomDiskSize);
                 $wizard.find('.tab-view').tabs();
                 $wizard.find('.slider').each(function() {
                    var $slider = $(this);
@@ -1347,7 +1407,7 @@
                             $slider.closest('.section.custom-size').find('input[type=text]').val(
                                 ui.value
                             );
-                            $slider.closest('.step').find('span.custom-disk-size').html(
+                            $slider.closest('.step').find('span.custom-slider-container').html(
                                 ui.value
                             );
                         }
@@ -1356,18 +1416,21 @@
 
                 $wizard.find('div.data-disk-offering div.custom-size input[type=text]').bind('change', function() {
                     var old = $wizard.find('div.data-disk-offering div.custom-size input[type=text]').val();
-                    $wizard.find('div.data-disk-offering span.custom-disk-size').html(_s(old));
+                    $wizard.find('div.data-disk-offering span.custom-slider-container').html(_s(old));
                 });
-
-
-                return $wizard.dialog({
+                
+                var wizardDialog = $wizard.dialog({
                     title: _l('label.vm.add'),
                     width: 896,
-                    height: 570,
+                    minHeight: 600,
+                    height: 'auto',
                     closeOnEscape: false,
-                    zIndex: 5000
-                })
-                    .closest('.ui-dialog').overlay();
+                    modal: true
+                });
+                var wizardDialogDiv = wizardDialog.closest('.ui-dialog');
+
+                $('button.ui-dialog-titlebar-close').remove();
+                return wizardDialogDiv.overlay();
             };
 
             instanceWizard(args);

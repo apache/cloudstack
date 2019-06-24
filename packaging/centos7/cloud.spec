@@ -24,13 +24,8 @@
 Name:      cloudstack
 Summary:   CloudStack IaaS Platform
 #http://fedoraproject.org/wiki/PackageNamingGuidelines#Pre-Release_packages
-%if "%{?_prerelease}" != ""
-%define _maventag %{_ver}-SNAPSHOT
+%define _maventag %{_fullver}
 Release:   %{_rel}%{dist}
-%else
-%define _maventag %{_ver}
-Release:   %{_rel}%{dist}
-%endif
 
 %{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
@@ -59,7 +54,6 @@ intelligent IaaS cloud implementation.
 %package management
 Summary:   CloudStack management server UI
 Requires: java-1.8.0-openjdk
-Requires: apache-commons-daemon-jsvc
 Requires: python
 Requires: bash
 Requires: bzip2
@@ -195,7 +189,7 @@ if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then
    FLAGS="$FLAGS -Dsimulator"
 fi
 
-mvn -Psystemvm,developer -DskipTests $FLAGS clean package
+mvn -Psystemvm,developer $FLAGS clean package
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -227,7 +221,7 @@ cp build/gitrev.txt ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 cp packaging/centos7/cloudstack-sccs ${RPM_BUILD_ROOT}/usr/bin
 
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
-cp -r plugins/network-elements/cisco-vnmc/scripts/network/cisco/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
+cp -r plugins/network-elements/cisco-vnmc/src/main/scripts/network/cisco/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
 
 # Management
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
@@ -425,6 +419,7 @@ if [ ! -d %{_sysconfdir}/libvirt/hooks ] ; then
     mkdir %{_sysconfdir}/libvirt/hooks
 fi
 cp -a ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib/libvirtqemuhook %{_sysconfdir}/libvirt/hooks/qemu
+mkdir -m 0755 -p /usr/share/cloudstack-agent/tmp
 /sbin/service libvirtd restart
 /sbin/systemctl enable cloudstack-agent > /dev/null 2>&1 || true
 
@@ -435,6 +430,8 @@ if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
     # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
     mv %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/cloud.rpmsave/agent/agent.properties.rpmsave
 fi
+
+systemctl daemon-reload
 
 %pre usage
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
@@ -517,7 +514,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0644,root,root) %{_unitdir}/%{name}-agent.service
 %config(noreplace) %{_sysconfdir}/default/%{name}-agent
 %attr(0644,root,root) %{_sysconfdir}/profile.d/%{name}-agent-profile.sh
-%config(noreplace) %{_sysconfdir}/logrotate.d/%{name}-agent
+%config(noreplace) %attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-agent
 %attr(0755,root,root) %{_datadir}/%{name}-common/scripts/network/cisco
 %config(noreplace) %{_sysconfdir}/%{name}/agent
 %dir %{_localstatedir}/log/%{name}/agent

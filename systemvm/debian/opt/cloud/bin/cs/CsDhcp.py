@@ -16,6 +16,7 @@
 # under the License.
 import CsHelper
 import logging
+import os
 from netaddr import *
 from random import randint
 from CsGuestNetwork import CsGuestNetwork
@@ -46,8 +47,8 @@ class CsDhcp(CsDataBag):
         for item in self.dbag:
             if item == "id":
                 continue
-            self.add(self.dbag[item])
-        self.write_hosts()
+            if not self.dbag[item]['remove']:
+                self.add(self.dbag[item])
 
         self.configure_server()
 
@@ -63,6 +64,8 @@ class CsDhcp(CsDataBag):
 
         if restart_dnsmasq:
             self.delete_leases()
+
+        self.write_hosts()
 
         if not self.cl.is_redundant() or self.cl.is_master():
             if restart_dnsmasq:
@@ -114,10 +117,26 @@ class CsDhcp(CsDataBag):
             idx += 1
 
     def delete_leases(self):
+        macs_dhcphosts = []
         try:
-            open(LEASES, 'w').close()
-        except IOError:
-            return
+            logging.info("Attempting to delete entries from dnsmasq.leases file for VMs which are not on dhcphosts file")
+            for host in open(DHCP_HOSTS):
+                macs_dhcphosts.append(host.split(',')[0])
+
+            removed = 0
+            for leaseline in open(LEASES):
+                lease = leaseline.split(' ')
+                mac = lease[1]
+                ip = lease[2]
+                if mac not in macs_dhcphosts:
+                    cmd = "dhcp_release $(ip route get %s | grep eth | head -1 | awk '{print $3}') %s %s" % (ip, ip, mac)
+                    logging.info(cmd)
+                    CsHelper.execute(cmd)
+                    removed = removed + 1
+                    self.del_host(ip)
+            logging.info("Deleted %s entries from dnsmasq.leases file" % str(removed))
+        except Exception as e:
+            logging.error("Caught error while trying to delete entries from dnsmasq.leases file: %s" % e)
 
     def preseed(self):
         self.add_host("127.0.0.1", "localhost %s" % CsHelper.get_hostname())
@@ -170,3 +189,7 @@ class CsDhcp(CsDataBag):
 
     def add_host(self, ip, hosts):
         self.hosts[ip] = hosts
+
+    def del_host(self, ip):
+        if ip in self.hosts:
+            self.hosts.pop(ip)

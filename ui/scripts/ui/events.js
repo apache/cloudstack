@@ -41,7 +41,7 @@
                 var data, elem;
 
                 $elem = $target.closest('.cloudStack-elem.' + widget);
-                if (!$elem.size())
+                if (!$elem.length)
                     return true;
 
                 $widget = $('.cloudStack-widget.' + widget);

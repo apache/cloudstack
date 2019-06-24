@@ -23,6 +23,7 @@
 context.path=/client
 
 # The HTTP port to be used by the management server
+http.enable=true
 http.port=8080
 
 # Max inactivity time in minutes for the session
@@ -34,6 +35,7 @@ session.timeout=30
 # keystore file should exists and be readable by the management server.
 https.enable=false
 https.port=8443
+
 # The keystore and manager passwords are assumed to be same.
 https.keystore=/etc/cloudstack/management/cloud.jks
 https.keystore.password=vmops.com

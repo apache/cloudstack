@@ -279,6 +279,7 @@
                         data.systemVmCount = response.systemvms;
                         data.virtualRouterCount = response.routers;
                         data.socketCount = response.cpusockets;
+                        data.managementServerCount = response.managementservers;
                         args.response.success({
                             data: data
                         });
@@ -480,9 +481,11 @@
                                                 var array1 =[];
                                                 array1.push("&zoneId=" + args.context.zones[0].id);
 
-                                                if (args.data.vlan != null && args.data.vlan.length > 0)
-                                                array1.push("&vlan=" + todb(args.data.vlan)); else
-                                                array1.push("&vlan=untagged");
+                                                var vlan = "untagged";
+                                                if (args.data.vlan != null && args.data.vlan.length > 0){
+                                                    vlan = args.data.vlan;
+                                                }
+                                                cloudStack.addVlanToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, vlan);
 
                                                 array1.push("&gateway=" + args.data.gateway);
                                                 array1.push("&netmask=" + args.data.netmask);
@@ -818,11 +821,9 @@
                                                 var array1 =[];
                                                 array1.push("&zoneId=" + args.context.zones[0].id);
                                                 array1.push("&podid=" + args.data.podid);
-
                                                 array1.push("&gateway=" + args.data.gateway);
 
-                                                if (args.data.vlan != null && args.data.vlan.length > 0)
-                                                array1.push("&vlan=" + todb(args.data.vlan));
+                                                cloudStack.addVlanToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, args.data.vlan);
 
                                                 array1.push("&netmask=" + args.data.netmask);
                                                 array1.push("&startip=" + args.data.startip);
@@ -1050,9 +1051,7 @@
                                                 if (args.data.systemvms) {
                                                     array1.push("&forsystemvms=" + (args.data.systemvms == "on" ? "true" : "false"));
                                                 }
-
-                                                if (args.data.vlan != null && args.data.vlan.length > 0)
-                                                    array1.push("&vlan=" + todb(args.data.vlan));
+                                                cloudStack.addVlanToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, args.data.vlan);
 
                                                 $.ajax({
                                                     url: createURL("createManagementNetworkIpRange" + array1.join("")),
@@ -1561,16 +1560,16 @@
                                                 label: 'label.edit',
                                                 action: function (args) {
                                                     var array1 =[];
-                                                    array1.push("&name=" + todb(args.data.name));
-                                                    array1.push("&displaytext=" + todb(args.data.displaytext));
+                                                    array1.push("&name=" + encodeURIComponent(args.data.name));
+                                                    array1.push("&displaytext=" + encodeURIComponent(args.data.displaytext));
 
                                                     //args.data.networkdomain is null when networkdomain field is hidden
                                                     if (args.data.networkdomain != null && args.data.networkdomain != selectedGuestNetworkObj.networkdomain)
-                                                    array1.push("&networkdomain=" + todb(args.data.networkdomain));
+                                                    array1.push("&networkdomain=" + encodeURIComponent(args.data.networkdomain));
 
                                                     //args.data.networkofferingid is null when networkofferingid field is hidden
                                                     if (args.data.networkofferingid != null && args.data.networkofferingid != args.context.networks[0].networkofferingid) {
-                                                        array1.push("&networkofferingid=" + todb(args.data.networkofferingid));
+                                                        array1.push("&networkofferingid=" + encodeURIComponent(args.data.networkofferingid));
 
                                                         if (args.context.networks[0].type == "Isolated") {
                                                             //Isolated network
@@ -1656,7 +1655,7 @@
                                                     desc: 'message.restart.network',
                                                     preFilter: function (args) {
                                                         if (selectedZoneObj.networktype == "Basic") {
-                                                            args.$form.find('.form-item[rel=cleanup]').find('input').removeAttr('checked');
+                                                            args.$form.find('.form-item[rel=cleanup]').find('input').prop('checked', false);
                                                             //unchecked
                                                             args.$form.find('.form-item[rel=cleanup]').hide();
                                                             //hidden
@@ -3840,6 +3839,91 @@
                                                             });
                                                         }
                                                     });
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            },
+
+                                            diagnostics: {
+                                                label: 'label.action.run.diagnostics',
+                                                messages: {
+                                                    notification: function (args) {
+                                                        return 'label.action.run.diagnostics';
+                                                    },
+                                                    complete: function(args) {
+                                                        var exitcode = _l('message.diagnostics.exitcode');
+                                                        exitcode = exitcode.replace('var', args.exitcode);
+                                                        var stderr = _l('message.diagnostics.stderr');
+                                                        stderr = stderr.replace('var', args.stderr);
+                                                        var stdout = _l('message.diagnostics.stdout');
+                                                        stdout = stdout.replace('var', args.stdout);
+                                                        var msg = "<div style='text-align: left; overflow-y: auto'>" + exitcode + "<br><br>" + stderr + "<br><br>" + stdout + "</div>";
+                                                        return msg;
+                                                    }
+                                                },
+                                                createForm: {
+                                                    title: 'label.action.run.diagnostics',
+                                                    desc: '',
+                                                    fields: {
+                                                        type: {
+                                                            label: 'label.run.diagnostics.type',
+                                                            validation: {
+                                                                required: true
+                                                            },
+                                                            select: function (args) {
+                                                                var items = [];
+                                                                items.push({
+                                                                    id: "ping",
+                                                                    description: "Ping"
+                                                                });
+                                                                items.push({
+                                                                    id: "traceroute",
+                                                                    description: "Traceroute"
+                                                                });
+                                                                items.push({
+                                                                    id: "arping",
+                                                                    description: "Arping"
+                                                                });
+                                                                args.response.success({
+                                                                    data: items
+                                                                });
+                                                            }
+                                                        },
+                                                        destination: {
+                                                            label: 'label.run.diagnostics.destination',
+                                                            validation: {
+                                                                required: true
+                                                            }
+                                                        },
+                                                        extra: {
+                                                            label: 'label.run.diagnostics.extra'
+                                                        }
+
+                                                    }
+                                                },
+                                                action: function (args) {
+                                                    $.ajax({
+                                                        url: createURL("runDiagnostics&targetid=" + args.context.systemVMs[0].id + "&ipaddress=" + args.data.destination + "&type=" + args.data.type + "&params=" + args.data.extra),
+                                                        dataType: "json",
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var jid = json.rundiagnosticsresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId : jid,
+                                                                    getUpdatedItem: function (json) {
+                                                                        return json.queryasyncjobresultresponse.jobresult.diagnostics;
+
+                                                                    },
+                                                                    getActionFilter: function(){
+                                                                        return systemvmActionfilter;
+                                                                   }
+                                                                }
+
+                                                            });
+                                                        }
+                                                    }); //end ajax
                                                 },
                                                 notification: {
                                                     poll: pollAsyncJobResult
@@ -6905,249 +6989,7 @@
                             }
                         }
                     },
-                    // Nuage Vsp provider detail view
-                    nuageVsp: {
-                         type: 'detailView',
-                         id: 'nuageVspProvider',
-                         label: 'label.nuageVsp',
-                         viewAll: {
-                             label: 'label.devices',
-                             path: '_zone.nuageVspDevices'
-                         },
-                         tabs: {
-                             details: {
-                                 title: 'label.details',
-                                 fields: [{
-                                     name: {
-                                         label: 'label.name'
-                                     }
-                                 }, {
-                                     state: {
-                                         label: 'label.state'
-                                     }
-                                 }],
-                                 dataProvider: function(args) {
-                                     refreshNspData("NuageVsp");
-                                     var providerObj;
-                                     $(nspHardcodingArray).each(function() {
-                                         if (this.id == "nuageVsp") {
-                                             providerObj = this;
-                                             return false; //break each loop
-                                         }
-                                     });
-                                     args.response.success({
-                                         data: providerObj,
-                                         actionFilter: networkProviderActionFilter('nuageVsp')
-                                     });
-                                 }
-                             }
-                         },
-                         actions: {
-                             add: {
-                                 label: 'label.add.NuageVsp.device',
-                                 createForm: {
-                                     title: 'label.add.NuageVsp.device',
-                                     preFilter: function(args) {},
-                                     fields: {
-                                         hostname: {
-                                             label: 'label.host.name',
-                                             validation: {
-                                                 required: true
-                                             },
-                                             docID: 'helpVspHostname'
-                                         },
-                                         username: {
-                                             label: 'label.username',
-                                             validation: {
-                                                 required: true
-                                             },
-                                             docID: 'helpVspUsername'
-                                         },
-                                         password: {
-                                             label: 'label.password',
-                                             isPassword: true,
-                                             validation: {
-                                                 required: true
-                                             },
-                                             docID: 'helpVspPassword'
-                                         },
-                                         port: {
-                                             label: 'label.port',
-                                             validation: {
-                                                 required: false,
-                                                 number: true
-                                             },
-                                             docID: 'helpVspPort'
-                                         },
-                                         apiversion: {
-                                             label: 'label.api.version',
-                                             defaultValue: 'v3_2',
-                                             validation: {
-                                                 required: true
-                                             },
-                                             docID: 'helpVspApiVersion'
-                                         },
-                                         retrycount: {
-                                             label: 'label.numretries',
-                                             defaultValue: '4',
-                                             validation: {
-                                                 required: true,
-                                                 number: true
-                                             },
-                                             docID: 'helpVspRetries'
-                                         },
-                                         retryinterval: {
-                                             label: 'label.retry.interval',
-                                             defaultValue: '60',
-                                             validation: {
-                                                 required: false,
-                                                 number: true
-                                             },
-                                             docID: 'helpVspRetryInterval'
-                                         }
-                                     }
-                                 },
-                                 action: function(args) {
-                                     if (nspMap["nuageVsp"] == null) {
-                                         $.ajax({
-                                             url: createURL("addNetworkServiceProvider&name=NuageVsp&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
-                                             dataType: "json",
-                                             async: true,
-                                             success: function(json) {
-                                                 var jobId = json.addnetworkserviceproviderresponse.jobid;
-                                                 var addNuageVspProviderIntervalID = setInterval(function() {
-                                                     $.ajax({
-                                                         url: createURL("queryAsyncJobResult&jobId=" + jobId),
-                                                         dataType: "json",
-                                                         success: function(json) {
-                                                             var result = json.queryasyncjobresultresponse;
-                                                             if (result.jobstatus == 0) {
-                                                                 return; //Job has not completed
-                                                             } else {
-                                                                 clearInterval(addNuageVspProviderIntervalID);
-                                                                 if (result.jobstatus == 1) {
-                                                                     nspMap["nuageVsp"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
-                                                                     addNuageVspDevice(args, selectedPhysicalNetworkObj, "addNuageVspDevice", "addnuagevspdeviceresponse", "nuagevspdevice")
-                                                                 } else if (result.jobstatus == 2) {
-                                                                     alert("addNetworkServiceProvider&name=NuageVsp failed. Error: " + _s(result.jobresult.errortext));
-                                                                 }
-                                                             }
-                                                         },
-                                                         error: function(XMLHttpResponse) {
-                                                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                                             alert("addNetworkServiceProvider&name=NuageVsp failed. Error: " + errorMsg);
-                                                         }
-                                                     });
-                                                 }, g_queryAsyncJobResultInterval);
-                                             }
-                                         });
-                                     } else {
-                                         addNuageVspDevice(args, selectedPhysicalNetworkObj, "addNuageVspDevice", "addnuagevspdeviceresponse", "nuagevspdevice")
-                                     }
-                                 },
-                                 messages: {
-                                     notification: function(args) {
-                                         return 'label.add.NuageVsp.device';
-                                     }
-                                 },
-                                 notification: {
-                                     poll: pollAsyncJobResult
-                                 }
-                             },
-                             enable: {
-                                 label: 'label.enable.provider',
-                                 action: function(args) {
-                                     $.ajax({
-                                         url: createURL("updateNetworkServiceProvider&id=" + nspMap["nuageVsp"].id + "&state=Enabled"),
-                                         dataType: "json",
-                                         success: function(json) {
-                                             var jid = json.updatenetworkserviceproviderresponse.jobid;
-                                             args.response.success({
-                                                 _custom: {
-                                                     jobId: jid,
-                                                     getUpdatedItem: function(json) {
-                                                         $(window).trigger('cloudStack.fullRefresh');
-                                                     }
-                                                 }
-                                             });
-                                         }
-                                     });
-                                 },
-                                 messages: {
-                                     confirm: function(args) {
-                                         return 'message.confirm.enable.provider';
-                                     },
-                                     notification: function() {
-                                         return 'label.enable.provider';
-                                     }
-                                 },
-                                 notification: {
-                                     poll: pollAsyncJobResult
-                                 }
-                             },
-                             disable: {
-                                 label: 'label.disable.provider',
-                                 action: function(args) {
-                                     $.ajax({
-                                         url: createURL("updateNetworkServiceProvider&id=" + nspMap["nuageVsp"].id + "&state=Disabled"),
-                                         dataType: "json",
-                                         success: function(json) {
-                                             var jid = json.updatenetworkserviceproviderresponse.jobid;
-                                             args.response.success({
-                                                 _custom: {
-                                                     jobId: jid,
-                                                     getUpdatedItem: function(json) {
-                                                         $(window).trigger('cloudStack.fullRefresh');
-                                                     }
-                                                 }
-                                             });
-                                         }
-                                     });
-                                 },
-                                 messages: {
-                                     confirm: function(args) {
-                                         return 'message.confirm.disable.provider';
-                                     },
-                                     notification: function() {
-                                         return 'label.disable.provider';
-                                     }
-                                 },
-                                 notification: {
-                                     poll: pollAsyncJobResult
-                                 }
-                             },
-                             destroy: {
-                                 label: 'label.shutdown.provider',
-                                 action: function(args) {
-                                     $.ajax({
-                                         url: createURL("deleteNetworkServiceProvider&id=" + nspMap["nuageVsp"].id),
-                                         dataType: "json",
-                                         success: function(json) {
-                                             var jid = json.deletenetworkserviceproviderresponse.jobid;
-                                             args.response.success({
-                                                 _custom: {
-                                                     jobId: jid
-                                                 }
-                                             });
 
-                                             $(window).trigger('cloudStack.fullRefresh');
-                                         }
-                                     });
-                                 },
-                                 messages: {
-                                     confirm: function(args) {
-                                         return 'message.confirm.shutdown.provider';
-                                     },
-                                     notification: function(args) {
-                                         return 'label.shutdown.provider';
-                                     }
-                                 },
-                                 notification: {
-                                     poll: pollAsyncJobResult
-                                 }
-                             }
-                         }
-                    },
                     Opendaylight: {
                         type: 'detailView',
                         id: 'openDaylightProvider',
@@ -7799,6 +7641,8 @@
                                 }
                             },
 
+                            reorder: cloudStack.api.actions.sort('updateZone', 'physicalResources'),
+
                             dataProvider: function (args) {
                                 var array1 =[];
                                 if (args.filterBy != null) {
@@ -7927,6 +7771,58 @@
                                                 success: function (json) {
                                                     //var item = json.addvmwaredcresponse.vmwaredc;
                                                     args.response.success();
+                                                }
+                                            });
+                                        },
+                                        notification: {
+                                            poll: function (args) {
+                                                args.complete();
+                                            }
+                                        }
+                                    },
+
+                                    updateVmwareDc: {
+                                        label: 'label.update.vmware.datacenter',
+                                        messages: {
+                                            confirm: function (args) {
+                                                return 'label.update.vmware.datacenter';
+                                            },
+                                            notification: function (args) {
+                                                return 'label.update.vmware.datacenter';
+                                            }
+                                        },
+                                        createForm: {
+                                            title: 'label.update.vmware.datacenter',
+                                            fields: {
+                                                name: {
+                                                    label: 'label.vmware.datacenter.name'
+                                                },
+                                                vcenter: {
+                                                    label: 'label.vmware.datacenter.vcenter'
+                                                },
+                                                username: {
+                                                    label: 'label.username'
+                                                },
+                                                password: {
+                                                    label: 'label.password',
+                                                    isPassword: true
+                                                }
+                                            }
+                                        },
+                                        action: function (args) {
+                                            var data = args.data;
+                                            data.zoneid = args.context.physicalResources[0].id;
+                                            $.ajax({
+                                                url: createURL('updateVmwareDc'),
+                                                data: data,
+                                                success: function (json) {
+                                                    args.response.success({
+                                                        data: args.context.physicalResources[0]
+                                                    });
+                                                },
+                                                error: function (XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                    args.response.error(errorMsg);
                                                 }
                                             });
                                         },
@@ -8101,7 +7997,7 @@
                                             //EXPLICIT DEDICATION
                                             var array2 =[];
                                             if (args.data.accountId != "")
-                                            array2.push("&account=" + todb(args.data.accountId));
+                                            array2.push("&account=" + encodeURIComponent(args.data.accountId));
 
                                             $.ajax({
                                                 url: createURL("dedicateZone&zoneId=" +
@@ -8198,23 +8094,23 @@
                                         label: 'label.edit',
                                         action: function (args) {
                                             var array1 =[];
-                                            array1.push("&name=" + todb(args.data.name));
-                                            array1.push("&dns1=" + todb(args.data.dns1));
-                                            array1.push("&dns2=" + todb(args.data.dns2));
+                                            array1.push("&name=" + encodeURIComponent(args.data.name));
+                                            array1.push("&dns1=" + encodeURIComponent(args.data.dns1));
+                                            array1.push("&dns2=" + encodeURIComponent(args.data.dns2));
                                             //dns2 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.
-                                            array1.push("&ip6dns1=" + todb(args.data.ip6dns1));
+                                            array1.push("&ip6dns1=" + encodeURIComponent(args.data.ip6dns1));
                                             //p6dns1 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.
-                                            array1.push("&ip6dns2=" + todb(args.data.ip6dns2));
+                                            array1.push("&ip6dns2=" + encodeURIComponent(args.data.ip6dns2));
                                             //ip6dns2 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.
 
                                             if (selectedZoneObj.networktype == "Advanced" && args.data.guestcidraddress) {
-                                                array1.push("&guestcidraddress=" + todb(args.data.guestcidraddress));
+                                                array1.push("&guestcidraddress=" + encodeURIComponent(args.data.guestcidraddress));
                                             }
 
-                                            array1.push("&internaldns1=" + todb(args.data.internaldns1));
-                                            array1.push("&internaldns2=" + todb(args.data.internaldns2));
+                                            array1.push("&internaldns1=" + encodeURIComponent(args.data.internaldns1));
+                                            array1.push("&internaldns2=" + encodeURIComponent(args.data.internaldns2));
                                             //internaldns2 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.
-                                            array1.push("&domain=" + todb(args.data.domain));
+                                            array1.push("&domain=" + encodeURIComponent(args.data.domain));
                                             array1.push("&localstorageenabled=" + (args.data.localstorageenabled == 'on'));
                                             $.ajax({
                                                 url: createURL("updateZone&id=" + args.context.physicalResources[0].id + array1.join("")),
@@ -8857,6 +8753,91 @@
                                                                     });
                                                                 }
                                                             });
+                                                        },
+                                                        notification: {
+                                                            poll: pollAsyncJobResult
+                                                        }
+                                                    },
+
+                                                    diagnostics: {
+                                                        label: 'label.action.run.diagnostics',
+                                                        messages: {
+                                                            notification: function (args) {
+                                                                return 'label.action.run.diagnostics';
+                                                            },
+                                                            complete: function(args) {
+                                                                var exitcode = _l('message.diagnostics.exitcode');
+                                                                exitcode = exitcode.replace('var', args.exitcode);
+                                                                var stderr = _l('message.diagnostics.stderr');
+                                                                stderr = stderr.replace('var', args.stderr);
+                                                                var stdout = _l('message.diagnostics.stdout');
+                                                                stdout = stdout.replace('var', args.stdout);
+                                                                var msg = "<div style='text-align: left; overflow-y: auto'>" + exitcode + "<br><br>" + stderr + "<br><br>" + stdout + "</div>";
+                                                                return msg;
+                                                            }
+                                                        },
+                                                        createForm: {
+                                                            title: 'label.action.run.diagnostics',
+                                                            desc: '',
+                                                            fields: {
+                                                                type: {
+                                                                    label: 'label.run.diagnostics.type',
+                                                                    validation: {
+                                                                        required: true
+                                                                    },
+                                                                    select: function (args) {
+                                                                        var items = [];
+                                                                        items.push({
+                                                                            id: "ping",
+                                                                            description: "Ping"
+                                                                        });
+                                                                        items.push({
+                                                                            id: "traceroute",
+                                                                            description: "Traceroute"
+                                                                        });
+                                                                        items.push({
+                                                                            id: "arping",
+                                                                            description: "Arping"
+                                                                        });
+                                                                        args.response.success({
+                                                                            data: items
+                                                                        });
+                                                                    }
+                                                                },
+                                                                destination: {
+                                                                    label: 'label.run.diagnostics.destination',
+                                                                    validation: {
+                                                                        required: true
+                                                                    }
+                                                                },
+                                                                extra: {
+                                                                    label: 'label.run.diagnostics.extra'
+                                                                }
+
+                                                            }
+                                                        },
+                                                        action: function (args) {
+                                                            $.ajax({
+                                                                url: createURL("runDiagnostics&targetid=" + args.context.systemVMs[0].id + "&ipaddress=" + args.data.destination + "&type=" + args.data.type + "&params=" + args.data.extra),
+                                                                dataType: "json",
+                                                                async: true,
+                                                                success: function(json) {
+                                                                    var jid = json.rundiagnosticsresponse.jobid;
+                                                                    args.response.success({
+                                                                        _custom: {
+                                                                            jobId : jid,
+                                                                            getUpdatedItem: function (json) {
+                                                                                return json.queryasyncjobresultresponse.jobresult.diagnostics;
+
+                                                                            },
+                                                                            getActionFilter: function(){
+                                                                                return systemvmActionfilter;
+                                                                           }
+                                                                        }
+
+                                                                    });
+                                                                }
+                                                            }); //end ajax
                                                         },
                                                         notification: {
                                                             poll: pollAsyncJobResult
@@ -9736,6 +9717,40 @@
                             };
 
                             return listView;
+                        },
+
+                        managementServers: function () {
+                            var listView = {
+                                id: 'managementservers',
+                                fields: {
+                                    name: {
+                                        label: 'label.name'
+                                    },
+                                    id: {
+                                        label: 'label.uuid'
+                                    },
+                                    state: {
+                                        label: 'label.state',
+                                        indicator: {
+                                            'Up': 'on',
+                                            'Down': 'off'
+                                        }
+                                    },
+                                    version: {
+                                        label: 'label.version'
+                                    }
+                                },
+                                dataProvider: function (args) {
+                                        $.ajax({
+                                            url: createURL('listManagementServers'),
+                                            async: false,
+                                            success: function (json) {
+                                                args.response.success({ data: json.listmanagementserversresponse.managementserver });
+                                            }
+                                        });
+                                    }
+                                };
+                            return listView;
                         }
                     }
                 }
@@ -10183,6 +10198,92 @@
                                                     });
                                                 }
                                             });
+                                        },
+                                        notification: {
+                                            poll: pollAsyncJobResult
+                                        }
+                                    },
+
+                                    // VR Diagnostics
+                                    diagnostics: {
+                                        label: 'label.action.run.diagnostics',
+                                        messages: {
+                                            notification: function (args) {
+                                                return 'label.action.run.diagnostics';
+                                            },
+                                            complete: function(args) {
+                                                var exitcode = _l('message.diagnostics.exitcode');
+                                                exitcode = exitcode.replace('var', args.exitcode);
+                                                var stderr = _l('message.diagnostics.stderr');
+                                                stderr = stderr.replace('var', args.stderr);
+                                                var stdout = _l('message.diagnostics.stdout');
+                                                stdout = stdout.replace('var', args.stdout);
+                                                var msg = "<div style='text-align: left; overflow-y: auto'>" + exitcode + "<br><br>" + stderr + "<br><br>" + stdout + "</div>";
+                                                return msg;
+                                            }
+                                        },
+                                        createForm: {
+                                            title: 'label.action.run.diagnostics',
+                                            desc: '',
+                                            fields: {
+                                                type: {
+                                                    label: 'label.run.diagnostics.type',
+                                                    validation: {
+                                                        required: true
+                                                    },
+                                                    select: function (args) {
+                                                        var items = [];
+                                                        items.push({
+                                                            id: "ping",
+                                                            description: "Ping"
+                                                        });
+                                                        items.push({
+                                                            id: "traceroute",
+                                                            description: "Traceroute"
+                                                        });
+                                                        items.push({
+                                                            id: "arping",
+                                                            description: "Arping"
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                },
+                                                destination: {
+                                                    label: 'label.run.diagnostics.destination',
+                                                    validation: {
+                                                        required: true
+                                                    }
+                                                },
+                                                extra: {
+                                                    label: 'label.run.diagnostics.extra'
+                                                }
+
+                                            }
+                                        },
+                                        action: function (args) {
+                                            $.ajax({
+                                                url: createURL("runDiagnostics&targetid=" + args.context.routers[0].id + "&ipaddress=" + args.data.destination + "&type=" + args.data.type + "&params=" + args.data.extra),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var jid = json.rundiagnosticsresponse.jobid;
+                                                    args.response.success({
+                                                        _custom: {
+                                                            jobId : jid,
+                                                            getUpdatedItem: function (json) {
+                                                                return json.queryasyncjobresultresponse.jobresult.diagnostics;
+
+                                                            },
+                                                            getActionFilter: function(){
+                                                                return routerActionfilter;
+                                                           }
+                                                        }
+
+                                                    });
+                                                }
+                                            }); //end ajax
                                         },
                                         notification: {
                                             poll: pollAsyncJobResult
@@ -11454,6 +11555,91 @@
                                 }
                             },
 
+                            diagnostics: {
+                                label: 'label.action.run.diagnostics',
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.action.run.diagnostics';
+                                    },
+                                    complete: function(args) {
+                                        var exitcode = _l('message.diagnostics.exitcode');
+                                        exitcode = exitcode.replace('var', args.exitcode);
+                                        var stderr = _l('message.diagnostics.stderr');
+                                        stderr = stderr.replace('var', args.stderr);
+                                        var stdout = _l('message.diagnostics.stdout');
+                                        stdout = stdout.replace('var', args.stdout);
+                                        var msg = "<div style='text-align: left; overflow-y: auto'>" + exitcode + "<br><br>" + stderr + "<br><br>" + stdout + "</div>";
+                                        return msg;
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.action.run.diagnostics',
+                                    desc: '',
+                                    fields: {
+                                        type: {
+                                            label: 'label.run.diagnostics.type',
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function (args) {
+                                                var items = [];
+                                                items.push({
+                                                    id: "ping",
+                                                    description: "Ping"
+                                                });
+                                                items.push({
+                                                    id: "traceroute",
+                                                    description: "Traceroute"
+                                                });
+                                                items.push({
+                                                    id: "arping",
+                                                    description: "Arping"
+                                                });
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        },
+                                        destination: {
+                                            label: 'label.run.diagnostics.destination',
+                                            validation: {
+                                                required: true
+                                            }
+                                        },
+                                        extra: {
+                                            label: 'label.run.diagnostics.extra'
+                                        }
+
+                                    }
+                                },
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("runDiagnostics&targetid=" + args.context.systemVMs[0].id + "&ipaddress=" + args.data.destination + "&type=" + args.data.type + "&params=" + args.data.extra),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.rundiagnosticsresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId : jid,
+                                                    getUpdatedItem: function (json) {
+                                                        return json.queryasyncjobresultresponse.jobresult.diagnostics;
+
+                                                    },
+                                                    getActionFilter: function(){
+                                                        return systemvmActionfilter;
+                                                   }
+                                                }
+
+                                            });
+                                        }
+                                    }); //end ajax
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+
                             scaleUp: { //*** Infrastructure > System VMs (consoleProxy or SSVM) > change service offering ***
                                 label: 'label.change.service.offering',
                                 createForm: {
@@ -11546,8 +11732,6 @@
                                     poll: pollAsyncJobResult
                                 }
                             },
-
-
 
                             viewConsole: {
                                 label: 'label.view.console',
@@ -13279,202 +13463,6 @@
                     }
                 }
             },
-            nuageVspDevices: {
-                id: 'nuageVspDevices',
-                title: 'label.devices',
-                listView: {
-                    id: 'nuageVspDevices',
-                    fields: {
-                        hostname: {
-                            label: 'label.host.name'
-                        },
-                        port: {
-                            label: 'label.port'
-                        },
-                        apiversion: {
-                            label: 'label.api.version'
-                        },
-                        retrycount: {
-                            label: 'label.numretries'
-                        },
-                        retryinterval: {
-                            label: 'label.retry.interval'
-                        }
-                    },
-                    actions: {
-                        add: {
-                            label: 'label.add.NuageVsp.device',
-                            createForm: {
-                                title: 'label.add.NuageVsp.device',
-                                preFilter: function(args) {},
-                                fields: {
-                                    hostname: {
-                                        label: 'label.host.name'
-                                    },
-                                    username: {
-                                        label: 'label.username'
-                                    },
-                                    password: {
-                                        label: 'label.password',
-                                        isPassword: true
-                                    },
-                                    port: {
-                                        label: 'label.port'
-                                    },
-                                    apiversion: {
-                                        label: 'label.api.version',
-                                        defaultValue: 'v3_2'
-                                    },
-                                    retrycount: {
-                                        label: 'label.numretries',
-                                        defaultValue: '4'
-                                    },
-                                    retryinterval: {
-                                        label: 'label.retry.interval',
-                                        defaultValue: '60'
-                                    }
-                                }
-                            },
-                            action: function(args) {
-                                if (nspMap["nuageVsp"] == null) {
-                                    $.ajax({
-                                        url: createURL("addNetworkServiceProvider&name=NuageVsp&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
-                                        dataType: "json",
-                                        async: true,
-                                        success: function(json) {
-                                            var jobId = json.addnetworkserviceproviderresponse.jobid;
-                                            var addNuageVspProviderIntervalID = setInterval(function() {
-                                                $.ajax({
-                                                    url: createURL("queryAsyncJobResult&jobId=" + jobId),
-                                                    dataType: "json",
-                                                    success: function(json) {
-                                                        var result = json.queryasyncjobresultresponse;
-                                                        if (result.jobstatus == 0) {
-                                                            return;
-                                                        } else {
-                                                            clearInterval(addNuageVspProviderIntervalID);
-                                                            if (result.jobstatus == 1) {
-                                                                nspMap["nuageVsp"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
-                                                                addNuageVspDevice(args, selectedPhysicalNetworkObj, "addNuageVspDevice", "addnuagevspdeviceresponse", "nuagevspdevice")
-                                                            } else if (result.jobstatus == 2) {
-                                                                alert("addNetworkServiceProvider&name=NuageVsp failed. Error: " + _s(result.jobresult.errortext));
-                                                            }
-                                                        }
-                                                    },
-                                                    error: function(XMLHttpResponse) {
-                                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                                        alert("addNetworkServiceProvider&name=NuageVsp failed. Error: " + errorMsg);
-                                                    }
-                                                });
-                                            }, g_queryAsyncJobResultInterval);
-                                        }
-                                    });
-                                } else {
-                                    addNuageVspDevice(args, selectedPhysicalNetworkObj, "addNuageVspDevice", "addnuagevspdeviceresponse", "nuagevspdevice")
-                                }
-                            },
-
-                            messages: {
-                                notification: function(args) {
-                                    return 'message.added.new.nuage.vsp.controller';
-                                }
-                            },
-                            notification: {
-                                poll: pollAsyncJobResult
-                            }
-                        }
-                    },
-                    dataProvider: function(args) {
-                        $.ajax({
-                            url: createURL("listNuageVspDevices&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
-                            data: {
-                                page: args.page,
-                                pageSize: pageSize
-                            },
-                            dataType: "json",
-                            async: false,
-                            success: function(json) {
-                                var items = json.listnuagevspdevicesresponse.nuagevspdevice;
-                                args.response.success({
-                                    data: items
-                                });
-                            }
-                        });
-                    },
-                    detailView: {
-                        name: 'Nuage Vsp details',
-                        actions: {
-                            'remove': {
-                                label: 'label.delete.NuageVsp',
-                                messages: {
-                                    confirm: function(args) {
-                                        return 'message.confirm.delete.NuageVsp';
-                                    },
-                                    notification: function(args) {
-                                        return 'label.delete.NuageVsp';
-                                    }
-                                },
-                                action: function(args) {
-                                    $.ajax({
-                                        url: createURL("deleteNuageVspDevice&vspdeviceid=" + args.context.nuageVspDevices[0].vspdeviceid),
-                                        dataType: "json",
-                                        async: true,
-                                        success: function(json) {
-                                            var jid = json.deletenuagevspdeviceresponse.jobid;
-                                            args.response.success({
-                                                _custom: {
-                                                    jobId: jid
-                                                }
-                                            });
-                                        }
-                                    });
-                                },
-                                notification: {
-                                    poll: pollAsyncJobResult
-                                }
-                            }
-                        },
-                        tabs: {
-                            details: {
-                                title: 'label.details',
-                                fields: [{
-                                    vspdeviceid: {
-                                        label: 'label.id'
-                                    },
-                                    hostname: {
-                                        label: 'label.host.name'
-                                    },
-                                    port: {
-                                        label: 'label.port'
-                                    },
-                                    apiversion: {
-                                        label: 'label.api.version'
-                                    },
-                                    retrycount: {
-                                        label: 'label.numretries'
-                                    },
-                                    retryinterval: {
-                                        label: 'label.retry.interval'
-                                    }
-                                }],
-                                dataProvider: function(args) {
-                                    $.ajax({
-                                        url: createURL("listNuageVspDevices&vspdeviceid=" + args.context.nuageVspDevices[0].vspdeviceid),
-                                        dataType: "json",
-                                        async: true,
-                                        success: function(json) {
-                                            var item = json.listnuagevspdevicesresponse.nuagevspdevice[0];
-                                            args.response.success({
-                                                data: item
-                                            });
-                                        }
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-            },
             pods: {
                 title: 'label.pods',
                 listView: {
@@ -13668,14 +13656,14 @@
                                 };
 
                                 array1.push("&zoneId=" + args.data.zoneid);
-                                array1.push("&name=" + todb(args.data.podname));
-                                array1.push("&gateway=" + todb(args.data.reservedSystemGateway));
-                                array1.push("&netmask=" + todb(args.data.reservedSystemNetmask));
-                                array1.push("&startIp=" + todb(args.data.reservedSystemStartIp));
+                                array1.push("&name=" + encodeURIComponent(args.data.podname));
+                                array1.push("&gateway=" + encodeURIComponent(args.data.reservedSystemGateway));
+                                array1.push("&netmask=" + encodeURIComponent(args.data.reservedSystemNetmask));
+                                array1.push("&startIp=" + encodeURIComponent(args.data.reservedSystemStartIp));
 
                                 var endip = args.data.reservedSystemEndIp; //optional
                                 if (endip != null && endip.length > 0)
-                                array1.push("&endIp=" + todb(endip));
+                                array1.push("&endIp=" + encodeURIComponent(endip));
                                 var podId = null;
                                 $.ajax({
                                     url: createURL("createPod" + array1.join("")),
@@ -13689,7 +13677,7 @@
                                         if (args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked') == true) {
                                             var array2 =[];
                                             if (args.data.accountId != "")
-                                            array2.push("&account=" + todb(args.data.accountId));
+                                            array2.push("&account=" + encodeURIComponent(args.data.accountId));
 
                                             if (podId != null) {
                                                 $.ajax({
@@ -13768,11 +13756,11 @@
                                 action: function (args) {
                                     var array1 =[];
 
-                                    array1.push("&name=" + todb(args.data.name));
-                                    array1.push("&netmask=" + todb(args.data.netmask));
+                                    array1.push("&name=" + encodeURIComponent(args.data.name));
+                                    array1.push("&netmask=" + encodeURIComponent(args.data.netmask));
 
                                     if (args.data.gateway != null && args.data.gateway.length > 0)
-                                    array1.push("&gateway=" + todb(args.data.gateway));
+                                    array1.push("&gateway=" + encodeURIComponent(args.data.gateway));
 
                                     $.ajax({
                                         url: createURL("updatePod&id=" + args.context.pods[0].id + array1.join("")),
@@ -13883,7 +13871,7 @@
                                     //EXPLICIT DEDICATION
                                     var array2 =[];
                                     if (args.data.accountId != "")
-                                    array2.push("&account=" + todb(args.data.accountId));
+                                    array2.push("&account=" + encodeURIComponent(args.data.accountId));
 
                                     $.ajax({
                                         url: createURL("dedicatePod&podId=" +
@@ -14729,13 +14717,12 @@
 
                                 var clusterName = args.data.name;
                                 if (args.data.hypervisor == "Ovm3") {
-                                     array1.push("&ovm3pool=" + todb(args.data.ovm3pool));
-                                     array1.push("&ovm3cluster=" + todb(args.data.ovm3cluster));
-                                     array1.push("&ovm3vip=" + todb(args.data.ovm3vip));
+                                     array1.push("&ovm3pool=" + encodeURIComponent(args.data.ovm3pool));
+                                     array1.push("&ovm3cluster=" + encodeURIComponent(args.data.ovm3cluster));
+                                     array1.push("&ovm3vip=" + encodeURIComponent(args.data.ovm3vip));
                                 }
                                 if (args.data.hypervisor == "VMware") {
-                                    array1.push("&username=" + todb(args.data.vCenterUsername));
-                                    array1.push("&password=" + todb(args.data.vCenterPassword));
+                                    cloudStack.addUsernameAndPasswordToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, args.data.vCenterUsername, args.data.vCenterPassword);
 
                                     //vSwitch Public Type
                                     if (args.$form.find('.form-item[rel=vSwitchPublicType]').css('display') != 'none' && args.data.vSwitchPublicType != "") {
@@ -14802,11 +14789,11 @@
                                     url = "http://" + hostname; else
                                     url = hostname;
                                     url += "/" + dcName + "/" + clusterName;
-                                    array1.push("&url=" + todb(url));
+                                    array1.push("&url=" + encodeURIComponent(url));
 
                                     clusterName = hostname + "/" + dcName + "/" + clusterName; //override clusterName
                                 }
-                                array1.push("&clustername=" + todb(clusterName));
+                                array1.push("&clustername=" + encodeURIComponent(clusterName));
                                 var clusterId = null;
                                 $.ajax({
                                     url: createURL("addCluster" + array1.join("")),
@@ -14820,7 +14807,7 @@
                                         var array2 =[];
                                         if (args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked') == true) {
                                             if (args.data.accountId != "")
-                                            array2.push("&account=" + todb(args.data.accountId));
+                                            array2.push("&account=" + encodeURIComponent(args.data.accountId));
 
                                             if (clusterId != null) {
                                                 $.ajax({
@@ -15052,7 +15039,7 @@
                                     //EXPLICIT DEDICATION
                                     var array2 =[];
                                     if (args.data.accountId != "")
-                                    array2.push("&account=" + todb(args.data.accountId));
+                                    array2.push("&account=" + encodeURIComponent(args.data.accountId));
                                     $.ajax({
                                         url: createURL("dedicateCluster&clusterId=" +
                                         args.context.clusters[0].id +
@@ -16319,7 +16306,7 @@
 
                                         if (args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked') == true) {
                                             if (args.data.accountId != "")
-                                            array2.push("&account=" + todb(args.data.accountId));
+                                            array2.push("&account=" + encodeURIComponent(args.data.accountId));
 
 
                                             if (hostId != null) {
@@ -16399,7 +16386,7 @@
                                 label: 'label.edit',
                                 action: function (args) {
                                     var array1 =[];
-                                    array1.push("&hosttags=" + todb(args.data.hosttags));
+                                    array1.push("&hosttags=" + encodeURIComponent(args.data.hosttags));
 
                                     if (args.data.oscategoryid != null && args.data.oscategoryid.length > 0)
                                         array1.push("&osCategoryId=" + args.data.oscategoryid);
@@ -16483,7 +16470,7 @@
                                     //EXPLICIT DEDICATION
                                     var array2 =[];
                                     if (args.data.accountId != "")
-                                    array2.push("&account=" + todb(args.data.accountId));
+                                    array2.push("&account=" + encodeURIComponent(args.data.accountId));
 
                                     $.ajax({
                                         url: createURL("dedicateHost&hostId=" +
@@ -17466,6 +17453,9 @@
                                     },
                                     cpusockets: {
                                         label: 'label.number.of.cpu.sockets'
+                                    },
+                                    managementServers: {
+                                        label: 'label.number.of.management.servers'
                                     }
                                 }, {
 
@@ -18734,7 +18724,7 @@
                             /******************************/
                             action: function (args) {
                                 var array1 =[];
-                                array1.push("&scope=" + todb(args.data.scope));
+                                array1.push("&scope=" + encodeURIComponent(args.data.scope));
 
                                 array1.push("&zoneid=" + args.data.zoneid);
 
@@ -18755,9 +18745,9 @@
                                     array1.push("&hostid=" + args.data.hostId);
                                 }
 
-                                array1.push("&name=" + todb(args.data.name));
+                                array1.push("&name=" + encodeURIComponent(args.data.name));
 
-                                array1.push("&provider=" + todb(args.data.provider));
+                                array1.push("&provider=" + encodeURIComponent(args.data.provider));
 
                                 if (args.data.provider == "DefaultPrimary")
                                 {
@@ -18774,7 +18764,7 @@
                                             path = "/" + path;
                                         url = smbURL(server, path);
                                         array1.push("&details[0].user=" + args.data.smbUsername);
-                                        array1.push("&details[1].password=" + todb(args.data.smbPassword));
+                                        array1.push("&details[1].password=" + encodeURIComponent(args.data.smbPassword));
                                         array1.push("&details[2].domain=" + args.data.smbDomain);
                                     } else if (args.data.protocol == "PreSetup") {
                                         var path = args.data.path;
@@ -18824,7 +18814,7 @@
                                         url = "";
                                     }
 
-                                    array1.push("&url=" + todb(url));
+                                    array1.push("&url=" + encodeURIComponent(url));
                                 }
                                 else
                                 {
@@ -18842,13 +18832,13 @@
 
                                     if (args.data.url != null && args.data.url.length > 0)
                                     {
-                                        array1.push("&url=" + todb(args.data.url));
+                                        array1.push("&url=" + encodeURIComponent(args.data.url));
                                     }
                                 }
 
                                 if (args.data.storageTags != null && args.data.storageTags.length > 0)
                                 {
-                                    array1.push("&tags=" + todb(args.data.storageTags));
+                                    array1.push("&tags=" + encodeURIComponent(args.data.storageTags));
                                 }
 
                                 if ("custom" in args.response) {
@@ -18913,7 +18903,7 @@
                                 label: 'label.edit',
                                 action: function (args) {
                                     var array1 =[];
-                                    array1.push("&tags=" + todb(args.data.tags));
+                                    array1.push("&tags=" + encodeURIComponent(args.data.tags));
 
                                     if (args.data.disksizetotal != null && args.data.disksizetotal.length > 0) {
                                         var diskSizeTotal = args.data.disksizetotal.split(",").join("");
@@ -19839,7 +19829,7 @@
                                                 select: function (args) {
                                                     /*
                                                     UI no longer gets providers from "listStorageProviders&type=image" because:
-                                                    (1) Not all of returned values are handled by UI (e.g. Provider "NetApp" is not handled by UI).
+                                                    (1) Not all of returned values are handled by UI.
                                                     (2) Provider "SMB" which is handled by UI is not returned from "listStorageProviders&type=image"
                                                      */
                                                     var items =[ {
@@ -19886,7 +19876,7 @@
                                                             $form.find('.form-item[rel=maxerrorretry]').hide();
                                                             $form.find('.form-item[rel=sockettimeout]').hide();
 
-                                                            $form.find('.form-item[rel=createNfsCache]').find('input').removeAttr('checked');
+                                                            $form.find('.form-item[rel=createNfsCache]').find('input').prop('checked', false);
                                                             $form.find('.form-item[rel=createNfsCache]').hide();
                                                             $form.find('.form-item[rel=nfsCacheZoneid]').hide();
                                                             $form.find('.form-item[rel=nfsCacheNfsServer]').hide();
@@ -19919,7 +19909,7 @@
                                                             $form.find('.form-item[rel=maxerrorretry]').hide();
                                                             $form.find('.form-item[rel=sockettimeout]').hide();
 
-                                                            $form.find('.form-item[rel=createNfsCache]').find('input').removeAttr('checked');
+                                                            $form.find('.form-item[rel=createNfsCache]').find('input').prop('checked', false);
                                                             $form.find('.form-item[rel=createNfsCache]').hide();
                                                             $form.find('.form-item[rel=nfsCacheZoneid]').hide();
                                                             $form.find('.form-item[rel=nfsCacheNfsServer]').hide();
@@ -19987,7 +19977,7 @@
                                                             $form.find('.form-item[rel=maxerrorretry]').hide();
                                                             $form.find('.form-item[rel=sockettimeout]').hide();
 
-                                                            $form.find('.form-item[rel=createNfsCache]').find('input').removeAttr('checked');
+                                                            $form.find('.form-item[rel=createNfsCache]').find('input').prop('checked', false);
                                                             $form.find('.form-item[rel=createNfsCache]').hide();
                                                             $form.find('.form-item[rel=nfsCacheZoneid]').hide();
                                                             $form.find('.form-item[rel=nfsCacheNfsServer]').hide();
@@ -21140,14 +21130,13 @@
     function addExternalLoadBalancer(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
         var array1 =[];
         array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
-        array1.push("&username=" + todb(args.data.username));
-        array1.push("&password=" + todb(args.data.password));
-        array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+        cloudStack.addUsernameAndPasswordToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, args.data.username, args.data.password);
+        array1.push("&networkdevicetype=" + encodeURIComponent(args.data.networkdevicetype));
 
         if (apiCmd == "addNetscalerLoadBalancer") {
             array1.push("&gslbprovider=" + (args.data.gslbprovider == "on"));
-            array1.push("&gslbproviderpublicip=" + todb(args.data.gslbproviderpublicip));
-            array1.push("&gslbproviderprivateip=" + todb(args.data.gslbproviderprivateip));
+            array1.push("&gslbproviderpublicip=" + encodeURIComponent(args.data.gslbproviderpublicip));
+            array1.push("&gslbproviderprivateip=" + encodeURIComponent(args.data.gslbproviderprivateip));
         }
 
         //construct URL starts here
@@ -21224,7 +21213,7 @@
         url.push("lbdevicededicated=" + dedicated.toString());
 
 
-        array1.push("&url=" + todb(url.join("")));
+        array1.push("&url=" + encodeURIComponent(url.join("")));
         //construct URL ends here
 
         $.ajax({
@@ -21250,9 +21239,8 @@
     function addExternalFirewall(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
         var array1 =[];
         array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
-        array1.push("&username=" + todb(args.data.username));
-        array1.push("&password=" + todb(args.data.password));
-        array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+        cloudStack.addUsernameAndPasswordToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, args.data.username, args.data.password);
+        array1.push("&networkdevicetype=" + encodeURIComponent(args.data.networkdevicetype));
 
         //construct URL starts here
         var url =[];
@@ -21406,7 +21394,7 @@
         }
         // END - Palo Alto Specific Fields
 
-        array1.push("&url=" + todb(url.join("")));
+        array1.push("&url=" + encodeURIComponent(url.join("")));
         //construct URL ends here
 
         $.ajax({
@@ -21432,19 +21420,18 @@
     function addNiciraNvpDevice(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
         var array1 =[];
         array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
-        array1.push("&username=" + todb(args.data.username));
-        array1.push("&password=" + todb(args.data.password));
-        array1.push("&hostname=" + todb(args.data.host));
-        array1.push("&transportzoneuuid=" + todb(args.data.transportzoneuuid));
+        cloudStack.addUsernameAndPasswordToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, rgs.data.username, args.data.password);
+        array1.push("&hostname=" + encodeURIComponent(args.data.host));
+        array1.push("&transportzoneuuid=" + encodeURIComponent(args.data.transportzoneuuid));
 
         var l3GatewayServiceUuid = args.data.l3gatewayserviceuuid;
         if (l3GatewayServiceUuid != null && l3GatewayServiceUuid.length > 0) {
-            array1.push("&l3gatewayserviceuuid=" + todb(args.data.l3gatewayserviceuuid));
+            array1.push("&l3gatewayserviceuuid=" + encodeURIComponent(args.data.l3gatewayserviceuuid));
         }
-		
+
 		var l2GatewayServiceUuid = args.data.l2gatewayserviceuuid;
         if (l2GatewayServiceUuid != null && l2GatewayServiceUuid.length > 0) {
-            array1.push("&l2gatewayserviceuuid=" + todb(args.data.l2gatewayserviceuuid));
+            array1.push("&l2gatewayserviceuuid=" + encodeURIComponent(args.data.l2gatewayserviceuuid));
         }
 
         $.ajax({
@@ -21470,9 +21457,8 @@
     function addBrocadeVcsDevice(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
         var array1 =[];
         array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
-        array1.push("&username=" + todb(args.data.username));
-        array1.push("&password=" + todb(args.data.password));
-        array1.push("&hostname=" + todb(args.data.host));
+        cloudStack.addUsernameAndPasswordToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, args.data.username, args.data.password);
+        array1.push("&hostname=" + encodeURIComponent(args.data.host));
 
         $.ajax({
             url: createURL(apiCmd + array1.join("")),
@@ -21497,9 +21483,8 @@
     function addOpenDaylightController(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
         var array1 =[];
         array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
-        array1.push("&username=" + todb(args.data.username));
-        array1.push("&password=" + todb(args.data.password));
-        array1.push("&url=" + todb(args.data.url));
+        cloudStack.addUsernameAndPasswordToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, args.data.username, args.data.password);
+        array1.push("&url=" + encodeURIComponent(args.data.url));
 
         $.ajax({
             url: createURL(apiCmd + array1.join("")),
@@ -21524,9 +21509,9 @@
     function addBigSwitchBcfDevice(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
         var array1 =[];
         array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
-        array1.push("&hostname=" + todb(args.data.host));
-        array1.push("&username=" + args.data.username);
-        array1.push("&password=" + args.data.password);
+        array1.push("&hostname=" + encodeURIComponent(args.data.host));
+        array1.push("&username=" + encodeURIComponent(args.data.username));
+        cloudStack.addPasswordToCommandUrlParameterArray(array1, args.data.password);
         array1.push("&nat=" + (args.data.nat == 'on' ? "true": "false"));
 
         $.ajax({
@@ -21548,43 +21533,11 @@
         });
     }
 
-    function addNuageVspDevice(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
-        var array1 = [];
-        array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
-        array1.push("&hostname=" + todb(args.data.hostname));
-        array1.push("&username=" + todb(args.data.username));
-        array1.push("&password=" + todb(args.data.password));
-        array1.push("&port=" + todb(args.data.port));
-        array1.push("&apiversion=" + todb(args.data.apiversion));
-        array1.push("&retrycount=" + todb(args.data.retrycount));
-        array1.push("&retryinterval=" + todb(args.data.retryinterval));
-
-        $.ajax({
-            url: createURL(apiCmd + array1.join("")),
-            dataType: "json",
-            type: "POST",
-            success: function(json) {
-                var jid = json[apiCmdRes].jobid;
-                args.response.success({
-                    _custom: {
-                        jobId: jid,
-                        getUpdatedItem: function(json) {
-                            var item = json.queryasyncjobresultresponse.jobresult[apiCmdObj];
-
-                            return item;
-                        }
-                    }
-                });
-            }
-        });
-    }
-
     function addGloboDnsHost(args, physicalNetworkObj, apiCmd, apiCmdRes) {
         var array1 = [];
         array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
-        array1.push("&username=" + todb(args.data.username));
-        array1.push("&password=" + todb(args.data.password));
-        array1.push("&url=" + todb(args.data.url));
+        cloudStack.addUsernameAndPasswordToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, args.data.username, args.data.password);
+        array1.push("&url=" + encodeURIComponent(args.data.url));
 
         $.ajax({
             url: createURL(apiCmd + array1.join("")),
@@ -21745,20 +21698,9 @@
                                                                                                                                     dataType: "json",
                                                                                                                                     async: false,
                                                                                                                                     success: function (json) {
-                                                                                                                                        //create pod
-                                                                                                                                        var array3 =[];
-                                                                                                                                        array3.push("&zoneId=" + newZoneObj.id);
-                                                                                                                                        array3.push("&name=" + todb(args.data.podName));
-                                                                                                                                        array3.push("&gateway=" + todb(args.data.podGateway));
-                                                                                                                                        array3.push("&netmask=" + todb(args.data.podNetmask));
-                                                                                                                                        array3.push("&startIp=" + todb(args.data.podStartIp));
-
-                                                                                                                                        var endip = args.data.podEndIp; //optional
-                                                                                                                                        if (endip != null && endip.length > 0)
-                                                                                                                                        array3.push("&endIp=" + todb(endip));
-
+                                                                                                                                        var arrayOfParameters = cloudStack.createArrayOfParametersForCreatePodCommand(newZoneObj.id, args.data);
                                                                                                                                         $.ajax({
-                                                                                                                                            url: createURL("createPod" + array3.join("")),
+                                                                                                                                            url: createURL("createPod" + arrayOfParameters.join("")),
                                                                                                                                             dataType: "json",
                                                                                                                                             async: false,
                                                                                                                                             success: function (json) {
@@ -21796,20 +21738,9 @@
                                                                                                         dataType: "json",
                                                                                                         async: false,
                                                                                                         success: function (json) {
-                                                                                                            //create pod
-                                                                                                            var array3 =[];
-                                                                                                            array3.push("&zoneId=" + newZoneObj.id);
-                                                                                                            array3.push("&name=" + todb(args.data.podName));
-                                                                                                            array3.push("&gateway=" + todb(args.data.podGateway));
-                                                                                                            array3.push("&netmask=" + todb(args.data.podNetmask));
-                                                                                                            array3.push("&startIp=" + todb(args.data.podStartIp));
-
-                                                                                                            var endip = args.data.podEndIp; //optional
-                                                                                                            if (endip != null && endip.length > 0)
-                                                                                                            array3.push("&endIp=" + todb(endip));
-
+                                                                                                            var arrayOfParameters = cloudStack.createArrayOfParametersForCreatePodCommand(newZoneObj.id, args.data);
                                                                                                             $.ajax({
-                                                                                                                url: createURL("createPod" + array3.join("")),
+                                                                                                                url: createURL("createPod" + arrayOfParameters.join("")),
                                                                                                                 dataType: "json",
                                                                                                                 async: false,
                                                                                                                 success: function (json) {
@@ -21823,21 +21754,9 @@
                                                                                                     });
                                                                                                 }
                                                                                             } else {
-                                                                                                //Advanced zone
-                                                                                                //create pod
-                                                                                                var array3 =[];
-                                                                                                array3.push("&zoneId=" + newZoneObj.id);
-                                                                                                array3.push("&name=" + todb(args.data.podName));
-                                                                                                array3.push("&gateway=" + todb(args.data.podGateway));
-                                                                                                array3.push("&netmask=" + todb(args.data.podNetmask));
-                                                                                                array3.push("&startIp=" + todb(args.data.podStartIp));
-
-                                                                                                var endip = args.data.podEndIp; //optional
-                                                                                                if (endip != null && endip.length > 0)
-                                                                                                array3.push("&endIp=" + todb(endip));
-
+                                                                                                var arrayOfParameters = cloudStack.createArrayOfParametersForCreatePodCommand(newZoneObj.id, args.data);
                                                                                                 $.ajax({
-                                                                                                    url: createURL("createPod" + array3.join("")),
+                                                                                                    url: createURL("createPod" + arrayOfParameters.join("")),
                                                                                                     dataType: "json",
                                                                                                     async: false,
                                                                                                     success: function (json) {
@@ -21897,9 +21816,12 @@
         var jsonObj = args.context.item;
         var allowedActions =[ 'enableSwift'];
 
-        if (jsonObj.vmwaredcId == null)
-        allowedActions.push('addVmwareDc'); else
-        allowedActions.push('removeVmwareDc');
+        if (jsonObj.vmwaredcId == null) {
+            allowedActions.push('addVmwareDc');
+        } else {
+            allowedActions.push('updateVmwareDc');
+            allowedActions.push('removeVmwareDc');
+        }
 
         if (jsonObj.domainid != null)
         allowedActions.push("releaseDedicatedZone"); else
@@ -22142,8 +22064,10 @@
             allowedActions.push("remove");
             allowedActions.push("viewConsole");
 
-            if (isAdmin())
-            allowedActions.push("migrate");
+            if (isAdmin()) {
+                allowedActions.push("migrate");
+                allowedActions.push("diagnostics");
+            }
         } else if (jsonObj.state == 'Starting') {
             if (isAdmin()) {
                 allowedActions.push("viewConsole");
@@ -22193,8 +22117,10 @@
             }
 
             allowedActions.push("viewConsole");
-            if (isAdmin())
-            allowedActions.push("migrate");
+            if (isAdmin()) {
+                allowedActions.push("migrate");
+                allowedActions.push("diagnostics");
+            }
         } else if (jsonObj.state == 'Starting') {
             if (isAdmin()) {
                 allowedActions.push("viewConsole");
@@ -22391,9 +22317,6 @@
                             case "Opendaylight":
                             nspMap[ "Opendaylight"] = items[i];
                             break;
-                            case "NuageVsp":
-                            nspMap["nuageVsp"] = items[i];
-                            break;
                             case "GloboDns":
                                 nspMap["GloboDns"] = items[i];
                                 break;
@@ -22460,12 +22383,6 @@
                 state: nspMap.securityGroups ? nspMap.securityGroups.state: 'Disabled'
             });
         } else if (selectedZoneObj.networktype == "Advanced") {
-            nspHardcodingArray.push({
-                id: 'nuageVsp',
-                name: 'Nuage Vsp',
-                state: nspMap.nuageVsp ? nspMap.nuageVsp.state : 'Disabled'
-            });
-
             nspHardcodingArray.push({
                 id: 'InternalLbVm',
                 name: 'Internal LB VM',

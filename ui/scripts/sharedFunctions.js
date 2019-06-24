@@ -35,6 +35,7 @@ var g_cloudstackversion = null;
 var g_queryAsyncJobResultInterval = 3000;
 var g_idpList = null;
 var g_appendIdpDomain = false;
+var g_sortKeyIsAscending = false;
 
 //keyboard keycode
 var keycode_Enter = 13;
@@ -44,10 +45,6 @@ var ERROR_ACCESS_DENIED_DUE_TO_UNAUTHORIZED = 401;
 var ERROR_INTERNET_NAME_NOT_RESOLVED = 12007;
 var ERROR_INTERNET_CANNOT_CONNECT = 12029;
 var ERROR_VMOPS_ACCOUNT_ERROR = 531;
-
-// Default password is MD5 hashed.  Set the following variable to false to disable this.
-var md5Hashed = false;
-var md5HashedLogin = false;
 
 //page size for API call (e.g."listXXXXXXX&pagesize=N" )
 var pageSize = 20;
@@ -184,11 +181,8 @@ var pollAsyncJobResult = function(args) {
         return urlString;
     }
 
-    function todb(val) {
-        return encodeURIComponent(val);
-    }
 
-    //LB provider map
+//LB provider map
 var lbProviderMap = {
     "publicLb": {
         "non-vpc": ["VirtualRouter", "Netscaler", "F5"],
@@ -353,6 +347,10 @@ var addGuestNetworkDialog = {
                 vlanId: {
                     label: 'label.vlan.id',
                     docID: 'helpGuestNetworkZoneVLANID'
+                },
+                bypassVlanOverlapCheck: {
+                    label: 'label.bypass.vlan.overlap.check',
+                    isBoolean: true
                 },
                 isolatedpvlanId: {
                     label: 'label.secondary.isolated.vlan.id'
@@ -679,7 +677,7 @@ var addGuestNetworkDialog = {
                     label: 'label.ipv6.gateway',
                     docID: 'helpGuestNetworkZoneGateway',
                     validation: {
-                        ipv6: true
+                    	ipv6CustomJqueryValidator: true
                     }
                 },
                 ip6cidr: {
@@ -692,14 +690,14 @@ var addGuestNetworkDialog = {
                     label: 'label.ipv6.start.ip',
                     docID: 'helpGuestNetworkZoneStartIP',
                     validation: {
-                        ipv6: true
+                    	ipv6CustomJqueryValidator: true
                     }
                 },
                 endipv6: {
                     label: 'label.ipv6.end.ip',
                     docID: 'helpGuestNetworkZoneEndIP',
                     validation: {
-                        ipv6: true
+                    	ipv6CustomJqueryValidator: true
                     }
                },
                 //IPv6 (end)
@@ -707,7 +705,16 @@ var addGuestNetworkDialog = {
                 networkdomain: {
                     label: 'label.network.domain',
                     docID: 'helpGuestNetworkZoneNetworkDomain'
+                },
+
+                hideipaddressusage: {
+                    label: 'label.network.hideipaddressusage',
+                    dependsOn: ['zoneId', 'physicalNetworkId', 'scope'],
+                    isBoolean: true,
+                    isChecked: false,
+                    docID: 'helpGuestNetworkHideIpAddressUsage'
                 }
+
             }
         },
 
@@ -739,16 +746,19 @@ var addGuestNetworkDialog = {
 
             if (selectedNetworkOfferingObj.guestiptype == "Shared")
                 array1.push("&physicalnetworkid=" + args.data.physicalNetworkId);
+            
+            cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array1, "name", args.data.name);
+            cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array1, "displayText", args.data.description);
 
-            array1.push("&name=" + todb(args.data.name));
-            array1.push("&displayText=" + todb(args.data.description));
-
-            if (($form.find('.form-item[rel=vlanId]').css("display") != "none") && (args.data.vlanId != null && args.data.vlanId.length > 0))
-                array1.push("&vlan=" + todb(args.data.vlanId));
-
-            if (($form.find('.form-item[rel=isolatedpvlanId]').css("display") != "none") && (args.data.isolatedpvlanId != null && args.data.isolatedpvlanId.length > 0))
-                array1.push("&isolatedpvlan=" + todb(args.data.isolatedpvlanId));
-
+            if ($form.find('.form-item[rel=vlanId]').css("display") != "none"){
+                cloudStack.addVlanToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, args.data.vlanId)
+            }
+            if ($form.find('.form-item[rel=bypassVlanOverlapCheck]').css("display") != "none"){
+                array1.push("&bypassVlanOverlapCheck=" + encodeURIComponent((args.data.bypassVlanOverlapCheck == "on")));
+            }
+            if (($form.find('.form-item[rel=isolatedpvlanId]').css("display") != "none") && (args.data.isolatedpvlanId != null && args.data.isolatedpvlanId.length > 0)){
+                array1.push("&isolatedpvlan=" + encodeURIComponent(args.data.isolatedpvlanId));
+            }
             if ($form.find('.form-item[rel=domainId]').css("display") != "none") {
                 array1.push("&domainId=" + args.data.domainId);
 
@@ -761,7 +771,7 @@ var addGuestNetworkDialog = {
                 } else { //domain-specific
                     array1.push("&acltype=domain");
 
-                    if ($form.find('.form-item[rel=subdomainaccess]:visible input:checked').size())
+                    if ($form.find('.form-item[rel=subdomainaccess]:visible input:checked').length)
                         array1.push("&subdomainaccess=true");
                     else
                         array1.push("&subdomainaccess=false");
@@ -792,8 +802,12 @@ var addGuestNetworkDialog = {
                 array1.push("&endipv6=" + args.data.endipv6);
             //IPv6 (end)
 
-            if (args.data.networkdomain != null && args.data.networkdomain.length > 0)
-                array1.push("&networkdomain=" + todb(args.data.networkdomain));
+            if (args.data.networkdomain != null && args.data.networkdomain.length > 0){
+                array1.push("&networkdomain=" + encodeURIComponent(args.data.networkdomain));
+            }
+            if (args.data.hideipaddressusage != null && args.data.hideipaddressusage) {
+                array1.push("&hideipaddressusage=true")
+            }
 
             $.ajax({
                 url: createURL("createNetwork" + array1.join("")),
@@ -831,13 +845,6 @@ var addL2GuestNetwork = {
             }
         },
 
-        preFilter: function(args) {
-            if (isAdmin())
-                return true;
-            else
-                return false;
-        },
-
         createForm: {
             title: 'label.add.l2.guest.network',
             fields: {
@@ -867,7 +874,7 @@ var addL2GuestNetwork = {
                             url: createURL('listZones'),
                             success: function(json) {
                                 var zones = $.grep(json.listzonesresponse.zone, function(zone) {
-                                    return (zone.networktype == 'Advanced' && zone.securitygroupsenabled != true); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
+                                    return (zone.networktype == 'Advanced'); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
                                 });
 
                                 args.response.success({
@@ -930,9 +937,13 @@ var addL2GuestNetwork = {
                             url: createURL('listNetworkOfferings'),
                             data: data,
                             success: function(json) {
-                                networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                                if(!json.listnetworkofferingsresponse || !json.listnetworkofferingsresponse.networkoffering){
+                                    return;
+                                }
+                                var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
                                 args.$select.change(function() {
                                     var $vlan = args.$select.closest('form').find('[rel=vlan]');
+                                    var $bypassVlanOverlapCheck = args.$select.closest('form').find('[rel=bypassVlanOverlapCheck]');
                                     var networkOffering = $.grep(
                                         networkOfferingObjs, function(netoffer) {
                                             return netoffer.id == args.$select.val();
@@ -941,8 +952,10 @@ var addL2GuestNetwork = {
 
                                     if (networkOffering.specifyvlan) {
                                         $vlan.css('display', 'inline-block');
+                                        $bypassVlanOverlapCheck.css('display', 'inline-block');
                                     } else {
                                         $vlan.hide();
+                                        $bypassVlanOverlapCheck.hide();
                                     }
                                 });
 
@@ -966,6 +979,11 @@ var addL2GuestNetwork = {
                     },
                     isHidden: true
                 },
+                bypassVlanOverlapCheck: {
+                    label: 'label.bypass.vlan.overlap.check',
+                    isBoolean: true,
+                    isHidden: true
+                  },
 
                 domain: {
                     label: 'label.domain',
@@ -1040,7 +1058,8 @@ var addL2GuestNetwork = {
 
             if (args.$form.find('.form-item[rel=vlan]').css('display') != 'none') {
                 $.extend(dataObj, {
-                    vlan: args.data.vlan
+                    vlan: args.data.vlan,
+                    bypassVlanOverlapCheck: (args.data.bypassVlanOverlapCheck == "on")
                 });
             }
 
@@ -2400,7 +2419,7 @@ cloudStack.api = {
                     url: createURL(updateCommand),
                     data: {
                         id: args.context[objType].id,
-                        sortKey: args.index
+                        sortKey: g_sortKeyIsAscending ? (-1 * args.index) : args.index
                     },
                     success: function(json) {
                         args.response.success();
@@ -2570,7 +2589,7 @@ $.validator.addMethod("ipv6cidr", function(value, element) {
         return false;
     }
 
-    if (!$.validator.methods.ipv6.call(this, parts[0], element))
+    if (!$.validator.methods.ipv6CustomJqueryValidator.call(this, parts[0], element))
         return false;
 
     if (parts[1] != Number(parts[1]).toString()) //making sure that "", " ", "00", "0 ","2  ", etc. will not pass
@@ -2603,6 +2622,19 @@ $.validator.addMethod("ipv4cidr", function(value, element) {
     return true;
 }, "The specified IPv4 CIDR is invalid.");
 
+$.validator.addMethod("ipv46cidrs", function(value, element) {
+    var result = true;
+    if (value) {
+        var validatorThis = this;
+        value.split(',').forEach(function(item){
+            if (result && !$.validator.methods.ipv46cidr.call(validatorThis, item.trim(), element)) {
+                result = false;
+            }
+        })
+    }
+    return result;
+}, "The specified IPv4/IPv6 CIDR input is invalid.");
+
 $.validator.addMethod("ipv46cidr", function(value, element) {
     if (this.optional(element) && value.length == 0)
         return true;
@@ -2613,6 +2645,23 @@ $.validator.addMethod("ipv46cidr", function(value, element) {
     return false;
 }, "The specified IPv4/IPv6 CIDR is invalid.");
 
+jQuery.validator.addMethod("ipv4AndIpv6AddressValidator", function(value, element) {
+    if (this.optional(element) && value.length == 0) {
+        return true;
+	}
+    if (jQuery.validator.methods.ipv4.call(this, value, element) || jQuery.validator.methods.ipv6CustomJqueryValidator.call(this, value, element)) {
+        return true;
+    }
+    return false;
+}, "The specified IPv4/IPv6 address is invalid.");
+
+jQuery.validator.addMethod("ipv6CustomJqueryValidator", function(value, element) {
+    if (value == '::'){
+    	return true;
+    }
+    return jQuery.validator.methods.ipv6.call(this, value, element);
+}, "The specified IPv6 address is invalid.");
+
 
 $.validator.addMethod("allzonesonly", function(value, element){
 
@@ -2622,3 +2671,270 @@ $.validator.addMethod("allzonesonly", function(value, element){
 
 },
 "All Zones cannot be combined with any other zone");
+
+cloudStack.createTemplateMethod = function (isSnapshot){
+	return {
+        label: 'label.create.template',
+        messages: {
+            confirm: function(args) {
+                return 'message.create.template';
+            },
+            notification: function(args) {
+                return 'label.create.template';
+            }
+        },
+        createForm: {
+            title: 'label.create.template',
+            preFilter: cloudStack.preFilter.createTemplate,
+            desc: '',
+            preFilter: function(args) {
+                if (args.context.volumes[0].hypervisor == "XenServer") {
+                    if (isAdmin()) {
+                        args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
+                    }
+                }
+            },
+            fields: {
+                name: {
+                    label: 'label.name',
+                    validation: {
+                        required: true
+                    }
+                },
+                displayText: {
+                    label: 'label.description',
+                    validation: {
+                        required: true
+                    }
+                },
+                xenserverToolsVersion61plus: {
+                    label: 'label.xenserver.tools.version.61.plus',
+                    isBoolean: true,
+                    isChecked: function (args) {
+                        var b = false;
+                        var vmObj;
+                        $.ajax({
+                            url: createURL("listVirtualMachines"),
+                            data: {
+                                id: args.context.volumes[0].virtualmachineid
+                            },
+                            async: false,
+                            success: function(json) {
+                                vmObj = json.listvirtualmachinesresponse.virtualmachine[0];
+                            }
+                        });
+                        if (vmObj == undefined) { //e.g. VM has failed over
+                            if (isAdmin()) {
+                                $.ajax({
+                                    url: createURL('listConfigurations'),
+                                    data: {
+                                        name: 'xenserver.pvdriver.version'
+                                    },
+                                    async: false,
+                                    success: function (json) {
+                                        if (json.listconfigurationsresponse.configuration != null && json.listconfigurationsresponse.configuration[0].value == 'xenserver61') {
+                                            b = true;
+                                        }
+                                    }
+                                });
+                            }
+                        } else {
+                             if ('details' in vmObj && 'hypervisortoolsversion' in vmObj.details) {
+                                 if (vmObj.details.hypervisortoolsversion == 'xenserver61')
+                                     b = true;
+                                 else
+                                     b = false;
+                             }
+                        }
+                        return b;
+                    },
+                    isHidden: true
+                },
+                osTypeId: {
+                    label: 'label.os.type',
+                    select: function(args) {
+                        $.ajax({
+                            url: createURL("listOsTypes"),
+                            dataType: "json",
+                            async: true,
+                            success: function(json) {
+                                var ostypes = json.listostypesresponse.ostype;
+                                var items = [];
+                                $(ostypes).each(function() {
+                                    items.push({
+                                        id: this.id,
+                                        description: this.description
+                                    });
+                                });
+                                args.response.success({
+                                    data: items
+                                });
+                            }
+                        });
+                    }
+                },
+                isPublic: {
+                    label: 'label.public',
+                    isBoolean: true
+                },
+                isPasswordEnabled: {
+                    label: 'label.password.enabled',
+                    isBoolean: true
+                },
+                isFeatured: {
+                    label: 'label.featured',
+                    isBoolean: true
+                },
+                isdynamicallyscalable: {
+                    label: 'label.dynamically.scalable',
+                    isBoolean: true
+                },
+                requireshvm: {
+                    label: 'label.hvm',
+                    docID: 'helpRegisterTemplateHvm',
+                    isBoolean: true,
+                    isHidden: false,
+                    isChecked: false
+                }
+            }
+        },
+        action: function(args) {
+            var data = {
+                name: args.data.name,
+                displayText: args.data.displayText,
+                osTypeId: args.data.osTypeId,
+                isPublic: (args.data.isPublic == "on"),
+                passwordEnabled: (args.data.isPasswordEnabled == "on"),
+                isdynamicallyscalable: (args.data.isdynamicallyscalable == "on"),
+                requireshvm: (args.data.requireshvm == "on")
+            };
+            
+            if(isSnapshot){
+            	data.snapshotid = args.context.snapshots[0].id;
+            } else{
+            	data.volumeId = args.context.volumes[0].id;
+            }
+            if (args.$form.find('.form-item[rel=isFeatured]').css("display") != "none") {
+                $.extend(data, {
+                    isfeatured: (args.data.isFeatured == "on")
+                });
+            }
+
+            //XenServer only (starts here)
+            if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').length > 0) {
+                if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css("display") != "none") {
+                    $.extend(data, {
+                        'details[0].hypervisortoolsversion': (args.data.xenserverToolsVersion61plus == "on") ? "xenserver61" : "xenserver56"
+                    });
+                }
+            }
+            //XenServer only (ends here)
+
+            $.ajax({
+                url: createURL('createTemplate'),
+                data: data,
+                success: function(json) {
+                    var jid = json.createtemplateresponse.jobid;
+                    args.response.success({
+                        _custom: {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {
+                                return {}; //no properties in this volume needs to be updated
+                            },
+                            getActionFilter: function() {
+                                return volumeActionfilter;
+                            }
+                        }
+                    });
+                }
+            });
+        },
+        notification: {
+            poll: pollAsyncJobResult
+        }
+    };
+};
+
+cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty = function(array, parameterName, value){
+    if (value != null && value.length > 0) {
+        array.push("&" + parameterName + "=" + encodeURIComponent(value));
+    }
+}
+
+cloudStack.addUsernameAndPasswordToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty = function(array, username, password){
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "username", username);
+    cloudStack.addPasswordToCommandUrlParameterArray(array, password);
+};
+
+cloudStack.addPasswordToCommandUrlParameterArray = function(array, password){
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "password", password);
+};
+
+/**
+ * We will only add the name and description data to the array of parameters if they are not null.
+ * Moreover, we expect the name parameter to be a property ('name') of data object. 
+ * The description must be a property called 'description' in the data object.   
+ */
+cloudStack.addNameAndDescriptionToCommandUrlParameterArray = function (array, data){
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "name", data.name);
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "description", data.description);
+};
+
+cloudStack.addNewSizeToCommandUrlParameterArrayIfItIsNotNullAndHigherThanZero = function(array, newSize){
+    if(newSize == undefined || newSize == null){
+        return;
+    }
+    var newSizeAsNumber = new Number(newSize);
+    if(isNaN(newSizeAsNumber)){
+        return;
+    }
+    if (newSizeAsNumber > 0) {
+        array.push("&size=" + encodeURIComponent(newSize));
+    }
+};
+
+cloudStack.addVlanToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty = function(array, vlan){
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "vlan", vlan);
+};
+
+cloudStack.createArrayOfParametersForCreatePodCommand = function (zoneId, data){
+    var array =[];
+    array.push("&zoneId=" + zoneId);
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "name", data.podName);
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "gateway", data.podGateway);
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "netmask", data.podNetmask);
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "startIp", data.podStartIp);
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "endIp", data.podEndIp);
+    return array;
+}
+
+cloudStack.listDiskOfferings = function(options){
+    var defaultOptions = {
+            listAll: false,
+            isRecursive: false,
+            error: function(data) {
+                args.response.error(data);
+            }
+    };
+    var mergedOptions = $.extend({}, defaultOptions, options);
+    
+    var listDiskOfferingsUrl = "listDiskOfferings";
+    if(mergedOptions.listAll){
+        listDiskOfferingsUrl = listDiskOfferingsUrl + "&listall=true";
+    }
+    if(mergedOptions.isRecursive){
+        listDiskOfferingsUrl = listDiskOfferingsUrl + "&isrecursive=true";
+    }
+    var diskOfferings = undefined;
+    $.ajax({
+        url: createURL(listDiskOfferingsUrl),
+        data: mergedOptions.data,
+        dataType: "json",
+        async: false,
+        success: function(json) {
+            diskOfferings = json.listdiskofferingsresponse.diskoffering;
+        },
+        error: mergedOptions.error
+    });
+    return diskOfferings;
+};

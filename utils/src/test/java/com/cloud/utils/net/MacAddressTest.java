@@ -51,10 +51,4 @@ public class MacAddressTest {
     // TODO    public final void testToString() throws Exception {
     // TODO    public final void testGetMacAddress() throws Exception {
     // TODO    public final void testParse() throws Exception {
-    // TODO    public final void testMain() throws Exception {
-    // TODO    public final void testParseLong() throws Exception {
-    // TODO    public final void testParseInt() throws Exception {
-    // TODO    public final void testParseShort() throws Exception {
-    // TODO    public final void testParseByte() throws Exception {
-
 }

@@ -17,6 +17,126 @@
 (function($, cloudStack) {
     var vmMigrationHostObjs, ostypeObjs;
 
+    var vmStartAction = function(args) {
+      var action = {
+        messages: {
+          confirm: function() {
+            return 'message.action.start.instance';
+          },
+          notification: function() {
+            return 'label.action.start.instance';
+          }
+        },
+        label: 'label.action.start.instance',
+        compactLabel: 'label.start',
+        addRow: 'false',
+        createForm: {
+          title: 'notification.start.instance',
+          desc: 'message.action.start.instance',
+          fields: {
+            hostId: {
+              label: 'label.host',
+              isHidden: function() {
+                return !isAdmin();
+              },
+              select: function(args) {
+                if (isAdmin()) {
+                  $.ajax({
+                    url: createURL("listHosts&state=Up&type=Routing&zoneid=" + args.context.instances[0].zoneid),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      if (json.listhostsresponse.host != undefined) {
+                        hostObjs = json.listhostsresponse.host;
+                        var items = [{
+                          id: -1,
+                          description: 'Default'
+                        }];
+                        $(hostObjs).each(function() {
+                          items.push({
+                            id: this.id,
+                            description: this.name
+                          });
+                        });
+                        args.response.success({
+                          data: items
+                        });
+                      } else {
+                        cloudStack.dialog.notice({
+                          message: _l('No Hosts are avaialble')
+                        });
+                      }
+                    }
+                  });
+                } else {
+                  args.response.success({
+                    data: null
+                  });
+                }
+              }
+            }
+          }
+        },
+        action: function(args) {
+          var instances = args.context.instances;
+          var skippedInstances = 0;
+          $(instances).each(function(index, instance) {
+            if (instance.state === 'Running' || instance.state === "Starting") {
+              skippedInstances++;
+            } else {
+              var data = {
+                id: instance.id
+              };
+              if (args.$form.find('.form-item[rel=hostId]').css("display") != "none" && args.data.hostId != -1) {
+                $.extend(data, {
+                  hostid: args.data.hostId
+                });
+              }
+              $.ajax({
+                url: createURL("startVirtualMachine"),
+                data: data,
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var jid = json.startvirtualmachineresponse.jobid;
+                  args.response.success({
+                    _custom: {
+                      jobId: jid,
+                      getUpdatedItem: function(json) {
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                      },
+                      getActionFilter: function() {
+                        return cloudStack.actionFilter.vmActionFilter;
+                      }
+                    }
+                  });
+                },
+                error: function(json) {
+                  args.response.error(parseXMLHttpResponse(json));
+                }
+              });
+            }
+          });
+          if (skippedInstances === instances.length) {
+            args.response.error();
+          }
+        },
+        notification: {
+          poll: pollAsyncJobResult
+        }
+      };
+
+
+      if (args && args.listView) {
+        $.extend(action, {
+          isHeader: true,
+          isMultiSelectAction: true
+        });
+      }
+
+      return action;
+    };
+
     var vmStopAction = function(args) {
         var action = {
             messages: {
@@ -43,34 +163,42 @@
             },
             action: function(args) {
                 var instances = args.context.instances;
-                $(instances).map(function(index, instance) {
-                    var data = {
-                        id: instance.id,
-                        forced: (args.data.forced == "on")
-                    };
-                    $.ajax({
-                        url: createURL("stopVirtualMachine"),
-                        data: data,
-                        dataType: "json",
-                        success: function(json) {
-                            var jid = json.stopvirtualmachineresponse.jobid;
-                            args.response.success({
-                                _custom: {
-                                    jobId: jid,
-                                    getUpdatedItem: function(json) {
-                                        return $.extend(json.queryasyncjobresultresponse.jobresult.virtualmachine, { hostid: null });
-                                    },
-                                    getActionFilter: function() {
-                                        return vmActionfilter;
+                var skippedInstances = 0;
+                $(instances).each(function(index, instance) {
+                    if (instance.state === 'Stopped' || instance.state === 'Stopping') {
+                        skippedInstances++;
+                    } else {
+                        var data = {
+                            id: instance.id,
+                            forced: (args.data.forced == "on")
+                        };
+                        $.ajax({
+                            url: createURL("stopVirtualMachine"),
+                            data: data,
+                            dataType: "json",
+                            success: function(json) {
+                                var jid = json.stopvirtualmachineresponse.jobid;
+                                args.response.success({
+                                    _custom: {
+                                        jobId: jid,
+                                        getUpdatedItem: function(json) {
+                                            return $.extend(json.queryasyncjobresultresponse.jobresult.virtualmachine, { hostid: null });
+                                        },
+                                        getActionFilter: function() {
+                                            return vmActionfilter;
+                                        }
                                     }
-                                }
-                            });
-                        },
-                        error: function(json) {
-                            args.response.error(parseXMLHttpResponse(json));
-                        }
-                    });
+                                });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
+                            }
+                        });
+                    }
                 });
+                if (skippedInstances === instances.length) {
+                    args.response.error();
+                }
             },
             notification: {
                 poll: pollAsyncJobResult
@@ -112,6 +240,35 @@
                         label: 'label.expunge',
                         isBoolean: true,
                         isChecked: false
+                    },
+                    volumes: {
+                        label: 'label.delete.volumes',
+                        isBoolean: true,
+                        isChecked: true,
+                        isHidden: true,
+                    },
+                    volumeids: {
+                        label: 'label.delete.volumes',
+                        dependsOn: 'volumes',
+                        isBoolean: true,
+                        isHidden: false,
+                        emptyMessage: 'label.volume.empty',
+                        multiDataArray: true,
+                        multiData: function(args) {
+                            $.ajax({
+                                url: createURL("listVolumes&virtualMachineId=" + args.context.instances[0].id) + "&type=DATADISK",
+                                  dataType: "json",
+                                  async: true,
+                                  success: function(json) {
+                                    var volumes = json.listvolumesresponse.volume;
+                                    args.response.success({
+                                        descriptionField: 'name',
+                                        valueField: 'id',
+                                        data: volumes
+                                    });
+                                  }
+                            });
+                        }
                     }
                 }
             },
@@ -124,6 +281,26 @@
                     if (args.data.expunge == 'on') {
                         $.extend(data, {
                             expunge: true
+                        });
+                    }
+                    if (args.data.volumes == 'on') {
+
+                        var regex = RegExp('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+
+                        var selectedVolumes = [];
+
+                        for (var key in args.data) {
+                            var matches = key.match(regex);
+
+                            if (matches != null) {
+                                selectedVolumes.push(key);
+                            }
+                        }
+
+                        $.extend(data, {
+                            volumeids: $(selectedVolumes).map(function(index, volume) {
+                                return volume;
+                            }).toArray().join(',')
                         });
                     }
                     $.ajax({
@@ -228,14 +405,7 @@
                     var array1 = [];
                     array1.push("&snapshotmemory=" + (args.data.snapshotMemory == "on"));
                     array1.push("&quiescevm=" + (args.data.quiescevm == "on"));
-                    var displayname = args.data.name;
-                    if (displayname != null && displayname.length > 0) {
-                        array1.push("&name=" + todb(displayname));
-                    }
-                    var description = args.data.description;
-                    if (description != null && description.length > 0) {
-                        array1.push("&description=" + todb(description));
-                    }
+                    cloudStack.addNameAndDescriptionToCommandUrlParameterArray(array1, args.data);
                     $.ajax({
                         url: createURL("createVMSnapshot&virtualmachineid=" + instance.id + array1.join("")),
                         dataType: "json",
@@ -462,8 +632,9 @@
                         poll: pollAsyncJobResult
                     }
                 },
-                stop: vmStopAction({ listView: true}),
                 destroy: vmDestroyAction({ listView: true }),
+                stop: vmStopAction({ listView: true }),
+                start: vmStartAction({ listView: true }),
                 snapshot: vmSnapshotAction({ listView: true }),
                 viewMetrics: {
                     label: 'label.metrics',
@@ -692,10 +863,6 @@
                     if (includingSecurityGroupService == false) {
                         hiddenTabs.push("securityGroups");
                     }
-					
-					if (args.context.instances[0].state == 'Running') {
-						hiddenTabs.push("settings");
-					}
 
                     return hiddenTabs;
                 },
@@ -982,7 +1149,7 @@
                                     label: 'label.select.a.template',
                                     select: function(args) {
                                         var data = {
-                                            templatefilter: 'featured'
+                                            templatefilter: 'executable'
                                         };
                                         $.ajax({
                                             url: createURL('listTemplates'),
@@ -2872,6 +3039,9 @@
                             type: {
                                 label: 'label.type'
                             },
+                            macaddress: {
+                              label: 'label.mac.address'
+                            },
                             ipaddress: {
                                 label: 'label.ip.address'
                             },
@@ -3058,10 +3228,31 @@
 								$.ajax({
 									url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
 									success: function(json) {
-										var details = json.listvirtualmachinesresponse.virtualmachine[0].details;
-										args.response.success({
-											data: parseDetails(details)
-										});
+                                        var virtualMachine = json.listvirtualmachinesresponse.virtualmachine[0];
+                                        args.response.success({
+                                            data: parseDetails(virtualMachine.details)
+                                        });
+
+                                        if (virtualMachine.state != 'Stopped') {
+                                            $('#details-tab-settings').append($('<div>').addClass('blocking-overlay'));
+                                            cloudStack.dialog.notice({
+                                                message: _l('message.action.settings.warning.vm.running')
+                                            });
+                                        } else {
+                                            if(virtualMachine && virtualMachine.readonlyuidetails && virtualMachine.readonlyuidetails.length > 0) {
+                                                var readOnlyUIDetails = []
+                                                $.each(virtualMachine.readonlyuidetails.split(","), function(){
+                                                    readOnlyUIDetails.push($.trim(this));
+                                                });
+                                                $('#details-tab-settings tr').each(function() {
+                                                    if($.inArray($.trim($(this).find('td:first').text()), readOnlyUIDetails) >= 0) {
+                                                        $(this).find('td:last div.action').each(function() {
+                                                            $(this).addClass("disabled")
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        };
 									},
 
 									error: function(json) {
@@ -3076,85 +3267,100 @@
 										name: args.data.jsonObj.name,
 										value: args.data.value
 									};
-									var existingDetails;
+									var virtualMachine;
 									$.ajax({
 										url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
 										async:false,
 										success: function(json) {
-											var details = json.listvirtualmachinesresponse.virtualmachine[0].details;
-											console.log(details);
-											existingDetails = details;
+											virtualMachine = json.listvirtualmachinesresponse.virtualmachine[0];
 										},
 
 										error: function(json) {
 											args.response.error(parseXMLHttpResponse(json));
 										}
 									});
-									console.log(existingDetails);
-									var newDetails = '';
-									for (d in existingDetails) {
-										if (d != data.name) {
-											newDetails += 'details[0].' + d + '=' + existingDetails[d] + '&';
-										}
-									}
-									newDetails += 'details[0].' + data.name + '=' + data.value;
-									
-									$.ajax({
-										url: createURL('updateVirtualMachine&id=' + args.context.instances[0].id + '&' + newDetails),
-										async:false,
-										success: function(json) {
-											var items = json.updatevirtualmachineresponse.virtualmachine.details;
-											args.response.success({
-												data: parseDetails(items)
-											});
-										},
-
-										error: function(json) {
-											args.response.error(parseXMLHttpResponse(json));
-										}
-									});
-								},
+                                    if (virtualMachine && virtualMachine.state == "Stopped") {
+                                        // It could happen that a stale web page has been opened up when VM was stopped but
+                                        // vm was turned on through another route - UI or API. so we should check again.
+                                        var existingDetails = virtualMachine.details;
+                                        console.log(existingDetails);
+                                        var newDetails = {};
+                                        for (d in existingDetails) {
+                                            if (d != data.name) {
+                                                newDetails['details[0].' + d] = existingDetails[d];
+                                            }
+                                        }
+                                        newDetails['details[0].' + data.name] = data.value;
+                                        var postData = {'id' : args.context.instances[0].id};
+                                        $.extend(postData, newDetails);
+                                        $.ajax({
+                                            url: createURL('updateVirtualMachine'),
+                                            data: postData,
+                                            async:false,
+                                            success: function(json) {
+                                                var items = json.updatevirtualmachineresponse.virtualmachine.details;
+                                                args.response.success({
+                                                    data: parseDetails(items)
+                                                });
+                                            },
+                                            error: function(json) {
+                                                args.response.error(parseXMLHttpResponse(json));
+                                            }
+                                        });
+                                    } else {
+                                        $('#details-tab-settings').append($('<div>').addClass('blocking-overlay'));
+                                        cloudStack.dialog.notice({
+                                            message: _l('message.action.settings.warning.vm.started')
+                                        });
+                                    }
+                                },
 								remove: function(args) {
-									var existingDetails;
+									var virtualMachine;
 									$.ajax({
 										url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
 										async:false,
 										success: function(json) {
-											var details = json.listvirtualmachinesresponse.virtualmachine[0].details;
-											existingDetails = details;
+											virtualMachine = json.listvirtualmachinesresponse.virtualmachine[0];
 										},
 
 										error: function(json) {
 											args.response.error(parseXMLHttpResponse(json));
 										}
 									});
-									
-									var detailToDelete = args.data.jsonObj.name;
-									var newDetails = ''
-									for (detail in existingDetails) {
-										if (detail != detailToDelete) {
-											newDetails += 'details[0].' + detail + '=' + existingDetails[detail] + '&';
-										}
-									}
-									if (newDetails != '') {
-										newDetails = newDetails.substring(0, newDetails.length - 1);
-									}
-									else {
-										newDetails += 'cleanupdetails=true'
-									}
-									$.ajax({
-										url: createURL('updateVirtualMachine&id=' + args.context.instances[0].id + '&' + newDetails),
-										async:false,
-										success: function(json) {
-											var items = json.updatevirtualmachineresponse.virtualmachine.details;
-											args.response.success({
-												data: parseDetails(items)
-											});
-										},
-										error: function(json) {
-											args.response.error(parseXMLHttpResponse(json));
-										}
-									});
+                                    if (virtualMachine && virtualMachine.state == "Stopped") {
+                                        // It could happen that a stale web page has been opened up when VM was stopped but
+                                        // vm was turned on through another route - UI or API. so we should check again.
+                                        var detailToDelete = args.data.jsonObj.name;
+                                        var existingDetails = virtualMachine.details;
+                                        var newDetails = {};
+                                        for (detail in existingDetails) {
+                                            if (detail != detailToDelete) {
+                                                newDetails['details[0].' + detail] = existingDetails[detail];
+                                            }
+                                        }
+
+                                        var postData = $.isEmptyObject(newDetails) ? {'cleanupdetails': true} : newDetails;
+                                        $.extend(postData, {'id' : args.context.instances[0].id});
+                                        $.ajax({
+                                            url: createURL('updateVirtualMachine'),
+                                            data: postData,
+                                            async:false,
+                                            success: function(json) {
+                                                var items = json.updatevirtualmachineresponse.virtualmachine.details;
+                                                args.response.success({
+                                                    data: parseDetails(items)
+                                                });
+                                            },
+                                            error: function(json) {
+                                                args.response.error(parseXMLHttpResponse(json));
+                                            }
+                                        });
+                                    } else {
+                                        $('#details-tab-settings').append($('<div>').addClass('blocking-overlay'));
+                                        cloudStack.dialog.notice({
+                                            message: _l('message.action.settings.warning.vm.started')
+                                        });
+                                    }
 								},
 								add: function(args) {
 									var name = args.data.name;

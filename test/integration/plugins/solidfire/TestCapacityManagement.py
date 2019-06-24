@@ -33,7 +33,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import Account, ServiceOffering, StoragePool, User, VirtualMachine
 
 # common - commonly used methods for all tests are listed here
-from marvin.lib.common import get_domain, get_template, get_zone, list_clusters, list_hosts
+from marvin.lib.common import get_domain, get_template, get_zone, list_hosts
 
 # utils - utility classes for common cleanup, external library wrappers, etc.
 from marvin.lib.utils import cleanup_resources
@@ -47,7 +47,7 @@ from marvin.lib.utils import cleanup_resources
 #  If using XenServer, verify the "xen_server_hostname" variable is correct.
 #
 # Note:
-#  If you do have more than one cluster, you might need to change this line: cls.cluster = list_clusters(cls.apiClient)[0]
+#  If you do have more than one cluster, you might need to change this variable: TestData.clusterId.
 
 
 class TestData():
@@ -193,7 +193,6 @@ class TestCapacityManagement(cloudstackTestCase):
 
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
-        cls.cluster = list_clusters(cls.apiClient)[0]
         cls.template = get_template(cls.apiClient, cls.zone.id, hypervisor=TestData.hypervisor_type)
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 

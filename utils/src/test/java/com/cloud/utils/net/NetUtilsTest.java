@@ -680,10 +680,33 @@ public class NetUtilsTest {
     }
 
     @Test
+    public void testIsIpv4() {
+        assertTrue(NetUtils.isIpv4("192.168.1.1"));
+        assertFalse(NetUtils.isIpv4("2a01:4f8:130:2192::2"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIsIpv4ExpectException() {
+        NetUtils.isIpv4("test");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIsIpv4ExpectException2() {
+        NetUtils.isIpv4("2001:db8:300::/64");
+    }
+
     public void testAllIpsOfDefaultNic() {
         final String defaultHostIp = NetUtils.getDefaultHostIp();
         if (defaultHostIp != null) {
             assertTrue(NetUtils.getAllDefaultNicIps().stream().anyMatch(defaultHostIp::contains));
         }
+    }
+
+    @Test
+    public void testIsIPv6EUI64() {
+        assertTrue(NetUtils.isIPv6EUI64("fe80::5054:8fff:fe9f:af61"));
+        assertTrue(NetUtils.isIPv6EUI64("2a00:f10:305:0:464:64ff:fe00:4e0"));
+        assertFalse(NetUtils.isIPv6EUI64("2001:db8::100:1"));
+        assertFalse(NetUtils.isIPv6EUI64("2a01:4f9:2a:185f::2"));
     }
 }

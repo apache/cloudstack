@@ -78,7 +78,7 @@
             var ret = function() {
                 $('.overlay').remove();
 
-                return $formContainer.dialog({
+                var $dialog = $formContainer.dialog({
                     dialogClass: args.form.isWarning ? 'create-form warning' : 'create-form',
                     closeOnEscape: false,
                     draggable: false,
@@ -107,7 +107,9 @@
                             $('div.overlay').remove();
                             $('.tooltip-box').remove();
                             $formContainer.remove();
-                            $(this).dialog('destroy');
+                            if ($(this).data('dialog')) {
+                                $(this).dialog('destroy');
+                            }
 
                             $('.hovered-elem').hide();
 
@@ -117,10 +119,11 @@
                         text: _l('label.cancel'),
                         'class': 'cancel',
                         click: function() {
+                            $(this).dialog('destroy');
+
                             $('div.overlay').remove();
                             $('.tooltip-box').remove();
                             $formContainer.remove();
-                            $(this).dialog('destroy');
 
                             $('.hovered-elem').hide();
 
@@ -129,7 +132,9 @@
                             }
                         }
                     }]
-                }).closest('.ui-dialog').overlay();
+                });
+
+                return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
             };
 
             var isLastAsync = function(idx) {
@@ -379,7 +384,7 @@
 
                                 // Make sure all data is loaded to pass to select fn
                                 dependsOnLoaded = $.inArray(
-                                    true, $dependsOn.map(function(index, item) { return $(item).find('option').size() ? true : false; })
+                                    true, $dependsOn.map(function(index, item) { return $(item).find('option').length ? true : false; })
                                 ) > -1;
 
                                 if (!dependsOnLoaded) {
@@ -430,6 +435,68 @@
                             );
                         });
 
+                    } else if (field.multiDataArray) {
+
+                        $input = $('<div>');
+
+                        multiArgs = {
+                            context: args.context,
+                            response: {
+                                success: function(args) {
+                                    if (args.data == undefined || args.data.length == 0) {
+
+                                        var label = field.emptyMessage != null ? field.emptyMessage : 'No data available';
+
+                                        $input
+                                            .addClass('value')
+                                            .appendTo($value)
+                                            .append(
+                                                $('<label>').html(_l(label))
+                                            );
+
+                                    } else {
+
+                                        $input.addClass('multi-array').addClass(key).appendTo($value);
+
+                                        $(args.data).each(function() {
+
+                                            var id;
+                                            if (field.valueField)
+                                                id = this[field.valueField];
+                                             else
+                                                id = this.id !== undefined ? this.id : this.name;
+
+                                            var desc;
+                                            if (args.descriptionField)
+                                                desc = this[args.descriptionField];
+                                            else
+                                                desc = _l(this.description);
+
+                                            $input.append(
+                                                $('<div>')
+                                                    .addClass('item')
+                                                    .append(
+                                                        $.merge(
+                                                            $('<div>').addClass('name').html(_l(desc)),
+                                                            $('<div>').addClass('value').append(
+                                                                $('<input>').attr({
+                                                                    name: id,
+                                                                    type: 'checkbox'
+                                                                })
+                                                                .data('json-obj', this)
+                                                                .appendTo($value)
+                                                            )
+                                                        )
+                                                    )
+                                            );
+                                        });
+                                    }
+                                }
+                            }
+                        }
+
+                        multiFn = field.multiData;
+                        multiFn(multiArgs);
                     } else {
                         $input = $('<input>').attr({
                             name: key,
@@ -711,7 +778,7 @@
 
                 if (!$formContainer.find('form').valid()) {
                     // Ignore hidden field validation
-                    if ($formContainer.find('input.error:visible, select.error:visible').size()) {
+                    if ($formContainer.find('input.error:visible, select.error:visible').length) {
                         return false;
                     }
                 }
@@ -753,7 +820,16 @@
                                             $form.find('.loading-overlay').remove();
                                             $('div.loading-overlay').remove();
 
-                                            cloudStack.dialog.error({ message: msg });
+                                            if (!msg) {
+                                                msg = "Failed to upload file due to system misconfiguration. Please contact admin.";
+                                            }
+                                            cloudStack.dialog.notice({ message: msg });
+
+                                            $('.tooltip-box').remove();
+                                            $formContainer.remove();
+                                            $(this).dialog('destroy');
+
+                                            $('.hovered-elem').hide();
                                         }
                                     }
                                 };
@@ -905,7 +981,7 @@
                     click: function() {
                         if (!$listView.find(
                             'input[type=radio]:checked, input[type=checkbox]:checked'
-                        ).size()) {
+                        ).length) {
                             cloudStack.dialog.notice({
                                 message: _l('message.select.instance')
                             });
@@ -985,7 +1061,7 @@
          * Confirmation dialog
          */
         confirm: function(args) {
-            return $(
+            var $dialog = $(
                 $('<span>').addClass('message').html(
                     _l(args.message)
                 )
@@ -993,7 +1069,6 @@
                 title: args.isWarning ? _l('label.warning') : _l('label.confirmation'),
                 dialogClass: args.isWarning ? 'confirm warning': 'confirm',
                 closeOnEscape: false,
-                zIndex: 5000,
                 buttons: [{
                     text: _l('label.no'),
                     'class': 'cancel',
@@ -1015,7 +1090,9 @@
                         $('.hovered-elem').hide();
                     }
                 }]
-            }).closest('.ui-dialog').overlay();
+            });
+
+            return  cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
         },
 
         /**
@@ -1023,7 +1100,7 @@
          */
         notice: function(args) {
             if (args.message) {
-                return $(
+                var $dialog = $(
                     $('<span>').addClass('message').html(
                         _l(args.message)
                     )
@@ -1031,7 +1108,6 @@
                     title: _l('label.status'),
                     dialogClass: 'notice',
                     closeOnEscape: false,
-                    zIndex: 5000,
                     buttons: [{
                         text: _l('label.close'),
                         'class': 'close',
@@ -1039,11 +1115,13 @@
                             $(this).dialog('destroy');
                             if (args.clickAction) args.clickAction();
                             $('.hovered-elem').hide();
+                            $('div.overlay').hide();
                         }
                     }]
                 });
-            }
 
+                return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog, 5001);
+            }
             return false;
         }
     };

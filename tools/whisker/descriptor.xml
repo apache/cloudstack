@@ -2609,7 +2609,7 @@ Copyright (c) 2012 John Resig, Jörn Zaefferer
             </by-organisation>
         </with-license>
     </within>
-    <within dir='utils/src/com/cloud/utils/db'>
+    <within dir='utils/src/main/java/com/cloud/utils/db'>
         <with-license id='ApacheLicenseVersion2'>
             <copyright-notice>
 Copyright (c) 2004 Clinton Begin
@@ -2639,7 +2639,7 @@ Copyright (c) 2010-2011 OpenStack, LLC.
 			</by-organisation>
 		</with-license>
     </within>
-    <within dir='utils/src/org/apache/commons/httpclient/contrib/ssl'>
+    <within dir='utils/src/main/java/org/apache/commons/httpclient/contrib/ssl'>
         <with-license id='ApacheLicenseVersion2'>
             <copyright-notice>
 Copyright (c) 2007 The Apache Software Foundation

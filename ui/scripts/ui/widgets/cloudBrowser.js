@@ -95,7 +95,7 @@
          */
         width: function($container, options) {
             options = options ? options : {};
-            var width = $container.find('div.panel').size() < 1 || !options.partial ?
+            var width = $container.find('div.panel').length < 1 || !options.partial ?
                 $container.width() : $container.width() - $container.width() / 4;
 
             return width;
@@ -105,7 +105,7 @@
          * Get left position
          */
         position: function($container, options) {
-            return $container.find('div.panel').size() <= 1 || !options.partial ?
+            return $container.find('div.panel').length <= 1 || !options.partial ?
                 0 : _panel.width($container, options) - _panel.width($container, options) / 1.5;
         },
 
@@ -340,7 +340,7 @@
         }
     });
 
-    $('#breadcrumbs li').live('click', cloudStack.ui.event.bind(
+    $(document).on('click', '#breadcrumbs li', cloudStack.ui.event.bind(
         'cloudBrowser', {
             'breadcrumb': function($target, $browser, data) {
 

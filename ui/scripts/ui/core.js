@@ -181,7 +181,7 @@
                         }).join(',')
                     );
 
-                    if ($target.closest('.select.project-view').size()) {
+                    if ($target.closest('.select.project-view').length) {
                         $('#cloudStack3-container').addClass('project-view');
                         $projectSwitcher.addClass('alt');
                         $projectSwitcher.find('.select.project-view').addClass('active')
@@ -317,22 +317,20 @@
 
             if (this == 'label.help') {
                 $link.addClass('help').click(function() {
-                    var helpURL = 'http://cloudstack.apache.org/';
-
-                    window.open(helpURL, '_blank');
-
+                    window.open(cloudStackOptions.helpURL, '_blank');
                     return false;
                 });
             }
             if (this == 'label.about') {
                 $link.addClass('about').click(function() {
-                    var $logo = $('<div>').addClass('logo').text(_l('label.app.name')),
-                        $version = $('<div>').addClass('version').text(g_cloudstackversion),
+                    var $logo = $('<div>').addClass('logo').text(_l(cloudStackOptions.aboutText)),
+                        $version = $('<div>').addClass('version').text(_l(g_cloudstackversion)),
                         $about = $('<div>').addClass('about').append($logo).append($version);
-                    $about.dialog({
+
+                    var $aboutDialog = $about.dialog({
                         modal: true,
                         width: 300,
-                        title: _l('label.about.app'),
+                        title: _l(cloudStackOptions.aboutTitle),
                         closeOnEscape: false,
                         dialogClass: 'dialog-about',
                         buttons: {
@@ -341,8 +339,8 @@
                                 $(':ui-dialog, .overlay').remove();
                             }
                         }
-                    }).closest('.ui-dialog').overlay();
-
+                    });
+                    cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($aboutDialog);
                     return false;
                 });
             }
@@ -403,9 +401,9 @@
         function checkHoveredLabel($target) {
             var $multiWizard = $('div.ui-dialog div.multi-wizard');
             if (($target.is('label[for]') && !$target.parents('body.login')) ||
-                ($multiWizard.size() &&
-                    ($target.is('.multi-wizard label') && $target.prev('input[type="radio"],input[type="checkbox"]').size()) ||
-                    ($target.is('.multi-wizard .select-desc div.name') && $target.parent('div.select-desc').prev('input[type="radio"],input[type="checkbox"]').size())
+                ($multiWizard.length &&
+                    ($target.is('.multi-wizard label') && $target.prev('input[type="radio"],input[type="checkbox"]').length) ||
+                    ($target.is('.multi-wizard .select-desc div.name') && $target.parent('div.select-desc').prev('input[type="radio"],input[type="checkbox"]').length)
                 ))
                 return true;
 
@@ -418,7 +416,7 @@
             if (checkHoveredLabel($target)) {
                 $target.addClass('label-hovered');
             }
-            if ($target.closest('#user, #user-options').size()) {
+            if ($target.closest('#user, #user-options').length) {
                 return false;
             } else $('#user-options').hide();
 
@@ -440,19 +438,19 @@
             var $multiWizard = $('div.ui-dialog div.multi-wizard');
 
             // Wizard: trigger click event for input when click it label
-            if ($multiWizard.size()) {
-                if ($target.is('.multi-wizard label') && $target.prev('input[type="radio"],input[type="checkbox"]').size()) {
+            if ($multiWizard.length) {
+                if ($target.is('.multi-wizard label') && $target.prev('input[type="radio"],input[type="checkbox"]').length) {
                     $target.prev('input').trigger('click');
                 }
-                if ($target.is('.multi-wizard .select-desc div.name') && $target.parent('div.select-desc').prev('input[type="radio"],input[type="checkbox"]').size()) {
+                if ($target.is('.multi-wizard .select-desc div.name') && $target.parent('div.select-desc').prev('input[type="radio"],input[type="checkbox"]').length) {
                     $target.parent('div.select-desc').prev('input').trigger('click');
                 }
             }
 
-            if (!$container.size()) return true;
+            if (!$container.length) return true;
 
             // Navigation items
-            if ($target.closest('li.navigation-item').size() && $target.closest('#navigation').size()) {
+            if ($target.closest('li.navigation-item').length && $target.closest('#navigation').length) {
                 var $navItem = $target.closest('li.navigation-item');
 
                 if ($navItem.is('.disabled')) return false;
@@ -462,7 +460,7 @@
             }
 
             // Browser expand
-            if ($target.hasClass('control expand') && $target.closest('div.panel div.toolbar').size()) {
+            if ($target.hasClass('control expand') && $target.closest('div.panel div.toolbar').length) {
                 $browser.cloudBrowser('toggleMaximizePanel', {
                     panel: $target.closest('div.panel')
                 });
@@ -477,7 +475,7 @@
             }
 
             // User options
-            if ($target.closest('#user div.icon.options').size()) {
+            if ($target.closest('#user div.icon.options').length) {
                 $('#user-options').toggle();
 
                 return false;

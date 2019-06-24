@@ -30,7 +30,7 @@ from marvin.lib.base import (Domain,
                              User,
                              NATRule,
                              Template,
-                             PublicIPAddress)
+                             PublicIPAddress, Role)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_test_template,
@@ -66,6 +66,11 @@ class Services:
                 # Random characters are appended for unique
                 # username
                 "password": "fr3sca",
+            },
+            "role": {
+                "name": "MarvinFake Role",
+                "type": "User",
+                "description": "Fake Role created by Marvin test"
             },
             "user": {
                 "email": "user@test.com",
@@ -259,6 +264,53 @@ class TestAccounts(cloudstackTestCase):
             "Check user source of created user"
         )
         return
+
+
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"],
+          required_hardware="false")
+    def test_02_update_account(self):
+        """
+        Tests that accounts can be updated with new name, network domain, dynamic role
+        :return:
+        """
+        dynamic_roles_active = self.apiclient.listCapabilities(listCapabilities.listCapabilitiesCmd()).dynamicrolesenabled
+        if not dynamic_roles_active:
+            self.skipTest("Dynamic Role-Based API checker not enabled, skipping test")
+
+        ts = str(time.time())
+        network_domain = 'mycloud.com'
+
+        account = Account.create(self.apiclient, self.services['account'])
+        self.cleanup.append(account)
+
+        role = Role.create(self.apiclient, self.services['role'])
+        self.cleanup.append(role)
+
+        account.update(self.apiclient, newname=account.name + ts)
+        account.update(self.apiclient, roleid=role.id)
+        account.update(self.apiclient, networkdomain=network_domain)
+
+        list_accounts_response = list_accounts(self.apiclient, id=account.id)
+        test_account = list_accounts_response[0]
+
+        self.assertEqual(
+            test_account.roleid, role.id,
+            "Check the role for the account is changed")
+
+        self.assertEqual(
+            test_account.networkdomain, network_domain,
+            "Check the domain for the account is changed")
+
+        self.assertEqual(
+            test_account.name, account.name + ts,
+            "Check the name for the account is changed")
+
+        try:
+            account.update(self.apiclient, newname="")
+            self.fail("Account name change to empty name succeeded. Must be error.")
+        except CloudstackAPIException:
+            pass
+
 
 
 class TestRemoveUserFromAccount(cloudstackTestCase):

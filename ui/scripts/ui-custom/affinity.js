@@ -136,8 +136,8 @@
                         });
                     }
                 }]
-            }).parent('.ui-dialog').overlay();
-
+            });
+            cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dataList);
             // Add tier select dialog
             if (tierSelect) {
                 var $toolbar = $dataList.find('.toolbar');

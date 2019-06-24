@@ -4726,13 +4726,13 @@ Within the ui/lib/qunit directory
             qunit.css  from http://docs.jquery.com/QUnit
             qunit.js  from http://docs.jquery.com/QUnit
 
-Within the utils/src/com/cloud/utils/db directory
+Within the utils/src/main/java/com/cloud/utils/db directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2004 Clinton Begin
         from Clinton Begin  http://code.google.com/p/mybatis/ 
             ScriptRunner.java  from http://code.google.com/p/mybatis/
 
-Within the utils/src/org/apache/commons/httpclient/contrib/ssl directory
+Within the utils/src/main/java/org/apache/commons/httpclient/contrib/ssl directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2007 The Apache Software Foundation
         from The Apache Software Foundation  http://www.apache.org/ 

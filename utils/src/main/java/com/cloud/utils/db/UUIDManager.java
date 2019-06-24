@@ -45,4 +45,6 @@ public interface UUIDManager {
      * .
      */
     <T> void checkUuidSimple(String uuid, Class<T> entityType);
+
+    public <T> String getUuid(Class<T> entityType, Long customId);
 }

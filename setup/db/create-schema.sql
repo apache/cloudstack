@@ -195,9 +195,6 @@ DROP TABLE IF EXISTS `cloud`.`image_data_store`;
 DROP TABLE IF EXISTS `cloud`.`vm_compute_tags`;
 DROP TABLE IF EXISTS `cloud`.`vm_root_disk_tags`;
 DROP TABLE IF EXISTS `cloud`.`vm_network_map`;
-DROP TABLE IF EXISTS `cloud`.`netapp_volume`;
-DROP TABLE IF EXISTS `cloud`.`netapp_pool`;
-DROP TABLE IF EXISTS `cloud`.`netapp_lun`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',

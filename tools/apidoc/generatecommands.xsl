@@ -55,13 +55,12 @@ version="1.0">
 			<div class="api_titlebox">
 				<div class="api_titlebox_left">
 				<xsl:for-each select="command/command">
-					<!-- Modify this line for the release version -->
 					<span>
-									Apache CloudStack v4.9.0 Root Admin API Reference
-								</span>
-								<p></p>
-                                <h1><xsl:value-of select="name"/></h1>
-                                <p><xsl:value-of select="description"/></p>
+						Apache CloudStack %ACS_RELEASE% Root Admin API Reference
+					</span>
+					<p></p>
+					<h1><xsl:value-of select="name"/></h1>
+					<p><xsl:value-of select="description"/></p>
 				</xsl:for-each>
                             </div>
 

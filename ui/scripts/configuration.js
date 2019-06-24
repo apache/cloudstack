@@ -136,11 +136,70 @@
                                             });
                                         }
                                     },
-                                    isCustomized: {
-                                        label: 'label.custom',
-                                        isBoolean: true,
-                                        isReverse: true,
-                                        isChecked: false
+                                    offeringType: {
+                                        label: 'label.compute.offering.type',
+                                        docID: 'helpComputeOfferingType',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'fixed',
+                                                description: _l('label.compute.offering.fixed')
+                                            });
+                                            items.push({
+                                                id: 'customConstrained',
+                                                description: _l('label.compute.offering.custom.constrained')
+                                            });
+                                            items.push({
+                                                id: 'customUnconstrained',
+                                                description: _l('label.compute.offering.custom.unconstrained')
+                                            });
+
+                                            args.response.success({
+                                                data: items
+                                            });
+
+                                            args.$select.change(function() {
+                                                var $form = $(this).closest('form');
+
+                                                var $cpuNumber = $form.find('.form-item[rel=cpuNumber]');
+                                                var $cpuSpeed = $form.find('.form-item[rel=cpuSpeed]');
+                                                var $memory = $form.find('.form-item[rel=memory]');
+
+                                                var $minCPUNumber = $form.find('.form-item[rel=minCPUNumber]');
+                                                var $maxCPUNumber = $form.find('.form-item[rel=maxCPUNumber]');
+                                                var $minMemory = $form.find('.form-item[rel=minMemory]');
+                                                var $maxMemory = $form.find('.form-item[rel=maxMemory]');
+
+                                                var type = $(this).val();
+                                                if (type == 'fixed') {
+                                                    $minCPUNumber.hide();
+                                                    $maxCPUNumber.hide();
+                                                    $minMemory.hide();
+                                                    $maxMemory.hide();
+
+                                                    $cpuNumber.css('display', 'inline-block');
+                                                    $cpuSpeed.css('display', 'inline-block');
+                                                    $memory.css('display', 'inline-block');
+                                                } else if (type == 'customConstrained') {
+                                                    $cpuNumber.hide();
+                                                    $memory.hide();
+
+                                                    $cpuSpeed.css('display', 'inline-block');
+                                                    $minCPUNumber.css('display', 'inline-block');
+                                                    $maxCPUNumber.css('display', 'inline-block');
+                                                    $minMemory.css('display', 'inline-block');
+                                                    $maxMemory.css('display', 'inline-block');
+                                                } else {
+                                                    $cpuNumber.hide();
+                                                    $memory.hide();
+                                                    $cpuSpeed.hide();
+                                                    $minCPUNumber.hide();
+                                                    $maxCPUNumber.hide();
+                                                    $minMemory.hide();
+                                                    $maxMemory.hide();
+                                                }
+                                            });
+                                        }
                                     },
                                     cpuNumber: {
                                         label: 'label.num.cpu.cores',
@@ -164,6 +223,39 @@
                                         label: 'label.memory.mb',
                                         dependsOn: 'isCustomized',
                                         docID: 'helpComputeOfferingMemory',
+                                        validation: {
+                                            required: true,
+                                            number: true
+                                        }
+                                    },
+                                    // Custom Compute Offering
+                                    minCPUNumber: {
+                                        label: 'label.min.cpu.cores',
+                                        docID: 'helpComputeOfferingMinCPUCores',
+                                        validation: {
+                                            required: true,
+                                            number: true
+                                        }
+                                    },
+                                    maxCPUNumber: {
+                                        label: 'label.max.cpu.cores',
+                                        docID: 'helpComputeOfferingMaxCPUCores',
+                                        validation: {
+                                            required: true,
+                                            number: true
+                                        }
+                                    },
+                                    minMemory: {
+                                        label: 'label.memory.minimum.mb',
+                                        docID: 'helpComputeOfferingMinMemory',
+                                        validation: {
+                                            required: true,
+                                            number: true
+                                        }
+                                    },
+                                    maxMemory: {
+                                        label: 'label.memory.maximum.mb',
+                                        docID: 'helpComputeOfferingMaxMemory',
                                         validation: {
                                             required: true,
                                             number: true
@@ -588,17 +680,18 @@
                             },
 
                             action: function(args) {
+                                var isFixedOfferingType = args.data.offeringType == 'fixed';
                                 var data = {
                                     issystem: false,
                                     name: args.data.name,
                                     displaytext: args.data.description,
                                     storageType: args.data.storageType,
                                     provisioningType :args.data.provisioningType,
-                                    customized: (args.data.isCustomized == "on")
+                                    customized: !isFixedOfferingType
                                 };
 
                                 //custom fields (begin)
-                                if (args.data.isCustomized != "on") {
+                                if (isFixedOfferingType) {
                                     $.extend(data, {
                                         cpuNumber: args.data.cpuNumber
                                     });
@@ -608,6 +701,24 @@
                                     $.extend(data, {
                                         memory: args.data.memory
                                     });
+                                } else {
+                                    if(args.data.cpuSpeed != null && args.data.minCPUNumber != null && args.data.maxCPUNumber != null && args.data.minMemory != null && args.data.maxMemory != null){
+                                        $.extend(data, {
+                                            cpuSpeed: args.data.cpuSpeed
+                                        });
+                                        $.extend(data, {
+                                            mincpunumber: args.data.minCPUNumber
+                                        });
+                                        $.extend(data, {
+                                            maxcpunumber: args.data.maxCPUNumber
+                                        });
+                                        $.extend(data, {
+                                            minmemory: args.data.minMemory
+                                        });
+                                        $.extend(data, {
+                                            maxmemory: args.data.maxMemory
+                                        });
+                                    }
                                 }
                                 //custom fields (end)
 
@@ -1683,19 +1794,16 @@
                     dataProvider: function(args) {
                         var data = {};
                         listViewDataProvider(args, data);
-
-                        $.ajax({
-                            url: createURL('listDiskOfferings&isrecursive=true'),
+                        var listDiskOfferingsOptions = {
+                            isRecursive: true,
                             data: data,
-                            success: function(json) {
-                                var items = json.listdiskofferingsresponse.diskoffering;
-                                args.response.success({
-                                    data: items
-                                });
-                            },
                             error: function(data) {
                                 args.response.error(parseXMLHttpResponse(data));
                             }
+                        };
+                        var diskOfferings = cloudStack.listDiskOfferings(listDiskOfferingsOptions);
+                        args.response.success({
+                            data: diskOfferings
                         });
                     },
 
@@ -2295,15 +2403,16 @@
 
                                 dataProvider: function(args) {
                                     var data = {
+                                        isrecursive: true,
                                         id: args.context.diskOfferings[0].id
                                     };
                                     $.ajax({
-                                        url: createURL('listDiskOfferings&isrecursive=true'),
+                                        url: createURL('listDiskOfferings'),
+                                        dataType: "json",
                                         data: data,
                                         success: function(json) {
                                             var item = json.listdiskofferingsresponse.diskoffering[0];
                                             args.response.success({
-                                                actionFilter: diskOfferingActionfilter,
                                                 data: item
                                             });
                                         }
@@ -2410,7 +2519,7 @@
                                             $userDataL2.hide();
                                             $supportedServices.css('display', 'inline-block');
                                             if ($useVpcCb.is(':checked')) { //if useVpc is checked,
-                                                $useVpcCb.removeAttr("checked"); //remove "checked" attribute in useVpc
+                                                $useVpcCb.prop("checked", false); //remove "checked" attribute in useVpc
                                             }
                                             $conservemode.css('display', 'inline-block');
                                         } else if ($guestTypeField.val() == 'Isolated') { //Isolated network offering
@@ -2429,7 +2538,7 @@
                                         //p.s. Netscaler is supported in both vpc and non-vpc
                                         if ($useVpc.is(':visible') && $useVpcCb.is(':checked')) { //*** vpc ***
                                             $optionsOfProviders.each(function(index) {
-                                                if ($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter' || $(this).val() == 'Netscaler'  || $(this).val() == 'NuageVsp' || $(this).val() == 'NuageVspVpc' || $(this).val() == 'BigSwitchBcf' || $(this).val() == 'ConfigDrive') {
+                                                if ($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter' || $(this).val() == 'Netscaler'  || $(this).val() == 'BigSwitchBcf' || $(this).val() == 'ConfigDrive') {
                                                     $(this).attr('disabled', false);
                                                 } else {
                                                     $(this).attr('disabled', true);
@@ -2562,7 +2671,7 @@
                                             $conservemode.find("input[type=checkbox]").removeAttr("disabled");
                                         }
 
-                                        $(':ui-dialog').dialog('option', 'position', 'center');
+                                        $('div.ui-dialog').css('top', '24px');
 
                                         //CS-16612 show all services regardless of guestIpType(Shared/Isolated)
                                         /*
@@ -2705,17 +2814,12 @@
                                         }
 
                                         //PublicAccess checkbox should be displayed only when 'Connectivity' service is checked
-                                        if (args.$form.find('.form-item[rel=\"service.Connectivity.isEnabled\"]').find('input[type=checkbox]').is(':checked') && $guestTypeField.val() == 'Shared' &&
-                                            args.$form.find('.form-item[rel=\"service.Connectivity.provider\"]').find('select').val() == 'NuageVsp') {
+                                        if (args.$form.find('.form-item[rel=\"service.Connectivity.isEnabled\"]').find('input[type=checkbox]').is(':checked')
+                                            && $guestTypeField.val() == 'Shared'
+                                            && args.$form.find('.form-item[rel=\"service.Connectivity.provider\"]').find('select').val() == 'NuageVsp') {
                                             $supportspublicaccess.css('display', 'inline-block');
                                         } else {
                                             $supportspublicaccess.hide();
-                                        }
-
-                                        //Uncheck specifyVlan checkbox when (1)guest type is Shared and (2)NuageVsp is selected as a Connectivity provider
-                                        if ($guestTypeField.val() == 'Shared') {
-                                            var $specifyVlanCheckbox = args.$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]');
-                                            $specifyVlanCheckbox.attr('checked', args.$form.find('.form-item[rel=\"service.Connectivity.provider\"]').find('select').val() != 'NuageVsp')
                                         }
                                     });
 
@@ -3006,9 +3110,9 @@
                                                                                 });
                                                                             }
                                                                         } else { //canenableindividualservice == true
-                                                                            if ($thisProviderDropdown.context.name in providerDropdownsForciblyChangedTogether) { //if this provider dropdown is one of provider dropdowns forcibly changed together earlier, make other forcibly changed provider dropdowns restore default option (i.e. 1st option in dropdown)
+                                                                            if (this.name in providerDropdownsForciblyChangedTogether) { //if this provider dropdown is one of provider dropdowns forcibly changed together earlier, make other forcibly changed provider dropdowns restore default option (i.e. 1st option in dropdown)
                                                                                 for (var key in providerDropdownsForciblyChangedTogether) {
-                                                                                    if (key == $thisProviderDropdown.context.name)
+                                                                                    if (key == this.name)
                                                                                         continue; //skip to next item in for loop
                                                                                     else
                                                                                         $("select[name='" + key + "'] option:first").attr("selected", "selected");
@@ -3355,7 +3459,7 @@
                                         inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'StretchedL2Subnet';
                                         inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
                                         serviceCapabilityIndex++;
-                                    } else if (k == 'supportspublicaccess' && ("Connectivity" in serviceProviderMap) && serviceProviderMap['Connectivity'] == 'NuageVsp') {
+                                    } else if (k == 'supportspublicaccess' && ("Connectivity" in serviceProviderMap)) {
                                         inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'Connectivity';
                                         inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'PublicAccess';
                                         inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
@@ -3907,8 +4011,8 @@
                                             networkServiceObjs.push({
                                                 name: 'Dhcp',
                                                 provider: [
-                                                       {name: 'VpcVirtualRouter'},
-                                                       {name: 'NuageVsp'}]
+                                                       {name: 'VpcVirtualRouter'}
+                                                ]
                                             });
                                             networkServiceObjs.push({
                                                 name: 'Dns',
@@ -3930,21 +4034,18 @@
                                                 name: 'StaticNat',
                                                 provider: [
                                                        {name: 'VpcVirtualRouter'},
-                                                       {name: 'NuageVsp'},
                                                        {name: 'BigSwitchBcf'}]
                                             });
                                             networkServiceObjs.push({
                                                 name: 'SourceNat',
                                                 provider: [
                                                        {name: 'VpcVirtualRouter'},
-                                                       {name: 'NuageVsp'},
                                                        {name: 'BigSwitchBcf'}]
                                             });
                                             networkServiceObjs.push({
                                                 name: 'NetworkACL',
                                                 provider: [
                                                        {name: 'VpcVirtualRouter'},
-                                                       {name: 'NuageVsp'},
                                                        {name: 'BigSwitchBcf'}]
                                             });
                                             networkServiceObjs.push({
@@ -3968,8 +4069,7 @@
                                                     {name: 'BigSwitchBcf'},
                                                     {name: 'NiciraNvp'},
                                                     {name: 'Ovs'},
-                                                    {name: 'JuniperContrailVpcRouter'},
-                                                    {name: 'NuageVsp'}
+                                                    {name: 'JuniperContrailVpcRouter'}
                                                 ]
                                             });
 

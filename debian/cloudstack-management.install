@@ -22,7 +22,6 @@
 /etc/cloudstack/management/java.security.ciphers
 /etc/cloudstack/management/log4j-cloud.xml
 /etc/default/cloudstack-management
-/etc/init.d/cloudstack-management
 /etc/security/limits.d/cloudstack-limits.conf
 /etc/sudoers.d/cloudstack
 /var/cache/cloudstack/management

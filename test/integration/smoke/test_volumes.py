@@ -37,7 +37,8 @@ from marvin.lib.common import (get_domain,
                                 get_zone,
                                 get_template,
                                 find_storage_pool_type,
-                                get_pod)
+                                get_pod,
+                                list_disk_offering)
 from marvin.lib.utils import checkVolumeSize
 from marvin.codes import SUCCESS, FAILED, XEN_SERVER
 from nose.plugins.attrib import attr
@@ -398,32 +399,32 @@ class TestVolumes(cloudstackTestCase):
         # 3. disk should be  attached to instance successfully
 
         self.debug(
-                "Attaching volume (ID: %s) to VM (ID: %s)" % (
-                                                    self.volume.id,
-                                                    self.virtual_machine.id
-                                                    ))
+            "Attaching volume (ID: %s) to VM (ID: %s)" % (
+                self.volume.id,
+                self.virtual_machine.id
+            ))
         self.virtual_machine.attach_volume(self.apiClient, self.volume)
         self.attached = True
         list_volume_response = Volume.list(
-                                                self.apiClient,
-                                                id=self.volume.id
-                                                )
+            self.apiClient,
+            id=self.volume.id
+        )
         self.assertEqual(
-                            isinstance(list_volume_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
+            isinstance(list_volume_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
         self.assertNotEqual(
-                            list_volume_response,
-                            None,
-                            "Check if volume exists in ListVolumes"
-                            )
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes"
+        )
         volume = list_volume_response[0]
         self.assertNotEqual(
-                            volume.virtualmachineid,
-                            None,
-                            "Check if volume state (attached) is reflected"
-                            )
+            volume.virtualmachineid,
+            None,
+            "Check if volume state (attached) is reflected"
+        )
         try:
             #Format the attached volume to a known fs
             format_volume_to_ext3(self.virtual_machine.get_ssh_client())
@@ -431,7 +432,7 @@ class TestVolumes(cloudstackTestCase):
         except Exception as e:
 
             self.fail("SSH failed for VM: %s - %s" %
-                                    (self.virtual_machine.ipaddress, e))
+                      (self.virtual_machine.ipaddress, e))
         return
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
@@ -857,6 +858,60 @@ class TestVolumes(cloudstackTestCase):
         self.assertTrue(hasattr(root_volume, "podname"))
         self.assertEqual(root_volume.podname, list_pods.name)
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_11_attach_volume_with_unstarted_vm(self):
+        """Attach a created Volume to a unstarted VM
+        """
+        # Validate the following
+        # 1. Attach to a vm in startvm=false state works and vm can be started afterwards.
+        # 2. shows list of volumes
+        # 3. "Attach Disk" pop-up box will display with list of  instances
+        # 4. disk should be  attached to instance successfully
+
+        test_vm = VirtualMachine.create(
+            self.apiclient,
+            self.services,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            mode=self.services["mode"],
+            startvm=False
+        )
+
+        self.debug(
+            "Attaching volume (ID: %s) to VM (ID: %s)" % (
+                self.volume.id,
+                test_vm.id
+            ))
+        test_vm.attach_volume(self.apiClient, self.volume)
+        test_vm.start(self.apiClient)
+
+        list_volume_response = Volume.list(
+            self.apiClient,
+            id=self.volume.id
+        )
+        self.assertEqual(
+            isinstance(list_volume_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes"
+        )
+        volume = list_volume_response[0]
+        self.assertNotEqual(
+            volume.virtualmachineid,
+            None,
+            "Check if volume state (attached) is reflected"
+        )
+
+        test_vm.detach_volume(self.apiClient, self.volume)
+        self.cleanup.append(test_vm)
+
+        return
+
     def wait_for_attributes_and_return_root_vol(self):
         def checkVolumeResponse():
             list_volume_response = Volume.list(
@@ -875,3 +930,80 @@ class TestVolumes(cloudstackTestCase):
         if not res:
             self.fail("Failed to return root volume response")
         return response
+
+
+    @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_11_migrate_volume_and_change_offering(self):
+
+    # Validates the following
+    #
+    # 1. Creates a new Volume with a small disk offering
+    #
+    # 2. Migrates the Volume to another primary storage and changes the offering
+    #
+    # 3. Verifies the Volume has new offering when migrated to the new storage.
+
+        small_offering = list_disk_offering(
+            self.apiclient,
+            name = "Small"
+        )[0]
+
+        large_offering = list_disk_offering(
+            self.apiclient,
+            name = "Large"
+        )[0]
+        volume = Volume.create(
+            self.apiClient,
+            self.services,
+            zoneid = self.zone.id,
+            account = self.account.name,
+            domainid = self.account.domainid,
+            diskofferingid = small_offering.id
+        )
+        self.debug("Created a small volume: %s" % volume.id)
+
+        self.virtual_machine.attach_volume(self.apiclient, volume=volume)
+
+        if self.virtual_machine.hypervisor == "KVM":
+            self.virtual_machine.stop(self.apiclient)
+
+        pools = StoragePool.listForMigration(
+            self.apiclient,
+            id=volume.id
+            )
+
+        pool = None
+
+        if pools and len(pools) > 0:
+            pool = pools[0]
+        else:
+            raise self.skipTest("Not enough storage pools found, skipping test")
+        
+        if hasattr(pool, 'tags'):
+            StoragePool.update(self.apiclient, id=pool.id, tags="")
+
+        self.debug("Migrating Volume-ID: %s to Pool: %s" % (volume.id, pool.id))
+        livemigrate = False
+        if self.virtual_machine.hypervisor.lower() == "vmware" or self.virtual_machine.hypervisor.lower() == 'xenserver':
+            livemigrate = True
+
+        Volume.migrate(
+            self.apiclient,
+            volumeid = volume.id,
+            storageid = pool.id,
+            newdiskofferingid = large_offering.id,
+            livemigrate = livemigrate
+        )
+        if self.virtual_machine.hypervisor == "KVM":
+            self.virtual_machine.start(self.apiclient
+        )
+        migrated_vol = Volume.list(
+            self.apiclient,
+            id = volume.id
+        )[0]
+        self.assertEqual(
+            migrated_vol.diskofferingname,
+            large_offering.name,
+            "Offering name did not match with the new one "
+        )
+        return
