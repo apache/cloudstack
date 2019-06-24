@@ -3434,7 +3434,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         options.put(VmDetailConstants.ROOT_DISK_SIZE, Collections.emptyList());
 
         if (HypervisorType.KVM.equals(hypervisorType)) {
-            options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("ide", "scsi", "virtio"));
+            options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio"));
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {
