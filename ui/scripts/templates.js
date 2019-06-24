@@ -1559,7 +1559,7 @@
                                                         // allow.user.view.domain.accounts = true
                                                         // Populate List of accounts in domain as dropdown multiselect
                                                         $form.find('[rel=sharewith]').css('display', 'inline-block');
-                                                        if (g_allowUserViewAllDomainAccounts === true) {
+                                                        if (!isUser() || g_allowUserViewAllDomainAccounts === true) {
                                                             $form.find('[rel=projects]').css('display', 'inline-block');
                                                             $form.find('[rel=accounts]').css('display', 'inline-block');
                                                             $form.find('[rel=accountlist]').hide();
@@ -1606,7 +1606,7 @@
                                                         } else {
                                                             // allow.user.view.domain.accounts = true
                                                             // Populate List of accounts in domain as dropdown multiselect
-                                                            if (g_allowUserViewAllDomainAccounts === true) {
+                                                            if (!isUser() || g_allowUserViewAllDomainAccounts === true) {
                                                                 $form.find('[rel=projects]').hide();
                                                                 $form.find('[rel=accountlist]').hide();
                                                                 $form.find('[rel=accounts]').css('display', 'inline-block');
