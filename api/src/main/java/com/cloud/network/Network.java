@@ -40,13 +40,14 @@ import com.cloud.utils.fsm.StateObject;
  */
 public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity, Serializable, Displayable {
 
-    public enum GuestType {
+    enum GuestType {
         Shared, Isolated, L2
     }
 
-    public String updatingInSequence ="updatingInSequence";
+    String updatingInSequence = "updatingInSequence";
+    String hideIpAddressUsage = "hideIpAddressUsage";
 
-    public static class Service {
+    class Service {
         private static List<Service> supportedServices = new ArrayList<Service>();
 
         public static final Service Vpn = new Service("Vpn", Capability.SupportedVpnProtocols, Capability.VpnTypes);

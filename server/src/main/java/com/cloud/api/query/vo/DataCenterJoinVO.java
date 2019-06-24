@@ -117,6 +117,9 @@ public class DataCenterJoinVO extends BaseViewVO implements InternalIdentity, Id
     @Column(name = "account_id")
     private long accountId;
 
+    @Column(name = "sort_key")
+    private int sortKey;
+
     public DataCenterJoinVO() {
     }
 
@@ -220,5 +223,9 @@ public class DataCenterJoinVO extends BaseViewVO implements InternalIdentity, Id
 
     public long getAccountId() {
         return accountId;
+    }
+
+    public int getSortKey() {
+        return sortKey;
     }
 }

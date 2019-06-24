@@ -718,10 +718,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         String userSpecifiedName = getVolumeNameFromCommand(cmd);
 
-        VolumeVO volume = commitVolume(cmd, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
+        return commitVolume(cmd, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
                 _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()));
-
-        return volume;
     }
 
     private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final Account owner, final Boolean displayVolume, final Long zoneId, final Long diskOfferingId,
@@ -1043,6 +1041,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // the requested change
 
         /* If this volume has never been beyond allocated state, short circuit everything and simply update the database. */
+        // We need to publish this event to usage_volume table
         if (volume.getState() == Volume.State.Allocated) {
             s_logger.debug("Volume is in the allocated state, but has never been created. Simply updating database with new size and IOPS.");
 
@@ -1056,7 +1055,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             _volsDao.update(volume.getId(), volume);
-
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
             return volume;
         }
 
@@ -1133,7 +1133,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private VolumeVO orchestrateResizeVolume(long volumeId, long currentSize, long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, Long newDiskOfferingId,
             boolean shrinkOk) {
-        VolumeVO volume = _volsDao.findById(volumeId);
+        final VolumeVO volume = _volsDao.findById(volumeId);
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
         boolean isManaged = storagePool.isManaged();
@@ -1209,13 +1209,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                         volService.resizeVolumeOnHypervisor(volumeId, newSize, hosts[0], instanceName);
                     }
                 }
-
-                volume.setSize(newSize);
-
-                _volsDao.update(volume.getId(), volume);
             }
-
-            volume = _volsDao.findById(volume.getId());
 
             if (newDiskOfferingId != null) {
                 volume.setDiskOfferingId(newDiskOfferingId);
@@ -1229,20 +1223,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             /* Update resource count for the account on primary storage resource */
             if (!shrinkOk) {
-                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplayVolume(), new Long(newSize - currentSize));
+                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplayVolume(), newSize - currentSize);
             } else {
-                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplayVolume(), new Long(currentSize - newSize));
+                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplayVolume(), currentSize - newSize);
             }
+
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
+
             return volume;
-        } catch (InterruptedException e) {
-            s_logger.warn("failed get resize volume result", e);
-            throw new CloudRuntimeException(e.getMessage());
-        } catch (ExecutionException e) {
-            s_logger.warn("failed get resize volume result", e);
-            throw new CloudRuntimeException(e.getMessage());
+
         } catch (Exception e) {
-            s_logger.warn("failed get resize volume result", e);
-            throw new CloudRuntimeException(e.getMessage());
+            throw new CloudRuntimeException("Exception caught during resize volume operation of volume UUID: " + volume.getUuid(), e);
         }
     }
 
