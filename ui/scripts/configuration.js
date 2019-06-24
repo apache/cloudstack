@@ -991,6 +991,203 @@
                                         args.complete();
                                     }
                                 }
+                            },
+
+                            updateOfferingAccess: {
+                                label: 'label.action.update.offering.access',
+                                messages: {
+                                    notification: function(args) {
+                                        return 'label.action.update.offering.access';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.compute.offering.access',
+                                    desc: '',
+                                    preFilter: function(args) {
+                                        if (isAdmin()) {
+                                        } else {
+                                            args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
+                                            args.$form.find('.form-item[rel=isPublic]').hide();
+                                            args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                        }
+                                        var formOffering = args.context.serviceOfferings[0];
+                                        $.ajax({
+                                            url: createURL('listServiceOfferings&isrecursive=true'),
+                                            data: {
+                                                id: args.context.serviceOfferings[0].id
+                                            },
+                                            dataType: "json",
+                                            async: false,
+                                            success: function (json) {
+                                                var item = json.listserviceofferingsresponse.serviceoffering[0];
+                                                formOffering = item;
+                                                args.response.success({
+                                                    data: item
+                                                });
+                                            }
+                                        }); //end ajax
+                                        var offeringDomainIds = formOffering.domainid;
+                                        if (offeringDomainIds) {
+                                            args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
+                                            args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.spit(",") : [offeringDomainIds];
+                                            var options = args.$form.find('.form-item[rel=domainId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringDomainIds, function(domainIdIndex, domainId) {
+                                                    domainId = domainId.toString().trim();
+                                                    if ($(option).val() === domainId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        } else {
+                                            if (isAdmin()) {
+                                                args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', true);
+                                            }
+                                        }
+                                        var offeringZoneIds = formOffering.zoneid;
+                                        if (offeringZoneIds) {
+                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.spit(",") : [offeringZoneIds];
+                                            var options = args.$form.find('.form-item[rel=zoneId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringZoneIds, function(zoneIdIndex, zoneId) {
+                                                    zoneId = zoneId.toString().trim();
+                                                    if ($(option).val() === zoneId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        }
+                                    },
+                                    fields: {
+                                        isPublic: {
+                                            label: 'label.public',
+                                            isBoolean: true,
+                                            isReverse: true,
+                                            isChecked: false,
+                                            docID: 'helpComputeOfferingPublic'
+                                        },
+                                        domainId: {
+                                            label: 'label.domain',
+                                            docID: 'helpComputeOfferingDomain',
+                                            dependsOn: 'isPublic',
+                                            isMultiple: true,
+                                            isHidden: true,
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL('listDomains'),
+                                                    data: {
+                                                        listAll: true,
+                                                        details: 'min'
+                                                    },
+                                                    dataType: "json",
+                                                    async: false,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                        var options = args.$form.find('.form-item[rel=domainId]').children('option');
+                                                        $.each(options, function() {
+                                                            console.log($(this).val());
+                                                        });
+                                                        console.log("Hello! "+options);
+                                                    }
+                                                });
+                                            }
+                                        },
+                                        zoneId: {
+                                            label: 'label.zone',
+                                            docID: 'helpComputeOfferingZone',
+                                            isMultiple: true,
+                                            validation: {
+                                                allzonesonly: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL("listZones"),
+                                                    data: {available: 'true'},
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var zoneObjs = json.listzonesresponse.zone;
+                                                        $(zoneObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.name
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        items.unshift({
+                                                            id: -1,
+                                                            description: "All Zones",
+                                                            selected: true
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                },
+                                action: function(args) {
+                                    var data = {
+                                        id: args.context.serviceOfferings[0].id
+                                    };
+                                    if (args.data.isPublic != "on") {
+                                        var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                        if (domainId) {
+                                            $.extend(data, {
+                                                domainid: domainId
+                                            });
+                                        }
+                                    } else {
+                                        $.extend(data, {
+                                            domainid: "public"
+                                        });
+                                    }
+                                    var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
+                                    if (zoneId) {
+                                        $.extend(data, {
+                                            zoneid: zoneId
+                                        });
+                                    }
+                                    $.ajax({
+                                        url: createURL('updateServiceOffering'),
+                                        data: data,
+                                        dataType: "json",
+                                        async: false,
+                                        success: function (json) {
+                                            var item = json.updateserviceofferingresponse.serviceoffering;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    }); //end ajax
+                                },
+                                notification: {
+                                    poll: function(args) {
+                                        args.complete();
+                                    }
+                                }
                             }
                         },
 
@@ -2405,6 +2602,197 @@
                                             args.response.error(parseXMLHttpResponse(data));
                                         }
                                     });
+                                },
+                                notification: {
+                                    poll: function(args) {
+                                        args.complete();
+                                    }
+                                }
+                            },
+
+                            updateOfferingAccess: {
+                                label: 'label.action.update.offering.access',
+                                messages: {
+                                    notification: function(args) {
+                                        return 'label.action.update.offering.access';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.disk.offering.access',
+                                    desc: '',
+                                    preFilter: function(args) {
+                                        if (isAdmin()) {
+                                        } else {
+                                            args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
+                                            args.$form.find('.form-item[rel=isPublic]').hide();
+                                            args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                        }
+                                        var formOffering = args.context.diskOfferings[0];
+                                        $.ajax({
+                                            url: createURL('listDiskOfferings'),
+                                            data: {
+                                                id: args.context.diskOfferings[0].id
+                                            },
+                                            dataType: "json",
+                                            async: false,
+                                            success: function (json) {
+                                            var item = json.listdiskofferingsresponse.diskoffering[0];
+                                                formOffering = item;
+                                                args.response.success({
+                                                    data: item
+                                                });
+                                            }
+                                        }); //end ajax
+                                        var offeringDomainIds = formOffering.domainid;
+                                        if (offeringDomainIds) {
+                                            args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
+                                            args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.spit(",") : [offeringDomainIds];
+                                            var options = args.$form.find('.form-item[rel=domainId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringDomainIds, function(domainIdIndex, domainId) {
+                                                    domainId = domainId.toString().trim();
+                                                    if ($(option).val() === domainId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        } else {
+                                            if (isAdmin()) {
+                                                args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', true);
+                                            }
+                                        }
+                                        var offeringZoneIds = formOffering.zoneid;
+                                        if (offeringZoneIds) {
+                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.spit(",") : [offeringZoneIds];
+                                            var options = args.$form.find('.form-item[rel=zoneId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringZoneIds, function(zoneIdIndex, zoneId) {
+                                                    zoneId = zoneId.toString().trim();
+                                                    if ($(option).val() === zoneId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        }
+                                    },
+                                    fields: {
+                                        isPublic: {
+                                            label: 'label.public',
+                                            isBoolean: true,
+                                            isReverse: true,
+                                            isChecked: false,
+                                            docID: 'helpDiskOfferingPublic'
+                                        },
+                                        domainId: {
+                                            label: 'label.domain',
+                                            docID: 'helpDiskOfferingDomain',
+                                            dependsOn: 'isPublic',
+                                            isMultiple: true,
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL('listDomains'),
+                                                    data: {
+                                                        listAll: true,
+                                                        details: 'min'
+                                                    },
+                                                    dataType: "json",
+                                                    async: false,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            },
+                                            isHidden: true
+                                        },
+                                        zoneId: {
+                                            label: 'label.zone',
+                                            docID: 'helpDiskOfferingZone',
+                                            isMultiple: true,
+                                            validation: {
+                                                allzonesonly: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL("listZones"),
+                                                    data: {available: 'true'},
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var zoneObjs = json.listzonesresponse.zone;
+                                                        $(zoneObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.name
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        items.unshift({
+                                                            id: -1,
+                                                            description: "All Zones"
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                },
+                                action: function(args) {
+                                    var data = {
+                                        id: args.context.diskOfferings[0].id
+                                    };
+                                    if (args.data.isPublic != "on") {
+                                        var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                        if (domainId) {
+                                            $.extend(data, {
+                                                domainid: domainId
+                                            });
+                                        }
+                                    } else {
+                                        $.extend(data, {
+                                            domainid: "public"
+                                        });
+                                    }
+                                    var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
+                                    if (zoneId) {
+                                        $.extend(data, {
+                                            zoneid: zoneId
+                                        });
+                                    }
+                                    $.ajax({
+                                        url: createURL('updateDiskOffering'),
+                                        data: data,
+                                        dataType: "json",
+                                        async: false,
+                                        success: function (json) {
+                                            var item = json.updatediskofferingresponse.diskoffering;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    }); //end ajax
                                 },
                                 notification: {
                                     poll: function(args) {
@@ -3959,6 +4347,191 @@
                                         });
                                     }
                                 }
+                            },
+
+                            updateOfferingAccess: {
+                                label: 'label.action.update.offering.access',
+                                messages: {
+                                    notification: function(args) {
+                                        return 'label.action.update.offering.access';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.network.offering.access',
+                                    desc: '',
+                                    preFilter: function(args) {
+                                        var formOffering = args.context.networkOfferings[0];
+                                        $.ajax({
+                                            url: createURL('listNetworkOfferings'),
+                                            data: {
+                                                id: args.context.networkOfferings[0].id
+                                            },
+                                            dataType: "json",
+                                            async: false,
+                                            success: function (json) {
+                                            var item = json.listnetworkofferingsresponse.networkoffering[0];
+                                                formOffering = item;
+                                                args.response.success({
+                                                    data: item
+                                                });
+                                            }
+                                        }); //end ajax
+                                        var offeringDomainIds = formOffering.domainid;
+                                        if (offeringDomainIds) {
+                                            args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
+                                            args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.spit(",") : [offeringDomainIds];
+                                            var options = args.$form.find('.form-item[rel=domainId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringDomainIds, function(domainIdIndex, domainId) {
+                                                    domainId = domainId.toString().trim();
+                                                    if ($(option).val() === domainId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        } else {
+                                            if (isAdmin()) {
+                                                args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', true);
+                                            }
+                                        }
+                                        var offeringZoneIds = formOffering.zoneid;
+                                        if (offeringZoneIds) {
+                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.spit(",") : [offeringZoneIds];
+                                            var options = args.$form.find('.form-item[rel=zoneId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringZoneIds, function(zoneIdIndex, zoneId) {
+                                                    zoneId = zoneId.toString().trim();
+                                                    if ($(option).val() === zoneId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        }
+                                    },
+                                    fields: {
+                                        isPublic: {
+                                            label: 'label.public',
+                                            isBoolean: true,
+                                            isReverse: true,
+                                            isChecked: false,
+                                            docID: 'helpNetworkOfferingPublic'
+                                        },
+                                        domainId: {
+                                            label: 'label.domain',
+                                            docID: 'helpNetworkOfferingDomain',
+                                            dependsOn: 'isPublic',
+                                            isMultiple: true,
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL('listDomains'),
+                                                    data: {
+                                                        listAll: true,
+                                                        details: 'min'
+                                                    },
+                                                    dataType: "json",
+                                                    async: false,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            },
+                                            isHidden: true
+                                        },
+                                        zoneId: {
+                                            label: 'label.zone',
+                                            docID: 'helpNetworkOfferingZone',
+                                            isMultiple: true,
+                                            validation: {
+                                                allzonesonly: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL("listZones"),
+                                                    data: {available: 'true'},
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var zoneObjs = json.listzonesresponse.zone;
+                                                        $(zoneObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.name
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        items.unshift({
+                                                            id: -1,
+                                                            description: "All Zones"
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                },
+                                action: function(args) {
+                                    var data = {
+                                        id: args.context.networkOfferings[0].id
+                                    };
+                                    if (args.data.isPublic != "on") {
+                                        var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                        if (domainId) {
+                                            $.extend(data, {
+                                                domainid: domainId
+                                            });
+                                        }
+                                    } else {
+                                        $.extend(data, {
+                                            domainid: "public"
+                                        });
+                                    }
+                                    var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
+                                    if (zoneId) {
+                                        $.extend(data, {
+                                            zoneid: zoneId
+                                        });
+                                    }
+                                    $.ajax({
+                                        url: createURL('updateNetworkOffering'),
+                                        data: data,
+                                        dataType: "json",
+                                        async: false,
+                                        success: function (json) {
+                                            var item = json.updatenetworkofferingresponse.networkoffering;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    }); //end ajax
+                                },
+                                notification: {
+                                    poll: function(args) {
+                                        args.complete();
+                                    }
+                                }
                             }
                         },
                         tabs: {
@@ -4706,6 +5279,191 @@
                                         });
                                     }
                                 }
+                            },
+
+                            updateOfferingAccess: {
+                                label: 'label.action.update.offering.access',
+                                messages: {
+                                    notification: function(args) {
+                                        return 'label.action.update.offering.access';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.vpc.offering.access',
+                                    desc: '',
+                                    preFilter: function(args) {
+                                        var formOffering = args.context.vpcOfferings[0];
+                                        $.ajax({
+                                            url: createURL('listVPCOfferings'),
+                                            data: {
+                                                id: args.context.vpcOfferings[0].id
+                                            },
+                                            dataType: "json",
+                                            async: false,
+                                            success: function (json) {
+                                            var item = json.listvpcofferingsresponse.vpcoffering[0];
+                                                formOffering = item;
+                                                args.response.success({
+                                                    data: item
+                                                });
+                                            }
+                                        }); //end ajax
+                                        var offeringDomainIds = formOffering.domainid;
+                                        if (offeringDomainIds) {
+                                            args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
+                                            args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.spit(",") : [offeringDomainIds];
+                                            var options = args.$form.find('.form-item[rel=domainId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringDomainIds, function(domainIdIndex, domainId) {
+                                                    domainId = domainId.toString().trim();
+                                                    if ($(option).val() === domainId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        } else {
+                                            if (isAdmin()) {
+                                                args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', true);
+                                            }
+                                        }
+                                        var offeringZoneIds = formOffering.zoneid;
+                                        if (offeringZoneIds) {
+                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.spit(",") : [offeringZoneIds];
+                                            var options = args.$form.find('.form-item[rel=zoneId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringZoneIds, function(zoneIdIndex, zoneId) {
+                                                    zoneId = zoneId.toString().trim();
+                                                    if ($(option).val() === zoneId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        }
+                                    },
+                                    fields: {
+                                        isPublic: {
+                                            label: 'label.public',
+                                            isBoolean: true,
+                                            isReverse: true,
+                                            isChecked: false,
+                                            docID: 'helpVpcOfferingPublic'
+                                        },
+                                        domainId: {
+                                            label: 'label.domain',
+                                            docID: 'helpVpcOfferingDomain',
+                                            dependsOn: 'isPublic',
+                                            isMultiple: true,
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL('listDomains'),
+                                                    data: {
+                                                        listAll: true,
+                                                        details: 'min'
+                                                    },
+                                                    dataType: "json",
+                                                    async: false,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            },
+                                            isHidden: true
+                                        },
+                                        zoneId: {
+                                            label: 'label.zone',
+                                            docID: 'helpVpcOfferingZone',
+                                            isMultiple: true,
+                                            validation: {
+                                                allzonesonly: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL("listZones"),
+                                                    data: {available: 'true'},
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var zoneObjs = json.listzonesresponse.zone;
+                                                        $(zoneObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.name
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        items.unshift({
+                                                            id: -1,
+                                                            description: "All Zones"
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                },
+                                action: function(args) {
+                                    var data = {
+                                        id: args.context.vpcOfferings[0].id
+                                    };
+                                    if (args.data.isPublic != "on") {
+                                        var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                        if (domainId) {
+                                            $.extend(data, {
+                                                domainid: domainId
+                                            });
+                                        }
+                                    } else {
+                                        $.extend(data, {
+                                            domainid: "public"
+                                        });
+                                    }
+                                    var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
+                                    if (zoneId) {
+                                        $.extend(data, {
+                                            zoneid: zoneId
+                                        });
+                                    }
+                                    $.ajax({
+                                        url: createURL('updateVPCOffering'),
+                                        data: data,
+                                        dataType: "json",
+                                        async: false,
+                                        success: function (json) {
+                                            var item = json.updatevpcofferingresponse.vpcoffering;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    }); //end ajax
+                                },
+                                notification: {
+                                    poll: function(args) {
+                                        args.complete();
+                                    }
+                                }
                             }
                         },
                         tabs: {
@@ -4807,6 +5565,7 @@
         var allowedActions = [];
         allowedActions.push("edit");
         allowedActions.push("remove");
+        allowedActions.push("updateOfferingAccess");
         return allowedActions;
     };
 
@@ -4823,6 +5582,7 @@
         var allowedActions = [];
         allowedActions.push("edit");
         allowedActions.push("remove");
+        allowedActions.push("updateOfferingAccess");
         return allowedActions;
     };
 
@@ -4842,6 +5602,7 @@
 
         if (jsonObj.isdefault == false)
             allowedActions.push("remove");
+        allowedActions.push("updateOfferingAccess");
 
         return allowedActions;
     };
@@ -4862,6 +5623,7 @@
 
         if (jsonObj.isdefault == false)
             allowedActions.push("remove");
+        allowedActions.push("updateOfferingAccess");
 
         return allowedActions;
     };
