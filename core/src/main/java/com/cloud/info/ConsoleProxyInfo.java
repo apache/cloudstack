@@ -56,14 +56,12 @@ public class ConsoleProxyInfo {
     private String formatProxyAddress(String consoleProxyUrlDomain, String proxyIpAddress) {
         StringBuffer sb = new StringBuffer();
         // Domain in format *.example.com, proxy IP is 1.2.3.4 --> 1-2-3-4.example.com
-        if (consoleProxyUrlDomain.startsWith("*")) {
+        if (consoleProxyUrlDomain != null && consoleProxyUrlDomain.startsWith("*")) {
             sb.append(proxyIpAddress.replaceAll("\\.", "-"));
             sb.append(consoleProxyUrlDomain.substring(1)); // skip the *
-
         // Otherwise we assume a valid domain if config not blank
         } else if (StringUtils.isNotBlank(consoleProxyUrlDomain)) {
             sb.append(consoleProxyUrlDomain);
-
         // Blank config, we use the proxy IP
         } else {
             sb.append(proxyIpAddress);
