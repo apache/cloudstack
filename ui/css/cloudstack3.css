@@ -12400,7 +12400,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -165px -122px;
 }
 
-.shareTemplate .icon {
+.shareTemplate:hover .icon {
   background-position: -165px -704px;
 }
 
