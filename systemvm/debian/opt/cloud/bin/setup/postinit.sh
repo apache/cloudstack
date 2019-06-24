@@ -29,33 +29,33 @@ if [ "$TYPE" == "router" ] || [ "$TYPE" == "vpcrouter" ] || [ "$TYPE" == "dhcpsr
 then
   if [ -x /opt/cloud/bin/update_config.py ]
   then
-      /opt/cloud/bin/update_config.py cmd_line.json || true
+    /opt/cloud/bin/update_config.py cmd_line.json || true
   fi
 fi
 
 [ ! -f /var/cache/cloud/enabled_svcs ] && touch /var/cache/cloud/enabled_svcs
 for svc in $(cat /var/cache/cloud/enabled_svcs)
-  do
-    systemctl enable --now --no-block $svc
+do
+  systemctl enable --now --no-block $svc
 done
 
 [ ! -f /var/cache/cloud/disabled_svcs ] && touch /var/cache/cloud/disabled_svcs
 for svc in $(cat /var/cache/cloud/disabled_svcs)
 do
-   systemctl disable --now --no-block $svc
+  systemctl disable --now --no-block $svc
 done
 
 # Restore the persistent iptables nat, rules and filters for IPv4 and IPv6 if they exist
 ipv4="/etc/iptables/rules.v4"
 if [ -e $ipv4 ]
 then
-   iptables-restore < $ipv4
+  iptables-restore < $ipv4
 fi
 
 ipv6="/etc/iptables/rules.v6"
 if [ -e $ipv6 ]
 then
-   ip6tables-restore < $ipv6
+  ip6tables-restore < $ipv6
 fi
 
 # Start SSH

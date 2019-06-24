@@ -52,6 +52,7 @@ function install_cloud_scripts() {
 
   systemctl daemon-reload
   systemctl enable cloud-early-config
+  systemctl enable cloud-postinit
 }
 
 function do_signature() {
