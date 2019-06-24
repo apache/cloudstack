@@ -879,7 +879,7 @@
                                     }
                                 }
 
-                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
+                                var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
                                 if (zoneId) {
                                     $.extend(data, {
                                         zoneid: zoneId
@@ -1164,7 +1164,7 @@
                                             domainid: "public"
                                         });
                                     }
-                                    var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
+                                    var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
                                     if (zoneId) {
                                         $.extend(data, {
                                             zoneid: zoneId
@@ -2521,7 +2521,7 @@
                                     }
                                 }
 
-                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
+                                var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
                                 if (zoneId) {
                                     $.extend(data, {
                                         zoneid: zoneId
@@ -2775,7 +2775,7 @@
                                             domainid: "public"
                                         });
                                     }
-                                    var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
+                                    var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
                                     if (zoneId) {
                                         $.extend(data, {
                                             zoneid: zoneId
@@ -4155,7 +4155,7 @@
                                     }
                                 }
 
-                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
+                                var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
                                 if (zoneId) {
                                     $.extend(inputData, {
                                         zoneid: zoneId
@@ -4508,7 +4508,7 @@
                                             domainid: "public"
                                         });
                                     }
-                                    var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
+                                    var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
                                     if (zoneId) {
                                         $.extend(data, {
                                             zoneid: zoneId
@@ -5101,7 +5101,7 @@
                                     }
                                 }
 
-                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
+                                var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
                                 if (zoneId) {
                                     $.extend(inputData, {
                                         zoneid: zoneId
@@ -5440,7 +5440,7 @@
                                             domainid: "public"
                                         });
                                     }
-                                    var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
+                                    var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
                                     if (zoneId) {
                                         $.extend(data, {
                                             zoneid: zoneId
