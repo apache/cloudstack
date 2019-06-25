@@ -181,7 +181,7 @@ patch() {
 }
 
 config_sysctl() {
-  # set cache back pressure based on amount of physical memory 100 is default
+  # When there is more memory reset the cache back pressure to default 100
   physmem=$(free|awk '/^Mem:/{print $2}')
   if [ $((physmem)) -lt 409600 ]; then
       sed  -i "/^vm.vfs_cache_pressure/ c\vm.vfs_cache_pressure = 200" /etc/sysctl.conf

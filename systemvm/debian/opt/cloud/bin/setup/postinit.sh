@@ -58,7 +58,10 @@ then
   ip6tables-restore < $ipv6
 fi
 
-# Start SSH
-systemctl start ssh
+# Patch known systemd/sshd memory leak - https://github.com/systemd/systemd/issues/8015#issuecomment-476160981
+echo '@include null' >> /etc/pam.d/systemd-user
+
+# Enable and Start SSH
+systemctl enable --now --no-block ssh
 
 date > /var/cache/cloud/boot_up_done

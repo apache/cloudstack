@@ -21,9 +21,9 @@
 setup_console_proxy() {
   log_it "Setting up console proxy system vm"
 
-  mkdir -p /var/log/cloud
   echo "cloud" > /var/cache/cloud/enabled_svcs
   echo "haproxy dnsmasq apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
+  mkdir -p /var/log/cloud
 
   setup_common eth0 eth1 eth2
   setup_system_rfc1918_internal

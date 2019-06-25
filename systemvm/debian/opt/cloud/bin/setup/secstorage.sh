@@ -20,7 +20,6 @@
 
 setup_secstorage() {
   log_it "Setting up secondary storage system vm"
-  #sysctl vm.min_free_kbytes=8192
 
   echo "cloud apache2 nfs-common portmap" > /var/cache/cloud/enabled_svcs
   echo "conntrackd keepalived haproxy dnsmasq" > /var/cache/cloud/disabled_svcs

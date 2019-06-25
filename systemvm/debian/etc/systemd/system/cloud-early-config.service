@@ -2,9 +2,10 @@
 Description=CloudStack post-boot patching service using cmdline
 DefaultDependencies=no
 
-Before=sshd.service
+Before=network-pre.target
+Wants=network-pre.target
 
-Requires=local-fs.target network-pre.target
+Requires=local-fs.target
 After=local-fs.target
 
 [Install]
@@ -13,5 +14,5 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 ExecStart=/opt/cloud/bin/setup/cloud-early-config
-RemainAfterExit=no
+RemainAfterExit=true
 TimeoutStartSec=5min
