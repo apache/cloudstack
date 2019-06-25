@@ -114,7 +114,6 @@ function configure_services() {
   systemctl disable nfs-common
   systemctl disable portmap
 
-
   # Disable guest services which will selectively be started based on hypervisor
   systemctl disable open-vm-tools
   systemctl disable xe-daemon
