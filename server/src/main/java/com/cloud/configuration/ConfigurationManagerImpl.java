@@ -3222,12 +3222,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         final Account account = _accountDao.findById(user.getAccountId());
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            final List<ServiceOfferingDetailsVO> details = _serviceOfferingDetailsDao.findDetails(offering.getId(), ApiConstants.DOMAIN_ID);
-            if (details.isEmpty()) {
+            List<Long> existingDomainIds = diskOfferingDetailsDao.findDomainIds(offeringId);
+            if (existingDomainIds.isEmpty()) {
                 throw new InvalidParameterValueException("Unable to delete public service offering by id " + userId + " because it is domain-admin");
             }
-            for (final ServiceOfferingDetailsVO detail : details) {
-                final Long domainId = Long.valueOf(detail.getValue(), 0);
+            for (Long domainId : existingDomainIds) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                     throw new InvalidParameterValueException("Unable to delete service offering by another domain admin with id " + userId);
                 }
