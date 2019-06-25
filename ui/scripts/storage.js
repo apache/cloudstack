@@ -1969,6 +1969,9 @@
                                         } else {
                                             args.$form.find('.form-item[rel=zoneid]').hide();
                                         }
+                                        if(args.context.snapshots[0].volumetype!='ROOT') {
+                                            args.$form.find('.form-item[rel=diskOffering]').hide();
+                                        }
                                     },
                                     fields: {
                                         name: {
@@ -2005,19 +2008,145 @@
                                                     }
                                                 });
                                             }
+                                        },
+                                        diskOffering: {
+                                            label: 'label.disk.offering',
+                                            docID: 'helpVolumeDiskOffering',
+                                            select: function(args) {
+                                                var snapshotSizeInGB = Math.floor(args.context.snapshots[0].virtualsize/(1024 * 1024 * 1024))
+                                                $.ajax({
+                                                    url: createURL("listDiskOfferings"),
+                                                    dataType: "json",
+                                                    async: false,
+                                                    success: function(json) {
+                                                        diskofferingObjs = json.listdiskofferingsresponse.diskoffering;
+                                                        var items = [];
+                                                        // Sort offerings list with size and keep custom offerings at end
+                                                        for(var i=0;i<diskofferingObjs.length;i++) {
+                                                            for(var j=i+1;j<diskofferingObjs.length;j++) {
+                                                                if((diskofferingObjs[i].disksize>diskofferingObjs[j].disksize &&
+                                                                    diskofferingObjs[j].disksize!=0) ||
+                                                                    (diskofferingObjs[i].disksize==0 &&
+                                                                        diskofferingObjs[j].disksize!=0)) {
+                                                                    var temp = diskofferingObjs[i];
+                                                                    diskofferingObjs[i] = diskofferingObjs[j];
+                                                                    diskofferingObjs[j] = temp;
+                                                                }
+                                                            }
+                                                        }
+                                                        $(diskofferingObjs).each(function() {
+                                                            if(this.disksize==0 || this.disksize>=snapshotSizeInGB) {
+                                                                items.push({
+                                                                    id: this.id,
+                                                                    description: this.displaytext
+                                                                });
+                                                            }
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+
+                                                args.$select.change(function() {
+                                                    var diskOfferingId = $(this).val();
+                                                    selectedDiskOfferingObj = null;
+                                                    $(diskofferingObjs).each(function() {
+                                                        if (this.id == diskOfferingId) {
+                                                            selectedDiskOfferingObj = this;
+                                                            return false;
+                                                        }
+                                                    });
+
+                                                    if (selectedDiskOfferingObj == null) return;
+
+                                                    var $form = $(this).closest('form');
+                                                    var $diskSize = $form.find('.form-item[rel=diskSize]');
+                                                    if (selectedDiskOfferingObj.iscustomized == true) {
+                                                        $diskSize.css('display', 'inline-block');
+                                                        $form.find('input[name=diskSize]').val(''+snapshotSizeInGB);
+                                                    } else {
+                                                        $diskSize.hide();
+                                                    }
+
+                                                    var $minIops = $form.find('.form-item[rel=minIops]');
+                                                    var $maxIops = $form.find('.form-item[rel=maxIops]');
+                                                    if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                                        $minIops.css('display', 'inline-block');
+                                                        $maxIops.css('display', 'inline-block');
+                                                    } else {
+                                                        $minIops.hide();
+                                                        $maxIops.hide();
+                                                    }
+                                                });
+                                            }
+                                        },
+                                        diskSize: {
+                                            label: 'label.disk.size.gb',
+                                            docID: 'helpVolumeSizeGb',
+                                            validation: {
+                                                required: true,
+                                                number: true
+                                            },
+                                            isHidden: true
+                                        },
+                                        minIops: {
+                                            label: 'label.disk.iops.min',
+                                            validation: {
+                                                required: false,
+                                                number: true
+                                            },
+                                            isHidden: true
+                                        },
+                                        maxIops: {
+                                            label: 'label.disk.iops.max',
+                                            validation: {
+                                                required: false,
+                                                number: true
+                                            },
+                                            isHidden: true
                                         }
                                     }
                                 },
                                 action: function(args) {
                                     var data = {
-                                        snapshotid: args.context.snapshots[0].id,
-                                        name: args.data.name
+                                        name: args.data.name,
+                                        snapshotid: args.context.snapshots[0].id
                                     };
 
                                     if (args.$form.find('.form-item[rel=zoneid]').css("display") != "none" && args.data.zoneid != '') {
                                         $.extend(data, {
                                             zoneId: args.data.zoneid
                                         });
+                                    }
+
+                                    if (args.$form.find('.form-item[rel=diskOffering]').css("display") != "none") {
+                                        if (args.data.diskOffering) {
+                                            $.extend(data, {
+                                                diskofferingid: args.data.diskOffering
+                                            });
+                                        }
+                                        if (selectedDiskOfferingObj) {
+                                            if(selectedDiskOfferingObj.iscustomized == true) {
+                                                $.extend(data, {
+                                                    size: args.data.diskSize
+                                                });
+                                            }
+
+                                            if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                                if (args.data.minIops != "" && args.data.minIops > 0) {
+                                                    $.extend(data, {
+                                                        miniops: args.data.minIops
+                                                    });
+                                                }
+
+                                                if (args.data.maxIops != "" && args.data.maxIops > 0) {
+                                                    $.extend(data, {
+                                                        maxiops: args.data.maxIops
+                                                    });
+                                                }
+                                            }
+                                        }
                                     }
 
                                     $.ajax({
@@ -2036,6 +2165,9 @@
                                                     }
                                                 }
                                             });
+                                        },
+                                        error: function(json) {
+                                            args.response.error(parseXMLHttpResponse(json));
                                         }
                                     });
                                 },
@@ -2043,7 +2175,6 @@
                                     poll: pollAsyncJobResult
                                 }
                             },
-
                             revertSnapshot: {
                                 label: 'label.action.revert.snapshot',
                                 messages: {
