@@ -278,10 +278,11 @@ class TestDomainsVpcOfferings(cloudstackTestCase):
         self.debug("Updating vpc offering with ID: %s" %
                    self.vpc_offering.id)
 
-        offering_data_domainid = "{0},{1}".format(self.domain_1.id, self.domain_2.id)
         cmd = updateVPCOffering.updateVPCOfferingCmd()
         cmd.id = self.vpc_offering.id
-        cmd.domainid = offering_data_domainid
+        input_domainid ="{0},{1},{2}".format(self.domain_1.id, self.domain_11.id, self.domain_2.id)
+        result_domainid = "{0},{1}".format(self.domain_1.id, self.domain_2.id)
+        cmd.domainid = input_domainid
         self.apiclient.updateVPCOffering(cmd)
 
         cmd = listVPCOfferings.listVPCOfferingsCmd()
@@ -298,21 +299,22 @@ class TestDomainsVpcOfferings(cloudstackTestCase):
             0,
             "Check Vpc offering is updated"
         )
+
+        try:
+            self.assertItemsEqual(
+                list_vpc_response[0].domainid.split(","),
+                input_domainid.split(","),
+                "Check child domainid in updateServiceOffering, should fail"
+            )
+            self.fail("Child domain added to offering when parent domain already exist. Must be an error.")
+        except AssertionError:
+            self.debug("Child domain check successful")
+
         self.assertItemsEqual(
             list_vpc_response[0].domainid.split(","),
-            offering_data_domainid.split(","),
+            result_domainid.split(","),
             "Check domainid in createVPCOffering"
         )
-
-        cmd = updateVPCOffering.updateVPCOfferingCmd()
-        # Add parameters for API call
-        cmd.id = self.vpc_offering.id
-        cmd.domainid = self.domain_11.id
-        try:
-            self.apiclient.updateVPCOffering(cmd)
-            self.fail("Child domain added to offering when parent domain already exist. Must be an error.")
-        except Exception as e:
-            self.debug("Child domain check %s" % e)
 
     @attr(
         tags=[

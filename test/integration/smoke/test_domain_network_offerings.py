@@ -224,8 +224,8 @@ class TestDomainsNetworkOfferings(cloudstackTestCase):
         """Test to update existing network offering"""
 
         # 1. updateNetworkOffering should return a valid information for the updated offering
-        # 2. updateNetworkOffering should fail while tring to add child domain but parent domain
-        #    is already present
+        # 2. updateNetworkOffering should fail while trying to add child domain but parent domain
+        #    is also passed
         # 3. updateNetworkOffering should be able to add new domain to the offering
         self.debug("Updating network offering with ID: %s" %
                    self.network_offering.id)
@@ -233,17 +233,9 @@ class TestDomainsNetworkOfferings(cloudstackTestCase):
         cmd = updateNetworkOffering.updateNetworkOfferingCmd()
         # Add parameters for API call
         cmd.id = self.network_offering.id
-        cmd.domainid = self.domain_11.id
-        try:
-            self.apiclient.updateNetworkOffering(cmd)
-            self.fail("Child domain added to offering when parent domain already exist. Must be an error.")
-        except CloudstackAPIException:
-            self.debug("Child domain check")
-
-
-        cmd = updateNetworkOffering.updateNetworkOfferingCmd()
-        cmd.id = self.network_offering.id
-        cmd.domainid = self.domain_2.id
+        input_domainid ="{0},{1},{2}".format(self.domain_1.id, self.domain_11.id, self.domain_2.id)
+        result_domainid = "{0},{1}".format(self.domain_1.id, self.domain_2.id)
+        cmd.domainid = input_domainid
         self.apiclient.updateNetworkOffering(cmd)
 
         cmd = listNetworkOfferings.listNetworkOfferingsCmd()
@@ -261,10 +253,20 @@ class TestDomainsNetworkOfferings(cloudstackTestCase):
             "Check Network offering is updated"
         )
 
+        try:
+            self.assertItemsEqual(
+                list_network_response[0].domainid.split(","),
+                input_domainid.split(","),
+                "Check child domainid in updateServiceOffering, should fail"
+            )
+            self.fail("Child domain added to offering when parent domain already exist. Must be an error.")
+        except AssertionError:
+            self.debug("Child domain check successful")
+
         domainid = "{0},{1}".format(self.domain_1.id, self.domain_2.id)
         self.assertItemsEqual(
             list_network_response[0].domainid.split(","),
-            domainid.split(","),
+            result_domainid.split(","),
             "Check domainid in createNetworkOffering"
         )
         return
