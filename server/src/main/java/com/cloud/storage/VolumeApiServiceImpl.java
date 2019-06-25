@@ -551,7 +551,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long zoneId = cmd.getZoneId();
         Long diskOfferingId = null;
         DiskOfferingVO diskOffering = null;
-        Storage.ProvisioningType provisioningType;
         Long size = null;
         Long minIops = null;
         Long maxIops = null;
@@ -559,11 +558,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         VolumeVO parentVolume = null;
 
         // validate input parameters before creating the volume
-        if ((cmd.getSnapshotId() == null && cmd.getDiskOfferingId() == null) || (cmd.getSnapshotId() != null && cmd.getDiskOfferingId() != null)) {
-            throw new InvalidParameterValueException("Either disk Offering Id or snapshot Id must be passed whilst creating volume");
+        if (cmd.getSnapshotId() == null && cmd.getDiskOfferingId() == null) {
+            throw new InvalidParameterValueException("At least one of disk Offering ID or snapshot ID must be passed whilst creating volume");
         }
 
-        if (cmd.getSnapshotId() == null) {// create a new volume
+        // disallow passing disk offering ID with DATA disk volume snapshots
+        if (cmd.getSnapshotId() != null && cmd.getDiskOfferingId() != null) {
+            SnapshotVO snapshot = _snapshotDao.findById(cmd.getSnapshotId());
+            if (snapshot != null) {
+                parentVolume = _volsDao.findByIdIncludingRemoved(snapshot.getVolumeId());
+                if (parentVolume != null && parentVolume.getVolumeType() != Volume.Type.ROOT)
+                    throw new InvalidParameterValueException("Disk Offering ID cannot be passed whilst creating volume from snapshot other than ROOT disk snapshots");
+            }
+            parentVolume = null;
+        }
+
+        if (cmd.getDiskOfferingId() != null) { // create a new volume
 
             diskOfferingId = cmd.getDiskOfferingId();
             size = cmd.getSize();
@@ -633,13 +643,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
 
-            provisioningType = diskOffering.getProvisioningType();
-
             if (!validateVolumeSizeRange(size)) {// convert size from mb to gb
                 // for validation
                 throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size + " ,max volume size is:" + _maxVolumeSizeInGb);
             }
-        } else { // create volume from snapshot
+        }
+
+        if (cmd.getSnapshotId() != null) { // create volume from snapshot
             Long snapshotId = cmd.getSnapshotId();
             SnapshotVO snapshotCheck = _snapshotDao.findById(snapshotId);
             if (snapshotCheck == null) {
@@ -651,8 +661,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
             parentVolume = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
 
-            diskOfferingId = snapshotCheck.getDiskOfferingId();
-            diskOffering = _diskOfferingDao.findById(diskOfferingId);
             if (zoneId == null) {
                 // if zoneId is not provided, we default to create volume in the same zone as the snapshot zone.
                 zoneId = snapshotCheck.getDataCenterId();
@@ -660,13 +668,20 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             _configMgr.checkDiskOfferingAccess(null, diskOffering, _dcDao.findById(zoneId));
 
-            size = snapshotCheck.getSize(); // ; disk offering is used for tags
-            // purposes
+            if (diskOffering == null) { // Pure snapshot is being used to create volume.
+                diskOfferingId = snapshotCheck.getDiskOfferingId();
+                diskOffering = _diskOfferingDao.findById(diskOfferingId);
 
-            minIops = snapshotCheck.getMinIops();
-            maxIops = snapshotCheck.getMaxIops();
+                minIops = snapshotCheck.getMinIops();
+                maxIops = snapshotCheck.getMaxIops();
+                size = snapshotCheck.getSize(); // ; disk offering is used for tags purposes
+            } else {
+                if (size < snapshotCheck.getSize()) {
+                    throw new InvalidParameterValueException(String.format("Invalid size for volume creation: %dGB, snapshot size is: %dGB",
+                            size / (1024 * 1024 * 1024), snapshotCheck.getSize() / (1024 * 1024 * 1024)));
+                }
+            }
 
-            provisioningType = diskOffering.getProvisioningType();
             // check snapshot permissions
             _accountMgr.checkAccess(caller, null, true, snapshotCheck);
 
@@ -688,8 +703,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 // permission check
                 _accountMgr.checkAccess(caller, null, false, vm);
             }
-
         }
+
+        Storage.ProvisioningType provisioningType = diskOffering.getProvisioningType();
 
         // Check that the resource limit for primary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, displayVolume, new Long(size));
