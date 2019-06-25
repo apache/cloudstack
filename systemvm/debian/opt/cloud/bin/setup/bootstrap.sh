@@ -62,6 +62,8 @@ config_guest() {
   [ ! -d /proc/xen ] && sed -i 's/^vc/#vc/' /etc/inittab && telinit q
   [ -d /proc/xen ] && sed -i 's/^#vc/vc/' /etc/inittab && telinit q
 
+  systemctl daemon-reload
+
   case $HYPERVISOR in
      xen-pv|xen-domU)
           systemctl stop ntpd
