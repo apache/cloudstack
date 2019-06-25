@@ -963,7 +963,7 @@ public class LibvirtVMDef {
     }
 
     public static class InterfaceDef {
-        enum GuestNetType {
+        public enum GuestNetType {
             BRIDGE("bridge"), DIRECT("direct"), NETWORK("network"), USER("user"), ETHERNET("ethernet"), INTERNAL("internal"), VHOSTUSER("vhostuser");
             String _type;
 
@@ -1176,10 +1176,24 @@ public class LibvirtVMDef {
             _dpdkSourcePort = port;
         }
 
-        @Override
-        public String toString() {
+        public String getDpdkOvsPath() {
+            return _dpdkSourcePath;
+        }
+
+        public void setDpdkOvsPath(String path) {
+            _dpdkSourcePath = path;
+        }
+
+        public String getInterfaceMode() {
+            return _interfaceMode;
+        }
+
+        public void setInterfaceMode(String mode) {
+            _interfaceMode = mode;
+        }
+
+        public String getContent() {
             StringBuilder netBuilder = new StringBuilder();
-            netBuilder.append("<interface type='" + _netType + "'>\n");
             if (_netType == GuestNetType.BRIDGE) {
                 netBuilder.append("<source bridge='" + _sourceName + "'/>\n");
             } else if (_netType == GuestNetType.NETWORK) {
@@ -1233,6 +1247,14 @@ public class LibvirtVMDef {
             if (_slot  != null) {
                 netBuilder.append(String.format("<address type='pci' domain='0x0000' bus='0x00' slot='0x%02x' function='0x0'/>\n", _slot));
             }
+            return netBuilder.toString();
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder netBuilder = new StringBuilder();
+            netBuilder.append("<interface type='" + _netType + "'>\n");
+            netBuilder.append(getContent());
             netBuilder.append("</interface>\n");
             return netBuilder.toString();
         }

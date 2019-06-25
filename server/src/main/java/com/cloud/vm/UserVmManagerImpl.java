@@ -96,6 +96,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -472,6 +473,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private TemplateApiService _tmplService;
     @Inject
     private ConfigurationDao _configDao;
+    @Inject
+    private DpdkHelper dpdkHelper;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -5223,6 +5226,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("Cannot migrate the VM, destination host is not in the same cluster as current host of the VM");
                 }
             }
+        }
+
+        if (dpdkHelper.isVMDpdkEnabled(vm.getId()) && !dpdkHelper.isHostDpdkEnabled(destinationHost.getId())) {
+            throw new CloudRuntimeException("Cannot migrate VM, VM is DPDK enabled VM but destination host is not DPDK enabled");
         }
 
         checkHostsDedication(vm, srcHostId, destinationHost.getId());

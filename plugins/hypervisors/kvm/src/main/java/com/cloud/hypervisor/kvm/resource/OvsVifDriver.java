@@ -24,9 +24,9 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.hypervisor.kvm.dpdk.DPDKDriver;
-import com.cloud.hypervisor.kvm.dpdk.DPDKDriverImpl;
-import com.cloud.hypervisor.kvm.dpdk.DPDKHelper;
+import com.cloud.hypervisor.kvm.dpdk.DpdkDriver;
+import com.cloud.hypervisor.kvm.dpdk.DpdkDriverImpl;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -44,7 +44,7 @@ import com.cloud.utils.script.Script;
 public class OvsVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger.getLogger(OvsVifDriver.class);
     private int _timeout;
-    private DPDKDriver dpdkDriver;
+    private DpdkDriver dpdkDriver;
 
     @Override
     public void configure(Map<String, Object> params) throws ConfigurationException {
@@ -59,7 +59,7 @@ public class OvsVifDriver extends VifDriverBase {
 
         String dpdk = (String) params.get("openvswitch.dpdk.enabled");
         if (StringUtils.isNotBlank(dpdk) && Boolean.parseBoolean(dpdk)) {
-            dpdkDriver = new DPDKDriverImpl();
+            dpdkDriver = new DpdkDriverImpl();
         }
 
         String value = (String)params.get("scripts.timeout");
@@ -87,12 +87,34 @@ public class OvsVifDriver extends VifDriverBase {
         s_logger.debug("done looking for pifs, no more bridges");
     }
 
+    /**
+     * Plug interface with DPDK support:
+     *      - Create a new port with DPDK support for the interface
+     *      - Set the 'intf' path to the new port
+     */
+    protected void plugDPDKInterface(InterfaceDef intf, String trafficLabel, Map<String, String> extraConfig,
+                                     String vlanId, String guestOsType, NicTO nic, String nicAdapter) {
+        s_logger.debug("DPDK support enabled: configuring per traffic label " + trafficLabel);
+        String dpdkOvsPath = _libvirtComputingResource.dpdkOvsPath;
+        if (StringUtils.isBlank(dpdkOvsPath)) {
+            throw new CloudRuntimeException("DPDK is enabled on the host but no OVS path has been provided");
+        }
+        String port = dpdkDriver.getNextDpdkPort();
+        DpdkHelper.VHostUserMode dpdKvHostUserMode = dpdkDriver.getDpdkvHostUserMode(extraConfig);
+        dpdkDriver.addDpdkPort(_pifs.get(trafficLabel), port, vlanId, dpdKvHostUserMode, dpdkOvsPath);
+        String interfaceMode = dpdkDriver.getGuestInterfacesModeFromDpdkVhostUserMode(dpdKvHostUserMode);
+        intf.defDpdkNet(dpdkOvsPath, port, nic.getMac(),
+                getGuestNicModel(guestOsType, nicAdapter), 0,
+                dpdkDriver.getExtraDpdkProperties(extraConfig),
+                interfaceMode);
+    }
+
     @Override
     public InterfaceDef plug(NicTO nic, String guestOsType, String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
         s_logger.debug("plugging nic=" + nic);
 
         LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
-        if (!_libvirtComputingResource.dpdkSupport || nic.isDpdkDisabled()) {
+        if (!_libvirtComputingResource.dpdkSupport || !nic.isDpdkEnabled()) {
             // Let libvirt handle OVS ports creation when DPDK property is disabled or when it is enabled but disabled for the nic
             // For DPDK support, libvirt does not handle ports creation, invoke 'addDpdkPort' method
             intf.setVirtualPortType("openvswitch");
@@ -114,20 +136,8 @@ public class OvsVifDriver extends VifDriverBase {
             if ((nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan || nic.getBroadcastType() == Networks.BroadcastDomainType.Pvlan) &&
                     !vlanId.equalsIgnoreCase("untagged")) {
                 if (trafficLabel != null && !trafficLabel.isEmpty()) {
-                    if (_libvirtComputingResource.dpdkSupport && !nic.isDpdkDisabled()) {
-                        s_logger.debug("DPDK support enabled: configuring per traffic label " + trafficLabel);
-                        String dpdkOvsPath = _libvirtComputingResource.dpdkOvsPath;
-                        if (StringUtils.isBlank(dpdkOvsPath)) {
-                            throw new CloudRuntimeException("DPDK is enabled on the host but no OVS path has been provided");
-                        }
-                        String port = dpdkDriver.getNextDpdkPort();
-                        DPDKHelper.VHostUserMode dpdKvHostUserMode = dpdkDriver.getDPDKvHostUserMode(extraConfig);
-                        dpdkDriver.addDpdkPort(_pifs.get(trafficLabel), port, vlanId, dpdKvHostUserMode, dpdkOvsPath);
-                        String interfaceMode = dpdkDriver.getGuestInterfacesModeFromDPDKVhostUserMode(dpdKvHostUserMode);
-                        intf.defDpdkNet(dpdkOvsPath, port, nic.getMac(),
-                                getGuestNicModel(guestOsType, nicAdapter), 0,
-                                dpdkDriver.getExtraDpdkProperties(extraConfig),
-                                interfaceMode);
+                    if (_libvirtComputingResource.dpdkSupport && nic.isDpdkEnabled()) {
+                        plugDPDKInterface(intf, trafficLabel, extraConfig, vlanId, guestOsType, nic, nicAdapter);
                     } else {
                         s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
                         intf.defBridgeNet(_pifs.get(trafficLabel), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
@@ -180,7 +190,7 @@ public class OvsVifDriver extends VifDriverBase {
     @Override
     public void unplug(InterfaceDef iface) {
         // Libvirt apparently takes care of this, see BridgeVifDriver unplug
-        if (_libvirtComputingResource.dpdkSupport) {
+        if (_libvirtComputingResource.dpdkSupport && StringUtils.isNotBlank(iface.getDpdkSourcePort())) {
             // If DPDK is enabled, we'll need to cleanup the port as libvirt won't
             String dpdkPort = iface.getDpdkSourcePort();
             String cmd = String.format("ovs-vsctl del-port %s", dpdkPort);

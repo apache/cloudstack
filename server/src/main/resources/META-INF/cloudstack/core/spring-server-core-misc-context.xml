@@ -79,6 +79,6 @@
         <property name="name" value="Basic" />
     </bean>
 
-    <bean id="DPDKHelper" class="com.cloud.hypervisor.kvm.dpdk.DPDKHelperImpl" />
+    <bean id="DPDKHelper" class="com.cloud.hypervisor.kvm.dpdk.DpdkHelperImpl" />
     
 </beans>

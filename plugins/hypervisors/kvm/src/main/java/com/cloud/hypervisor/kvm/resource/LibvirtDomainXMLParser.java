@@ -224,9 +224,13 @@ public class LibvirtDomainXMLParser {
                     def.defEthernet(dev, mac, NicModel.valueOf(model.toUpperCase()), scriptPath, networkRateKBps);
                 } else if (type.equals("vhostuser")) {
                     String sourcePort = getAttrValue("source", "path", nic);
-                    String[] sourcePathParts = sourcePort.split("/");
-                    String port = sourcePathParts[sourcePathParts.length - 1];
+                    String mode = getAttrValue("source", "mode", nic);
+                    int lastSlashIndex = sourcePort.lastIndexOf("/");
+                    String ovsPath = sourcePort.substring(0,lastSlashIndex);
+                    String port = sourcePort.substring(lastSlashIndex + 1);
                     def.setDpdkSourcePort(port);
+                    def.setDpdkOvsPath(ovsPath);
+                    def.setInterfaceMode(mode);
                 }
 
                 if (StringUtils.isNotBlank(slot)) {

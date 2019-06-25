@@ -43,6 +43,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import com.cloud.agent.api.to.DpdkTO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -151,6 +152,11 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
             if (migrateStorage) {
                 xmlDesc = replaceStorage(xmlDesc, mapMigrateStorage, migrateStorageManaged);
+            }
+
+            Map<String, DpdkTO> dpdkPortsMapping = command.getDpdkInterfaceMapping();
+            if (MapUtils.isNotEmpty(dpdkPortsMapping)) {
+                xmlDesc = replaceDpdkInterfaces(xmlDesc, dpdkPortsMapping);
             }
 
             dconn = libvirtUtilitiesHelper.retrieveQemuConnection(destinationUri);
@@ -281,6 +287,76 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         }
 
         return new MigrateAnswer(command, result == null, result, null);
+    }
+
+    /**
+     * Replace DPDK source path and target before migrations
+     */
+    protected String replaceDpdkInterfaces(String xmlDesc, Map<String, DpdkTO> dpdkPortsMapping) throws TransformerException, ParserConfigurationException, IOException, SAXException {
+        InputStream in = IOUtils.toInputStream(xmlDesc);
+
+        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(in);
+
+        // Get the root element
+        Node domainNode = doc.getFirstChild();
+
+        NodeList domainChildNodes = domainNode.getChildNodes();
+
+        for (int i = 0; i < domainChildNodes.getLength(); i++) {
+            Node domainChildNode = domainChildNodes.item(i);
+
+            if ("devices".equals(domainChildNode.getNodeName())) {
+                NodeList devicesChildNodes = domainChildNode.getChildNodes();
+
+                for (int x = 0; x < devicesChildNodes.getLength(); x++) {
+                    Node deviceChildNode = devicesChildNodes.item(x);
+
+                    if ("interface".equals(deviceChildNode.getNodeName())) {
+                        Node interfaceNode = deviceChildNode;
+                        NamedNodeMap attributes = interfaceNode.getAttributes();
+                        Node interfaceTypeAttr = attributes.getNamedItem("type");
+
+                        if ("vhostuser".equals(interfaceTypeAttr.getNodeValue())) {
+                            NodeList diskChildNodes = interfaceNode.getChildNodes();
+
+                            String mac = null;
+                            for (int y = 0; y < diskChildNodes.getLength(); y++) {
+                                Node diskChildNode = diskChildNodes.item(y);
+                                if (!"mac".equals(diskChildNode.getNodeName())) {
+                                    continue;
+                                }
+                                mac = diskChildNode.getAttributes().getNamedItem("address").getNodeValue();
+                            }
+
+                            if (StringUtils.isNotBlank(mac)) {
+                                DpdkTO to = dpdkPortsMapping.get(mac);
+
+                                for (int z = 0; z < diskChildNodes.getLength(); z++) {
+                                    Node diskChildNode = diskChildNodes.item(z);
+
+                                    if ("target".equals(diskChildNode.getNodeName())) {
+                                        Node targetNode = diskChildNode;
+                                        Node targetNodeAttr = targetNode.getAttributes().getNamedItem("dev");
+                                        targetNodeAttr.setNodeValue(to.getPort());
+                                    } else if ("source".equals(diskChildNode.getNodeName())) {
+                                        Node sourceNode = diskChildNode;
+                                        NamedNodeMap attrs = sourceNode.getAttributes();
+                                        Node path = attrs.getNamedItem("path");
+                                        path.setNodeValue(to.getPath() + "/" + to.getPort());
+                                        Node mode = attrs.getNamedItem("mode");
+                                        mode.setNodeValue(to.getMode());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return getXml(doc);
     }
 
     /**

@@ -22,7 +22,9 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
@@ -126,6 +128,34 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         return to;
     }
 
+    /**
+     * Add extra configuration from VM details. Extra configuration is stored as details starting with 'extraconfig'
+     */
+    private void addExtraConfig(Map<String, String> details, VirtualMachineTO to) {
+        for (String key : details.keySet()) {
+            if (key.startsWith(ApiConstants.EXTRA_CONFIG)) {
+                to.addExtraConfig(key, details.get(key));
+            }
+        }
+    }
+
+    /**
+     * Add extra configurations from service offering to the VM TO.
+     * Extra configuration keys are expected in formats:
+     * - "extraconfig-N"
+     * - "extraconfig-CONFIG_NAME"
+     */
+    protected void addServiceOfferingExtraConfiguration(ServiceOffering offering, VirtualMachineTO to) {
+        List<ServiceOfferingDetailsVO> details = _serviceOfferingDetailsDao.listDetails(offering.getId());
+        if (CollectionUtils.isNotEmpty(details)) {
+            for (ServiceOfferingDetailsVO detail : details) {
+                if (detail.getName().startsWith(ApiConstants.EXTRA_CONFIG)) {
+                    to.addExtraConfig(detail.getName(), detail.getValue());
+                }
+            }
+        }
+    }
+
     protected VirtualMachineTO toVirtualMachineTO(VirtualMachineProfile vmProfile) {
         ServiceOffering offering = _serviceOfferingDao.findById(vmProfile.getId(), vmProfile.getServiceOfferingId());
         VirtualMachine vm = vmProfile.getVirtualMachine();
@@ -169,7 +199,10 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         Map<String, String> detailsInVm = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
         if (detailsInVm != null) {
             to.setDetails(detailsInVm);
+            addExtraConfig(detailsInVm, to);
         }
+
+        addServiceOfferingExtraConfiguration(offering, to);
 
         // Set GPU details
         ServiceOfferingDetailsVO offeringDetail = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString());

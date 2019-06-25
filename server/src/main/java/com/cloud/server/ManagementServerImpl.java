@@ -37,6 +37,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.ScopeType;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -634,7 +636,6 @@ import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
-import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -811,6 +812,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private GuestOsDetailsDao _guestOsDetailsDao;
     @Inject
     private KeystoreManager _ksMgr;
+    @Inject
+    private DpdkHelper dpdkHelper;
 
     private LockMasterListener _lockMasterListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -1302,6 +1305,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
 
+        if (dpdkHelper.isVMDpdkEnabled(vm.getId())) {
+            excludeNonDPDKEnabledHosts(plan, excludes);
+        }
+
         // call affinitygroup chain
         final long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
 
@@ -1332,6 +1339,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(otherHosts, suitableHosts, requiresStorageMotion);
+    }
+
+    /**
+     * Add non DPDK enabled hosts to the avoid list
+     */
+    private void excludeNonDPDKEnabledHosts(DataCenterDeployment plan, ExcludeList excludes) {
+        long dataCenterId = plan.getDataCenterId();
+        Long clusterId = plan.getClusterId();
+        Long podId = plan.getPodId();
+        List<HostVO> hosts = _hostDao.listAllUpAndEnabledNonHAHosts(Type.Routing, clusterId, podId, dataCenterId, null);
+        for (HostVO host : hosts) {
+            if (!dpdkHelper.isHostDpdkEnabled(host.getId())) {
+                excludes.addHost(host.getId());
+            }
+        }
     }
 
     private boolean hasSuitablePoolsForVolume(final VolumeVO volume, final Host host, final VirtualMachineProfile vmProfile) {
