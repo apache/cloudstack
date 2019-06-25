@@ -39,7 +39,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.ApiConstants;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
+import com.cloud.agent.api.to.DpdkTO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
@@ -1118,8 +1119,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 
-                    addExtraConfig(vmTO);
-
                     work = _workDao.findById(work.getId());
                     if (work == null || work.getStep() != Step.Prepare) {
                         throw new ConcurrentOperationException("Work steps have been changed: " + work);
@@ -1281,15 +1280,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (startedVm == null) {
             throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName() + "' (" + vm.getUuid() + "), see management server log for details");
-        }
-    }
-
-    private void addExtraConfig(VirtualMachineTO vmTO) {
-        Map<String, String> details = vmTO.getDetails();
-        for (String key : details.keySet()) {
-            if (key.startsWith(ApiConstants.EXTRA_CONFIG)) {
-                vmTO.addExtraConfig(key, details.get(key));
-            }
         }
     }
 
@@ -2362,6 +2352,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         boolean migrated = false;
+        Map<String, DpdkTO> dpdkInterfaceMapping = null;
         try {
             final boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
             final MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, getExecuteInSequence(vm.getHypervisorType()));
@@ -2369,6 +2360,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
             mc.setAutoConvergence(kvmAutoConvergence);
             mc.setHostGuid(dest.getHost().getGuid());
+
+            dpdkInterfaceMapping = ((PrepareForMigrationAnswer) pfma).getDpdkInterfaceMapping();
+            if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
+                mc.setDpdkInterfaceMapping(dpdkInterfaceMapping);
+            }
 
             try {
                 final Answer ma = _agentMgr.send(vm.getLastHostId(), mc);
@@ -2396,7 +2392,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (!checkVmOnHost(vm, dstHostId)) {
                     s_logger.error("Unable to complete migration for " + vm);
                     try {
-                        _agentMgr.send(srcHostId, new Commands(cleanup(vm)), null);
+                        _agentMgr.send(srcHostId, new Commands(cleanup(vm, dpdkInterfaceMapping)), null);
                     } catch (final AgentUnavailableException e) {
                         s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHostId);
                     }
@@ -2417,7 +2413,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         "Unable to migrate vm " + vm.getInstanceName() + " from host " + fromHost.getName() + " in zone " + dest.getDataCenter().getName() + " and pod " +
                                 dest.getPod().getName(), "Migrate Command failed.  Please check logs.");
                 try {
-                    _agentMgr.send(dstHostId, new Commands(cleanup(vm)), null);
+                    _agentMgr.send(dstHostId, new Commands(cleanup(vm, dpdkInterfaceMapping)), null);
                 } catch (final AgentUnavailableException ae) {
                     s_logger.info("Looks like the destination Host is unavailable for cleanup");
                 }
@@ -3106,9 +3102,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    public Command cleanup(final VirtualMachine vm) {
+    public Command cleanup(final VirtualMachine vm, Map<String, DpdkTO> dpdkInterfaceMapping) {
         StopCommand cmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
         cmd.setControlIp(getControlNicIpForVM(vm));
+        if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
+            cmd.setDpdkInterfaceMapping(dpdkInterfaceMapping);
+        }
         return cmd;
     }
 

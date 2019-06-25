@@ -784,7 +784,7 @@ body.install-wizard {
 
 .install-wizard .step {
   position: relative;
-  z-index: 10;
+  z-index: 11;
 }
 
 .install-wizard .step .tooltip-info {
@@ -12343,12 +12343,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .snapshot .icon,
-.takeSnapshot .icon {
+.takeSnapshot .icon,
+.storageSnapshot .icon {
   background-position: -36px -91px;
 }
 
 .snapshot:hover .icon,
-.takeSnapshot:hover .icon {
+.takeSnapshot:hover .icon,
+.storageSnapshot:hover .icon {
   background-position: -36px -673px;
 }
 

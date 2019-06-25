@@ -160,7 +160,7 @@
         <cs.servlet.version>4.0.0</cs.servlet.version>
         <cs.tomcat-embed-core.version>8.0.30</cs.tomcat-embed-core.version>
         <cs.trilead.version>1.0.0-build221</cs.trilead.version>
-        <cs.vmware.api.version>6.5</cs.vmware.api.version>
+        <cs.vmware.api.version>6.7</cs.vmware.api.version>
         <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
         <cs.xml-apis.version>1.4.01</cs.xml-apis.version>
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>

@@ -35,11 +35,11 @@ import java.util.Map;
 
 @PrepareForTest({ Script.class })
 @RunWith(PowerMockRunner.class)
-public class DPDKDriverTest {
+public class DpdkDriverTest {
 
     private static final int dpdkPortNumber = 7;
 
-    private DPDKDriver driver = new DPDKDriverImpl();
+    private DpdkDriver driver = new DpdkDriverImpl();
 
     private Map<String, String> extraConfig;
 
@@ -59,7 +59,7 @@ public class DPDKDriverTest {
     @Test
     public void testGetDpdkLatestPortNumberUsedExistingDpdkPorts() {
         Mockito.when(Script.runSimpleBashScript(Matchers.anyString())).
-                thenReturn(DPDKDriverImpl.DPDK_PORT_PREFIX + String.valueOf(dpdkPortNumber));
+                thenReturn(DpdkDriverImpl.DPDK_PORT_PREFIX + String.valueOf(dpdkPortNumber));
         Assert.assertEquals(dpdkPortNumber, driver.getDpdkLatestPortNumberUsed());
     }
 
@@ -67,47 +67,47 @@ public class DPDKDriverTest {
     public void testGetNextDpdkPortNoDpdkPorts() {
         Mockito.when(Script.runSimpleBashScript(Matchers.anyString())).
                 thenReturn(null);
-        String expectedPortName = DPDKDriverImpl.DPDK_PORT_PREFIX + String.valueOf(1);
+        String expectedPortName = DpdkDriverImpl.DPDK_PORT_PREFIX + String.valueOf(1);
         Assert.assertEquals(expectedPortName, driver.getNextDpdkPort());
     }
 
     @Test
     public void testGetNextDpdkPortExistingDpdkPorts() {
         Mockito.when(Script.runSimpleBashScript(Matchers.anyString())).
-                thenReturn(DPDKDriverImpl.DPDK_PORT_PREFIX + String.valueOf(dpdkPortNumber));
-        String expectedPortName = DPDKDriverImpl.DPDK_PORT_PREFIX + String.valueOf(dpdkPortNumber + 1);
+                thenReturn(DpdkDriverImpl.DPDK_PORT_PREFIX + String.valueOf(dpdkPortNumber));
+        String expectedPortName = DpdkDriverImpl.DPDK_PORT_PREFIX + String.valueOf(dpdkPortNumber + 1);
         Assert.assertEquals(expectedPortName, driver.getNextDpdkPort());
     }
 
     @Test
-    public void testGetGuestInterfacesModeFromDPDKVhostUserModeClientDPDK() {
-        String guestMode = driver.getGuestInterfacesModeFromDPDKVhostUserMode(DPDKHelper.VHostUserMode.CLIENT);
+    public void testGetGuestInterfacesModeFromDpdkVhostUserModeClientDpdk() {
+        String guestMode = driver.getGuestInterfacesModeFromDpdkVhostUserMode(DpdkHelper.VHostUserMode.CLIENT);
         Assert.assertEquals("server", guestMode);
     }
 
     @Test
-    public void testGetGuestInterfacesModeFromDPDKVhostUserModeServerDPDK() {
-        String guestMode = driver.getGuestInterfacesModeFromDPDKVhostUserMode(DPDKHelper.VHostUserMode.SERVER);
+    public void testGetGuestInterfacesModeFromDpdkVhostUserModeServerDpdk() {
+        String guestMode = driver.getGuestInterfacesModeFromDpdkVhostUserMode(DpdkHelper.VHostUserMode.SERVER);
         Assert.assertEquals("client", guestMode);
     }
 
     @Test
-    public void testGetDPDKvHostUserModeServerExtraConfig() {
-        extraConfig.put(DPDKHelper.DPDK_VHOST_USER_MODE, DPDKHelper.VHostUserMode.SERVER.toString());
-        DPDKHelper.VHostUserMode dpdKvHostUserMode = driver.getDPDKvHostUserMode(extraConfig);
-        Assert.assertEquals(DPDKHelper.VHostUserMode.SERVER, dpdKvHostUserMode);
+    public void testGetDpdkvHostUserModeServerExtraConfig() {
+        extraConfig.put(DpdkHelper.DPDK_VHOST_USER_MODE, DpdkHelper.VHostUserMode.SERVER.toString());
+        DpdkHelper.VHostUserMode dpdKvHostUserMode = driver.getDpdkvHostUserMode(extraConfig);
+        Assert.assertEquals(DpdkHelper.VHostUserMode.SERVER, dpdKvHostUserMode);
     }
 
     @Test
-    public void testGetDPDKvHostUserModeServerClientExtraConfig() {
-        extraConfig.put(DPDKHelper.DPDK_VHOST_USER_MODE, DPDKHelper.VHostUserMode.CLIENT.toString());
-        DPDKHelper.VHostUserMode dpdKvHostUserMode = driver.getDPDKvHostUserMode(extraConfig);
-        Assert.assertEquals(DPDKHelper.VHostUserMode.CLIENT, dpdKvHostUserMode);
+    public void testGetDpdkvHostUserModeServerClientExtraConfig() {
+        extraConfig.put(DpdkHelper.DPDK_VHOST_USER_MODE, DpdkHelper.VHostUserMode.CLIENT.toString());
+        DpdkHelper.VHostUserMode dpdKvHostUserMode = driver.getDpdkvHostUserMode(extraConfig);
+        Assert.assertEquals(DpdkHelper.VHostUserMode.CLIENT, dpdKvHostUserMode);
     }
 
     @Test
-    public void testGetDPDKvHostUserModeServerEmptyExtraConfig() {
-        DPDKHelper.VHostUserMode dpdKvHostUserMode = driver.getDPDKvHostUserMode(extraConfig);
-        Assert.assertEquals(DPDKHelper.VHostUserMode.SERVER, dpdKvHostUserMode);
+    public void testGetDpdkvHostUserModeServerEmptyExtraConfig() {
+        DpdkHelper.VHostUserMode dpdKvHostUserMode = driver.getDpdkvHostUserMode(extraConfig);
+        Assert.assertEquals(DpdkHelper.VHostUserMode.SERVER, dpdKvHostUserMode);
     }
 }

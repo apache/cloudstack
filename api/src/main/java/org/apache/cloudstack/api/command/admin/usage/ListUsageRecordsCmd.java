@@ -82,6 +82,9 @@ public class ListUsageRecordsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.INCLUDE_TAGS, type = CommandType.BOOLEAN, description = "Flag to enable display of Tags for a resource")
     private Boolean includeTags;
 
+    @Parameter(name = ApiConstants.OLD_FORMAT, type = CommandType.BOOLEAN, description = "Flag to enable description rendered in old format which uses internal database IDs instead of UUIDs. False by default.")
+    private Boolean oldFormat;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -146,6 +149,9 @@ public class ListUsageRecordsCmd extends BaseListCmd {
         this.usageId = usageId;
     }
 
+    public boolean getOldFormat() {
+        return oldFormat != null && oldFormat;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -168,7 +174,7 @@ public class ListUsageRecordsCmd extends BaseListCmd {
                 resourceTagResponseMap = _responseGenerator.getUsageResourceTags();
             }
             for (Usage usageRecord : usageRecords.first()) {
-                UsageRecordResponse usageResponse = _responseGenerator.createUsageResponse(usageRecord, resourceTagResponseMap);
+                UsageRecordResponse usageResponse = _responseGenerator.createUsageResponse(usageRecord, resourceTagResponseMap, getOldFormat());
                 if (usageResponse != null) {
                     usageResponse.setObjectName("usagerecord");
                     usageResponses.add(usageResponse);

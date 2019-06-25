@@ -46,7 +46,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.hypervisor.kvm.dpdk.DPDKHelper;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.resource.RequestWrapper;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -2070,7 +2070,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.setPlatformEmulator(vmTO.getPlatformEmulator());
 
         Map<String, String> extraConfig = vmTO.getExtraConfig();
-        if (dpdkSupport && (!extraConfig.containsKey(DPDKHelper.DPDK_NUMA) || !extraConfig.containsKey(DPDKHelper.DPDK_HUGE_PAGES))) {
+        if (dpdkSupport && (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA) || !extraConfig.containsKey(DpdkHelper.DPDK_HUGE_PAGES))) {
             s_logger.info("DPDK is enabled but it needs extra configurations for CPU NUMA and Huge Pages for VM deployment");
         }
 
@@ -2107,7 +2107,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         grd.setVcpuNum(vcpus);
         vm.addComp(grd);
 
-        if (!extraConfig.containsKey(DPDKHelper.DPDK_NUMA)) {
+        if (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA)) {
             final CpuModeDef cmd = new CpuModeDef();
             cmd.setMode(_guestCpuMode);
             cmd.setModel(_guestCpuModel);
@@ -2235,7 +2235,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (MapUtils.isNotEmpty(extraConfig)) {
             StringBuilder extraConfigBuilder = new StringBuilder();
             for (String key : extraConfig.keySet()) {
-                if (!key.startsWith(DPDKHelper.DPDK_INTERFACE_PREFIX) && !key.equals(DPDKHelper.DPDK_VHOST_USER_MODE)) {
+                if (!key.startsWith(DpdkHelper.DPDK_INTERFACE_PREFIX) && !key.equals(DpdkHelper.DPDK_VHOST_USER_MODE)) {
                     extraConfigBuilder.append(extraConfig.get(key));
                 }
             }
@@ -2706,7 +2706,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem);
 
-        final String capabilities = String.join(",", info.getCapabilities());
+        String capabilities = String.join(",", info.getCapabilities());
+        if (dpdkSupport) {
+            capabilities += ",dpdk";
+        }
 
         final StartupRoutingCommand cmd =
                 new StartupRoutingCommand(info.getCpus(), info.getCpuSpeed(), info.getTotalMemory(), info.getReservedMemory(), capabilities, _hypervisorType,

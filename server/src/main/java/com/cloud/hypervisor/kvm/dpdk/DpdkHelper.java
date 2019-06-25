@@ -20,7 +20,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.api.ApiConstants;
 
-public interface DPDKHelper {
+public interface DpdkHelper {
 
     String DPDK_VHOST_USER_MODE = "DPDK-VHOSTUSER";
     String DPDK_NUMA = ApiConstants.EXTRA_CONFIG + "-dpdk-numa";
@@ -56,11 +56,26 @@ public interface DPDKHelper {
      * True if the DPDK vHost user mode setting is part of the VM service offering details, false if not.
      * @param vm
      */
-    boolean isDPDKvHostUserModeSettingOnServiceOffering(VirtualMachineProfile vm);
+    boolean isDpdkvHostUserModeSettingOnServiceOffering(VirtualMachineProfile vm);
 
     /**
      * Add DPDK vHost User Mode as extra configuration to the VM TO (if present on the VM service offering details)
      */
     void setDpdkVhostUserMode(VirtualMachineTO to, VirtualMachineProfile vm);
 
+    /**
+     * True if VM is a guest DPDK enabled VM, false if not.
+     * It is determined by:
+     *      - VM type is guest
+     *      - VM details contains NUMA and Huge pages configurations for DPDK
+     *      - VM host contains the DPDK capability
+     */
+    boolean isVMDpdkEnabled(long vmId);
+
+    /**
+     * True if host is DPDK enabled, false if not.
+     * Host is DPDK enabled when:
+     *      - 'dpdk' is part of the host capabilities
+     */
+    boolean isHostDpdkEnabled(long hostId);
 }
