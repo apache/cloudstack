@@ -351,6 +351,33 @@ class CsRedundant(object):
 
         interfaces = [interface for interface in self.address.get_interfaces() if interface.is_public()]
         CsHelper.reconfigure_interfaces(self.cl, interfaces)
+
+        public_devices = list(set([interface.get_device() for interface in interfaces]))
+        if len(public_devices) > 1:
+            # Handle specific failures when multiple public interfaces
+
+            public_devices.sort()
+
+            # Ensure the default route is added, or outgoing traffic from VMs with static NAT on
+            # the subsequent interfaces will go from he wrong IP
+            route = CsRoute()
+            dev = ''
+            for interface in interfaces:
+                if dev == interface.get_device():
+                    continue
+                dev = interface.get_device()
+                gateway = interface.get_gateway()
+                if gateway:
+                    route.add_route(dev, gateway)
+
+            # The first public interface has a static MAC address between VRs.  Subsequent ones don't,
+            # so an ARP announcement is needed on failover
+            for device in public_devices[1:]:
+                logging.info("Sending garp messages for IPs on %s" % device)
+                for interface in interfaces:
+                    if interface.get_device() == device:
+                        CsHelper.execute("arping -I %s -U %s -c 1" % (device, interface.get_ip()))
+
         logging.info("Router switched to master mode")
 
     def _collect_ignore_ips(self):

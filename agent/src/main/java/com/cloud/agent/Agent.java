@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificate;
 import org.apache.cloudstack.agent.lb.SetupMSListAnswer;
 import org.apache.cloudstack.agent.lb.SetupMSListCommand;
 import org.apache.cloudstack.ca.PostCertificateRenewalCommand;
@@ -606,9 +605,7 @@ public class Agent implements HandlerFactory, IAgentControl {
                         System.exit(1);
                         return;
                     } else if (cmd instanceof MaintainCommand) {
-                        s_logger.debug("Received maintainCommand");
-                        cancelTasks();
-                        _reconnectAllowed = false;
+                        s_logger.debug("Received maintainCommand, do not cancel current tasks");
                         answer = new MaintainAnswer((MaintainCommand)cmd);
                     } else if (cmd instanceof AgentControlCommand) {
                         answer = null;
@@ -632,8 +629,6 @@ public class Agent implements HandlerFactory, IAgentControl {
                         if (Host.Type.Routing.equals(_resource.getType())) {
                             scheduleServicesRestartTask();
                         }
-                    } else if (cmd instanceof SetupDirectDownloadCertificate) {
-                        answer = setupDirectDownloadCertificate((SetupDirectDownloadCertificate) cmd);
                     } else if (cmd instanceof SetupMSListCommand) {
                         answer = setupManagementServerList((SetupMSListCommand) cmd);
                     } else {
@@ -683,31 +678,6 @@ public class Agent implements HandlerFactory, IAgentControl {
                 }
             }
         }
-    }
-
-    private Answer setupDirectDownloadCertificate(SetupDirectDownloadCertificate cmd) {
-        String certificate = cmd.getCertificate();
-        String certificateName = cmd.getCertificateName();
-        s_logger.info("Importing certificate " + certificateName + " into keystore");
-
-        final File agentFile = PropertiesUtil.findConfigFile("agent.properties");
-        if (agentFile == null) {
-            return new Answer(cmd, false, "Failed to find agent.properties file");
-        }
-
-        final String keyStoreFile = agentFile.getParent() + "/" + KeyStoreUtils.KS_FILENAME;
-
-        String cerFile = agentFile.getParent() + "/" + certificateName + ".cer";
-        Script.runSimpleBashScript(String.format("echo '%s' > %s", certificate, cerFile));
-
-        String privatePasswordFormat = "sed -n '/keystore.passphrase/p' '%s' 2>/dev/null  | sed 's/keystore.passphrase=//g' 2>/dev/null";
-        String privatePasswordCmd = String.format(privatePasswordFormat, agentFile.getAbsolutePath());
-        String privatePassword = Script.runSimpleBashScript(privatePasswordCmd);
-
-        String importCommandFormat = "keytool -importcert -file %s -keystore %s -alias '%s' -storepass '%s' -noprompt";
-        String importCmd = String.format(importCommandFormat, cerFile, keyStoreFile, certificateName, privatePassword);
-        Script.runSimpleBashScript(importCmd);
-        return new Answer(cmd, true, "Certificate " + certificateName + " imported");
     }
 
     public Answer setupAgentKeystore(final SetupKeyStoreCommand cmd) {

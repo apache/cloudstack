@@ -24,6 +24,8 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -40,15 +42,11 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreateCommand;
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -57,8 +55,8 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineManager;
+import org.apache.commons.collections.MapUtils;
 
 /**
  * Extends {@link StorageSystemDataMotionStrategy}, allowing KVM hosts to migrate VMs with the ROOT volume on a non managed local storage pool.
@@ -82,19 +80,67 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
      * Note that the super implementation (override) is called by {@link #canHandle(Map, Host, Host)} which ensures that {@link #internalCanHandle(Map)} will be executed only if the source host is KVM.
      */
     @Override
-    protected StrategyPriority internalCanHandle(Map<VolumeInfo, DataStore> volumeMap) {
-        if (super.internalCanHandle(volumeMap) == StrategyPriority.CANT_HANDLE) {
-            Set<VolumeInfo> volumeInfoSet = volumeMap.keySet();
+    protected StrategyPriority internalCanHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+        if (super.internalCanHandle(volumeMap, srcHost, destHost) == StrategyPriority.CANT_HANDLE) {
+            if (canHandleKVMNonManagedLiveNFSStorageMigration(volumeMap, srcHost, destHost) == StrategyPriority.CANT_HANDLE) {
+                Set<VolumeInfo> volumeInfoSet = volumeMap.keySet();
 
-            for (VolumeInfo volumeInfo : volumeInfoSet) {
-                StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
-                if (storagePoolVO.getPoolType() != StoragePoolType.Filesystem && storagePoolVO.getPoolType() != StoragePoolType.NetworkFilesystem) {
-                    return StrategyPriority.CANT_HANDLE;
+                for (VolumeInfo volumeInfo : volumeInfoSet) {
+                    StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
+                    if (storagePoolVO.getPoolType() != StoragePoolType.Filesystem && storagePoolVO.getPoolType() != StoragePoolType.NetworkFilesystem) {
+                        return StrategyPriority.CANT_HANDLE;
+                    }
                 }
             }
             return StrategyPriority.HYPERVISOR;
         }
         return StrategyPriority.CANT_HANDLE;
+    }
+
+    /**
+     * Allow KVM live storage migration for non managed storage when:
+     * - Source host and destination host are different, and are on the same cluster
+     * - Source and destination storage are NFS
+     * - Destination storage is cluster-wide
+     */
+    protected StrategyPriority canHandleKVMNonManagedLiveNFSStorageMigration(Map<VolumeInfo, DataStore> volumeMap,
+                                                                             Host srcHost, Host destHost) {
+        if (srcHost.getId() != destHost.getId() &&
+                srcHost.getClusterId().equals(destHost.getClusterId()) &&
+                isSourceNfsPrimaryStorage(volumeMap) &&
+                isDestinationNfsPrimaryStorageClusterWide(volumeMap)) {
+            return StrategyPriority.HYPERVISOR;
+        }
+        return StrategyPriority.CANT_HANDLE;
+    }
+
+    /**
+     * True if volumes source storage are NFS
+     */
+    protected boolean isSourceNfsPrimaryStorage(Map<VolumeInfo, DataStore> volumeMap) {
+        if (MapUtils.isNotEmpty(volumeMap)) {
+            for (VolumeInfo volumeInfo : volumeMap.keySet()) {
+                StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
+                return storagePoolVO != null &&
+                        storagePoolVO.getPoolType() == Storage.StoragePoolType.NetworkFilesystem;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * True if destination storage is cluster-wide NFS
+     */
+    protected boolean isDestinationNfsPrimaryStorageClusterWide(Map<VolumeInfo, DataStore> volumeMap) {
+        if (MapUtils.isNotEmpty(volumeMap)) {
+            for (DataStore dataStore : volumeMap.values()) {
+                StoragePoolVO storagePoolVO = _storagePoolDao.findById(dataStore.getId());
+                return storagePoolVO != null &&
+                        storagePoolVO.getPoolType() == Storage.StoragePoolType.NetworkFilesystem &&
+                        storagePoolVO.getScope() == ScopeType.CLUSTER;
+            }
+        }
+        return false;
     }
 
     /**
@@ -111,28 +157,8 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
      * Example: /var/lib/libvirt/images/f3d49ecc-870c-475a-89fa-fd0124420a9b
      */
     @Override
-    protected String generateDestPath(VirtualMachineTO vmTO, VolumeVO srcVolume, Host destHost, StoragePoolVO destStoragePool, VolumeInfo destVolumeInfo) {
-        DiskOfferingVO diskOffering = _diskOfferingDao.findById(srcVolume.getDiskOfferingId());
-        DiskProfile diskProfile = new DiskProfile(destVolumeInfo, diskOffering, HypervisorType.KVM);
-        String templateUuid = getTemplateUuid(destVolumeInfo.getTemplateId());
-        CreateCommand rootImageProvisioningCommand = new CreateCommand(diskProfile, templateUuid, destStoragePool, true);
-
-        Answer rootImageProvisioningAnswer = agentManager.easySend(destHost.getId(), rootImageProvisioningCommand);
-
-        if (rootImageProvisioningAnswer == null) {
-            throw new CloudRuntimeException(String.format("Migration with storage of vm [%s] failed while provisioning root image", vmTO.getName()));
-        }
-
-        if (!rootImageProvisioningAnswer.getResult()) {
-            throw new CloudRuntimeException(String.format("Unable to modify target volume on the host [host id:%s, name:%s]", destHost.getId(), destHost.getName()));
-        }
-
-        String libvirtDestImgsPath = null;
-        if (rootImageProvisioningAnswer instanceof CreateAnswer) {
-            libvirtDestImgsPath = ((CreateAnswer)rootImageProvisioningAnswer).getVolume().getName();
-        }
-        // File.getAbsolutePath is used to keep the file separator as it should be and eliminate a verification to check if exists a file separator in the last character of libvirtDestImgsPath.
-        return new File(libvirtDestImgsPath, destVolumeInfo.getUuid()).getAbsolutePath();
+    protected String generateDestPath(Host destHost, StoragePoolVO destStoragePool, VolumeInfo destVolumeInfo) {
+        return new File(destStoragePool.getPath(), destVolumeInfo.getUuid()).getAbsolutePath();
     }
 
     /**
@@ -160,7 +186,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
      */
     @Override
     protected boolean shouldMigrateVolume(StoragePoolVO sourceStoragePool, Host destHost, StoragePoolVO destStoragePool) {
-        return sourceStoragePool.getPoolType() == StoragePoolType.Filesystem;
+        return sourceStoragePool.getPoolType() == StoragePoolType.Filesystem || sourceStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem;
     }
 
     /**

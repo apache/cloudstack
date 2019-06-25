@@ -20,6 +20,7 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.MigrationOptions;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -72,6 +73,7 @@ public class VolumeObject implements VolumeInfo {
     @Inject
     DiskOfferingDao diskOfferingDao;
     private Object payload;
+    private MigrationOptions migrationOptions;
 
     public VolumeObject() {
         _volStateMachine = Volume.State.getStateMachine();
@@ -313,6 +315,16 @@ public class VolumeObject implements VolumeInfo {
             return diskOfferingVO.getCacheMode();
         }
         return null;
+    }
+
+    @Override
+    public MigrationOptions getMigrationOptions() {
+        return migrationOptions;
+    }
+
+    @Override
+    public void setMigrationOptions(MigrationOptions migrationOptions) {
+        this.migrationOptions = migrationOptions;
     }
 
     public void update() {

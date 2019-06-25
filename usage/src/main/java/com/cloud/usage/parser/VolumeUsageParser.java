@@ -166,8 +166,7 @@ public class VolumeUsageParser {
             usageDesc += " (DiskOffering: " + doId + ")";
         }
 
-        UsageVO usageRecord =
-            new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, doId, templateId, volId,
+        UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, doId, templateId, volId,
                 size, startDate, endDate);
         s_usageDao.persist(usageRecord);
     }

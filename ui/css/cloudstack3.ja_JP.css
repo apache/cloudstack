@@ -27,14 +27,14 @@
 
 .dashboard.admin .dashboard-container .stats ul li .percentage {
   float: left;
+  margin: 13px 0 0;
   font-size: 15px;
   font-weight: bold;
-  margin: 13px 0 0;
   /*+text-shadow:0px -2px 1px #FFFFFF;*/
-  -moz-text-shadow: 0px -2px 1px #FFFFFF;
-  -webkit-text-shadow: 0px -2px 1px #FFFFFF;
-  -o-text-shadow: 0px -2px 1px #FFFFFF;
-  text-shadow: 0px -2px 1px #FFFFFF;
+  text-shadow: 0 -2px 1px #ffffff;
+  -moz-text-shadow: 0 -2px 1px #ffffff;
+  -webkit-text-shadow: 0 -2px 1px #ffffff;
+  -o-text-shadow: 0 -2px 1px #ffffff;
 }
 
 .dashboard.admin .dashboard-container .stats ul li .value .content {
@@ -70,14 +70,17 @@ table thead th.quick-view {
 }
 
 .multi-wizard .review .select-container .select .name {
-  white-space: nowrap;
   font-size: 10px;
+  white-space: nowrap;
 }
 
 .quick-view-tooltip .detail-view .detail-group.actions .action.text .label {
   font-size: 8px;
 }
 
-.detail-view .multi-edit table tr th, .detail-view .multi-edit table tr td {
+.detail-view .multi-edit table tr th,
+.detail-view .multi-edit table tr td {
   font-size: 8px;
 }
+
+/*# sourceMappingURL=src/sourcemaps/cloudstack3.ja_JP.css.map */

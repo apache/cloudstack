@@ -328,7 +328,10 @@
                                         }
                                     });
                                     var setupAutocompletion = function() {
-                                        $($.find('input[name="rule"]')).autocomplete("destroy");
+                                        var $target = $($.find('input[name="rule"]'));
+                                        if ($target.hasClass('ui-autocomplete')) {
+                                            $target.autocomplete('destroy');
+                                        }
                                         $($.find('input[name="rule"]')).autocomplete({
                                             source: apiList,
                                             autoFocus:true

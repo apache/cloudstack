@@ -31,15 +31,16 @@ import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.StringTokenizer;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.Comparator;
+import java.util.StringTokenizer;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
@@ -53,18 +54,17 @@ import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
-
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.log4j.Logger;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Strings;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.NamedNodeMap;
 
 public class UriUtils {
 
@@ -264,11 +264,8 @@ public class UriUtils {
                     (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
                 throw new IllegalArgumentException("Unsupported scheme for url: " + url);
             }
-            int port = uri.getPort();
-            if (!(port == 80 || port == 8080 || port == 443 || port == -1)) {
-                throw new IllegalArgumentException("Only ports 80, 8080 and 443 are allowed");
-            }
 
+            int port = uri.getPort();
             if (port == -1 && uri.getScheme().equalsIgnoreCase("https")) {
                 port = 443;
             } else if (port == -1 && uri.getScheme().equalsIgnoreCase("http")) {

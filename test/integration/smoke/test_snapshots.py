@@ -309,9 +309,9 @@ class TestSnapshotRootDisk(cloudstackTestCase):
 
         # Migrate volume to new Primary Storage
         Volume.migrate(self.apiclient,
-            storageid=storage.id,
-            volumeid=vol.id
-        )
+                       storageid=storage.id,
+                       volumeid=vol.id
+                       )
 
         volume_response = list_volumes(
             self.apiclient,

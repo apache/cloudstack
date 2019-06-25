@@ -1666,6 +1666,7 @@ var dictionary = {
     "label.upgrade.router.newer.template": "Actualizar Router para usar una Plantilla más Nueva",
     "label.upload": "Subir",
     "label.upload.from.local": "Subir desde Local",
+    "label.upload.iso.from.local":"Subir ISO desde Local",
     "label.upload.template.from.local": "Subir Plantilla desde Local",
     "label.upload.volume": "Subir volumen",
     "label.upload.volume.from.local": "Subir un Volumen desde Local",

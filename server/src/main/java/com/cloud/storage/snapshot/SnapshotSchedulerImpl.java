@@ -178,7 +178,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         final List<SnapshotScheduleVO> snapshotSchedules = _snapshotScheduleDao.search(sc, null);
         for (final SnapshotScheduleVO snapshotSchedule : snapshotSchedules) {
             final Long asyncJobId = snapshotSchedule.getAsyncJobId();
-            final AsyncJobVO asyncJob = _asyncJobDao.findById(asyncJobId);
+            final AsyncJobVO asyncJob = _asyncJobDao.findByIdIncludingRemoved(asyncJobId);
             switch (asyncJob.getStatus()) {
                 case SUCCEEDED:
                     // The snapshot has been successfully backed up.
@@ -297,7 +297,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
                 final Long eventId =
                     ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:" +
-                        volumeId, true, 0);
+                        volume.getUuid(), true, 0);
 
                 final Map<String, String> params = new HashMap<String, String>();
                 params.put(ApiConstants.VOLUME_ID, "" + volumeId);

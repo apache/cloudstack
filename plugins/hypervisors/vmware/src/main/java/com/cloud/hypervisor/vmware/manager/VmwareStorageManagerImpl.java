@@ -930,12 +930,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             String prevSnapshotUuid, String prevBackupUuid, String workerVmName, Integer nfsVersion) throws Exception {
 
         String backupUuid = UUID.randomUUID().toString();
-        exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, getSnapshotRelativeDirInSecStorage(accountId, volumeId), backupUuid, workerVmName, nfsVersion);
+        exportVolumeToSecondaryStorage(vmMo, volumePath, secStorageUrl, getSnapshotRelativeDirInSecStorage(accountId, volumeId), backupUuid, workerVmName, nfsVersion, true);
         return backupUuid + "/" + backupUuid;
     }
 
-    private void exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath, String secStorageUrl, String secStorageDir, String exportName, String workerVmName,
-            Integer nfsVersion) throws Exception {
+    private void exportVolumeToSecondaryStorage(VirtualMachineMO vmMo, String volumePath, String secStorageUrl, String secStorageDir, String exportName, String workerVmName,
+                                                Integer nfsVersion, boolean clonedWorkerVMNeeded) throws Exception {
 
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, nfsVersion);
         String exportPath = secondaryMountPoint + "/" + secStorageDir + "/" + exportName;
@@ -961,16 +961,19 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 throw new Exception(msg);
             }
 
-            // 4 MB is the minimum requirement for VM memory in VMware
-            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
-            clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
-            if (clonedVm == null) {
-                String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
-                s_logger.error(msg);
-                throw new Exception(msg);
+            if (clonedWorkerVMNeeded) {
+                // 4 MB is the minimum requirement for VM memory in VMware
+                vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
+                clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
+                if (clonedVm == null) {
+                    String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+                clonedVm.exportVm(exportPath, exportName, false, false);  //Note: volss: not to create ova.
+            } else {
+                vmMo.exportVm(exportPath, exportName, false, false);
             }
-
-            clonedVm.exportVm(exportPath, exportName, false, false);  //Note: volss: not to create ova.
         } finally {
             if (clonedVm != null) {
                 clonedVm.detachAllDisks();
@@ -998,6 +1001,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 throw new Exception(msg);
             }
 
+            boolean clonedWorkerVMNeeded = true;
             vmMo = hyperHost.findVmOnHyperHost(vmName);
             if (vmMo == null) {
                 // create a dummy worker vm for attaching the volume
@@ -1014,16 +1018,19 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 String datastoreVolumePath = getVolumePathInDatastore(dsMo, volumePath + ".vmdk", searchExcludedFolders);
                 workerVm.attachDisk(new String[] {datastoreVolumePath}, morDs);
                 vmMo = workerVm;
+                clonedWorkerVMNeeded = false;
+            } else {
+                vmMo.createSnapshot(exportName, "Temporary snapshot for copy-volume command", false, false);
             }
 
-            vmMo.createSnapshot(exportName, "Temporary snapshot for copy-volume command", false, false);
-
-            exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, "volumes/" + volumeFolder, exportName, hostService.getWorkerName(hyperHost.getContext(), cmd, 1),
-                    nfsVersion);
+            exportVolumeToSecondaryStorage(vmMo, volumePath, secStorageUrl, "volumes/" + volumeFolder, exportName, hostService.getWorkerName(hyperHost.getContext(), cmd, 1),
+                    nfsVersion, clonedWorkerVMNeeded);
             return new Pair<String, String>(volumeFolder, exportName);
 
         } finally {
-            vmMo.removeSnapshot(exportName, false);
+            if (vmMo != null && vmMo.getSnapshotMor(exportName) != null) {
+                vmMo.removeSnapshot(exportName, false);
+            }
             if (workerVm != null) {
                 //detach volume and destroy worker vm
                 workerVm.detachAllDisks();

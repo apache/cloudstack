@@ -1431,7 +1431,9 @@ AjaxViewer.prototype = {
 		if(e.shiftLeft)
 			modifiers |= AjaxViewer.LEFT_SHIFT_MASK;
 
-		if(e.metaKey)
+		// Don't pass meta key modifier filter if control key is pressed.
+		// For more details see https://github.com/apache/cloudstack/issues/3229
+		if(e.metaKey && !e.ctrlKey)
 			modifiers |= AjaxViewer.META_KEY_MASK;
 
 		return modifiers;
