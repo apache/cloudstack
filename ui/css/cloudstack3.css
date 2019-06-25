@@ -8447,6 +8447,10 @@ div#details-tab-aclRules td.cidrlist span {
   display: inline-block;
 }
 
+.recurring-snapshots .schedule .forms .formContainer {
+  min-height: 250px;
+}
+
 .recurring-snapshots .schedule .add-snapshot-actions {
   float: left;
   clear: both;
