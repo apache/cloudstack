@@ -175,7 +175,6 @@
                     }
                 },
                 dataProvider: function(args) {
-                    dataProvider(args);
                     var data = {
                         resourcetype: resourceType
                     };
@@ -185,6 +184,7 @@
                     if (resourceType === 'Template') {
                         data.resourceid = args.context.templates[0].id;
                     }
+
                     $.ajax({
                         url: createURL("listDetailOptions"),
                         data: data,
@@ -209,6 +209,7 @@
                                     }
                                 });
                             });
+                            dataProvider(args);
                         }
                     });
                 }
