@@ -894,15 +894,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             if(!filteredDomainIds.equals(existingDomainIds)) {
                 sc.setParameters("detailName", ApiConstants.DOMAIN_ID);
                 vpcOfferingDetailsDao.remove(sc);
-                for (Long zoneId : filteredZoneIds) {
-                    detailsVO.add(new VpcOfferingDetailsVO(vpcOffId, ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
+                for (Long domainId : filteredDomainIds) {
+                    detailsVO.add(new VpcOfferingDetailsVO(vpcOffId, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
                 }
             }
             if(!filteredZoneIds.equals(existingZoneIds)) {
                 sc.setParameters("detailName", ApiConstants.ZONE_ID);
                 vpcOfferingDetailsDao.remove(sc);
-                for (Long domainId : filteredDomainIds) {
-                    detailsVO.add(new VpcOfferingDetailsVO(vpcOffId, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
+                for (Long zoneId : filteredZoneIds) {
+                    detailsVO.add(new VpcOfferingDetailsVO(vpcOffId, ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
                 }
             }
         }
