@@ -39,6 +39,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -579,7 +580,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     public Pair<List<? extends VpcOffering>, Integer> listVpcOfferings(final Long id, final String name, final String displayText, final List<String> supportedServicesStr,
             final Boolean isDefault, final String keyword, final String state, final Long startIndex, final Long pageSizeVal) {
-        final Filter searchFilter = new Filter(VpcOfferingVO.class, "created", false, null, null);
+        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+        isAscending = isAscending == null ? Boolean.TRUE : isAscending;
+        final Filter searchFilter = new Filter(VpcOfferingVO.class, "sortKey", isAscending, null, null);
         final SearchCriteria<VpcOfferingVO> sc = _vpcOffDao.createSearchCriteria();
 
         if (keyword != null) {
@@ -692,7 +695,23 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_UPDATE, eventDescription = "updating vpc offering")
-    public VpcOffering updateVpcOffering(final long vpcOffId, final String vpcOfferingName, final String displayText, final String state) {
+    public VpcOffering updateVpcOffering(long vpcOffId, String vpcOfferingName, String displayText, String state) {
+        return updateVpcOfferingInternal(vpcOffId, vpcOfferingName, displayText, state, null);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_UPDATE, eventDescription = "updating vpc offering")
+    public VpcOffering updateVpcOffering(final UpdateVPCOfferingCmd vpcOfferingCmd) {
+        final long vpcOffId = vpcOfferingCmd.getId();
+        final String vpcOfferingName = vpcOfferingCmd.getVpcOfferingName();
+        final String displayText = vpcOfferingCmd.getDisplayText();
+        final String state = vpcOfferingCmd.getState();
+        final Integer sortKey = vpcOfferingCmd.getSortKey();
+
+        return updateVpcOfferingInternal(vpcOffId, vpcOfferingName, displayText, state, sortKey);
+    }
+
+    private VpcOffering updateVpcOfferingInternal(long vpcOffId, String vpcOfferingName, String displayText, String state, Integer sortKey) {
         CallContext.current().setEventDetails(" Id: " + vpcOffId);
 
         // Verify input parameters
@@ -722,6 +741,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             if (!validState) {
                 throw new InvalidParameterValueException("Incorrect state value: " + state);
             }
+        }
+
+        if (sortKey != null) {
+            offering.setSortKey(sortKey);
         }
 
         if (_vpcOffDao.update(vpcOffId, offering)) {
