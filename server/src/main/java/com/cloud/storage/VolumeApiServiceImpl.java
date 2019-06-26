@@ -2083,6 +2083,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Failed to find the destination storage pool: " + storagePoolId);
         } else if (destPool.isInMaintenance()) {
             throw new InvalidParameterValueException("Cannot migrate volume " + vol + "to the destination storage pool " + destPool.getName() + " as the storage pool is in maintenance mode.");
+        }else if(storagePoolId == vol.poolId){
+            throw new InvalidParameterValueException("Cannot migrate volume "+ vol.name +" to the destination storage pool " +storagePoolId+ " as the current storage pool and the destination pool are the same.");
         }
 
         if (!storageMgr.storagePoolHasEnoughSpace(Collections.singletonList(vol), destPool)) {
