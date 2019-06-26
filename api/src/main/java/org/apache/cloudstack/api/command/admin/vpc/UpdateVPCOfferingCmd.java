@@ -69,6 +69,9 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
             since = "4.13")
     private String zoneIds;
 
+    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the VPC offering, integer")
+    private Integer sortKey;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -147,6 +150,10 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
             validZoneIds.addAll(_vpcProvSvc.getVpcOfferingZones(id));
         }
         return validZoneIds;
+    }
+
+    public Integer getSortKey() {
+        return sortKey;
     }
 
     /////////////////////////////////////////////////////

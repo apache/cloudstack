@@ -657,7 +657,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Long startIndex = cmd.getStartIndex();
         final Long pageSizeVal = cmd.getPageSizeVal();
         final Long zoneId = cmd.getZoneId();
-        final Filter searchFilter = new Filter(VpcOfferingJoinVO.class, "created", false, null, null);
+        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+        isAscending = isAscending == null ? Boolean.TRUE : isAscending;
+        final Filter searchFilter = new Filter(VpcOfferingJoinVO.class, "sortKey", isAscending, null, null);
         final SearchCriteria<VpcOfferingJoinVO> sc = vpcOfferingJoinDao.createSearchCriteria();
 
         if (keyword != null) {
@@ -800,13 +802,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_UPDATE, eventDescription = "updating vpc offering")
-    public VpcOffering updateVpcOffering(UpdateVPCOfferingCmd cmd) {
+    public VpcOffering updateVpcOffering(long vpcOffId, String vpcOfferingName, String displayText, String state) {
+        return updateVpcOfferingInternal(vpcOffId, vpcOfferingName, displayText, state, null, null, null);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_UPDATE, eventDescription = "updating vpc offering")
+    public VpcOffering updateVpcOffering(final UpdateVPCOfferingCmd cmd) {
         final Long offeringId = cmd.getId();
         final String vpcOfferingName = cmd.getVpcOfferingName();
         final String displayText = cmd.getDisplayText();
         final String state = cmd.getState();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
+        final Integer sortKey = cmd.getSortKey();
 
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
@@ -825,10 +834,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        return updateVpcOffering(offeringId, vpcOfferingName, displayText, state, domainIds, zoneIds);
+        return updateVpcOfferingInternal(offeringId, vpcOfferingName, displayText, state, sortKey, domainIds, zoneIds);
     }
 
-    private VpcOffering updateVpcOffering(final long vpcOffId,final String vpcOfferingName, final String displayText, final String state, final List<Long> domainIds, final List<Long> zoneIds) {
+    private VpcOffering updateVpcOfferingInternal(long vpcOffId, String vpcOfferingName, String displayText, String state, Integer sortKey, final List<Long> domainIds, final List<Long> zoneIds) {
         CallContext.current().setEventDetails(" Id: " + vpcOffId);
 
         // Verify input parameters
@@ -854,7 +863,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         Collections.sort(filteredZoneIds);
 
-        final boolean updateNeeded = vpcOfferingName != null || displayText != null || state != null;
+        final boolean updateNeeded = vpcOfferingName != null || displayText != null || state != null || sortKey != null;
 
         final VpcOfferingVO offering = _vpcOffDao.createForUpdate(vpcOffId);
 
@@ -862,11 +871,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             if (vpcOfferingName != null) {
                 offering.setName(vpcOfferingName);
             }
-
             if (displayText != null) {
                 offering.setDisplayText(displayText);
             }
-
             if (state != null) {
                 boolean validState = false;
                 for (final VpcOffering.State st : VpcOffering.State.values()) {
@@ -879,6 +886,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     throw new InvalidParameterValueException("Incorrect state value: " + state);
                 }
             }
+            if (sortKey != null) {
+                offering.setSortKey(sortKey);
+            }
+
             if (!_vpcOffDao.update(vpcOffId, offering)) {
                 return  null;
             }

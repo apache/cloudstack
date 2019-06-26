@@ -132,7 +132,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public boolean moveUser(long id, Long domainId, long accountId) {
+    public boolean moveUser(long id, Long domainId, Account account) {
         return false;
     }
 

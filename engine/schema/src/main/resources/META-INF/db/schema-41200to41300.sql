@@ -26,6 +26,8 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 -- DPDK client and server mode support
 ALTER TABLE `cloud`.`service_offering_details` CHANGE COLUMN `value` `value` TEXT NOT NULL;
 
+ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
+
 -- Add `sort_key` column to data_center
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `sort_key` INT(32) NOT NULL DEFAULT 0;
 
@@ -259,6 +261,7 @@ CREATE VIEW `cloud`.`vpc_offering_view` AS
         `vpc_offerings`.`supports_distributed_router` AS `supports_distributed_router`,
         `vpc_offerings`.`supports_region_level_vpc` AS `supports_region_level_vpc`,
         `vpc_offerings`.`redundant_router_service` AS `redundant_router_service`,
+        `vpc_offerings`.`sort_key` AS `sort_key`,
         GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
         GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
         GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,

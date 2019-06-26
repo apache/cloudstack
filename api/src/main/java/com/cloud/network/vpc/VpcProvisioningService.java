@@ -45,11 +45,14 @@ public interface VpcProvisioningService {
      */
     public boolean deleteVpcOffering(long offId);
 
+    @Deprecated
+    public VpcOffering updateVpcOffering(long vpcOffId, String vpcOfferingName, String displayText, String state);
+
     /**
      * @param cmd
      * @return
      */
-    public VpcOffering updateVpcOffering(UpdateVPCOfferingCmd cmd);
+    VpcOffering updateVpcOffering(final UpdateVPCOfferingCmd cmd);
 
     /**
      * Retrieve ID of domains for a VPC offering

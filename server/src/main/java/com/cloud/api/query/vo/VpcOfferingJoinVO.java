@@ -74,6 +74,9 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Column(name = "redundant_router_service")
     boolean redundantRouter = false;
 
+    @Column(name = "sort_key")
+    int sortKey;
+
     @Column(name = "domain_id")
     private String domainId;
 
@@ -160,6 +163,10 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Override
     public boolean isRedundantRouter() {
         return redundantRouter;
+    }
+
+    public int getSortKey() {
+        return sortKey;
     }
 
     public String getDomainId() {
