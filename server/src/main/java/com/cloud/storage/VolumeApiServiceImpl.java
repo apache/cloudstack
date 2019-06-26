@@ -2032,7 +2032,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (vol.getState() != Volume.State.Ready) {
             throw new InvalidParameterValueException("Volume must be in ready state");
         }
-        
+
         if (vol.getPoolId() == storagePoolId) {
             throw new InvalidParameterValueException("Volume " + vol + " current storage pool is same as the the destination storage pool " + destPool.getName());
         }
