@@ -30,9 +30,11 @@ public class ImageStoreUtil {
 
         //if ssvm url domain is present, use it to construct hostname in the format 1-2-3-4.domain
         // if the domain name is not present, ssl validation fails and has to be ignored
-        if(StringUtils.isNotBlank(ssvmUrlDomain)) {
+        if(StringUtils.isNotBlank(ssvmUrlDomain) && ssvmUrlDomain.startsWith("*")) {
             hostname = ipAddress.replace(".", "-");
             hostname = hostname + ssvmUrlDomain.substring(1);
+        } else if (StringUtils.isNotBlank(ssvmUrlDomain)) {
+            hostname = ssvmUrlDomain;
         }
 
         //only https works with postupload and url format is fixed
