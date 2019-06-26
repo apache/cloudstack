@@ -2082,7 +2082,7 @@
                                     } else {
                                         args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
                                         args.$form.find('.form-item[rel=isPublic]').hide();
-                                        args.$form.find('.form-item[rel=domain]').css('display', 'inline-block'); //shown
+                                        args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
                                         args.$form.find('.form-item[rel=tags]').hide();
                                     }
                                 },
