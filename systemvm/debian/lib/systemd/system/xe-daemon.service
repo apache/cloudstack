@@ -1,0 +1,15 @@
+﻿[Unit]
+Description=Xen Guest Monitoring Agent
+DefaultDependencies=no
+After=local-fs.target
+Requires=proc-xen.mount
+Before=network.target cloud-early-config.service
+ConditionPathExists=/proc/xen/capabilities
+
+[Service]
+ExecStartPre=/usr/sbin/xe-linux-distribution /var/cache/xe-linux-distribution
+ExecStart=/usr/sbin/xe-daemon
+StandardOutput=journal+console
+
+[Install]
+WantedBy=multi-user.target

@@ -19,6 +19,9 @@
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 CMDLINE=/var/cache/cloud/cmdline
 
+rm -f /var/cache/cloud/enabled_svcs
+rm -f /var/cache/cloud/disabled_svcs
+
 . /lib/lsb/init-functions
 
 log_it() {
@@ -56,25 +59,25 @@ hypervisor() {
 }
 
 config_guest() {
-  if [ "$HYPERVISOR" == "kvm" ]
-  then
-    # Configure hot-plug
-    modprobe acpiphp || true
-    modprobe pci_hotplug || true
-    sed -i -e "/^s0:2345:respawn.*/d" /etc/inittab
-    sed -i -e "/6:23:respawn/a\s0:2345:respawn:/sbin/getty -L 115200 ttyS0 vt102" /etc/inittab
-  fi
   [ ! -d /proc/xen ] && sed -i 's/^vc/#vc/' /etc/inittab && telinit q
-  [  -d /proc/xen ] && sed -i 's/^#vc/vc/' /etc/inittab && telinit q
-}
+  [ -d /proc/xen ] && sed -i 's/^#vc/vc/' /etc/inittab && telinit q
 
-get_boot_params() {
+  systemctl daemon-reload
+
   case $HYPERVISOR in
      xen-pv|xen-domU)
+          systemctl stop ntpd
+          systemctl disable ntpd
+          systemctl start xe-daemon
+
           cat /proc/cmdline > $CMDLINE
           sed -i "s/%/ /g" $CMDLINE
           ;;
      xen-hvm)
+          systemctl stop ntpd
+          systemctl disable ntpd
+          systemctl start xe-daemon
+
           if [ ! -f /usr/bin/xenstore-read ]; then
             log_it "ERROR: xentools not installed, cannot found xenstore-read" && exit 5
           fi
@@ -82,7 +85,13 @@ get_boot_params() {
           sed -i "s/%/ /g" $CMDLINE
           ;;
      kvm)
+          # Configure hot-plug
+          modprobe acpiphp || true
+          modprobe pci_hotplug || true
+          sed -i -e "/^s0:2345:respawn.*/d" /etc/inittab
+          sed -i -e "/6:23:respawn/a\s0:2345:respawn:/sbin/getty -L 115200 ttyS0 vt102" /etc/inittab
           systemctl enable --now qemu-guest-agent
+
           # Wait for $CMDLINE file to be written by the qemu-guest-agent
           for i in {1..60}; do
             if [ -s $CMDLINE ]; then
@@ -96,13 +105,16 @@ get_boot_params() {
           fi
           ;;
      vmware)
+          # system time sync'd with host via vmware tools
+          systemctl stop ntpd
+          systemctl disable ntpd
+          systemctl start open-vm-tools
+
           vmtoolsd --cmd 'machine.id.get' > $CMDLINE
           ;;
      virtualpc|hyperv)
           # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
-          #waiting for the hv_kvp_daemon to start up
-          #sleep  need to fix the race condition of hv_kvp_daemon and cloud-early-config
-          [ -f /usr/sbin/hv_kvp_daemon ] && /usr/sbin/hv_kvp_daemon
+          systemctl start hyperv-daemons.hv-fcopy-daemon.service hyperv-daemons.hv-kvp-daemon.service hyperv-daemons.hv-vss-daemon.service
           sleep 5
           cp -f /var/opt/hyperv/.kvp_pool_0 $CMDLINE
           cat /dev/null > /var/opt/hyperv/.kvp_pool_0
@@ -117,12 +129,10 @@ get_boot_params() {
           fi
           ;;
   esac
-}
 
-get_systemvm_type() {
+  # Find and export guest type
   export TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
 }
-
 
 patch_systemvm() {
   local patchfile=$1
@@ -172,19 +182,29 @@ patch() {
   return 0
 }
 
+config_sysctl() {
+  # When there is more memory reset the cache back pressure to default 100
+  physmem=$(free|awk '/^Mem:/{print $2}')
+  if [ $((physmem)) -lt 409600 ]; then
+      sed  -i "/^vm.vfs_cache_pressure/ c\vm.vfs_cache_pressure = 200" /etc/sysctl.conf
+  else
+      sed  -i "/^vm.vfs_cache_pressure/ c\vm.vfs_cache_pressure = 100" /etc/sysctl.conf
+  fi
+
+  sync
+  sysctl -p
+}
+
 bootstrap() {
   log_it "Bootstrapping systemvm appliance"
 
   export HYPERVISOR=$(hypervisor)
-  [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
-  log_it "Detected that we are running inside $HYPERVISOR"
+  [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out" && exit 10
+  log_it "Starting guest services for $HYPERVISOR"
 
   config_guest
-  get_boot_params
-  get_systemvm_type
   patch
-  sync
-  sysctl -p
+  config_sysctl
 
   log_it "Configuring systemvm type=$TYPE"
   if [ -f "/opt/cloud/bin/setup/$TYPE.sh" ]; then
@@ -192,6 +212,7 @@ bootstrap() {
   else
       /opt/cloud/bin/setup/default.sh
   fi
+
   log_it "Finished setting up systemvm"
   exit 0
 }
