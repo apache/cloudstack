@@ -17,27 +17,20 @@
 
 package com.cloud.resource;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.GetVncPortAnswer;
-import com.cloud.agent.api.GetVncPortCommand;
-import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.event.ActionEventUtils;
-import com.cloud.ha.HighAvailabilityManager;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.StorageManager;
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.utils.ssh.SSHCmdHelper;
-import com.cloud.utils.ssh.SshException;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.UserVmDetailsDao;
-import com.cloud.vm.dao.VMInstanceDao;
-import com.trilead.ssh2.Connection;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Assert;
 import org.junit.Before;
@@ -52,21 +45,26 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static com.cloud.resource.ResourceState.Event.InternalEnterMaintenance;
-import static com.cloud.resource.ResourceState.Event.UnableToMigrate;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.GetVncPortAnswer;
+import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.StorageManager;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.ssh.SSHCmdHelper;
+import com.cloud.utils.ssh.SshException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.trilead.ssh2.Connection;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ActionEventUtils.class, ResourceManagerImpl.class, SSHCmdHelper.class})
@@ -170,41 +168,6 @@ public class ResourceManagerImplTest {
     }
 
     @Test
-    public void testCheckAndMaintainEnterMaintenanceMode() throws NoTransitionException {
-        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
-        verify(resourceManager).isHostInMaintenance(host, new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
-        verify(resourceManager).setHostIntoMaintenance(host);
-        verify(resourceManager).resourceStateTransitTo(eq(host), eq(InternalEnterMaintenance), anyLong());
-        Assert.assertTrue(enterMaintenanceMode);
-    }
-
-    @Test
-    public void testCheckAndMaintainErrorInMaintenanceRunningVms() throws NoTransitionException {
-        when(vmInstanceDao.listByHostId(hostId)).thenReturn(Arrays.asList(vm1, vm2));
-        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
-        verify(resourceManager).isHostInMaintenance(host, Arrays.asList(vm1, vm2), new ArrayList<>(), new ArrayList<>());
-        Assert.assertFalse(enterMaintenanceMode);
-    }
-
-    @Test
-    public void testCheckAndMaintainErrorInMaintenanceMigratingVms() throws NoTransitionException {
-        when(vmInstanceDao.listVmsMigratingFromHost(hostId)).thenReturn(Arrays.asList(vm1, vm2));
-        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
-        verify(resourceManager).isHostInMaintenance(host, new ArrayList<>(), Arrays.asList(vm1, vm2), new ArrayList<>());
-        Assert.assertFalse(enterMaintenanceMode);
-    }
-
-    @Test
-    public void testCheckAndMaintainErrorInMaintenanceFailedMigrations() throws NoTransitionException {
-        when(vmInstanceDao.listNonMigratingVmsByHostEqualsLastHost(hostId)).thenReturn(Arrays.asList(vm1, vm2));
-        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
-        verify(resourceManager).isHostInMaintenance(host, new ArrayList<>(), new ArrayList<>(), Arrays.asList(vm1, vm2));
-        verify(resourceManager).setHostIntoErrorInMaintenance(host, Arrays.asList(vm1, vm2));
-        verify(resourceManager).resourceStateTransitTo(eq(host), eq(UnableToMigrate), anyLong());
-        Assert.assertFalse(enterMaintenanceMode);
-    }
-
-    @Test
     public void testConfigureVncAccessForKVMHostFailedMigrations() {
         when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         List<VMInstanceVO> vms = Arrays.asList(vm1, vm2);
@@ -217,23 +180,6 @@ public class ResourceManagerImplTest {
         verify(userVmDetailsDao).addDetail(eq(vm2Id), eq("kvm.vnc.address"), eq(vm2VncAddress), anyBoolean());
         verify(userVmDetailsDao).addDetail(eq(vm2Id), eq("kvm.vnc.port"), eq(String.valueOf(vm2VncPort)), anyBoolean());
         verify(agentManager).pullAgentToMaintenance(hostId);
-    }
-
-    @Test
-    public void testCheckAndMaintainErrorInMaintenanceRetries() throws NoTransitionException {
-        resourceManager.setHostMaintenanceRetries(host);
-
-        List<VMInstanceVO> failedMigrations = Arrays.asList(vm1, vm2);
-        when(vmInstanceDao.listByHostId(host.getId())).thenReturn(failedMigrations);
-        when(vmInstanceDao.listNonMigratingVmsByHostEqualsLastHost(host.getId())).thenReturn(failedMigrations);
-
-        Integer retries = ResourceManager.HostMaintenanceRetries.valueIn(host.getClusterId());
-        for (int i = 0; i <= retries; i++) {
-            resourceManager.checkAndMaintain(host.getId());
-        }
-
-        verify(resourceManager, times(retries + 1)).isHostInMaintenance(host, failedMigrations, new ArrayList<>(), failedMigrations);
-        verify(resourceManager).setHostIntoErrorInMaintenance(host, failedMigrations);
     }
 
     @Test(expected = CloudRuntimeException.class)

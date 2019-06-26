@@ -47,11 +47,6 @@ import org.apache.cloudstack.framework.config.Configurable;
  */
 public interface ResourceManager extends ResourceService, Configurable {
 
-    ConfigKey<Integer> HostMaintenanceRetries = new ConfigKey<>("Advanced", Integer.class,
-            "host.maintenance.retries","20",
-            "Number of retries when preparing a host into Maintenance Mode is faulty before failing",
-            true, ConfigKey.Scope.Cluster);
-
     ConfigKey<Boolean> KvmSshToAgentEnabled = new ConfigKey<>("Advanced", Boolean.class,
             "kvm.ssh.to.agent","true",
             "Number of retries when preparing a host into Maintenance Mode is faulty before failing",
