@@ -690,14 +690,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         s_logger.debug("VmDiskStatsTask is running...");
 
                         SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
-                        sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, HypervisorType.KVM); // support KVM only util 2013.06.25
+                        sc.addAnd("hypervisorType", SearchCriteria.Op.IN, HypervisorType.KVM, HypervisorType.VMware);
                         List<HostVO> hosts = _hostDao.search(sc, null);
 
                         for (HostVO host : hosts) {
                             List<UserVmVO> vms = _userVmDao.listRunningByHostId(host.getId());
                             List<Long> vmIds = new ArrayList<Long>();
 
-                            for (UserVmVO vm : vms) {
+                            for (UserVmVO  vm : vms) {
                                 if (vm.getType() == VirtualMachine.Type.User) // user vm
                                     vmIds.add(vm.getId());
                             }

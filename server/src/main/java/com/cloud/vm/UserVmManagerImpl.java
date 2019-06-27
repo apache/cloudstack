@@ -4670,8 +4670,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public void collectVmDiskStatistics(final UserVm userVm) {
-        // support KVM only util 2013.06.25
-        if (!userVm.getHypervisorType().equals(HypervisorType.KVM)) {
+        // Only supported for KVM and VMware
+        if (!(userVm.getHypervisorType().equals(HypervisorType.KVM) || userVm.getHypervisorType().equals(HypervisorType.VMware))) {
             return;
         }
         s_logger.debug("Collect vm disk statistics from host before stopping Vm");

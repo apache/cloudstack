@@ -17,13 +17,14 @@
 
 package org.apache.cloudstack.response;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
+import java.util.Set;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
-import java.util.Set;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class VmMetricsResponse extends UserVmResponse {
     @SerializedName(ApiConstants.IP_ADDRESS)
@@ -54,7 +55,7 @@ public class VmMetricsResponse extends UserVmResponse {
     @Param(description = "disk write in MiB")
     private String diskWrite;
 
-    @SerializedName("diskiopstotal")
+    @SerializedName(ApiConstants.DISK_IO_PSTOTAL)
     @Param(description = "the total disk iops")
     private Long diskIopsTotal;
 
