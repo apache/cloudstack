@@ -31,6 +31,7 @@ import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+import com.cloud.vm.VmDetailConstants;
 import com.google.gson.Gson;
 
 import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
@@ -718,7 +719,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         final UserVmVO userVmVO = _userVmDao.findById(vm.getId());
 
         _userVmDao.loadDetails(userVmVO);
-        userVmVO.setDetail("password", password_encrypted);
+        userVmVO.setDetail(VmDetailConstants.PASSWORD, password_encrypted);
         _userVmDao.saveDetails(userVmVO);
 
         userVmVO.setUpdateParameters(true);

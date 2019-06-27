@@ -41,6 +41,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
+import com.cloud.vm.VmDetailConstants;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -421,8 +422,8 @@ public class ConsoleProxyServlet extends HttpServlet {
 
         Pair<String, Integer> portInfo;
         if (hostVo.getResourceState().equals(ResourceState.ErrorInMaintenance)) {
-            UserVmDetailVO detailAddress = _userVmDetailsDao.findDetail(vm.getId(), "kvm.vnc.address");
-            UserVmDetailVO detailPort = _userVmDetailsDao.findDetail(vm.getId(), "kvm.vnc.port");
+            UserVmDetailVO detailAddress = _userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS);
+            UserVmDetailVO detailPort = _userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT);
             portInfo = new Pair<>(detailAddress.getValue(), Integer.valueOf(detailPort.getValue()));
         } else {
             portInfo = _ms.getVncPort(vm);
@@ -441,7 +442,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         }
 
         String sid = vm.getVncPassword();
-        UserVmDetailVO details = _userVmDetailsDao.findDetail(vm.getId(), "keyboard");
+        UserVmDetailVO details = _userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KEYBOARD);
 
         String tag = vm.getUuid();
 

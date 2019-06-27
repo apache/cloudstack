@@ -22,6 +22,7 @@ import java.util.HashMap;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,6 +45,8 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.UserVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -76,6 +79,12 @@ public class UserVmManagerImplTest {
     @Mock
     private NetworkModel networkModel;
 
+    @Mock
+    private AccountVO callerAccount;
+
+    @Mock
+    private UserVO callerUser;
+
     private long vmId = 1l;
 
     @Before
@@ -83,6 +92,14 @@ public class UserVmManagerImplTest {
         Mockito.when(updateVmCommand.getId()).thenReturn(vmId);
 
         Mockito.when(userVmDao.findById(Mockito.eq(vmId))).thenReturn(userVmVoMock);
+
+        Mockito.when(callerAccount.getType()).thenReturn(Account.ACCOUNT_TYPE_ADMIN);
+        CallContext.register(callerUser, callerAccount);
+    }
+
+    @After
+    public void afterTest() {
+        CallContext.unregister();
     }
 
     @Test
