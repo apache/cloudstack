@@ -2033,6 +2033,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Volume must be in ready state");
         }
 
+        if (vol.getPoolId() == storagePoolId) {
+            throw new InvalidParameterValueException("Volume " + vol + " is already on the destination storage pool");
+        }
+
         boolean liveMigrateVolume = false;
         Long instanceId = vol.getInstanceId();
         Long srcClusterId = null;
