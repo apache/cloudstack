@@ -16,8 +16,53 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
+import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
+import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.MapUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.api.Answer;
-import com.cloud.utils.db.GlobalLock;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.alert.AlertManager;
@@ -42,6 +87,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ResourceTag.ResourceObjectType;
+import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
@@ -80,6 +126,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -92,48 +139,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
-import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
-import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
-import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
-import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
-import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 @Component
 public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implements SnapshotManager, SnapshotApiService, Configurable {
@@ -192,6 +197,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     ResourceManager _resourceMgr;
     @Inject
     StorageStrategyFactory _storageStrategyFactory;
+    @Inject
+    public TaggedResourceService taggedResourceService;
 
     private int _totalRetries;
     private int _pauseInterval;
@@ -902,6 +909,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                     policy.setDisplay(display);
                     _snapshotPolicyDao.update(policy.getId(), policy);
                     _snapSchedMgr.scheduleOrCancelNextSnapshotJobOnDisplayChange(policy, previousDisplay);
+                    taggedResourceService.deleteTags(Collections.singletonList(policy.getUuid()), ResourceObjectType.SnapshotPolicy, null);
+                }
+                final Map<String, String> tags = cmd.getTags();
+                if (MapUtils.isNotEmpty(tags)) {
+                    taggedResourceService.createTags(Collections.singletonList(policy.getUuid()), ResourceObjectType.SnapshotPolicy, tags, null);
                 }
             } finally {
                 createSnapshotPolicyLock.unlock();
@@ -916,9 +928,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
-    protected boolean deletePolicy(long userId, Long policyId) {
+    protected boolean deletePolicy(Long policyId) {
         SnapshotPolicyVO snapshotPolicy = _snapshotPolicyDao.findById(policyId);
         _snapSchedMgr.removeSchedule(snapshotPolicy.getVolumeId(), snapshotPolicy.getId());
+        taggedResourceService.deleteTags(Collections.singletonList(snapshotPolicy.getUuid()), ResourceObjectType.SnapshotPolicy, null);
         return _snapshotPolicyDao.remove(policyId);
     }
 
@@ -963,8 +976,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     public void deletePoliciesForVolume(Long volumeId) {
         List<SnapshotPolicyVO> policyInstances = listPoliciesforVolume(volumeId);
         for (SnapshotPolicyVO policyInstance : policyInstances) {
-            Long policyId = policyInstance.getId();
-            deletePolicy(1L, policyId);
+            deletePolicy(policyInstance.getId());
         }
         // We also want to delete the manual snapshots scheduled for this volume
         // We can only delete the schedules in the future, not the ones which are already executing.
@@ -1321,7 +1333,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     public boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd) {
         Long policyId = cmd.getId();
         List<Long> policyIds = cmd.getIds();
-        Long userId = getSnapshotUserId();
 
         if ((policyId == null) && (policyIds == null)) {
             throw new InvalidParameterValueException("No policy id (or list of ids) specified.");
@@ -1333,6 +1344,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         } else if (policyIds.size() <= 0) {
             // Not even sure how this is even possible
             throw new InvalidParameterValueException("There are no policy ids");
+        }
+
+        if (policyIds.contains(Snapshot.MANUAL_POLICY_ID)) {
+            throw new InvalidParameterValueException("Invalid Policy id given: " + Snapshot.MANUAL_POLICY_ID);
         }
 
         for (Long policy : policyIds) {
@@ -1348,21 +1363,14 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
         }
 
-        boolean success = true;
-
-        if (policyIds.contains(Snapshot.MANUAL_POLICY_ID)) {
-            throw new InvalidParameterValueException("Invalid Policy id given: " + Snapshot.MANUAL_POLICY_ID);
-        }
-
         for (Long pId : policyIds) {
-            if (!deletePolicy(userId, pId)) {
-                success = false;
+            if (!deletePolicy(pId)) {
                 s_logger.warn("Failed to delete snapshot policy with Id: " + policyId);
-                return success;
+                return false;
             }
         }
 
-        return success;
+        return true;
     }
 
     @Override

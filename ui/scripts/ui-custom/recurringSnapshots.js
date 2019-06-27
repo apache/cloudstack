@@ -61,6 +61,10 @@
                 }
             });
 
+            $($snapshots.find('.taggerContainer')).each(function() {
+                $('<div>').taggerInForm().appendTo(this);
+            });
+
             // Form validation
             $snapshots.find('form').validate();
 
@@ -70,7 +74,7 @@
 
                 if (!$form.valid()) return false;
 
-                var formData = cloudStack.serializeForm($form);
+                var formData = $.extend(cloudStack.serializeForm($form), {'tags' : cloudStack.getTagsFromForm($form)});
 
                 actions.add({
                     context: context,
