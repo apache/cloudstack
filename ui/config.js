@@ -30,7 +30,6 @@ cloudStackOptions = {
         "sc": "label.simplified.chinese.keyboard"
     },
     hiddenFields: { // Fields to be hidden only for users in the tables below
-        "metrics.storagepool": [], // Options - "name", "property", "disk",
         "metrics.instances": [], // Options - "name", "state", "ipaddress", "zonename", "cpuused", "memused", "network", "disk"
         "metrics.volumes": [] // Options - "name", "state", "vmname", "sizegb", "physicalsize", "utilization", "storagetype", "storage"
     }
