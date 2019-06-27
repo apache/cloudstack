@@ -2633,6 +2633,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Collections.sort(filteredZoneIds);
 
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            if (!filteredZoneIds.equals(existingZoneIds)) { // Domain-admins cannot update zone(s) for offerings
+                throw new InvalidParameterValueException(String.format("Unable to update zone(s) for service offering: %s by admin: %s as it is domain-admin", offeringHandle.getUuid(), user.getUuid()));
+            }
             if (existingDomainIds.isEmpty()) {
                 throw new InvalidParameterValueException(String.format("Unable to update public service offering: %s by user: %s because it is domain-admin", offeringHandle.getUuid(), user.getUuid()));
             } else {
@@ -2640,9 +2643,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException(String.format("Unable to update service offering: %s to a public offering by user: %s because it is domain-admin", offeringHandle.getUuid(), user.getUuid()));
                 }
             }
+            List<Long> nonChildDomains = new ArrayList<>();
             for (Long domainId : existingDomainIds) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new InvalidParameterValueException(String.format("Unable to update service offering: %s as it has linked domain(s) which are not child domain for domain-admin: %s", offeringHandle.getUuid(), user.getUuid()));
+                    if (name != null || displayText != null || sortKey != null) { // Domain-admins cannot update name, display text, sort key for offerings with domain which are not child domains for domain-admin
+                        throw new InvalidParameterValueException(String.format("Unable to update service offering: %s as it has linked domain(s) which are not child domain for domain-admin: %s", offeringHandle.getUuid(), user.getUuid()));
+                    }
+                    nonChildDomains.add(domainId);
                 }
             }
             for (Long domainId : filteredDomainIds) {
@@ -2651,6 +2658,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException(String.format("Unable to update service offering: %s by domain-admin: %s with domain: %3$s which is not a child domain", offeringHandle.getUuid(), user.getUuid(), domain.getUuid()));
                 }
             }
+            filteredDomainIds.addAll(nonChildDomains); // Final list must include domains which were not child domain for domain-admin but specified for this offering prior to update
         } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             throw new InvalidParameterValueException(String.format("Unable to update service offering: %s by id user: %s because it is not root-admin or domain-admin", offeringHandle.getUuid(), user.getUuid()));
         }
@@ -3028,6 +3036,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Collections.sort(filteredZoneIds);
 
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            if (!filteredZoneIds.equals(existingZoneIds)) { // Domain-admins cannot update zone(s) for offerings
+                throw new InvalidParameterValueException(String.format("Unable to update zone(s) for disk offering: %s by admin: %s as it is domain-admin", diskOfferingHandle.getUuid(), user.getUuid()));
+            }
             if (existingDomainIds.isEmpty()) {
                 throw new InvalidParameterValueException(String.format("Unable to update public disk offering: %s by user: %s because it is domain-admin", diskOfferingHandle.getUuid(), user.getUuid()));
             } else {
@@ -3035,9 +3046,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException(String.format("Unable to update disk offering: %s to a public offering by user: %s because it is domain-admin", diskOfferingHandle.getUuid(), user.getUuid()));
                 }
             }
+            List<Long> nonChildDomains = new ArrayList<>();
             for (Long domainId : existingDomainIds) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new InvalidParameterValueException(String.format("Unable to update disk offering: %s as it has linked domain(s) which are not child domain for domain-admin: %s", diskOfferingHandle.getUuid(), user.getUuid()));
+                    if (name != null || displayText != null || sortKey != null) { // Domain-admins cannot update name, display text, sort key for offerings with domain which are not child domains for domain-admin
+                        throw new InvalidParameterValueException(String.format("Unable to update disk offering: %s as it has linked domain(s) which are not child domain for domain-admin: %s", diskOfferingHandle.getUuid(), user.getUuid()));
+                    }
+                    nonChildDomains.add(domainId);
                 }
             }
             for (Long domainId : filteredDomainIds) {
@@ -3046,6 +3061,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException(String.format("Unable to update disk offering: %s by domain-admin: %s with domain: %3$s which is not a child domain", diskOfferingHandle.getUuid(), user.getUuid(), domain.getUuid()));
                 }
             }
+            filteredDomainIds.addAll(nonChildDomains); // Final list must include domains which were not child domain for domain-admin but specified for this offering prior to update
         } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             throw new InvalidParameterValueException(String.format("Unable to update disk offering: %s by id user: %s because it is not root-admin or domain-admin", diskOfferingHandle.getUuid(), user.getUuid()));
         }

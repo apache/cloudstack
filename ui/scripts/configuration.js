@@ -1009,6 +1009,7 @@
                                             args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
                                             args.$form.find('.form-item[rel=isPublic]').hide();
                                             args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                            args.$form.find('.form-item[rel=zoneId]').hide();
                                         }
                                         var formOffering = args.context.serviceOfferings[0];
                                         $.ajax({
@@ -1030,7 +1031,7 @@
                                         if (offeringDomainIds) {
                                             args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
                                             args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
-                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.spit(",") : [offeringDomainIds];
+                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.split(",") : [offeringDomainIds];
                                             var options = args.$form.find('.form-item[rel=domainId]').find('option');
                                             $.each(options, function(optionIndex, option) {
                                                 $.each(offeringDomainIds, function(domainIdIndex, domainId) {
@@ -1047,7 +1048,7 @@
                                         }
                                         var offeringZoneIds = formOffering.zoneid;
                                         if (offeringZoneIds) {
-                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.spit(",") : [offeringZoneIds];
+                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.split(",") : [offeringZoneIds];
                                             var options = args.$form.find('.form-item[rel=zoneId]').find('option');
                                             $.each(options, function(optionIndex, option) {
                                                 $.each(offeringZoneIds, function(zoneIdIndex, zoneId) {
@@ -2626,6 +2627,7 @@
                                             args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
                                             args.$form.find('.form-item[rel=isPublic]').hide();
                                             args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                            args.$form.find('.form-item[rel=zoneId]').hide();
                                         }
                                         var formOffering = args.context.diskOfferings[0];
                                         $.ajax({
@@ -2647,7 +2649,7 @@
                                         if (offeringDomainIds) {
                                             args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
                                             args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
-                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.spit(",") : [offeringDomainIds];
+                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.split(",") : [offeringDomainIds];
                                             var options = args.$form.find('.form-item[rel=domainId]').find('option');
                                             $.each(options, function(optionIndex, option) {
                                                 $.each(offeringDomainIds, function(domainIdIndex, domainId) {
@@ -2664,7 +2666,7 @@
                                         }
                                         var offeringZoneIds = formOffering.zoneid;
                                         if (offeringZoneIds) {
-                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.spit(",") : [offeringZoneIds];
+                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.split(",") : [offeringZoneIds];
                                             var options = args.$form.find('.form-item[rel=zoneId]').find('option');
                                             $.each(options, function(optionIndex, option) {
                                                 $.each(offeringZoneIds, function(zoneIdIndex, zoneId) {
@@ -4380,7 +4382,7 @@
                                         if (offeringDomainIds) {
                                             args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
                                             args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
-                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.spit(",") : [offeringDomainIds];
+                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.split(",") : [offeringDomainIds];
                                             var options = args.$form.find('.form-item[rel=domainId]').find('option');
                                             $.each(options, function(optionIndex, option) {
                                                 $.each(offeringDomainIds, function(domainIdIndex, domainId) {
@@ -4397,7 +4399,7 @@
                                         }
                                         var offeringZoneIds = formOffering.zoneid;
                                         if (offeringZoneIds) {
-                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.spit(",") : [offeringZoneIds];
+                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.split(",") : [offeringZoneIds];
                                             var options = args.$form.find('.form-item[rel=zoneId]').find('option');
                                             $.each(options, function(optionIndex, option) {
                                                 $.each(offeringZoneIds, function(zoneIdIndex, zoneId) {
@@ -5312,7 +5314,7 @@
                                         if (offeringDomainIds) {
                                             args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
                                             args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
-                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.spit(",") : [offeringDomainIds];
+                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.split(",") : [offeringDomainIds];
                                             var options = args.$form.find('.form-item[rel=domainId]').find('option');
                                             $.each(options, function(optionIndex, option) {
                                                 $.each(offeringDomainIds, function(domainIdIndex, domainId) {
@@ -5329,7 +5331,7 @@
                                         }
                                         var offeringZoneIds = formOffering.zoneid;
                                         if (offeringZoneIds) {
-                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.spit(",") : [offeringZoneIds];
+                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.split(",") : [offeringZoneIds];
                                             var options = args.$form.find('.form-item[rel=zoneId]').find('option');
                                             $.each(options, function(optionIndex, option) {
                                                 $.each(offeringZoneIds, function(zoneIdIndex, zoneId) {
