@@ -209,7 +209,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -3542,9 +3541,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     continue;
                 }
                 // from here, subnet overlaps
-                if (!UriUtils.checkVlanUriOverlap(
-                        BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId)),
-                        BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlan.getVlanTag())))) {
+                if (!vlanId.equals(vlan.getVlanTag())) {
                     boolean overlapped = false;
                     if( network.getTrafficType() == TrafficType.Public ) {
                         overlapped = true;
