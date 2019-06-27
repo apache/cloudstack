@@ -139,7 +139,7 @@ public class LdapDirectoryServerConnectionTest {
 //        assertEquals(["uid"].sort(), embeddedLdapServer.getUserIndexMap().keySet().sort());
     }
 
-    @Test
+//    @Test
     public void testEmbeddedLdapAvailable() {
         try {
             List<LdapUser> usahs = ldapManager.getUsers(1L);
@@ -159,7 +159,7 @@ public class LdapDirectoryServerConnectionTest {
         }
     }
 
-    @Test
+//    @Test
     public void testUserCreation() {
         LdapConnection connection = new LdapNetworkConnection( "localhost", 10389 );
         try {

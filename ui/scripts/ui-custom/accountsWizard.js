@@ -172,9 +172,6 @@
                         }
                     }) };
                     loadList();
-                    $("#label_filterBy").change(function() {
-                        loadList();
-                    });
 
                 } else {
                     var informationWithinLdap = cloudStack.dialog.createForm({
@@ -218,7 +215,14 @@
                 });
 
                 var informationNotInLdapForm = informationNotInLdap.$formContainer.find('form .form-item');
+                informationNotInLdapForm.find('.value #label_filterBy').addClass('required');
+                informationNotInLdapForm.find('.value #label_filterBy').change(function() {
+                    loadList();
+                });
                 informationNotInLdapForm.find('.value #label_domain').addClass('required');
+                informationNotInLdapForm.find('.value #label_domain').change(function() {
+                    loadList();
+                });
                 informationNotInLdapForm.find('.value #label_type').addClass('required');
                 if (!ldapStatus) {
                     informationNotInLdapForm.css('background', 'none');
