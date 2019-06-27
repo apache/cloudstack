@@ -1216,7 +1216,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         try {
-            resourceStateTransitTo(host, ResourceState.Event.AdminAskMaintenace, _nodeId);
+            resourceStateTransitTo(host, ResourceState.Event.AdminAskMaintenance, _nodeId);
         } catch (final NoTransitionException e) {
             final String err = "Cannot transmit resource state of host " + host.getId() + " to " + ResourceState.Maintenance;
             s_logger.debug(err, e);
@@ -1254,7 +1254,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public boolean maintain(final long hostId) throws AgentUnavailableException {
-        final Boolean result = propagateResourceEvent(hostId, ResourceState.Event.AdminAskMaintenace);
+        final Boolean result = propagateResourceEvent(hostId, ResourceState.Event.AdminAskMaintenance);
         if (result != null) {
             return result;
         }
@@ -1334,10 +1334,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      * - Cancel scheduled migrations for those which have already failed
      * - Configure VNC access for VMs (KVM hosts only)
      */
-    protected boolean setHostIntoErrorInMaintenance(HostVO host, List<VMInstanceVO> failedMigrations) throws NoTransitionException {
-        s_logger.debug("Unable to migrate " + failedMigrations.size() + " VM(s) from host " + host.getUuid());
+    protected boolean setHostIntoErrorInMaintenance(HostVO host, List<VMInstanceVO> errorVms) throws NoTransitionException {
+        s_logger.debug("Unable to migrate / fix errors for " + errorVms.size() + " VM(s) from host " + host.getUuid());
         _haMgr.cancelScheduledMigrations(host);
-        configureVncAccessForKVMHostFailedMigrations(host, failedMigrations);
+        configureVncAccessForKVMHostFailedMigrations(host, errorVms);
         resourceStateTransitTo(host, ResourceState.Event.UnableToMaintain, _nodeId);
         return false;
     }
@@ -1354,9 +1354,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return true;
     }
 
-    protected boolean setHostIntoPrepareForMaintenanceWithErrors(HostVO host) throws NoTransitionException {
-        s_logger.debug("Host " + host.getUuid() + " entering in PrepareForMaintainenceWithErrors state");
+    protected boolean setHostIntoPrepareForMaintenanceWithErrors(HostVO host, List<VMInstanceVO> errorVms) throws NoTransitionException {
+        s_logger.debug("Host " + host.getUuid() + " entering in PrepareForMaintenanceWithErrors state");
+        configureVncAccessForKVMHostFailedMigrations(host, errorVms);
         resourceStateTransitTo(host, ResourceState.Event.UnableToMigrate, _nodeId);
+        return true;
+    }
+
+    protected boolean setHostIntoPrepareForMaintenanceAfterErrorsFixed(HostVO host) throws NoTransitionException {
+        s_logger.debug("Host " + host.getUuid() + " entering in PrepareForMaintenance state as any previous corrections have been fixed");
+        resourceStateTransitTo(host, ResourceState.Event.ErrorsCorrected, _nodeId);
         return true;
     }
 
@@ -1364,7 +1371,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      * Return true if host goes into Maintenance mode, only when:
      * - No Running, Migrating or Failed migrations (host_id = last_host_id) for the host
      */
-    protected boolean attemptMaintain(HostVO host) throws NoTransitionException {
+    private boolean attemptMaintain(HostVO host) throws NoTransitionException {
         final long hostId = host.getId();
 
         if (CollectionUtils.isEmpty(_vmDao.findByHostInStates(hostId, State.Migrating, State.Running, State.Starting, State.Stopping, State.Error, State.Unknown))) {
@@ -1372,28 +1379,32 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         final List<VMInstanceVO> allVmsOnHost = _vmDao.listByHostId(hostId);
-        final List<VMInstanceVO> migratingVms = _vmDao.listVmsMigratingFromHost(hostId);
-        final List<VMInstanceVO> failedMigrations = _vmDao.listNonMigratingVmsByHostEqualsLastHost(hostId);
-        boolean hasPendingWorkForVMs = false;
+        boolean hasPendingMigrationWorks = false;
         for (VMInstanceVO vmInstanceVO : allVmsOnHost) {
-            if (_haMgr.hasPendingHaWork(vmInstanceVO.getId())) {
-                hasPendingWorkForVMs = true;
+            if (_haMgr.hasPendingMigrationsWork(vmInstanceVO.getId())) {
+                hasPendingMigrationWorks = true;
                 break;
             }
         }
 
-        if (!hasPendingWorkForVMs) {
-            if ((CollectionUtils.isNotEmpty(_vmDao.findByHostInStates(hostId, State.Running)) && CollectionUtils.isEmpty(migratingVms)) ||
-                    (CollectionUtils.isEmpty(_vmDao.findByHostInStates(hostId, State.Running)) &&
-                        CollectionUtils.isNotEmpty(_vmDao.findByHostInStates(hostId, State.Unknown, State.Error, State.Shutdowned)))) {
-                return setHostIntoErrorInMaintenance(host, failedMigrations);
-            }
+        final List<VMInstanceVO> failedMigrations = new ArrayList<>(_vmDao.listNonMigratingVmsByHostEqualsLastHost(hostId));
+        final List<VMInstanceVO> errorVms = new ArrayList<>(_vmDao.findByHostInStates(hostId, State.Unknown, State.Error, State.Shutdowned));
+        final boolean hasMigratingVms = CollectionUtils.isNotEmpty(_vmDao.listVmsMigratingFromHost(hostId));
+        final boolean hasRunningVms = CollectionUtils.isNotEmpty(_vmDao.findByHostInStates(hostId, State.Running));
+        final boolean hasFailedMigrations = CollectionUtils.isNotEmpty(failedMigrations);
+        final boolean hasVmsInFailureStates = CollectionUtils.isNotEmpty(errorVms);
+        errorVms.addAll(failedMigrations);
+
+        if (!hasPendingMigrationWorks && (hasRunningVms || (!hasRunningVms && !hasMigratingVms && hasVmsInFailureStates))) {
+            return setHostIntoErrorInMaintenance(host, errorVms);
         }
-        if (hasPendingWorkForVMs &&
-                (CollectionUtils.isNotEmpty(failedMigrations) ||
-                    CollectionUtils.isNotEmpty(_vmDao.findByHostInStates(hostId, State.Unknown, State.Error, State.Shutdowned))) &&
-                (CollectionUtils.isNotEmpty(migratingVms) || CollectionUtils.isNotEmpty(_vmDao.findByHostInStates(hostId, State.Stopping)))) {
-            return setHostIntoPrepareForMaintenanceWithErrors(host);
+
+        if ((hasVmsInFailureStates || hasFailedMigrations) && (hasPendingMigrationWorks || hasMigratingVms || CollectionUtils.isNotEmpty(_vmDao.findByHostInStates(hostId, State.Stopping)))) {
+            return setHostIntoPrepareForMaintenanceWithErrors(host, errorVms);
+        }
+
+        if (host.getResourceState() == ResourceState.PrepareForMaintenanceErrorsPresent) {
+            return setHostIntoPrepareForMaintenanceAfterErrorsFixed(host);
         }
 
         return false;
@@ -2444,7 +2455,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public boolean executeUserRequest(final long hostId, final ResourceState.Event event) throws AgentUnavailableException {
-        if (event == ResourceState.Event.AdminAskMaintenace) {
+        if (event == ResourceState.Event.AdminAskMaintenance) {
             return doMaintain(hostId);
         } else if (event == ResourceState.Event.AdminCancelMaintenance) {
             return doCancelMaintenance(hostId);

@@ -28,17 +28,19 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManagerListener;
-import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenterVO;
@@ -101,9 +103,14 @@ import com.cloud.vm.dao.VMInstanceDao;
  *         ha.retry.wait | time to wait before retrying the work item | seconds | 120 || || stop.retry.wait | time to wait
  *         before retrying the stop | seconds | 120 || * }
  **/
-public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvailabilityManager, ClusterManagerListener {
+public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvailabilityManager, ClusterManagerListener, Configurable {
 
     protected static final Logger s_logger = Logger.getLogger(HighAvailabilityManagerImpl.class);
+    private ConfigKey<Integer> MaxRetries = new ConfigKey<>("Advanced", Integer.class,
+            "max.retries","5",
+            "Total number of attempts for trying migration of a VM.",
+            true, ConfigKey.Scope.Cluster);
+
     WorkerThread[] _workers;
     boolean _stopped;
     long _timeToSleep;
@@ -908,6 +915,16 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         return true;
     }
 
+    @Override
+    public String getConfigComponentName() {
+        return HighAvailabilityManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {MaxRetries};
+    }
+
     protected class CleanupTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
@@ -1003,5 +1020,16 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     public boolean hasPendingHaWork(long vmId) {
         List<HaWorkVO> haWorks = _haDao.listPendingHaWorkForVm(vmId);
         return haWorks.size() > 0;
+    }
+
+    @Override
+    public boolean hasPendingMigrationsWork(long vmId) {
+        List<HaWorkVO> haWorks = _haDao.listPendingMigrationsForVm(vmId);
+        for (HaWorkVO work : haWorks) {
+            if (work.getTimesTried() < _maxRetries) {
+                return true;
+            }
+        }
+        return false;
     }
 }
