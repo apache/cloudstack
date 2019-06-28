@@ -3566,7 +3566,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         }
                     }
                 } else {
-                    // For untagged or non-overlapping URIs we need to ensure there is no Public traffic type
+                    // For tagged or non-overlapping URIs we need to ensure there is no Public traffic type
                     boolean overlapped = false;
                     if( network.getTrafficType() == TrafficType.Public ) {
                         overlapped = true;
