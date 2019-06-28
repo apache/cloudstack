@@ -209,6 +209,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -3541,7 +3542,31 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     continue;
                 }
                 // from here, subnet overlaps
-                if (!vlanId.equals(vlan.getVlanTag())) {
+                if (vlanId.toLowerCase().contains(Vlan.UNTAGGED) || UriUtils.checkVlanUriOverlap(
+                        BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId)),
+                        BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlan.getVlanTag())))) {
+                    // For untagged VLAN Id and overlapping URIs we need to expand and verify IP ranges
+                    final String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
+                    final String otherVlanStartIP = otherVlanIpRange[0];
+                    String otherVlanEndIP = null;
+                    if (otherVlanIpRange.length > 1) {
+                        otherVlanEndIP = otherVlanIpRange[1];
+                    }
+
+                    // extend IP range
+                    if (!vlanGateway.equals(otherVlanGateway) || !vlanNetmask.equals(vlan.getVlanNetmask())) {
+                        throw new InvalidParameterValueException("The IP range has already been added with gateway "
+                                + otherVlanGateway + " ,and netmask " + otherVlanNetmask
+                                + ", Please specify the gateway/netmask if you want to extend ip range" );
+                    }
+                    if (!NetUtils.is31PrefixCidr(newCidr)) {
+                        if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
+                            throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." +
+                                    " Please specify a different start IP/end IP.");
+                        }
+                    }
+                } else {
+                    // For untagged or non-overlapping URIs we need to ensure there is no Public traffic type
                     boolean overlapped = false;
                     if( network.getTrafficType() == TrafficType.Public ) {
                         overlapped = true;
@@ -3559,27 +3584,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
                                 + " in zone " + zone.getName()
                                 + " has overlapped with the subnet. Please specify a different gateway/netmask.");
-                    }
-                } else {
-
-                    final String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
-                    final String otherVlanStartIP = otherVlanIpRange[0];
-                    String otherVlanEndIP = null;
-                    if (otherVlanIpRange.length > 1) {
-                        otherVlanEndIP = otherVlanIpRange[1];
-                    }
-
-                    // extend IP range
-                    if (!vlanGateway.equals(otherVlanGateway) || !vlanNetmask.equals(vlan.getVlanNetmask())) {
-                        throw new InvalidParameterValueException("The IP range has already been added with gateway "
-                                + otherVlanGateway + " ,and netmask " + otherVlanNetmask
-                                + ", Please specify the gateway/netmask if you want to extend ip range" );
-                    }
-                    if (!NetUtils.is31PrefixCidr(newCidr)) {
-                        if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
-                            throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." +
-                                " Please specify a different start IP/end IP.");
-                        }
                     }
                 }
             }
