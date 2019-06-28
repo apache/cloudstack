@@ -42,68 +42,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 
 import javax.naming.ConfigurationException;
-
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
-import org.joda.time.Duration;
-
-import com.google.gson.Gson;
-import com.vmware.vim25.AboutInfo;
-import com.vmware.vim25.BoolPolicy;
-import com.vmware.vim25.ComputeResourceSummary;
-import com.vmware.vim25.CustomFieldStringValue;
-import com.vmware.vim25.DVPortConfigInfo;
-import com.vmware.vim25.DVPortConfigSpec;
-import com.vmware.vim25.DasVmPriority;
-import com.vmware.vim25.DatastoreSummary;
-import com.vmware.vim25.DistributedVirtualPort;
-import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
-import com.vmware.vim25.DistributedVirtualSwitchPortCriteria;
-import com.vmware.vim25.DynamicProperty;
-import com.vmware.vim25.GuestInfo;
-import com.vmware.vim25.HostCapability;
-import com.vmware.vim25.HostHostBusAdapter;
-import com.vmware.vim25.HostInternetScsiHba;
-import com.vmware.vim25.ManagedObjectReference;
-import com.vmware.vim25.ObjectContent;
-import com.vmware.vim25.OptionValue;
-import com.vmware.vim25.PerfCounterInfo;
-import com.vmware.vim25.PerfEntityMetric;
-import com.vmware.vim25.PerfEntityMetricBase;
-import com.vmware.vim25.PerfMetricId;
-import com.vmware.vim25.PerfMetricIntSeries;
-import com.vmware.vim25.PerfMetricSeries;
-import com.vmware.vim25.PerfQuerySpec;
-import com.vmware.vim25.PerfSampleInfo;
-import com.vmware.vim25.RuntimeFaultFaultMsg;
-import com.vmware.vim25.ToolsUnavailableFaultMsg;
-import com.vmware.vim25.VMwareDVSPortSetting;
-import com.vmware.vim25.VimPortType;
-import com.vmware.vim25.VirtualDevice;
-import com.vmware.vim25.VirtualDeviceBackingInfo;
-import com.vmware.vim25.VirtualDeviceConfigSpec;
-import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
-import com.vmware.vim25.VirtualDisk;
-import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
-import com.vmware.vim25.VirtualEthernetCard;
-import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
-import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
-import com.vmware.vim25.VirtualEthernetCardOpaqueNetworkBackingInfo;
-import com.vmware.vim25.VirtualMachineConfigSpec;
-import com.vmware.vim25.VirtualMachineFileInfo;
-import com.vmware.vim25.VirtualMachineFileLayoutEx;
-import com.vmware.vim25.VirtualMachineFileLayoutExFileInfo;
-import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
-import com.vmware.vim25.VirtualMachinePowerState;
-import com.vmware.vim25.VirtualMachineRelocateSpec;
-import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
-import com.vmware.vim25.VirtualMachineRuntimeInfo;
-import com.vmware.vim25.VirtualMachineToolsStatus;
-import com.vmware.vim25.VirtualMachineVideoCard;
-import com.vmware.vim25.VirtualUSBController;
-import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -114,6 +53,11 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
+import org.joda.time.Duration;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -211,6 +155,7 @@ import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.ValidateSnapshotAnswer;
 import com.cloud.agent.api.ValidateSnapshotCommand;
+import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.VolumeStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
@@ -310,6 +255,60 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VmDetailConstants;
+import com.google.gson.Gson;
+import com.vmware.vim25.AboutInfo;
+import com.vmware.vim25.BoolPolicy;
+import com.vmware.vim25.ComputeResourceSummary;
+import com.vmware.vim25.CustomFieldStringValue;
+import com.vmware.vim25.DVPortConfigInfo;
+import com.vmware.vim25.DVPortConfigSpec;
+import com.vmware.vim25.DasVmPriority;
+import com.vmware.vim25.DatastoreSummary;
+import com.vmware.vim25.DistributedVirtualPort;
+import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
+import com.vmware.vim25.DistributedVirtualSwitchPortCriteria;
+import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.GuestInfo;
+import com.vmware.vim25.HostCapability;
+import com.vmware.vim25.HostHostBusAdapter;
+import com.vmware.vim25.HostInternetScsiHba;
+import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.OptionValue;
+import com.vmware.vim25.PerfCounterInfo;
+import com.vmware.vim25.PerfEntityMetric;
+import com.vmware.vim25.PerfEntityMetricBase;
+import com.vmware.vim25.PerfMetricId;
+import com.vmware.vim25.PerfMetricIntSeries;
+import com.vmware.vim25.PerfMetricSeries;
+import com.vmware.vim25.PerfQuerySpec;
+import com.vmware.vim25.RuntimeFaultFaultMsg;
+import com.vmware.vim25.ToolsUnavailableFaultMsg;
+import com.vmware.vim25.VMwareDVSPortSetting;
+import com.vmware.vim25.VimPortType;
+import com.vmware.vim25.VirtualDevice;
+import com.vmware.vim25.VirtualDeviceBackingInfo;
+import com.vmware.vim25.VirtualDeviceConfigSpec;
+import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
+import com.vmware.vim25.VirtualDisk;
+import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
+import com.vmware.vim25.VirtualEthernetCard;
+import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
+import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
+import com.vmware.vim25.VirtualEthernetCardOpaqueNetworkBackingInfo;
+import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachineFileInfo;
+import com.vmware.vim25.VirtualMachineFileLayoutEx;
+import com.vmware.vim25.VirtualMachineFileLayoutExFileInfo;
+import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
+import com.vmware.vim25.VirtualMachinePowerState;
+import com.vmware.vim25.VirtualMachineRelocateSpec;
+import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
+import com.vmware.vim25.VirtualMachineRuntimeInfo;
+import com.vmware.vim25.VirtualMachineToolsStatus;
+import com.vmware.vim25.VirtualMachineVideoCard;
+import com.vmware.vim25.VirtualUSBController;
+import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
@@ -1874,7 +1873,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             // Check for multi-cores per socket settings
             int numCoresPerSocket = 1;
-            String coresPerSocket = vmSpec.getDetails().get("cpu.corespersocket");
+            String coresPerSocket = vmSpec.getDetails().get(VmDetailConstants.CPU_CORE_PER_SOCKET);
             if (coresPerSocket != null) {
                 String apiVersion = HypervisorHostHelper.getVcenterApiVersion(vmMo.getContext());
                 // Property 'numCoresPerSocket' is supported since vSphere API 5.0
@@ -3469,6 +3468,120 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(GetVmDiskStatsCommand cmd) {
+        try {
+            final VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+            final ManagedObjectReference perfMgr = getServiceContext().getServiceContent().getPerfManager();
+            VimPortType service = getServiceContext().getService();
+
+            final int intervalSeconds = 300;
+            final XMLGregorianCalendar startTime = VmwareHelper.getXMLGregorianCalendar(new Date(), intervalSeconds);
+            final XMLGregorianCalendar endTime = VmwareHelper.getXMLGregorianCalendar(new Date(), 0);
+
+            PerfCounterInfo diskReadIOPerfCounterInfo = null;
+            PerfCounterInfo diskWriteIOPerfCounterInfo = null;
+            PerfCounterInfo diskReadKbsPerfCounterInfo = null;
+            PerfCounterInfo diskWriteKbsPerfCounterInfo = null;
+
+            // https://pubs.vmware.com/vsphere-5-5/topic/com.vmware.wssdk.apiref.doc/virtual_disk_counters.html
+            List<PerfCounterInfo> cInfo = getServiceContext().getVimClient().getDynamicProperty(perfMgr, "perfCounter");
+            for (PerfCounterInfo info : cInfo) {
+                if ("virtualdisk".equalsIgnoreCase(info.getGroupInfo().getKey()) && "average".equalsIgnoreCase(info.getRollupType().value())) {
+                    if ("numberReadAveraged".equalsIgnoreCase(info.getNameInfo().getKey())) {
+                        diskReadIOPerfCounterInfo = info;
+                    }
+                    if ("numberWriteAveraged".equalsIgnoreCase(info.getNameInfo().getKey())) {
+                        diskWriteIOPerfCounterInfo = info;
+                    }
+                    if ("read".equalsIgnoreCase(info.getNameInfo().getKey())) {
+                        diskReadKbsPerfCounterInfo = info;
+                    }
+                    if ("write".equalsIgnoreCase(info.getNameInfo().getKey())) {
+                        diskWriteKbsPerfCounterInfo = info;
+                    }
+                }
+            }
+
+            final ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
+            final DatacenterMO dcMo = new DatacenterMO(getServiceContext(), dcMor);
+
+            final HashMap<String, List<VmDiskStatsEntry>> vmStatsMap = new HashMap<>();
+            for (final String vmName : cmd.getVmNames()) {
+                final VirtualMachineMO vmMo = dcMo.findVm(vmName);
+                final List<VmDiskStatsEntry> diskStats = new ArrayList<>();
+                for (final VirtualDisk disk : vmMo.getAllDiskDevice()) {
+                    final String diskBusName = vmMo.getDeviceBusName(vmMo.getAllDeviceList(), disk);
+                    long readReq = 0;
+                    long readBytes = 0;
+                    long writeReq = 0;
+                    long writeBytes = 0;
+
+                    final ArrayList<PerfMetricId> perfMetricsIds = new ArrayList<PerfMetricId>();
+                    if (diskReadIOPerfCounterInfo != null) {
+                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(diskReadIOPerfCounterInfo, diskBusName));
+                    }
+                    if (diskWriteIOPerfCounterInfo != null) {
+                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(diskWriteIOPerfCounterInfo, diskBusName));
+                    }
+                    if (diskReadKbsPerfCounterInfo != null) {
+                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(diskReadKbsPerfCounterInfo, diskBusName));
+                    }
+                    if (diskWriteKbsPerfCounterInfo != null) {
+                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(diskWriteKbsPerfCounterInfo, diskBusName));
+                    }
+
+                    if (perfMetricsIds.size() > 0) {
+                        final PerfQuerySpec qSpec = new PerfQuerySpec();
+                        qSpec.setEntity(vmMo.getMor());
+                        qSpec.setFormat("normal");
+                        qSpec.setIntervalId(intervalSeconds);
+                        qSpec.setStartTime(startTime);
+                        qSpec.setEndTime(endTime);
+                        qSpec.getMetricId().addAll(perfMetricsIds);
+
+                        for (final PerfEntityMetricBase perfValue : service.queryPerf(perfMgr, Collections.singletonList(qSpec))) {
+                            if (!(perfValue instanceof PerfEntityMetric)) {
+                                continue;
+                            }
+                            final List<PerfMetricSeries> values = ((PerfEntityMetric)perfValue).getValue();
+                            if (values == null || values.isEmpty()) {
+                                continue;
+                            }
+                            for (final PerfMetricSeries value : values) {
+                                if (!(value instanceof PerfMetricIntSeries) || !value.getId().getInstance().equals(diskBusName)) {
+                                    continue;
+                                }
+                                final List<Long> perfStats = ((PerfMetricIntSeries)value).getValue();
+                                if (perfStats.size() > 0) {
+                                    long sum = 0;
+                                    for (long val : perfStats) {
+                                        sum += val;
+                                    }
+                                    long avg = sum / perfStats.size();
+                                    if (value.getId().getCounterId() == diskReadIOPerfCounterInfo.getKey()) {
+                                        readReq = avg;
+                                    } else if (value.getId().getCounterId() == diskWriteIOPerfCounterInfo.getKey()) {
+                                        writeReq = avg;
+                                    } else if (value.getId().getCounterId() == diskReadKbsPerfCounterInfo.getKey()) {
+                                        readBytes = avg * 1024;
+                                    } else if (value.getId().getCounterId() == diskWriteKbsPerfCounterInfo.getKey()) {
+                                        writeBytes = avg * 1024;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    diskStats.add(new VmDiskStatsEntry(vmName, VmwareHelper.getDiskDeviceFileName(disk), writeReq, readReq, writeBytes, readBytes));
+                }
+                if (diskStats.size() > 0) {
+                    vmStatsMap.put(vmName, diskStats);
+                }
+            }
+            if (vmStatsMap.size() > 0) {
+                return new GetVmDiskStatsAnswer(cmd, "", cmd.getHostName(), vmStatsMap);
+            }
+        } catch (Exception e) {
+            s_logger.error("Unable to execute GetVmDiskStatsCommand due to " + VmwareHelper.getExceptionMessage(e), e);
+        }
         return new GetVmDiskStatsAnswer(cmd, null, null, null);
     }
 
@@ -5857,17 +5970,40 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         HashMap<String, VmStatsEntry> vmResponseMap = new HashMap<String, VmStatsEntry>();
         ManagedObjectReference perfMgr = getServiceContext().getServiceContent().getPerfManager();
         VimPortType service = getServiceContext().getService();
+
         PerfCounterInfo rxPerfCounterInfo = null;
         PerfCounterInfo txPerfCounterInfo = null;
+        PerfCounterInfo diskReadIOPerfCounterInfo = null;
+        PerfCounterInfo diskWriteIOPerfCounterInfo = null;
+        PerfCounterInfo diskReadKbsPerfCounterInfo = null;
+        PerfCounterInfo diskWriteKbsPerfCounterInfo = null;
+
+        final int intervalSeconds = 300;
+        final XMLGregorianCalendar startTime = VmwareHelper.getXMLGregorianCalendar(new Date(), intervalSeconds);
+        final XMLGregorianCalendar endTime = VmwareHelper.getXMLGregorianCalendar(new Date(), 0);
 
         List<PerfCounterInfo> cInfo = getServiceContext().getVimClient().getDynamicProperty(perfMgr, "perfCounter");
         for (PerfCounterInfo info : cInfo) {
-            if ("net".equalsIgnoreCase(info.getGroupInfo().getKey())) {
+            if ("net".equalsIgnoreCase(info.getGroupInfo().getKey()) && "average".equalsIgnoreCase(info.getRollupType().value())) {
                 if ("transmitted".equalsIgnoreCase(info.getNameInfo().getKey())) {
                     txPerfCounterInfo = info;
                 }
                 if ("received".equalsIgnoreCase(info.getNameInfo().getKey())) {
                     rxPerfCounterInfo = info;
+                }
+            }
+            if ("virtualdisk".equalsIgnoreCase(info.getGroupInfo().getKey())) {
+                if ("numberReadAveraged".equalsIgnoreCase(info.getNameInfo().getKey())) {
+                    diskReadIOPerfCounterInfo = info;
+                }
+                if ("numberWriteAveraged".equalsIgnoreCase(info.getNameInfo().getKey())) {
+                    diskWriteIOPerfCounterInfo = info;
+                }
+                if ("read".equalsIgnoreCase(info.getNameInfo().getKey())) {
+                    diskReadKbsPerfCounterInfo = info;
+                }
+                if ("write".equalsIgnoreCase(info.getNameInfo().getKey())) {
+                    diskWriteKbsPerfCounterInfo = info;
                 }
             }
         }
@@ -5885,8 +6021,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         final String memMbStr = "config.hardware.memoryMB";
         final String allocatedCpuStr = "summary.runtime.maxCpuUsage";
 
-        ObjectContent[] ocs =
-                hyperHost.getVmPropertiesOnHyperHost(new String[] {"name", numCpuStr, cpuUseStr ,guestMemUseStr ,memLimitStr ,memMbStr,allocatedCpuStr ,instanceNameCustomField});
+        ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(new String[] {
+                "name", numCpuStr, cpuUseStr, guestMemUseStr, memLimitStr, memMbStr,allocatedCpuStr, instanceNameCustomField
+        });
 
         if (ocs != null && ocs.length > 0) {
             for (ObjectContent oc : ocs) {
@@ -5923,7 +6060,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
 
                     maxCpuUsage = (maxCpuUsage/allocatedCpu)*100;
-                    new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
                     if (vmInternalCSName != null) {
                         name = vmInternalCSName;
                     } else {
@@ -5937,60 +6073,86 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     ManagedObjectReference vmMor = hyperHost.findVmOnHyperHost(name).getMor();
                     assert (vmMor != null);
 
-                    ArrayList<PerfMetricId> vmNetworkMetrics = new ArrayList<PerfMetricId>();
-                    // get all the metrics from the available sample period
-                    List<PerfMetricId> perfMetrics = service.queryAvailablePerfMetric(perfMgr, vmMor, null, null, null);
-                    if (perfMetrics != null) {
-                        for (int index = 0; index < perfMetrics.size(); ++index) {
-                            if (((rxPerfCounterInfo != null) && (perfMetrics.get(index).getCounterId() == rxPerfCounterInfo.getKey()))
-                                    || ((txPerfCounterInfo != null) && (perfMetrics.get(index).getCounterId() == txPerfCounterInfo.getKey()))) {
-                                vmNetworkMetrics.add(perfMetrics.get(index));
-                            }
-                        }
-                    }
-
                     double networkReadKBs = 0;
                     double networkWriteKBs = 0;
-                    long sampleDuration = 0;
+                    double diskReadIops = 0;
+                    double diskWriteIops = 0;
+                    double diskReadKbs = 0;
+                    double diskWriteKbs = 0;
 
-                    if (vmNetworkMetrics.size() != 0) {
-                        PerfQuerySpec qSpec = new PerfQuerySpec();
+                    final ArrayList<PerfMetricId> perfMetricsIds = new ArrayList<PerfMetricId>();
+                    if (rxPerfCounterInfo != null) {
+                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(rxPerfCounterInfo, ""));
+                    }
+                    if (txPerfCounterInfo != null) {
+                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(txPerfCounterInfo, ""));
+                    }
+                    if (diskReadIOPerfCounterInfo != null) {
+                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(diskReadIOPerfCounterInfo, "*"));
+                    }
+                    if (diskWriteIOPerfCounterInfo != null) {
+                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(diskWriteIOPerfCounterInfo, "*"));
+                    }
+                    if (diskReadKbsPerfCounterInfo != null) {
+                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(diskReadKbsPerfCounterInfo, ""));
+                    }
+                    if (diskWriteKbsPerfCounterInfo != null) {
+                        perfMetricsIds.add(VmwareHelper.createPerfMetricId(diskWriteKbsPerfCounterInfo, ""));
+                    }
+
+                    if (perfMetricsIds.size() > 0) {
+                        final PerfQuerySpec qSpec = new PerfQuerySpec();
                         qSpec.setEntity(vmMor);
-                        PerfMetricId[] availableMetricIds = vmNetworkMetrics.toArray(new PerfMetricId[0]);
-                        qSpec.getMetricId().addAll(Arrays.asList(availableMetricIds));
-                        List<PerfQuerySpec> qSpecs = new ArrayList<PerfQuerySpec>();
-                        qSpecs.add(qSpec);
-                        List<PerfEntityMetricBase> values = service.queryPerf(perfMgr, qSpecs);
-
-                        for (int i = 0; i < values.size(); ++i) {
-                            List<PerfSampleInfo> infos = ((PerfEntityMetric)values.get(i)).getSampleInfo();
-                            if (infos != null && infos.size() > 0) {
-                                int endMs = infos.get(infos.size() - 1).getTimestamp().getSecond() * 1000 + infos.get(infos.size() - 1).getTimestamp().getMillisecond();
-                                int beginMs = infos.get(0).getTimestamp().getSecond() * 1000 + infos.get(0).getTimestamp().getMillisecond();
-                                sampleDuration = (endMs - beginMs) / 1000;
-                                List<PerfMetricSeries> vals = ((PerfEntityMetric)values.get(i)).getValue();
-                                for (int vi = 0; ((vals != null) && (vi < vals.size())); ++vi) {
-                                    if (vals.get(vi) instanceof PerfMetricIntSeries) {
-                                        PerfMetricIntSeries val = (PerfMetricIntSeries)vals.get(vi);
-                                        List<Long> perfValues = val.getValue();
-                                        Long sumRate = 0L;
-                                        for (int j = 0; j < infos.size(); j++) { // Size of the array matches the size as the PerfSampleInfo
-                                            sumRate += perfValues.get(j);
-                                        }
-                                        Long averageRate = sumRate / infos.size();
-                                        if (vals.get(vi).getId().getCounterId() == rxPerfCounterInfo.getKey()) {
-                                            networkReadKBs = sampleDuration * averageRate; //get the average RX rate multiplied by sampled duration
-                                        }
-                                        if (vals.get(vi).getId().getCounterId() == txPerfCounterInfo.getKey()) {
-                                            networkWriteKBs = sampleDuration * averageRate;//get the average TX rate multiplied by sampled duration
-                                        }
-                                    }
+                        qSpec.setFormat("normal");
+                        qSpec.setIntervalId(intervalSeconds);
+                        qSpec.setStartTime(startTime);
+                        qSpec.setEndTime(endTime);
+                        qSpec.getMetricId().addAll(perfMetricsIds);
+                        final List<PerfEntityMetricBase> perfValues = service.queryPerf(perfMgr, Collections.singletonList(qSpec));
+                        for (final PerfEntityMetricBase perfValue : perfValues) {
+                            if (!(perfValue instanceof PerfEntityMetric)) {
+                                continue;
+                            }
+                            final List<PerfMetricSeries> seriesList = ((PerfEntityMetric) perfValue).getValue();
+                            for (final PerfMetricSeries series : seriesList) {
+                                if (!(series instanceof PerfMetricIntSeries)) {
+                                    continue;
+                                }
+                                final List<Long> values = ((PerfMetricIntSeries) series).getValue();
+                                double sum = 0;
+                                for (final Long value : values) {
+                                    sum += value;
+                                }
+                                double avg = sum / values.size();
+                                if (series.getId().getCounterId() == rxPerfCounterInfo.getKey()) {
+                                    networkReadKBs = avg;
+                                }
+                                if (series.getId().getCounterId() == txPerfCounterInfo.getKey()) {
+                                    networkWriteKBs = avg;
+                                }
+                                if (series.getId().getCounterId() == diskReadIOPerfCounterInfo.getKey()) {
+                                    diskReadIops += avg;
+                                }
+                                if (series.getId().getCounterId() == diskWriteIOPerfCounterInfo.getKey()) {
+                                    diskWriteIops += avg;
+                                }
+                                if (series.getId().getCounterId() == diskReadKbsPerfCounterInfo.getKey()) {
+                                    diskReadKbs = avg;
+                                }
+                                if (series.getId().getCounterId() == diskWriteKbsPerfCounterInfo.getKey()) {
+                                    diskWriteKbs = avg;
                                 }
                             }
                         }
                     }
-                    vmResponseMap.put(name, new VmStatsEntry( NumberUtils.toDouble(memkb)*1024,NumberUtils.toDouble(guestMemusage)*1024,NumberUtils.toDouble(memlimit)*1024,
-                            maxCpuUsage, networkReadKBs, networkWriteKBs, NumberUtils.toInt(numberCPUs), "vm"));
+
+                    final VmStatsEntry vmStats = new VmStatsEntry( NumberUtils.toDouble(memkb)*1024,NumberUtils.toDouble(guestMemusage)*1024,NumberUtils.toDouble(memlimit)*1024,
+                            maxCpuUsage, networkReadKBs, networkWriteKBs, NumberUtils.toInt(numberCPUs), "vm");
+                    vmStats.setDiskReadIOs(diskReadIops);
+                    vmStats.setDiskWriteIOs(diskWriteIops);
+                    vmStats.setDiskReadKBs(diskReadKbs);
+                    vmStats.setDiskWriteKBs(diskWriteKbs);
+                    vmResponseMap.put(name, vmStats);
 
                 }
             }

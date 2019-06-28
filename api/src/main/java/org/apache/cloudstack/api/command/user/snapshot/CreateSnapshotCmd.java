@@ -16,6 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,6 +32,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -83,6 +88,9 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ASYNC_BACKUP, type = CommandType.BOOLEAN, required = false, description = "asynchronous backup if true")
     private Boolean asyncBackup;
 
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "Map of tags (key/value pairs)")
+    private Map tags;
+
     private String syncObjectType = BaseAsyncCmd.snapshotHostSyncObject;
 
     // ///////////////////////////////////////////////////
@@ -119,6 +127,18 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         } else {
             return Snapshot.MANUAL_POLICY_ID;
         }
+    }
+
+    public Map<String, String> getTags() {
+        Map<String, String> tagsMap = new HashMap<>();
+        if (MapUtils.isNotEmpty(tags)) {
+            for (Map<String, String> services : (Collection<Map<String, String>>)tags.values()) {
+                String key = services.get("key");
+                String value = services.get("value");
+                tagsMap.put(key, value);
+            }
+        }
+        return tagsMap;
     }
 
     private Long getHostId() {
@@ -196,7 +216,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         Snapshot snapshot;
         try {
             snapshot =
-                _volumeService.takeSnapshot(getVolumeId(), getPolicyId(), getEntityId(), _accountService.getAccount(getEntityOwnerId()), getQuiescevm(), getLocationType(), getAsyncBackup());
+                _volumeService.takeSnapshot(getVolumeId(), getPolicyId(), getEntityId(), _accountService.getAccount(getEntityOwnerId()), getQuiescevm(), getLocationType(), getAsyncBackup(), getTags());
 
             if (snapshot != null) {
                 SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);

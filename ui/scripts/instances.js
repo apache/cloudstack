@@ -3329,6 +3329,7 @@
 					settings: {
 						title: 'label.settings',
 						custom: cloudStack.uiCustom.granularDetails({
+                        resourceType: 'UserVm',
 							dataProvider: function(args) {
 								$.ajax({
 									url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
@@ -3388,7 +3389,6 @@
                                         // It could happen that a stale web page has been opened up when VM was stopped but
                                         // vm was turned on through another route - UI or API. so we should check again.
                                         var existingDetails = virtualMachine.details;
-                                        console.log(existingDetails);
                                         var newDetails = {};
                                         for (d in existingDetails) {
                                             if (d != data.name) {

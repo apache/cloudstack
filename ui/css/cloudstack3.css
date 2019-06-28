@@ -4027,7 +4027,7 @@ textarea {
   font-size: 14px;
 }
 
-.ui-dialog div.form-container div.value label {
+#label_delete_volumes label {
   display: block;
   width: 119px;
   margin-top: 2px;
@@ -8447,6 +8447,10 @@ div#details-tab-aclRules td.cidrlist span {
   display: inline-block;
 }
 
+.recurring-snapshots .schedule .forms .formContainer {
+  min-height: 250px;
+}
+
 .recurring-snapshots .schedule .add-snapshot-actions {
   float: left;
   clear: both;
@@ -8510,6 +8514,11 @@ div#details-tab-aclRules td.cidrlist span {
   left: 5px;
 }
 
+.recurring-snapshots .schedule .forms .tagger form div.value label {
+  width: 25px;
+  top: 10px;
+}
+
 .recurring-snapshots .schedule .forms form label.error {
   float: left;
   width: 100%;
@@ -8520,6 +8529,10 @@ div#details-tab-aclRules td.cidrlist span {
   float: left;
   width: 100%;
   margin: 8px 0 0;
+}
+
+.recurring-snapshots .schedule .forms .tagger form .field {
+  margin: 0;
 }
 
 .recurring-snapshots .schedule .forms form .name {
@@ -8658,6 +8671,11 @@ div#details-tab-aclRules td.cidrlist span {
   margin: 0;
   margin: 0;
   padding: 0;
+}
+
+.recurring-snapshots .ui-tabs .tagger ul {
+    margin: 16px auto auto;
+    padding-bottom: 10px;
 }
 
 .recurring-snapshots .ui-tabs ul li a {
@@ -10690,6 +10708,11 @@ div#details-tab-aclRules td.cidrlist span {
 
 .ui-dialog .tagger .tag-info {
   display: none;
+}
+
+.ui-dialog .tagger .tag-info.inside-form {
+  display: block;
+  text-align: left;
 }
 
 .ui-dialog.editTags .ui-button {
@@ -13021,6 +13044,29 @@ div.gpugroups div.list-view {
 .ui-dialog .ui-button.add span {
   padding: 0 0 3px 18px;
   background: transparent url("../images/icons.png") no-repeat -626px -209px;
+}
+
+ul.ui-autocomplete.ui-menu {
+  width: 250px;
+  max-height: 100px;
+  background: #eee;
+  padding: 5px;
+  text-align: left;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 100;
+}
+
+.ui-menu .ui-menu-item {
+  cursor: pointer;
+}
+
+.ui-menu .ui-menu-item .ui-state-active {
+  background: #CBDDF3;
+}
+
+.ui-helper-hidden-accessible {
+  display: none;
 }
 
 .copy-template-destination-list div.text-search {

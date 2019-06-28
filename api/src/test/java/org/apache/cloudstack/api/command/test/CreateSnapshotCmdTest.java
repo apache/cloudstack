@@ -19,8 +19,12 @@ package org.apache.cloudstack.api.command.test;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.isNull;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
@@ -32,6 +36,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.VolumeApiService;
@@ -87,9 +92,8 @@ public class CreateSnapshotCmdTest extends TestCase {
         VolumeApiService volumeApiService = Mockito.mock(VolumeApiService.class);
         Snapshot snapshot = Mockito.mock(Snapshot.class);
         try {
-
             Mockito.when(volumeApiService.takeSnapshot(anyLong(), anyLong(), anyLong(),
-                    any(Account.class), anyBoolean(), isNull(Snapshot.LocationType.class), anyBoolean())).thenReturn(snapshot);
+                    any(Account.class), anyBoolean(), isNull(Snapshot.LocationType.class), anyBoolean(), anyObject())).thenReturn(snapshot);
 
         } catch (Exception e) {
             Assert.fail("Received exception when success expected " + e.getMessage());
@@ -122,7 +126,7 @@ public class CreateSnapshotCmdTest extends TestCase {
 
         try {
                 Mockito.when(volumeApiService.takeSnapshot(anyLong(), anyLong(), anyLong(),
-                        any(Account.class), anyBoolean(), isNull(Snapshot.LocationType.class), anyBoolean())).thenReturn(null);
+                        any(Account.class), anyBoolean(), isNull(Snapshot.LocationType.class), anyBoolean(), anyObject())).thenReturn(null);
         } catch (Exception e) {
             Assert.fail("Received exception when success expected " + e.getMessage());
         }
@@ -135,5 +139,25 @@ public class CreateSnapshotCmdTest extends TestCase {
         } catch (ServerApiException exception) {
             Assert.assertEquals("Failed to create snapshot due to an internal error creating snapshot for volume 123", exception.getDescription());
         }
+    }
+
+    @Test
+    public void testParsingTags() {
+        final CreateSnapshotCmd createSnapshotCmd = new CreateSnapshotCmd();
+        final Map<String, String> tag1 = new HashMap<>();
+        tag1.put("key", "key1");
+        tag1.put("value", "value1");
+        final Map<String, String> tag2 = new HashMap<>();
+        tag2.put("key", "key2");
+        tag2.put("value", "value2");
+        final Map<String, String> expectedTags = new HashMap<>();
+        expectedTags.put("key1", "value1");
+        expectedTags.put("key2", "value2");
+
+        final Map<String, Map<String, String>> tagsParams = new HashMap<>();
+        tagsParams.put("0", tag1);
+        tagsParams.put("1", tag2);
+        ReflectionTestUtils.setField(createSnapshotCmd, "tags", tagsParams);
+        Assert.assertEquals(createSnapshotCmd.getTags(), expectedTags);
     }
 }

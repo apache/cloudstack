@@ -16,9 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.log4j.Logger;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,6 +29,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.commons.collections.MapUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -67,6 +71,9 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the policy to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
+
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "Map of tags (key/value pairs)")
+    private Map tags;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -131,6 +138,18 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
         }
 
         return volume.getAccountId();
+    }
+
+    public Map<String, String> getTags() {
+        Map<String, String> tagsMap = new HashMap<>();
+        if (MapUtils.isNotEmpty(tags)) {
+            for (Map<String, String> services : (Collection<Map<String, String>>)tags.values()) {
+                String key = services.get("key");
+                String value = services.get("value");
+                tagsMap.put(key, value);
+            }
+        }
+        return tagsMap;
     }
 
     @Override

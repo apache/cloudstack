@@ -35,6 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -85,6 +86,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -847,7 +849,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             final UserVmVO userVm = _vmDao.findById(vmId);
             _vmDao.loadDetails(userVm);
-            userVm.setDetail("SSH.PublicKey", sshPublicKey);
+            userVm.setDetail(VmDetailConstants.SSH_PUBLIC_KEY, sshPublicKey);
             if (template.isEnablePassword()) {
                 userVm.setPassword(password);
                 //update the encrypted password in vm_details table too
@@ -2426,11 +2428,36 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (isDisplayVm != null && isDisplayVm != vmInstance.isDisplay()) {
             updateDisplayVmFlag(isDisplayVm, id, vmInstance);
         }
+        final Account caller = CallContext.current().getCallingAccount();
+        final List<String> userBlacklistedSettings = Stream.of(QueryService.UserVMBlacklistedDetails.value().split(","))
+                .map(item -> (item).trim())
+                .collect(Collectors.toList());
         if (cleanupDetails){
-            userVmDetailsDao.removeDetails(id);
-        }
-        else {
+            if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+                userVmDetailsDao.removeDetails(id);
+            } else {
+                for (final UserVmDetailVO detail : userVmDetailsDao.listDetails(id)) {
+                    if (detail != null && !userBlacklistedSettings.contains(detail.getName())) {
+                        userVmDetailsDao.removeDetail(id, detail.getName());
+                    }
+                }
+            }
+        } else {
             if (MapUtils.isNotEmpty(details)) {
+                if (caller != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                    // Ensure blacklisted detail is not passed by non-root-admin user
+                    for (final String detailName : details.keySet()) {
+                        if (userBlacklistedSettings.contains(detailName)) {
+                            throw new InvalidParameterValueException("You're not allowed to add or edit the restricted setting: " + detailName);
+                        }
+                    }
+                    // Add any hidden/blacklisted detail
+                    for (final UserVmDetailVO detail : userVmDetailsDao.listDetails(id)) {
+                        if (userBlacklistedSettings.contains(detail.getName())) {
+                            details.put(detail.getName(), detail.getValue());
+                        }
+                    }
+                }
                 vmInstance.setDetails(details);
                 _vmDao.saveDetails(vmInstance);
             }
@@ -3379,13 +3406,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
         long size = 0;
         // custom root disk size, resizes base template to larger size
-        if (customParameters.containsKey("rootdisksize")) {
+        if (customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
             // only KVM, XenServer and VMware supports rootdisksize override
             if (!(hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.XenServer || hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.Simulator)) {
                 throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support rootdisksize override");
             }
 
-            Long rootDiskSize = NumbersUtil.parseLong(customParameters.get("rootdisksize"), -1);
+            Long rootDiskSize = NumbersUtil.parseLong(customParameters.get(VmDetailConstants.ROOT_DISK_SIZE), -1);
             if (rootDiskSize <= 0) {
                 throw new InvalidParameterValueException("Root disk size should be a positive number.");
             }
@@ -3768,7 +3795,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 if (sshPublicKey != null) {
-                    vm.setDetail("SSH.PublicKey", sshPublicKey);
+                    vm.setDetail(VmDetailConstants.SSH_PUBLIC_KEY, sshPublicKey);
                 }
 
                 if (keyboard != null && !keyboard.isEmpty()) {
@@ -3780,9 +3807,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
                 Long rootDiskSize = null;
                 // custom root disk size, resizes base template to larger size
-                if (customParameters.containsKey("rootdisksize")) {
+                if (customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
                     // already verified for positive number
-                    rootDiskSize = Long.parseLong(customParameters.get("rootdisksize"));
+                    rootDiskSize = Long.parseLong(customParameters.get(VmDetailConstants.ROOT_DISK_SIZE));
 
                     VMTemplateVO templateVO = _templateDao.findById(template.getId());
                     if (templateVO == null) {
@@ -3806,10 +3833,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 // If hypervisor is vSphere and OS is OS X, set special settings.
                 if (hypervisorType.equals(HypervisorType.VMware)) {
                     if (guestOS.getDisplayName().toLowerCase().contains("apple mac os")) {
-                        vm.setDetail("smc.present", "TRUE");
+                        vm.setDetail(VmDetailConstants.SMC_PRESENT, "TRUE");
                         vm.setDetail(VmDetailConstants.ROOT_DISK_CONTROLLER, "scsi");
                         vm.setDetail(VmDetailConstants.DATA_DISK_CONTROLLER, "scsi");
-                        vm.setDetail("firmware", "efi");
+                        vm.setDetail(VmDetailConstants.FIRMWARE, "efi");
                         s_logger.info("guestOS is OSX : overwrite root disk controller to scsi, use smc and efi");
                     } else {
                         String controllerSetting = _configDao.getValue("vmware.root.disk.controller");
@@ -3838,7 +3865,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         vm.setDetail(key, customParameters.get(key));
                     }
                 }
-                vm.setDetail("deployvm", "true");
+                vm.setDetail(VmDetailConstants.DEPLOY_VM, "true");
                 _vmDao.saveDetails(vm);
 
                 s_logger.debug("Allocating in the DB for vm");
@@ -3888,10 +3915,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             s_logger.error(error);
             throw new InvalidParameterValueException(error);
         } else if ((rootDiskSize << 30) > templateVO.getSize()) {
-            if (hypervisorType == HypervisorType.VMware && (vm.getDetails() == null || vm.getDetails().get("rootDiskController") == null)) {
+            if (hypervisorType == HypervisorType.VMware && (vm.getDetails() == null || vm.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER) == null)) {
                 s_logger.warn("If Root disk controller parameter is not overridden, then Root disk resize may fail because current Root disk controller value is NULL.");
-            } else if (hypervisorType == HypervisorType.VMware && !vm.getDetails().get("rootDiskController").toLowerCase().contains("scsi")) {
-                String error = "Found unsupported root disk controller: " + vm.getDetails().get("rootDiskController");
+            } else if (hypervisorType == HypervisorType.VMware && !vm.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER).toLowerCase().contains("scsi")) {
+                String error = "Found unsupported root disk controller: " + vm.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
                 s_logger.error(error);
                 throw new InvalidParameterValueException(error);
             } else {
@@ -3899,7 +3926,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         } else {
             s_logger.debug("Root disk size specified is " + (rootDiskSize << 30) + "B and Template root disk size is " + templateVO.getSize() + "B. Both are equal so no need to override");
-            customParameters.remove("rootdisksize");
+            customParameters.remove(VmDetailConstants.ROOT_DISK_SIZE);
         }
     }
 
@@ -4182,7 +4209,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
                 List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
-                        vm.getUuid(), defaultNic.getIPv4Address(), vm.getDetail("SSH.PublicKey"), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
+                        vm.getUuid(), defaultNic.getIPv4Address(), vm.getDetail(VmDetailConstants.SSH_PUBLIC_KEY), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
                 String vmName = vm.getInstanceName();
                 String configDriveIsoRootFolder = "/tmp";
                 String isoFile = configDriveIsoRootFolder + "/" + vmName + "/configDrive/" + vmName + ".iso";
@@ -4574,8 +4601,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // this value is not being sent to the backend; need only for api
             // display purposes
             if (template.isEnablePassword()) {
-                if (vm.getDetail("password") != null) {
-                    userVmDetailsDao.removeDetail(vm.getId(), "password");
+                if (vm.getDetail(VmDetailConstants.PASSWORD) != null) {
+                    userVmDetailsDao.removeDetail(vm.getId(), VmDetailConstants.PASSWORD);
                 }
                 vm.setUpdateParameters(false);
                 _vmDao.update(vm.getId(), vm);
@@ -4643,8 +4670,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public void collectVmDiskStatistics(final UserVm userVm) {
-        // support KVM only util 2013.06.25
-        if (!userVm.getHypervisorType().equals(HypervisorType.KVM)) {
+        // Only supported for KVM and VMware
+        if (!(userVm.getHypervisorType().equals(HypervisorType.KVM) || userVm.getHypervisorType().equals(HypervisorType.VMware))) {
             return;
         }
         s_logger.debug("Collect vm disk statistics from host before stopping Vm");
@@ -6334,7 +6361,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             if (needRestart) {
                 try {
-                    if (vm.getDetail("password") != null) {
+                    if (vm.getDetail(VmDetailConstants.PASSWORD) != null) {
                         params = new HashMap<VirtualMachineProfile.Param, Object>();
                         params.put(VirtualMachineProfile.Param.VmPassword, password);
                     }
@@ -6347,8 +6374,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         if (vm.isUpdateParameters()) {
                             vm.setUpdateParameters(false);
                             _vmDao.loadDetails(vm);
-                            if (vm.getDetail("password") != null) {
-                                userVmDetailsDao.removeDetail(vm.getId(), "password");
+                            if (vm.getDetail(VmDetailConstants.PASSWORD) != null) {
+                                userVmDetailsDao.removeDetail(vm.getId(), VmDetailConstants.PASSWORD);
                             }
                             _vmDao.update(vm.getId(), vm);
                         }
@@ -6526,7 +6553,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void encryptAndStorePassword(UserVmVO vm, String password) {
-        String sshPublicKey = vm.getDetail("SSH.PublicKey");
+        String sshPublicKey = vm.getDetail(VmDetailConstants.SSH_PUBLIC_KEY);
         if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password")) {
             if (!sshPublicKey.startsWith("ssh-rsa")) {
                 s_logger.warn("Only RSA public keys can be used to encrypt a vm password.");
@@ -6537,7 +6564,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new CloudRuntimeException("Error encrypting password");
             }
 
-            vm.setDetail("Encrypted.Password", encryptedPasswd);
+            vm.setDetail(VmDetailConstants.ENCRYPTED_PASSWORD, encryptedPasswd);
             _vmDao.saveDetails(vm);
         }
     }
@@ -6569,7 +6596,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public String getVmUserData(long vmId) {
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find virual machine with id " + vmId);
+            throw new InvalidParameterValueException("Unable to find virtual machine with id " + vmId);
         }
 
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);

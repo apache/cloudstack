@@ -80,6 +80,7 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -114,6 +115,8 @@ import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.org.Grouping;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.server.ResourceTag;
+import com.cloud.server.TaggedResourceService;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -256,6 +259,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private StoragePoolTagsDao storagePoolTagsDao;
     @Inject
     private StorageUtil storageUtil;
+    @Inject
+    public TaggedResourceService taggedResourceService;
 
     protected Gson _gson;
 
@@ -2024,6 +2029,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Volume must be in ready state");
         }
 
+        if (vol.getPoolId() == storagePoolId) {
+            throw new InvalidParameterValueException("Volume " + vol + " is already on the destination storage pool");
+        }
+
         boolean liveMigrateVolume = false;
         Long instanceId = vol.getInstanceId();
         Long srcClusterId = null;
@@ -2335,7 +2344,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_CREATE, eventDescription = "taking snapshot", async = true)
-    public Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup)
+    public Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup, Map<String, String> tags)
+            throws ResourceAllocationException {
+        final Snapshot snapshot = takeSnapshotInternal(volumeId, policyId, snapshotId, account, quiescevm, locationType, asyncBackup);
+        if (snapshot != null && MapUtils.isNotEmpty(tags)) {
+            taggedResourceService.createTags(Collections.singletonList(snapshot.getUuid()), ResourceTag.ResourceObjectType.Snapshot, tags, null);
+        }
+        return snapshot;
+    }
+
+    private Snapshot takeSnapshotInternal(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup)
             throws ResourceAllocationException {
         VolumeInfo volume = volFactory.getVolume(volumeId);
         if (volume == null) {

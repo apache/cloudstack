@@ -43,6 +43,8 @@ import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
+import com.cloud.server.ResourceTag;
+import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
@@ -97,6 +99,8 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     protected VMSnapshotDao _vmSnapshotDao;
     @Inject
     protected VMSnapshotManager _vmSnaphostManager;
+    @Inject
+    public TaggedResourceService taggedResourceService;
 
     protected AsyncJobDispatcher _asyncDispatcher;
 
@@ -305,6 +309,15 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 params.put("ctxUserId", "1");
                 params.put("ctxAccountId", "" + volume.getAccountId());
                 params.put("ctxStartEventId", String.valueOf(eventId));
+                List<? extends ResourceTag> resourceTags = taggedResourceService.listByResourceTypeAndId(ResourceTag.ResourceObjectType.SnapshotPolicy, policyId);
+                if (resourceTags != null && !resourceTags.isEmpty()) {
+                    int tagNumber = 0;
+                    for (ResourceTag resourceTag : resourceTags) {
+                        params.put("tags[" + tagNumber + "].key", resourceTag.getKey());
+                        params.put("tags[" + tagNumber + "].value", resourceTag.getValue());
+                        tagNumber++;
+                    }
+                }
 
                 final CreateSnapshotCmd cmd = new CreateSnapshotCmd();
                 ComponentContext.inject(cmd);

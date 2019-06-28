@@ -1071,16 +1071,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 long destHostId = dest.getHost().getId();
                 vm.setPodIdToDeployIn(dest.getPod().getId());
                 final Long cluster_id = dest.getCluster().getId();
-                final ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, "cpuOvercommitRatio");
-                final ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, "memoryOvercommitRatio");
-                //storing the value of overcommit in the vm_details table for doing a capacity check in case the cluster overcommit ratio is changed.
-                if (userVmDetailsDao.findDetail(vm.getId(), "cpuOvercommitRatio") == null &&
+                final ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, VmDetailConstants.CPU_OVER_COMMIT_RATIO);
+                final ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
+                //storing the value of overcommit in the user_vm_details table for doing a capacity check in case the cluster overcommit ratio is changed.
+                if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO) == null &&
                         (Float.parseFloat(cluster_detail_cpu.getValue()) > 1f || Float.parseFloat(cluster_detail_ram.getValue()) > 1f)) {
-                    userVmDetailsDao.addDetail(vm.getId(), "cpuOvercommitRatio", cluster_detail_cpu.getValue(), true);
-                    userVmDetailsDao.addDetail(vm.getId(), "memoryOvercommitRatio", cluster_detail_ram.getValue(), true);
-                } else if (userVmDetailsDao.findDetail(vm.getId(), "cpuOvercommitRatio") != null) {
-                    userVmDetailsDao.addDetail(vm.getId(), "cpuOvercommitRatio", cluster_detail_cpu.getValue(), true);
-                    userVmDetailsDao.addDetail(vm.getId(), "memoryOvercommitRatio", cluster_detail_ram.getValue(), true);
+                    userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, cluster_detail_cpu.getValue(), true);
+                    userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, cluster_detail_ram.getValue(), true);
+                } else if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO) != null) {
+                    userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, cluster_detail_cpu.getValue(), true);
+                    userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, cluster_detail_ram.getValue(), true);
                 }
 
                 vmProfile.setCpuOvercommitRatio(Float.parseFloat(cluster_detail_cpu.getValue()));
@@ -1160,8 +1160,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             // Remove the information on whether it was a deploy vm request.The deployvm=true information
                             // is set only when the vm is being deployed. When a vm is started from a stop state the
                             // information isn't set,
-                            if (userVmDetailsDao.findDetail(vm.getId(), "deployvm") != null) {
-                                userVmDetailsDao.removeDetail(vm.getId(), "deployvm");
+                            if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_VM) != null) {
+                                userVmDetailsDao.removeDetail(vm.getId(), VmDetailConstants.DEPLOY_VM);
                             }
 
                             startedVm = vm;
@@ -1455,7 +1455,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     if (platform != null) {
                         final UserVmVO userVm = _userVmDao.findById(vm.getId());
                         _userVmDao.loadDetails(userVm);
-                        userVm.setDetail("platform", platform);
+                        userVm.setDetail(VmDetailConstants.PLATFORM, platform);
                         _userVmDao.saveDetails(userVm);
                     }
                 }
@@ -1731,7 +1731,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         if (platform != null) {
                             final UserVmVO userVm = _userVmDao.findById(vm.getId());
                             _userVmDao.loadDetails(userVm);
-                            userVm.setDetail("platform", platform);
+                            userVm.setDetail(VmDetailConstants.PLATFORM, platform);
                             _userVmDao.saveDetails(userVm);
                         }
                     }
@@ -3174,16 +3174,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private void updateVmMetaData(Long vmId, String platform) {
         UserVmVO userVm = _userVmDao.findById(vmId);
         _userVmDao.loadDetails(userVm);
-        if ( userVm.details.containsKey("timeoffset")) {
-            userVm.details.remove("timeoffset");
+        if ( userVm.details.containsKey(VmDetailConstants.TIME_OFFSET)) {
+            userVm.details.remove(VmDetailConstants.TIME_OFFSET);
         }
-        userVm.setDetail("platform",  platform);
+        userVm.setDetail(VmDetailConstants.PLATFORM,  platform);
         String pvdriver = "xenserver56";
         if ( platform.contains("device_id")) {
             pvdriver = "xenserver61";
         }
-        if (!userVm.details.containsKey("hypervisortoolsversion") || !userVm.details.get("hypervisortoolsversion").equals(pvdriver)) {
-            userVm.setDetail("hypervisortoolsversion", pvdriver);
+        if (!userVm.details.containsKey(VmDetailConstants.HYPERVISOR_TOOLS_VERSION) || !userVm.details.get(VmDetailConstants.HYPERVISOR_TOOLS_VERSION).equals(pvdriver)) {
+            userVm.setDetail(VmDetailConstants.HYPERVISOR_TOOLS_VERSION, pvdriver);
         }
         _userVmDao.saveDetails(userVm);
     }

@@ -312,6 +312,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -1482,7 +1483,7 @@ public class ApiDBUtils {
     }
 
     public static UserVmDetailVO  findPublicKeyByVmId(long vmId) {
-        return s_userVmDetailsDao.findDetail(vmId, "SSH.PublicKey");
+        return s_userVmDetailsDao.findDetail(vmId, VmDetailConstants.SSH_PUBLIC_KEY);
     }
 
     public static void getAutoScaleVmGroupPolicies(long vmGroupId, List<AutoScalePolicy> scaleUpPolicies, List<AutoScalePolicy> scaleDownPolicies) {

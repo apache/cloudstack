@@ -149,7 +149,6 @@
 
             var isAsync = false;
             var isNoDialog = args.noDialog ? args.noDialog : false;
-
             $(fields).each(function(idx, element) {
                 var key = this;
                 var field = args.form.fields[key];
@@ -190,7 +189,6 @@
                  closeOnEscape: false
                  }); */
                 // Label field
-
                 var $name = $('<div>').addClass('name')
                         .appendTo($formItem)
                         .append(
@@ -619,9 +617,9 @@
                     }
                     $input.addClass("disallowSpecialCharacters");
                     $input.datepicker({
-			dateFormat: 'yy-mm-dd',
-			maxDate: field.maxDate,
-			minDate: field.minDate
+                        dateFormat: 'yy-mm-dd',
+                        maxDate: field.maxDate,
+                        minDate: field.minDate
                     });
 
                 } else if (field.range) { //2 text fields on the same line (e.g. port range: startPort - endPort)
@@ -702,6 +700,10 @@
 
                         this.oldUnit = newUnit;
                     })
+                } else if (field.tagger) {
+                    $name.hide();
+                    $value.hide();
+                    $input = $('<div>').taggerInForm().appendTo($formItem);
                 } else { //text field
                     $input = $('<input>').attr({
                         name: key,
@@ -717,10 +719,12 @@
                     $input.addClass("disallowSpecialCharacters");
                 }
 
-                if (field.validation != null)
-                    $input.data('validation-rules', field.validation);
-                else
-                    $input.data('validation-rules', {});
+                if (!field.tagger) { // Tagger has it's own validation
+                    if (field.validation != null)
+                        $input.data('validation-rules', field.validation);
+                    else
+                        $input.data('validation-rules', {});
+                }
 
                 var fieldLabel = field.label;
 
@@ -775,6 +779,13 @@
             var complete = function($formContainer) {
                 var $form = $formContainer.find('form');
                 var data = cloudStack.serializeForm($form);
+                if (!data.tags) {
+                    // Some APIs consume tags as a string (such as disk offering creation).
+                    // The UI of those use a tagger that is not a custom cloudStack.tagger
+                    // but rather a string. That case is handled by usual serialization. We
+                    // only need to check extract tags when the string tags are not present.
+                    $.extend(data, {'tags' : cloudStack.getTagsFromForm($form)});
+                }
 
                 if (!$formContainer.find('form').valid()) {
                     // Ignore hidden field validation

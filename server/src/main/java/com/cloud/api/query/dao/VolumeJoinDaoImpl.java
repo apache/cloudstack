@@ -36,6 +36,8 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.user.AccountManager;
+import com.cloud.user.VmDiskStatisticsVO;
+import com.cloud.user.dao.VmDiskStatisticsDao;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -47,6 +49,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
     private ConfigurationDao  _configDao;
     @Inject
     public AccountManager _accountMgr;
+    @Inject
+    private VmDiskStatisticsDao vmDiskStatsDao;
 
     private final SearchBuilder<VolumeJoinVO> volSearch;
 
@@ -101,6 +105,14 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
                 volResponse.setVirtualMachineDisplayName(volume.getVmDisplayName());
             } else {
                 volResponse.setVirtualMachineDisplayName(volume.getVmName());
+            }
+
+            VmDiskStatisticsVO diskStats = vmDiskStatsDao.findBy(volume.getAccountId(), volume.getDataCenterId(), instanceId, volume.getId());
+            if (diskStats != null) {
+                volResponse.setDiskIORead(diskStats.getCurrentIORead());
+                volResponse.setDiskIOWrite(diskStats.getCurrentIOWrite());
+                volResponse.setDiskKbsRead((long) (diskStats.getCurrentBytesRead() / 1024.0));
+                volResponse.setDiskKbsWrite((long) (diskStats.getCurrentBytesWrite() / 1024.0));
             }
         }
 

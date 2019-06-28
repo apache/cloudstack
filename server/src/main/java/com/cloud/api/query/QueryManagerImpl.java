@@ -17,12 +17,17 @@
 package com.cloud.api.query;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -62,6 +67,7 @@ import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
+import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
@@ -72,6 +78,7 @@ import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.DetailOptionsResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -215,10 +222,12 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -3445,6 +3454,61 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     @Override
+    public DetailOptionsResponse listDetailOptions(final ListDetailOptionsCmd cmd) {
+        final ResourceObjectType type = cmd.getResourceType();
+        final String resourceUuid = cmd.getResourceId();
+        final Map<String, List<String>> options = new HashMap<>();
+        switch (type) {
+            case Template:
+            case UserVm:
+                HypervisorType hypervisorType = HypervisorType.None;
+                if (!Strings.isNullOrEmpty(resourceUuid) && ResourceObjectType.Template.equals(type)) {
+                    hypervisorType = _templateDao.findByUuid(resourceUuid).getHypervisorType();
+                }
+                if (!Strings.isNullOrEmpty(resourceUuid) && ResourceObjectType.UserVm.equals(type)) {
+                    hypervisorType = _vmInstanceDao.findByUuid(resourceUuid).getHypervisorType();
+                }
+                fillVMOrTemplateDetailOptions(options, hypervisorType);
+                break;
+            default:
+                throw new CloudRuntimeException("Resource type not supported.");
+        }
+        if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            final List<String> userBlacklistedSettings = Stream.of(QueryService.UserVMBlacklistedDetails.value().split(","))
+                    .map(item -> (item).trim())
+                    .collect(Collectors.toList());
+            for (final String detail : userBlacklistedSettings) {
+                if (options.containsKey(detail)) {
+                    options.remove(detail);
+                }
+            }
+        }
+        return new DetailOptionsResponse(options);
+    }
+
+    private void fillVMOrTemplateDetailOptions(final Map<String, List<String>> options, final HypervisorType hypervisorType) {
+        if (options == null) {
+            throw new CloudRuntimeException("Invalid/null detail-options response object passed");
+        }
+
+        options.put(VmDetailConstants.KEYBOARD, Arrays.asList("uk", "us", "jp", "fr"));
+        options.put(VmDetailConstants.CPU_CORE_PER_SOCKET, Collections.emptyList());
+        options.put(VmDetailConstants.ROOT_DISK_SIZE, Collections.emptyList());
+
+        if (HypervisorType.KVM.equals(hypervisorType)) {
+            options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio"));
+        }
+
+        if (HypervisorType.VMware.equals(hypervisorType)) {
+            options.put(VmDetailConstants.NIC_ADAPTER, Arrays.asList("E1000", "PCNet32", "Vmxnet2", "Vmxnet3"));
+            options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "lsilogic", "lsisas1068", "buslogic", "pvscsi"));
+            options.put(VmDetailConstants.DATA_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "lsilogic", "lsisas1068", "buslogic", "pvscsi"));
+            options.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, Arrays.asList("true", "false"));
+            options.put(VmDetailConstants.SVGA_VRAM_SIZE, Collections.emptyList());
+        }
+    }
+
+    @Override
     public ListResponse<AffinityGroupResponse> searchForAffinityGroups(ListAffinityGroupsCmd cmd) {
         Pair<List<AffinityGroupJoinVO>, Integer> result = searchForAffinityGroupsInternal(cmd);
         ListResponse<AffinityGroupResponse> response = new ListResponse<AffinityGroupResponse>();
@@ -3750,7 +3814,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         response.setResponses(result);
         return response;
-     }
+    }
 
     @Override
     public String getConfigComponentName() {

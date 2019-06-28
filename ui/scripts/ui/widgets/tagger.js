@@ -46,10 +46,7 @@
 
             $keyField.append($keyLabel, $key);
             $valueField.append($valueLabel, $value);
-            $form.append(
-                $keyField, $valueField,
-                $submit
-            );
+            $form.append($keyField, $valueField, $submit);
 
             $form.validate();
 
@@ -80,9 +77,11 @@
                         }
                     });
 
-                    // Prevent input during submission
-                    $key.attr('disabled', 'disabled');
-                    $value.attr('disabled', 'disabled');
+                    if (args.isAsyncSubmit) {
+                        // Prevent input during submission
+                        $key.attr('disabled', 'disabled');
+                        $value.attr('disabled', 'disabled');
+                    }
 
                     return false;
                 } :
@@ -102,6 +101,8 @@
 
             $label.append($key, '<span>=</span>', $value);
             $label.attr('title', title);
+            $label.attr('cloudstack_tag_key', _s(data.key));
+            $label.attr('cloudstack_tag_value', _s(data.value));
             $remove.click(function() {
                 if (onRemove) onRemove($li, data);
             });
@@ -173,6 +174,7 @@
             };
 
             var $inputArea = elems.inputArea({
+                isAsyncSubmit: true,
                 onSubmit: function(args) {
                     var data = args.data;
                     var success = args.response.success;
@@ -252,4 +254,53 @@
             });
         }
     });
+
+    $.widget('cloudStack.taggerInForm', {
+        _init: function(args) {
+            var $container = this.element.addClass('tagger');
+            var $tagArea = $('<ul>').addClass('tags');
+            var $title = elems.info(_l('label.tags')).addClass('title inside-form');
+            var $loading = $('<div>').addClass('loading-overlay');
+            var $tags = {};
+
+            var onRemoveItem = function($item, data) {
+                $item.remove();
+                if ($tags[data.key]) delete $tags[data.key];
+                else {
+                    cloudStack.dialog.notice({
+                        message: "Unexpected error occured in attempting deletion"
+                    });
+                }
+            };
+
+            var $inputArea = elems.inputArea({
+                isAsyncSubmit: false,
+                onSubmit: function(args) {
+                    var data = args.data;
+                    if ($tags[data.key]) {
+                        cloudStack.dialog.notice({
+                            message: "Key already present. Please delete previous and add again."
+                        });
+                    } else {
+                        var success = args.response.success;
+                        var title = data.key + ' = ' + data.value;
+                        elems.tagItem(title, onRemoveItem, data).appendTo($tagArea);
+                        success();
+                        $tags[data.key] = data.value;
+                    }
+                }
+            });
+
+            $container.append($title, $inputArea, $tagArea);
+        }
+    });
+
+    cloudStack.getTagsFromForm = function($form) {
+        var tagLabels = $($form).find('.tagger .tags .label');
+        var tags = [];
+        $(tagLabels).each(function() {
+            tags.push({'key' : $(this).attr('cloudstack_tag_key'), 'value' : $(this).attr('cloudstack_tag_value')});
+        });
+        return tags;
+    };
 }(jQuery, cloudStack));

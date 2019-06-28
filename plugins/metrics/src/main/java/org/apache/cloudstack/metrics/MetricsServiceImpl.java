@@ -17,6 +17,39 @@
 
 package org.apache.cloudstack.metrics;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ListClustersMetricsCmd;
+import org.apache.cloudstack.api.ListHostsMetricsCmd;
+import org.apache.cloudstack.api.ListInfrastructureCmd;
+import org.apache.cloudstack.api.ListStoragePoolsMetricsCmd;
+import org.apache.cloudstack.api.ListVMsMetricsCmd;
+import org.apache.cloudstack.api.ListVolumesMetricsCmd;
+import org.apache.cloudstack.api.ListZonesMetricsCmd;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.response.ClusterMetricsResponse;
+import org.apache.cloudstack.response.HostMetricsResponse;
+import org.apache.cloudstack.response.InfrastructureResponse;
+import org.apache.cloudstack.response.StoragePoolMetricsResponse;
+import org.apache.cloudstack.response.VmMetricsResponse;
+import org.apache.cloudstack.response.VolumeMetricsResponse;
+import org.apache.cloudstack.response.ZoneMetricsResponse;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.commons.beanutils.BeanUtils;
+
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.HostJoinDao;
@@ -45,37 +78,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.ListClustersMetricsCmd;
-import org.apache.cloudstack.api.ListHostsMetricsCmd;
-import org.apache.cloudstack.api.ListInfrastructureCmd;
-import org.apache.cloudstack.api.ListStoragePoolsMetricsCmd;
-import org.apache.cloudstack.api.ListVMsMetricsCmd;
-import org.apache.cloudstack.api.ListVolumesMetricsCmd;
-import org.apache.cloudstack.api.ListZonesMetricsCmd;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.ClusterResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.response.ClusterMetricsResponse;
-import org.apache.cloudstack.response.HostMetricsResponse;
-import org.apache.cloudstack.response.InfrastructureResponse;
-import org.apache.cloudstack.response.StoragePoolMetricsResponse;
-import org.apache.cloudstack.response.VmMetricsResponse;
-import org.apache.cloudstack.response.VolumeMetricsResponse;
-import org.apache.cloudstack.response.ZoneMetricsResponse;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.commons.beanutils.BeanUtils;
-
-import javax.inject.Inject;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MetricsServiceImpl extends ComponentLifecycleBase implements MetricsService {
 
@@ -163,6 +165,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             }
 
             metricsResponse.setDiskSizeGB(volumeResponse.getSize());
+            metricsResponse.setDiskIopsTotal(volumeResponse.getDiskIORead(), volumeResponse.getDiskIOWrite());
             Account account = CallContext.current().getCallingAccount();
             if (accountMgr.isAdmin(account.getAccountId())) {
                 metricsResponse.setStorageType(volumeResponse.getStorageType(), volumeResponse.getVolumeType());
