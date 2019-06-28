@@ -778,7 +778,14 @@
 
             var complete = function($formContainer) {
                 var $form = $formContainer.find('form');
-                var data = $.extend(cloudStack.serializeForm($form), {'tags' : cloudStack.getTagsFromForm($form)});
+                var data = cloudStack.serializeForm($form);
+                if (!data.tags) {
+                    // Some APIs consume tags as a string (such as disk offering creation).
+                    // The UI of those use a tagger that is not a custom cloudStack.tagger
+                    // but rather a string. That case is handled by usual serialization. We
+                    // only need to check extract tags when the string tags are not present.
+                    $.extend(data, {'tags' : cloudStack.getTagsFromForm($form)});
+                }
 
                 if (!$formContainer.find('form').valid()) {
                     // Ignore hidden field validation
