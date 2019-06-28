@@ -778,7 +778,7 @@
 
             var complete = function($formContainer) {
                 var $form = $formContainer.find('form');
-                var data = cloudStack.serializeForm($form));
+                var data = cloudStack.serializeForm($form);
                 if (!data.tags) {
                     // Some APIs consume tags as a string (such as disk offering creation).
                     // The UI of those use a tagger that is not a custom cloudStack.tagger
