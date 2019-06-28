@@ -70,7 +70,7 @@ class CsPassword(CsDataBag):
                 request = urllib2.Request(url, data=data, headers={"DomU_Request" : "save_password"})
                 try:
                     resp = urllib2.urlopen(request, data)
-                    logging.debug("Update password server result: http:%s, content:%s" % resp.code, resp.read())
+                    logging.debug("Update password server result: http:%s, content:%s" % (resp.code, resp.read()))
                 except Exception as e:
                     logging.error("Failed to update password server due to: %s" % e)
 
