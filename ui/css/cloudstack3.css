@@ -12441,6 +12441,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -37px -643px;
 }
 
+.updateVMHostname .icon {
+  background-position: -231px -2px;
+}
+
+.updateVMHostname:hover .icon {
+  background-position: -229px -586px;
+}
+
 .assignVmToAnotherAccount .icon {
   background-position: -232px -97px;
 }
