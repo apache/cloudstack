@@ -5048,6 +5048,7 @@
                                 var inputData = {};
                                 var serviceProviderMap = {};
                                 var serviceCapabilityIndex = 0;
+                                var excludedKeys = ['isPublic', 'domainId', 'zoneId', 'state', 'status', 'allocationstate']
                                 $.each(formData, function(key, value) {
                                     var serviceData = key.split('.');
                                     if (serviceData.length > 1) {
@@ -5075,7 +5076,7 @@
                                             serviceCapabilityIndex++;
                                         }
 
-                                    } else if (value != '') { // Normal data
+                                    } else if (value != '' && $.inArray(key, excludedKeys) == -1) { // Normal data
                                         inputData[key] = value;
                                     }
                                 });
