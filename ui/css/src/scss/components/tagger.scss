@@ -234,6 +234,11 @@
   display: none;
 }
 
+.ui-dialog .tagger .tag-info.inside-form {
+  display: block;
+  text-align: left;
+}
+
 .ui-dialog.editTags .ui-button {
   float: right;
 }

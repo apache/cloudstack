@@ -19,6 +19,10 @@
   display: inline-block;
 }
 
+.recurring-snapshots .schedule .forms .formContainer {
+  min-height: 250px;
+}
+
 .recurring-snapshots .schedule .add-snapshot-actions {
   float: left;
   clear: both;
@@ -75,6 +79,11 @@
   left: 1px;
 }
 
+.recurring-snapshots .schedule .forms .tagger form div.value label {
+  top: 10px;
+  width: 25px;
+}
+
 .recurring-snapshots .schedule .forms form label {
   /*+placement:shift 5px 4px;*/
   position: relative;
@@ -92,6 +101,10 @@
   float: left;
   width: 100%;
   margin: 8px 0 0;
+}
+
+.recurring-snapshots .schedule .forms .tagger form .field {
+  margin: 0;
 }
 
 .recurring-snapshots .schedule .forms form .name {
@@ -230,6 +243,11 @@
   margin: 0;
   margin: 0;
   padding: 0;
+}
+
+.recurring-snapshots .ui-tabs .tagger ul {
+  margin: 16px auto auto;
+  padding-bottom: 10px;
 }
 
 .recurring-snapshots .ui-tabs ul li a {
