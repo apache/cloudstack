@@ -1368,6 +1368,11 @@
                                     displayName: args.data.displayname
                                 });
                             }
+                            if (args.data.name != args.context.instances[0].name) {
+                                $.extend(data, {
+                                    name: args.data.name
+                                });
+                            }
                             $.ajax({
                                 url: createURL('updateVirtualMachine'),
                                 data: data,
@@ -2178,62 +2183,6 @@
                         }
                     },
 
-                    updateVMHostname: {
-                        label: 'label.update.vm.hostname',
-                        createForm: {
-                            title: 'label.update.vm.hostname',
-                            desc: 'message.update.vm.hostname',
-
-                            fields: {
-                                newHostname: {
-                                    label: 'New Hostname',
-                                    validation: {
-                                        required: true,
-                                        alphanumeric: true
-                                    }
-                                },
-
-                            }
-                        },
-                        action: function(args) {
-                            var dataObj = {
-                                id: args.context.instances[0].id,
-                                name: args.data.newHostname,
-                            };
-
-                            $.ajax({
-                                url: createURL('updateVirtualMachine'),
-                                data: dataObj,
-                                success: function(json) {
-                                    args.response.success({
-                                        _custom: {
-                                            jobId: json.updatevirtualmachineresponse.jobid,
-                                            getUpdatedItem: function(json) {
-                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                                            }
-                                        }
-                                    });
-                                    cloudStack.dialog.notice({
-                                        message: _l('message.update.vm.hostname.success')
-                                    });
-                                },
-                                error: function(data) {
-                                    args.response.error(parseXMLHttpResponse(data));
-                                }
-                            });
-                        },
-                        messages: {
-                            notification: function(args) {
-                                return 'label.update.vm.hostname';
-                            }
-                        },
-                        notification: {
-                            poll: function(args) {
-                                args.complete();
-                            }
-                        }
-                    },
-
                     assignVmToAnotherAccount: {
                         label: 'label.assign.instance.another',
                         createForm: {
@@ -2745,7 +2694,8 @@
                                 converter: cloudStack.converters.toLocalDate
                             },
                             name: {
-                                label: 'label.name'
+                                label: 'label.name',
+                                isEditable: true
                             },
                             id: {
                                 label: 'label.id'
@@ -3552,7 +3502,6 @@
                 allowedActions.push("assignVmToAnotherAccount");
             }
             allowedActions.push("resetSSHKeyForVirtualMachine");
-            allowedActions.push("updateVMHostname");
         } else if (jsonObj.state == 'Starting') {
             //  allowedActions.push("stop");
             if (isAdmin()) {
