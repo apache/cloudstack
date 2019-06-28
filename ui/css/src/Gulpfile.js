@@ -29,19 +29,6 @@ const pathRoot = process.cwd();
 const pathCss = pathRoot + '/../';
 const pathSass = pathRoot + '/scss/';
 const filesSass = pathRoot + '/scss/*.scss';
-const browserVersions = [
-  "last 1 versions",
-  "last 20 firefox versions",
-  "last 20 chrome versions",
-  "last 5 opera versions",
-  "ie >= 9",
-  "last 5 edge versions",
-  "safari >= 9",
-  "last 3 ios versions",
-  "last 5 android versions",
-  "last 5 ie_mob versions",
-  "last 5 and_chr versions"
-];
 
 
 gulp.task('lintSassFix',
@@ -58,9 +45,8 @@ const buildSass = (style) => {
           outputStyle: style
         })
         .on('error', sass.logError))
-      .pipe(autoprefixer({
-        browsers: browserVersions, //todo remove all current prefix rules from css
-        cascade: false // prefix indentation in one line?
+      .pipe(autoprefixer({ //todo remove all current prefix rules from css
+        cascade: false // default true. cascade gives you prefix indentations in one line
       }))
       .pipe(sourcemaps.write('./src/sourcemaps'))
       .pipe(gulp.dest(pathCss));

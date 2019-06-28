@@ -22,6 +22,19 @@
   "bugs": {
     "url": "https://github.com/apache/cloudstack/issues"
   },
+  "browserslist": [
+    "last 1 versions",
+    "last 20 firefox versions",
+    "last 20 chrome versions",
+    "last 5 opera versions",
+    "ie >= 9",
+    "last 5 edge versions",
+    "safari >= 9",
+    "last 3 ios versions",
+    "last 5 android versions",
+    "last 5 ie_mob versions",
+    "last 5 and_chr versions"
+  ],
   "homepage": "https://github.com/apache/cloudstack#readme",
   "devDependencies": {
     "fibers": "^3.1.1",
