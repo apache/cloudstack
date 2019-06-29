@@ -2419,7 +2419,7 @@ cloudStack.api = {
                     url: createURL(updateCommand),
                     data: {
                         id: args.context[objType].id,
-                        sortKey: g_sortKeyIsAscending ? (-1 * args.index) : args.index
+                        sortKey: args.sortKey
                     },
                     success: function(json) {
                         args.response.success();

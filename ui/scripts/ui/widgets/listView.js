@@ -1335,13 +1335,18 @@
                         true, {},
                         $tr.closest('.list-view').data('view-args').context
                     );
-                    var rowIndex = $tr.closest('tbody').find('tr').length - ($tr.index());
+                    var sortKey;
+                    if (g_sortKeyIsAscending) {
+                        sortKey = $tr.index() + 1;
+                    } else {
+                        sortKey = ($tr.closest('tbody').find('tr').length - ($tr.index()));
+                    }
 
                     context[viewArgs.activeSection] = $tr.data('json-obj');
 
                     action.action({
                         context: context,
-                        index: rowIndex,
+                        sortKey: sortKey,
                         response: {
                             success: function(args) {},
                             error: function(args) {
