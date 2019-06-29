@@ -98,11 +98,6 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
     }
 
     @Override
-    public ProjectResponse setProjectResponse(ProjectResponse rsp, ProjectJoinVO proj) {
-        return rsp;
-    }
-
-    @Override
     public List<ProjectJoinVO> newProjectView(Project proj) {
         SearchCriteria<ProjectJoinVO> sc = prjIdSearch.create();
         sc.setParameters("id", proj.getId());
