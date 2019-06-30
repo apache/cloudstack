@@ -2963,10 +2963,18 @@ public class VirtualMachineMO extends BaseMO {
         List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
                 getDynamicProperty(_mor, "config.hardware.device");
         if(devices != null && devices.size() > 0) {
+            long isoDevices = devices.stream()
+                    .filter(x -> x instanceof VirtualCdrom && x.getBacking() instanceof VirtualCdromIsoBackingInfo)
+                    .count();
             for(VirtualDevice device : devices) {
-                if(device instanceof VirtualCdrom && device.getBacking() instanceof VirtualCdromIsoBackingInfo &&
-                        ((VirtualCdromIsoBackingInfo)device.getBacking()).getFileName().equals(filename)) {
-                    return device;
+                if(device instanceof VirtualCdrom && device.getBacking() instanceof VirtualCdromIsoBackingInfo) {
+                    if (((VirtualCdromIsoBackingInfo)device.getBacking()).getFileName().equals(filename)) {
+                        return device;
+                    } else if (isoDevices == 1L){
+                        s_logger.warn(String.format("VM ISO filename %s differs from the expected filename %s",
+                                ((VirtualCdromIsoBackingInfo)device.getBacking()).getFileName(), filename));
+                        return device;
+                    }
                 }
             }
         }
