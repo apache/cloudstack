@@ -395,7 +395,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         //Create dummy TO with hyperType
         DataTO dataTO = new DiagnosticsDataTO(hypervisorType, store.getTO());
         DataObject dataObject = new DiagnosticsDataObject(dataTO, store);
-        return secStore.createEntityExtractUrl(filePath, Storage.ImageFormat.TAR, dataObject);
+        return secStore.createEntityExtractUrl(filePath, Storage.ImageFormat.ZIP, dataObject);
     }
 
     private VMInstanceVO getSystemVMInstance(Long vmId) {

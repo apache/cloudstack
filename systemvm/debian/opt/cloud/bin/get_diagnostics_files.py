@@ -68,8 +68,10 @@ def execute_shell_script(script):
         cmd = 'iptables-save'
     elif script == 'ipaddr':
         cmd = 'ip address'
+    elif script == 'iprule':
+        cmd = 'ip rule list'
     elif script == 'iproute':
-        cmd = 'ip rule list && ip route show table all'
+        cmd = 'ip route show table all'
     else:
         cmd = script
     with open(outputfile, 'wb', 0) as f:

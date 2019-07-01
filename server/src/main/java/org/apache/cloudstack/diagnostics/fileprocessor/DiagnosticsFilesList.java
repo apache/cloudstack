@@ -31,13 +31,13 @@ public interface DiagnosticsFilesList {
      * which will then be retrieved.
      */
     ConfigKey<String> SystemVMDefaultSupportedFiles = new ConfigKey<>("Advanced", String.class,
-            "diagnostics.data.systemvm.defaults", "iptables, ipaddr, iproute, /etc/cloudstack-release, " +
+            "diagnostics.data.systemvm.defaults", "iptables, ipaddr, iprule, iproute, /etc/cloudstack-release, " +
             "/usr/local/cloud/systemvm/conf/agent.properties, /usr/local/cloud/systemvm/conf/consoleproxy.properties, " +
             "/var/log/cloud.log, /var/log/patchsystemvm.log /var/log/daemon.log",
             "List of supported diagnostics data file options for the CPVM and SSVM.", true);
 
     ConfigKey<String> RouterDefaultSupportedFiles = new ConfigKey<>("Advanced", String.class,
-            "diagnostics.data.router.defaults", "iptables, ipaddr, iproute, /etc/cloudstack-release, " +
+            "diagnostics.data.router.defaults", "iptables, ipaddr, iprule, iproute, /etc/cloudstack-release, " +
             "/etc/dnsmasq.conf, /etc/dhcphosts.txt, /etc/dhcpopts.txt, /etc/dnsmasq.d/cloud.conf, /etc/dnsmasq-resolv.conf, /var/lib/misc/dnsmasq.leases, /var/log/dnsmasq.log, " +
             "/etc/hosts, /etc/resolv.conf, /etc/haproxy/haproxy.cfg, /var/log/haproxy.log, /etc/ipsec.d/l2tp.conf, /var/log/cloud.log, " +
             "/var/log/routerServiceMonitor.log, /var/log/daemon.log",
