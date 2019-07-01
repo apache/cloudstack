@@ -1445,6 +1445,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             name = oldPodName;
         }
 
+        final long zoneId = pod.getDataCenterId();
         final String[] existingPodIPRangeArray = pod.getDescription().split("-");
         final String currentStartIP= existingPodIPRangeArray[0];
         final String currentEndIP = existingPodIPRangeArray [1];
@@ -1495,13 +1496,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        // Check if the IP range is valid.
+        checkIpRange(startIp, endIp, cidrAddress, cidrSize);
+
+        // Check if the IP range overlaps with the public ip.
+        checkOverlapPublicIpRange(zoneId, startIp, endIp);
+
+        if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
+            throw new InvalidParameterValueException("The gateway shouldn't overlap start/end ip addresses");
+        }
+
         try {
             final String allocationStateStrFinal = allocationStateStr;
             final String nameFinal = name;
             final String gatewayFinal = gateway;
             final String newStartIP= startIp;
             final String newEndIP= endIp;
-
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(final TransactionStatus status) {
@@ -1512,7 +1522,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     pod.setGateway(gatewayFinal);
                     pod.setCidrAddress(getCidrAddress(cidr));
                     pod.setCidrSize(getCidrSize(cidr));
-                    pod.setDescription(pod.getDescription().replaceAll(currentEndIP, newEndIP).replaceAll(currentStartIP,
+                    pod.setDescription(pod.getDescription().replaceFirst(currentEndIP, newEndIP).replaceFirst(currentStartIP,
                             newStartIP));
 
                     Grouping.AllocationState allocationState = null;
@@ -1750,6 +1760,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (!Strings.isNullOrEmpty(endIp) && NetUtils.ip2Long(startIp) > NetUtils.ip2Long(endIp)) {
+            throw new InvalidParameterValueException("The start IP address must have a lower value than the end IP address.");
+        }
+
+        if (NetUtils.ip2Long(startIp) > NetUtils.ip2Long(endIp)) {
             throw new InvalidParameterValueException("The start IP address must have a lower value than the end IP address.");
         }
 
