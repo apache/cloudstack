@@ -21,6 +21,8 @@ import logging
 import os
 import re
 import sys
+import urllib
+import urllib2
 import time
 
 from collections import OrderedDict
@@ -62,10 +64,15 @@ class CsPassword(CsDataBag):
             server_ip = ip.split('/')[0]
             proc = CsProcess(['/opt/cloud/bin/passwd_server_ip.py', server_ip])
             if proc.find():
-                update_command = 'curl --header "DomU_Request: save_password" "http://{SERVER_IP}:8080/" -F "ip={VM_IP}" -F "password={PASSWORD}" ' \
-                                 '-F "token={TOKEN}" >/dev/null 2>/dev/null &'.format(SERVER_IP=server_ip, VM_IP=vm_ip, PASSWORD=password, TOKEN=token)
-                result = CsHelper.execute(update_command)
-                logging.debug("Update password server result ==> %s" % result)
+                url = "http://%s:8080/" % server_ip
+                payload = {"ip": vm_ip, "password": password, "token": token}
+                data = urllib.urlencode(payload)
+                request = urllib2.Request(url, data=data, headers={"DomU_Request" : "save_password"})
+                try:
+                    resp = urllib2.urlopen(request, data)
+                    logging.debug("Update password server result: http:%s, content:%s" % (resp.code, resp.read()))
+                except Exception as e:
+                    logging.error("Failed to update password server due to: %s" % e)
 
 
 class CsAcl(CsDataBag):
