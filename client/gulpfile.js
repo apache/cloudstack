@@ -26,7 +26,7 @@ const autoprefixer = require('gulp-autoprefixer');
 const shell = require('gulp-shell');
 const gulpif = require('gulp-if');
 
-const pathRoot = process.cwd() + '/ui/';
+const pathRoot = process.cwd() + '/../ui/';
 const pathCss = 'target/classes/META-INF/webapp/css';
 const pathSass = pathRoot + 'scss/';
 const filesSass = pathRoot + 'scss/*.scss';
@@ -43,7 +43,6 @@ const browserVersions = [
   "last 5 ie_mob versions",
   "last 5 and_chr versions"
 ];
-
 
 gulp.task('lintSassFix',
   shell.task('npm run fix')
