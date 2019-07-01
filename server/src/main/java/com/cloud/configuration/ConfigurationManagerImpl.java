@@ -1542,8 +1542,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return pod;
     }
 
-
-
     @Override
     public Pod createPod(final long zoneId, final String name, final String startIp, final String endIp, final String gateway, final String netmask, String allocationState) {
         // Check if the gateway is a valid IP address
