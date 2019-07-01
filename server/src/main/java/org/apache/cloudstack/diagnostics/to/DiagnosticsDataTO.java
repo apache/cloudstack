@@ -35,7 +35,7 @@ public class DiagnosticsDataTO implements DataTO {
 
     @Override
     public DataObjectType getObjectType() {
-        return DataObjectType.TAR;
+        return DataObjectType.ARCHIVE;
     }
 
     @Override

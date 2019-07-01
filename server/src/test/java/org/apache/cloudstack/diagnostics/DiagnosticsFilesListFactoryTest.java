@@ -16,15 +16,14 @@
 // under the License.
 package org.apache.cloudstack.diagnostics;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-
-import org.apache.cloudstack.diagnostics.fileprocessor.ConsoleProxyDiagnosticFiles;
 import org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesListFactory;
+import org.apache.cloudstack.diagnostics.fileprocessor.DomainRouterDiagnosticsFiles;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.After;
 import org.junit.Before;
@@ -35,12 +34,13 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.junit.Assert.assertEquals;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DiagnosticsFilesListFactoryTest {
 
-    private ConsoleProxyDiagnosticFiles proxyDiagnosticFiles;
+    private DomainRouterDiagnosticsFiles proxyDiagnosticFiles;
 
     @Mock
     private VMInstanceVO vmInstance;
@@ -50,7 +50,7 @@ public class DiagnosticsFilesListFactoryTest {
 
     @Before
     public void setUp() throws Exception {
-        Mockito.when(vmInstance.getType()).thenReturn(VirtualMachine.Type.ConsoleProxy);
+        Mockito.when(vmInstance.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
     }
 
     @After
@@ -63,8 +63,8 @@ public class DiagnosticsFilesListFactoryTest {
         List<String> dataTypeList = new ArrayList<>();
         dataTypeList.add("/var/log/auth.log");
         dataTypeList.add("/etc/dnsmasq.conf");
-        dataTypeList.add("[IPTABLES]");
-        dataTypeList.add("[IFCONFIG]");
+        dataTypeList.add("iptables");
+        dataTypeList.add("ipaddr");
 
         List<String> files = Objects.requireNonNull(DiagnosticsFilesListFactory.getDiagnosticsFilesList(dataTypeList, vmInstance)).generateFileList();
 
@@ -72,10 +72,10 @@ public class DiagnosticsFilesListFactoryTest {
     }
 
     @Test
-    public void testDiagnisticsFileListDefaultsCpvm() {
+    public void testDiagnosticsFileListDefaultsRouter() {
         List<String> filesList = Objects.requireNonNull(DiagnosticsFilesListFactory.getDiagnosticsFilesList(null, vmInstance)).generateFileList();
 
-        ConfigKey configKey = proxyDiagnosticFiles.CpvmDefaultSupportedFiles;
+        ConfigKey configKey = proxyDiagnosticFiles.RouterDefaultSupportedFiles;
         String[] defaultFileArray = configKey.defaultValue().split(",");
 
         assertEquals(filesList.size(), defaultFileArray.length);

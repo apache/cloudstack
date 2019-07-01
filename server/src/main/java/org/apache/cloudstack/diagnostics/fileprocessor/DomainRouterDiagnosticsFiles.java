@@ -37,8 +37,7 @@ public class DomainRouterDiagnosticsFiles implements DiagnosticsFilesList {
         List<String> filesList = new ArrayList<>();
 
         if (CollectionUtils.isEmpty(dataTypeList)) {
-            filesList.addAll(Arrays.asList(VrDefaultSupportedFiles.value().split(",")));
-
+            filesList.addAll(Arrays.asList(RouterDefaultSupportedFiles.value().split(",")));
         } else {
             filesList.addAll(dataTypeList);
         }

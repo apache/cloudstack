@@ -12421,12 +12421,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -69px -677px;
 }
 
+.retrieveDiagnostics .icon,
 .downloadVolume .icon,
 .downloadTemplate .icon,
 .downloadISO .icon {
   background-position: -35px -125px;
 }
 
+.retrieveDiagnostics:hover .icon,
 .downloadVolume:hover .icon,
 .downloadTemplate:hover .icon,
 .downloadISO:hover .icon {

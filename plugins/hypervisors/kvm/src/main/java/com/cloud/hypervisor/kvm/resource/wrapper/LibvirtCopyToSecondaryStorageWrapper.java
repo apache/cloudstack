@@ -16,13 +16,15 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.setDirFilePermissions;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
-import org.apache.cloudstack.diagnostics.DiagnosticsHelper;
+import org.apache.cloudstack.diagnostics.DiagnosticsService;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -32,8 +34,6 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.ssh.SshHelper;
-
-import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.setDirFilePermissions;
 
 @ResourceWrapper(handles = CopyToSecondaryStorageCommand.class)
 public class LibvirtCopyToSecondaryStorageWrapper extends CommandWrapper<CopyToSecondaryStorageCommand, Answer, LibvirtComputingResource> {
@@ -55,7 +55,7 @@ public class LibvirtCopyToSecondaryStorageWrapper extends CommandWrapper<CopyToS
         String mountPoint = secondaryPool.getLocalPath();
 
         // /mnt/SecStorage/uuid/diagnostics_data
-        String dataDirectoryInSecondaryStore = String.format("%s/%s", mountPoint, DiagnosticsHelper.DIAGNOSTICS_DATA_DIR);
+        String dataDirectoryInSecondaryStore = String.format("%s/%s", mountPoint, DiagnosticsService.DIAGNOSTICS_DIRECTORY);
         try {
             File dataDirectory = new File(dataDirectoryInSecondaryStore);
             boolean existsInSecondaryStore = dataDirectory.exists() || dataDirectory.mkdir();

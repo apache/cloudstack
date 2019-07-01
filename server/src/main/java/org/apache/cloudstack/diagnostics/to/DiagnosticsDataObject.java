@@ -17,13 +17,13 @@
 // under the License.
 package org.apache.cloudstack.diagnostics.to;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataTO;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataTO;
 
 public class DiagnosticsDataObject implements DataObject {
     private DataTO dataTO;
@@ -75,19 +75,19 @@ public class DiagnosticsDataObject implements DataObject {
     }
 
     @Override
-    public void processEvent(ObjectInDataStoreStateMachine.Event event) { }
-
-    @Override
-    public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
-
+    public void processEvent(ObjectInDataStoreStateMachine.Event event) {
     }
 
     @Override
-    public void incRefCount() { }
+    public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
+    }
+
+    @Override
+    public void incRefCount() {
+    }
 
     @Override
     public void decRefCount() {
-
     }
 
     @Override

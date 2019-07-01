@@ -30,21 +30,18 @@ public interface DiagnosticsFilesList {
      * in the system vm and grab output for retrieval, e.g. the output from iptables-save is written to a file
      * which will then be retrieved.
      */
-    ConfigKey<String> SsvmDefaultSupportedFiles = new ConfigKey<>("Advanced", String.class,
-            "diagnostics.data.ssvm.defaults", "[IPTABLES], [IFCONFIG], [ROUTE], /usr/local/cloud/systemvm/conf/agent.properties," +
-            " /usr/local/cloud/systemvm/conf/consoleproxy.properties, /var/log/cloud.log",
-            "List of supported diagnostics data file options for the ssvm", true);
+    ConfigKey<String> SystemVMDefaultSupportedFiles = new ConfigKey<>("Advanced", String.class,
+            "diagnostics.data.systemvm.defaults", "iptables, ipaddr, iproute, /etc/cloudstack-release, " +
+            "/usr/local/cloud/systemvm/conf/agent.properties, /usr/local/cloud/systemvm/conf/consoleproxy.properties, " +
+            "/var/log/cloud.log, /var/log/patchsystemvm.log /var/log/daemon.log",
+            "List of supported diagnostics data file options for the CPVM and SSVM.", true);
 
-    ConfigKey<String> VrDefaultSupportedFiles = new ConfigKey<>("Advanced", String.class,
-            "diagnostics.data.vr.defaults", "[IPTABLES], [IFCONFIG], [ROUTE], " +
-            "/etc/dnsmasq.conf, /etc/resolv.conf, /etc/haproxy.conf, /etc/hosts.conf, /etcdnsmaq-resolv.conf, /var/log/cloud.log, " +
-            "/var/log/routerServiceMonitor.log, /var/log/dnsmasq.log",
-            "List of supported diagnostics data file options for the VR", true);
-
-    ConfigKey<String> CpvmDefaultSupportedFiles = new ConfigKey<>("Advanced", String.class,
-            "diagnostics.data.cpvm.defaults", "[IPTABLES], [IFCONFIG], [ROUTE], /usr/local/cloud/systemvm/conf/agent.properties, " +
-            "/usr/local/cloud/systemvm/conf/consoleproxy.properties, /var/log/cloud.log",
-            "List of supported diagnostics data file options for the cpvm", true);
+    ConfigKey<String> RouterDefaultSupportedFiles = new ConfigKey<>("Advanced", String.class,
+            "diagnostics.data.router.defaults", "iptables, ipaddr, iproute, /etc/cloudstack-release, " +
+            "/etc/dnsmasq.conf, /etc/dhcphosts.txt, /etc/dhcpopts.txt, /etc/dnsmasq.d/cloud.conf, /etc/dnsmasq-resolv.conf, /var/lib/misc/dnsmasq.leases, /var/log/dnsmasq.log, " +
+            "/etc/hosts, /etc/resolv.conf, /etc/haproxy/haproxy.cfg, /var/log/haproxy.log, /etc/ipsec.d/l2tp.conf, /var/log/cloud.log, " +
+            "/var/log/routerServiceMonitor.log, /var/log/daemon.log",
+            "List of supported diagnostics data file options for the domain router.", true);
 
     List<String> generateFileList();
 }

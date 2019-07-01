@@ -17,6 +17,12 @@
 // under the License.
 package org.apache.cloudstack.diagnostics;
 
+import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.getTimeDifference;
+import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.setDirFilePermissions;
+import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.umountSecondaryStorage;
+import static org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesList.RouterDefaultSupportedFiles;
+import static org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesList.SystemVMDefaultSupportedFiles;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -74,13 +80,6 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
 
-import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.getTimeDifference;
-import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.setDirFilePermissions;
-import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.umountSecondaryStorage;
-import static org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesList.CpvmDefaultSupportedFiles;
-import static org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesList.SsvmDefaultSupportedFiles;
-import static org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesList.VrDefaultSupportedFiles;
-
 public class DiagnosticsServiceImpl extends ManagerBase implements PluggableService, DiagnosticsService, Configurable {
     private static final Logger LOGGER = Logger.getLogger(DiagnosticsServiceImpl.class);
 
@@ -113,13 +112,11 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
 
     // These are easily computed properties and need not need a restart of the management server
     private static final ConfigKey<Long> DataRetrievalTimeout = new ConfigKey<>("Advanced", Long.class,
-            "diagnostics.data.retrieval.timeout", "3600", "overall data retrieval timeout in seconds", true);
+            "diagnostics.data.retrieval.timeout", "1800", "overall data retrieval timeout in seconds", true);
     private static final ConfigKey<Long> MaximumFileAgeforGarbageCollection = new ConfigKey<>("Advanced", Long.class,
             "diagnostics.data.max.file.age", "86400", "maximum file age for garbage collection in seconds", true);
     private static final ConfigKey<Double> DiskQuotaPercentageThreshold = new ConfigKey<>("Advanced", Double.class,
-            "diagnostics.data.disable.threshold", "0.95", "Minimum disk space percentage to initiate diagnostics file retrieval", true);
-
-    private final static String DIAGNOSTICS_DATA_DIRECTORY = "diagnostics_data";
+            "diagnostics.data.disable.threshold", "0.9", "Minimum disk space percentage to initiate diagnostics file retrieval", true);
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SYSTEM_VM_DIAGNOSTICS, eventDescription = "running diagnostics on system vm", async = true)
@@ -205,29 +202,26 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             throw new CloudRuntimeException("Failed to generate diagnostics file list for retrieval.");
         }
 
-        Long vmHostId = vmInstance.getHostId();
-
-        // Find Secondary Storage with enough Disk Quota in the current Zone
+        final Long vmHostId = vmInstance.getHostId();
         final DataStore store = getImageStore(vmInstance.getDataCenterId());
-
-        Answer zipFilesAnswer = zipDiagnosticsFilesInSystemVm(vmInstance, fileList);
+        final Answer zipFilesAnswer = prepareDiagnosticsFilesInSystemVm(vmInstance, fileList);
 
         if (zipFilesAnswer == null) {
-            throw new CloudRuntimeException(String.format("Failed to generate diagnostics zip file in VM %s", vmInstance.getUuid()));
+            throw new CloudRuntimeException(String.format("Failed to generate diagnostics zip file in the system VM %s", vmInstance.getUuid()));
         }
 
         if (!zipFilesAnswer.getResult()) {
             throw new CloudRuntimeException(String.format("Failed to generate diagnostics zip file in VM %s due to: %s", vmInstance.getUuid(), zipFilesAnswer.getDetails()));
         }
 
-        String zipFileInSystemVm = zipFilesAnswer.getDetails().replace("\n", "");
+        final String zipFileInSystemVm = zipFilesAnswer.getDetails().replace("\n", "");
         Pair<Boolean, String> copyToSecondaryStorageResults = copyZipFileToSecondaryStorage(vmInstance, vmHostId, zipFileInSystemVm, store);
 
         if (!copyToSecondaryStorageResults.first()) {
             throw new CloudRuntimeException(String.format("Failed to copy %s to secondary storage %s due to: %s.", zipFileInSystemVm, store.getUri(), copyToSecondaryStorageResults.second()));
         }
 
-        Answer fileCleanupAnswer = deleteDiagnosticsZipFileInsystemVm(vmInstance, zipFileInSystemVm);
+        final Answer fileCleanupAnswer = deleteDiagnosticsZipFileInsystemVm(vmInstance, zipFileInSystemVm);
         if (fileCleanupAnswer == null) {
             LOGGER.error(String.format("Failed to cleanup diagnostics zip file on vm: %s", vmInstance.getUuid()));
         } else {
@@ -240,10 +234,10 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         // Find ssvm of store
         VMInstanceVO ssvm = getSecondaryStorageVmInZone(zoneId);
         if (ssvm == null) {
-            throw new CloudRuntimeException("No ssvm found in Zone with ID: " + zoneId);
+            throw new CloudRuntimeException("No SSVM found in zone with ID: " + zoneId);
         }
         // Secondary Storage install path = "diagnostics_data/diagnostics_files_xxxx.tar
-        String installPath = DIAGNOSTICS_DATA_DIRECTORY + File.separator + zipFileInSystemVm.replace("/root", "");
+        String installPath = DIAGNOSTICS_DIRECTORY + File.separator + zipFileInSystemVm.replace("/root", "");
         return createFileDownloadUrl(store, ssvm.getHypervisorType(), installPath);
     }
 
@@ -277,7 +271,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         cmd.setAccessDetail(accessDetails);
     }
 
-    private Answer zipDiagnosticsFilesInSystemVm(VMInstanceVO vmInstance, List<String> fileList) {
+    private Answer prepareDiagnosticsFilesInSystemVm(VMInstanceVO vmInstance, List<String> fileList) {
         final PrepareFilesCommand cmd = new PrepareFilesCommand(fileList, DataRetrievalTimeout.value());
         configureNetworkElementCommand(cmd, vmInstance);
         Answer answer = agentManager.easySend(vmInstance.getHostId(), cmd);
@@ -330,7 +324,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             LOGGER.info(String.format("Copying %s from %s to secondary store %s", diagnosticsFile, vmSshIp, store.getUri()));
 
             // dirIn/mnt/SecStorage/uuid/diagnostics_data
-            String dataDirectoryInSecondaryStore = String.format("%s/%s", mountPoint, DIAGNOSTICS_DATA_DIRECTORY);
+            String dataDirectoryInSecondaryStore = String.format("%s/%s", mountPoint, DIAGNOSTICS_DIRECTORY);
             try {
                 File dataDirectory = new File(dataDirectoryInSecondaryStore);
                 boolean existsInSecondaryStore = dataDirectory.exists() || dataDirectory.mkdir();
@@ -439,9 +433,8 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         if (EnableGarbageCollector.value()) {
             backgroundPollManager.submitTask(new GCBackgroundTask(this));
-            return true;
         }
-        return false;
+        return true;
     }
 
     public static final class GCBackgroundTask extends ManagedContextRunnable implements BackgroundPollTask {
@@ -452,7 +445,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         }
 
         private static void deleteOldDiagnosticsFiles(File directory, String storeName) {
-            File[] fileList = directory.listFiles();
+            final File[] fileList = directory.listFiles();
             if (fileList != null) {
                 String msg = String.format("Found %s diagnostics files in store %s for garbage collection", fileList.length, storeName);
                 LOGGER.info(msg);
@@ -478,7 +471,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
                     try {
                         mountPoint = serviceImpl.mountManager.getMountPoint(store.getUri(), null);
                         if (StringUtils.isNotBlank(mountPoint)) {
-                            File directory = new File(mountPoint + "/" + DIAGNOSTICS_DATA_DIRECTORY);
+                            File directory = new File(mountPoint + "/" + DIAGNOSTICS_DIRECTORY);
                             if (directory.isDirectory()) {
                                 deleteOldDiagnosticsFiles(directory, store.getName());
                             }
@@ -514,8 +507,14 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{EnableGarbageCollector, DataRetrievalTimeout,
-                MaximumFileAgeforGarbageCollection, GarbageCollectionInterval, DiskQuotaPercentageThreshold,
-                SsvmDefaultSupportedFiles, VrDefaultSupportedFiles, CpvmDefaultSupportedFiles};
+        return new ConfigKey<?>[]{
+                EnableGarbageCollector,
+                DataRetrievalTimeout,
+                MaximumFileAgeforGarbageCollection,
+                GarbageCollectionInterval,
+                DiskQuotaPercentageThreshold,
+                SystemVMDefaultSupportedFiles,
+                RouterDefaultSupportedFiles
+        };
     }
 }

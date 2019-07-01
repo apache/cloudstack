@@ -37,8 +37,6 @@ import com.cloud.utils.script.Script2;
 public class DiagnosticsHelper {
     private static final Logger LOGGER = Logger.getLogger(DiagnosticsHelper.class);
 
-    public static final String DIAGNOSTICS_DATA_DIR = "diagnostics_data";
-
     public static void setDirFilePermissions(Path path) throws java.io.IOException {
         Set<PosixFilePermission> perms = Files.readAttributes(path, PosixFileAttributes.class).permissions();
         perms.add(PosixFilePermission.OWNER_WRITE);

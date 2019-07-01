@@ -35,7 +35,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.diagnostics.DiagnosticsService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
@@ -49,14 +48,15 @@ import com.cloud.vm.VirtualMachine;
         entityType = {VirtualMachine.class},
         responseHasSensitiveInfo = false,
         requestHasSensitiveInfo = false,
-        description = "Get diagnostics data files from system VMs",
-        since = "4.12.0.0",
+        description = "Get diagnostics and files from system VMs",
+        since = "4.13.0.0",
         authorized = {RoleType.Admin})
 public class GetDiagnosticsDataCmd extends BaseAsyncCmd {
-    private static final Logger LOGGER = Logger.getLogger(GetDiagnosticsDataCmd.class);
     public static final String APINAME = "getDiagnosticsData";
+
     @Inject
     private DiagnosticsService diagnosticsService;
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -74,10 +74,10 @@ public class GetDiagnosticsDataCmd extends BaseAsyncCmd {
             description = "A comma separated list of diagnostics data files to be retrieved. Defaults are taken from global settings if none has been provided.")
     private List<String> filesList;
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
+
     public Long getId() {
         return id;
     }
@@ -89,6 +89,7 @@ public class GetDiagnosticsDataCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////////// Implementation //////////////////
     /////////////////////////////////////////////////////
+
     @Override
     public String getCommandName() {
         return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;

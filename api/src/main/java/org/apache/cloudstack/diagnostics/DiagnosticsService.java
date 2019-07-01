@@ -25,6 +25,8 @@ import org.apache.cloudstack.api.command.admin.diagnostics.RunDiagnosticsCmd;
 
 public interface DiagnosticsService {
 
+    String DIAGNOSTICS_DIRECTORY = "diagnostics";
+
     Map<String, String> runDiagnosticsCommand(RunDiagnosticsCmd cmd);
 
     String getDiagnosticsDataCommand(GetDiagnosticsDataCmd getDiagnosticsDataCmd);

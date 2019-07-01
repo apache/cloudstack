@@ -24,11 +24,11 @@ import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
 
-public class SecondaryStorageVmDiagnosticsFiles implements DiagnosticsFilesList {
+public class SystemVMDiagnosticsFiles implements DiagnosticsFilesList {
     // Optional parameters
     private List<String> dataTypeList;
 
-    public SecondaryStorageVmDiagnosticsFiles(List<String> dataTypeList) {
+    public SystemVMDiagnosticsFiles(List<String> dataTypeList) {
         this.dataTypeList = dataTypeList;
     }
 
@@ -37,8 +37,7 @@ public class SecondaryStorageVmDiagnosticsFiles implements DiagnosticsFilesList 
         List<String> filesList = new ArrayList<>();
 
         if (CollectionUtils.isEmpty(dataTypeList)) {
-            filesList.addAll(Arrays.asList(SsvmDefaultSupportedFiles.value().split(",")));
-
+            filesList.addAll(Arrays.asList(SystemVMDefaultSupportedFiles.value().split(",")));
         } else {
             filesList.addAll(dataTypeList);
         }

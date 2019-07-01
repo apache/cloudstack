@@ -57,6 +57,7 @@ import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
 import org.apache.cloudstack.diagnostics.DiagnosticsHelper;
 import org.apache.cloudstack.hypervisor.xenserver.ExtraConfigurationUtility;
+import org.apache.cloudstack.diagnostics.DiagnosticsService;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
@@ -5642,7 +5643,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 return new CopyToSecondaryStorageAnswer(cmd, false, "Could not mount secondary storage " + secondaryStorageMountPath + " on host " + localDir);
             }
 
-            String dataDirectoryInSecondaryStore = localDir + "/" + DiagnosticsHelper.DIAGNOSTICS_DATA_DIR;
+            String dataDirectoryInSecondaryStore = localDir + "/" + DiagnosticsService.DIAGNOSTICS_DIRECTORY;
             File dataDirectory = new File(dataDirectoryInSecondaryStore);
             boolean existsInSecondaryStore = dataDirectory.exists() || dataDirectory.mkdir();
 

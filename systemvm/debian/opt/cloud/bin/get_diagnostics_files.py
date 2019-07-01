@@ -16,16 +16,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import zipfile
+import logging
+import os
+import re
+import shlex
+import subprocess as sp
 import sys
 import time
-import re
-import subprocess as sp
-import shlex
-import os
-import logging
-
-fileList = sys.argv[1:]
+import zipfile
 
 
 # Create zip archive and append files for retrieval
@@ -33,7 +31,7 @@ def zip_files(files):
     fList = files
     compression = zipfile.ZIP_DEFLATED
     time_str = time.strftime("%Y%m%d-%H%M%S")
-    zf_name = '/root/diagnostics_files_' + time_str + '.tar'
+    zf_name = '/root/diagnostics_files_' + time_str + '.zip'
     zf = zipfile.ZipFile(zf_name, 'w', compression)
 
     '''
@@ -46,10 +44,8 @@ def zip_files(files):
 
     try:
         for f in fList:
-            # [IPTABLES], [ROUE] and [IFCONFIG], remove square brackets
-            if '[' in f:
-                shell_script = re.sub(r'\W+', "", f).strip().lower()
-                f = execute_shell_script(shell_script)
+            if f in ('iptables', 'ipaddr', 'iproute'):
+                f = execute_shell_script(f)
                 files_from_shell_commands.append(f)
             if os.path.isfile(f):
                 try:
@@ -64,17 +60,16 @@ def zip_files(files):
         zf.close()
         print zf_name
 
-
 def execute_shell_script(script):
     # Ex. iptables.log
     outputfile = script + '.log'
 
     if script == 'iptables':
         cmd = 'iptables-save'
-    elif script == 'ifconfig':
-        cmd = 'ifconfig'
-    elif script == 'route':
-        cmd = 'netstat -rn'
+    elif script == 'ipaddr':
+        cmd = 'ip address'
+    elif script == 'iproute':
+        cmd = 'ip rule list && ip route show table all'
     else:
         cmd = script
     with open(outputfile, 'wb', 0) as f:
@@ -119,4 +114,5 @@ def generate_retrieved_files_txt(zip_file, files_found, files_not_found):
 
 
 if __name__ == '__main__':
+    fileList = sys.argv[1:]
     zip_files(fileList)

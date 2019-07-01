@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.diagnostics.fileprocessor;
 
+import java.util.Collections;
 import java.util.List;
 
 import com.cloud.vm.VirtualMachine;
@@ -23,16 +24,13 @@ import com.cloud.vm.VirtualMachine;
 public class DiagnosticsFilesListFactory {
 
     public static DiagnosticsFilesList getDiagnosticsFilesList(List<String> dataTypeList, VirtualMachine vm) {
-        VirtualMachine.Type vmType = vm.getType();
-
-        if (vmType == VirtualMachine.Type.ConsoleProxy) {
-            return new ConsoleProxyDiagnosticFiles(dataTypeList);
-        } else if (vmType == VirtualMachine.Type.SecondaryStorageVm) {
-            return new SecondaryStorageVmDiagnosticsFiles(dataTypeList);
+        final VirtualMachine.Type vmType = vm.getType();
+        if (vmType == VirtualMachine.Type.ConsoleProxy || vmType == VirtualMachine.Type.SecondaryStorageVm) {
+            return new SystemVMDiagnosticsFiles(dataTypeList);
         } else if (vmType == VirtualMachine.Type.DomainRouter) {
             return new DomainRouterDiagnosticsFiles(dataTypeList);
         } else {
-            return null;
+            return (DiagnosticsFilesList) Collections.emptyList();
         }
     }
 }
