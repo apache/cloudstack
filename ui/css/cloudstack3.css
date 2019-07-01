@@ -8154,7 +8154,6 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   display: block;
   float: left;
   max-width: 90%;
-  white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
 }
