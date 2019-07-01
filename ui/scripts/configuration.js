@@ -5257,7 +5257,15 @@
                                             id: args.context.vpcOfferings[0].id
                                         },
                                         success: function(json) {
-                                            args.response.success();
+                                            var jid = json.deletevpcofferingresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getActionFilter: function() {
+                                                        return vpcOfferingActionfilter;
+                                                    }
+                                                }
+                                            });
                                         },
                                         error: function(data) {
                                             args.response.error(parseXMLHttpResponse(data));
@@ -5273,14 +5281,7 @@
                                     }
                                 },
                                 notification: {
-                                    poll: function(args) {
-                                        args.complete({
-                                            data: {
-                                                state: 'Destroyed'
-                                            },
-                                            actionFilter: vpcOfferingActionfilter
-                                        });
-                                    }
+                                    poll: pollAsyncJobResult
                                 }
                             },
 
