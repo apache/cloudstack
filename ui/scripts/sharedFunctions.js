@@ -534,7 +534,7 @@ var addGuestNetworkDialog = {
                 networkOfferingId: {
                     label: 'label.network.offering',
                     docID: 'helpGuestNetworkZoneNetworkOffering',
-                    dependsOn: ['zoneId', 'physicalNetworkId', 'scope'],
+                    dependsOn: ['zoneId', 'physicalNetworkId', 'scope', 'domainId'],
                     select: function(args) {
                         if(args.$form.find('.form-item[rel=zoneId]').find('select').val() == null || args.$form.find('.form-item[rel=zoneId]').find('select').val().length == 0) {
                             args.response.success({
@@ -570,6 +570,11 @@ var addGuestNetworkDialog = {
                             $.extend(data, {
                                 guestiptype: 'Shared'
                             });
+                            if (args.scope == "domain-specific") {
+                                $.extend(data, {
+                                    domainid: args.domainId
+                                });
+                            }
                         }
 
                         var items = [];

@@ -5298,6 +5298,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Object specifyVlan = cmd.getSpecifyVlan();
         final Object availability = cmd.getAvailability();
         final Object state = cmd.getState();
+        final Long domainId = cmd.getDomainId();
         final Long zoneId = cmd.getZoneId();
         DataCenter zone = null;
         final Long networkId = cmd.getNetworkId();
@@ -5307,6 +5308,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String tags = cmd.getTags();
         final Boolean isTagged = cmd.isTagged();
         final Boolean forVpc = cmd.getForVpc();
+
+        if (domainId != null) {
+            Domain domain = _entityMgr.findById(Domain.class, domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
+            }
+            if (!_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
+                throw new InvalidParameterValueException(String.format("Unable to list network offerings for domain: %s as caller does not have access for it", domain.getUuid()));
+            }
+        }
 
         if (zoneId != null) {
             zone = _entityMgr.findById(DataCenter.class, zoneId);
@@ -5426,19 +5437,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final List<NetworkOfferingJoinVO> offerings = networkOfferingJoinDao.search(sc, searchFilter);
-        // Remove offerings that are not associated with caller's domain
-        // TODO: Better approach
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && CollectionUtils.isNotEmpty(offerings)) {
+        // Remove offerings that are not associated with caller's domain or domainId passed
+        if ((caller.getType() != Account.ACCOUNT_TYPE_ADMIN || domainId != null) && CollectionUtils.isNotEmpty(offerings)) {
             ListIterator<NetworkOfferingJoinVO> it = offerings.listIterator();
             while (it.hasNext()) {
                 NetworkOfferingJoinVO offering = it.next();
-                if(!Strings.isNullOrEmpty(offering.getDomainId())) {
-                    boolean toRemove = true;
+                if (!Strings.isNullOrEmpty(offering.getDomainId())) {
+                    boolean toRemove = false;
                     String[] domainIdsArray = offering.getDomainId().split(",");
                     for (String domainIdString : domainIdsArray) {
                         Long dId = Long.valueOf(domainIdString.trim());
-                        if (_domainDao.isChildDomain(caller.getDomainId(), dId)) {
-                            toRemove = false;
+                        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN &&
+                                !_domainDao.isChildDomain(caller.getDomainId(), dId)) {
+                            toRemove = true;
+                            break;
+                        }
+                        if (domainId != null && !_domainDao.isChildDomain(dId, domainId)) {
+                            toRemove = true;
                             break;
                         }
                     }
