@@ -4006,7 +4006,7 @@
                                     } else if (value != '') { // normal data (serviceData.length ==1), e.g. "name", "displayText", "networkRate", "guestIpType", "lbType" (unwanted), "availability" (unwated when value is "Optional"), "egressdefaultpolicy", "state" (unwanted), "status" (unwanted), "allocationstate" (unwanted)
                                         if (key == "useVpc") {
                                             inputData['forvpc'] = value;
-                                        } else if (!(key ==  "lbType"  || (key == "availability" && value == "Optional") || key == "state" || key == "status" || key == "allocationstate" || key == "useVpc" )) {
+                                        } else if (!(key ==  "lbType"  || (key == "availability" && value == "Optional") || key == "state" || key == "status" || key == "allocationstate" || key == "useVpc" || key == "isPublic" || key == "domainId" || key == "zoneId")) {
                                             inputData[key] = value;
                                         }
                                     }
