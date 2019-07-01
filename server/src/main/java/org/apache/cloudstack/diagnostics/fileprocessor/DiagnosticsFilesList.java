@@ -33,7 +33,7 @@ public interface DiagnosticsFilesList {
     ConfigKey<String> SystemVMDefaultSupportedFiles = new ConfigKey<>("Advanced", String.class,
             "diagnostics.data.systemvm.defaults", "iptables, ipaddr, iprule, iproute, /etc/cloudstack-release, " +
             "/usr/local/cloud/systemvm/conf/agent.properties, /usr/local/cloud/systemvm/conf/consoleproxy.properties, " +
-            "/var/log/cloud.log, /var/log/patchsystemvm.log /var/log/daemon.log",
+            "/var/log/cloud.log, /var/log/patchsystemvm.log, /var/log/daemon.log",
             "List of supported diagnostics data file options for the CPVM and SSVM.", true);
 
     ConfigKey<String> RouterDefaultSupportedFiles = new ConfigKey<>("Advanced", String.class,

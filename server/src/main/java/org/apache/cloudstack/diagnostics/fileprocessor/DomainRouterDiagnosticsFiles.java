@@ -21,6 +21,7 @@ package org.apache.cloudstack.diagnostics.fileprocessor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 
@@ -37,7 +38,11 @@ public class DomainRouterDiagnosticsFiles implements DiagnosticsFilesList {
         List<String> filesList = new ArrayList<>();
 
         if (CollectionUtils.isEmpty(dataTypeList)) {
-            filesList.addAll(Arrays.asList(RouterDefaultSupportedFiles.value().split(",")));
+            filesList.addAll(Arrays.stream(RouterDefaultSupportedFiles.value().split(","))
+                    .map(String :: trim)
+                    .distinct()
+                    .collect(Collectors.toList()));
+
         } else {
             filesList.addAll(dataTypeList);
         }

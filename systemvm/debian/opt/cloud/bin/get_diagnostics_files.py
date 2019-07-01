@@ -44,7 +44,7 @@ def zip_files(files):
 
     try:
         for f in fList:
-            if f in ('iptables', 'ipaddr', 'iproute'):
+            if f in ('iptables', 'ipaddr', 'iprule', 'iproute'):
                 f = execute_shell_script(f)
                 files_from_shell_commands.append(f)
             if os.path.isfile(f):
