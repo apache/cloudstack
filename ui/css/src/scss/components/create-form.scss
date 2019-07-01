@@ -67,7 +67,7 @@
   color: #ee7b7b;
 }
 
-#label_delete_volumes label {
+.ui-dialog div.form-container div.value {
   display: inline-block;
   float: left;
   width: 61%;
@@ -84,7 +84,7 @@ textarea {
   font-size: 14px;
 }
 
-.ui-dialog div.form-container div.value label {
+#label_delete_volumes label label {
   display: block;
   width: 119px;
   margin-top: 2px;
