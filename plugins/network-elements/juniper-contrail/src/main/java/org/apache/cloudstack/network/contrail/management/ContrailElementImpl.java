@@ -379,4 +379,9 @@ public class ContrailElementImpl extends AdapterBase
     public boolean setExtraDhcpOptions(Network network, long nicId, Map<Integer, String> dhcpOptions) {
         return false;
     }
+
+    @Override
+    public boolean removeDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vmProfile) {
+        return false;
+    }
 }

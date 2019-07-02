@@ -310,6 +310,13 @@ cloudStack.docs = {
     helpCreateInstanceSnapshotMemory: {
         desc: 'Check this to include CPU/memory state. Does not quiesce the VM. If not checked, the snapshot contain only volumes.'
     },
+    // Create instance storage snapshot
+    helpCreateInstanceStorageSnapshotVolume: {
+        desc: 'Choose a volume that you want to take a snapshot of'
+    },
+    helpCreateInstanceStorageSnapshotName: {
+        desc: 'Give the snapshot a name. A unique name will be automatically generated if you leave this blank'
+    },
     // Add disk offering
     helpDiskOfferingName: {
         desc: 'Any desired name for the offering',
@@ -504,6 +511,10 @@ cloudStack.docs = {
     },
     helpGuestNetworkZoneNetworkDomain: {
         desc: 'If you want to assign a special domain name to this guest VM network, specify the DNS suffix',
+        externalLink: ''
+    },
+    helpGuestNetworkHideIpAddressUsage: {
+        desc: 'If you want the IP address usage records hidden for the network',
         externalLink: ''
     },
     // Add host

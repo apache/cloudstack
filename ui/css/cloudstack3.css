@@ -565,18 +565,18 @@ body.login {
 }
 
 .blocking-overlay {
+  opacity: 0.7;
   position: absolute;
-  width: 100%;
-  height: 100%;
-  left: 0px;
-  top: 0px;
-  background: #F2F2F2;
   z-index: 500;
+  top: 0;
+  left: 0;
+  width: 100%;
   /*+opacity:70%;*/
+  height: 100%;
+  background: #f2f2f2;
   filter: alpha(opacity=70);
   -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=70);
   -moz-opacity: 0.7;
-  opacity: 0.7;
 }
 
 .loading-overlay {
@@ -784,7 +784,7 @@ body.install-wizard {
 
 .install-wizard .step {
   position: relative;
-  z-index: 10;
+  z-index: 11;
 }
 
 .install-wizard .step .tooltip-info {
@@ -1505,10 +1505,7 @@ div.list-view td.state.notsuitable-storage-migration-required span {
 
 .quick-view-tooltip .loading-overlay {
   opacity: 0.35;
-  top: 94px;
-  left: 1px;
   /*+opacity:35%;*/
-  height: 57px;
   filter: alpha(opacity=35);
   -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=35);
   -moz-opacity: 0.35;
@@ -1516,6 +1513,7 @@ div.list-view td.state.notsuitable-storage-migration-required span {
 
 .quick-view-tooltip .container {
   display: inline-block;
+  position: relative;
   width: 471px;
   height: auto;
   min-height: 100px;
@@ -1555,11 +1553,12 @@ div.list-view td.state.notsuitable-storage-migration-required span {
   display: none !important;
 }
 
-.quick-view-tooltip .detail-view .ui-tabs-panel {
+.quick-view-tooltip .detail-view.ui-tabs div.ui-tabs-panel {
   display: inline-block;
   float: left;
   width: 100% !important;
   height: auto;
+  background-color: inherit;
   overflow: hidden;
 }
 
@@ -4029,7 +4028,7 @@ textarea {
   font-size: 14px;
 }
 
-.ui-dialog div.form-container div.value label {
+#label_delete_volumes label {
   display: block;
   width: 119px;
   margin-top: 2px;
@@ -4207,8 +4206,6 @@ textarea {
 }
 
 .dashboard.admin .dashboard-container {
-  margin: 0 0 11px;
-  padding: 0 8px 18px 0;
   /*+border-radius:3px;*/
   border: 1px solid #c8c2c2;
   border-radius: 3px;
@@ -4219,7 +4216,7 @@ textarea {
 }
 
 .dashboard.admin .dashboard-container.sub {
-  width: 468px;
+  width: 49.5%;
 }
 
 .dashboard.admin .dashboard-container.sub .button.view-all,
@@ -4275,13 +4272,15 @@ textarea {
 /**** Head*/
 .dashboard.admin .dashboard-container.head {
   float: left;
-  width: 966px;
-  height: 431px;
+  box-sizing: border-box;
+  width: 100%;
   margin: 9px 0 0;
+  padding: 0 0;
 }
 
 .dashboard.admin .dashboard-container .top {
   float: left;
+  box-sizing: border-box;
   width: 100%;
   margin: 0;
   padding: 4px 4px 8px;
@@ -4335,29 +4334,22 @@ textarea {
 /**** Charts / stats*/
 .dashboard.admin .zone-stats {
   position: relative;
-  top: 0;
-  left: 0;
-  width: 974px;
-  /*+placement:shift 0px 0px;*/
-  height: 416px;
+  width: 100%;
+  padding: 11px 0;
   overflow: auto;
   overflow-x: hidden;
 }
 
 .dashboard.admin .zone-stats ul {
   position: relative;
-  /*+placement:shift -2px 11px;*/
-  top: 11px;
-  left: -2px;
-  width: 996px;
+  width: 100%;
 }
 
 .dashboard.admin .zone-stats ul li {
-  position: absolute;
   position: relative;
   z-index: 1;
   float: left;
-  width: 488px;
+  width: 50%;
   height: 79px;
   font-size: 14px;
   cursor: pointer;
@@ -4534,20 +4526,23 @@ textarea {
 .dashboard.admin .dashboard-container.sub.alerts {
   position: relative;
   float: left;
-  height: 170px;
-  margin: 0 12px 0 0;
+  box-sizing: border-box;
+  height: 190px;
   overflow: hidden;
 }
 
-.dashboard.admin .dashboard-container.sub.alerts.last {
-  margin-right: 0;
+.dashboard.admin .dashboard-container.sub.alerts.first {
+  margin-right: 1%;
+}
+
+.dashboard.admin .dashboard-container.sub.alerts .top {
+  height: 18%;
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul {
   position: relative;
-  width: 468px;
-  height: 100%;
-  margin: 0 0 0 8px;
+  width: 100%;
+  height: 82%;
   overflow-y: scroll;
 }
 
@@ -7598,7 +7593,6 @@ textarea {
 div.toolbar,
 .multi-wizard.zone-wizard .select-container .field .select-array-item {
   display: block;
-  height: 1px;
 }
 
 div.toolbar:after,
@@ -7819,7 +7813,7 @@ div.toolbar:after,
 
 .ui-dialog .list-view .toolbar {
   top: 50px;
-  width: 854px;
+  width: 100%;
 }
 
 div.panel.ui-dialog div.list-view div.fixed-header {
@@ -8161,7 +8155,6 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   display: block;
   float: left;
   max-width: 90%;
-  white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
 }
@@ -8454,6 +8447,10 @@ div#details-tab-aclRules td.cidrlist span {
   display: inline-block;
 }
 
+.recurring-snapshots .schedule .forms .formContainer {
+  min-height: 250px;
+}
+
 .recurring-snapshots .schedule .add-snapshot-actions {
   float: left;
   clear: both;
@@ -8517,6 +8514,11 @@ div#details-tab-aclRules td.cidrlist span {
   left: 5px;
 }
 
+.recurring-snapshots .schedule .forms .tagger form div.value label {
+  width: 25px;
+  top: 10px;
+}
+
 .recurring-snapshots .schedule .forms form label.error {
   float: left;
   width: 100%;
@@ -8527,6 +8529,10 @@ div#details-tab-aclRules td.cidrlist span {
   float: left;
   width: 100%;
   margin: 8px 0 0;
+}
+
+.recurring-snapshots .schedule .forms .tagger form .field {
+  margin: 0;
 }
 
 .recurring-snapshots .schedule .forms form .name {
@@ -8665,6 +8671,11 @@ div#details-tab-aclRules td.cidrlist span {
   margin: 0;
   margin: 0;
   padding: 0;
+}
+
+.recurring-snapshots .ui-tabs .tagger ul {
+    margin: 16px auto auto;
+    padding-bottom: 10px;
 }
 
 .recurring-snapshots .ui-tabs ul li a {
@@ -10699,6 +10710,11 @@ div#details-tab-aclRules td.cidrlist span {
   display: none;
 }
 
+.ui-dialog .tagger .tag-info.inside-form {
+  display: block;
+  text-align: left;
+}
+
 .ui-dialog.editTags .ui-button {
   float: right;
 }
@@ -12350,12 +12366,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .snapshot .icon,
-.takeSnapshot .icon {
+.takeSnapshot .icon,
+.storageSnapshot .icon {
   background-position: -36px -91px;
 }
 
 .snapshot:hover .icon,
-.takeSnapshot:hover .icon {
+.takeSnapshot:hover .icon,
+.storageSnapshot:hover .icon {
   background-position: -36px -673px;
 }
 
@@ -13018,6 +13036,29 @@ div.gpugroups div.list-view {
 .ui-dialog .ui-button.add span {
   padding: 0 0 3px 18px;
   background: transparent url("../images/icons.png") no-repeat -626px -209px;
+}
+
+ul.ui-autocomplete.ui-menu {
+  width: 250px;
+  max-height: 100px;
+  background: #eee;
+  padding: 5px;
+  text-align: left;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 100;
+}
+
+.ui-menu .ui-menu-item {
+  cursor: pointer;
+}
+
+.ui-menu .ui-menu-item .ui-state-active {
+  background: #CBDDF3;
+}
+
+.ui-helper-hidden-accessible {
+  display: none;
 }
 
 .copy-template-destination-list div.text-search {

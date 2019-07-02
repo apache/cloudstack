@@ -963,7 +963,7 @@ public class LibvirtVMDef {
     }
 
     public static class InterfaceDef {
-        enum GuestNetType {
+        public enum GuestNetType {
             BRIDGE("bridge"), DIRECT("direct"), NETWORK("network"), USER("user"), ETHERNET("ethernet"), INTERNAL("internal"), VHOSTUSER("vhostuser");
             String _type;
 
@@ -1018,6 +1018,7 @@ public class LibvirtVMDef {
         private String _dpdkSourcePath;
         private String _dpdkSourcePort;
         private String _dpdkExtraLines;
+        private String _interfaceMode;
 
         /**
          * Bridge Net
@@ -1035,11 +1036,10 @@ public class LibvirtVMDef {
             _networkRateKBps = networkRateKBps;
             _mtu = mtu;
         }
-
-        /**
-         * Dpdk Net
-         */
-        public void defDpdkNet(String dpdkSourcePath, String dpdkPort, String macAddress, NicModel model, Integer networkRateKBps, String extra, Integer mtu) {
+       /**
+       * Dpdk Net
+       */
+        public void defDpdkNet(String dpdkSourcePath, String dpdkPort, String macAddress, NicModel model, Integer networkRateKBps, String extra, String interfaceMode, Integer mtu) {
             _netType = GuestNetType.VHOSTUSER;
             _dpdkSourcePath = dpdkSourcePath;
             _dpdkSourcePort = dpdkPort;
@@ -1047,7 +1047,12 @@ public class LibvirtVMDef {
             _model = model;
             _networkRateKBps = networkRateKBps;
             _dpdkExtraLines = extra;
+            _interfaceMode = interfaceMode;
             _mtu = mtu;
+        }
+
+        public void defDirectNet(String sourceName, String targetName, String macAddr, NicModel model, String sourceMode, Integer mtu) {
+            defDirectNet(sourceName, targetName, macAddr, model, sourceMode, 0, mtu);
         }
 
         /**
@@ -1178,10 +1183,24 @@ public class LibvirtVMDef {
             _dpdkSourcePort = port;
         }
 
-        @Override
-        public String toString() {
+        public String getDpdkOvsPath() {
+            return _dpdkSourcePath;
+        }
+
+        public void setDpdkOvsPath(String path) {
+            _dpdkSourcePath = path;
+        }
+
+        public String getInterfaceMode() {
+            return _interfaceMode;
+        }
+
+        public void setInterfaceMode(String mode) {
+            _interfaceMode = mode;
+        }
+
+        public String getContent() {
             StringBuilder netBuilder = new StringBuilder();
-            netBuilder.append("<interface type='" + _netType + "'>\n");
             if (_netType == GuestNetType.BRIDGE) {
                 netBuilder.append("<source bridge='" + _sourceName + "'/>\n");
             } else if (_netType == GuestNetType.NETWORK) {
@@ -1189,7 +1208,8 @@ public class LibvirtVMDef {
             } else if (_netType == GuestNetType.DIRECT) {
                 netBuilder.append("<source dev='" + _sourceName + "' mode='" + _netSourceMode + "'/>\n");
             } else if (_netType == GuestNetType.VHOSTUSER) {
-                netBuilder.append("<source type='unix' path='"+ _dpdkSourcePath + _dpdkSourcePort + "' mode='client'/>\n");
+                netBuilder.append("<source type='unix' path='"+ _dpdkSourcePath + _dpdkSourcePort +
+                        "' mode='" + _interfaceMode + "'/>\n");
             }
             if (_networkName != null) {
                 netBuilder.append("<target dev='" + _networkName + "'/>\n");
@@ -1237,6 +1257,14 @@ public class LibvirtVMDef {
             if (_slot  != null) {
                 netBuilder.append(String.format("<address type='pci' domain='0x0000' bus='0x00' slot='0x%02x' function='0x0'/>\n", _slot));
             }
+            return netBuilder.toString();
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder netBuilder = new StringBuilder();
+            netBuilder.append("<interface type='" + _netType + "'>\n");
+            netBuilder.append(getContent());
             netBuilder.append("</interface>\n");
             return netBuilder.toString();
         }

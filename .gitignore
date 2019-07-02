@@ -102,3 +102,4 @@ scripts/.pydevproject
 *.raw
 venv
 node_modules
+.vscode

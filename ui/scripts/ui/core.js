@@ -317,23 +317,20 @@
 
             if (this == 'label.help') {
                 $link.addClass('help').click(function() {
-                    var helpURL = 'http://cloudstack.apache.org/';
-
-                    window.open(helpURL, '_blank');
-
+                    window.open(cloudStackOptions.helpURL, '_blank');
                     return false;
                 });
             }
             if (this == 'label.about') {
                 $link.addClass('about').click(function() {
-                    var $logo = $('<div>').addClass('logo').text(_l('label.app.name')),
-                        $version = $('<div>').addClass('version').text(g_cloudstackversion),
+                    var $logo = $('<div>').addClass('logo').text(_l(cloudStackOptions.aboutText)),
+                        $version = $('<div>').addClass('version').text(_l(g_cloudstackversion)),
                         $about = $('<div>').addClass('about').append($logo).append($version);
-                    
+
                     var $aboutDialog = $about.dialog({
                         modal: true,
                         width: 300,
-                        title: _l('label.about.app'),
+                        title: _l(cloudStackOptions.aboutTitle),
                         closeOnEscape: false,
                         dialogClass: 'dialog-about',
                         buttons: {

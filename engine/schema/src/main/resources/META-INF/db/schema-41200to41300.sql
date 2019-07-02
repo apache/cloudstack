@@ -19,6 +19,18 @@
 -- Schema upgrade from 4.12.0.0 to 4.13.0.0
 --;
 
+-- Add support for VMware 6.7
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '6.7', 128, 0, 13, 32, 1, 1);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'VMware', '6.7', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='VMware' AND hypervisor_version='6.5';
+
+-- XenServer 7.6
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, max_data_volumes_limit, storage_motion_supported) values (UUID(), 'XenServer', '7.6.0', 500, 13, 1);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '7.6.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='7.5.0';
+
+-- DPDK client and server mode support
+ALTER TABLE `cloud`.`service_offering_details` CHANGE COLUMN `value` `value` TEXT NOT NULL;
+
+ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
 -- PR#3186 Add possibility to set MTU size for NIC
 ALTER TABLE `cloud`.`nics` ADD COLUMN `mtu` smallint (6) NOT NULL DEFAULT 0 COMMENT 'MTU size for the interface';
 
@@ -143,3 +155,46 @@ CREATE VIEW `cloud`.`user_vm_view` AS
    `affinity_group`.`description` AS `affinity_group_description`,
    `vm_instance`.`dynamically_scalable` AS `dynamically_scalable`
 FROM ((((((((((((((((((((((((((((((((`user_vm` join `vm_instance` on(`vm_instance`.`id` = `user_vm`.`id` and `vm_instance`.`removed` is null)) join `account` on(`vm_instance`.`account_id` = `account`.`id`)) join `domain` on(`vm_instance`.`domain_id` = `domain`.`id`)) left join `guest_os` on(`vm_instance`.`guest_os_id` = `guest_os`.`id`)) left join `host_pod_ref` on(`vm_instance`.`pod_id` = `host_pod_ref`.`id`)) left join `projects` on(`projects`.`project_account_id` = `account`.`id`)) left join `instance_group_vm_map` on(`vm_instance`.`id` = `instance_group_vm_map`.`instance_id`)) left join `instance_group` on(`instance_group_vm_map`.`group_id` = `instance_group`.`id`)) left join `data_center` on(`vm_instance`.`data_center_id` = `data_center`.`id`)) left join `host` on(`vm_instance`.`host_id` = `host`.`id`)) left join `vm_template` on(`vm_instance`.`vm_template_id` = `vm_template`.`id`)) left join `vm_template` `iso` on(`iso`.`id` = `user_vm`.`iso_id`)) left join `service_offering` on(`vm_instance`.`service_offering_id` = `service_offering`.`id`)) left join `disk_offering` `svc_disk_offering` on(`vm_instance`.`service_offering_id` = `svc_disk_offering`.`id`)) left join `disk_offering` on(`vm_instance`.`disk_offering_id` = `disk_offering`.`id`)) left join `volumes` on(`vm_instance`.`id` = `volumes`.`instance_id`)) left join `storage_pool` on(`volumes`.`pool_id` = `storage_pool`.`id`)) left join `security_group_vm_map` on(`vm_instance`.`id` = `security_group_vm_map`.`instance_id`)) left join `security_group` on(`security_group_vm_map`.`security_group_id` = `security_group`.`id`)) left join `nics` on(`vm_instance`.`id` = `nics`.`instance_id` and `nics`.`removed` is null)) left join `networks` on(`nics`.`network_id` = `networks`.`id`)) left join `vpc` on(`networks`.`vpc_id` = `vpc`.`id` and `vpc`.`removed` is null)) left join `user_ip_address` on(`user_ip_address`.`vm_id` = `vm_instance`.`id`)) left join `user_vm_details` `ssh_details` on(`ssh_details`.`vm_id` = `vm_instance`.`id` and `ssh_details`.`name` = 'SSH.PublicKey')) left join `ssh_keypairs` on(`ssh_keypairs`.`public_key` = `ssh_details`.`value` and `ssh_keypairs`.`account_id` = `account`.`id`)) left join `resource_tags` on(`resource_tags`.`resource_id` = `vm_instance`.`id` and `resource_tags`.`resource_type` = 'UserVm')) left join `async_job` on(`async_job`.`instance_id` = `vm_instance`.`id` and `async_job`.`instance_type` = 'VirtualMachine' and `async_job`.`job_status` = 0)) left join `affinity_group_vm_map` on(`vm_instance`.`id` = `affinity_group_vm_map`.`instance_id`)) left join `affinity_group` on(`affinity_group_vm_map`.`affinity_group_id` = `affinity_group`.`id`)) left join `user_vm_details` `custom_cpu` on(`custom_cpu`.`vm_id` = `vm_instance`.`id` and `custom_cpu`.`name` = 'CpuNumber')) left join `user_vm_details` `custom_speed` on(`custom_speed`.`vm_id` = `vm_instance`.`id` and `custom_speed`.`name` = 'CpuSpeed')) left join `user_vm_details` `custom_ram_size` on(`custom_ram_size`.`vm_id` = `vm_instance`.`id` and `custom_ram_size`.`name` = 'memory'));
+
+-- Add `sort_key` column to data_center
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `sort_key` INT(32) NOT NULL DEFAULT 0;
+
+-- Recreate data_center_view
+DROP VIEW IF EXISTS `cloud`.`data_center_view`;
+CREATE VIEW `cloud`.`data_center_view` AS
+    select
+        data_center.id,
+        data_center.uuid,
+        data_center.name,
+        data_center.is_security_group_enabled,
+        data_center.is_local_storage_enabled,
+        data_center.description,
+        data_center.dns1,
+        data_center.dns2,
+        data_center.ip6_dns1,
+        data_center.ip6_dns2,
+        data_center.internal_dns1,
+        data_center.internal_dns2,
+        data_center.guest_network_cidr,
+        data_center.domain,
+        data_center.networktype,
+        data_center.allocation_state,
+        data_center.zone_token,
+        data_center.dhcp_provider,
+        data_center.removed,
+        data_center.sort_key,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        dedicated_resources.affinity_group_id,
+        dedicated_resources.account_id,
+        affinity_group.uuid affinity_group_uuid
+    from
+        `cloud`.`data_center`
+            left join
+        `cloud`.`domain` ON data_center.domain_id = domain.id
+            left join
+        `cloud`.`dedicated_resources` ON data_center.id = dedicated_resources.data_center_id
+            left join
+        `cloud`.`affinity_group` ON dedicated_resources.affinity_group_id = affinity_group.id;

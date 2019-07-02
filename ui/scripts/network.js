@@ -91,7 +91,7 @@
                 url: createURL('listNics'),
                 data: {
                     virtualmachineid: instance.id,
-                    networkId: network.id
+                    networkid: (args.context.networkid != undefined) ? args.context.networkid : network.id
                 },
                 success: function(json) {
                     var nic = json.listnicsresponse.nic[0];
@@ -2465,6 +2465,10 @@
                                                             networkid: $tierSelect.val(),
                                                             vpcid: args.context.vpc[0].id
                                                         });
+                                                        $.extend(args.context, {
+                                                            networkid: $tierSelect.val(),
+                                                            vpcid: args.context.vpc[0].id
+                                                        });
                                                     } else if ('networks' in args.context && !args.context.ipAddresses[0].isportable) {
                                                         $.extend(data, {
                                                             networkid: args.context.networks[0].id
@@ -3388,6 +3392,10 @@
                                                             id: 'tcp',
                                                             name: 'tcp',
                                                             description: _l('label.lb.protocol.tcp')
+                                                        }, {
+                                                            id: 'tcp-proxy',
+                                                            name: 'tcp-proxy',
+                                                            description: _l('label.lb.protocol.tcp.proxy')
                                                         }, {
                                                             id: 'udp',
                                                             name: 'udp',

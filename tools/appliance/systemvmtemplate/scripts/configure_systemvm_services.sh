@@ -46,7 +46,7 @@ function install_cloud_scripts() {
   rsync -av ./cloud_scripts/ /
   chmod +x /opt/cloud/bin/* /opt/cloud/bin/setup/* \
     /root/{clearUsageRules.sh,reconfigLB.sh,monitorServices.py} \
-    /etc/profile.d/cloud.sh
+    /etc/profile.d/cloud.sh /etc/cron.daily/* /etc/cron.hourly/*
 
   chmod -x /etc/systemd/system/*
 
@@ -64,6 +64,7 @@ function do_signature() {
 
 function configure_issue() {
   cat > /etc/issue <<EOF
+ESC [ 2J
    __?.o/  Apache CloudStack SystemVM $CLOUDSTACK_RELEASE
   (  )#    https://cloudstack.apache.org
  (___(_)   Debian GNU/Linux 9 \n \l
@@ -108,6 +109,18 @@ function configure_services() {
   systemctl disable strongswan
   systemctl disable x11-common
   systemctl disable xl2tpd
+  systemctl disable vgauth
+  systemctl disable sshd
+  systemctl disable nfs-common
+  systemctl disable portmap
+
+  # Disable guest services which will selectively be started based on hypervisor
+  systemctl disable open-vm-tools
+  systemctl disable xe-daemon
+  systemctl disable hyperv-daemons.hv-fcopy-daemon.service
+  systemctl disable hyperv-daemons.hv-kvp-daemon.service
+  systemctl disable hyperv-daemons.hv-vss-daemon.service
+  systemctl disable qemu-guest-agent
 
   configure_apache2
   configure_strongswan

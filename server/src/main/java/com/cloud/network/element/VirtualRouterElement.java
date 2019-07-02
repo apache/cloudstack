@@ -31,6 +31,7 @@ import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+import com.cloud.vm.VmDetailConstants;
 import com.google.gson.Gson;
 
 import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
@@ -718,7 +719,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         final UserVmVO userVmVO = _userVmDao.findById(vm.getId());
 
         _userVmDao.loadDetails(userVmVO);
-        userVmVO.setDetail("password", password_encrypted);
+        userVmVO.setDetail(VmDetailConstants.PASSWORD, password_encrypted);
         _userVmDao.saveDetails(userVmVO);
 
         userVmVO.setUpdateParameters(true);
@@ -895,6 +896,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     @Override
     public boolean release(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final ReservationContext context) throws ConcurrentOperationException,
     ResourceUnavailableException {
+        removeDhcpEntry(network, nic, vm);
         return true;
     }
 
@@ -944,6 +946,34 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     @Override
     public boolean setExtraDhcpOptions(Network network, long nicId, Map<Integer, String> dhcpOptions) {
         return false;
+    }
+
+    @Override
+    public boolean removeDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vmProfile) throws ResourceUnavailableException {
+        boolean result = true;
+        if (canHandle(network, Service.Dhcp)) {
+            if (vmProfile.getType() != VirtualMachine.Type.User) {
+                return false;
+            }
+
+            final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
+
+            if (CollectionUtils.isEmpty(routers)) {
+                throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
+            }
+
+            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            for (final DomainRouterVO domainRouterVO : routers) {
+                if (domainRouterVO.getState() != VirtualMachine.State.Running) {
+                    continue;
+                }
+
+                result = result && networkTopology.removeDhcpEntry(network, nic, vmProfile, domainRouterVO);
+            }
+        }
+        return result;
     }
 
     @Override

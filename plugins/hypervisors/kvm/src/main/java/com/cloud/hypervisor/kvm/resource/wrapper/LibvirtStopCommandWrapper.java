@@ -23,8 +23,12 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -106,11 +110,23 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
                     }
                 }
 
-                for (final InterfaceDef iface : ifaces) {
-                    // We don't know which "traffic type" is associated with
-                    // each interface at this point, so inform all vif drivers
-                    for (final VifDriver vifDriver : libvirtComputingResource.getAllVifDrivers()) {
-                        vifDriver.unplug(iface);
+                if (CollectionUtils.isEmpty(ifaces)) {
+                    Map<String, DpdkTO> dpdkInterfaceMapping = command.getDpdkInterfaceMapping();
+                    if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
+                        for (DpdkTO to : dpdkInterfaceMapping.values()) {
+                            String portToRemove = to.getPort();
+                            String cmd = String.format("ovs-vsctl del-port %s", portToRemove);
+                            s_logger.debug("Removing DPDK port: " + portToRemove);
+                            Script.runSimpleBashScript(cmd);
+                        }
+                    }
+                } else {
+                    for (final InterfaceDef iface : ifaces) {
+                        // We don't know which "traffic type" is associated with
+                        // each interface at this point, so inform all vif drivers
+                        for (final VifDriver vifDriver : libvirtComputingResource.getAllVifDrivers()) {
+                            vifDriver.unplug(iface);
+                        }
                     }
                 }
             }

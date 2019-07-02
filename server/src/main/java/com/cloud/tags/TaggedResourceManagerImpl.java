@@ -16,13 +16,31 @@
 // under the License.
 package com.cloud.tags;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
+
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
 import com.cloud.dc.DataCenterVO;
 import com.cloud.domain.PartOf;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.network.LBHealthCheckPolicyVO;
 import com.cloud.network.as.AutoScaleVmGroupVO;
 import com.cloud.network.as.AutoScaleVmProfileVO;
@@ -43,6 +61,7 @@ import com.cloud.network.vpc.NetworkACLVO;
 import com.cloud.network.vpc.StaticRouteVO;
 import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.projects.ProjectVO;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
@@ -74,23 +93,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import org.apache.commons.collections.MapUtils;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class TaggedResourceManagerImpl extends ManagerBase implements TaggedResourceService {
     public static final Logger s_logger = Logger.getLogger(TaggedResourceManagerImpl.class);
@@ -219,6 +221,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             accountId = ((ProjectVO)entity).getProjectAccountId();
         }
 
+        if (resourceType == ResourceObjectType.SnapshotPolicy) {
+            accountId = _entityMgr.findById(VolumeVO.class, ((SnapshotPolicyVO)entity).getVolumeId()).getAccountId();
+        }
+
         if (entity instanceof OwnedBy) {
             accountId = ((OwnedBy)entity).getAccountId();
         }
@@ -314,7 +320,11 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                         }
 
                         ResourceTagVO resourceTag = new ResourceTagVO(key, value, accountDomainPair.first(), accountDomainPair.second(), id, resourceType, customer, resourceUuid);
-                        resourceTag = _resourceTagDao.persist(resourceTag);
+                        try {
+                            resourceTag = _resourceTagDao.persist(resourceTag);
+                        } catch (EntityExistsException e) {
+                            throw new CloudRuntimeException(String.format("tag %s already on %s with id %s", resourceTag.getKey(), resourceType.toString(), resourceId),e);
+                        }
                         resourceTags.add(resourceTag);
                     }
                 }
@@ -384,7 +394,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         }
 
         if (tagsToDelete.isEmpty()) {
-            throw new InvalidParameterValueException("Unable to find any tags which conform to specified delete parameters.");
+            return false;
         }
 
         //Remove the tags

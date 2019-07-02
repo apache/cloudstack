@@ -154,14 +154,15 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
                     publicVlans.add(publicIp.getVlanTag());
                 }
             }
-            if (publicNetwork != null) {
-                if (networks.get(publicNetwork) != null) {
-                    @SuppressWarnings("unchecked") final List<NicProfile> publicNicProfiles = (List<NicProfile>)networks.get(publicNetwork);
-                    publicNicProfiles.addAll(publicNics);
-                    networks.put(publicNetwork, publicNicProfiles);
-                } else {
-                    networks.put(publicNetwork, publicNics);
-                }
+        }
+        if (publicNetwork != null) {
+            if (networks.get(publicNetwork) != null) {
+                @SuppressWarnings("unchecked")
+                final List<NicProfile> publicNicProfiles = (List<NicProfile>)networks.get(publicNetwork);
+                publicNicProfiles.addAll(publicNics);
+                networks.put(publicNetwork, publicNicProfiles);
+            } else {
+                networks.put(publicNetwork, publicNics);
             }
         }
 

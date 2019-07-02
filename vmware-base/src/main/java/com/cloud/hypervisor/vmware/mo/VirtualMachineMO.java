@@ -2709,7 +2709,7 @@ public class VirtualMachineMO extends BaseMO {
         return pathList;
     }
 
-    private String getDeviceBusName(List<VirtualDevice> allDevices, VirtualDevice theDevice) throws Exception {
+    public String getDeviceBusName(List<VirtualDevice> allDevices, VirtualDevice theDevice) throws Exception {
         for (VirtualDevice device : allDevices) {
             if (device.getKey() == theDevice.getControllerKey().intValue()) {
                 if (device instanceof VirtualIDEController) {
@@ -3298,7 +3298,7 @@ public class VirtualMachineMO extends BaseMO {
         virtualHardwareVersion = getVirtualHardwareVersion();
 
         // Check if guest operating system supports memory hotadd
-        if (guestOsDescriptor.isSupportsMemoryHotAdd()) {
+        if (guestOsDescriptor != null && guestOsDescriptor.isSupportsMemoryHotAdd()) {
             guestOsSupportsMemoryHotAdd = true;
         }
         // Check if virtual machine is using hardware version 7 or later.

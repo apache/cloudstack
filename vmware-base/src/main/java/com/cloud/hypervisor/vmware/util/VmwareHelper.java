@@ -25,11 +25,16 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
 import javax.annotation.Nonnull;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -41,6 +46,8 @@ import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.MethodFault;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.OptionValue;
+import com.vmware.vim25.PerfCounterInfo;
+import com.vmware.vim25.PerfMetricId;
 import com.vmware.vim25.ResourceAllocationInfo;
 import com.vmware.vim25.VirtualCdrom;
 import com.vmware.vim25.VirtualCdromIsoBackingInfo;
@@ -637,6 +644,25 @@ public class VmwareHelper {
         return usbController;
     }
 
+    public static PerfMetricId createPerfMetricId(PerfCounterInfo counterInfo, String instance) {
+        PerfMetricId metricId = new PerfMetricId();
+        metricId.setCounterId(counterInfo.getKey());
+        metricId.setInstance(instance);
+        return metricId;
+    }
+
+    public static String getDiskDeviceFileName(VirtualDisk diskDevice) {
+        VirtualDeviceBackingInfo backingInfo = diskDevice.getBacking();
+        if (backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
+            final String vmdkName = ((VirtualDiskFlatVer2BackingInfo)backingInfo).getFileName().replace(".vmdk", "");
+            if (vmdkName.contains("/")) {
+                return vmdkName.split("/", 2)[1];
+            }
+            return vmdkName;
+        }
+        return null;
+    }
+
     public static ManagedObjectReference getDiskDeviceDatastore(VirtualDisk diskDevice) throws Exception {
         VirtualDeviceBackingInfo backingInfo = diskDevice.getBacking();
         assert (backingInfo instanceof VirtualDiskFlatVer2BackingInfo);
@@ -771,6 +797,15 @@ public class VmwareHelper {
 
     public static boolean isControllerOsRecommended(String dataDiskController) {
         return DiskControllerType.getType(dataDiskController) == DiskControllerType.osdefault;
+    }
+
+    public static XMLGregorianCalendar getXMLGregorianCalendar(final Date date, final int offsetSeconds) throws DatatypeConfigurationException {
+        if (offsetSeconds > 0) {
+            date.setTime(date.getTime() - offsetSeconds * 1000);
+        }
+        final GregorianCalendar gregorianCalendar = new GregorianCalendar();
+        gregorianCalendar.setTime(date);
+        return DatatypeFactory.newInstance().newXMLGregorianCalendar(gregorianCalendar);
     }
 
 }

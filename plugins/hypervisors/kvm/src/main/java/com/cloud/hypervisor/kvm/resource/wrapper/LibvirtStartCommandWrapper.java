@@ -69,7 +69,6 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             for (final NicTO nic : nics) {
                 if (vmSpec.getType() != VirtualMachine.Type.User) {
                     nic.setPxeDisable(true);
-                    nic.setDpdkDisabled(true);
                 }
             }
 

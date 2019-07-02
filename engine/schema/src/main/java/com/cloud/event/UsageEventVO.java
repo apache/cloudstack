@@ -70,7 +70,7 @@ public class UsageEventVO implements UsageEvent {
     private String resourceType;
 
     @Column(name = "processed")
-    boolean processed;
+    private boolean processed;
 
     @Column(name = "virtual_size")
     private Long virtualSize;

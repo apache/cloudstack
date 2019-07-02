@@ -36,6 +36,8 @@ public class DhcpEntryRules extends RuleApplier {
     private final VirtualMachineProfile _profile;
     private final DeployDestination _destination;
 
+    private boolean remove;
+
     private NicVO _nicVo;
     private UserVmVO _userVM;
 
@@ -76,5 +78,13 @@ public class DhcpEntryRules extends RuleApplier {
 
     public UserVmVO getUserVM() {
         return _userVM;
+    }
+
+    public boolean isRemove() {
+        return remove;
+    }
+
+    public void setRemove(boolean remove) {
+        this.remove = remove;
     }
 }

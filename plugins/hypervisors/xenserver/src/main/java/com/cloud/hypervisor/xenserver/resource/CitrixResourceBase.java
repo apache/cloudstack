@@ -134,6 +134,7 @@ import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
+import com.cloud.vm.VmDetailConstants;
 import com.trilead.ssh2.SCPClient;
 import com.xensource.xenapi.Bond;
 import com.xensource.xenapi.Connection;
@@ -1862,18 +1863,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         final Map<String, String> details = vmSpec.getDetails();
         if (details != null) {
-            final String platformstring = details.get("platform");
+            final String platformstring = details.get(VmDetailConstants.PLATFORM);
             if (platformstring != null && !platformstring.isEmpty()) {
                 final Map<String, String> platform = StringUtils.stringToMap(platformstring);
                 vm.setPlatform(conn, platform);
             } else {
-                final String timeoffset = details.get("timeoffset");
+                final String timeoffset = details.get(VmDetailConstants.TIME_OFFSET);
                 if (timeoffset != null) {
                     final Map<String, String> platform = vm.getPlatform(conn);
-                    platform.put("timeoffset", timeoffset);
+                    platform.put(VmDetailConstants.TIME_OFFSET, timeoffset);
                     vm.setPlatform(conn, platform);
                 }
-                final String coresPerSocket = details.get("cpu.corespersocket");
+                final String coresPerSocket = details.get(VmDetailConstants.CPU_CORE_PER_SOCKET);
                 if (coresPerSocket != null) {
                     final Map<String, String> platform = vm.getPlatform(conn);
                     platform.put("cores-per-socket", coresPerSocket);
@@ -1881,7 +1882,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
             }
             if (!BootloaderType.CD.equals(vmSpec.getBootloader())) {
-                final String xenservertoolsversion = details.get("hypervisortoolsversion");
+                final String xenservertoolsversion = details.get(VmDetailConstants.HYPERVISOR_TOOLS_VERSION);
                 if ((xenservertoolsversion == null || !xenservertoolsversion.equalsIgnoreCase("xenserver61")) && vmSpec.getGpuDevice() == null) {
                     final Map<String, String> platform = vm.getPlatform(conn);
                     platform.remove("device_id");

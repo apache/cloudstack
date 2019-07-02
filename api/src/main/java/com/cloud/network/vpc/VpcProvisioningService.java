@@ -20,6 +20,8 @@ package com.cloud.network.vpc;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
+
 import com.cloud.utils.Pair;
 
 public interface VpcProvisioningService {
@@ -40,13 +42,13 @@ public interface VpcProvisioningService {
      */
     public boolean deleteVpcOffering(long offId);
 
+    @Deprecated
+    public VpcOffering updateVpcOffering(long vpcOffId, String vpcOfferingName, String displayText, String state);
+
     /**
-     * @param vpcOffId
-     * @param vpcOfferingName
-     * @param displayText
-     * @param state
+     * @param vpcOfferingCmd
      * @return
      */
-    public VpcOffering updateVpcOffering(long vpcOffId, String vpcOfferingName, String displayText, String state);
+    public VpcOffering updateVpcOffering(final UpdateVPCOfferingCmd vpcOfferingCmd);
 
 }

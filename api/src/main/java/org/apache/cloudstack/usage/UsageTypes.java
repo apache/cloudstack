@@ -66,6 +66,7 @@ public class UsageTypes {
         responseList.add(new UsageTypeResponse(VM_DISK_BYTES_READ, "VM Disk usage(Bytes Read)"));
         responseList.add(new UsageTypeResponse(VM_DISK_BYTES_WRITE, "VM Disk usage(Bytes Write)"));
         responseList.add(new UsageTypeResponse(VM_SNAPSHOT, "VM Snapshot storage usage"));
+        responseList.add(new UsageTypeResponse(VOLUME_SECONDARY, "Volume on secondary storage usage"));
         responseList.add(new UsageTypeResponse(VM_SNAPSHOT_ON_PRIMARY, "VM Snapshot on primary storage usage"));
         return responseList;
     }

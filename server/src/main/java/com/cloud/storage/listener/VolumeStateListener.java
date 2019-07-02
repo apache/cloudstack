@@ -76,8 +76,7 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
           if (transition.getToState() == State.Ready) {
             if (transition.getCurrentState() == State.Resizing) {
               // Log usage event for volumes belonging user VM's only
-              UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(),
-                      vol.getDiskOfferingId(), vol.getTemplateId(), vol.getSize(), Volume.class.getName(), vol.getUuid());
+              // For the Resize Volume Event, this  publishes an event with an incorrect disk offering ID, so do nothing for now
             } else {
               UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), vol.getDiskOfferingId(), null, vol.getSize(),
                       Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());

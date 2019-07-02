@@ -16,10 +16,9 @@
 // under the License.
 package com.cloud.dc;
 
-import com.cloud.network.Network.Provider;
-import com.cloud.org.Grouping;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.GenericDao;
+import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -31,9 +30,11 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
+
+import com.cloud.network.Network.Provider;
+import com.cloud.org.Grouping;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "data_center")
@@ -133,6 +134,9 @@ public class DataCenterVO implements DataCenter {
 
     @Column(name = "is_local_storage_enabled")
     boolean localStorageEnabled;
+
+    @Column(name = "sort_key")
+    int sortKey;
 
     @Override
     public String getDnsProvider() {
@@ -361,6 +365,15 @@ public class DataCenterVO implements DataCenter {
 
     public void setLocalStorageEnabled(boolean enabled) {
         this.localStorageEnabled = enabled;
+    }
+
+    @Override
+    public int getSortKey() {
+        return sortKey;
+    }
+
+    public void setSortKey(int newSortKey) {
+        sortKey = newSortKey;
     }
 
     @Override

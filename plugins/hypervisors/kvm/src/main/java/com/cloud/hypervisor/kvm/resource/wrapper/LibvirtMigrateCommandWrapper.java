@@ -43,6 +43,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import com.cloud.agent.api.to.DpdkTO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -147,9 +148,15 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             // migrateStorage is declared as final because the replaceStorage method may mutate mapMigrateStorage, but
             // migrateStorage's value should always only be associated with the initial state of mapMigrateStorage.
             final boolean migrateStorage = MapUtils.isNotEmpty(mapMigrateStorage);
+            final boolean migrateStorageManaged = command.isMigrateStorageManaged();
 
             if (migrateStorage) {
-                xmlDesc = replaceStorage(xmlDesc, mapMigrateStorage);
+                xmlDesc = replaceStorage(xmlDesc, mapMigrateStorage, migrateStorageManaged);
+            }
+
+            Map<String, DpdkTO> dpdkPortsMapping = command.getDpdkInterfaceMapping();
+            if (MapUtils.isNotEmpty(dpdkPortsMapping)) {
+                xmlDesc = replaceDpdkInterfaces(xmlDesc, dpdkPortsMapping);
             }
 
             dconn = libvirtUtilitiesHelper.retrieveQemuConnection(destinationUri);
@@ -157,7 +164,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             //run migration in thread so we can monitor it
             s_logger.info("Live migration of instance " + vmName + " initiated to destination host: " + dconn.getURI());
             final ExecutorService executor = Executors.newFixedThreadPool(1);
-            final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc, migrateStorage,
+            final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc,
+                    migrateStorage, migrateStorageManaged,
                     command.isAutoConvergence(), vmName, command.getDestinationIp());
             final Future<Domain> migrateThread = executor.submit(worker);
             executor.shutdown();
@@ -282,6 +290,76 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     }
 
     /**
+     * Replace DPDK source path and target before migrations
+     */
+    protected String replaceDpdkInterfaces(String xmlDesc, Map<String, DpdkTO> dpdkPortsMapping) throws TransformerException, ParserConfigurationException, IOException, SAXException {
+        InputStream in = IOUtils.toInputStream(xmlDesc);
+
+        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(in);
+
+        // Get the root element
+        Node domainNode = doc.getFirstChild();
+
+        NodeList domainChildNodes = domainNode.getChildNodes();
+
+        for (int i = 0; i < domainChildNodes.getLength(); i++) {
+            Node domainChildNode = domainChildNodes.item(i);
+
+            if ("devices".equals(domainChildNode.getNodeName())) {
+                NodeList devicesChildNodes = domainChildNode.getChildNodes();
+
+                for (int x = 0; x < devicesChildNodes.getLength(); x++) {
+                    Node deviceChildNode = devicesChildNodes.item(x);
+
+                    if ("interface".equals(deviceChildNode.getNodeName())) {
+                        Node interfaceNode = deviceChildNode;
+                        NamedNodeMap attributes = interfaceNode.getAttributes();
+                        Node interfaceTypeAttr = attributes.getNamedItem("type");
+
+                        if ("vhostuser".equals(interfaceTypeAttr.getNodeValue())) {
+                            NodeList diskChildNodes = interfaceNode.getChildNodes();
+
+                            String mac = null;
+                            for (int y = 0; y < diskChildNodes.getLength(); y++) {
+                                Node diskChildNode = diskChildNodes.item(y);
+                                if (!"mac".equals(diskChildNode.getNodeName())) {
+                                    continue;
+                                }
+                                mac = diskChildNode.getAttributes().getNamedItem("address").getNodeValue();
+                            }
+
+                            if (StringUtils.isNotBlank(mac)) {
+                                DpdkTO to = dpdkPortsMapping.get(mac);
+
+                                for (int z = 0; z < diskChildNodes.getLength(); z++) {
+                                    Node diskChildNode = diskChildNodes.item(z);
+
+                                    if ("target".equals(diskChildNode.getNodeName())) {
+                                        Node targetNode = diskChildNode;
+                                        Node targetNodeAttr = targetNode.getAttributes().getNamedItem("dev");
+                                        targetNodeAttr.setNodeValue(to.getPort());
+                                    } else if ("source".equals(diskChildNode.getNodeName())) {
+                                        Node sourceNode = diskChildNode;
+                                        NamedNodeMap attrs = sourceNode.getAttributes();
+                                        Node path = attrs.getNamedItem("path");
+                                        path.setNodeValue(to.getPath() + "/" + to.getPort());
+                                        Node mode = attrs.getNamedItem("mode");
+                                        mode.setNodeValue(to.getMode());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return getXml(doc);
+    }
+
+    /**
      * In case of a local file, it deletes the file on the source host/storage pool. Otherwise (for instance iScsi) it disconnects the disk on the source storage pool. </br>
      * This method must be executed after a successful migration to a target storage pool, cleaning up the source storage.
      */
@@ -356,7 +434,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
      *  <li>The source of the disk needs an attribute that is either 'file' or 'dev' as well as its corresponding value.
      * </ul>
      */
-    protected String replaceStorage(String xmlDesc, Map<String, MigrateCommand.MigrateDiskInfo> migrateStorage)
+    protected String replaceStorage(String xmlDesc, Map<String, MigrateCommand.MigrateDiskInfo> migrateStorage,
+                                  boolean migrateStorageManaged)
             throws IOException, ParserConfigurationException, SAXException, TransformerException {
         InputStream in = IOUtils.toInputStream(xmlDesc);
 
@@ -398,7 +477,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                             for (int z = 0; z < diskChildNodes.getLength(); z++) {
                                 Node diskChildNode = diskChildNodes.item(z);
 
-                                if ("driver".equals(diskChildNode.getNodeName())) {
+                                if (migrateStorageManaged && "driver".equals(diskChildNode.getNodeName())) {
                                     Node driverNode = diskChildNode;
 
                                     NamedNodeMap driverNodeAttributes = driverNode.getAttributes();
@@ -413,7 +492,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                                     newChildSourceNode.setAttribute(migrateDiskInfo.getSource().toString(), migrateDiskInfo.getSourceText());
 
                                     diskNode.appendChild(newChildSourceNode);
-                                } else if ("auth".equals(diskChildNode.getNodeName())) {
+                                } else if (migrateStorageManaged && "auth".equals(diskChildNode.getNodeName())) {
                                     diskNode.removeChild(diskChildNode);
                                 }
                             }
