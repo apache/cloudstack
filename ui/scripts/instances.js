@@ -750,9 +750,13 @@
                 if ("sshkeypairs" in args.context) {
                     $.extend(data, {
                         domainid: args.context.sshkeypairs[0].domainid,
-                        account: args.context.sshkeypairs[0].account,
                         keypair: args.context.sshkeypairs[0].name
                     });
+                    if (!cloudStack.context || !cloudStack.context.projects) {
+                        // In case we are in project mode sshkeypairs provides project account name which
+                        // should not be passed as part of API params. So only extend if NOT in project mode.
+                        $.extend(data, { account: args.context.sshkeypairs[0].account});
+                    }
                 }
 
                 $.ajax({
