@@ -1,18 +1,18 @@
-cloudstack (4.11.3.0) unstable; urgency=low
+cloudstack (4.11.4.0-SNAPSHOT) unstable; urgency=low
 
-  * Update the version to 4.11.3.0
+  * Update the version to 4.11.4.0-SNAPSHOT
 
  -- the Apache CloudStack project <dev@cloudstack.apache.org>  Tue, 25 Jun 2019 20:45:11 +0100
 
-cloudstack (4.11.3.0) unstable; urgency=low
+cloudstack (4.11.4.0-SNAPSHOT) unstable; urgency=low
 
-  * Update the version to 4.11.3.0
+  * Update the version to 4.11.4.0-SNAPSHOT
 
  -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 10 Jun 2019 16:15:05 +0100
 
-cloudstack (4.11.3.0-SNAPSHOT) unstable; urgency=low
+cloudstack (4.11.4.0-SNAPSHOT-SNAPSHOT) unstable; urgency=low
 
-  * Update the version to 4.11.3.0-SNAPSHOT
+  * Update the version to 4.11.4.0-SNAPSHOT-SNAPSHOT
 
  -- the Apache CloudStack project <dev@cloudstack.apache.org>  Thu, 26 Jun 2018 18:24:36 +0100
 

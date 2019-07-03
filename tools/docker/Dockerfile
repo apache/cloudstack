@@ -20,7 +20,7 @@
 FROM ubuntu:16.04
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
-LABEL Vendor="Apache.org" License="ApacheV2" Version="4.11.3.0"
+LABEL Vendor="Apache.org" License="ApacheV2" Version="4.11.4.0-SNAPSHOT"
 
 RUN apt-get -y update && apt-get install -y \
     genisoimage \
