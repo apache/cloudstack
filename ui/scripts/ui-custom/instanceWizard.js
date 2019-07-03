@@ -332,9 +332,6 @@
                                         $step.find('.select-iso').show();
                                     }
                                     var makeIsos = function(type, append) {
-
-                                        sortArrayByKey(args.data.templates[type], 'name');
-
                                         var $selects = makeSelects('templateid', args.data.templates[type], {
                                             name: 'name',
                                             desc: 'displaytext',
@@ -494,9 +491,6 @@
                         return {
                             response: {
                                 success: function(args) {
-
-                                    sortArrayByKey(args.data.serviceOfferings, 'cpuspeed');
-
                                     $step.find('.content .select-container').append(
                                         makeSelects('serviceofferingid', args.data.serviceOfferings, {
                                             name: 'name',
@@ -562,8 +556,6 @@
                                     $step.find('.multi-disk-select-container').remove();
                                     $step.removeClass('custom-disk-size');
                                     $step.find('.main-desc, p.no-datadisk').remove();
-
-                                    sortArrayByKey(args.data.diskOfferings, 'disksize');
 
                                     if (!multiDisk){
                                             if (args.required) {
