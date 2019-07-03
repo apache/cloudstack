@@ -28,8 +28,6 @@ public interface ProjectJoinDao extends GenericDao<ProjectJoinVO, Long> {
 
     ProjectResponse newProjectResponse(ProjectJoinVO proj);
 
-    ProjectResponse setProjectResponse(ProjectResponse rsp, ProjectJoinVO proj);
-
     List<ProjectJoinVO> newProjectView(Project proj);
 
     List<ProjectJoinVO> searchByIds(Long... ids);

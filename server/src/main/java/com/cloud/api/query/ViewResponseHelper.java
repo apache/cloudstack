@@ -203,11 +203,8 @@ public class ViewResponseHelper {
             if (pData == null) {
                 // first time encountering this vm
                 pData = ApiDBUtils.newProjectResponse(p);
-            } else {
-                // update those  1 to many mapping fields
-                pData = ApiDBUtils.fillProjectDetails(pData, p);
+                prjDataList.put(p.getId(), pData);
             }
-            prjDataList.put(p.getId(), pData);
         }
         return new ArrayList<ProjectResponse>(prjDataList.values());
     }
