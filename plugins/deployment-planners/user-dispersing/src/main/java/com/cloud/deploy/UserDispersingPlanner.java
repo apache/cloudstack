@@ -146,7 +146,7 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
         //normalize the vmCountMap
         LinkedHashMap<Long, Double> normalisedVmCountIdMap = new LinkedHashMap<Long, Double>();
 
-        Long totalVmsOfAccount = vmInstanceDao.countRunningByAccount(accountId);
+        Long totalVmsOfAccount = vmInstanceDao.countRunningAndStartingByAccount(accountId);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total VMs for account: " + totalVmsOfAccount);
         }
