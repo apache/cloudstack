@@ -16,15 +16,19 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -60,6 +64,12 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
 
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "List projects by tags (key/value pairs)")
     private Map tags;
+
+    @Parameter(name = ApiConstants.DETAILS,
+               type = CommandType.LIST,
+               collectionType = CommandType.STRING,
+               description = "comma separated list of project details requested, value can be a list of [ all, resource, min]")
+    private List<String> viewDetails;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -103,6 +113,25 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
             }
         }
         return tagsMap;
+    }
+
+    public EnumSet<DomainDetails> getDetails() throws InvalidParameterValueException {
+        EnumSet<DomainDetails> dv;
+        if (viewDetails == null || viewDetails.size() <= 0) {
+            dv = EnumSet.of(DomainDetails.all);
+        } else {
+            try {
+                ArrayList<DomainDetails> dc = new ArrayList<DomainDetails>();
+                for (String detail : viewDetails) {
+                    dc.add(DomainDetails.valueOf(detail));
+                }
+                dv = EnumSet.copyOf(dc);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " +
+                    EnumSet.allOf(DomainDetails.class));
+            }
+        }
+        return dv;
     }
 
     /////////////////////////////////////////////////////

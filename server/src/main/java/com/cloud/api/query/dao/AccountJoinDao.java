@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.EnumSet;
+
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
@@ -26,7 +29,7 @@ import com.cloud.utils.db.GenericDao;
 
 public interface AccountJoinDao extends GenericDao<AccountJoinVO, Long> {
 
-    AccountResponse newAccountResponse(ResponseView view, AccountJoinVO vol);
+    AccountResponse newAccountResponse(ResponseView view, EnumSet<DomainDetails> details, AccountJoinVO vol);
 
     AccountJoinVO newAccountView(Account vol);
 

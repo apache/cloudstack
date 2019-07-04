@@ -809,6 +809,9 @@
                                     $step.find('.main-desc, p.no-affinity-groups').remove();
 
                                     if (args.data.affinityGroups && args.data.affinityGroups.length) {
+
+                                        sortArrayByKey(args.data.affinityGroups, 'name');
+
                                         $step.prepend(
                                             $('<div>').addClass('main-desc').append(
                                                 $('<p>').html(_l('message.select.affinity.groups'))
@@ -855,6 +858,9 @@
                                     $step.find('.main-desc, p.no-sshkey-pairs').remove();
 
                                     if (args.data.sshkeyPairs && args.data.sshkeyPairs.length) {
+
+                                        sortArrayByKey(args.data.sshkeyPairs, 'name');
+
                                         $step.prepend(
                                             $('<div>').addClass('main-desc').append(
                                                 $('<p>').html(_l('message.please.select.ssh.key.pair.use.with.this.vm'))
@@ -1024,6 +1030,9 @@
 
                                     // Populate VPC drop-down
                                     $vpcSelect.html('');
+
+                                    sortArrayByKey(vpcs, 'name');
+
                                     $(vpcs).map(function(index, vpc) {
                                         var $option = $('<option>');
                                         var id = vpc.id;
