@@ -15,12 +15,12 @@
 # specific language governing permissions and limitations
 # under the License.
 sudo: required
-dist: trusty
+dist: xenial
 group: edge
 
 language: java
 jdk:
-  - oraclejdk8
+  - openjdk8
 python:
   - "2.7"
 
