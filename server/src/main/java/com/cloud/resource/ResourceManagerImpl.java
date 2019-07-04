@@ -1279,9 +1279,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (_storageMgr.isLocalStorageActiveOnHost(host.getId())) {
             throw new InvalidParameterValueException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
         }
-
-        if (_vmDao.findByHostInStates(hostId, State.Migrating).size() > 0) { // Incoming Migrations
-            throw new CloudRuntimeException("Host contains VMs migrating. Please wait for them to complete before putting to maintenance.");
+        List<VMInstanceVO> migratingInVMs = _vmDao.findByHostInStates(hostId, State.Migrating);
+        if (migratingInVMs.size() > 0) {
+            throw new CloudRuntimeException("Host contains incoming VMs migrating. Please wait for them to complete before putting to maintenance.");
         }
 
         if (_vmDao.findByHostInStates(hostId, State.Starting).size() > 0) {

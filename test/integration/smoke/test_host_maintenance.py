@@ -21,7 +21,7 @@
 from marvin.cloudstackTestCase import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
-from marvin.lib.common import (get_zone, get_pod, get_template)
+from marvin.lib.common import (get_zone, get_pod, get_template, list_ssvms)
 from nose.plugins.attrib import attr
 from marvin.lib.decoratorGenerators import skipTestIf
 from distutils.util import strtobool
@@ -106,7 +106,32 @@ class TestHostMaintenance(cloudstackTestCase):
         self.cleanup.append(self.network_offering)
         self.cleanup.append(self.service_offering)
         return vms
-    
+
+    def checkAllVmsRunningOnHost(self, hostId):
+        listVms1 = VirtualMachine.list(
+            self.apiclient,
+            hostid=hostId
+        )
+
+        if (listVms1 is not None):
+            self.logger.debug('Vms found to test all running = {} '.format(len(listVms1)))
+            for vm in listVms1:
+                if (vm.state != "Running"):
+                    self.logger.debug('VirtualMachine on Host with id = {} is in {}'.format(vm.id, vm.state))
+                    return (False, None)
+
+        response = list_ssvms(
+            self.apiclient,
+            hostid=hostId
+        )
+        if isinstance(response, list):
+            for systemvm in response:
+                if systemvm.state != 'Running':
+                    self.logger.debug("Found not running VM {}".format(systemvm.name))
+                    return (False, None)
+
+        return (True, None)
+
     def checkVmMigratingOnHost(self, hostId):
         vm_migrating=False
         listVms1 = VirtualMachine.list(
@@ -118,7 +143,7 @@ class TestHostMaintenance(cloudstackTestCase):
             self.logger.debug('Vms found = {} '.format(len(listVms1)))
             for vm in listVms1:
                 if (vm.state == "Migrating"):
-                    self.logger.debug('VirtualMachine on Hyp id = {} is in {}'.format(vm.id, vm.state))
+                    self.logger.debug('VirtualMachine on Host with id = {} is in {}'.format(vm.id, vm.state))
                     vm_migrating=True
                     break
 
@@ -140,7 +165,7 @@ class TestHostMaintenance(cloudstackTestCase):
                     break
 
         return (no_vm_migrating, None)
-    
+
     def noOfVMsOnHost(self, hostId):
         listVms = VirtualMachine.list(
                                        self.apiclient, 
@@ -153,25 +178,29 @@ class TestHostMaintenance(cloudstackTestCase):
                 no_of_vms=no_of_vms+1
              
         return no_of_vms
-    
+
     def hostPrepareAndCancelMaintenance(self, target_host_id, other_host_id, checkVMMigration):
-        
+        # Wait for all VMs to complete any pending migrations.
+        if not wait_until(1, 30, self.checkAllVmsRunningOnHost, target_host_id) or not wait_until(1, 30, self.checkAllVmsRunningOnHost, other_host_id):
+            raise Exception("Failed to wait for all VMs to reach running state to execute test")
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = target_host_id
+        self.logger.debug('Sending Host with id {} to prepareHostForMaintenance'.format(target_host_id))
         response = self.apiclient.prepareHostForMaintenance(cmd)
         
         self.logger.debug('Host with id {} is in prepareHostForMaintenance'.format(target_host_id))
         
         vm_migrating = wait_until(1, 10, checkVMMigration, other_host_id)
-        
+
+        self.logger.debug('Canceling Host with id {} from maintain'.format(target_host_id))
         cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
         cmd.id = target_host_id
         response = self.apiclient.cancelHostMaintenance(cmd)
         
-        self.logger.debug('Host with id {} is in cancelHostMaintenance'.format(target_host_id) )
+        self.logger.debug('Host with id {} has been sent to cancelHostMaintenance'.format(target_host_id))
         
         return vm_migrating
-        
+
     @attr(
         tags=[
             "advanced",
@@ -257,7 +286,6 @@ class TestHostMaintenance(cloudstackTestCase):
         vm_migrating=False
         
         try:
-           
            vm_migrating = self.hostPrepareAndCancelMaintenance(listHost[0].id, listHost[1].id, self.checkVmMigratingOnHost)
            
            vm_migrating = self.hostPrepareAndCancelMaintenance(listHost[1].id, listHost[0].id, self.checkVmMigratingOnHost)
