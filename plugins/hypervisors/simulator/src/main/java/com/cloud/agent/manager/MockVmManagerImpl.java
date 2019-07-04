@@ -756,7 +756,10 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             txn.close();
 
             for (final DomainRouterVO router : routers) {
-                vrs.add(_mockVmDao.findByVmName(router.getInstanceName()));
+                MockVm v = _mockVmDao.findByVmName(router.getInstanceName());
+                if (v != null) {
+                    vrs.add(v);
+                }
             }
         } finally {
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
