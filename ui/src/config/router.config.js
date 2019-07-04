@@ -17,18 +17,67 @@ export const asyncRouterMap = [
         component: () => import('@/views/dashboard/Dashboard')
       },
 
-      // instance
+      // compute
       {
-        path: '/vm',
-        name: 'vm',
-        meta: { title: 'Instances', keepAlive: true, icon: 'cloud', permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ] },
-        component: () => import('@/components/CloudMonkey/Resource.vue'),
-        hideChildrenInMenu: true,
+        path: '/compute',
+        name: 'compute',
+        meta: { title: 'Compute', keepAlive: true, icon: 'cloud', permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ] },
+        component: RouteView,
+        redirect: '/vm',
         children: [
           {
-            path: '/vm/:id',
-            meta: { title: 'Instances', keepAlive: true, icon: 'cloud', permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue')
+            path: '/vm',
+            name: 'vm',
+            meta: { title: 'Instances', keepAlive: true, icon: 'laptop', permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ] },
+            component: () => import('@/components/CloudMonkey/Resource.vue'),
+            hideChildrenInMenu: true,
+            children: [
+              {
+                path: '/vm/:id',
+                meta: { title: 'Instances', keepAlive: true, icon: 'cloud', permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ] },
+                component: () => import('@/components/CloudMonkey/Resource.vue')
+              }
+            ]
+          },
+          {
+            path: '/kubernetes',
+            name: 'kubernetes',
+            meta: { title: 'Kubernetes', keepAlive: true, icon: 'radar-chart', permission: [ 'listVirtualMachines' ] },
+            component: () => import('@/components/CloudMonkey/Resource.vue'),
+            hideChildrenInMenu: true,
+            children: [
+              {
+                path: '/kubernetes/:id',
+                meta: { title: 'Instances', keepAlive: true, icon: 'cloud', permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ] },
+                component: () => import('@/components/CloudMonkey/Resource.vue')
+              }
+            ]
+          },
+          {
+            path: '/ssh',
+            name: 'ssh',
+            meta: { title: 'SSH Keys', icon: 'key', permission: [ 'listSSHKeyPairs' ] },
+            component: () => import('@/components/CloudMonkey/Resource.vue'),
+            hideChildrenInMenu: true,
+            children: [
+              {
+                path: '/ssh/:id',
+                component: () => import('@/components/CloudMonkey/Resource.vue')
+              }
+            ]
+          },
+          {
+            path: '/affinitygroups',
+            name: 'affinitygroups',
+            meta: { title: 'Affinity Groups', icon: 'rocket', permission: [ 'listAffinityGroups' ] },
+            component: () => import('@/components/CloudMonkey/Resource.vue'),
+            hideChildrenInMenu: true,
+            children: [
+              {
+                path: '/affinitygroups/:id',
+                component: () => import('@/components/CloudMonkey/Resource.vue')
+              }
+            ]
           }
         ]
       },
@@ -105,19 +154,6 @@ export const asyncRouterMap = [
             ]
           },
           {
-            path: '/securitygroups',
-            name: 'securitygroups',
-            meta: { title: 'Security Groups', icon: 'compass', permission: [ 'listSecurityGroups' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/securitygroups/:id',
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          },
-          {
             path: '/vpc',
             name: 'vpc',
             meta: { title: 'VPCs', icon: 'deployment-unit', permission: [ 'listVPCs' ] },
@@ -126,6 +162,19 @@ export const asyncRouterMap = [
             children: [
               {
                 path: '/vpc/:id',
+                component: () => import('@/components/CloudMonkey/Resource.vue')
+              }
+            ]
+          },
+          {
+            path: '/securitygroups',
+            name: 'securitygroups',
+            meta: { title: 'Security Groups', icon: 'compass', permission: [ 'listSecurityGroups' ] },
+            component: () => import('@/components/CloudMonkey/Resource.vue'),
+            hideChildrenInMenu: true,
+            children: [
+              {
+                path: '/securitygroups/:id',
                 component: () => import('@/components/CloudMonkey/Resource.vue')
               }
             ]
@@ -183,6 +232,21 @@ export const asyncRouterMap = [
         ]
       },
 
+      // project
+      {
+        path: '/project',
+        name: 'project',
+        meta: { title: 'Projects', icon: 'project', permission: [ 'listProjects' ] },
+        component: () => import('@/components/CloudMonkey/Resource.vue'),
+        hideChildrenInMenu: true,
+        children: [
+          {
+            path: '/project/:id',
+            component: () => import('@/components/CloudMonkey/Resource.vue')
+          }
+        ]
+      },
+
       // audit
       {
         path: '/audit',
@@ -220,21 +284,6 @@ export const asyncRouterMap = [
         ]
       },
 
-      // project
-      {
-        path: '/project',
-        name: 'project',
-        meta: { title: 'Projects', icon: 'project', permission: [ 'listProjects' ] },
-        component: () => import('@/components/CloudMonkey/Resource.vue'),
-        hideChildrenInMenu: true,
-        children: [
-          {
-            path: '/project/:id',
-            component: () => import('@/components/CloudMonkey/Resource.vue')
-          }
-        ]
-      },
-
       // org
       {
         path: '/manage',
@@ -244,40 +293,15 @@ export const asyncRouterMap = [
         redirect: '/account',
         children: [
           {
-            path: '/affinitygroups',
-            name: 'affinitygroups',
-            meta: { title: 'Affinity Groups', icon: 'rocket', permission: [ 'listAffinityGroups' ] },
+            path: '/domain',
+            name: 'domain',
+            meta: { title: 'Domains', icon: 'block', permission: [ 'listDomains' ] },
             component: () => import('@/components/CloudMonkey/Resource.vue'),
             hideChildrenInMenu: true,
             children: [
               {
-                path: '/affinitygroups/:id',
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          },
-          {
-            path: '/ssh',
-            name: 'ssh',
-            meta: { title: 'SSH Keys', icon: 'safety', permission: [ 'listSSHKeyPairs' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/ssh/:id',
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          },
-          {
-            path: '/user',
-            name: 'user',
-            meta: { title: 'Users', icon: 'user', permission: [ 'listUsers' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/user/:id',
+                path: '/domain/:id',
+                meta: { title: 'Domains', icon: 'block', permission: [ 'listDomains' ] },
                 component: () => import('@/components/CloudMonkey/Resource.vue')
               }
             ]
@@ -297,15 +321,14 @@ export const asyncRouterMap = [
             ]
           },
           {
-            path: '/domain',
-            name: 'domain',
-            meta: { title: 'Domains', icon: 'block', permission: [ 'listDomains' ] },
+            path: '/user',
+            name: 'user',
+            meta: { title: 'Users', icon: 'user', permission: [ 'listUsers' ] },
             component: () => import('@/components/CloudMonkey/Resource.vue'),
             hideChildrenInMenu: true,
             children: [
               {
-                path: '/domain/:id',
-                meta: { title: 'Domains', icon: 'block', permission: [ 'listDomains' ] },
+                path: '/user/:id',
                 component: () => import('@/components/CloudMonkey/Resource.vue')
               }
             ]
