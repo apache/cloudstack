@@ -87,7 +87,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> HostNameAndZoneSearch;
     protected GenericSearchBuilder<VMInstanceVO, Long> FindIdsOfVirtualRoutersByAccount;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountActiveByHost;
-    protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByAccount;
+    protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningAndStartingByAccount;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountByZoneAndState;
     protected SearchBuilder<VMInstanceVO> NetworkTypeSearch;
     protected GenericSearchBuilder<VMInstanceVO, String> DistinctHostNameSearch;
@@ -245,11 +245,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         CountActiveByHost.and("state", CountActiveByHost.entity().getState(), SearchCriteria.Op.IN);
         CountActiveByHost.done();
 
-        CountRunningByAccount = createSearchBuilder(Long.class);
-        CountRunningByAccount.select(null, Func.COUNT, null);
-        CountRunningByAccount.and("account", CountRunningByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
-        CountRunningByAccount.and("state", CountRunningByAccount.entity().getState(), SearchCriteria.Op.EQ);
-        CountRunningByAccount.done();
+        CountRunningAndStartingByAccount = createSearchBuilder(Long.class);
+        CountRunningAndStartingByAccount.select(null, Func.COUNT, null);
+        CountRunningAndStartingByAccount.and("account", CountRunningAndStartingByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        CountRunningAndStartingByAccount.and("states", CountRunningAndStartingByAccount.entity().getState(), SearchCriteria.Op.IN);
+        CountRunningAndStartingByAccount.done();
 
         CountByZoneAndState = createSearchBuilder(Long.class);
         CountByZoneAndState.select(null, Func.COUNT, null);
@@ -749,10 +749,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public Long countRunningByAccount(long accountId) {
-        SearchCriteria<Long> sc = CountRunningByAccount.create();
+    public Long countRunningAndStartingByAccount(long accountId) {
+        SearchCriteria<Long> sc = CountRunningAndStartingByAccount.create();
         sc.setParameters("account", accountId);
-        sc.setParameters("state", State.Running);
+        sc.setParameters("states", new Object[] {State.Starting, State.Running});
         return customSearch(sc, null).get(0);
     }
 
