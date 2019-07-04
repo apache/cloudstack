@@ -252,6 +252,9 @@ export default {
           return 0
         })
       }
+      if (!this.columnKeys.includes('name')) {
+        this.columnKeys = ['name', ...this.columnKeys]
+      }
       for (const key of this.columnKeys) {
         this.columns.push({
           title: key,
