@@ -2242,10 +2242,10 @@ namespace HypervResource
                 strtRouteCmd.cpus = cores;
                 strtRouteCmd.speed = mhz;
                 strtRouteCmd.cpuSockets = sockets;
-                ulong memoryKBs;
+                ulong memoryUsedKBs;
                 ulong freeMemoryKBs;
-                wmiCallsV2.GetMemoryResources(out memoryKBs, out freeMemoryKBs);
-                strtRouteCmd.memory = memoryKBs * 1024;   // Convert to bytes
+                wmiCallsV2.GetMemoryResources(out memoryUsedKBs, out freeMemoryKBs);
+                strtRouteCmd.memory = memoryUsedKBs * 1024;   // Convert to bytes
 
                 // Need 2 Gig for DOM0, see http://technet.microsoft.com/en-us/magazine/hh750394.aspx
                 strtRouteCmd.dom0MinMemory = config.ParentPartitionMinMemoryMb * 1024 * 1024;  // Convert to bytes

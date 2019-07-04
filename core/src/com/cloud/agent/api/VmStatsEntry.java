@@ -30,19 +30,19 @@ public class VmStatsEntry implements VmStats {
     double diskWriteIOs;
     double diskReadKBs;
     double diskWriteKBs;
-    double memoryKBs;
-    double intfreememoryKBs;
-    double targetmemoryKBs;
+    double memoryUsedKBs;
+    double intfreememoryUsedKBs;
+    double targetmemoryUsedKBs;
     int numCPUs;
     String entityType;
 
     public VmStatsEntry() {
     }
 
-    public VmStatsEntry(double memoryKBs,double intfreememoryKBs,double targetmemoryKBs, double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs, String entityType) {
-        this.memoryKBs = memoryKBs;
-        this.intfreememoryKBs = intfreememoryKBs;
-        this.targetmemoryKBs = targetmemoryKBs;
+    public VmStatsEntry(double memoryUsedKBs,double intfreememoryUsedKBs,double targetmemoryUsedKBs, double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs, String entityType) {
+        this.memoryUsedKBs = memoryUsedKBs;
+        this.intfreememoryUsedKBs = intfreememoryUsedKBs;
+        this.targetmemoryUsedKBs = targetmemoryUsedKBs;
         this.cpuUtilization = cpuUtilization;
         this.networkReadKBs = networkReadKBs;
         this.networkWriteKBs = networkWriteKBs;
@@ -125,29 +125,29 @@ public class VmStatsEntry implements VmStats {
 
     @Override
     public double getMemoryKBs() {
-        return memoryKBs;
+        return memoryUsedKBs;
     }
 
-    public void setMemoryKBs(double memoryKBs) {
-        this.memoryKBs = memoryKBs;
+    public void setMemoryKBs(double memoryUsedKBs) {
+        this.memoryUsedKBs = memoryUsedKBs;
     }
 
     @Override
     public double getIntFreeMemoryKBs() {
-        return intfreememoryKBs;
+        return intfreememoryUsedKBs;
     }
 
-    public void setIntFreeMemoryKBs(double intfreememoryKBs) {
-        this.intfreememoryKBs = intfreememoryKBs;
+    public void setIntFreeMemoryKBs(double intfreememoryUsedKBs) {
+        this.intfreememoryUsedKBs = intfreememoryUsedKBs;
     }
 
     @Override
     public double getTargetMemoryKBs() {
-        return targetmemoryKBs;
+        return targetmemoryUsedKBs;
     }
 
-    public void setTargetMemoryKBs(double targetmemoryKBs) {
-        this.targetmemoryKBs = targetmemoryKBs;
+    public void setTargetMemoryKBs(double targetmemoryUsedKBs) {
+        this.targetmemoryUsedKBs = targetmemoryUsedKBs;
     }
 
     public int getNumCPUs() {

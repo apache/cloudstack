@@ -196,9 +196,9 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the write (bytes) of disk on the vm")
     private Long diskKbsWrite;
 
-    @SerializedName("memorykbs")
+    @SerializedName("memoryusedkbs")
     @Param(description = "the memory used by the vm")
-    private Long memoryKBs;
+    private Long memoryUsedKBs;
 
     @SerializedName("memoryintfreekbs")
     @Param(description = "the internal memory thats free in vm")
@@ -475,7 +475,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     }
 
     public Long getMemoryKBs() {
-        return memoryKBs;
+        return memoryUsedKBs;
     }
 
     public Long getMemoryIntFreeKBs() {
@@ -661,8 +661,8 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.diskIORead = diskIORead;
     }
 
-    public void setMemoryKBs(Long memoryKBs) {
-        this.memoryKBs = memoryKBs;
+    public void setMemoryKBs(Long memoryUsedKBs) {
+        this.memoryUsedKBs = memoryUsedKBs;
     }
 
     public void setMemoryIntFreeKBs(Long memoryIntFreeKBs) {
