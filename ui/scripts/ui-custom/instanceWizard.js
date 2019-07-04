@@ -988,8 +988,6 @@
 
                                     $vpcSelect.val(-1);
 
-                                    sortArrayByKey(args.data.networkOfferings, 'name');
-
                                     // Populate network offering drop-down
                                     $(args.data.networkOfferings).each(function() {
                                         $('<option>')
