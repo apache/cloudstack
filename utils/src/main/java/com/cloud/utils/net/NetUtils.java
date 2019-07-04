@@ -34,6 +34,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.List;
+import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
@@ -410,10 +411,11 @@ public class NetUtils {
     }
 
     public static String[] getNetworkParams(final NetworkInterface nic) {
-        final List<InterfaceAddress> addrs = nic.getInterfaceAddresses();
+        List<InterfaceAddress> addrs = nic.getInterfaceAddresses();
         if (addrs == null || addrs.size() == 0) {
             return null;
         }
+        Collections.reverse(addrs); // reverse addresses because it has reverse order as "ip addr show"
         InterfaceAddress addr = null;
         for (final InterfaceAddress iaddr : addrs) {
             final InetAddress inet = iaddr.getAddress();

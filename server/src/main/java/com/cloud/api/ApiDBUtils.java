@@ -1771,10 +1771,6 @@ public class ApiDBUtils {
         return s_projectJoinDao.newProjectResponse(proj);
     }
 
-    public static ProjectResponse fillProjectDetails(ProjectResponse rsp, ProjectJoinVO proj) {
-        return s_projectJoinDao.setProjectResponse(rsp, proj);
-    }
-
     public static List<ProjectJoinVO> newProjectView(Project proj) {
         return s_projectJoinDao.newProjectView(proj);
     }
