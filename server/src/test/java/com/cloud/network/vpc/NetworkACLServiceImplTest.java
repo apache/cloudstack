@@ -685,7 +685,7 @@ public class NetworkACLServiceImplTest {
     @Test(expected = InvalidParameterValueException.class)
     public void validateIcmpTypeAndCodeTestIcmpTypeValidAndIcmpCodeInvalid() {
         Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(255);
-        Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(16);
+        Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(17);
 
         networkAclServiceImpl.validateIcmpTypeAndCode(networkAclItemVoMock);
     }
