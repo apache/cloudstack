@@ -17,13 +17,16 @@
 package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+
 
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
@@ -68,7 +71,7 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
     }
 
     @Override
-    public ProjectResponse newProjectResponse(ProjectJoinVO proj) {
+    public ProjectResponse newProjectResponse(EnumSet<DomainDetails> details, ProjectJoinVO proj) {
         ProjectResponse response = new ProjectResponse();
         response.setId(proj.getUuid());
         response.setName(proj.getName());
@@ -89,9 +92,11 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
 
         //set resource limit/count information for the project (by getting the info of the project's account)
         Account account = _accountDao.findByIdIncludingRemoved(proj.getProjectAccountId());
-        AccountJoinVO accountJn = ApiDBUtils.newAccountView(account);
-        _accountJoinDao.setResourceLimits(accountJn, false, response);
-        response.setProjectAccountName(accountJn.getAccountName());
+        if (details.contains(DomainDetails.all) || details.contains(DomainDetails.resource)) {
+            AccountJoinVO accountJn = ApiDBUtils.newAccountView(account);
+            _accountJoinDao.setResourceLimits(accountJn, false, response);
+        }
+        response.setProjectAccountName(account.getAccountName());
 
         response.setObjectName("project");
         return response;

@@ -2044,6 +2044,7 @@
                                                             $.ajax({
                                                                 url: createURL('listAccounts&domainid=' + args.domainId),
                                                                 data: {
+                                                                    details: 'min',
                                                                     listAll: true
                                                                 },
                                                                 success: function (json) {
@@ -2068,7 +2069,7 @@
                                                         select: function(args) {
                                                             var items = [];
                                                             $.ajax({
-                                                                url: createURL("listProjects&domainid=" + args.domainId),
+                                                                url: createURL("listProjects&details=min&domainid=" + args.domainId),
                                                                 dataType: "json",
                                                                 async: false,
                                                                 success: function(json) {
@@ -11027,7 +11028,7 @@
                                     }
                                 }
                                 $.ajax({
-                                    url: createURL("listAccounts&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                                    url: createURL("listAccounts&listAll=true&details=min&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                                     success: function (json) {
                                         var accountObjs = json.listaccountsresponse.account;
                                         if (accountObjs != null) {
