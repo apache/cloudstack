@@ -9,8 +9,6 @@
     <font-awesome-icon :icon="['fab', 'centos']" size="4x" />
     <font-awesome-icon icon="coffee" />
 
-
-
     <a-row>
       <a-col :span="16">
         <a-button

@@ -2,7 +2,7 @@
   <div class="home">
     <div class="banner">
       <img style="width: 64px; height: 64px" src="../assets/logo.png">
-      <h3 style="margin-top: 1rem">Welcome to Your Vue.js App</h3>
+      <h3 style="margin-top: 1rem">Welcome to Primate App</h3>
     </div>
   </div>
 </template>
