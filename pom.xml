@@ -909,6 +909,7 @@
                             <exclude>**/*.iso</exclude>
                             <exclude>**/*.tgz</exclude>
                             <exclude>**/*.zip</exclude>
+                            <exclude>**/*.vhd*</exclude>
                             <exclude>**/target/**</exclude>
                             <exclude>**/.vagrant</exclude>
                             <exclude>**/*.json</exclude>
@@ -934,15 +935,7 @@
                             <exclude>debian/source/format</exclude>
                             <exclude>dist/console-proxy/js/jquery.js</exclude>
                             <exclude>plugins/hypervisors/hyperv/conf/agent.properties</exclude>
-                            <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/ServerResource.sln</exclude>
-                            <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/packages/**</exclude>
-                            <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/.nuget/**</exclude>
-                            <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**/obj/**</exclude>
-                            <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**/bin/**</exclude>
-                            <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**/packages.config</exclude>
-                            <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**/App.config</exclude>
-                            <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**/*.csproj</exclude>
-                            <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**/*.settings</exclude>
+                            <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**</exclude>
                             <exclude>scripts/installer/windows/acs_license.rtf</exclude>
                             <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
                             <exclude>services/console-proxy/server/conf/agent.properties</exclude>
