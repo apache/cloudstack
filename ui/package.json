@@ -10,6 +10,11 @@
   },
   "dependencies": {
     "@antv/data-set": "^0.10.2",
+    "@fortawesome/fontawesome-svg-core": "^1.2.19",
+    "@fortawesome/free-brands-svg-icons": "^5.9.0",
+    "@fortawesome/free-regular-svg-icons": "^5.9.0",
+    "@fortawesome/free-solid-svg-icons": "^5.9.0",
+    "@fortawesome/vue-fontawesome": "^0.1.6",
     "ant-design-vue": "~1.3.10",
     "axios": "^0.19.0",
     "enquire.js": "^2.1.6",
