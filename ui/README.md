@@ -47,6 +47,7 @@ Vue](https://github.com/sendya/ant-design-pro-vue).
 - [vue-cropper](https://github.com/xyxiao001/vue-cropper) - Picture edit
 - [@antv/g2](https://antv.alipay.com/zh-cn/index.html) - AntV G2
 - [Viser-vue](https://viserjs.github.io/docs.html#/viser/guide/installation)  - Antv/G2 of Vue
+- [Fontawesome](https://github.com/FortAwesome/vue-fontawesome)
 
 ### Other
 

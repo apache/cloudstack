@@ -1,5 +1,16 @@
 <template>
   <div style="margin-top: 16px">
+
+    <font-awesome-icon :icon="['far', 'bell']" />
+    <font-awesome-icon :icon="['fas', 'dharmachakra']" size='2x' />
+    <font-awesome-icon :icon="['fab', 'ubuntu']" />
+    <font-awesome-icon :icon="['fab', 'ubuntu']" size="lg" />
+    <font-awesome-icon :icon="['fab', 'ubuntu']" size="2x" />
+    <font-awesome-icon :icon="['fab', 'centos']" size="4x" />
+    <font-awesome-icon icon="coffee" />
+
+
+
     <a-row>
       <a-col :span="16">
         <a-button
