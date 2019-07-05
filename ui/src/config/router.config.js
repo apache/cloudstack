@@ -28,7 +28,7 @@ export const asyncRouterMap = [
           {
             path: '/vm',
             name: 'vm',
-            meta: { title: 'Instances', keepAlive: true, icon: 'laptop', permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ] },
+            meta: { title: 'Instances', keepAlive: true, icon: 'desktop', permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ] },
             component: () => import('@/components/CloudMonkey/Resource.vue'),
             hideChildrenInMenu: true,
             children: [
@@ -69,7 +69,7 @@ export const asyncRouterMap = [
           {
             path: '/affinitygroups',
             name: 'affinitygroups',
-            meta: { title: 'Affinity Groups', icon: 'rocket', permission: [ 'listAffinityGroups' ] },
+            meta: { title: 'Affinity Groups', icon: 'swap', permission: [ 'listAffinityGroups' ] },
             component: () => import('@/components/CloudMonkey/Resource.vue'),
             hideChildrenInMenu: true,
             children: [
@@ -169,7 +169,7 @@ export const asyncRouterMap = [
           {
             path: '/securitygroups',
             name: 'securitygroups',
-            meta: { title: 'Security Groups', icon: 'compass', permission: [ 'listSecurityGroups' ] },
+            meta: { title: 'Security Groups', icon: 'fire', permission: [ 'listSecurityGroups' ] },
             component: () => import('@/components/CloudMonkey/Resource.vue'),
             hideChildrenInMenu: true,
             children: [
@@ -258,7 +258,7 @@ export const asyncRouterMap = [
           {
             path: '/events',
             name: 'events',
-            meta: { title: 'Events', icon: 'bars', permission: [ 'listEvents' ] },
+            meta: { title: 'Events', icon: 'schedule', permission: [ 'listEvents' ] },
             component: () => import('@/components/CloudMonkey/Resource.vue'),
             hideChildrenInMenu: true,
             children: [
@@ -271,7 +271,7 @@ export const asyncRouterMap = [
           {
             path: '/alerts',
             name: 'alerts',
-            meta: { title: 'Alerts', icon: 'sound', permission: [ 'listAlerts' ] },
+            meta: { title: 'Alerts', icon: 'flag', permission: [ 'listAlerts' ] },
             component: () => import('@/components/CloudMonkey/Resource.vue'),
             hideChildrenInMenu: true,
             children: [
@@ -286,9 +286,9 @@ export const asyncRouterMap = [
 
       // org
       {
-        path: '/manage',
-        name: 'manage',
-        meta: { title: 'Manage', keepAlive: true, icon: 'solution', permission: [ 'listAccounts' ] },
+        path: '/iam',
+        name: 'iam',
+        meta: { title: 'Identity and Access', keepAlive: true, icon: 'solution', permission: [ 'listAccounts' ] },
         component: RouteView,
         redirect: '/account',
         children: [
@@ -353,7 +353,7 @@ export const asyncRouterMap = [
       {
         path: '/infra',
         name: 'infra',
-        meta: { title: 'Infrastructure', keepAlive: true, icon: 'appstore', permission: [ 'listInfrastructure' ] },
+        meta: { title: 'Infrastructure', keepAlive: true, icon: 'folder-open', permission: [ 'listInfrastructure' ] },
         component: RouteView,
         redirect: '/zone',
         children: [
@@ -373,7 +373,7 @@ export const asyncRouterMap = [
           {
             path: '/pod',
             name: 'pod',
-            meta: { title: 'Pods', icon: 'hdd', permission: [ 'listPods' ] },
+            meta: { title: 'Pods', icon: 'appstore', permission: [ 'listPods' ] },
             component: () => import('@/components/CloudMonkey/Resource.vue'),
             hideChildrenInMenu: true,
             children: [
@@ -412,7 +412,7 @@ export const asyncRouterMap = [
           {
             path: '/primarystorage',
             name: 'primarystorage',
-            meta: { title: 'Primary Storage', icon: 'gold', permission: [ 'listStoragePoolsMetrics', 'listStoragePools' ] },
+            meta: { title: 'Primary Storage', icon: 'database', permission: [ 'listStoragePoolsMetrics', 'listStoragePools' ] },
             component: () => import('@/components/CloudMonkey/Resource.vue'),
             hideChildrenInMenu: true,
             children: [
@@ -425,7 +425,7 @@ export const asyncRouterMap = [
           {
             path: '/secondarystorage',
             name: 'secondarystorage',
-            meta: { title: 'Secondary Storage', icon: 'switcher', permission: [ 'listImageStores' ] },
+            meta: { title: 'Secondary Storage', icon: 'picture', permission: [ 'listImageStores' ] },
             component: () => import('@/components/CloudMonkey/Resource.vue'),
             hideChildrenInMenu: true,
             children: [
@@ -474,7 +474,7 @@ export const asyncRouterMap = [
       {
         path: '/offering',
         name: 'Offerings',
-        meta: { title: 'Offerings', keepAlive: true, icon: 'layout', permission: [ 'listServiceOfferings' ] },
+        meta: { title: 'Offerings', keepAlive: true, icon: 'shopping', permission: [ 'listServiceOfferings' ] },
         component: RouteView,
         redirect: '/computeoffering',
         children: [
@@ -494,7 +494,7 @@ export const asyncRouterMap = [
           {
             path: '/diskoffering',
             name: 'diskoffering',
-            meta: { title: 'Disk Offerings', icon: 'save', permission: [ 'listDiskOfferings' ] },
+            meta: { title: 'Disk Offerings', icon: 'hdd', permission: [ 'listDiskOfferings' ] },
             component: () => import('@/components/CloudMonkey/Resource.vue'),
             hideChildrenInMenu: true,
             children: [
