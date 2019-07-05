@@ -90,7 +90,7 @@
                             url: createURL('listNics'),
                             data: {
                                 virtualmachineid: instance.id,
-                                nicId: instance.nic[0].id
+                                networkId: network.id
                             },
                             success: function(json) {
                                 var nic = json.listnicsresponse.nic[0];
@@ -3339,7 +3339,7 @@
                                     }
                                 });
                                 if (zoneObj.networktype == "Basic") {
-                                    args.$form.find('.form-item[rel=cleanup]').find('input').removeAttr('checked'); //unchecked
+                                    args.$form.find('.form-item[rel=cleanup]').find('input').prop('checked', false); //unchecked
                                     args.$form.find('.form-item[rel=cleanup]').hide(); //hidden
                                 } else {
                                     args.$form.find('.form-item[rel=cleanup]').find('input').attr('checked', 'checked'); //checked

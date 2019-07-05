@@ -39,10 +39,12 @@ import com.cloud.utils.EncryptionUtil;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.EnumUtils;
+import com.cloud.vm.VmDetailConstants;
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
@@ -349,11 +351,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating post upload template")
-    public GetUploadParamsResponse registerTemplateForPostUpload(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException, MalformedURLException {
-        TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
-        TemplateProfile profile = adapter.prepare(cmd);
+    /**
+     * Internal register template or ISO method - post local upload
+     * @param adapter
+     * @param profile
+     */
+    private GetUploadParamsResponse registerPostUploadInternal(TemplateAdapter adapter,
+                                                               TemplateProfile profile) throws MalformedURLException {
+
         List<TemplateOrVolumePostUploadCommand> payload = adapter.createTemplateForPostUpload(profile);
 
         if(CollectionUtils.isNotEmpty(payload)) {
@@ -403,6 +408,21 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ISO_CREATE, eventDescription = "creating post upload iso")
+    public GetUploadParamsResponse registerIsoForPostUpload(GetUploadParamsForIsoCmd cmd) throws ResourceAllocationException, MalformedURLException {
+        TemplateAdapter adapter = getAdapter(HypervisorType.None);
+        TemplateProfile profile = adapter.prepare(cmd);
+        return registerPostUploadInternal(adapter, profile);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating post upload template")
+    public GetUploadParamsResponse registerTemplateForPostUpload(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException, MalformedURLException {
+        TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
+        TemplateProfile profile = adapter.prepare(cmd);
+        return registerPostUploadInternal(adapter, profile);
+    }
 
     @Override
     public DataStore getImageStore(String storeUuid, Long zoneId) {
@@ -558,6 +578,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (vm.getIsoId() != null) {
             Map<Volume, StoragePool> storageForDisks = dest.getStorageForDisks();
             Long poolId = null;
+            TemplateInfo template;
             if (MapUtils.isNotEmpty(storageForDisks)) {
                 for (StoragePool storagePool : storageForDisks.values()) {
                     if (poolId != null && storagePool.getId() != poolId) {
@@ -565,8 +586,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     }
                     poolId = storagePool.getId();
                 }
+                template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
+            } else {
+                template = _tmplFactory.getTemplate(vm.getIsoId(), DataStoreRole.Primary, dest.getDataCenter().getId());
             }
-            TemplateInfo template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
+
             if (template == null){
                 s_logger.error("Failed to prepare ISO on secondary or cache storage");
                 throw new CloudRuntimeException("Failed to prepare ISO on secondary or cache storage");
@@ -1895,7 +1919,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 }
             }
             if (cmd.getDetails() != null) {
-                details.remove("Encrypted.Password"); // new password will be generated during vm deployment from password enabled template
+                details.remove(VmDetailConstants.ENCRYPTED_PASSWORD); // new password will be generated during vm deployment from password enabled template
                 details.putAll(cmd.getDetails());
             }
             if (!details.isEmpty()) {

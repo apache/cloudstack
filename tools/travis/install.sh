@@ -25,14 +25,15 @@ export MAVEN_OPTS="-Xmx4096m -XX:MaxPermSize=800m -Djava.security.egd=file:/dev/
 set -e
 
 if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
+   DIR=$(pwd)
    # Pylint/pep8 systemvm python codebase
-   cd systemvm/test && bash -x runtests.sh && cd ../..
+   cd systemvm/test && bash -x runtests.sh
    # Build noredist
-   git clone https://github.com/rhtyd/cloudstack-nonoss.git nonoss
-   cd nonoss && bash -x install-non-oss.sh && cd ..
+   git clone https://github.com/rhtyd/cloudstack-nonoss.git nonoss && cd nonoss && bash -x install-non-oss.sh
+   cd $DIR && echo $DIR
    git clean -fdx .
    # Perform rat checks
-   mvn -P developer,systemvm -Dsimulator -Dnoredist --projects='org.apache.cloudstack:cloudstack' org.apache.rat:apache-rat-plugin:0.12:check
+   mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.12:check
    mvn -q -B -P developer,systemvm -Dsimulator -Dnoredist clean install
 else
    mvn -Pdeveloper -Dsimulator clean install -DskipTests -T4 | egrep "Building|Tests|SUCCESS|FAILURE"

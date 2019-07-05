@@ -20,15 +20,42 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Scanner;
 
 import junit.framework.TestCase;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
+import org.apache.cloudstack.utils.linux.MemStat;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(value = {MemStat.class})
 public class LibvirtVMDefTest extends TestCase {
 
+    final String memInfo = "MemTotal:        5830236 kB\n" +
+            "MemFree:          156752 kB\n" +
+            "Buffers:          326836 kB\n" +
+            "Cached:          2606764 kB\n" +
+            "SwapCached:            0 kB\n" +
+            "Active:          4260808 kB\n" +
+            "Inactive:         949392 kB\n";
+
+    @Before
+    public void setup() throws Exception {
+        Scanner scanner = new Scanner(memInfo);
+        PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
+    }
+
+    @Test
     public void testInterfaceEtehrnet() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
         ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
@@ -44,6 +71,7 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals(expected, ifDef.toString());
     }
 
+    @Test
     public void testInterfaceDirectNet() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
         ifDef.defDirectNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "private");
@@ -59,6 +87,7 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals(expected, ifDef.toString());
     }
 
+    @Test
     public void testInterfaceBridgeSlot() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
         ifDef.defBridgeNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
@@ -91,6 +120,7 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals(expected, ifDef.toString());
     }
 
+    @Test
     public void testCpuModeDef() {
         LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
         cpuModeDef.setMode("custom");
@@ -111,6 +141,32 @@ public class LibvirtVMDefTest extends TestCase {
 
     }
 
+    @Test
+    public void testCpuModeDefCpuFeatures() {
+        LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
+        cpuModeDef.setMode("custom");
+        cpuModeDef.setModel("Nehalem");
+
+        String expected_start = "<cpu mode='custom' match='exact'><model fallback='allow'>Nehalem</model>";
+        String expected_end = "</cpu>";
+
+        List<String> features1 = Arrays.asList("feature1", "feature2");
+        cpuModeDef.setFeatures(features1);
+        String expected1 = "<feature policy='require' name='feature1'/><feature policy='require' name='feature2'/>";
+        assertEquals(expected_start + expected1 + expected_end, cpuModeDef.toString());
+
+        List<String> features2 = Arrays.asList("-feature1", "-feature2");
+        cpuModeDef.setFeatures(features2);
+        String expected2 = "<feature policy='disable' name='feature1'/><feature policy='disable' name='feature2'/>";
+        assertEquals(expected_start + expected2 + expected_end, cpuModeDef.toString());
+
+        List<String> features3 = Arrays.asList("-feature1", "feature2");
+        cpuModeDef.setFeatures(features3);
+        String expected3 = "<feature policy='disable' name='feature1'/><feature policy='require' name='feature2'/>";
+        assertEquals(expected_start + expected3 + expected_end, cpuModeDef.toString());
+    }
+
+    @Test
     public void testDiskDef() {
         String filePath = "/var/lib/libvirt/images/disk.qcow2";
         String diskLabel = "vda";
@@ -135,6 +191,7 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals(xmlDef, expectedXml);
     }
 
+    @Test
     public void testDiskDefWithBurst() {
         String filePath = "/var/lib/libvirt/images/disk.qcow2";
         String diskLabel = "vda";
@@ -188,6 +245,7 @@ public class LibvirtVMDefTest extends TestCase {
                 assertEquals(xmlDef, expectedXml);
     }
 
+    @Test
     public void testHypervEnlightDef() {
         LibvirtVMDef.FeaturesDef featuresDef = new LibvirtVMDef.FeaturesDef();
         LibvirtVMDef.HyperVEnlightenmentFeatureDef hyperVEnlightenmentFeatureDef = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
@@ -211,6 +269,7 @@ public class LibvirtVMDefTest extends TestCase {
 
     }
 
+    @Test
     public void testRngDef() {
         LibvirtVMDef.RngDef.RngBackendModel backendModel = LibvirtVMDef.RngDef.RngBackendModel.RANDOM;
         String path = "/dev/random";
@@ -225,10 +284,11 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals(def.getRngRatePeriod(), period);
     }
 
+    @Test
     public void testChannelDef() {
         ChannelDef.ChannelType type = ChannelDef.ChannelType.UNIX;
         ChannelDef.ChannelState state = ChannelDef.ChannelState.CONNECTED;
-        String name = "v-136-VM.vport";
+        String name = "v-136-VM.org.qemu.guest_agent.0";
         File path = new File("/var/lib/libvirt/qemu/" + name);
 
         ChannelDef channelDef = new ChannelDef(name, type, state, path);
@@ -239,6 +299,7 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals(path, channelDef.getPath());
     }
 
+    @Test
     public void testWatchDogDef() {
         LibvirtVMDef.WatchDogDef.WatchDogModel model = LibvirtVMDef.WatchDogDef.WatchDogModel.I6300ESB;
         LibvirtVMDef.WatchDogDef.WatchDogAction action = LibvirtVMDef.WatchDogDef.WatchDogAction.RESET;
@@ -248,6 +309,7 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals(def.getAction(), action);
     }
 
+    @Test
     public void testSCSIDef() {
         SCSIDef def = new SCSIDef((short)0, 0, 0, 9, 0, 4);
         String str = def.toString();
@@ -257,22 +319,4 @@ public class LibvirtVMDefTest extends TestCase {
                 "</controller>\n";
         assertEquals(str, expected);
     }
-
-    public void testMetadataDef() {
-        LibvirtVMDef.MetadataDef metadataDef = new LibvirtVMDef.MetadataDef();
-
-        metadataDef.getMetadataNode(LibvirtVMDef.NuageExtensionDef.class).addNuageExtension("mac1", "ip1");
-        metadataDef.getMetadataNode(LibvirtVMDef.NuageExtensionDef.class).addNuageExtension("mac2", "ip2");
-
-        String xmlDef = metadataDef.toString();
-        String expectedXml = "<metadata>\n" +
-                "<nuage-extension xmlns='nuagenetworks.net/nuage/cna'>\n" +
-                "  <interface mac='mac2' vsp-vr-ip='ip2'></interface>\n" +
-                "  <interface mac='mac1' vsp-vr-ip='ip1'></interface>\n" +
-                "</nuage-extension>\n" +
-                "</metadata>\n";
-
-        assertEquals(xmlDef, expectedXml);
-    }
-
 }

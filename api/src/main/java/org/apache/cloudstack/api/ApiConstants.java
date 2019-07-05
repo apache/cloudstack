@@ -91,6 +91,11 @@ public class ApiConstants {
     public static final String DIRECT_DOWNLOAD = "directdownload";
     public static final String DISK_OFFERING_ID = "diskofferingid";
     public static final String NEW_DISK_OFFERING_ID = "newdiskofferingid";
+    public static final String DISK_KBS_READ = "diskkbsread";
+    public static final String DISK_KBS_WRITE = "diskkbswrite";
+    public static final String DISK_IO_READ = "diskioread";
+    public static final String DISK_IO_WRITE = "diskiowrite";
+    public static final String DISK_IO_PSTOTAL = "diskiopstotal";
     public static final String DISK_SIZE = "disksize";
     public static final String UTILIZATION = "utilization";
     public static final String DRIVER = "driver";
@@ -110,6 +115,7 @@ public class ApiConstants {
     public static final String IP6_DNS1 = "ip6dns1";
     public static final String IP6_DNS2 = "ip6dns2";
     public static final String DOMAIN = "domain";
+    public static final String DOMAIN_PATH = "domainpath";
     public static final String DOMAIN_ID = "domainid";
     public static final String DOMAIN__ID = "domainId";
     public static final String DURATION = "duration";
@@ -149,6 +155,7 @@ public class ApiConstants {
     public static final String HA_PROVIDER = "haprovider";
     public static final String HA_STATE = "hastate";
     public static final String HEALTH = "health";
+    public static final String HIDE_IP_ADDRESS_USAGE = "hideipaddressusage";
     public static final String HOST_ID = "hostid";
     public static final String HOST_NAME = "hostname";
     public static final String HYPERVISOR = "hypervisor";
@@ -201,6 +208,10 @@ public class ApiConstants {
     public static final String MAX = "max";
     public static final String MAC_ADDRESS = "macaddress";
     public static final String MAX_SNAPS = "maxsnaps";
+    public static final String MAX_CPU_NUMBER = "maxcpunumber";
+    public static final String MAX_MEMORY = "maxmemory";
+    public static final String MIN_CPU_NUMBER = "mincpunumber";
+    public static final String MIN_MEMORY = "minmemory";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
     public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
@@ -213,6 +224,7 @@ public class ApiConstants {
     public static final String OFFER_HA = "offerha";
     public static final String IS_SYSTEM_OFFERING = "issystem";
     public static final String IS_DEFAULT_USE = "defaultuse";
+    public static final String OLD_FORMAT = "oldformat";
     public static final String OP = "op";
     public static final String OS_CATEGORY_ID = "oscategoryid";
     public static final String OS_TYPE_ID = "ostypeid";

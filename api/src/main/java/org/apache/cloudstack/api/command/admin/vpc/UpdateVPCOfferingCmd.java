@@ -52,6 +52,9 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "update state for the VPC offering; " + "supported states - Enabled/Disabled")
     private String state;
 
+    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the VPC offering, integer")
+    private Integer sortKey;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -72,6 +75,11 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
         return state;
     }
 
+    public Integer getSortKey() {
+        return sortKey;
+    }
+
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -87,7 +95,7 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        VpcOffering result = _vpcProvSvc.updateVpcOffering(getId(), getVpcOfferingName(), getDisplayText(), getState());
+        VpcOffering result = _vpcProvSvc.updateVpcOffering(this);
         if (result != null) {
             VpcOfferingResponse response = _responseGenerator.createVpcOfferingResponse(result);
             response.setResponseName(getCommandName());

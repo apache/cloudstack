@@ -623,22 +623,34 @@ class VirtualMachine:
             return VirtualMachine(virtual_machine.__dict__, services)
 
         # program ssh access over NAT via PF
-        if mode.lower() == 'advanced':
-            cls.access_ssh_over_nat(
-                apiclient,
-                services,
-                virtual_machine,
-                allow_egress=allow_egress,
-                networkid=cmd.networkids[0] if cmd.networkids else None)
-        elif mode.lower() == 'basic':
-            if virtual_machine.publicip is not None:
-                # EIP/ELB (netscaler) enabled zone
-                vm_ssh_ip = virtual_machine.publicip
-            else:
-                # regular basic zone with security group
-                vm_ssh_ip = virtual_machine.nic[0].ipaddress
-            virtual_machine.ssh_ip = vm_ssh_ip
-            virtual_machine.public_ip = vm_ssh_ip
+        retries = 5
+        interval = 30
+        while retries > 0:
+            time.sleep(interval)
+            try:
+                if mode.lower() == 'advanced':
+                    cls.access_ssh_over_nat(
+                        apiclient,
+                        services,
+                        virtual_machine,
+                        allow_egress=allow_egress,
+                        networkid=cmd.networkids[0] if cmd.networkids else None)
+                elif mode.lower() == 'basic':
+                    if virtual_machine.publicip is not None:
+                        # EIP/ELB (netscaler) enabled zone
+                        vm_ssh_ip = virtual_machine.publicip
+                    else:
+                        # regular basic zone with security group
+                        vm_ssh_ip = virtual_machine.nic[0].ipaddress
+                    virtual_machine.ssh_ip = vm_ssh_ip
+                    virtual_machine.public_ip = vm_ssh_ip
+                break
+            except Exception as e:
+                if retries >= 0:
+                    retries = retries - 1
+                    continue
+                raise Exception(
+                    "The following exception appeared while programming ssh access - %s" % e)
 
         return VirtualMachine(virtual_machine.__dict__, services)
 
@@ -4246,61 +4258,6 @@ class NetworkServiceProvider:
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
             cmd.listall = True
         return (apiclient.listNetworkServiceProviders(cmd))
-
-
-class Nuage:
-    """Manage external nuage VSD device"""
-
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-    @classmethod
-    def add(cls, apiclient, services, physicalnetworkid, username=None, password=None):
-        """Add external nuage VSD device to cloudstack"""
-
-        cmd = addNuageVspDevice.addNuageVspDeviceCmd()
-        cmd.physicalnetworkid = physicalnetworkid
-        if username:
-            cmd.username = username
-        else:
-            cmd.username = services["username"]
-
-        if password:
-            cmd.password = password
-        else:
-            cmd.password = services["password"]
-
-        cmd.hostname = services["hostname"]
-        cmd.port = services["port"]
-        cmd.retrycount = services["retrycount"]
-        cmd.retryinterval = services["retryinterval"]
-        cmd.apiversion = services["apiversion"]
-
-        return Nuage(apiclient.addNuageVspDevice(cmd).__dict__)
-
-    def update(self, apiclient, **kwargs):
-        """Deletes a nuage VSD device from CloudStack"""
-
-        cmd = updateNuageVspDevice.updateNuageVspDeviceCmd()
-        cmd.physicalnetworkid = self.physicalnetworkid
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return apiclient.updateNuageVspDevice(cmd)
-
-    def delete(self, apiclient):
-        """Deletes a nuage VSD device from CloudStack"""
-
-        cmd = deleteNuageVspDevice.deleteNuageVspDeviceCmd()
-        cmd.vspdeviceid = self.vspdeviceid
-        apiclient.deleteNuageVspDevice(cmd)
-        return
-
-    @classmethod
-    def list(cls, apiclient, **kwargs):
-        """List already registered netscaler devices"""
-
-        cmd = listNuageVspDevices.listNuageVspDevicesCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return (apiclient.listNuageVspDevices(cmd))
 
 
 class Router:

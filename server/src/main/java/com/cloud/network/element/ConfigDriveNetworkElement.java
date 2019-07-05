@@ -77,6 +77,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
@@ -195,7 +196,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     }
 
     private String getSshKey(VirtualMachineProfile profile) {
-        final UserVmDetailVO vmDetailSshKey = _userVmDetailsDao.findDetail(profile.getId(), "SSH.PublicKey");
+        final UserVmDetailVO vmDetailSshKey = _userVmDetailsDao.findDetail(profile.getId(), VmDetailConstants.SSH_PUBLIC_KEY);
         return (vmDetailSshKey!=null ? vmDetailSshKey.getValue() : null);
     }
 
@@ -262,7 +263,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         final String password_encrypted = DBEncryptionUtil.encrypt(password);
         final UserVmVO userVmVO = _userVmDao.findById(vm.getId());
 
-        _userVmDetailsDao.addDetail(vm.getId(), "password", password_encrypted, false);
+        _userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.PASSWORD,  password_encrypted, false);
 
         userVmVO.setUpdateParameters(true);
         _userVmDao.update(userVmVO.getId(), userVmVO);

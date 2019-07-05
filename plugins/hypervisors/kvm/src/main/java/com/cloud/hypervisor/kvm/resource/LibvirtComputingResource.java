@@ -46,8 +46,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.resource.RequestWrapper;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -72,6 +72,7 @@ import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
+import org.libvirt.Network;
 import org.libvirt.NodeInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -200,7 +201,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private String _modifyVlanPath;
     private String _versionstringpath;
-    private String _patchViaSocketPath;
+    private String _patchScriptPath;
     private String _createvmPath;
     private String _manageSnapshotPath;
     private String _resizeVolumePath;
@@ -523,9 +524,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
-    protected static final String DPDK_NUMA = ApiConstants.EXTRA_CONFIG + "-dpdk-numa";
-    protected static final String DPDK_HUGE_PAGES = ApiConstants.EXTRA_CONFIG + "-dpdk-hugepages";
-    protected static final String DPDK_INTERFACE_PREFIX = ApiConstants.EXTRA_CONFIG + "-dpdk-interface-";
 
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
         final String[] tokens = startIp.split("[.]");
@@ -693,9 +691,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find versions.sh");
         }
 
-        _patchViaSocketPath = Script.findScript(kvmScriptsDir + "/patch/", "patchviasocket.py");
-        if (_patchViaSocketPath == null) {
-            throw new ConfigurationException("Unable to find patchviasocket.py");
+        _patchScriptPath = Script.findScript(kvmScriptsDir, "patch.sh");
+        if (_patchScriptPath == null) {
+            throw new ConfigurationException("Unable to find patch.sh");
         }
 
         _heartBeatPath = Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
@@ -923,6 +921,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         } catch (final LibvirtException e) {
             throw new CloudRuntimeException(e.getMessage());
+        }
+
+        // destroy default network, see https://libvirt.org/sources/java/javadoc/org/libvirt/Network.html
+        try {
+            Network network = conn.networkLookupByName("default");
+            s_logger.debug("Found libvirt default network, destroying it and setting autostart to false");
+            if (network.isActive() == 1) {
+                network.destroy();
+            }
+            if (network.getAutostart()) {
+                network.setAutostart(false);
+            }
+        } catch (final LibvirtException e) {
+            s_logger.warn("Ignoring libvirt error.", e);
         }
 
         if (HypervisorType.KVM == _hypervisorType) {
@@ -1376,13 +1388,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean passCmdLine(final String vmName, final String cmdLine) throws InternalErrorException {
-        final Script command = new Script(_patchViaSocketPath, 5 * 1000, s_logger);
+        final Script command = new Script(_patchScriptPath, 300 * 1000, s_logger);
         String result;
         command.add("-n", vmName);
-        command.add("-p", cmdLine.replaceAll(" ", "%"));
+        command.add("-c", cmdLine);
         result = command.execute();
         if (result != null) {
-            s_logger.error("passcmd failed:" + result);
+            s_logger.error("Passing cmdline failed:" + result);
             return false;
         }
         return true;
@@ -2058,7 +2070,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.setPlatformEmulator(vmTO.getPlatformEmulator());
 
         Map<String, String> extraConfig = vmTO.getExtraConfig();
-        if (dpdkSupport && (!extraConfig.containsKey(DPDK_NUMA) || !extraConfig.containsKey(DPDK_HUGE_PAGES))) {
+        if (dpdkSupport && (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA) || !extraConfig.containsKey(DpdkHelper.DPDK_HUGE_PAGES))) {
             s_logger.info("DPDK is enabled but it needs extra configurations for CPU NUMA and Huge Pages for VM deployment");
         }
 
@@ -2095,7 +2107,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         grd.setVcpuNum(vcpus);
         vm.addComp(grd);
 
-        if (!extraConfig.containsKey(DPDK_NUMA)) {
+        if (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA)) {
             final CpuModeDef cmd = new CpuModeDef();
             cmd.setMode(_guestCpuMode);
             cmd.setModel(_guestCpuModel);
@@ -2171,12 +2183,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final SerialDef serial = new SerialDef("pty", null, (short)0);
         devices.addDevice(serial);
 
-        /* Add a VirtIO channel for SystemVMs for communication and provisioning */
-        if (vmTO.getType() != VirtualMachine.Type.User) {
-            File virtIoChannel = Paths.get(_qemuSocketsPath.getPath(), vmTO.getName() + ".agent").toFile();
-            devices.addDevice(new ChannelDef(vmTO.getName() + ".vport", ChannelDef.ChannelType.UNIX, virtIoChannel));
-        }
-
         if (_rngEnable) {
             final RngDef rngDevice = new RngDef(_rngPath, _rngBackendModel, _rngRateBytes, _rngRatePeriod);
             devices.addDevice(rngDevice);
@@ -2229,7 +2235,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (MapUtils.isNotEmpty(extraConfig)) {
             StringBuilder extraConfigBuilder = new StringBuilder();
             for (String key : extraConfig.keySet()) {
-                if (!key.startsWith(DPDK_INTERFACE_PREFIX)) {
+                if (!key.startsWith(DpdkHelper.DPDK_INTERFACE_PREFIX) && !key.equals(DpdkHelper.DPDK_VHOST_USER_MODE)) {
                     extraConfigBuilder.append(extraConfig.get(key));
                 }
             }
@@ -2476,16 +2482,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private void createVif(final LibvirtVMDef vm, final NicTO nic, final String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
-
-        if (nic.getType().equals(TrafficType.Guest) && nic.getBroadcastType().equals(BroadcastDomainType.Vsp)) {
-            String vrIp = nic.getBroadcastUri().getPath().substring(1);
-            vm.getMetaData().getMetadataNode(LibvirtVMDef.NuageExtensionDef.class).addNuageExtension(nic.getMac(), vrIp);
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("NIC with MAC " + nic.getMac() + " and BroadcastDomainType " + nic.getBroadcastType() + " in network(" + nic.getGateway() + "/" + nic.getNetmask()
-                        + ") is " + nic.getType() + " traffic type. So, vsp-vr-ip " + vrIp + " is set in the metadata");
-            }
-        }
         if (vm.getDevices() == null) {
             s_logger.error("LibvirtVMDef object get devices with null result");
             throw new InternalErrorException("LibvirtVMDef object get devices with null result");
@@ -2710,7 +2706,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem);
 
-        final String capabilities = String.join(",", info.getCapabilities());
+        String capabilities = String.join(",", info.getCapabilities());
+        if (dpdkSupport) {
+            capabilities += ",dpdk";
+        }
 
         final StartupRoutingCommand cmd =
                 new StartupRoutingCommand(info.getCpus(), info.getCpuSpeed(), info.getTotalMemory(), info.getReservedMemory(), capabilities, _hypervisorType,

@@ -1817,13 +1817,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public boolean moveUser(long id, Long domainId, long accountId) {
+    public boolean moveUser(long id, Long domainId, Account newAccount) {
         UserVO user = getValidUserVO(id);
         Account oldAccount = _accountDao.findById(user.getAccountId());
         checkAccountAndAccess(user, oldAccount);
-        Account newAccount = _accountDao.findById(accountId);
         checkIfNotMovingAcrossDomains(domainId, newAccount);
-        return moveUser(user, accountId);
+        return moveUser(user, newAccount.getId());
     }
 
     private boolean moveUser(UserVO user, long newAccountId) {

@@ -51,6 +51,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.BatchPoints;
@@ -689,14 +690,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         s_logger.debug("VmDiskStatsTask is running...");
 
                         SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
-                        sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, HypervisorType.KVM); // support KVM only util 2013.06.25
+                        sc.addAnd("hypervisorType", SearchCriteria.Op.IN, HypervisorType.KVM, HypervisorType.VMware);
                         List<HostVO> hosts = _hostDao.search(sc, null);
 
                         for (HostVO host : hosts) {
                             List<UserVmVO> vms = _userVmDao.listRunningByHostId(host.getId());
                             List<Long> vmIds = new ArrayList<Long>();
 
-                            for (UserVmVO vm : vms) {
+                            for (UserVmVO  vm : vms) {
                                 if (vm.getType() == VirtualMachine.Type.User) // user vm
                                     vmIds.add(vm.getId());
                             }
@@ -928,7 +929,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     List<String> volumeLocators = new ArrayList<String>();
                     for (VolumeVO volume : volumes) {
                         if (volume.getFormat() == ImageFormat.QCOW2) {
-                            volumeLocators.add(volume.getUuid());
+                            if (pool.isManaged()) {
+                                volumeLocators.add(volume.getPath());
+                            } else {
+                                volumeLocators.add(volume.getUuid());
+                            }
                         } else if (volume.getFormat() == ImageFormat.VHD) {
                             volumeLocators.add(volume.getPath());
                         } else if (volume.getFormat() == ImageFormat.OVA) {
@@ -1498,6 +1503,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      */
     protected void writeBatches(InfluxDB influxDbConnection, String dbName, List<Point> points) {
         BatchPoints batchPoints = BatchPoints.database(dbName).build();
+        influxDbConnection.enableBatch(BatchOptions.DEFAULTS);
 
         for (Point point : points) {
             batchPoints.point(point);

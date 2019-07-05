@@ -87,4 +87,6 @@ public interface NetworkTopology {
 
     boolean applyRules(final Network network, final VirtualRouter router, final String typeString, final boolean isPodLevelException, final Long podId,
             final boolean failWhenDisconnect, RuleApplierWrapper<RuleApplier> ruleApplier) throws ResourceUnavailableException;
+
+    boolean removeDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final VirtualRouter virtualRouter) throws ResourceUnavailableException;
 }

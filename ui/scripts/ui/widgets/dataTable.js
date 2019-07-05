@@ -150,25 +150,71 @@
             if ($elems.length < 2) {
                 return;
             }
-
+            // strict function for filtering numbers (e.g. "2.3", "-2" but not "8 CPUs")
+            var filterNumber = function (value) {
+              if(/^[-+]?\d*\.?\d*$/.test(value))
+                return Number(value);
+              return NaN;
+            };
             var stringComparator = function(a,b) {
                 return a.html().localeCompare(b.html());
             };
             var numericComparator = function(a,b) {
-                return parseFloat(a.children().html()) < parseFloat(b.children().html()) ? 1 : -1;
+                return filterNumber(a.children().html()) < filterNumber(b.children().html()) ? 1 : -1;
             };
             var stateComparator = function(a,b) {
                 return a.attr('title').localeCompare(b.attr('title'));
             };
+            var ipV4AddressCIDRComparator = function(a,b) {
+                a = a.children().html().split(/[./]/gm);
+                b = b.children().html().split(/[./]/gm);
+                for( var i = 0; i < a.length; i++ )
+                {
+                  if( ( a[i] = parseInt( a[i] ) ) < ( b[i] = parseInt( b[i] ) ) )
+                    return -1;
+                  else if( a[i] > b[i] )
+                    return 1;
+                }
+                return 0;
+            };
+            var ipV6AddressCIDRComparator = function(a,b) {
+              a = a.children().html().split(/[:/]/gm);
+              b = b.children().html().split(/[:/]/gm);
+              for( var i = 0; i < a.length; i++ )
+              {
+                if((a[i] = parseInt("0x" + a[i] , 16)) < ( b[i] = parseInt( "0x" + b[i], 16)))
+                  return -1;
+                else if( a[i] > b[i] )
+                  return 1;
+              }
+              return 0;
+            };
+            var isIpV4Address = function(obj) {
+              return !$.isArray(obj) && (/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/gm).test(obj);
+            };
+            var isIpV6Address = function(obj) {
+              return !$.isArray(obj) && (/^[a-fA-F0-9:]+$/gm).test(obj);
+            };
+            var isIpV4CIDRAddress = function(obj) {
+              return !$.isArray(obj) && (/^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$/gm).test(obj);
+            };
+            var isIpV6CIDRAddress = function(obj) {
+              return !$.isArray(obj) && (/^s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:)))(%.+)?s*(\/([0-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8]))?$/gm).test(obj);
+            };
+
             var isNumeric = function(obj) {
-                return !$.isArray(obj) && !isNaN(parseFloat(obj)) && isFinite(parseFloat(obj));
-            }
+                return !$.isArray(obj) && !isNaN(filterNumber(obj));
+            };
 
             var comparator = stringComparator;
             var hasAllRowsSameValue = true;
             var firstElem = $($elems[0]).html();
             var sortData = [];
             var numericDataCount = 0;
+            var ipV4AddressDataCount = 0;
+            var ipV4CIDRDataCount = 0;
+            var ipV6AddressDataCount = 0;
+            var ipV6CIDRDataCount = 0;
             $elems.each(function() {
                 var text = $(this);
                 if (hasAllRowsSameValue) {
@@ -180,6 +226,18 @@
                     text = text.children().html();
                 } else {
                     text = text.html();
+                }
+                if (isIpV4CIDRAddress(text) || !text){
+                    ipV4CIDRDataCount += 1;
+                }
+                if (isIpV4Address(text) || !text){
+                    ipV4AddressDataCount += 1;
+                }
+                if (isIpV6Address(text) || !text){
+                    ipV6AddressDataCount += 1;
+                }
+                if (isIpV6CIDRAddress(text) || !text){
+                    ipV6CIDRDataCount += 1;
                 }
                 if (isNumeric(text) || !text) {
                     numericDataCount += 1;
@@ -193,9 +251,19 @@
                 if (hasAllRowsSameValue) {
                     return;
                 }
-                if (columnIndex != 0 && numericDataCount > ($elems.length / 4)) {
+                if (columnIndex !== 0){
+                  var relevantElementsBorder = $elems.length / 4;
+                  if (numericDataCount > relevantElementsBorder) {
                     comparator = numericComparator;
+                  }
+                  if (ipV4AddressDataCount + ipV4CIDRDataCount > relevantElementsBorder){
+                    comparator = ipV4AddressCIDRComparator;
+                  }
+                  if (ipV6AddressDataCount + ipV6AddressDataCount > relevantElementsBorder){
+                    comparator = ipV6AddressCIDRComparator;
+                  }
                 }
+
             }
 
             sortData.sort(comparator);

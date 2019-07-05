@@ -66,11 +66,19 @@ public interface StorageAdaptor {
 
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPools, int timeout);
 
-    public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool);
+    public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool, int timeout);
 
     public boolean refresh(KVMStoragePool pool);
 
     public boolean deleteStoragePool(KVMStoragePool pool);
 
     public boolean createFolder(String uuid, String path);
+
+    /**
+     * Creates disk using template backing.
+     * Precondition: Template is on destPool
+     */
+    KVMPhysicalDisk createDiskFromTemplateBacking(KVMPhysicalDisk template,
+                                                  String name, PhysicalDiskFormat format, long size,
+                                                  KVMStoragePool destPool, int timeout);
 }

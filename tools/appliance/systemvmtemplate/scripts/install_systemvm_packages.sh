@@ -67,6 +67,7 @@ function install_packages() {
     libtcnative-1 libssl-dev libapr1-dev \
     python-flask \
     haproxy \
+    haveged \
     radvd \
     sharutils genisoimage aria2 \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins \

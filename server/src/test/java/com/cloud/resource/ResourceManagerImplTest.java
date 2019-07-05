@@ -25,13 +25,20 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.StorageManager;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.ssh.SSHCmdHelper;
+import com.cloud.utils.ssh.SshException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.trilead.ssh2.Connection;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,12 +63,13 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ActionEventUtils.class, ResourceManagerImpl.class})
+@PrepareForTest({ActionEventUtils.class, ResourceManagerImpl.class, SSHCmdHelper.class})
 public class ResourceManagerImplTest {
 
     @Mock
@@ -78,6 +86,8 @@ public class ResourceManagerImplTest {
     private HostDao hostDao;
     @Mock
     private VMInstanceDao vmInstanceDao;
+    @Mock
+    private ConfigurationDao configurationDao;
 
     @Spy
     @InjectMocks
@@ -99,7 +109,13 @@ public class ResourceManagerImplTest {
     @Mock
     private GetVncPortCommand getVncPortCommandVm2;
 
+    @Mock
+    private Connection sshConnection;
+
     private static long hostId = 1L;
+    private static final String hostUsername = "user";
+    private static final String hostPassword = "password";
+    private static final String hostPrivateIp = "192.168.1.10";
 
     private static long vm1Id = 1L;
     private static String vm1InstanceName = "i-1-VM";
@@ -117,9 +133,13 @@ public class ResourceManagerImplTest {
         when(host.getType()).thenReturn(Host.Type.Routing);
         when(host.getId()).thenReturn(hostId);
         when(host.getResourceState()).thenReturn(ResourceState.Enabled);
-        when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.VMware);
+        when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         when(host.getClusterId()).thenReturn(1L);
         when(hostDao.findById(hostId)).thenReturn(host);
+        when(host.getDetail("username")).thenReturn(hostUsername);
+        when(host.getDetail("password")).thenReturn(hostPassword);
+        when(host.getStatus()).thenReturn(Status.Up);
+        when(host.getPrivateIpAddress()).thenReturn(hostPrivateIp);
         when(vm1.getId()).thenReturn(vm1Id);
         when(vm2.getId()).thenReturn(vm2Id);
         when(vm1.getInstanceName()).thenReturn(vm1InstanceName);
@@ -138,6 +158,15 @@ public class ResourceManagerImplTest {
         PowerMockito.whenNew(GetVncPortCommand.class).withArguments(vm2Id, vm2InstanceName).thenReturn(getVncPortCommandVm2);
         when(agentManager.easySend(eq(hostId), eq(getVncPortCommandVm1))).thenReturn(getVncPortAnswerVm1);
         when(agentManager.easySend(eq(hostId), eq(getVncPortCommandVm2))).thenReturn(getVncPortAnswerVm2);
+
+        PowerMockito.mockStatic(SSHCmdHelper.class);
+        BDDMockito.given(SSHCmdHelper.acquireAuthorizedConnection(eq(hostPrivateIp), eq(22),
+                eq(hostUsername), eq(hostPassword))).willReturn(sshConnection);
+        BDDMockito.given(SSHCmdHelper.sshExecuteCmdOneShot(eq(sshConnection),
+                eq("service cloudstack-agent restart"))).
+                willReturn(new SSHCmdHelper.SSHCmdResult(0,"",""));
+
+        when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("true");
     }
 
     @Test
@@ -205,5 +234,77 @@ public class ResourceManagerImplTest {
 
         verify(resourceManager, times(retries + 1)).isHostInMaintenance(host, failedMigrations, new ArrayList<>(), failedMigrations);
         verify(resourceManager).setHostIntoErrorInMaintenance(host, failedMigrations);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testGetHostCredentialsMissingParameter() {
+        when(host.getDetail("password")).thenReturn(null);
+        resourceManager.getHostCredentials(host);
+    }
+
+    @Test
+    public void testGetHostCredentials() {
+        Pair<String, String> credentials = resourceManager.getHostCredentials(host);
+        Assert.assertNotNull(credentials);
+        Assert.assertEquals(hostUsername, credentials.first());
+        Assert.assertEquals(hostPassword, credentials.second());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testConnectAndRestartAgentOnHostCannotConnect() {
+        BDDMockito.given(SSHCmdHelper.acquireAuthorizedConnection(eq(hostPrivateIp), eq(22),
+                eq(hostUsername), eq(hostPassword))).willReturn(null);
+        resourceManager.connectAndRestartAgentOnHost(host, hostUsername, hostPassword);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testConnectAndRestartAgentOnHostCannotRestart() throws Exception {
+        BDDMockito.given(SSHCmdHelper.sshExecuteCmdOneShot(eq(sshConnection),
+                eq("service cloudstack-agent restart"))).willThrow(new SshException("exception"));
+        resourceManager.connectAndRestartAgentOnHost(host, hostUsername, hostPassword);
+    }
+
+    @Test
+    public void testConnectAndRestartAgentOnHost() {
+        resourceManager.connectAndRestartAgentOnHost(host, hostUsername, hostPassword);
+    }
+
+    @Test
+    public void testHandleAgentSSHEnabledNotConnectedAgent() {
+        when(host.getStatus()).thenReturn(Status.Disconnected);
+        resourceManager.handleAgentIfNotConnected(host, false);
+        verify(resourceManager).getHostCredentials(eq(host));
+        verify(resourceManager).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword));
+    }
+
+    @Test
+    public void testHandleAgentSSHEnabledConnectedAgent() {
+        when(host.getStatus()).thenReturn(Status.Up);
+        resourceManager.handleAgentIfNotConnected(host, false);
+        verify(resourceManager, never()).getHostCredentials(eq(host));
+        verify(resourceManager, never()).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testHandleAgentSSHDisabledNotConnectedAgent() {
+        when(host.getStatus()).thenReturn(Status.Disconnected);
+        when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("false");
+        resourceManager.handleAgentIfNotConnected(host, false);
+    }
+
+    @Test
+    public void testHandleAgentSSHDisabledConnectedAgent() {
+        when(host.getStatus()).thenReturn(Status.Up);
+        when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("false");
+        resourceManager.handleAgentIfNotConnected(host, false);
+        verify(resourceManager, never()).getHostCredentials(eq(host));
+        verify(resourceManager, never()).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword));
+    }
+
+    @Test
+    public void testHandleAgentVMsMigrating() {
+        resourceManager.handleAgentIfNotConnected(host, true);
+        verify(resourceManager, never()).getHostCredentials(eq(host));
+        verify(resourceManager, never()).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword));
     }
 }

@@ -17,13 +17,16 @@
 package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+
 
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
@@ -32,6 +35,7 @@ import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.projects.Project;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GenericDaoBase;
@@ -67,7 +71,7 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
     }
 
     @Override
-    public ProjectResponse newProjectResponse(ProjectJoinVO proj) {
+    public ProjectResponse newProjectResponse(EnumSet<DomainDetails> details, ProjectJoinVO proj) {
         ProjectResponse response = new ProjectResponse();
         response.setId(proj.getUuid());
         response.setName(proj.getName());
@@ -81,35 +85,21 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
         response.setOwner(proj.getOwner());
 
         // update tag information
-        Long tag_id = proj.getTagId();
-        if (tag_id != null && tag_id.longValue() > 0) {
-            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
-            if (vtag != null) {
-                response.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
-            }
+        List<ResourceTagJoinVO> tags = ApiDBUtils.listResourceTagViewByResourceUUID(proj.getUuid(), ResourceObjectType.Project);
+        for (ResourceTagJoinVO vtag : tags) {
+            response.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
         }
 
         //set resource limit/count information for the project (by getting the info of the project's account)
         Account account = _accountDao.findByIdIncludingRemoved(proj.getProjectAccountId());
-        AccountJoinVO accountJn = ApiDBUtils.newAccountView(account);
-        _accountJoinDao.setResourceLimits(accountJn, false, response);
-        response.setProjectAccountName(accountJn.getAccountName());
+        if (details.contains(DomainDetails.all) || details.contains(DomainDetails.resource)) {
+            AccountJoinVO accountJn = ApiDBUtils.newAccountView(account);
+            _accountJoinDao.setResourceLimits(accountJn, false, response);
+        }
+        response.setProjectAccountName(account.getAccountName());
 
         response.setObjectName("project");
         return response;
-    }
-
-    @Override
-    public ProjectResponse setProjectResponse(ProjectResponse rsp, ProjectJoinVO proj) {
-        // update tag information
-        Long tag_id = proj.getTagId();
-        if (tag_id != null && tag_id.longValue() > 0) {
-            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
-            if (vtag != null) {
-                rsp.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
-            }
-        }
-        return rsp;
     }
 
     @Override

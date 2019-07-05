@@ -152,83 +152,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.affinity.AffinityGroup;
-import org.apache.cloudstack.affinity.AffinityGroupService;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
-import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
-import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
-import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.region.DeletePortableIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.region.ListPortableIpRangesCmd;
-import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
-import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
-import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
-import org.apache.cloudstack.config.Configuration;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.framework.config.ConfigDepot;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.region.PortableIp;
-import org.apache.cloudstack.region.PortableIpDao;
-import org.apache.cloudstack.region.PortableIpRange;
-import org.apache.cloudstack.region.PortableIpRangeDao;
-import org.apache.cloudstack.region.PortableIpRangeVO;
-import org.apache.cloudstack.region.PortableIpVO;
-import org.apache.cloudstack.region.Region;
-import org.apache.cloudstack.region.RegionVO;
-import org.apache.cloudstack.region.dao.RegionDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.UUID;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
@@ -1917,6 +1841,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             guestCidr = zone.getGuestNetworkCidr();
         }
 
+        int sortKey = cmd.getSortKey() != null ? cmd.getSortKey() : zone.getSortKey();
+
         // validate network domain
         if (networkDomain != null && !networkDomain.isEmpty()) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
@@ -1939,6 +1865,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         zone.setInternalDns1(internalDns1);
         zone.setInternalDns2(internalDns2);
         zone.setGuestNetworkCidr(guestCidr);
+        zone.setSortKey(sortKey);
         if (localStorageEnabled != null) {
             zone.setLocalStorageEnabled(localStorageEnabled.booleanValue());
         }
@@ -2215,6 +2142,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
     public ServiceOffering createServiceOffering(final CreateServiceOfferingCmd cmd) {
         final Long userId = CallContext.current().getCallingUserId();
+        final Map<String, String> details = cmd.getDetails();
+        final String offeringName = cmd.getServiceOfferingName();
 
         final String name = cmd.getServiceOfferingName();
         if (name == null || name.length() == 0) {
@@ -2230,21 +2159,54 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Integer cpuSpeed = cmd.getCpuSpeed();
         final Integer memory = cmd.getMemory();
 
-        //restricting the createserviceoffering to allow setting all or none of the dynamic parameters to null
-        if (cpuNumber == null || cpuSpeed == null || memory == null) {
-            if (cpuNumber != null || cpuSpeed != null || memory != null) {
-                throw new InvalidParameterValueException("For creating a custom compute offering cpu, cpu speed and memory all should be null");
-            }
-        }
+        // Optional Custom Parameters
+        Integer maxCPU = cmd.getMaxCPUs();
+        Integer minCPU = cmd.getMinCPUs();
+        Integer maxMemory = cmd.getMaxMemory();
+        Integer minMemory = cmd.getMinMemory();
 
-        if (cpuNumber != null && (cpuNumber.intValue() <= 0 || cpuNumber.longValue() > Integer.MAX_VALUE)) {
-            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the cpu number value between 1 and " + Integer.MAX_VALUE);
-        }
-        if (cpuSpeed != null && (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE)) {
-            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the cpu speed value between 0 and " + Integer.MAX_VALUE);
-        }
-        if (memory != null && (memory.intValue() < 32 || memory.longValue() > Integer.MAX_VALUE)) {
-            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the memory value between 32 and " + Integer.MAX_VALUE + " MB");
+        // Check if service offering is Custom,
+        // If Customized, the following conditions must hold
+        // 1. cpuNumber, cpuSpeed and memory should be all null
+        // 2. minCPU, maxCPU, minMemory and maxMemory should all be null or all specified
+        boolean isCustomized = cmd.isCustomized();
+        if (isCustomized) {
+            // validate specs
+            //restricting the createserviceoffering to allow setting all or none of the dynamic parameters to null
+            if (cpuNumber != null || memory != null) {
+                throw new InvalidParameterValueException("For creating a custom compute offering cpu and memory all should be null");
+            }
+            // if any of them is null, then all of them shoull be null
+            if (maxCPU == null || minCPU == null || maxMemory == null || minMemory == null) {
+                if (maxCPU != null || minCPU != null || maxMemory != null || minMemory != null) {
+                    throw new InvalidParameterValueException("For creating a custom compute offering min/max cpu and min/max memory should all be specified");
+                }
+            } else {
+                if (cpuSpeed != null && (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE)) {
+                    throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu speed value between 1 and " + Integer.MAX_VALUE);
+                }
+                if ((maxCPU <= 0 || maxCPU.longValue() > Integer.MAX_VALUE) || (minCPU <= 0 || minCPU.longValue() > Integer.MAX_VALUE )  ) {
+                    throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the minimum or minimum cpu number value between 1 and " + Integer.MAX_VALUE);
+                }
+                if (minMemory < 32 || (minMemory.longValue() > Integer.MAX_VALUE) || (maxMemory.longValue() > Integer.MAX_VALUE)) {
+                    throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the memory value between 32 and " + Integer.MAX_VALUE + " MB");
+                }
+                // Persist min/max CPU and Memory parameters in the service_offering_details table
+                details.put(ApiConstants.MIN_MEMORY, minMemory.toString());
+                details.put(ApiConstants.MAX_MEMORY, maxMemory.toString());
+                details.put(ApiConstants.MIN_CPU_NUMBER, minCPU.toString());
+                details.put(ApiConstants.MAX_CPU_NUMBER, maxCPU.toString());
+            }
+        } else {
+            if (cpuNumber != null && (cpuNumber.intValue() <= 0 || cpuNumber.longValue() > Integer.MAX_VALUE)) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu number value between 1 and " + Integer.MAX_VALUE);
+            }
+            if (cpuSpeed != null && (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE)) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu speed value between 0 and " + Integer.MAX_VALUE);
+            }
+            if (memory != null && (memory.intValue() < 32 || memory.longValue() > Integer.MAX_VALUE)) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the memory value between 32 and " + Integer.MAX_VALUE + " MB");
+            }
         }
 
         // check if valid domain
@@ -2327,7 +2289,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(),
-                cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
+                cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
                 cmd.getBytesReadRate(), cmd.getBytesReadRateMax(), cmd.getBytesReadRateMaxLength(),
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
@@ -2373,7 +2335,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 limitResourceUse, volatileVm, displayText, typedProvisioningType, localStorageRequired, false, tags, isSystem, vmType,
                 domainId, hostTag, deploymentPlanner);
 
-        if (Boolean.TRUE.equals(isCustomizedIops)) {
+        if (Boolean.TRUE.equals(isCustomizedIops) || isCustomizedIops == null) {
                 minIops = null;
                 maxIops = null;
         } else {
@@ -2454,17 +2416,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
             for (final Entry<String, String> detailEntry : details.entrySet()) {
+                String detailEntryValue = detailEntry.getValue();
                 if (detailEntry.getKey().equals(GPU.Keys.pciDevice.toString())) {
-                    if (detailEntry.getValue() == null) {
+                    if (detailEntryValue == null) {
                         throw new InvalidParameterValueException("Please specify a GPU Card.");
                     }
                 }
                 if (detailEntry.getKey().equals(GPU.Keys.vgpuType.toString())) {
-                    if (detailEntry.getValue() == null) {
+                    if (detailEntryValue == null) {
                         throw new InvalidParameterValueException("vGPUType value cannot be null");
                     }
                 }
-                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntry.getValue(), true));
+                if (detailEntry.getKey().startsWith(ApiConstants.EXTRA_CONFIG)) {
+                    try {
+                        detailEntryValue = URLDecoder.decode(detailEntry.getValue(), "UTF-8");
+                    } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+                        s_logger.error("Cannot decode extra configuration value for key: " + detailEntry.getKey() + ", skipping it");
+                        continue;
+                    }
+                }
+                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntryValue, true));
             }
         }
 
@@ -2594,7 +2565,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             isCustomized = true;
         }
 
-        if (Boolean.TRUE.equals(isCustomizedIops)) {
+        if (Boolean.TRUE.equals(isCustomizedIops) || isCustomizedIops == null) {
             minIops = null;
             maxIops = null;
         } else {
@@ -3654,9 +3625,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         boolean isDomainSpecific = false;
-        List<DomainVlanMapVO> domainVln = _domainVlanMapDao.listDomainVlanMapsByVlan(vlanRange.getId());
+        List<DomainVlanMapVO> domainVlan = _domainVlanMapDao.listDomainVlanMapsByVlan(vlanRange.getId());
         // Check for domain wide pool. It will have an entry for domain_vlan_map.
-        if (domainVln != null && !domainVln.isEmpty()) {
+        if (domainVlan != null && !domainVlan.isEmpty()) {
             isDomainSpecific = true;
         }
 
@@ -3813,10 +3784,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             forSystemVms = ip.isForSystemVms();
             final Long allocatedToAccountId = ip.getAllocatedToAccountId();
             if (allocatedToAccountId != null) {
-                final Account accountAllocatedTo = _accountMgr.getActiveAccountById(allocatedToAccountId);
-                if (!accountAllocatedTo.getAccountName().equalsIgnoreCase(accountName)) {
+                if (vlanOwner != null && allocatedToAccountId != vlanOwner.getId()) {
                     throw new InvalidParameterValueException(ip.getAddress() + " Public IP address in range is allocated to another account ");
                 }
+                final Account accountAllocatedTo = _accountMgr.getActiveAccountById(allocatedToAccountId);
                 if (vlanOwner == null && domain != null && domain.getId() != accountAllocatedTo.getDomainId()){
                     throw new InvalidParameterValueException(ip.getAddress()
                             + " Public IP address in range is allocated to another domain/account ");
@@ -3877,9 +3848,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         boolean isDomainSpecific = false;
-        final List<DomainVlanMapVO> domainVln = _domainVlanMapDao.listDomainVlanMapsByVlan(vlanDbId);
+        final List<DomainVlanMapVO> domainVlan = _domainVlanMapDao.listDomainVlanMapsByVlan(vlanDbId);
         // Check for domain wide pool. It will have an entry for domain_vlan_map.
-        if (domainVln != null && !domainVln.isEmpty()) {
+        if (domainVlan != null && !domainVlan.isEmpty()) {
             isDomainSpecific = true;
         }
 
@@ -3932,7 +3903,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // decrement resource count for dedicated public ip's
             _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, new Long(ips.size()));
             return true;
-        } else if (isDomainSpecific && _domainVlanMapDao.remove(domainVln.get(0).getId())) {
+        } else if (isDomainSpecific && _domainVlanMapDao.remove(domainVlan.get(0).getId())) {
             s_logger.debug("Remove the vlan from domain_vlan_map successfully.");
             return true;
         } else {

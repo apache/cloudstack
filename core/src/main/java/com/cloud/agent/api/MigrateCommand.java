@@ -24,18 +24,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 
 public class MigrateCommand extends Command {
     private String vmName;
     private String destIp;
     private Map<String, MigrateDiskInfo> migrateStorage;
+    private boolean migrateStorageManaged;
     private boolean autoConvergence;
     private String hostGuid;
     private boolean isWindows;
     private VirtualMachineTO vmTO;
     private boolean executeInSequence = false;
     private List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<>();
+    private Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
+
+    public Map<String, DpdkTO> getDpdkInterfaceMapping() {
+        return dpdkInterfaceMapping;
+    }
+
+    public void setDpdkInterfaceMapping(Map<String, DpdkTO> dpdkInterfaceMapping) {
+        this.dpdkInterfaceMapping = dpdkInterfaceMapping;
+    }
 
     protected MigrateCommand() {
     }
@@ -54,6 +65,14 @@ public class MigrateCommand extends Command {
 
     public Map<String, MigrateDiskInfo> getMigrateStorage() {
         return migrateStorage != null ? new HashMap<>(migrateStorage) : new HashMap<String, MigrateDiskInfo>();
+    }
+
+    public boolean isMigrateStorageManaged() {
+        return migrateStorageManaged;
+    }
+
+    public void setMigrateStorageManaged(boolean migrateStorageManaged) {
+        this.migrateStorageManaged = migrateStorageManaged;
     }
 
     public void setAutoConvergence(boolean autoConvergence) {

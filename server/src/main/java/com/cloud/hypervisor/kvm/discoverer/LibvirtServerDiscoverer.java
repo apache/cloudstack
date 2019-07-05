@@ -210,6 +210,12 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             return null;
         }
 
+        // Set cluster GUID based on cluster ID if null
+        if (cluster.getGuid() == null) {
+            cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
+            _clusterDao.update(clusterId, cluster);
+        }
+
         Map<KvmDummyResourceBase, Map<String, String>> resources = new HashMap<KvmDummyResourceBase, Map<String, String>>();
         Map<String, String> details = new HashMap<String, String>();
         if (!uri.getScheme().equals("http")) {
@@ -230,8 +236,9 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             if (existingHosts != null) {
                 for (HostVO existingHost : existingHosts) {
                     if (existingHost.getGuid().toLowerCase().startsWith(guid.toLowerCase())) {
-                        s_logger.debug("Skipping " + agentIp + " because " + guid + " is already in the database for resource " + existingHost.getGuid());
-                        return null;
+                        final String msg = "Skipping host " + agentIp + " because " + guid + " is already in the database for resource " + existingHost.getGuid() + " with ID " + existingHost.getUuid();
+                        s_logger.debug(msg);
+                        throw new CloudRuntimeException(msg);
                     }
                 }
             }
@@ -325,12 +332,6 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                 return null;
 
             details.put("guid", connectedHost.getGuid());
-
-            // place a place holder guid derived from cluster ID
-            if (cluster.getGuid() == null) {
-                cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
-                _clusterDao.update(clusterId, cluster);
-            }
 
             // save user name and password
             _hostDao.loadDetails(connectedHost);

@@ -58,7 +58,7 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         AutoScaleVmGroup(false, true),
         LBStickinessPolicy(false, true),
         LBHealthCheckPolicy(false, true),
-        SnapshotPolicy(false, true),
+        SnapshotPolicy(true, true),
         GuestOs(false, true),
         NetworkOffering(false, true),
         VpcOffering(true, false);

@@ -20,6 +20,7 @@ package org.apache.cloudstack.direct.download;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.host.dao.HostDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand.DownloadProtocol;
 import org.junit.Assert;
 import org.junit.Before;
@@ -49,6 +50,26 @@ public class DirectDownloadManagerImplTest {
     private static final String HTTP_VALUE_1 = "application/x-www-form-urlencoded";
     private static final String HTTP_HEADER_2 = "Accept-Encoding";
     private static final String HTTP_VALUE_2 = "gzip";
+
+    private static final String VALID_CERTIFICATE =
+            "MIIDSzCCAjMCFDa0LoW+1O8/cEwCI0nIqfl8c1TLMA0GCSqGSIb3DQEBCwUAMGEx\n" +
+            "CzAJBgNVBAYTAkNTMQswCQYDVQQIDAJDUzELMAkGA1UEBwwCQ1MxCzAJBgNVBAoM\n" +
+            "AkNTMQswCQYDVQQLDAJDUzELMAkGA1UEAwwCQ1MxETAPBgkqhkiG9w0BCQEWAkNT\n" +
+            "MCAXDTE5MDQyNDE1NTIzNVoYDzIwOTgwOTE1MTU1MjM1WjBhMQswCQYDVQQGEwJD\n" +
+            "UzELMAkGA1UECAwCQ1MxCzAJBgNVBAcMAkNTMQswCQYDVQQKDAJDUzELMAkGA1UE\n" +
+            "CwwCQ1MxCzAJBgNVBAMMAkNTMREwDwYJKoZIhvcNAQkBFgJDUzCCASIwDQYJKoZI\n" +
+            "hvcNAQEBBQADggEPADCCAQoCggEBAKstLRcMGCo6+2hojRMjEuuimnWp27yfYhDU\n" +
+            "w/Cj03MJe/KCOhwsDqX82QNIr/bNtLdFf2ZJEUQd08sLLlHeUy9y5aOcxt9SGx2j\n" +
+            "xolqO4MBL7BW3dklO0IvjaEfBeFP6udz8ajeVur/iPPZb2Edd0zlXuHvDozfQisv\n" +
+            "bpuJImnTUVx0ReCXP075PBGvlqQXW2uEht+E/w3H8/2rra3JFV6J5xc77KyQSq2t\n" +
+            "1+2ZU7PJiy/rppXf5rjTvNm6ydfag8/av7lcgs2ntdkK4koAmkmROhAwNonlL7cD\n" +
+            "xIC83cKOqOFiQXSwr1IgoLf7zBNafKoTlSb/ev6Zt18BXEMLGpkCAwEAATANBgkq\n" +
+            "hkiG9w0BAQsFAAOCAQEAVS5uWZRz2m3yx7EUQm47RTMW5WMXU4pI8D+N5WZ9xubY\n" +
+            "OqtU3r2OAYpfL/QO8iT7jcqNYGoDqe8ZjEaNvfxiTG8cOI6TSXhKBG6hjSaSFQSH\n" +
+            "OZ5mfstM36y/3ENFh6JCJ2ao1rgWSbfDRyAaHuvt6aCkaV6zRq2OMEgoJqZSgwxL\n" +
+            "QO230xa2hYgKXOePMVZyHFA2oKJtSOc3jCke9Y8zDUwm0McGdMRBD8tVB0rcaOqQ\n" +
+            "0PlDLjB9sQuhhLu8vjdgbznmPbUmMG7JN0yhT1eJbIX5ImXyh0DoTwiaGcYwW6Sq\n" +
+            "YodjXACsC37xaQXAPYBiaAs4iI80TJSx1DVFO1LV0g==";
 
     @Before
     public void setUp() {
@@ -102,5 +123,17 @@ public class DirectDownloadManagerImplTest {
         details.put("Message.ReservedCapacityFreed.Flag", "false");
         Map<String, String> headers = manager.getHeadersFromDetails(details);
         Assert.assertTrue(headers.isEmpty());
+    }
+
+    @Test
+    public void testCertificateSanityValidCertificate() {
+        String pretifiedCertificate = manager.getPretifiedCertificate(VALID_CERTIFICATE);
+        manager.certificateSanity(pretifiedCertificate);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCertificateSanityInvalidCertificate() {
+        String pretifiedCertificate = manager.getPretifiedCertificate(VALID_CERTIFICATE + "xxx");
+        manager.certificateSanity(pretifiedCertificate);
     }
 }

@@ -45,7 +45,7 @@
                         roletype: {
                             label: 'label.roletype'
                         },
-                        domain: {
+                        domainpath: {
                             label: 'label.domain'
                         },
                         state: {
@@ -148,6 +148,10 @@
                                 });
                             }
                         }
+
+                        $.extend(data, {
+                            details: 'min'
+                        });
 
                         $.ajax({
                             url: createURL('listAccounts'),
@@ -697,7 +701,7 @@
                                     roletype: {
                                         label: 'label.roletype'
                                     },
-                                    domain: {
+                                    domainpath: {
                                         label: 'label.domain'
                                     },
                                     state: {

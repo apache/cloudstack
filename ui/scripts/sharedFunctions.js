@@ -35,6 +35,7 @@ var g_cloudstackversion = null;
 var g_queryAsyncJobResultInterval = 3000;
 var g_idpList = null;
 var g_appendIdpDomain = false;
+var g_sortKeyIsAscending = false;
 
 //keyboard keycode
 var keycode_Enter = 13;
@@ -511,7 +512,7 @@ var addGuestNetworkDialog = {
                     select: function(args) {
                         var items = [];
                         $.ajax({
-                            url: createURL("listProjects&listAll=true"),
+                            url: createURL("listProjects&listAll=true&details=min"),
                             dataType: "json",
                             async: false,
                             success: function(json) {
@@ -704,7 +705,16 @@ var addGuestNetworkDialog = {
                 networkdomain: {
                     label: 'label.network.domain',
                     docID: 'helpGuestNetworkZoneNetworkDomain'
+                },
+
+                hideipaddressusage: {
+                    label: 'label.network.hideipaddressusage',
+                    dependsOn: ['zoneId', 'physicalNetworkId', 'scope'],
+                    isBoolean: true,
+                    isChecked: false,
+                    docID: 'helpGuestNetworkHideIpAddressUsage'
                 }
+
             }
         },
 
@@ -795,6 +805,10 @@ var addGuestNetworkDialog = {
             if (args.data.networkdomain != null && args.data.networkdomain.length > 0){
                 array1.push("&networkdomain=" + encodeURIComponent(args.data.networkdomain));
             }
+            if (args.data.hideipaddressusage != null && args.data.hideipaddressusage) {
+                array1.push("&hideipaddressusage=true")
+            }
+
             $.ajax({
                 url: createURL("createNetwork" + array1.join("")),
                 dataType: "json",
@@ -831,13 +845,6 @@ var addL2GuestNetwork = {
             }
         },
 
-        preFilter: function(args) {
-            if (isAdmin())
-                return true;
-            else
-                return false;
-        },
-
         createForm: {
             title: 'label.add.l2.guest.network',
             fields: {
@@ -867,7 +874,7 @@ var addL2GuestNetwork = {
                             url: createURL('listZones'),
                             success: function(json) {
                                 var zones = $.grep(json.listzonesresponse.zone, function(zone) {
-                                    return (zone.networktype == 'Advanced' && zone.securitygroupsenabled != true); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
+                                    return (zone.networktype == 'Advanced'); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
                                 });
 
                                 args.response.success({
@@ -2412,7 +2419,7 @@ cloudStack.api = {
                     url: createURL(updateCommand),
                     data: {
                         id: args.context[objType].id,
-                        sortKey: args.index
+                        sortKey: args.sortKey
                     },
                     success: function(json) {
                         args.response.success();
@@ -2550,6 +2557,39 @@ function strOrFunc(arg, args) {
     return arg;
 }
 
+function sortArrayByKey(arrayToSort, sortKey, reverse) {
+
+    if(!arrayToSort){
+        return;
+    }
+    // Move smaller items towards the front
+    // or back of the array depending on if
+    // we want to sort the array in reverse
+    // order or not.
+    var moveSmaller = reverse ? 1 : -1;
+
+    // Move larger items towards the front
+    // or back of the array depending on if
+    // we want to sort the array in reverse
+    // order or not.
+    var moveLarger = reverse ? -1 : 1;
+
+    /**
+     * @param  {*} a
+     * @param  {*} b
+     * @return {Number}
+     */
+    arrayToSort.sort(function(a, b) {
+        if (a[sortKey] < b[sortKey]) {
+            return moveSmaller;
+        }
+        if (a[sortKey] > b[sortKey]) {
+            return moveLarger;
+        }
+        return 0;
+    });
+}
+
 $.validator.addMethod("netmask", function(value, element) {
     if (this.optional(element) && value.length == 0)
         return true;
@@ -2614,6 +2654,19 @@ $.validator.addMethod("ipv4cidr", function(value, element) {
 
     return true;
 }, "The specified IPv4 CIDR is invalid.");
+
+$.validator.addMethod("ipv46cidrs", function(value, element) {
+    var result = true;
+    if (value) {
+        var validatorThis = this;
+        value.split(',').forEach(function(item){
+            if (result && !$.validator.methods.ipv46cidr.call(validatorThis, item.trim(), element)) {
+                result = false;
+            }
+        })
+    }
+    return result;
+}, "The specified IPv4/IPv6 CIDR input is invalid.");
 
 $.validator.addMethod("ipv46cidr", function(value, element) {
     if (this.optional(element) && value.length == 0)

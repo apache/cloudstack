@@ -581,6 +581,8 @@ class libvirtConfigUbuntu(serviceCfgBase):
 
             self.syscfg.svo.stopService("libvirt-bin")
             self.syscfg.svo.enableService("libvirt-bin")
+            if os.path.exists("/lib/systemd/system/libvirt-bin.socket"):
+                bash("systemctl stop libvirt-bin.socket")
             return True
         except:
             raise

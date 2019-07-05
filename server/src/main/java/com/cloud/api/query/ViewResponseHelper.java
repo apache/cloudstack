@@ -195,19 +195,16 @@ public class ViewResponseHelper {
         return new ArrayList<SecurityGroupResponse>(vrDataList.values());
     }
 
-    public static List<ProjectResponse> createProjectResponse(ProjectJoinVO... projects) {
+    public static List<ProjectResponse> createProjectResponse(EnumSet<DomainDetails> details, ProjectJoinVO... projects) {
         Hashtable<Long, ProjectResponse> prjDataList = new Hashtable<Long, ProjectResponse>();
         // Initialise the prjdatalist with the input data
         for (ProjectJoinVO p : projects) {
             ProjectResponse pData = prjDataList.get(p.getId());
             if (pData == null) {
                 // first time encountering this vm
-                pData = ApiDBUtils.newProjectResponse(p);
-            } else {
-                // update those  1 to many mapping fields
-                pData = ApiDBUtils.fillProjectDetails(pData, p);
+                pData = ApiDBUtils.newProjectResponse(details, p);
+                prjDataList.put(p.getId(), pData);
             }
-            prjDataList.put(p.getId(), pData);
         }
         return new ArrayList<ProjectResponse>(prjDataList.values());
     }
@@ -284,29 +281,30 @@ public class ViewResponseHelper {
             }
             vrDataList.put(vr.getId(), vrData);
 
-            if (view == ResponseView.Full) {
-                VolumeStats vs = null;
-                if (vr.getFormat() == ImageFormat.QCOW2) {
-                    vs = ApiDBUtils.getVolumeStatistics(vrData.getId());
-                }
-                else if (vr.getFormat() == ImageFormat.VHD){
-                    vs = ApiDBUtils.getVolumeStatistics(vrData.getPath());
-                }
-                else if (vr.getFormat() == ImageFormat.OVA){
-                    if (vrData.getChainInfo() != null) {
-                        vs = ApiDBUtils.getVolumeStatistics(vrData.getChainInfo());
-                    }
-                }
-                if (vs != null){
-                    long vsz = vs.getVirtualSize();
-                    long psz = vs.getPhysicalSize() ;
-                    double util = (double)psz/vsz;
-                    vrData.setVirtualsize(vsz);
-                    vrData.setPhysicalsize(psz);
-                    vrData.setUtilization(df.format(util));
+            VolumeStats vs = null;
+            if (vr.getFormat() == ImageFormat.QCOW2) {
+                vs = ApiDBUtils.getVolumeStatistics(vrData.getId());
+            }
+            else if (vr.getFormat() == ImageFormat.VHD){
+                vs = ApiDBUtils.getVolumeStatistics(vrData.getPath());
+            }
+            else if (vr.getFormat() == ImageFormat.OVA){
+                if (vrData.getChainInfo() != null) {
+                    vs = ApiDBUtils.getVolumeStatistics(vrData.getChainInfo());
                 }
             }
 
+            if (vs != null){
+                long vsz = vs.getVirtualSize();
+                long psz = vs.getPhysicalSize() ;
+                double util = (double)psz/vsz;
+                vrData.setUtilization(df.format(util));
+
+                if (view == ResponseView.Full) {
+                    vrData.setVirtualsize(vsz);
+                    vrData.setPhysicalsize(psz);
+                }
+            }
         }
         return new ArrayList<VolumeResponse>(vrDataList.values());
     }
@@ -540,10 +538,10 @@ public class ViewResponseHelper {
         }
     }
 
-    public static List<AccountResponse> createAccountResponse(ResponseView view, AccountJoinVO... accounts) {
+    public static List<AccountResponse> createAccountResponse(ResponseView view, EnumSet<DomainDetails> details, AccountJoinVO... accounts) {
         List<AccountResponse> respList = new ArrayList<AccountResponse>();
         for (AccountJoinVO vt : accounts){
-            respList.add(ApiDBUtils.newAccountResponse(view, vt));
+            respList.add(ApiDBUtils.newAccountResponse(view, details, vt));
         }
         return respList;
     }

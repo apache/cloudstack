@@ -16,18 +16,20 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponseWithTagInformation;
+import org.apache.cloudstack.api.EntityReference;
+
 import com.cloud.serializer.Param;
 import com.cloud.storage.Snapshot;
 import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.EntityReference;
-
-import java.util.Date;
-import java.util.List;
 
 @EntityReference(value = Snapshot.class)
-public class SnapshotResponse extends BaseResponse implements ControlledEntityResponse {
+public class SnapshotResponse extends BaseResponseWithTagInformation implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the snapshot")
     private String id;
@@ -96,10 +98,6 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @Param(description = "id of the availability zone")
     private String zoneId;
 
-    @SerializedName(ApiConstants.TAGS)
-    @Param(description = "the list of resource tags associated with snapshot", responseObject = ResourceTagResponse.class)
-    private List<ResourceTagResponse> tags;
-
     @SerializedName(ApiConstants.REVERTABLE)
     @Param(description = "indicates whether the underlying storage supports reverting the volume to this snapshot")
     private boolean revertable;
@@ -115,6 +113,10 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName(ApiConstants.VIRTUAL_SIZE)
     @Param(description = "virtual size of backedup snapshot on image store")
     private long virtualSize;
+
+    public SnapshotResponse() {
+        tags = new LinkedHashSet<ResourceTagResponse>();
+    }
 
     @Override
     public String getObjectId() {
@@ -206,7 +208,7 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
         this.zoneId = zoneId;
     }
 
-    public void setTags(List<ResourceTagResponse> tags) {
+    public void setTags(Set<ResourceTagResponse> tags) {
         this.tags = tags;
     }
 

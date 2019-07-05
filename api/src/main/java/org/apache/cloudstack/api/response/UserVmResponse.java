@@ -188,11 +188,11 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the outgoing network traffic on the host")
     private Long networkKbsWrite;
 
-    @SerializedName("diskkbsread")
+    @SerializedName(ApiConstants.DISK_KBS_READ)
     @Param(description = "the read (bytes) of disk on the vm")
     private Long diskKbsRead;
 
-    @SerializedName("diskkbswrite")
+    @SerializedName(ApiConstants.DISK_KBS_WRITE)
     @Param(description = "the write (bytes) of disk on the vm")
     private Long diskKbsWrite;
 
@@ -208,11 +208,11 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the target memory in vm")
     private Long memoryTargetKBs;
 
-    @SerializedName("diskioread")
+    @SerializedName(ApiConstants.DISK_IO_READ)
     @Param(description = "the read (io) of disk on the vm")
     private Long diskIORead;
 
-    @SerializedName("diskiowrite")
+    @SerializedName(ApiConstants.DISK_IO_WRITE)
     @Param(description = "the write (io) of disk on the vm")
     private Long diskIOWrite;
 
@@ -261,6 +261,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "Vm details in key/value pairs.", since = "4.2.1")
     private Map details;
+
+    @SerializedName("readonlyuidetails")
+    @Param(description = "List of UI read-only Vm details as comma separated string.", since = "4.13.0")
+    private String readOnlyUIDetails;
 
     @SerializedName(ApiConstants.SSH_KEYPAIR)
     @Param(description = "ssh key-pair")
@@ -810,6 +814,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.details = details;
     }
 
+    public void setReadOnlyUIDetails(String readOnlyUIDetails) {
+        this.readOnlyUIDetails = readOnlyUIDetails;
+    }
+
     public void setOsTypeId(String osTypeId) {
         this.osTypeId = osTypeId;
     }
@@ -824,6 +832,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public Map getDetails() {
         return details;
+    }
+
+    public String getReadOnlyUIDetails() {
+        return readOnlyUIDetails;
     }
 
     public Boolean getDynamicallyScalable() {
