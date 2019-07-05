@@ -2046,16 +2046,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @DB()
     protected StringBuilder createCountSelect(SearchCriteria<?> sc, final boolean whereClause) {
-        if (sc == null)
-            return null;
-
-        StringBuilder sql;
-        Pair<GroupBy<?, ?, ?>, List<Object>> groupBys = sc.getGroupBy();
-        if (groupBys != null) {
-            final SqlGenerator generator = new SqlGenerator(_entityBeanType);
-            sql = new StringBuilder(generator.buildCountSqlWithGroupBy(groupBys.first()));
-        } else {
-            sql = new StringBuilder(_count);
+        StringBuilder sql = new StringBuilder(_count);
+        if (sc != null) {
+            Pair<GroupBy<?, ?, ?>, List<Object>> groupBys = sc.getGroupBy();
+            if (groupBys != null) {
+                final SqlGenerator generator = new SqlGenerator(_entityBeanType);
+                sql = new StringBuilder(generator.buildCountSqlWithGroupBy(groupBys.first()));
+            }
         }
 
         if (!whereClause) {
