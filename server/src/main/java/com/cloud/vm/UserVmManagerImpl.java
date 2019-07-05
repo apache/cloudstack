@@ -4936,12 +4936,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             addExtraConfig(vm, caller, extraConfig);
         }
 
-        if (cmd.getCopyImageTagsToVm()) {
-            final ResourceTag.ResourceObjectType templateType = (_templateDao.findById(templateId).getFormat() == ImageFormat.ISO) ? ResourceTag.ResourceObjectType.ISO : ResourceTag.ResourceObjectType.Template;
-            final List<? extends ResourceTag> resourceTags = resourceTagDao.listBy(templateId, templateType);
-            for (ResourceTag resourceTag : resourceTags) {
-                final ResourceTagVO copyTag = new ResourceTagVO(resourceTag.getKey(), resourceTag.getValue(), resourceTag.getAccountId(), resourceTag.getDomainId(), vm.getId(), ResourceTag.ResourceObjectType.UserVm, resourceTag.getCustomer(), vm.getUuid());
-                resourceTagDao.persist(copyTag);
+        if (cmd.getCopyImageTags()) {
+            VMTemplateVO templateOrIso = _templateDao.findById(templateId);
+            if (templateOrIso != null) {
+                final ResourceTag.ResourceObjectType templateType = (templateOrIso.getFormat() == ImageFormat.ISO) ? ResourceTag.ResourceObjectType.ISO : ResourceTag.ResourceObjectType.Template;
+                final List<? extends ResourceTag> resourceTags = resourceTagDao.listBy(templateId, templateType);
+                for (ResourceTag resourceTag : resourceTags) {
+                    final ResourceTagVO copyTag = new ResourceTagVO(resourceTag.getKey(), resourceTag.getValue(), resourceTag.getAccountId(), resourceTag.getDomainId(), vm.getId(), ResourceTag.ResourceObjectType.UserVm, resourceTag.getCustomer(), vm.getUuid());
+                    resourceTagDao.persist(copyTag);
+                }
             }
         }
 

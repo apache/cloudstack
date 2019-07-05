@@ -203,8 +203,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.EXTRA_CONFIG, type = CommandType.STRING, since = "4.12", description = "an optional URL encoded string that can be passed to the virtual machine upon successful deployment", length = 5120)
     private String extraConfig;
 
-    @Parameter(name = "copyimagetagstovm", type = CommandType.BOOLEAN, since = "4.13", description = "if true we copy the image tags to the deployed Vm; defaulted to false if not specified")
-    private Boolean copyImageTagsToVm;
+    @Parameter(name = ApiConstants.COPY_IMAGE_TAGS, type = CommandType.BOOLEAN, since = "4.13", description = "if true the image tags (if any) will be copied to the VM, default value is false")
+    private Boolean copyImageTags;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -492,8 +492,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return extraConfig;
     }
 
-    public boolean getCopyImageTagsToVm() {
-        return copyImageTagsToVm == null ? false : copyImageTagsToVm;
+    public boolean getCopyImageTags() {
+        return copyImageTags == null ? false : copyImageTags;
     }
 
     /////////////////////////////////////////////////////
