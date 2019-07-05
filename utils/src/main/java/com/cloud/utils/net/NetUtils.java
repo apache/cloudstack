@@ -1215,9 +1215,9 @@ public class NetUtils {
 
     public static boolean validateIcmpCode(final long icmpCode) {
 
-        //Source - http://www.erg.abdn.ac.uk/~gorry/course/inet-pages/icmp-code.html
-        if (!(icmpCode >= 0 && icmpCode <= 15)) {
-            s_logger.warn("Icmp code should be within 0-15 range");
+        // Reference: https://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml#icmp-parameters-codes-9/#table-icmp-parameters-ext-classes
+        if (!(icmpCode >= 0 && icmpCode <= 16)) {
+            s_logger.warn("Icmp code should be within 0-16 range");
             return false;
         }
 

@@ -545,7 +545,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
         if (icmpCode != null) {
             if (icmpCode.longValue() != -1 && !NetUtils.validateIcmpCode(icmpCode.longValue())) {
-                throw new InvalidParameterValueException(String.format("Invalid icmp code [%d]. It should belong to [0-15] range and can be defined when icmpType belongs to [0-40] range", icmpCode));
+                throw new InvalidParameterValueException(String.format("Invalid icmp code [%d]. It should belong to [0-16] range and can be defined when icmpType belongs to [0-40] range", icmpCode));
             }
         }
     }
