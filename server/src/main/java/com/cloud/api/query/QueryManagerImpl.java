@@ -643,7 +643,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         boolean listAll = cmd.listAll();
         Long projectId = cmd.getProjectId();
 
-        if (projectId == null && ResourceObjectType.Project.name().equals(resourceType) && !Strings.isNullOrEmpty(resourceId)) {
+        if (projectId == null && ResourceObjectType.Project.name().equalsIgnoreCase(resourceType) && !Strings.isNullOrEmpty(resourceId)) {
             try {
                 projectId = Long.parseLong(resourceId);
             } catch (final NumberFormatException e) {
