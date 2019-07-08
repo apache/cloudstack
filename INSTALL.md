@@ -5,31 +5,32 @@ CloudStack. For more information please refer to the official [documentation](ht
 or the developer [wiki](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Home).
 
 Apache CloudStack developers use various platforms for development, this guide
-was tested against a CentOS 6.5 x86_64 setup.
+was tested against a CentOS 7 x86_64 setup.
 
 * [Setting up development environment](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Setting+up+CloudStack+Development+Environment) for Apache CloudStack.
 * [Building](https://cwiki.apache.org/confluence/display/CLOUDSTACK/How+to+build+CloudStack) Apache CloudStack.
+* [Appliance based development](https://github.com/rhtyd/monkeybox)
 
 ## Setting up Development Environment
 
 Install tools and dependencies used for development:
 
-    $ yum install git ant ant-devel java-1.6.0-openjdk java-1.6.0-openjdk-devel
+    $ yum install git java-1.8.0-openjdk java-1.8.0-openjdk-devel \
     mysql mysql-server mkisofs gcc python MySQL-python openssh-clients wget
 
     # yum -y update
-    # yum -y install java-1.7.0-openjdk
-    # yum -y install java-1.7.0-openjdk-devel
+    # yum -y install java-1.8.0-openjdk
+    # yum -y install java-1.8.0-openjdk-devel
     # yum -y install mysql-server
     # yum -y install git
     # yum -y install genisoimage
 
-Set up Maven (3.0.5):
+Set up Maven (3.6.0):
 
-    # wget http://www.us.apache.org/dist/maven/maven-3/3.0.5/binaries/apache-maven-3.0.5-bin.tar.gz
-    # tar -zxvf apache-maven-3.0.5-bin.tar.gz -C /usr/local
+    # wget http://www.us.apache.org/dist/maven/maven-3/3.6.0/binaries/apache-maven-3.6.0-bin.tar.gz
+    # tar -zxvf apache-maven-3.6.0-bin.tar.gz -C /usr/local
     # cd /usr/local
-    # ln -s apache-maven-3.0.5 maven
+    # ln -s apache-maven-3.6.0 maven
     # echo export M2_HOME=/usr/local/maven >> ~/.bashrc # or .zshrc or .profile
     # echo export PATH=/usr/local/maven/bin:${PATH} >> ~/.bashrc # or .zshrc or .profile
     # source ~/.bashrc
@@ -44,10 +45,10 @@ CloudStack is built using Java and Python.  To make selection of these tools ver
 
 Following installation, execute the following commands to configure jenv and pyenv for use with CloudStack development:
 
-    # pyenv install 2.7.11                                          ## Install Python 2.7.11
-    # pyenv virtualenv 2.7.11 cloudstack                            ## Create a cloudstack virtualenv using Python 2.7.11
+    # pyenv install 2.7.16                                          ## Install Python 2.7.16
+    # pyenv virtualenv 2.7.16 cloudstack                            ## Create a cloudstack virtualenv using Python 2.7.16
     # pip install -r <root CloudStack source tree>/requirements.txt ## Install cloudstack Python dependencies
-    # jenv add <path to JDK 1.7 installation>                       ## Add Java7 to jenv
+    # jenv add <path to JDK 1.8 installation>                       ## Add Java7 to jenv
 
 *N.B.* If you are running Linux, you may need to install additional packages to allow pyenv to build Python.
 
@@ -61,10 +62,10 @@ You may get the source code from the repository hosted on Apache:
 
 Or, you may fork the repository from the official Apache CloudStack mirror on [Github](https://github.com/apache/cloudstack)
 
-To checkout a specific branch, for example 4.4, do:
+To checkout a specific branch, for example 4.11, do:
 
     $ git fetch origin
-    $ git checkout -b 4.4 origin/4.4
+    $ git checkout -b 4.11 origin/4.11
 
 ## Building
 
@@ -142,7 +143,7 @@ To create rpms, install the following extra packages:
 
 Then:
 
-    $ cd packaging/centos63
+    $ cd packaging
     $ package.sh
 
 To create packages for noredist add the `-p noredist` option to the package script.
