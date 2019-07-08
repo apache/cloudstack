@@ -675,6 +675,14 @@ public class SqlGenerator {
         return sql.append("SELECT COUNT(*) FROM ").append(buildTableReferences()).append(" WHERE ").append(buildDiscriminatorClause().first()).toString();
     }
 
+    public String buildCountSqlWithGroupBy(final GroupBy groupBy) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT COUNT(DISTINCT ");
+        groupBy.appendGroupByAttributes(sql);
+        sql.append(") FROM ").append(buildTableReferences()).append(" WHERE ").append(buildDiscriminatorClause().first());
+        return sql.toString();
+    }
+
     public String buildDistinctIdSql() {
         StringBuilder sql = new StringBuilder();
 
