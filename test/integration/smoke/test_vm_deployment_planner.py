@@ -28,7 +28,6 @@ from marvin.lib.common import (get_domain,
 from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
 
-
 class TestVMDeploymentPlanner(cloudstackTestCase):
 
     @classmethod

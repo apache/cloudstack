@@ -49,6 +49,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
@@ -4140,20 +4141,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "starting Vm", async = true)
     public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
-        return startVirtualMachine(cmd, null, cmd.getDeploymentPlanner());
+        long vmId = cmd.getEntityId();
+        Long podId = null;
+        Long clusterId = null;
+        Long hostId = cmd.getHostId();
+        Map<Long, DiskOffering> diskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
+        if (cmd instanceof DeployVMCmdByAdmin) {
+            DeployVMCmdByAdmin adminCmd = (DeployVMCmdByAdmin)cmd;
+            podId = adminCmd.getPodId();
+            clusterId = adminCmd.getClusterId();
+        }
+        return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, null, cmd.getDeploymentPlanner());
     }
 
-    private UserVm startVirtualMachine(DeployVMCmd cmd, Map<VirtualMachineProfile.Param, Object> additonalParams, String deploymentPlannerToUse)
+    private UserVm startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId, Map<Long, DiskOffering> diskOfferingMap, Map<VirtualMachineProfile.Param, Object> additonalParams, String deploymentPlannerToUse)
             throws ResourceUnavailableException,
             InsufficientCapacityException, ConcurrentOperationException {
-
-        long vmId = cmd.getEntityId();
-        Long podId = cmd.getPodId();
-        Long clusterId = cmd.getClusterId();
-        Long hostId = cmd.getHostId();
         UserVmVO vm = _vmDao.findById(vmId);
-
         Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = null;
+
         try {
             vmParamPair = startVirtualMachine(vmId, podId, clusterId, hostId, additonalParams, deploymentPlannerToUse);
             vm = vmParamPair.first();
@@ -4167,7 +4173,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             try {
-                if (!cmd.getDataDiskTemplateToDiskOfferingMap().isEmpty()) {
+                if (!diskOfferingMap.isEmpty()) {
                     List<VolumeVO> vols = _volsDao.findByInstance(tmpVm.getId());
                     for (VolumeVO vol : vols) {
                         if (vol.getVolumeType() == Volume.Type.DATADISK) {
@@ -4627,7 +4633,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private Pod getDestinationPod(Long podId, boolean isRootAdmin) {
-
         Pod destinationPod = null;
         if (podId != null) {
             if (!isRootAdmin) {
@@ -4643,7 +4648,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private Cluster getDestinationCluster(Long clusterId, boolean isRootAdmin) {
-
         Cluster destinationCluster = null;
         if (clusterId != null) {
             if (!isRootAdmin) {
@@ -4659,10 +4663,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private Host getDestinationHost(Long hostId, boolean isRootAdmin) {
-
         Host destinationHost = null;
         if (hostId != null) {
-
             if (!isRootAdmin) {
                 throw new PermissionDeniedException(
                         "Parameter " + ApiConstants.HOST_ID + " can only be specified by a Root Admin, permission denied");
