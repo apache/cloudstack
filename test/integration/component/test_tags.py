@@ -1755,7 +1755,7 @@ class TestResourceTags(cloudstackTestCase):
             self.apiclient,
             listall=True,
             resourceType='project',
-            resourceIds=project.id,
+            resourceId=project.id,
             key=tag_key,
         )
         self.debug("tags = %s" % tags)
