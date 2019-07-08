@@ -177,7 +177,15 @@ public class JuniperSrxResource implements ServerResource {
         private static final Logger s_logger = Logger.getLogger(JuniperSrxResource.class);
 
         private SrxXml(String filename) {
-            xml = getXml(filename);
+            String contents = getXml(filename);
+
+            // Strip the apache header and add the filename as a header to aid debugging
+            contents = contents.replaceAll( "(?s)<!--.*?-->", "" ).trim();
+            if (!contents.startsWith("<?")) {
+                contents = "<!-- " + filename + " -->" + contents;
+            }
+
+            xml = contents;
         }
 
         public String getXml() {
@@ -2031,61 +2039,68 @@ public class JuniperSrxResource implements ServerResource {
                 xml = replaceXmlValue(xml, "rule-name", ruleName_private);
                 return sendRequestAndCheckResponse(command, xml, "name", ruleName_private);
             case ADD:
-                if (manageStaticNatRule(SrxCommand.CHECK_IF_EXISTS, publicIp, privateIp)) {
-                    return true;
+                if (!manageStaticNatRule(SrxCommand.CHECK_IF_EXISTS, publicIp, privateIp)) {
+                    xml = SrxXml.STATIC_NAT_RULE_ADD.getXml();
+                    xml = replaceXmlValue(xml, "rule-set", _publicZone);
+                    xml = replaceXmlValue(xml, "from-zone", _publicZone);
+                    xml = replaceXmlValue(xml, "rule-name", ruleName);
+                    xml = replaceXmlValue(xml, "original-ip", publicIp);
+                    xml = replaceXmlValue(xml, "translated-ip", privateIp);
+
+                    if (!sendRequestAndCheckResponse(command, xml)) {
+                        throw new ExecutionException(String.format("Failed to add static NAT rule %s -> %s on %s ", publicIp, privateIp, _publicZone));
+                    }
+                } else {
+                    s_logger.debug(String.format("Static NAT rule %s -> %s on %s already exists", publicIp, privateIp, _publicZone));
                 }
 
-                xml = SrxXml.STATIC_NAT_RULE_ADD.getXml();
-                xml = replaceXmlValue(xml, "rule-set", _publicZone);
-                xml = replaceXmlValue(xml, "from-zone", _publicZone);
-                xml = replaceXmlValue(xml, "rule-name", ruleName);
-                xml = replaceXmlValue(xml, "original-ip", publicIp);
-                xml = replaceXmlValue(xml, "translated-ip", privateIp);
-
-                if (!sendRequestAndCheckResponse(command, xml)) {
-                    throw new ExecutionException("Failed to add static NAT rule from public IP " + publicIp + " to private IP " + privateIp);
-                } else {
+                if (!manageStaticNatRule(SrxCommand.CHECK_PRIVATE_IF_EXISTS, publicIp, privateIp)) {
                     xml = SrxXml.STATIC_NAT_RULE_ADD.getXml();
                     xml = replaceXmlValue(xml, "rule-set", _privateZone);
                     xml = replaceXmlValue(xml, "from-zone", _privateZone);
                     xml = replaceXmlValue(xml, "rule-name", ruleName_private);
                     xml = replaceXmlValue(xml, "original-ip", publicIp);
                     xml = replaceXmlValue(xml, "translated-ip", privateIp);
-                    if (!sendRequestAndCheckResponse(command, xml))
-                    {
-                        throw new ExecutionException("Failed to add trust static NAT rule from public IP " + publicIp + " to private IP " + privateIp);
+                    if (!sendRequestAndCheckResponse(command, xml)) {
+                        throw new ExecutionException(String.format("Failed to add static NAT rule %s -> %s on %s ", publicIp, privateIp, _privateZone));
                     }
-                    return true;
+                } else {
+                    s_logger.debug(String.format("Static NAT rule %s -> %s on %s already exists", publicIp, privateIp, _privateZone));
                 }
+
+                return true;
 
             case DELETE:
-                if (!manageStaticNatRule(SrxCommand.CHECK_IF_EXISTS, publicIp, privateIp)) {
-                    return true;
-                }
+                if (manageStaticNatRule(SrxCommand.CHECK_IF_EXISTS, publicIp, privateIp)) {
+                    xml = SrxXml.STATIC_NAT_RULE_GETONE.getXml();
+                    xml = setDelete(xml, true);
+                    xml = replaceXmlValue(xml, "rule-set", _publicZone);
+                    xml = replaceXmlValue(xml, "from-zone", _publicZone);
+                    xml = replaceXmlValue(xml, "rule-name", ruleName);
 
-                xml = SrxXml.STATIC_NAT_RULE_GETONE.getXml();
-                xml = setDelete(xml, true);
-                xml = replaceXmlValue(xml, "rule-set", _publicZone);
-                xml = replaceXmlValue(xml, "from-zone", _publicZone);
-                xml = replaceXmlValue(xml, "rule-name", ruleName);
-
-                if (!sendRequestAndCheckResponse(command, xml, "name", ruleName)) {
-                    throw new ExecutionException("Failed to delete static NAT rule from public IP " + publicIp + " to private IP " + privateIp);
-                } else {
-                    if (manageStaticNatRule(SrxCommand.CHECK_PRIVATE_IF_EXISTS, publicIp, privateIp)){
-                        xml = SrxXml.STATIC_NAT_RULE_GETONE.getXml();
-                        xml = setDelete(xml, true);
-                        xml = replaceXmlValue(xml, "rule-set", _privateZone);
-                        xml = replaceXmlValue(xml, "from-zone", _privateZone);
-                        xml = replaceXmlValue(xml, "rule-name", ruleName_private);
-
-                        if (!sendRequestAndCheckResponse(command, xml, "name", ruleName_private))
-                        {
-                            throw new ExecutionException("Failed to delete trust static NAT rule from public IP " + publicIp + " to private IP " + privateIp);
-                        }
+                    if (!sendRequestAndCheckResponse(command, xml, "name", ruleName)) {
+                        throw new ExecutionException(String.format("Failed to delete static NAT rule %s -> %s on %s", publicIp, privateIp, _publicZone));
                     }
-                    return true;
+                } else {
+                    s_logger.debug(String.format("Static NAT rule %s -> %s on %s not found", publicIp, privateIp, _publicZone));
                 }
+
+                if (manageStaticNatRule(SrxCommand.CHECK_PRIVATE_IF_EXISTS, publicIp, privateIp)){
+                    xml = SrxXml.STATIC_NAT_RULE_GETONE.getXml();
+                    xml = setDelete(xml, true);
+                    xml = replaceXmlValue(xml, "rule-set", _privateZone);
+                    xml = replaceXmlValue(xml, "from-zone", _privateZone);
+                    xml = replaceXmlValue(xml, "rule-name", ruleName_private);
+
+                    if (!sendRequestAndCheckResponse(command, xml, "name", ruleName_private))
+                    {
+                        throw new ExecutionException(String.format("Failed to delete static NAT rule %s -> %s on %s", publicIp, privateIp, _privateZone));
+                    }
+                } else {
+                    s_logger.debug(String.format("Static NAT rule %s -> %s on %s not found", publicIp, privateIp, _privateZone));
+                }
+
+                return true;
 
             default:
                 throw new ExecutionException("Unrecognized command.");
@@ -2163,39 +2178,39 @@ public class JuniperSrxResource implements ServerResource {
                 return sendRequestAndCheckResponse(command, xml, "pool-name", poolName);
 
             case ADD:
-                if (manageDestinationNatPool(SrxCommand.CHECK_IF_EXISTS, privateIp, destPort)) {
-                    return true;
-                }
+                if (!manageDestinationNatPool(SrxCommand.CHECK_IF_EXISTS, privateIp, destPort)) {
+                    xml = SrxXml.DEST_NAT_POOL_ADD.getXml();
+                    xml = replaceXmlValue(xml, "pool-name", poolName);
+                    xml = replaceXmlValue(xml, "private-address", privateIp + "/32");
+                    xml = replaceXmlValue(xml, "dest-port", String.valueOf(destPort));
 
-                xml = SrxXml.DEST_NAT_POOL_ADD.getXml();
-                xml = replaceXmlValue(xml, "pool-name", poolName);
-                xml = replaceXmlValue(xml, "private-address", privateIp + "/32");
-                xml = replaceXmlValue(xml, "dest-port", String.valueOf(destPort));
-
-                if (!sendRequestAndCheckResponse(command, xml)) {
-                    throw new ExecutionException("Failed to add destination NAT pool for private IP " + privateIp + " and private port " + destPort);
+                    if (!sendRequestAndCheckResponse(command, xml)) {
+                        throw new ExecutionException(String.format("Failed to add Destination NAT pool for %s:%s", privateIp, destPort));
+                    }
                 } else {
+                    s_logger.debug(String.format("Destination NAT pool for %s:%s already exists", privateIp, destPort));
                     return true;
                 }
+
+                return true;
 
             case DELETE:
-                if (!manageDestinationNatPool(SrxCommand.CHECK_IF_EXISTS, privateIp, destPort)) {
-                    return true;
-                }
+                if (manageDestinationNatPool(SrxCommand.CHECK_IF_EXISTS, privateIp, destPort)) {
+                    if (!manageDestinationNatPool(SrxCommand.CHECK_IF_IN_USE, privateIp, destPort)) {
+                        xml = SrxXml.DEST_NAT_POOL_GETONE.getXml();
+                        xml = setDelete(xml, true);
+                        xml = replaceXmlValue(xml, "pool-name", poolName);
 
-                if (manageDestinationNatPool(SrxCommand.CHECK_IF_IN_USE, privateIp, destPort)) {
-                    return true;
-                }
-
-                xml = SrxXml.DEST_NAT_POOL_GETONE.getXml();
-                xml = setDelete(xml, true);
-                xml = replaceXmlValue(xml, "pool-name", poolName);
-
-                if (!sendRequestAndCheckResponse(command, xml)) {
-                    throw new ExecutionException("Failed to delete destination NAT pool for private IP " + privateIp + " and private port " + destPort);
+                        if (!sendRequestAndCheckResponse(command, xml)) {
+                            throw new ExecutionException(String.format("Failed to delete Destination NAT pool for %s:%s", privateIp, destPort));
+                        }
+                    } else {
+                        s_logger.debug(String.format("Destination NAT pool for %s:%s is in use, not deleting", privateIp, destPort));
+                    }
                 } else {
-                    return true;
+                    s_logger.debug(String.format("Did not find Destination NAT pool for %s:%s to delete", privateIp, destPort));
                 }
+                return true;
 
             default:
                 throw new ExecutionException("Unrecognized command.");
@@ -2234,28 +2249,31 @@ public class JuniperSrxResource implements ServerResource {
                 xml = replaceXmlValue(xml, "rule-name", ruleName_private);
                 return sendRequestAndCheckResponse(command, xml, "name", ruleName_private);
             case ADD:
-                if (manageDestinationNatRule(SrxCommand.CHECK_IF_EXISTS, publicIp, privateIp, srcPort, destPort)) {
-                    return true;
-                }
+                // Add untrust rule
+                if (!manageDestinationNatRule(SrxCommand.CHECK_IF_EXISTS, publicIp, privateIp, srcPort, destPort)) {
+                    if (!manageDestinationNatPool(SrxCommand.CHECK_IF_EXISTS, privateIp, destPort)) {       // Added elsewhere
+                        throw new ExecutionException(String.format("Destination NAT pool for %s:%s does not exist", privateIp, destPort));
+                    }
 
-                if (!manageDestinationNatPool(SrxCommand.CHECK_IF_EXISTS, privateIp, destPort)) {
-                    throw new ExecutionException("The destination NAT pool corresponding to private IP: " + privateIp + " and destination port: " + destPort +
-                        " does not exist.");
-                }
+                    xml = SrxXml.DEST_NAT_RULE_ADD.getXml();
+                    xml = replaceXmlValue(xml, "rule-set", _publicZone);
+                    xml = replaceXmlValue(xml, "from-zone", _publicZone);
+                    xml = replaceXmlValue(xml, "rule-name", ruleName);
+                    xml = replaceXmlValue(xml, "public-address", publicIp);
+                    xml = replaceXmlValue(xml, "src-port", String.valueOf(srcPort));
+                    xml = replaceXmlValue(xml, "pool-name", poolName);
 
-                xml = SrxXml.DEST_NAT_RULE_ADD.getXml();
-                xml = replaceXmlValue(xml, "rule-set", _publicZone);
-                xml = replaceXmlValue(xml, "from-zone", _publicZone);
-                xml = replaceXmlValue(xml, "rule-name", ruleName);
-                xml = replaceXmlValue(xml, "public-address", publicIp);
-                xml = replaceXmlValue(xml, "src-port", String.valueOf(srcPort));
-                xml = replaceXmlValue(xml, "pool-name", poolName);
-
-                if (!sendRequestAndCheckResponse(command, xml)) {
-                    throw new ExecutionException("Failed to add destination NAT rule from public IP " + publicIp + ", public port " + srcPort + ", private IP " +
-                        privateIp + ", and private port " + destPort);
+                    if (!sendRequestAndCheckResponse(command, xml)) {
+                        throw new ExecutionException(String.format("Failed to add Destination NAT rule %s:%s -> %s:%s on %s",
+                            publicIp, srcPort, privateIp, destPort, _publicZone));
+                    }
                 } else {
+                    s_logger.debug(String.format("Destination NAT rule for %s:%s -> %s:%s on %s already exists",
+                        publicIp, srcPort, privateIp, destPort, _publicZone));
+                }
 
+                // Add trust rule
+                if (!manageDestinationNatRule(SrxCommand.CHECK_PRIVATE_IF_EXISTS, publicIp, privateIp, srcPort, destPort)) {
                     xml = SrxXml.DEST_NAT_RULE_ADD.getXml();
                     xml = replaceXmlValue(xml, "rule-set", _privateZone);
                     xml = replaceXmlValue(xml, "from-zone", _privateZone);
@@ -2266,44 +2284,53 @@ public class JuniperSrxResource implements ServerResource {
 
                     if (!sendRequestAndCheckResponse(command, xml))
                     {
-                        s_logger.debug("Purple: loopback Failed to add " + _privateZone + " destination NAT rule from public IP " + publicIp + ", public port " + srcPort + ", private IP " +
-                                privateIp + ", and private port " + destPort);
+                        throw new ExecutionException(String.format("Failed to add Destination NAT rule %s:%s -> %s:%s on %s",
+                            publicIp, srcPort, privateIp, destPort, _privateZone));
                     }
-                    return true;
+                } else {
+                    s_logger.debug(String.format("Destination NAT rule for %s:%s -> %s:%s on %s already exists",
+                        publicIp, srcPort, privateIp, destPort, _privateZone));
                 }
+
+                return true;
 
             case DELETE:
-                if (!manageDestinationNatRule(SrxCommand.CHECK_IF_EXISTS, publicIp, privateIp, srcPort, destPort)) {
-                    return true;
-                }
+                // Delete public rule
+                if (manageDestinationNatRule(SrxCommand.CHECK_IF_EXISTS, publicIp, privateIp, srcPort, destPort)) {
+                    xml = SrxXml.DEST_NAT_RULE_GETONE.getXml();
+                    xml = setDelete(xml, true);
+                    xml = replaceXmlValue(xml, "rule-set", _publicZone);
+                    xml = replaceXmlValue(xml, "from-zone", _publicZone);
+                    xml = replaceXmlValue(xml, "rule-name", ruleName);
 
-                xml = SrxXml.DEST_NAT_RULE_GETONE.getXml();
-                xml = setDelete(xml, true);
-                xml = replaceXmlValue(xml, "rule-set", _publicZone);
-                xml = replaceXmlValue(xml, "from-zone", _publicZone);
-                xml = replaceXmlValue(xml, "rule-name", ruleName);
-
-                if (!sendRequestAndCheckResponse(command, xml)) {
-                    throw new ExecutionException("Failed to delete destination NAT rule from public IP " + publicIp + ", public port " + srcPort + ", private IP " +
-                        privateIp + ", and private port " + destPort);
-                } else {
-                    if (manageDestinationNatRule(SrxCommand.CHECK_PRIVATE_IF_EXISTS, publicIp, privateIp, srcPort, destPort))
-                    {
-                        xml = SrxXml.DEST_NAT_RULE_GETONE.getXml();
-                        xml = setDelete(xml, true);
-                        xml = replaceXmlValue(xml, "rule-set", _privateZone);
-                        xml = replaceXmlValue(xml, "from-zone", _privateZone);
-                        xml = replaceXmlValue(xml, "rule-name", ruleName_private);
-
-                        if (!sendRequestAndCheckResponse(command, xml))
-                        {
-                            s_logger.debug("Purple: Failed to delete " + _privateZone + " destination NAT rule from public IP " + publicIp + ", public port " + srcPort + ", private IP " +
-                                    privateIp + ", and private port " + destPort);
-                        }
+                    if (!sendRequestAndCheckResponse(command, xml)) {
+                        throw new ExecutionException(String.format("Failed to delete destination NAT rule %s[%s] -> %s[%s] on rule %s",
+                            publicIp, srcPort, privateIp, destPort, _publicZone));
                     }
-
-                    return true;
+                } else {
+                    s_logger.debug(String.format("Destination NAT rule %s[%s] -> %s[%s] not found on %s, not deleting",
+                        publicIp, srcPort, privateIp, destPort, _publicZone));
                 }
+
+                // Delete private rule
+                if (manageDestinationNatRule(SrxCommand.CHECK_PRIVATE_IF_EXISTS, publicIp, privateIp, srcPort, destPort)) {
+                    xml = SrxXml.DEST_NAT_RULE_GETONE.getXml();
+                    xml = setDelete(xml, true);
+                    xml = replaceXmlValue(xml, "rule-set", _privateZone);
+                    xml = replaceXmlValue(xml, "from-zone", _privateZone);
+                    xml = replaceXmlValue(xml, "rule-name", ruleName_private);
+
+                    if (!sendRequestAndCheckResponse(command, xml))
+                    {
+                        throw new ExecutionException(String.format("Failed to delete destination NAT rule %s[%s] -> %s[%s] on rule %s",
+                            publicIp, srcPort, privateIp, destPort, _privateZone));
+                    }
+                } else {
+                    s_logger.debug(String.format("Destination NAT rule %s[%s] -> %s[%s] not found on %s, not deleting",
+                        publicIp, srcPort, privateIp, destPort, _privateZone));
+                }
+
+                return true;
 
             default:
                 s_logger.debug("Unrecognized command.");
@@ -2345,7 +2372,7 @@ public class JuniperSrxResource implements ServerResource {
                             NodeList destPortEntries = ruleMatchEntry.getChildNodes();
                             for (int destPortIndex = 0; destPortIndex < destPortEntries.getLength(); destPortIndex++) {
                                 Node destPortEntry = destPortEntries.item(destPortIndex);
-                                if (destPortEntry.getNodeName().equals("dst-port")) {
+                                if (destPortEntry.getNodeName().equals("dst-port") || destPortEntry.getNodeName().equals("name")) {
                                     ruleSrcPort = destPortEntry.getFirstChild().getNodeValue();
                                 }
                             }
