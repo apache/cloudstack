@@ -2331,14 +2331,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             // if params contains a rootDiskController key, use its value (this is what other HVs are doing)
             DiskDef.DiskBus diskBusType = getDiskModelFromVMDetail(vmSpec);
             if (diskBusType == null) {
-                // always use bus type ide for windows root volumes and virtio for data volumes unless specified in vm details or windows pv is selected
-                if (volume.getType() == Volume.Type.ROOT && vmSpec.getPlatformEmulator().startsWith("Windows") && !vmSpec.getPlatformEmulator().startsWith("Windows PV")){
-                    diskBusType = DiskDef.DiskBus.IDE;
-                } else if (volume.getType() == Volume.Type.DATADISK && vmSpec.getPlatformEmulator().startsWith("Windows")) {
-                    diskBusType = DiskDef.DiskBus.VIRTIO;
-                } else {
-                    diskBusType = getGuestDiskModel(vmSpec.getPlatformEmulator());
-                }
+                diskBusType = getGuestDiskModel(vmSpec.getPlatformEmulator());
             }
 
             // I'm not sure why previously certain DATADISKs were hard-coded VIRTIO and others not, however this
@@ -2375,7 +2368,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), pool.getSourceHost(), pool.getSourcePort(), null,
                             null, devId, diskBusType, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
                 } else if (pool.getType() == StoragePoolType.CLVM || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
-                    disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
+                    if (volume.getType() == Volume.Type.DATADISK) {
+                        disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
+                    }
+                    else {
+                        disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
+                    }
                 } else {
                     if (volume.getType() == Volume.Type.DATADISK) {
                         disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData, DiskDef.DiskFmtType.QCOW2);
