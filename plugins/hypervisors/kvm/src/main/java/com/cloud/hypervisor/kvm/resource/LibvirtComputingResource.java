@@ -3202,14 +3202,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return DiskDef.DiskBus.IDE;
         } else if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {
             return DiskDef.DiskBus.SCSI;
-        } else if (platformEmulator.startsWith("Ubuntu") ||
+        } else if (platformEmulator.contains("Ubuntu") ||
                 platformEmulator.startsWith("Fedora") ||
                 platformEmulator.startsWith("CentOS") ||
                 platformEmulator.startsWith("Red Hat Enterprise Linux") ||
                 platformEmulator.startsWith("Debian GNU/Linux") ||
                 platformEmulator.startsWith("FreeBSD") ||
                 platformEmulator.startsWith("Oracle") ||
-                platformEmulator.startsWith("Windows PV") ||
                 platformEmulator.startsWith("Other PV")) {
             return DiskDef.DiskBus.VIRTIO;
         } else {
