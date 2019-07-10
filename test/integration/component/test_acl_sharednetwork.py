@@ -59,7 +59,7 @@ class TestSharedNetwork(cloudstackTestCase):
         cls.acldata = cls.testdata["acl"]
 	cls.domain_1 = None
         cls.domain_2 = None
-        cleanup = []
+        cls.cleanup = []
 
 
 	try:

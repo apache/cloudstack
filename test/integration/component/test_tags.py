@@ -885,7 +885,7 @@ class TestResourceTags(cloudstackTestCase):
         tag = Tag.create(
             self.apiclient,
             resourceIds=self.vm_1.id,
-            resourceType='userVM',
+            resourceType='UserVm',
             tags={tag_key: tag_value}
         )
         self.debug("Tag created: %s" % tag.__dict__)
@@ -893,7 +893,7 @@ class TestResourceTags(cloudstackTestCase):
         tags = Tag.list(
             self.apiclient,
             listall=True,
-            resourceType='userVM',
+            resourceType='UserVm',
             account=self.account.name,
             domainid=self.account.domainid,
             key=tag_key,
@@ -927,7 +927,7 @@ class TestResourceTags(cloudstackTestCase):
             Tag.delete(
                 self.apiclient,
                 resourceIds=self.vm_1.id,
-                resourceType='userVM',
+                resourceType='UserVm',
                 tags={tag_key: tag_value}
             )
         except Exception as e:
@@ -937,7 +937,7 @@ class TestResourceTags(cloudstackTestCase):
         tags = Tag.list(
             self.apiclient,
             listall=True,
-            resourceType='userVM',
+            resourceType='UserVm',
             account=self.account.name,
             domainid=self.account.domainid,
             key=tag_key,
@@ -1509,7 +1509,7 @@ class TestResourceTags(cloudstackTestCase):
         tag = Tag.create(
             self.apiclient,
             resourceIds=self.vm_1.id,
-            resourceType='userVM',
+            resourceType='UserVm',
             tags={tag_key: tag_value}
         )
         self.debug("Tag created: %s" % tag.__dict__)
@@ -1517,7 +1517,7 @@ class TestResourceTags(cloudstackTestCase):
         tags = Tag.list(
             self.apiclient,
             listall=True,
-            resourceType='userVM',
+            resourceType='UserVm',
             account=self.account.name,
             domainid=self.account.domainid,
             key=tag_key,
@@ -1544,7 +1544,7 @@ class TestResourceTags(cloudstackTestCase):
             Tag.delete(
                 self.apiclient,
                 resourceIds=self.vm_1.id,
-                resourceType='userVM',
+                resourceType='UserVm',
                 tags={tag_key: tag_value}
             )
         except Exception as e:
@@ -1554,7 +1554,7 @@ class TestResourceTags(cloudstackTestCase):
         tags = Tag.list(
             self.apiclient,
             listall=True,
-            resourceType='userVM',
+            resourceType='UserVm',
             account=self.account.name,
             domainid=self.account.domainid,
             key=tag_key,
@@ -1583,7 +1583,7 @@ class TestResourceTags(cloudstackTestCase):
         tag_1 = Tag.create(
             self.apiclient,
             resourceIds=self.vm_1.id,
-            resourceType='userVM',
+            resourceType='UserVm',
             tags={tag_key: tag_value}
         )
         self.debug("Tag created: %s" % tag_1.__dict__)
@@ -1591,7 +1591,7 @@ class TestResourceTags(cloudstackTestCase):
         tags = Tag.list(
             self.apiclient,
             listall=True,
-            resourceType='userVM',
+            resourceType='UserVm',
             account=self.account.name,
             domainid=self.account.domainid,
             key=tag_key,
@@ -1611,7 +1611,7 @@ class TestResourceTags(cloudstackTestCase):
         try:
             Tag.create(self.apiclient,
                        resourceIds=self.vm_1.id,
-                       resourceType='userVM',
+                       resourceType='UserVm',
                        tags={tag_key.upper(): tag_value.uppper()})
         except Exception as e:
             pass
@@ -1622,7 +1622,7 @@ class TestResourceTags(cloudstackTestCase):
             Tag.delete(
                 self.apiclient,
                 resourceIds=self.vm_1.id,
-                resourceType='userVM',
+                resourceType='UserVm',
                 tags={tag_key: tag_value}
             )
         except Exception as e:
@@ -1632,7 +1632,7 @@ class TestResourceTags(cloudstackTestCase):
         tags = Tag.list(
             self.apiclient,
             listall=True,
-            resourceType='userVM',
+            resourceType='UserVm',
             account=self.account.name,
             domainid=self.account.domainid,
             key=tag_key,
@@ -1661,7 +1661,7 @@ class TestResourceTags(cloudstackTestCase):
         tag = Tag.create(
             self.apiclient,
             resourceIds=self.vm_1.id,
-            resourceType='userVM',
+            resourceType='UserVm',
             tags={
                 tag_key: tag_value,
                 'offering': 'high',
@@ -1681,7 +1681,7 @@ class TestResourceTags(cloudstackTestCase):
         tags = Tag.list(
             self.apiclient,
             listall=True,
-            resourceType='userVM',
+            resourceType='UserVm',
             account=self.account.name,
             domainid=self.account.domainid,
             key=tag_key,
@@ -1701,7 +1701,7 @@ class TestResourceTags(cloudstackTestCase):
         Tag.delete(
             self.apiclient,
             resourceIds=self.vm_1.id,
-            resourceType='userVM',
+            resourceType='UserVm',
             tags={
                 tag_key: tag_value,
                 'offering': 'high',
@@ -2018,7 +2018,7 @@ class TestResourceTags(cloudstackTestCase):
         tag = Tag.create(
             self.apiclient,
             resourceIds=self.vm_1.id,
-            resourceType='userVM',
+            resourceType='UserVm',
             tags={tag_key: tag_value}
         )
         self.debug("Tag created: %s" % tag.__dict__)
@@ -2029,7 +2029,7 @@ class TestResourceTags(cloudstackTestCase):
         # subsequent tests fail to tag the vm_1 with same key-pair
         # breaking the tests.
         self.rm_tags.append({'tag_obj': tag,
-                             'restype': 'userVM',
+                             'restype': 'UserVm',
                              'resid': self.vm_1.id,
                              'tags': [
                                  {'key': tag_key, 'value': tag_value}
@@ -2066,7 +2066,7 @@ class TestResourceTags(cloudstackTestCase):
         tag = Tag.create(
             self.apiclient,
             resourceIds=self.vm_1.id,
-            resourceType='userVM',
+            resourceType='UserVm',
             tags={tag_key: tag_value}
         )
         self.debug("Tag created: %s" % tag.__dict__)
@@ -2074,7 +2074,7 @@ class TestResourceTags(cloudstackTestCase):
         tags = Tag.list(
             self.apiclient,
             listall=True,
-            resourceType='userVM',
+            resourceType='UserVm',
             account=self.account.name,
             domainid=self.account.domainid,
             key=tag_key,
@@ -2097,7 +2097,7 @@ class TestResourceTags(cloudstackTestCase):
             Tag.delete(
                 self.apiclient,
                 resourceIds=self.vm_1.id,
-                resourceType='userVM',
+                resourceType='UserVm',
                 tags={tag_key: tag_value}
             )
         except Exception as e:
@@ -2107,7 +2107,7 @@ class TestResourceTags(cloudstackTestCase):
         tags = Tag.list(
             self.apiclient,
             listall=True,
-            resourceType='userVM',
+            resourceType='UserVm',
             account=self.account.name,
             domainid=self.account.domainid,
             key=tag_key,
@@ -2122,7 +2122,7 @@ class TestResourceTags(cloudstackTestCase):
         tag = Tag.create(
             self.apiclient,
             resourceIds=self.vm_1.id,
-            resourceType='userVM',
+            resourceType='UserVm',
             tags={tag_key: tag_value}
         )
         self.debug("Tag created: %s" % tag.__dict__)
@@ -2130,7 +2130,7 @@ class TestResourceTags(cloudstackTestCase):
         tags = Tag.list(
             self.apiclient,
             listall=True,
-            resourceType='userVM',
+            resourceType='UserVm',
             account=self.account.name,
             domainid=self.account.domainid,
             key=tag_key,
@@ -2152,7 +2152,7 @@ class TestResourceTags(cloudstackTestCase):
             Tag.delete(
                 self.apiclient,
                 resourceIds=self.vm_1.id,
-                resourceType='userVM',
+                resourceType='UserVm',
                 tags={tag_key: tag_value}
             )
         except Exception as e:
@@ -2212,7 +2212,7 @@ class TestResourceTags(cloudstackTestCase):
         tag = Tag.create(
             self.apiclient,
             resourceIds=self.vm_1.id,
-            resourceType='userVM',
+            resourceType='UserVm',
             tags={tag_key: tag_value}
         )
         self.debug("Tag created: %s" % tag.__dict__)
@@ -2220,7 +2220,7 @@ class TestResourceTags(cloudstackTestCase):
         tags = Tag.list(
             self.apiclient,
             listall=True,
-            resourceType='userVM',
+            resourceType='UserVm',
             account=self.account.name,
             domainid=self.account.domainid,
             key=tag_key,
@@ -2243,7 +2243,7 @@ class TestResourceTags(cloudstackTestCase):
             Tag.delete(
                 self.apiclient,
                 resourceIds=self.vm_1.id,
-                resourceType='userVM',
+                resourceType='UserVm',
                 tags={tag_key: tag_value}
             )
         except Exception as e:
@@ -2253,7 +2253,7 @@ class TestResourceTags(cloudstackTestCase):
         tags = Tag.list(
             self.apiclient,
             listall=True,
-            resourceType='userVM',
+            resourceType='UserVm',
             account=self.account.name,
             domainid=self.account.domainid,
             key=tag_key,
@@ -2283,7 +2283,7 @@ class TestResourceTags(cloudstackTestCase):
             tag = Tag.create(
                 self.apiclient,
                 resourceIds=self.vm_1.id,
-                resourceType='userVM',
+                resourceType='UserVm',
                 tags={tag_key: tag_value}
             )
             self.debug("Tag created: %s" % tag.__dict__)
@@ -2291,7 +2291,7 @@ class TestResourceTags(cloudstackTestCase):
             tags = Tag.list(
                 self.apiclient,
                 listall=True,
-                resourceType='userVM',
+                resourceType='UserVm',
                 account=self.account.name,
                 domainid=self.account.domainid,
                 key=tag_key,
@@ -2313,7 +2313,7 @@ class TestResourceTags(cloudstackTestCase):
             Tag.delete(
                 self.apiclient,
                 resourceIds=self.vm_1.id,
-                resourceType='userVM',
+                resourceType='UserVm',
                 tags={tag_key: tag_value}
             )
         except Exception as e:
@@ -2334,7 +2334,7 @@ class TestResourceTags(cloudstackTestCase):
         tag = Tag.create(
             self.apiclient,
             resourceIds=self.vm_1.id,
-            resourceType='userVM',
+            resourceType='UserVm',
             tags={tag_key: tag_value}
         )
         self.debug("Tag created: %s" % tag.__dict__)
@@ -2342,7 +2342,7 @@ class TestResourceTags(cloudstackTestCase):
         tags = Tag.list(
             self.apiclient,
             listall=True,
-            resourceType='userVM',
+            resourceType='UserVm',
             account=self.account.name,
             domainid=self.account.domainid,
             key=tag_key,
@@ -2365,7 +2365,7 @@ class TestResourceTags(cloudstackTestCase):
             Tag.delete(
                 self.apiclient,
                 resourceIds=self.vm_1.id,
-                resourceType='userVM',
+                resourceType='UserVm',
                 tags={tag_key: tag_value}
             )
         except Exception as e:
@@ -3009,7 +3009,7 @@ class TestResourceTags(cloudstackTestCase):
         tag = Tag.create(
             self.apiclient,
             resourceIds=self.vm_2.id,
-            resourceType='userVM',
+            resourceType='UserVm',
             tags={tag_key: tag_value}
         )
         self.debug("Tag created: %s" % tag.__dict__)
@@ -3019,15 +3019,14 @@ class TestResourceTags(cloudstackTestCase):
             erronousTag = Tag.create(
                 self.apiclient,
                 resourceIds=self.vm_2.id,
-                resourceType='userVM',
+                resourceType='UserVm',
                 tags={tag_key: tag_value}
             )
         except Exception as e:
             # verify e.message
-            assert "tag scope already on UserVm with id" in e.message, \
+            assert "tag scope33 already on UserVm with id" in e.message, \
                 "neat error message missing from error result"
             pass
-
 
         # we should still find the tag
         vms = VirtualMachine.list(
@@ -3047,7 +3046,7 @@ class TestResourceTags(cloudstackTestCase):
             Tag.delete(
                 self.apiclient,
                 resourceIds=self.vm_2.id,
-                resourceType='userVM',
+                resourceType='UserVm',
                 tags={tag_key: tag_value}
             )
         except Exception as e:
@@ -3057,7 +3056,7 @@ class TestResourceTags(cloudstackTestCase):
         tags = Tag.list(
             self.apiclient,
             listall=True,
-            resourceType='userVM',
+            resourceType='UserVm',
             account=self.account.name,
             domainid=self.account.domainid,
             key=tag_key,
