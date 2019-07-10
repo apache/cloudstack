@@ -53,13 +53,12 @@ env:
              smoke/test_disk_offerings
              smoke/test_dynamicroles
              smoke/test_global_settings
-             smoke/test_guest_vlan_range"
-
-    - TESTS="smoke/test_hostha_kvm
+             smoke/test_guest_vlan_range
              smoke/test_hostha_simulator
              smoke/test_host_annotations
-             smoke/test_host_maintenance
-             smoke/test_internal_lb
+             smoke/test_host_maintenance"
+
+    - TESTS="smoke/test_internal_lb
              smoke/test_iso
              smoke/test_list_ids_parameter
              smoke/test_loadbalance
@@ -77,10 +76,9 @@ env:
              smoke/test_over_provisioning
              smoke/test_password_server
              smoke/test_portable_publicip
-             smoke/test_portforwardingrules"
-    
-    - TESTS="smoke/test_primary_storage"
-    
+             smoke/test_portforwardingrules
+             smoke/test_primary_storage"
+
     - TESTS="smoke/test_privategw_acl
              smoke/test_projects
              smoke/test_public_ip_range
@@ -123,10 +121,8 @@ env:
     - TESTS="component/test_acl_sharednetwork
              component/test_acl_sharednetwork_deployVM-impersonation"
 
-    - TESTS="component/test_affinity_groups_projects
-             component/test_allocation_states"
-
-    - TESTS="component/test_cpu_domain_limits
+    - TESTS="component/test_allocation_states"
+             component/test_cpu_domain_limits
              component/test_cpu_limits
              component/test_cpu_max_limits
              component/test_cpu_project_limits"
@@ -146,7 +142,8 @@ env:
              component/test_non_contiguous_vlan
              component/test_persistent_networks"
 
-    - TESTS="component/test_project_limits
+    - TESTS="component/test_affinity_groups_projects
+             component/test_project_limits
              component/test_project_configs
              component/test_project_usage
              component/test_project_resources"
@@ -154,11 +151,7 @@ env:
     - TESTS="component/test_regions_accounts
              component/test_routers
              component/test_snapshots
-             component/test_stopped_vm"
-
-    - TESTS="component/test_project_resources"
-
-    - TESTS="component/test_project_limits
+             component/test_stopped_vm
              component/test_resource_limits"
 
     - TESTS="component/test_tags
@@ -171,9 +164,8 @@ env:
              component/test_vpc_offerings
              component/test_vpn_users"
 
-# FIXME: fix following tests and include them in Travis
-#    - TESTS="component/test_vpc" Please add when PR: https://github.com/apache/cloudstack/pull/955 CLOUDSTACK-8969 is fixed
-#    - TESTS="component/test_organization_states" Please add when CLOUDSTACK-7735 is fixed
+    # Newly added component tests
+    - TESTS="component/test_acl_isolatednetwork"
 
 before_install: travis_wait 30 ./tools/travis/before_install.sh
 install: ./tools/travis/install.sh
@@ -208,16 +200,5 @@ jobs:
 
     - stage: package
       services: docker
-      env: IMAGE=khos2ow/cloudstack-rpm-builder:centos6 PARAMS="--distribution centos63 --pack oss"
-      <<: *package_job
-
-    - stage: package
-      services: docker
       env: IMAGE=khos2ow/cloudstack-deb-builder:ubuntu1804 PARAMS=""
       <<: *package_job
-
-    - stage: package
-      services: docker
-      env: IMAGE=khos2ow/cloudstack-deb-builder:ubuntu1604 PARAMS=""
-      <<: *package_job
-
