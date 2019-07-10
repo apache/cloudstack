@@ -72,13 +72,11 @@ module.exports = {
     loaderOptions: {
       less: {
         modifyVars: {
-          /* less 变量覆盖，用于自定义 ant design 主题 */
-
-          /*
-          'primary-color': '#F5222D',
-          'link-color': '#F5222D',
-          'border-radius-base': '4px',
-          */
+          // Refer:
+          // https://ant.design/docs/spec/colors
+          // https://vue.ant.design/docs/vue/customize-theme/
+          'primary-color': '#1890ff',
+          'link-color': '#1890ff'
         },
         javascriptEnabled: true
       }

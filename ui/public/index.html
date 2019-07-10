@@ -6,14 +6,175 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <link rel="icon" href="<%= BASE_URL %>cloud.ico">
     <title>Apache CloudStack</title>
-    <style>#preloadingAnimation{position:fixed;left:0;top:0;height:100%;width:100%;background:#ffffff;user-select:none;z-index: 9999;overflow: hidden}.lds-roller{display:inline-block;position:relative;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;}.lds-roller div{animation:lds-roller 1.2s cubic-bezier(0.5,0,0.5,1) infinite;transform-origin:32px 32px;}.lds-roller div:after{content:" ";display:block;position:absolute;width:6px;height:6px;border-radius:50%;background:#39a7de;margin:-3px 0 0 -3px;}.lds-roller div:nth-child(1){animation-delay:-0.036s;}.lds-roller div:nth-child(1):after{top:50px;left:50px;}.lds-roller div:nth-child(2){animation-delay:-0.072s;}.lds-roller div:nth-child(2):after{top:54px;left:45px;}.lds-roller div:nth-child(3){animation-delay:-0.108s;}.lds-roller div:nth-child(3):after{top:57px;left:39px;}.lds-roller div:nth-child(4){animation-delay:-0.144s;}.lds-roller div:nth-child(4):after{top:58px;left:32px;}.lds-roller div:nth-child(5){animation-delay:-0.18s;}.lds-roller div:nth-child(5):after{top:57px;left:25px;}.lds-roller div:nth-child(6){animation-delay:-0.216s;}.lds-roller div:nth-child(6):after{top:54px;left:19px;}.lds-roller div:nth-child(7){animation-delay:-0.252s;}.lds-roller div:nth-child(7):after{top:50px;left:14px;}.lds-roller div:nth-child(8){animation-delay:-0.288s;}.lds-roller div:nth-child(8):after{top:45px;left:10px;}#preloadingAnimation .load-tips{color: #39a7de;font-size:2rem;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin-top:80px;text-align:center;width:400px;height:64px;}  @keyframes lds-roller{0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);}}</style>
+    <style>
+    /*!
+     * Load Awesome v1.1.0 (http://github.danielcardoso.net/load-awesome/)
+     * Copyright 2015 Daniel Cardoso <@DanielCardoso>
+     * Licensed under MIT
+     */
+    .la-ball-scale-ripple-multiple,
+    .la-ball-scale-ripple-multiple > div {
+        position: relative;
+        -webkit-box-sizing: border-box;
+           -moz-box-sizing: border-box;
+                box-sizing: border-box;
+    }
+    .la-ball-scale-ripple-multiple {
+        font-size: 0;
+        color: #fff;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 250px;
+    }
+    .la-ball-scale-ripple-multiple.la-dark {
+        color: #333;
+    }
+    .la-ball-scale-ripple-multiple > div {
+        display: inline-block;
+        float: none;
+        background-color: currentColor;
+        border: 0 solid currentColor;
+    }
+    .la-ball-scale-ripple-multiple {
+        width: 32px;
+        height: 32px;
+    }
+    .la-ball-scale-ripple-multiple > div {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 32px;
+        height: 32px;
+        background: transparent;
+        border-width: 2px;
+        border-radius: 100%;
+        opacity: 0;
+        -webkit-animation: ball-scale-ripple-multiple 1.25s 0s infinite cubic-bezier(.21, .53, .56, .8);
+           -moz-animation: ball-scale-ripple-multiple 1.25s 0s infinite cubic-bezier(.21, .53, .56, .8);
+             -o-animation: ball-scale-ripple-multiple 1.25s 0s infinite cubic-bezier(.21, .53, .56, .8);
+                animation: ball-scale-ripple-multiple 1.25s 0s infinite cubic-bezier(.21, .53, .56, .8);
+    }
+    .la-ball-scale-ripple-multiple > div:nth-child(1) {
+        -webkit-animation-delay: 0s;
+           -moz-animation-delay: 0s;
+             -o-animation-delay: 0s;
+                animation-delay: 0s;
+    }
+    .la-ball-scale-ripple-multiple > div:nth-child(2) {
+        -webkit-animation-delay: .25s;
+           -moz-animation-delay: .25s;
+             -o-animation-delay: .25s;
+                animation-delay: .25s;
+    }
+    .la-ball-scale-ripple-multiple > div:nth-child(3) {
+        -webkit-animation-delay: .5s;
+           -moz-animation-delay: .5s;
+             -o-animation-delay: .5s;
+                animation-delay: .5s;
+    }
+    .la-ball-scale-ripple-multiple.la-sm {
+        width: 16px;
+        height: 16px;
+    }
+    .la-ball-scale-ripple-multiple.la-sm > div {
+        width: 16px;
+        height: 16px;
+        border-width: 1px;
+    }
+    .la-ball-scale-ripple-multiple.la-2x {
+        width: 64px;
+        height: 64px;
+    }
+    .la-ball-scale-ripple-multiple.la-2x > div {
+        width: 64px;
+        height: 64px;
+        border-width: 4px;
+    }
+    .la-ball-scale-ripple-multiple.la-3x {
+        width: 96px;
+        height: 96px;
+    }
+    .la-ball-scale-ripple-multiple.la-3x > div {
+        width: 96px;
+        height: 96px;
+        border-width: 6px;
+    }
+    /*
+     * Animation
+     */
+    @-webkit-keyframes ball-scale-ripple-multiple {
+        0% {
+            opacity: 1;
+            -webkit-transform: scale(.1);
+                    transform: scale(.1);
+        }
+        70% {
+            opacity: .5;
+            -webkit-transform: scale(1);
+                    transform: scale(1);
+        }
+        95% {
+            opacity: 0;
+        }
+    }
+    @-moz-keyframes ball-scale-ripple-multiple {
+        0% {
+            opacity: 1;
+            -moz-transform: scale(.1);
+                 transform: scale(.1);
+        }
+        70% {
+            opacity: .5;
+            -moz-transform: scale(1);
+                 transform: scale(1);
+        }
+        95% {
+            opacity: 0;
+        }
+    }
+    @-o-keyframes ball-scale-ripple-multiple {
+        0% {
+            opacity: 1;
+            -o-transform: scale(.1);
+               transform: scale(.1);
+        }
+        70% {
+            opacity: .5;
+            -o-transform: scale(1);
+               transform: scale(1);
+        }
+        95% {
+            opacity: 0;
+        }
+    }
+    @keyframes ball-scale-ripple-multiple {
+        0% {
+            opacity: 1;
+            -webkit-transform: scale(.1);
+               -moz-transform: scale(.1);
+                 -o-transform: scale(.1);
+                    transform: scale(.1);
+        }
+        70% {
+            opacity: .5;
+            -webkit-transform: scale(1);
+               -moz-transform: scale(1);
+                 -o-transform: scale(1);
+                    transform: scale(1);
+        }
+        95% {
+            opacity: 0;
+        }
+    }
+    </style>
   </head>
   <body>
     <noscript>
-      <strong>We're sorry but CloudStack Primate UI doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+      <strong>We're sorry but CloudStack Primate needs JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
     <div id="app">
-      <div id="preloadingAnimation"><div class=lds-roller><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div><div class=load-tips>Loading</div></div>
+        <div style="color: #39A7DE" class="la-ball-scale-ripple-multiple la-3x"><div></div><div></div><div></div></div>
     </div>
   </body>
 </html>
