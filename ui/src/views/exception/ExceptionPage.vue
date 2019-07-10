@@ -1,7 +1,13 @@
 <template>
   <div class="exception">
-    <div class="img">
-      <img :src="config[type].img"/>
+    <div class="img" v-if="type == '403'">
+      <img src="@/assets/403.png"/>
+    </div>
+    <div class="img" v-if="type == '404'">
+      <img src="@/assets/404.png"/>
+    </div>
+    <div class="img" v-if="type == '500'">
+      <img src="@/assets/500.png"/>
     </div>
     <div class="content">
       <h1>{{ config[type].title }}</h1>
@@ -49,8 +55,8 @@ export default {
       padding-right: 52px;
       zoom: 1;
       img {
-        height: 360px;
-        max-width: 430px;
+        height: 256px;
+        max-width: 256px;
       }
     }
     .content {

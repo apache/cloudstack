@@ -2,43 +2,62 @@
   <div class="page-header-index-wide">
     <a-row :gutter="24" :style="{ marginTop: '24px' }">
       <a-col :sm="24" :md="6" :xl="18" :style="{ marginBottom: '24px' }">
-        <a-select
-          showSearch
-          optionFilterProp="children"
-          :defaultValue="zoneSelected.name"
-          :value="zoneSelected.name"
-          @change="changeZone"
-          style="width: 100%" >
-          <a-select-option v-for="(zone, index) in zones" :key="index">
-            {{ zone.name }}
-          </a-select-option>
-        </a-select>
-      </a-col>
-      <a-col :sm="24" :md="6" :xl="6" :style="{ marginBottom: '24px' }">
-        <a-button
-          type="primary"
-          @click="listCapacity(zoneSelected, true)">Fetch Latest Statistics</a-button>
-      </a-col>
-    </a-row>
+        <a-col :sm="24" :md="6" :xl="20" :style="{ marginBottom: '24px' }">
+          <a-select
+            showSearch
+            optionFilterProp="children"
+            :defaultValue="zoneSelected.name"
+            :value="zoneSelected.name"
+            @change="changeZone"
+            style="width: 100%" >
+            <a-select-option v-for="(zone, index) in zones" :key="index">
+              {{ zone.name }}
+            </a-select-option>
+          </a-select>
+        </a-col>
+        <a-col :sm="24" :md="6" :xl="4" :style="{ marginBottom: '24px' }">
+          <a-button
+            type="primary"
+            @click="listCapacity(zoneSelected, true)">Fetch Latest Statistics</a-button>
+        </a-col>
 
-    <a-row :gutter="24">
-      <a-col
-        :sm="12"
-        :md="12"
-        :xl="6"
-        :style="{ marginBottom: '28px' }"
-        v-for="stat in stats"
-        :key="stat.type">
-        <chart-card :loading="loading" style="padding-top: 40px">
+        <a-col
+          :sm="12"
+          :md="12"
+          :xl="6"
+          :style="{ marginBottom: '28px' }"
+          v-for="stat in stats"
+          :key="stat.type">
+          <chart-card :loading="loading" style="padding-top: 40px">
+            <div style="text-align: center">
+              <h4>{{ stat.name }}</h4>
+              <a-progress type="dashboard" :percent="parseFloat(stat.percentused, 10)" :width="100" />
+            </div>
+            <template slot="footer"><span>{{ stat.capacityused }} / {{ stat.capacitytotal }}</span></template>
+          </chart-card>
+        </a-col>
+      </a-col>
+      <a-col :xl="6">
+        <chart-card style="margin-bottom: 24px">
           <div style="text-align: center">
-            <h4>{{ stat.name }}</h4>
-            <a-progress type="dashboard" :percent="parseFloat(stat.percentused, 10)" :width="100" />
+            <h4>Alerts</h4>
+            <p>Some event data here...</p>
           </div>
-          <template slot="footer"><span>{{ stat.capacityused }} / {{ stat.capacitytotal }}</span></template>
+        </chart-card>
+        <chart-card style="margin-bottom: 24px">
+          <div style="text-align: center">
+            <h4>Host Alerts</h4>
+            <p>Some event data here...</p>
+          </div>
+        </chart-card>
+        <chart-card style="margin-bottom: 24px">
+          <div style="text-align: center">
+            <h4>Events</h4>
+            <p>Some event data here...</p>
+          </div>
         </chart-card>
       </a-col>
     </a-row>
-
   </div>
 </template>
 

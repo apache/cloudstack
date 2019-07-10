@@ -602,7 +602,7 @@ export const asyncRouterMap = [
         name: 'exception',
         component: RouteView,
         hidden: true,
-        redirect: '/exception/403',
+        redirect: '/exception/404',
         meta: { title: 'Exception', icon: 'warning' },
         children: [
           {
