@@ -2677,6 +2677,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
         // perform extraction
         ImageStoreEntity secStore = (ImageStoreEntity)dataStoreMgr.getImageStore(zoneId);
+        if (secStore == null) {
+            throw new InvalidParameterValueException(String.format("Secondary storage to satisfy storage needs cannot be found for zone: %d", zoneId));
+        }
         String value = _configDao.getValue(Config.CopyVolumeWait.toString());
         NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
 

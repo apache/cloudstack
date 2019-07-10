@@ -1118,7 +1118,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         vm.setDetails(details);
 
         DataStore secStore = _dataStoreMgr.getImageStore(dest.getDataCenter().getId());
-        assert (secStore != null);
+        if (secStore != null) {
+            s_logger.error(String.format("Unable to finalize virtual machine profile as no secondary storage available to satisfy storage needs for zone: %s", dest.getDataCenter().getUuid()));
+            return false;
+        }
 
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=secstorage");
