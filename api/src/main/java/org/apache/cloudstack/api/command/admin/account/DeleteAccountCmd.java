@@ -16,9 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.account;
 
-import javax.inject.Inject;
+import java.util.List;
 
-import org.apache.log4j.Logger;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
@@ -92,7 +93,8 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        User user = _responseGenerator.findUserById(getId());
+        List<User> users = _accountService.getAccountUsers(_accountService.getAccount(getId()));
+        User user = users.isEmpty() ? null : users.get(0);
         return (user != null ? ("deleting User " + user.getUsername() + " (id: " + user.getId() + ") and accountId = " + user.getAccountId())
             : "user delete, but this user does not exist in the system");
     }

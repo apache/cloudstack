@@ -449,6 +449,12 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
             throws PermissionDeniedException {
 
     }
+
+    @Override
+    public List<User> getAccountUsers(Account account) {
+        return null;
+    }
+
     @Override
     public String getConfigComponentName() {
         return null;
