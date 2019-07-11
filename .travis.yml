@@ -105,20 +105,16 @@ env:
              smoke/test_volumes
              smoke/test_vpc_redundant
              smoke/test_vpc_router_nics
-             smoke/test_vpc_vpn
-             smoke/test_primary_storage
-             smoke/misc/test_deploy_vm
-             smoke/misc/test_escalations_templates
-             smoke/misc/test_vm_ha
-             smoke/misc/test_vm_sync"
+             smoke/test_vpc_vpn"
 
     - TESTS="component/find_hosts_for_migration
              component/test_acl_isolatednetwork
-             component/test_acl_isolatednetwork_delete"
-
-    - TESTS="component/test_acl_listsnapshot
+             component/test_acl_isolatednetwork_delete
+             component/test_acl_listsnapshot
              component/test_acl_listvm
-             component/test_acl_listvolume
+             smoke/test_primary_storage"
+
+    - TESTS="component/test_acl_listvolume
              component/test_acl_sharednetwork
              component/test_acl_sharednetwork_deployVM-impersonation"
 
@@ -170,13 +166,10 @@ env:
 
     - TESTS="component/test_vpc_distributed_routing_offering
              component/test_vpc_network
-             component/test_vpc_network_internal_lbrules
              component/test_vpc_network_lbrules
              component/test_vpc_offerings
-             component/test_vpc_routers"
-
-    - TESTS="component/test_vpc_vm_life_cycle
-             component/test_vpc_vms_deployment
+             component/test_vpc_routers
+             component/test_vpc_vm_life_cycle
              component/test_vpn_users"
 
 before_install: travis_wait 30 ./tools/travis/before_install.sh
