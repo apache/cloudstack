@@ -417,12 +417,6 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         throws PermissionDeniedException {
 
     }
-
-    @Override
-    public List<User> getAccountUsers(Account account) {
-        return null;
-    }
-
     @Override
     public String getConfigComponentName() {
         return null;

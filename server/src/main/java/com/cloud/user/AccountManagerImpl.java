@@ -2871,15 +2871,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public List<User> getAccountUsers(Account account) {
-        List<User> users = new ArrayList<>();
-        if (account != null) {
-            users.addAll(_userDao.listByAccount(account.getId()));
-        }
-        return users;
-    }
-
-    @Override
     public String getConfigComponentName() {
         return AccountManager.class.getSimpleName();
     }

@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.user;
 
-import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -114,7 +113,5 @@ public interface AccountService {
      */
     UserAccount getUserAccountById(Long userId);
 
-    Map<String, String> getKeys(GetUserKeysCmd cmd);
-
-    List<User> getAccountUsers(Account account);
+    public Map<String, String> getKeys(GetUserKeysCmd cmd);
 }
