@@ -514,29 +514,7 @@
                                                 if (this.iscustomized == true) {
                                                     items.push({
                                                         id: this.id,
-                                                        description: this.displaytext
-                                                    });
-                                                }
-                                            });
-                                            args.response.success({
-                                                data: items
-                                            });
-                                        }
-                                    },
-                                    diskOffering: {
-                                        label: 'label.custom.disk.offering',
-                                        docID: 'helpVolumeDiskOffering',
-                                        select: function(args) {
-                                            var diskOfferings = cloudStack.listDiskOfferings({});
-                                            var items = [{
-                                                id: '',
-                                                description: ''
-                                            }];
-                                            $(diskOfferings).each(function() {
-                                                if (this.iscustomized == true) {
-                                                    items.push({
-                                                        id: this.id,
-                                                        description: this.displaytext
+                                                        description: this.name
                                                     });
                                                 }
                                             });
