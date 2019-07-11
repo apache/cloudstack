@@ -119,12 +119,11 @@ env:
 
     - TESTS="component/test_acl_listvm
              component/test_acl_listvolume
-             component/test_acl_sharednetwork"
+             component/test_acl_sharednetwork
+             component/test_acl_sharednetwork_deployVM-impersonation"
 
-    - TESTS="component/test_acl_sharednetwork_deployVM-impersonation
-             component/test_affinity_groups_projects"
-
-    - TESTS="component/test_allocation_states
+    - TESTS="component/test_affinity_groups_projects
+             component/test_allocation_states
              component/test_assign_vm
              component/test_concurrent_snapshots_limit"
 
@@ -172,12 +171,13 @@ env:
              component/test_vpc_distributed_routing_offering
              component/test_vpc_network
              component/test_vpc_network_internal_lbrules
-             component/test_vpc_network_lbrules
-             component/test_vpc_offerings
+             component/test_vpc_network_lbrules"
+
+    - TESTS="component/test_vpc_offerings
              component/test_vpc_routers
              component/test_vpc_vm_life_cycle
              component/test_vpc_vms_deployment
-             component/test_vpn_users
+             component/test_vpn_users"
 
 before_install: travis_wait 30 ./tools/travis/before_install.sh
 install: ./tools/travis/install.sh
