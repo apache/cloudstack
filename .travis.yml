@@ -101,29 +101,31 @@ env:
              smoke/test_usage
              smoke/test_usage_events
              smoke/test_vm_life_cycle
-             smoke/test_vm_snapshots
-             smoke/test_volumes
+             smoke/test_vm_snapshots"
+
+    - TESTS="smoke/test_volumes
              smoke/test_vpc_redundant
              smoke/test_vpc_router_nics
-             smoke/test_vpc_vpn"
+             smoke/test_vpc_vpn
+             smoke/test_primary_storage"
 
     - TESTS="component/find_hosts_for_migration
              component/test_acl_isolatednetwork
-             component/test_acl_isolatednetwork_delete
-             component/test_acl_listsnapshot
-             component/test_acl_listvm
-             smoke/test_primary_storage"
+             component/test_acl_isolatednetwork_delete"
 
-    - TESTS="component/test_acl_listvolume
-             component/test_acl_sharednetwork
+    - TESTS="component/test_acl_listsnapshot
+             component/test_acl_listvm
+             component/test_acl_listvolume"
+
+    - TESTS="component/test_acl_sharednetwork
              component/test_acl_sharednetwork_deployVM-impersonation"
 
     - TESTS="component/test_affinity_groups_projects
              component/test_allocation_states
-             component/test_assign_vm
-             component/test_concurrent_snapshots_limit"
+             component/test_assign_vm"
 
-    - TESTS="component/test_cpu_domain_limits
+    - TESTS="component/test_concurrent_snapshots_limit
+             component/test_cpu_domain_limits
              component/test_cpu_limits
              component/test_cpu_max_limits
              component/test_cpu_project_limits
@@ -131,45 +133,46 @@ env:
 
     - TESTS="component/test_egress_fw_rules
              component/test_invalid_gw_nm
-             component/test_ip_reservation
-             component/test_lb_secondary_ip
-             component/test_list_nics
-             component/test_list_pod"
+             component/test_ip_reservation"
 
-    - TESTS="component/test_memory_limits
-             component/test_mm_domain_limits
+    - TESTS="component/test_lb_secondary_ip
+             component/test_list_nics
+             component/test_list_pod
+             component/test_memory_limits"
+
+    - TESTS="component/test_mm_domain_limits
              component/test_mm_max_limits
              component/test_mm_project_limits
              component/test_network_offering
              component/test_non_contiguous_vlan"
 
-    - TESTS="component/test_overcommit
-             component/test_persistent_networks
-             component/test_project_configs"
+    - TESTS="component/test_overcommit"
 
-    - TESTS="component/test_project_limits
-             component/test_project_resources
-             component/test_project_usage
-             component/test_regions_accounts"
+    - TESTS="component/test_persistent_networks
+             component/test_project_configs
+             component/test_project_limits
+             component/test_project_resources"
 
-    - TESTS="component/test_resource_limits
-             component/test_routers
+    - TESTS="component/test_project_usage
+             component/test_regions_accounts
+             component/test_resource_limits"
+
+    - TESTS="component/test_routers
              component/test_snapshots
-             component/test_stopped_vm"
-
-    - TESTS="component/test_tags
+             component/test_stopped_vm
+             component/test_tags
              component/test_templates
              component/test_updateResourceCount
-             component/test_update_vm
-             component/test_volumes
-             component/test_vpc"
+             component/test_update_vm"
 
-    - TESTS="component/test_vpc_distributed_routing_offering
-             component/test_vpc_network
+    - TESTS="component/test_volumes
+             component/test_vpc
+             component/test_vpc_distributed_routing_offering"
+
+    - TESTS="component/test_vpc_network
              component/test_vpc_network_lbrules
              component/test_vpc_offerings
              component/test_vpc_routers
-             component/test_vpc_vm_life_cycle
              component/test_vpn_users"
 
 before_install: travis_wait 30 ./tools/travis/before_install.sh
