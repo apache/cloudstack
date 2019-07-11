@@ -208,3 +208,12 @@ class TestMetrics(cloudstackTestCase):
 
         self.assertTrue(hasattr(li, 'systemvms'))
         self.assertTrue(hasattr(li, 'cpusockets'))
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    def test_list_cpu_socket_metrics(self):
+        cmd = listCpuSocketsMetrics.listCpuSocketsMetricsCmd()
+        cpu_socket_metric = self.apiclient.listCpuSocketsMetrics(cmd)[0]
+        self.assertTrue(hasattr(cpu_socket_metric, 'hypervisorname'))
+        self.assertTrue(hasattr(cpu_socket_metric, 'hostscount'))
+        self.assertTrue(hasattr(cpu_socket_metric, 'cpusocketscount'))
+        self.assertTrue(hasattr(cpu_socket_metric, 'hypervisorversion'))

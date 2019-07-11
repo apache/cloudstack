@@ -78,6 +78,9 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     private static final String LIST_CLUSTERID_FOR_HOST_TAG = "select distinct cluster_id from host join host_tags on host.id = host_tags.host_id and host_tags.tag = ?";
 
+    private static final String GET_CPU_SOCKETS_METRICS = "SELECT host.hypervisor_type, host.hypervisor_version, SUM(host.cpu_sockets), COUNT(*)" +
+            "FROM host WHERE type = 'Routing' AND host.cpu_sockets IS NOT NULL AND host.removed IS NULL GROUP BY host.hypervisor_type, host.hypervisor_version";
+
     protected SearchBuilder<HostVO> TypePodDcStatusSearch;
 
     protected SearchBuilder<HostVO> IdStatusSearch;
@@ -125,6 +128,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected GenericSearchBuilder<HostVO, Long> ClustersForHostsNotOwnedByAnyMSSearch;
     protected GenericSearchBuilder<ClusterVO, Long> AllClustersSearch;
     protected SearchBuilder<HostVO> HostsInClusterSearch;
+    protected GenericSearchBuilder<HostVO, Integer> CpuSocketsCountSearch;
 
     protected Attribute _statusAttr;
     protected Attribute _resourceStateAttr;
@@ -157,6 +161,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         MaintenanceCountSearch.and("cluster", MaintenanceCountSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         MaintenanceCountSearch.and("resourceState", MaintenanceCountSearch.entity().getResourceState(), SearchCriteria.Op.IN);
         MaintenanceCountSearch.done();
+
+        CpuSocketsCountSearch = createSearchBuilder(Integer.class);
+        CpuSocketsCountSearch.select(null, Func.SUM, CpuSocketsCountSearch.entity().getCpuSockets());
+        CpuSocketsCountSearch.and("type", CpuSocketsCountSearch.entity().getType(), Op.EQ);
+        CpuSocketsCountSearch.and("cpuSockets", CpuSocketsCountSearch.entity().getCpuSockets(), Op.NNULL);
+        CpuSocketsCountSearch.done();
 
         TypePodDcStatusSearch = createSearchBuilder();
         HostVO entity = TypePodDcStatusSearch.entity();
@@ -1203,5 +1213,89 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             hostResourceStatus = "Disabled";
         }
         return String.format(sqlFindHostInZoneToExecuteCommand, hostResourceStatus);
+    }
+
+    @Override
+    public int getCpuSocketsCount(Type type)
+    {
+        SearchCriteria<Integer> sc = CpuSocketsCountSearch.create();
+        sc.setParameters("type", type);
+        List<Integer> result = customSearch(sc, null);
+        if (result != null && result.size() > 0 && result.get(0) != null) {
+            return result.get(0);
+        }
+        return 0;
+    }
+
+    @Override
+    public List<SummedMetrics> getCpuSocketsMetricsCount(Type type)
+    {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        List<SummedMetrics> result = new ArrayList<SummedMetrics>();
+        StringBuilder sql = new StringBuilder(GET_CPU_SOCKETS_METRICS);
+
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            ResultSet rs = pstmt.executeQuery();
+
+            while(rs.next())
+            {
+                SummedMetrics metrics = new SummedMetrics(rs.getString(1), rs.getInt(4), rs.getInt(3), rs.getString(2));
+                result.add(metrics);
+            }
+
+            return result;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static class SummedMetrics {
+        public String hypervisorname;
+        public int hostscount;
+        public int cpusocketscount;
+        public String hypervisorversion;
+
+        public SummedMetrics(String hypervisorname, int hostscount, int cpusocketscount, String hypervisorversion) {
+            this.hypervisorversion = hypervisorversion;
+            this.hypervisorname = hypervisorname;
+            this.hostscount = hostscount;
+            this.cpusocketscount = cpusocketscount;
+        }
+
+        public String getHypervisorname() {
+            return hypervisorname;
+        }
+
+        public void setHypervisorname(String hypervisorname) {
+            this.hypervisorname = hypervisorname;
+        }
+
+        public Integer getHostscount() {
+            return hostscount;
+        }
+
+        public void setHostscount(int hostscount) {
+            this.hostscount = hostscount;
+        }
+
+        public int getCpusocketscount() {
+            return cpusocketscount;
+        }
+
+        public void setCpusocketscount(Integer cpusocketscount) {
+            this.cpusocketscount = cpusocketscount;
+        }
+
+        public String getHypervisorversion() {
+            return hypervisorversion;
+        }
+
+        public void setHypervisorversion(String hypervisorversion) {
+            this.hypervisorversion = hypervisorversion;
+        }
     }
 }
