@@ -228,8 +228,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private static final ConfigKey<Integer> IntegrationAPIPort = new ConfigKey<Integer>("Advanced"
             , Integer.class
             , "integration.api.port"
-            , "8096"
-            , "Default API port"
+            , "0"
+            , "Integration API port (Unauthenticated)"
             , false
             , ConfigKey.Scope.Global);
     private static final ConfigKey<Long> ConcurrentSnapshotsThresholdPerHost = new ConfigKey<Long>("Advanced"
