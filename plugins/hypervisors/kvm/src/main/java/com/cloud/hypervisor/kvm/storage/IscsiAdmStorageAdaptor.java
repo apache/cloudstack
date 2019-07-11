@@ -242,7 +242,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         String result = iScsiAdmCmd.execute(parser);
 
         if (result != null) {
-            s_logger.warn("Unable to retrieve the size of device " + deviceByPath);
+            s_logger.warn("Unable to retrieve the size of device (resource may have moved to a different host)" + deviceByPath);
 
             return 0;
         }

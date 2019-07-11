@@ -1904,10 +1904,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType, List<String> volumeLocator, int timeout) {
+    public HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType, List<String> volumeLocators, int timeout) {
         List<HostVO> neighbors = _resourceMgr.listHostsInClusterByStatus(clusterId, Status.Up);
         for (HostVO neighbor : neighbors) {
-            GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocator);
+            StoragePool storagePool = _storagePoolDao.findPoolByUUID(poolUuid);
+            List<String> volumeLocatorsForHost;
+            if (storagePool.isManaged()) {
+                List<UserVmVO> vmsPerHost = _vmDao.listByHostId(neighbor.getId());
+                volumeLocatorsForHost = vmsPerHost.stream().flatMap(vm -> _volsDao.findByInstance(vm.getId()).stream().map(vol -> vol.getUuid())).collect(Collectors.toList());
+            } else {
+                volumeLocatorsForHost = volumeLocators;
+            }
+            GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocatorsForHost);
             if (timeout > 0) {
                 cmd.setWait(timeout/1000);
             }
