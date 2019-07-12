@@ -55,7 +55,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, validations = ApiArgValidator.NotNullOrEmpty, description = "name of the project")
     private String name;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, validations = ApiArgValidator.NotNullOrEmpty, description = "display text of the project")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "display text of the project")
     private String displayText;
 
     // ///////////////////////////////////////////////////

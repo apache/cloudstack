@@ -85,6 +85,7 @@ class TestDomainAccountProject(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags=["advanced", "basic", "sg"], required_hardware="false")
     def test_01_create_list_domain_account_project(self):
         """ Verify list domain, account and project return expected response
         """
