@@ -5448,7 +5448,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     for (String domainIdString : domainIdsArray) {
                         Long dId = Long.valueOf(domainIdString.trim());
                         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN &&
-                                !_domainDao.isChildDomain(caller.getDomainId(), dId)) {
+                                !_domainDao.isChildDomain(dId, caller.getDomainId())) {
                             toRemove = true;
                             break;
                         }
