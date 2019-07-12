@@ -1368,21 +1368,37 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     /**
-     * Return true if host goes into Maintenance mode, only when:
-     * - No Running, Migrating or Failed migrations (host_id = last_host_id) for the host
+     * Return true if host goes into Maintenance mode. There are various possibilities for VMs' states
+     * on a host. We need to track the various VM states on each run and accordingly transit to the
+     * appropriate state.
+     *
+     * We change states as follws -
+     * 1. If there are no VMs in running, migrating, starting, stopping, error, unknown states we can move
+     *    to maintenance state. Note that there cannot be incoming migrations as the API Call prepare for
+     *    maintenance checks incoming migrations before starting.
+     * 2. If there errors (like migrating VMs, error VMs, etc) we mark as ErrorInPrepareForMaintenance but
+     *    don't stop remaining migrations/ongoing legitimate operations.
+     * 3. If all migration retries, legitimate operations have finished we check for VMs on the host and if
+     *    there are still VMs in error state or in running state or failed migrations we mark the VM as
+     *    ErrorInMaintenance state.
+     * 4. Lastly if there are no errors or failed migrations or running VMs but there are still pending
+     *    legitimate operations and the host was in ErrorInPrepareForMaintenance, we push the host back
+     *    to PrepareForMaintenance state.
      */
-    private boolean attemptMaintain(HostVO host) throws NoTransitionException {
+    protected boolean attemptMaintain(HostVO host) throws NoTransitionException {
         final long hostId = host.getId();
 
-        if (CollectionUtils.isEmpty(_vmDao.findByHostInStates(hostId, State.Migrating, State.Running, State.Starting, State.Stopping, State.Error, State.Unknown))) {
+        // Step 1: If there are no VMs in migrating, running, starting, stopping, error or unknown state we can safely move the host to maintenance.
+        if (CollectionUtils.isEmpty(_vmDao.findByHostInStates(host.getId(), State.Migrating, State.Running, State.Starting, State.Stopping, State.Error, State.Unknown))) {
             return setHostIntoMaintenance(host);
         }
 
+        // Step 2: Gather relevant VMs' states on the host and then based on them we can determine if
         final List<VMInstanceVO> allVmsOnHost = _vmDao.listByHostId(hostId);
-        boolean hasPendingMigrationWorks = false;
+        boolean hasPendingMigrationRetries = false;
         for (VMInstanceVO vmInstanceVO : allVmsOnHost) {
             if (_haMgr.hasPendingMigrationsWork(vmInstanceVO.getId())) {
-                hasPendingMigrationWorks = true;
+                hasPendingMigrationRetries = true;
                 break;
             }
         }
@@ -1393,17 +1409,24 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final boolean hasRunningVms = CollectionUtils.isNotEmpty(_vmDao.findByHostInStates(hostId, State.Running));
         final boolean hasFailedMigrations = CollectionUtils.isNotEmpty(failedMigrations);
         final boolean hasVmsInFailureStates = CollectionUtils.isNotEmpty(errorVms);
+        final boolean hasStoppingVms = CollectionUtils.isNotEmpty(_vmDao.findByHostInStates(hostId, State.Stopping));
         errorVms.addAll(failedMigrations);
 
-        if (!hasPendingMigrationWorks && (hasRunningVms || (!hasRunningVms && !hasMigratingVms && hasVmsInFailureStates))) {
+        // Step 3: If there are no pending migration retries but host still has no running VMs or ongoing migrations,
+        // or no VMs in failure state we move the host to ErrorInMaintenance state.
+        if (!hasPendingMigrationRetries && (hasRunningVms || (!hasRunningVms && !hasMigratingVms && hasVmsInFailureStates))) {
             return setHostIntoErrorInMaintenance(host, errorVms);
         }
 
-        if ((hasVmsInFailureStates || hasFailedMigrations) && (hasPendingMigrationWorks || hasMigratingVms || CollectionUtils.isNotEmpty(_vmDao.findByHostInStates(hostId, State.Stopping)))) {
+        // Step 4: IF there are pending migrations or ongoing retries left or stopping VMs and there were errors or failed
+        // migrations we put the host into ErrorInPrepareForMaintenance
+        if ((hasVmsInFailureStates || hasFailedMigrations) && (hasPendingMigrationRetries || hasMigratingVms || hasStoppingVms)) {
             return setHostIntoPrepareForMaintenanceWithErrors(host, errorVms);
         }
 
-        if (host.getResourceState() == ResourceState.PrepareForMaintenanceErrorsPresent) {
+        // Step 5: If there were previously errors found, but not anymore it means the operator has fixed errors and we put
+        // the host into PrepareForMaintenance state.
+        if (host.getResourceState() == ResourceState.ErrorInPrepareForMaintenance) {
             return setHostIntoPrepareForMaintenanceAfterErrorsFixed(host);
         }
 
@@ -2349,7 +2372,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
          * really prefer to exception that always exposes bugs
          */
         if (host.getResourceState() != ResourceState.PrepareForMaintenance &&
-                host.getResourceState() != ResourceState.PrepareForMaintenanceErrorsPresent &&
+                host.getResourceState() != ResourceState.ErrorInPrepareForMaintenance &&
                 host.getResourceState() != ResourceState.Maintenance &&
                 host.getResourceState() != ResourceState.ErrorInMaintenance) {
             throw new CloudRuntimeException("Cannot perform cancelMaintenance when resource state is " + host.getResourceState() + ", hostId = " + hostId);
@@ -3003,6 +3026,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {KvmSshToAgentEnabled};
+        return new ConfigKey[0];
     }
 }

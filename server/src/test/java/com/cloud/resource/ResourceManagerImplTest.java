@@ -17,6 +17,8 @@
 
 package com.cloud.resource;
 
+import static com.cloud.resource.ResourceState.Event.InternalEnterMaintenance;
+import static com.cloud.resource.ResourceState.Event.UnableToMigrate;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
@@ -59,6 +61,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.utils.ssh.SshException;
 import com.cloud.vm.VMInstanceVO;
@@ -165,6 +168,41 @@ public class ResourceManagerImplTest {
                 willReturn(new SSHCmdHelper.SSHCmdResult(0,"",""));
 
         when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("true");
+    }
+
+    @Test
+    public void testCheckAndMaintainEnterMaintenanceMode() throws NoTransitionException {
+        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
+        verify(resourceManager).attemptMaintain(host);
+        verify(resourceManager).setHostIntoMaintenance(host);
+        verify(resourceManager).resourceStateTransitTo(eq(host), eq(InternalEnterMaintenance), anyLong());
+        Assert.assertTrue(enterMaintenanceMode);
+    }
+
+    @Test
+    public void testCheckAndMaintainErrorInMaintenanceRunningVms() throws NoTransitionException {
+        when(vmInstanceDao.listByHostId(hostId)).thenReturn(Arrays.asList(vm1, vm2));
+        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
+        verify(resourceManager).attemptMaintain(host);
+        Assert.assertFalse(enterMaintenanceMode);
+    }
+
+    @Test
+    public void testCheckAndMaintainErrorInMaintenanceMigratingVms() throws NoTransitionException {
+        when(vmInstanceDao.listVmsMigratingFromHost(hostId)).thenReturn(Arrays.asList(vm1, vm2));
+        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
+        verify(resourceManager).attemptMaintain(host);
+        Assert.assertFalse(enterMaintenanceMode);
+    }
+
+    @Test
+    public void testCheckAndMaintainErrorInMaintenanceFailedMigrations() throws NoTransitionException {
+        when(vmInstanceDao.listNonMigratingVmsByHostEqualsLastHost(hostId)).thenReturn(Arrays.asList(vm1, vm2));
+        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
+        verify(resourceManager).attemptMaintain(host);
+        verify(resourceManager).setHostIntoErrorInMaintenance(host, Arrays.asList(vm1, vm2));
+        verify(resourceManager).resourceStateTransitTo(eq(host), eq(UnableToMigrate), anyLong());
+        Assert.assertFalse(enterMaintenanceMode);
     }
 
     @Test
