@@ -947,7 +947,7 @@ var addL2GuestNetwork = {
                     validation: {
                         required: true
                     },
-                    dependsOn: ['zoneId', 'domain'],
+                    dependsOn: (isAdmin() || isDomainAdmin()) ? ['zoneId', 'domain'] : 'zoneId', // domain is visible only for admins
                     docID: 'helpGuestNetworkNetworkOffering',
                     select: function(args) {
                         var data = {
@@ -956,7 +956,7 @@ var addL2GuestNetwork = {
                             state: 'Enabled'
                         };
 
-                        if (args.domain != undefined && args.domain != null) {
+                        if ((isAdmin() || isDomainAdmin())) { // domain is visible only for admins
                             $.extend(data, {
                                 domainid: args.domain
                             });
