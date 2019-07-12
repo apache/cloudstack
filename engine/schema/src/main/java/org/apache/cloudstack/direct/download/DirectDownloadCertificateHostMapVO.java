@@ -38,12 +38,16 @@ public class DirectDownloadCertificateHostMapVO {
     @Column(name = "certificate_id")
     private Long certificateId;
 
+    @Column(name = "revoked")
+    private Boolean revoked;
+
     public DirectDownloadCertificateHostMapVO() {
     }
 
     public DirectDownloadCertificateHostMapVO(Long certificateId, Long hostId) {
         this.certificateId = certificateId;
         this.hostId = hostId;
+        this.revoked = false;
     }
 
     public Long getId() {
@@ -68,5 +72,13 @@ public class DirectDownloadCertificateHostMapVO {
 
     public void setCertificateId(Long certificateId) {
         this.certificateId = certificateId;
+    }
+
+    public Boolean isRevoked() {
+        return revoked;
+    }
+
+    public void setRevoked(Boolean revoked) {
+        this.revoked = revoked;
     }
 }

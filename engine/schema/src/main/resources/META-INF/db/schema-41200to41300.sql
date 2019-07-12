@@ -378,6 +378,7 @@ CREATE TABLE `cloud`.`direct_download_certificate_host_map` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `certificate_id` bigint(20) unsigned NOT NULL,
   `host_id` bigint(20) unsigned NOT NULL,
+  `revoked` int(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `fk_direct_download_certificate_host_map__host_id` (`host_id`),
   KEY `fk_direct_download_certificate_host_map__certificate_id` (`certificate_id`),

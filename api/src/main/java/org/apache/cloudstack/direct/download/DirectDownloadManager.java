@@ -26,12 +26,14 @@ public interface DirectDownloadManager extends DirectDownloadService, PluggableS
 
     ConfigKey<Long> DirectDownloadCertificateUploadInterval = new ConfigKey<>("Advanced", Long.class,
             "direct.download.certificate.background.task.interval",
-            "24",
-            "The Direct Download framework background interval in hours.",
-            true);
+            "0",
+            "This interval (in hours) controls a background task to sync hosts within enabled zones " +
+                    "missing uploaded certificates for direct download." +
+                    "Only certificates which have not been revoked from hosts are uploaded",
+            false);
 
     /**
      * Revoke direct download certificate with alias 'alias' from hosts of hypervisor type 'hypervisor'
      */
-    boolean revokeCertificateAlias(String certificateAlias, String hypervisor, Long zoneId);
+    boolean revokeCertificateAlias(String certificateAlias, String hypervisor, Long zoneId, Long hostId);
 }

@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -58,12 +59,16 @@ public class RevokeTemplateDirectDownloadCertificateCmd extends BaseCmd {
     private String certificateAlias;
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = BaseCmd.CommandType.STRING, required = true,
-            description = "Hypervisor type")
+            description = "hypervisor type")
     private String hypervisor;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
-            description = "Zone to upload certificate", required = true)
+            description = "zone to revoke certificate", required = true)
     private Long zoneId;
+
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
+            description = "(optional) the host ID to revoke certificate")
+    private Long hostId;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
@@ -73,7 +78,7 @@ public class RevokeTemplateDirectDownloadCertificateCmd extends BaseCmd {
         SuccessResponse response = new SuccessResponse(getCommandName());
         try {
             LOG.debug("Revoking certificate " + certificateAlias + " from " + hypervisor + " hosts");
-            boolean result = directDownloadManager.revokeCertificateAlias(certificateAlias, hypervisor, zoneId);
+            boolean result = directDownloadManager.revokeCertificateAlias(certificateAlias, hypervisor, zoneId, hostId);
             response.setSuccess(result);
             setResponseObject(response);
         } catch (Exception e) {
