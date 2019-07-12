@@ -512,7 +512,7 @@ var addGuestNetworkDialog = {
                     select: function(args) {
                         var items = [];
                         $.ajax({
-                            url: createURL("listProjects&listAll=true"),
+                            url: createURL("listProjects&listAll=true&details=min"),
                             dataType: "json",
                             async: false,
                             success: function(json) {
@@ -2429,7 +2429,7 @@ cloudStack.api = {
                     url: createURL(updateCommand),
                     data: {
                         id: args.context[objType].id,
-                        sortKey: g_sortKeyIsAscending ? (-1 * args.index) : args.index
+                        sortKey: args.sortKey
                     },
                     success: function(json) {
                         args.response.success();
@@ -2565,6 +2565,39 @@ function strOrFunc(arg, args) {
     if (typeof arg === 'function')
         return arg(args);
     return arg;
+}
+
+function sortArrayByKey(arrayToSort, sortKey, reverse) {
+
+    if(!arrayToSort){
+        return;
+    }
+    // Move smaller items towards the front
+    // or back of the array depending on if
+    // we want to sort the array in reverse
+    // order or not.
+    var moveSmaller = reverse ? 1 : -1;
+
+    // Move larger items towards the front
+    // or back of the array depending on if
+    // we want to sort the array in reverse
+    // order or not.
+    var moveLarger = reverse ? -1 : 1;
+
+    /**
+     * @param  {*} a
+     * @param  {*} b
+     * @return {Number}
+     */
+    arrayToSort.sort(function(a, b) {
+        if (a[sortKey] < b[sortKey]) {
+            return moveSmaller;
+        }
+        if (a[sortKey] > b[sortKey]) {
+            return moveLarger;
+        }
+        return 0;
+    });
 }
 
 $.validator.addMethod("netmask", function(value, element) {

@@ -750,9 +750,13 @@
                 if ("sshkeypairs" in args.context) {
                     $.extend(data, {
                         domainid: args.context.sshkeypairs[0].domainid,
-                        account: args.context.sshkeypairs[0].account,
                         keypair: args.context.sshkeypairs[0].name
                     });
+                    if (!cloudStack.context || !cloudStack.context.projects) {
+                        // In case we are in project mode sshkeypairs provides project account name which
+                        // should not be passed as part of API params. So only extend if NOT in project mode.
+                        $.extend(data, { account: args.context.sshkeypairs[0].account});
+                    }
                 }
 
                 $.ajax({
@@ -1471,6 +1475,11 @@
                             if (args.data.displayname != args.context.instances[0].displayname) {
                                 $.extend(data, {
                                     displayName: args.data.displayname
+                                });
+                            }
+                            if (args.data.name != args.context.instances[0].name) {
+                                $.extend(data, {
+                                    name: args.data.name
                                 });
                             }
                             $.ajax({
@@ -2378,6 +2387,7 @@
                                         };
                                         $.ajax({
                                             url: createURL('listAccounts', {
+                                                details: 'min',
                                                 ignoreProject: true
                                             }),
                                             data: dataObj,
@@ -2411,6 +2421,7 @@
                                         var dataObj = {
                                             domainId: args.domainid,
                                             state: 'Active',
+                                            details: 'min',
                                             listAll: true,
                                         };
                                         $.ajax({
@@ -2794,7 +2805,8 @@
                                 converter: cloudStack.converters.toLocalDate
                             },
                             name: {
-                                label: 'label.name'
+                                label: 'label.name',
+                                isEditable: true
                             },
                             id: {
                                 label: 'label.id'

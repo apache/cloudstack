@@ -1595,12 +1595,7 @@
                                     isextractable: {
                                         label: 'label.extractable.lower',
                                         isBoolean: true,
-                                        isEditable: function() {
-                                            if (isAdmin())
-                                                return true;
-                                            else
-                                                return false;
-                                        },
+                                        isEditable: true,
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     passwordenabled: {
@@ -2039,12 +2034,7 @@
                                                 isextractable: {
                                                     label: 'label.extractable.lower',
                                                     isBoolean: true,
-                                                    isEditable: function() {
-                                                        if (isAdmin())
-                                                            return true;
-                                                        else
-                                                            return false;
-                                                    },
+                                                    isEditable: true,
                                                     converter: cloudStack.converters.toBooleanText
                                                 },
                                                 passwordenabled: {
@@ -3327,12 +3317,7 @@
                                                 isextractable: {
                                                     label: 'label.extractable.lower',
                                                     isBoolean: true,
-                                                    isEditable: function() {
-                                                        if (isAdmin())
-                                                            return true;
-                                                        else
-                                                            return false;
-                                                    },
+                                                    isEditable: true,
                                                     converter: cloudStack.converters.toBooleanText
                                                 },
                                                 bootable: {
@@ -3449,7 +3434,9 @@
             || (jsonObj.isready == false) || jsonObj.templatetype == "SYSTEM") {
             //do nothing
         } else {
-            allowedActions.push("downloadTemplate");
+            if (jsonObj.isextractable){
+                allowedActions.push("downloadTemplate");
+            }
         }
 
         // "Delete Template"

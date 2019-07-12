@@ -993,6 +993,7 @@ var dictionary = {
 "label.lb.protocol.http":"HTTP",
 "label.lb.protocol.ssl":"SSL",
 "label.lb.protocol.tcp":"TCP",
+"label.lb.protocol.tcp.proxy":"TCP-proxy",
 "label.lb.protocol.udp":"UDP",
 "label.ldap.configuration":"LDAP Configuration",
 "label.ldap.group.name":"LDAP Group",

@@ -32,7 +32,7 @@ under the License.
 <dst-addr>%public-address%</dst-addr>
 </destination-address>
 <destination-port>
-<dst-port>%src-port%</dst-port>
+<low>%src-port%</low>
 </destination-port>
 </dest-nat-rule-match>
 <then>

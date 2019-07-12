@@ -35,6 +35,7 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseGenerator;
@@ -382,13 +383,13 @@ public class ApiResponseHelper implements ResponseGenerator {
     // creates an account + user)
     @Override
     public AccountResponse createUserAccountResponse(ResponseView view, UserAccount user) {
-        return ApiDBUtils.newAccountResponse(view, ApiDBUtils.findAccountViewById(user.getAccountId()));
+        return ApiDBUtils.newAccountResponse(view, EnumSet.of(DomainDetails.all), ApiDBUtils.findAccountViewById(user.getAccountId()));
     }
 
     @Override
     public AccountResponse createAccountResponse(ResponseView view, Account account) {
         AccountJoinVO vUser = ApiDBUtils.newAccountView(account);
-        return ApiDBUtils.newAccountResponse(view, vUser);
+        return ApiDBUtils.newAccountResponse(view, EnumSet.of(DomainDetails.all), vUser);
     }
 
     @Override
@@ -2269,7 +2270,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ProjectResponse createProjectResponse(Project project) {
         List<ProjectJoinVO> viewPrjs = ApiDBUtils.newProjectView(project);
-        List<ProjectResponse> listPrjs = ViewResponseHelper.createProjectResponse(viewPrjs.toArray(new ProjectJoinVO[viewPrjs.size()]));
+        List<ProjectResponse> listPrjs = ViewResponseHelper.createProjectResponse(EnumSet.of(DomainDetails.all), viewPrjs.toArray(new ProjectJoinVO[viewPrjs.size()]));
         assert listPrjs != null && listPrjs.size() == 1 : "There should be one project  returned";
         return listPrjs.get(0);
     }
