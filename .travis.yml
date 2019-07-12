@@ -197,14 +197,15 @@ after_script: ./tools/travis/after_script.sh
   after_success: true
   after_failure: true
 
-jobs:
-  include:
-    - stage: package
-      services: docker
-      env: IMAGE=khos2ow/cloudstack-rpm-builder:centos7 PARAMS="--distribution centos7 --pack oss"
-      <<: *package_job
-
-    - stage: package
-      services: docker
-      env: IMAGE=khos2ow/cloudstack-deb-builder:ubuntu1804 PARAMS=""
-      <<: *package_job
+#Disable due to intermittent failures
+#jobs:
+#  include:
+#    - stage: package
+#      services: docker
+#      env: IMAGE=khos2ow/cloudstack-rpm-builder:centos7 PARAMS="--distribution centos7 --pack oss"
+#      <<: *package_job
+#
+#    - stage: package
+#      services: docker
+#      env: IMAGE=khos2ow/cloudstack-deb-builder:ubuntu1804 PARAMS=""
+#      <<: *package_job
