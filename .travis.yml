@@ -79,11 +79,11 @@ env:
              smoke/test_portforwardingrules
              smoke/test_privategw_acl
              smoke/test_projects
-             smoke/test_public_ip_range
-             smoke/test_pvlan
-             smoke/test_regions"
+             smoke/test_public_ip_range"
 
-    - TESTS="smoke/test_reset_vm_on_reboot
+    - TESTS="smoke/test_pvlan
+             smoke/test_regions
+             smoke/test_reset_vm_on_reboot
              smoke/test_resource_accounting
              smoke/test_resource_detail
              smoke/test_router_dhcphosts
@@ -152,10 +152,10 @@ env:
              component/test_project_resources"
 
     - TESTS="component/test_project_usage
-             component/test_regions_accounts
              component/test_resource_limits"
 
-    - TESTS="component/test_routers
+    - TESTS="component/test_regions_accounts
+             component/test_routers
              component/test_snapshots
              component/test_stopped_vm
              component/test_tags
@@ -165,10 +165,10 @@ env:
 
     - TESTS="component/test_volumes
              component/test_vpc
-             component/test_vpc_distributed_routing_offering"
+             component/test_vpc_distributed_routing_offering
+             component/test_vpc_network"
 
-    - TESTS="component/test_vpc_network
-             component/test_vpc_network_lbrules
+    - TESTS="component/test_vpc_network_lbrules
              component/test_vpc_offerings
              component/test_vpc_routers
              component/test_vpn_users"
