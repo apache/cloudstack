@@ -1911,8 +1911,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             List<String> volumeLocatorsForHost;
             if (storagePool.isManaged()) {
                 List<UserVmVO> vmsPerHost = _vmDao.listByHostId(neighbor.getId());
-                volumeLocatorsForHost = vmsPerHost.stream().flatMap(vm -> _volsDao.findByInstance(vm.getId()).stream()
-                        .filter(vol -> vol.getPoolType().toString().equals(poolType.toString())).map(vol -> vol.getPath()))
+                volumeLocatorsForHost = vmsPerHost.stream()
+                        .flatMap(vm -> _volsDao.findByInstanceIdAndPoolId(vm.getId(),storagePool.getId()).stream()
+                        .map(vol -> vol.getPath()))
                         .collect(Collectors.toList());
             } else {
                 volumeLocatorsForHost = volumeLocators;
