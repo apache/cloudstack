@@ -395,7 +395,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         if (certificateVO != null) {
             throw new CloudRuntimeException("Certificate alias " + alias + " has been already created");
         }
-        certificateVO = new DirectDownloadCertificateVO(alias, certificateCer, hypervisorType, zoneId);
+        certificateVO = new DirectDownloadCertificateVO(alias, certificatePem, hypervisorType, zoneId);
         directDownloadCertificateDao.persist(certificateVO);
 
         s_logger.info("Attempting to upload certificate: " + alias + " to " + hosts.size() + " hosts on zone " + zoneId);
