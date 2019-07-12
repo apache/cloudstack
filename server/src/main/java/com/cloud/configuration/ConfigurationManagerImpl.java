@@ -1613,7 +1613,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal, false, null);
                 }
 
-                final String[] linkLocalIpRanges = getLinkLocalIPRange();
+                final String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(Config.ControlCidr.key()));
                 if (linkLocalIpRanges != null) {
                     _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
                 }
@@ -4487,20 +4487,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             return null;
         }
-    }
-
-    private String[] getLinkLocalIPRange() {
-        final String ipNums = _configDao.getValue("linkLocalIp.nums");
-        final int nums = Integer.parseInt(ipNums);
-        if (nums > 16 || nums <= 0) {
-            throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "is wrong, should be 1~16");
-        }
-        /* local link ip address starts from 169.254.0.2 - 169.254.(nums) */
-        final String[] ipRanges = NetUtils.getLinkLocalIPRange(nums);
-        if (ipRanges == null) {
-            throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "may be wrong, should be 1~16");
-        }
-        return ipRanges;
     }
 
     @Override

@@ -160,11 +160,16 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         if (ip == null) {
             throw new InsufficientAddressCapacityException("Insufficient link local address capacity", DataCenter.class, dest.getDataCenter().getId());
         }
+
+        String netmask = NetUtils.cidr2Netmask(_cidr);
+
+        s_logger.debug(String.format("Reserved NIC for %s [ipv4:%s netmask:%s gateway:%s]", vm.getInstanceName(), ip, netmask, _gateway));
+
         nic.setIPv4Address(ip);
         nic.setMacAddress(NetUtils.long2Mac(NetUtils.ip2Long(ip) | (14l << 40)));
-        nic.setIPv4Netmask("255.255.0.0");
+        nic.setIPv4Netmask(netmask);
         nic.setFormat(AddressFormat.Ip4);
-        nic.setIPv4Gateway(NetUtils.getLinkLocalGateway());
+        nic.setIPv4Gateway(_gateway);
     }
 
     @Override
@@ -223,7 +228,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         _cidr = dbParams.get(Config.ControlCidr.toString());
         if (_cidr == null) {
-            _cidr = "169.254.0.0/16";
+            _cidr = NetUtils.getLinkLocalCIDR();
         }
 
         _gateway = dbParams.get(Config.ControlGateway.toString());
