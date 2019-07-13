@@ -1543,6 +1543,7 @@ var dictionary = {
 "label.select-view":"Select view",
 "label.select.a.template":"Select a template",
 "label.select.a.zone":"Select a zone",
+"label.select.deployment.infrastructure":"Select deployment infrastructure",
 "label.select.instance":"Select instance",
 "label.select.host":"Select host",
 "label.select.instance.to.attach.volume.to":"Select instance to attach volume to",

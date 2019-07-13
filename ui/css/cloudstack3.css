@@ -5545,6 +5545,15 @@ textarea {
   background: #d6d6d6;
 }
 
+.multi-wizard .content .section .larger-area {
+  height: 134px !important;
+}
+
+.multi-wizard .content .section .lower-area {
+  height: 35px !important ;
+  margin: 7px auto auto !important ;
+}
+
 .multi-wizard .content .section .select-area .desc {
   float: right;
   width: 155px;
@@ -5591,6 +5600,14 @@ textarea {
   -o-text-shadow: 0 2px 2px #efefef;
 }
 
+.multi-wizard .content .section.select-deployment .select-area select {
+  margin: 9px 0 0 14px;
+}
+
+.multi-wizard .content .section.select-deployment .select-area label.desc {
+  padding: 0;
+}
+
 .multi-wizard .content .section .select-area label.error {
   margin: 2px 0 0 14px;
   font-size: 10px;
@@ -5623,6 +5640,14 @@ textarea {
 
 .multi-wizard .content .section.select-template {
   height: 206px;
+}
+
+.multi-wizard .content .section.select-template {
+  height: 206px;
+}
+
+.multi-wizard .content .section.smaller-height {
+  height: 126px !important;
 }
 
 .multi-wizard .content.tab-view {

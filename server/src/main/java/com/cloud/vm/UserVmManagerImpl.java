@@ -49,6 +49,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
@@ -136,6 +137,7 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
@@ -2755,7 +2757,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "starting Vm", async = true)
     public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        return startVirtualMachine(cmd.getId(), cmd.getHostId(), null, cmd.getDeploymentPlanner()).first();
+        return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), null, cmd.getDeploymentPlanner()).first();
     }
 
     @Override
@@ -4144,20 +4146,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "starting Vm", async = true)
     public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
-        return startVirtualMachine(cmd, null, cmd.getDeploymentPlanner());
+        long vmId = cmd.getEntityId();
+        Long podId = null;
+        Long clusterId = null;
+        Long hostId = cmd.getHostId();
+        Map<Long, DiskOffering> diskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
+        if (cmd instanceof DeployVMCmdByAdmin) {
+            DeployVMCmdByAdmin adminCmd = (DeployVMCmdByAdmin)cmd;
+            podId = adminCmd.getPodId();
+            clusterId = adminCmd.getClusterId();
+        }
+        return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, null, cmd.getDeploymentPlanner());
     }
 
-    private UserVm startVirtualMachine(DeployVMCmd cmd, Map<VirtualMachineProfile.Param, Object> additonalParams, String deploymentPlannerToUse)
+    private UserVm startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId, Map<Long, DiskOffering> diskOfferingMap, Map<VirtualMachineProfile.Param, Object> additonalParams, String deploymentPlannerToUse)
             throws ResourceUnavailableException,
             InsufficientCapacityException, ConcurrentOperationException {
-
-        long vmId = cmd.getEntityId();
-        Long hostId = cmd.getHostId();
         UserVmVO vm = _vmDao.findById(vmId);
-
         Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = null;
+
         try {
-            vmParamPair = startVirtualMachine(vmId, hostId, additonalParams, deploymentPlannerToUse);
+            vmParamPair = startVirtualMachine(vmId, podId, clusterId, hostId, additonalParams, deploymentPlannerToUse);
             vm = vmParamPair.first();
 
             // At this point VM should be in "Running" state
@@ -4169,7 +4178,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             try {
-                if (!cmd.getDataDiskTemplateToDiskOfferingMap().isEmpty()) {
+                if (!diskOfferingMap.isEmpty()) {
                     List<VolumeVO> vols = _volsDao.findByInstance(tmpVm.getId());
                     for (VolumeVO vol : vols) {
                         if (vol.getVolumeType() == Volume.Type.DATADISK) {
@@ -4488,8 +4497,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        return startVirtualMachine(vmId, null, null, hostId, additionalParams, deploymentPlannerToUse);
+    }
+
+    @Override
+    public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // Input validation
-        Account callerAccount = CallContext.current().getCallingAccount();
+        final Account callerAccount = CallContext.current().getCallingAccount();
         UserVO callerUser = _userDao.findById(CallContext.current().getCallingUserId());
 
         // if account is removed, return error
@@ -4514,19 +4529,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new PermissionDeniedException("The owner of " + vm + " is disabled: " + vm.getAccountId());
         }
 
-        Host destinationHost = null;
-        if (hostId != null) {
-            Account account = CallContext.current().getCallingAccount();
-            if (!_accountService.isRootAdmin(account.getId())) {
-                throw new PermissionDeniedException(
-                        "Parameter hostid can only be specified by a Root Admin, permission denied");
-            }
-            destinationHost = _hostDao.findById(hostId);
-            if (destinationHost == null) {
-                throw new InvalidParameterValueException("Unable to find the host to deploy the VM, host id=" + hostId);
-            }
-        }
-
         // check if vm is security group enabled
         if (_securityGroupMgr.isVmSecurityGroupEnabled(vmId) && _securityGroupMgr.getSecurityGroupsForVm(vmId).isEmpty()
                 && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vmId) && _networkModel.canAddDefaultSecurityGroup()) {
@@ -4542,12 +4544,30 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 _securityGroupMgr.addInstanceToGroups(vmId, groupList);
             }
         }
-
+        // Choose deployment planner
+        // Host takes 1st preference, Cluster takes 2nd preference and Pod takes 3rd
+        // Default behaviour is invoked when host, cluster or pod are not specified
+        boolean isRootAdmin = _accountService.isRootAdmin(callerAccount.getId());
+        Pod destinationPod = getDestinationPod(podId, isRootAdmin);
+        Cluster destinationCluster = getDestinationCluster(clusterId, isRootAdmin);
+        Host destinationHost = getDestinationHost(hostId, isRootAdmin);
         DataCenterDeployment plan = null;
         boolean deployOnGivenHost = false;
         if (destinationHost != null) {
             s_logger.debug("Destination Host to deploy the VM is specified, specifying a deployment plan to deploy the VM");
             plan = new DataCenterDeployment(vm.getDataCenterId(), destinationHost.getPodId(), destinationHost.getClusterId(), destinationHost.getId(), null, null);
+            if (!AllowDeployVmIfGivenHostFails.value()) {
+                deployOnGivenHost = true;
+            }
+        } else if (destinationCluster != null) {
+            s_logger.debug("Destination Cluster to deploy the VM is specified, specifying a deployment plan to deploy the VM");
+            plan = new DataCenterDeployment(vm.getDataCenterId(), destinationCluster.getPodId(), destinationCluster.getId(), null, null, null);
+            if (!AllowDeployVmIfGivenHostFails.value()) {
+                deployOnGivenHost = true;
+            }
+        } else if (destinationPod != null) {
+            s_logger.debug("Destination Pod to deploy the VM is specified, specifying a deployment plan to deploy the VM");
+            plan = new DataCenterDeployment(vm.getDataCenterId(), destinationPod.getId(), null, null, null, null);
             if (!AllowDeployVmIfGivenHostFails.value()) {
                 deployOnGivenHost = true;
             }
@@ -4615,6 +4635,51 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return vmParamPair;
+    }
+
+    private Pod getDestinationPod(Long podId, boolean isRootAdmin) {
+        Pod destinationPod = null;
+        if (podId != null) {
+            if (!isRootAdmin) {
+                throw new PermissionDeniedException(
+                        "Parameter " + ApiConstants.POD_ID + " can only be specified by a Root Admin, permission denied");
+            }
+            destinationPod = _podDao.findById(podId);
+            if (destinationPod == null) {
+                throw new InvalidParameterValueException("Unable to find the pod to deploy the VM, pod id=" + podId);
+            }
+        }
+        return destinationPod;
+    }
+
+    private Cluster getDestinationCluster(Long clusterId, boolean isRootAdmin) {
+        Cluster destinationCluster = null;
+        if (clusterId != null) {
+            if (!isRootAdmin) {
+                throw new PermissionDeniedException(
+                        "Parameter " + ApiConstants.CLUSTER_ID + " can only be specified by a Root Admin, permission denied");
+            }
+            destinationCluster = _clusterDao.findById(clusterId);
+            if (destinationCluster == null) {
+                throw new InvalidParameterValueException("Unable to find the cluster to deploy the VM, cluster id=" + clusterId);
+            }
+        }
+        return destinationCluster;
+    }
+
+    private Host getDestinationHost(Long hostId, boolean isRootAdmin) {
+        Host destinationHost = null;
+        if (hostId != null) {
+            if (!isRootAdmin) {
+                throw new PermissionDeniedException(
+                        "Parameter " + ApiConstants.HOST_ID + " can only be specified by a Root Admin, permission denied");
+            }
+            destinationHost = _hostDao.findById(hostId);
+            if (destinationHost == null) {
+                throw new InvalidParameterValueException("Unable to find the host to deploy the VM, host id=" + hostId);
+            }
+        }
+        return destinationHost;
     }
 
     @Override
