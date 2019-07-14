@@ -924,7 +924,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             _accountMgr.checkAccess(caller, null, true, ipVO);
         }
 
-        if (ipVO.isSourceNat()) {
+        Network guestNetwork = null;
+        final Long networkId = ipVO.getAssociatedWithNetworkId();
+        if (networkId != null) {
+            guestNetwork = getNetwork(networkId);
+        }
+        if (ipVO.isSourceNat() && guestNetwork != null && guestNetwork.getState() != Network.State.Allocated) {
             throw new IllegalArgumentException("ip address is used for source nat purposes and can not be disassociated.");
         }
 
@@ -941,9 +946,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         boolean success = _ipAddrMgr.disassociatePublicIpAddress(ipAddressId, userId, caller);
 
         if (success) {
-            Long networkId = ipVO.getAssociatedWithNetworkId();
-            if (networkId != null) {
-                Network guestNetwork = getNetwork(networkId);
+            if (guestNetwork != null) {
                 NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
                 Long vmId = ipVO.getAssociatedWithVmId();
                 if (offering.isElasticIp() && vmId != null) {
