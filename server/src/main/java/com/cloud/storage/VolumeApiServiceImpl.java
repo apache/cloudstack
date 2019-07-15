@@ -2861,7 +2861,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        verifyManagedStorage(volumeToAttachStoragePool.getId(), hostId);
+        if (volumeToAttachStoragePool != null) {
+            verifyManagedStorage(volumeToAttachStoragePool.getId(), hostId);
+        }
 
         // volumeToAttachStoragePool should be null if the VM we are attaching the disk to has never been started before
         DataStore dataStore = volumeToAttachStoragePool != null ? dataStoreMgr.getDataStore(volumeToAttachStoragePool.getId(), DataStoreRole.Primary) : null;
