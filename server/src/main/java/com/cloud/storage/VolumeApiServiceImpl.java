@@ -3009,6 +3009,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (host != null) {
             _hostDao.loadDetails(host);
             maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(host.getHypervisorType(), host.getDetail("product_version"));
+        } else {
+            List<HypervisorType> supportingDefaultHV = Arrays.asList(HypervisorType.XenServer, HypervisorType.VMware,
+                    HypervisorType.KVM, HypervisorType.Ovm, HypervisorType.LXC);
+            HypervisorType hypervisorType = vm.getHypervisorType();
+            if (hypervisorType != null && supportingDefaultHV.contains(hypervisorType)) {
+                maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(hypervisorType, "default");
+            }
         }
         if (maxDataVolumesSupported == null || maxDataVolumesSupported.intValue() <= 0) {
             maxDataVolumesSupported = 6; // 6 data disks by default if nothing
