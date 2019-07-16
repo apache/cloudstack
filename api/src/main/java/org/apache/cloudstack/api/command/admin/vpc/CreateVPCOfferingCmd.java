@@ -20,9 +20,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -74,6 +79,21 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                entityType = ServiceOfferingResponse.class,
                description = "the ID of the service offering for the VPC router appliance")
     private Long serviceOfferingId;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "the ID of the containing domain(s), null for public offerings")
+    private List<Long> domainIds;
+
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            description = "the ID of the containing zone(s), null for public offerings",
+            since = "4.13")
+    private List<Long> zoneIds;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -127,10 +147,27 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
         return serviceOfferingId;
     }
 
+    public List<Long> getDomainIds() {
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            Set<Long> set = new LinkedHashSet<>(domainIds);
+            domainIds.clear();
+            domainIds.addAll(set);
+        }
+        return domainIds;
+    }
+
+    public List<Long> getZoneIds() {
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            Set<Long> set = new LinkedHashSet<>(zoneIds);
+            zoneIds.clear();
+            zoneIds.addAll(set);
+        }
+        return zoneIds;
+    }
+
     @Override
     public void create() throws ResourceAllocationException {
-        VpcOffering vpcOff = _vpcProvSvc.createVpcOffering(getVpcOfferingName(), getDisplayText(),
-                getSupportedServices(), getServiceProviders(), getServiceCapabilitystList(), getServiceOfferingId());
+        VpcOffering vpcOff = _vpcProvSvc.createVpcOffering(this);
         if (vpcOff != null) {
             setEntityId(vpcOff.getId());
             setEntityUuid(vpcOff.getUuid());

@@ -12860,6 +12860,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -197px -647px;
 }
 
+.updateOfferingAccess .icon {
+  background-position: -165px -122px;
+}
+
+.updateOfferingAccess:hover .icon {
+  background-position: -165px -704px;
+}
+
 .accounts-wizard table {
   width: 100%;
   margin: 0;

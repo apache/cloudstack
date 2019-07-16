@@ -298,7 +298,11 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpComputeOfferingDomain: {
-        desc: 'The domain to associate this compute offering with'
+        desc: 'Select the domains in which this offering is available (Tip: Use Ctrl to choose multiple domains)',
+    },
+    helpComputeOfferingZone: {
+        desc: 'Select the zones in which this offering is available (Tip: Use Ctrl to choose multiple zones)',
+        externalLink: ''
     },
     // Create Instance Snapshot
     helpCreateInstanceSnapshotName: {
@@ -390,7 +394,11 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpDiskOfferingDomain: {
-        desc: 'Select the subdomain in which this offering is available',
+        desc: 'Select the domains in which this offering is available (Tip: Use Ctrl to choose multiple domains)',
+        externalLink: ''
+    },
+    helpDiskOfferingZone: {
+        desc: 'Select the zones in which this offering is available (Tip: Use Ctrl to choose multiple zones)',
         externalLink: ''
     },
     // Add domain
@@ -642,6 +650,17 @@ cloudStack.docs = {
     },
     helpNetworkOfferingTags: {
         desc: 'Network tag to specify which physical network to use',
+        externalLink: ''
+    },
+    helpNetworkOfferingPublic: {
+        desc: 'Yes makes the offering available to all domains. No limits the scope to a subdomain; you will be prompted for the subdomain\'s name.',
+        externalLink: ''
+    },
+    helpNetworkOfferingDomain: {
+        desc: 'Select the domains in which this offering is available (Tip: Use Ctrl to choose multiple domains)',
+    },
+    helpNetworkOfferingZone: {
+        desc: 'Select the zones in which this offering is available (Tip: Use Ctrl to choose multiple zones)',
         externalLink: ''
     },
     // Add pod
@@ -1306,6 +1325,17 @@ cloudStack.docs = {
     },
     helpVpcOfferingDescription: {
         desc: 'A short description of the offering that can be displayed to users',
+        externalLink: ''
+    },
+    helpVpcOfferingPublic: {
+        desc: 'Yes makes the offering available to all domains. No limits the scope to a subdomain; you will be prompted for the subdomain\'s name.',
+        externalLink: ''
+    },
+    helpVpcOfferingDomain: {
+        desc: 'Select the domains in which this offering is available (Tip: Use Ctrl to choose multiple domains)',
+    },
+    helpVpcOfferingZone: {
+        desc: 'Select the zones in which this offering is available (Tip: Use Ctrl to choose multiple zones)',
         externalLink: ''
     },
     helpOvm3pool: {

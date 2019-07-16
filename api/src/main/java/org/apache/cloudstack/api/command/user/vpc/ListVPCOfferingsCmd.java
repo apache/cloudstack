@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.vpc.VpcOffering;
@@ -60,6 +61,13 @@ public class ListVPCOfferingsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list VPC offerings by state")
     private String state;
 
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            description = "id of zone disk offering is associated with",
+            since = "4.13")
+    private Long zoneId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -87,6 +95,10 @@ public class ListVPCOfferingsCmd extends BaseListCmd {
         return state;
     }
 
+    public Long getZoneId() {
+        return zoneId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -94,8 +106,7 @@ public class ListVPCOfferingsCmd extends BaseListCmd {
     @Override
     public void execute() {
         Pair<List<? extends VpcOffering>, Integer> offerings =
-            _vpcProvSvc.listVpcOfferings(getId(), getVpcOffName(), getDisplayText(), getSupportedServices(), isDefault, this.getKeyword(), getState(),
-                this.getStartIndex(), this.getPageSizeVal());
+            _vpcProvSvc.listVpcOfferings(this);
         ListResponse<VpcOfferingResponse> response = new ListResponse<VpcOfferingResponse>();
         List<VpcOfferingResponse> offeringResponses = new ArrayList<VpcOfferingResponse>();
         for (VpcOffering offering : offerings.first()) {

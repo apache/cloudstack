@@ -41,11 +41,14 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
+import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
@@ -430,12 +433,22 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public void checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException {
+    public void checkAccess(Account account, ServiceOffering so, DataCenter zone) throws PermissionDeniedException {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public void checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException {
+    public void checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void checkAccess(Account account, NetworkOffering nof, DataCenter zone) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException {
         // TODO Auto-generated method stub
     }
 

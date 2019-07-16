@@ -535,6 +535,7 @@
 
 
                 // get serviceOfferingObjs
+                var zoneid = args.currentData["zoneid"];
                 $(window).removeData("cloudStack.module.instanceWizard.serviceOfferingObjs");
                 $(window).trigger("cloudStack.module.instanceWizard.serviceOffering.dataProvider", {
                     context: args.context,
@@ -545,6 +546,9 @@
                         url: createURL("listServiceOfferings&issystem=false"),
                         dataType: "json",
                         async: false,
+                        data: {
+                            zoneid: zoneid
+                        },
                         success: function(json) {
                             serviceOfferingObjs = json.listserviceofferingsresponse.serviceoffering;
                         }
@@ -568,6 +572,7 @@
             // Step 4: Data disk offering
             function(args) {
                 var isRequired = (args.currentData["select-template"] == "select-iso" ? true : false);
+                var zoneid = args.currentData["zoneid"];
                 var templateFilter = 'executable'
                 if (isAdmin()) {
                     templateFilter = 'all'
@@ -575,6 +580,9 @@
                 $.ajax({
                     url: createURL("listDiskOfferings"),
                     dataType: "json",
+                    data: {
+                        zoneid: zoneid
+                    },
                     async: true,
                     success: function(json) {
                         diskOfferingObjs = json.listdiskofferingsresponse.diskoffering;
@@ -835,6 +843,7 @@
 
 
                     // get networkObjsToPopulate
+                    var zoneid = args.currentData["zoneid"];
                     $(window).removeData("cloudStack.module.instanceWizard.networkObjs");
                     $(window).trigger("cloudStack.module.instanceWizard.network.dataProvider", {
                         context: args.context,
@@ -851,6 +860,9 @@
                     $.ajax({
                         url: createURL("listNetworkOfferings"),
                         dataType: "json",
+                        data: {
+                            zoneid: zoneid
+                        },
                         data: {
                             forvpc: false,
                             zoneid: selectedZoneObj.id,

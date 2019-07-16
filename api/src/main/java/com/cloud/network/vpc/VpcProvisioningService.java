@@ -20,21 +20,24 @@ package com.cloud.network.vpc;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;
 
 import com.cloud.utils.Pair;
 
 public interface VpcProvisioningService {
 
-    public VpcOffering getVpcOffering(long vpcOfferingId);
+    VpcOffering getVpcOffering(long vpcOfferingId);
 
-    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices,
-                                         Map<String, List<String>> serviceProviders,
-                                         Map serviceCapabilitystList,
-                                         Long serviceOfferingId);
+    VpcOffering createVpcOffering(CreateVPCOfferingCmd cmd);
 
-    Pair<List<? extends VpcOffering>,Integer> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr, Boolean isDefault, String keyword,
-        String state, Long startIndex, Long pageSizeVal);
+    VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices,
+                                  Map<String, List<String>> serviceProviders,
+                                  Map serviceCapabilitystList,
+                                  Long serviceOfferingId, List<Long> domainIds, List<Long> zoneIds);
+
+    Pair<List<? extends VpcOffering>,Integer> listVpcOfferings(ListVPCOfferingsCmd cmd);
 
     /**
      * @param offId
@@ -46,9 +49,22 @@ public interface VpcProvisioningService {
     public VpcOffering updateVpcOffering(long vpcOffId, String vpcOfferingName, String displayText, String state);
 
     /**
-     * @param vpcOfferingCmd
+     * @param cmd
      * @return
      */
-    public VpcOffering updateVpcOffering(final UpdateVPCOfferingCmd vpcOfferingCmd);
+    VpcOffering updateVpcOffering(final UpdateVPCOfferingCmd cmd);
 
+    /**
+     * Retrieve ID of domains for a VPC offering
+     *
+     * @param vpcOfferingId
+     */
+    List<Long> getVpcOfferingDomains(Long vpcOfferingId);
+
+    /**
+     * Retrieve ID of domains for a VPC offering
+     *
+     * @param vpcOfferingId
+     */
+    List<Long> getVpcOfferingZones(Long vpcOfferingId);
 }

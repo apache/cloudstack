@@ -77,6 +77,7 @@ import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -114,9 +115,11 @@ import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -2828,9 +2831,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public void checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException {
+    public void checkAccess(Account account, ServiceOffering so, DataCenter zone) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
-            if (checker.checkAccess(account, so)) {
+            if (checker.checkAccess(account, so, zone)) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Access granted to " + account + " to " + so + " by " + checker.getName());
                 }
@@ -2843,9 +2846,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public void checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException {
+    public void checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
-            if (checker.checkAccess(account, dof)) {
+            if (checker.checkAccess(account, dof, zone)) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Access granted to " + account + " to " + dof + " by " + checker.getName());
                 }
@@ -2855,6 +2858,36 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         assert false : "How can all of the security checkers pass on checking this caller?";
         throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + dof);
+    }
+
+    @Override
+    public void checkAccess(Account account, NetworkOffering nof, DataCenter zone) throws PermissionDeniedException {
+        for (SecurityChecker checker : _securityCheckers) {
+            if (checker.checkAccess(account, nof, zone)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Access granted to " + account + " to " + nof + " by " + checker.getName());
+                }
+                return;
+            }
+        }
+
+        assert false : "How can all of the security checkers pass on checking this caller?";
+        throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + nof);
+    }
+
+    @Override
+    public void checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException {
+        for (SecurityChecker checker : _securityCheckers) {
+            if (checker.checkAccess(account, vof, zone)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Access granted to " + account + " to " + vof + " by " + checker.getName());
+                }
+                return;
+            }
+        }
+
+        assert false : "How can all of the security checkers pass on checking this caller?";
+        throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + vof);
     }
 
     @Override

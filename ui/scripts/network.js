@@ -504,12 +504,60 @@
                                             });
                                         }
                                     },
+                                    domain: {
+                                        label: 'label.domain',
+                                        isHidden: function(args) {
+                                            if (isAdmin() || isDomainAdmin())
+                                                return false;
+                                            else
+                                                return true;
+                                        },
+                                        select: function(args) {
+                                            if (isAdmin() || isDomainAdmin()) {
+                                                $.ajax({
+                                                    url: createURL("listDomains&listAll=true"),
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        items.push({
+                                                            id: "",
+                                                            description: ""
+                                                        });
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                                args.$select.change(function() {
+                                                    var $form = $(this).closest('form');
+                                                    if ($(this).val() == "") {
+                                                        $form.find('.form-item[rel=account]').hide();
+                                                    } else {
+                                                        $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                                    }
+                                                });
+                                            } else {
+                                                args.response.success({
+                                                    data: null
+                                                });
+                                            }
+                                        }
+                                    },
                                     networkOfferingId: {
                                         label: 'label.network.offering',
                                         validation: {
                                             required: true
                                         },
-                                        dependsOn: 'zoneId',
+                                        dependsOn: (isAdmin() || isDomainAdmin()) ? ['zoneId', 'domain'] : 'zoneId', // domain is visible only for admins
                                         docID: 'helpGuestNetworkNetworkOffering',
                                         select: function(args) {
                                             var data = {
@@ -518,6 +566,12 @@
                                                 supportedServices: 'SourceNat',
                                                 state: 'Enabled'
                                             };
+
+                                            if ((isAdmin() || isDomainAdmin())) { // domain is visible only for admins
+                                                $.extend(data, {
+                                                    domainid: args.domain
+                                                });
+                                            }
 
                                             if ('vpc' in args.context) { //from VPC section
                                                 $.extend(data, {
@@ -656,54 +710,6 @@
                                     },
                                     networkDomain: {
                                         label: 'label.network.domain'
-                                    },
-                                    domain: {
-                                        label: 'label.domain',
-                                        isHidden: function(args) {
-                                            if (isAdmin() || isDomainAdmin())
-                                                return false;
-                                            else
-                                                return true;
-                                        },
-                                        select: function(args) {
-                                            if (isAdmin() || isDomainAdmin()) {
-                                                $.ajax({
-                                                    url: createURL("listDomains&listAll=true"),
-                                                    success: function(json) {
-                                                        var items = [];
-                                                        items.push({
-                                                            id: "",
-                                                            description: ""
-                                                        });
-                                                        var domainObjs = json.listdomainsresponse.domain;
-                                                        $(domainObjs).each(function() {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.path
-                                                            });
-                                                        });
-                                                        items.sort(function(a, b) {
-                                                            return a.description.localeCompare(b.description);
-                                                        });
-                                                        args.response.success({
-                                                            data: items
-                                                        });
-                                                    }
-                                                });
-                                                args.$select.change(function() {
-                                                    var $form = $(this).closest('form');
-                                                    if ($(this).val() == "") {
-                                                        $form.find('.form-item[rel=account]').hide();
-                                                    } else {
-                                                        $form.find('.form-item[rel=account]').css('display', 'inline-block');
-                                                    }
-                                                });
-                                            } else {
-                                                args.response.success({
-                                                    data: null
-                                                });
-                                            }
-                                        }
                                     },
                                     account: {
                                         label: 'label.account',
@@ -5197,14 +5203,17 @@
                                     },
                                     vpcoffering: {
                                         label: 'label.vpc.offering',
+                                        dependsOn: 'zoneid',
                                         validation: {
                                             required: true
                                         },
                                         select: function(args) {
-                                            var data = {};
+                                            var data = {
+                                                zoneid: args.zoneid
+                                            };
                                             $.ajax({
                                                 url: createURL('listVPCOfferings'),
-                                                data: {},
+                                                data: data,
                                                 success: function(json) {
                                                     var offerings  = json.listvpcofferingsresponse.vpcoffering ? json.listvpcofferingsresponse.vpcoffering : [];
                                                     var filteredofferings = $.grep(offerings, function(offering) {

@@ -27,7 +27,7 @@ public interface DomainDao extends GenericDao<DomainVO, Long> {
 
     public DomainVO findDomainByPath(String domainPath);
 
-    public boolean isChildDomain(Long parentId, Long childId);
+    boolean isChildDomain(Long parentId, Long childId);
 
     DomainVO findImmediateChildForParent(Long parentId);
 

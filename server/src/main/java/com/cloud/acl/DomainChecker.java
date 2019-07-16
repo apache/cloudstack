@@ -16,13 +16,15 @@
 // under the License.
 package com.cloud.acl;
 
-import javax.inject.Inject;
+import java.util.List;
 
-import org.springframework.stereotype.Component;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DedicatedResourceVO;
@@ -32,10 +34,15 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.dao.VpcOfferingDetailsDao;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -64,6 +71,14 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     private DedicatedResourceDao _dedicatedDao;
     @Inject
     AccountService _accountService;
+    @Inject
+    DiskOfferingDetailsDao diskOfferingDetailsDao;
+    @Inject
+    ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Inject
+    NetworkOfferingDetailsDao networkOfferingDetailsDao;
+    @Inject
+    VpcOfferingDetailsDao vpcOfferingDetailsDao;
 
     protected DomainChecker() {
         super();
@@ -167,81 +182,155 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     }
 
     @Override
-    public boolean checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException {
-        if (account == null || dof == null || dof.getDomainId() == null) {//public offering
-            return true;
+    public boolean checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException {
+        boolean hasAccess = false;
+        // Check for domains
+        if (account == null || dof == null) {
+            hasAccess = true;
         } else {
             //admin has all permissions
             if (_accountService.isRootAdmin(account.getId())) {
-                return true;
+                hasAccess = true;
             }
             //if account is normal user or domain admin
-            //check if account's domain is a child of zone's domain (Note: This is made consistent with the list command for disk offering)
+            //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for disk offering)
             else if (_accountService.isNormalUser(account.getId())
                     || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
                     || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                if (account.getDomainId() == dof.getDomainId()) {
-                    return true; //disk offering and account at exact node
+                final List<Long> doDomainIds = diskOfferingDetailsDao.findDomainIds(dof.getId());
+                if (doDomainIds.isEmpty()) {
+                    hasAccess = true;
                 } else {
-                    Domain domainRecord = _domainDao.findById(account.getDomainId());
-                    if (domainRecord != null) {
-                        while (true) {
-                            if (domainRecord.getId() == dof.getDomainId()) {
-                                //found as a child
-                                return true;
-                            }
-                            if (domainRecord.getParent() != null) {
-                                domainRecord = _domainDao.findById(domainRecord.getParent());
-                            } else {
-                                break;
-                            }
+                    for (Long domainId : doDomainIds) {
+                        if (_domainDao.isChildDomain(domainId, account.getDomainId())) {
+                            hasAccess = true;
+                            break;
                         }
                     }
                 }
             }
         }
-        //not found
-        return false;
+        // Check for zones
+        if (hasAccess && dof != null && zone != null) {
+            final List<Long> doZoneIds = diskOfferingDetailsDao.findZoneIds(dof.getId());
+            hasAccess = doZoneIds.isEmpty() || doZoneIds.contains(zone.getId());
+        }
+        return hasAccess;
     }
 
     @Override
-    public boolean checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException {
-        if (account == null || so.getDomainId() == null) {//public offering
-            return true;
+    public boolean checkAccess(Account account, ServiceOffering so, DataCenter zone) throws PermissionDeniedException {
+        boolean hasAccess = false;
+        // Check for domains
+        if (account == null || so == null) {
+            hasAccess = true;
         } else {
             //admin has all permissions
             if (_accountService.isRootAdmin(account.getId())) {
-                return true;
+                hasAccess = true;
             }
             //if account is normal user or domain admin
-            //check if account's domain is a child of zone's domain (Note: This is made consistent with the list command for service offering)
+            //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for service offering)
             else if (_accountService.isNormalUser(account.getId())
                     || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
                     || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                if (account.getDomainId() == so.getDomainId()) {
-                    return true; //service offering and account at exact node
+                final List<Long> soDomainIds = serviceOfferingDetailsDao.findDomainIds(so.getId());
+                if (soDomainIds.isEmpty()) {
+                    hasAccess = true;
                 } else {
-                    Domain domainRecord = _domainDao.findById(account.getDomainId());
-                    if (domainRecord != null) {
-                        while (true) {
-                            if (domainRecord.getId() == so.getDomainId()) {
-                                //found as a child
-                                return true;
-                            }
-                            if (domainRecord.getParent() != null) {
-                                domainRecord = _domainDao.findById(domainRecord.getParent());
-                            } else {
-                                break;
-                            }
+                    for (Long domainId : soDomainIds) {
+                        if (_domainDao.isChildDomain(domainId, account.getDomainId())) {
+                            hasAccess = true;
+                            break;
                         }
                     }
                 }
             }
         }
-        //not found
-        return false;
+        // Check for zones
+        if (hasAccess && so != null && zone != null) {
+            final List<Long> soZoneIds = serviceOfferingDetailsDao.findZoneIds(so.getId());
+            hasAccess = soZoneIds.isEmpty() || soZoneIds.contains(zone.getId());
+        }
+        return hasAccess;
+    }
+
+    @Override
+    public boolean checkAccess(Account account, NetworkOffering nof, DataCenter zone) throws PermissionDeniedException {
+        boolean hasAccess = false;
+        // Check for domains
+        if (account == null || nof == null) {
+            hasAccess = true;
+        } else {
+            //admin has all permissions
+            if (_accountService.isRootAdmin(account.getId())) {
+                hasAccess = true;
+            }
+            //if account is normal user or domain admin
+            //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for disk offering)
+            else if (_accountService.isNormalUser(account.getId())
+                    || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+                    || _accountService.isDomainAdmin(account.getId())
+                    || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                final List<Long> noDomainIds = networkOfferingDetailsDao.findDomainIds(nof.getId());
+                if (noDomainIds.isEmpty()) {
+                    hasAccess = true;
+                } else {
+                    for (Long domainId : noDomainIds) {
+                        if (_domainDao.isChildDomain(domainId, account.getDomainId())) {
+                            hasAccess = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        // Check for zones
+        if (hasAccess && nof != null && zone != null) {
+            final List<Long> doZoneIds = networkOfferingDetailsDao.findZoneIds(nof.getId());
+            hasAccess = doZoneIds.isEmpty() || doZoneIds.contains(zone.getId());
+        }
+        return hasAccess;
+    }
+
+    @Override
+    public boolean checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException {
+        boolean hasAccess = false;
+        // Check for domains
+        if (account == null || vof == null) {
+            hasAccess = true;
+        } else {
+            //admin has all permissions
+            if (_accountService.isRootAdmin(account.getId())) {
+                hasAccess = true;
+            }
+            //if account is normal user or domain admin
+            //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for disk offering)
+            else if (_accountService.isNormalUser(account.getId())
+                    || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+                    || _accountService.isDomainAdmin(account.getId())
+                    || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                final List<Long> voDomainIds = vpcOfferingDetailsDao.findDomainIds(vof.getId());
+                if (voDomainIds.isEmpty()) {
+                    hasAccess = true;
+                } else {
+                    for (Long domainId : voDomainIds) {
+                        if (_domainDao.isChildDomain(domainId, account.getDomainId())) {
+                            hasAccess = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        // Check for zones
+        if (hasAccess && vof != null && zone != null) {
+            final List<Long> doZoneIds = vpcOfferingDetailsDao.findZoneIds(vof.getId());
+            hasAccess = doZoneIds.isEmpty() || doZoneIds.contains(zone.getId());
+        }
+        return hasAccess;
     }
 
     @Override

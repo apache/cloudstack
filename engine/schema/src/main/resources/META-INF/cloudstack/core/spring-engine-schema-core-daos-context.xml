@@ -136,6 +136,7 @@
   <bean id="networkExternalFirewallDaoImpl" class="com.cloud.network.dao.NetworkExternalFirewallDaoImpl" />
   <bean id="networkExternalLoadBalancerDaoImpl" class="com.cloud.network.dao.NetworkExternalLoadBalancerDaoImpl" />
   <bean id="networkOfferingDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDaoImpl" />
+  <bean id="networkOfferingJoinDaoImpl" class="com.cloud.api.query.dao.NetworkOfferingJoinDaoImpl" />
   <bean id="networkOfferingServiceMapDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl" />
   <bean id="networkOpDaoImpl" class="com.cloud.network.dao.NetworkOpDaoImpl" />
   <bean id="networkRuleConfigDaoImpl" class="com.cloud.network.dao.NetworkRuleConfigDaoImpl" />
@@ -249,12 +250,14 @@
   <bean id="vpcDaoImpl" class="com.cloud.network.vpc.dao.VpcDaoImpl" />
   <bean id="vpcGatewayDaoImpl" class="com.cloud.network.vpc.dao.VpcGatewayDaoImpl" />
   <bean id="vpcOfferingDaoImpl" class="com.cloud.network.vpc.dao.VpcOfferingDaoImpl" />
+  <bean id="vpcOfferingJoinDaoImpl" class="com.cloud.api.query.dao.VpcOfferingJoinDaoImpl" />
   <bean id="vpcOfferingServiceMapDaoImpl" class="com.cloud.network.vpc.dao.VpcOfferingServiceMapDaoImpl" />
   <bean id="vpcServiceMapDaoImpl" class="com.cloud.network.vpc.dao.VpcServiceMapDaoImpl" />
   <bean id="vpnUserDaoImpl" class="com.cloud.network.dao.VpnUserDaoImpl" />
   <bean id="applicationLbRuleDaoImpl" class="org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDaoImpl" />
   <bean id="networkOfferingDetailsDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDetailsDaoImpl" />
   <bean id="serviceOfferingDetailsDaoImpl" class="com.cloud.service.dao.ServiceOfferingDetailsDaoImpl"/>
+  <bean id="vpcOfferingDetailsDaoImpl" class="com.cloud.network.vpc.dao.VpcOfferingDetailsDaoImpl"/>
   <bean id="networkDetailsDaoImpl" class="com.cloud.network.dao.NetworkDetailsDaoImpl" />
   <bean id="vlanDetailsDaoImpl" class="com.cloud.dc.dao.VlanDetailsDaoImpl" />
   <bean id="hostGpuGroupsDaoImpl" class="com.cloud.gpu.dao.HostGpuGroupsDaoImpl" />

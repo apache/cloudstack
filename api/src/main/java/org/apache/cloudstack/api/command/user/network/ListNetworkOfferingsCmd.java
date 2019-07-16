@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -61,6 +62,13 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "the availability of network offering. Default value is required")
     private String availability;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+            type = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "list network offerings available for network creation in specific domain",
+            since = "4.13")
+    private Long domainId;
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
@@ -135,6 +143,10 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
 
     public String getAvailability() {
         return availability;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     public Long getZoneId() {

@@ -17,6 +17,18 @@
 
 package com.cloud.configuration;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,16 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
-
-import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
@@ -45,7 +47,18 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.log4j.Logger;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
+import com.cloud.api.query.dao.NetworkOfferingJoinDao;
+import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
@@ -68,15 +81,11 @@ import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.NetworkModel;
-import com.cloud.network.Networks;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingVO;
-import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.projects.ProjectManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -94,18 +103,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ConfigurationManagerTest {
 
@@ -129,7 +126,7 @@ public class ConfigurationManagerTest {
     @Mock
     NetworkOrchestrationService _networkMgr;
     @Mock
-    NetworkOfferingDao _networkOfferingDao;
+    NetworkOfferingJoinDao networkOfferingJoinDao;
     @Mock
     AccountDao _accountDao;
     @Mock
@@ -490,14 +487,16 @@ public class ConfigurationManagerTest {
 
     @Test
     public void searchForNetworkOfferingsTest() {
-        List<NetworkOfferingVO> offerings = Arrays.asList(
-                new NetworkOfferingVO("off1", "off1", Networks.TrafficType.Guest, false, false, null, null, false, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false, false, false),
-                new NetworkOfferingVO("off2", "off2", Networks.TrafficType.Guest, false, false, null, null, false, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false, false, false),
-                new NetworkOfferingVO("off3", "off3", Networks.TrafficType.Guest, false, false, null, null, false, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false, false, true)
+        NetworkOfferingJoinVO forVpcOfferingJoinVO = new NetworkOfferingJoinVO();
+        forVpcOfferingJoinVO.setForVpc(true);
+        List<NetworkOfferingJoinVO> offerings = Arrays.asList(
+                new NetworkOfferingJoinVO(),
+                new NetworkOfferingJoinVO(),
+                forVpcOfferingJoinVO
         );
 
-        Mockito.when(_networkOfferingDao.createSearchCriteria()).thenReturn(Mockito.mock(SearchCriteria.class));
-        Mockito.when(_networkOfferingDao.search(Mockito.any(SearchCriteria.class), Mockito.any(Filter.class))).thenReturn(offerings);
+        Mockito.when(networkOfferingJoinDao.createSearchCriteria()).thenReturn(Mockito.mock(SearchCriteria.class));
+        Mockito.when(networkOfferingJoinDao.search(Mockito.any(SearchCriteria.class), Mockito.any(Filter.class))).thenReturn(offerings);
 
         ListNetworkOfferingsCmd cmd = Mockito.spy(ListNetworkOfferingsCmd.class);
         Mockito.when(cmd.getPageSize()).thenReturn(10);

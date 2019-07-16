@@ -17,6 +17,10 @@
 package org.apache.cloudstack.resourcedetail.dao;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.springframework.stereotype.Component;
@@ -27,5 +31,29 @@ public class DiskOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<DiskOffer
     @Override
     public void addDetail(long resourceId, String key, String value, boolean display) {
         super.addDetail(new DiskOfferingDetailVO(resourceId, key, value, display));
+    }
+
+    @Override
+    public List<Long> findDomainIds(long resourceId) {
+        final List<Long> domainIds = new ArrayList<>();
+        for (final DiskOfferingDetailVO detail: findDetails(resourceId, ApiConstants.DOMAIN_ID)) {
+            final Long domainId = Long.valueOf(detail.getValue());
+            if (domainId > 0) {
+                domainIds.add(domainId);
+            }
+        }
+        return domainIds;
+    }
+
+    @Override
+    public List<Long> findZoneIds(long resourceId) {
+        final List<Long> zoneIds = new ArrayList<>();
+        for (final DiskOfferingDetailVO detail: findDetails(resourceId, ApiConstants.ZONE_ID)) {
+            final Long zoneId = Long.valueOf(detail.getValue());
+            if (zoneId > 0) {
+                zoneIds.add(zoneId);
+            }
+        }
+        return zoneIds;
     }
 }

@@ -534,7 +534,7 @@ var addGuestNetworkDialog = {
                 networkOfferingId: {
                     label: 'label.network.offering',
                     docID: 'helpGuestNetworkZoneNetworkOffering',
-                    dependsOn: ['zoneId', 'physicalNetworkId', 'scope'],
+                    dependsOn: ['zoneId', 'physicalNetworkId', 'scope', 'domainId'],
                     select: function(args) {
                         if(args.$form.find('.form-item[rel=zoneId]').find('select').val() == null || args.$form.find('.form-item[rel=zoneId]').find('select').val().length == 0) {
                             args.response.success({
@@ -570,6 +570,11 @@ var addGuestNetworkDialog = {
                             $.extend(data, {
                                 guestiptype: 'Shared'
                             });
+                            if (args.scope == "domain-specific") {
+                                $.extend(data, {
+                                    domainid: args.domainId
+                                });
+                            }
                         }
 
                         var items = [];
@@ -889,12 +894,60 @@ var addL2GuestNetwork = {
                         });
                     }
                 },
+                domain: {
+                    label: 'label.domain',
+                    isHidden: function(args) {
+                        if (isAdmin() || isDomainAdmin())
+                            return false;
+                        else
+                            return true;
+                    },
+                    select: function(args) {
+                        if (isAdmin() || isDomainAdmin()) {
+                            $.ajax({
+                                url: createURL("listDomains&listAll=true"),
+                                success: function(json) {
+                                    var items = [];
+                                    items.push({
+                                        id: "",
+                                        description: ""
+                                    });
+                                    var domainObjs = json.listdomainsresponse.domain;
+                                    $(domainObjs).each(function() {
+                                        items.push({
+                                            id: this.id,
+                                            description: this.path
+                                        });
+                                    });
+                                    items.sort(function(a, b) {
+                                        return a.description.localeCompare(b.description);
+                                    });
+                                    args.response.success({
+                                        data: items
+                                    });
+                                }
+                            });
+                            args.$select.change(function() {
+                                var $form = $(this).closest('form');
+                                if ($(this).val() == "") {
+                                    $form.find('.form-item[rel=account]').hide();
+                                } else {
+                                    $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                }
+                            });
+                        } else {
+                            args.response.success({
+                                data: null
+                            });
+                        }
+                    }
+                },
                 networkOfferingId: {
                     label: 'label.network.offering',
                     validation: {
                         required: true
                     },
-                    dependsOn: 'zoneId',
+                    dependsOn: (isAdmin() || isDomainAdmin()) ? ['zoneId', 'domain'] : 'zoneId', // domain is visible only for admins
                     docID: 'helpGuestNetworkNetworkOffering',
                     select: function(args) {
                         var data = {
@@ -902,6 +955,12 @@ var addL2GuestNetwork = {
                             guestiptype: 'L2',
                             state: 'Enabled'
                         };
+
+                        if ((isAdmin() || isDomainAdmin())) { // domain is visible only for admins
+                            $.extend(data, {
+                                domainid: args.domain
+                            });
+                        }
 
                         if ('vpc' in args.context) { //from VPC section
                             $.extend(data, {
@@ -983,55 +1042,6 @@ var addL2GuestNetwork = {
                     label: 'label.bypass.vlan.overlap.check',
                     isBoolean: true,
                     isHidden: true
-                  },
-
-                domain: {
-                    label: 'label.domain',
-                    isHidden: function(args) {
-                        if (isAdmin() || isDomainAdmin())
-                            return false;
-                        else
-                            return true;
-                    },
-                    select: function(args) {
-                        if (isAdmin() || isDomainAdmin()) {
-                            $.ajax({
-                                url: createURL("listDomains&listAll=true"),
-                                success: function(json) {
-                                    var items = [];
-                                    items.push({
-                                        id: "",
-                                        description: ""
-                                    });
-                                    var domainObjs = json.listdomainsresponse.domain;
-                                    $(domainObjs).each(function() {
-                                        items.push({
-                                            id: this.id,
-                                            description: this.path
-                                        });
-                                    });
-                                    items.sort(function(a, b) {
-                                        return a.description.localeCompare(b.description);
-                                    });
-                                    args.response.success({
-                                        data: items
-                                    });
-                                }
-                            });
-                            args.$select.change(function() {
-                                var $form = $(this).closest('form');
-                                if ($(this).val() == "") {
-                                    $form.find('.form-item[rel=account]').hide();
-                                } else {
-                                    $form.find('.form-item[rel=account]').css('display', 'inline-block');
-                                }
-                            });
-                        } else {
-                            args.response.success({
-                                data: null
-                            });
-                        }
-                    }
                 },
                 account: {
                     label: 'label.account',
