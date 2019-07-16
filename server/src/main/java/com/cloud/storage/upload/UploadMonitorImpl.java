@@ -176,7 +176,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
         Type type = (template.getFormat() == ImageFormat.ISO) ? Type.ISO : Type.TEMPLATE;
 
-        DataStore secStore = storeMgr.getImageStore(dataCenterId);
+        DataStore secStore = storeMgr.getImageStoreForWrite(dataCenterId);
         if(secStore == null) {
             s_logger.error("Unable to extract template, secondary storage to satisfy storage needs cannot be found!");
             return null;

@@ -73,12 +73,21 @@ public class DataStoreManagerImpl implements DataStoreManager {
     }
 
     @Override
-    public DataStore getImageStore(long zoneId) {
+    public DataStore getImageStoreForRead(long zoneId) {
         List<DataStore> stores = getImageStoresByScope(new ZoneScope(zoneId));
         if (stores == null || stores.size() == 0) {
             return null;
         }
-        return imageDataStoreMgr.getImageStore(stores);
+        return imageDataStoreMgr.getImageStoreForRead(stores);
+    }
+
+    @Override
+    public DataStore getImageStoreForWrite(long zoneId) {
+        List<DataStore> stores = getImageStoresByScope(new ZoneScope(zoneId));
+        if (stores == null || stores.size() == 0) {
+            return null;
+        }
+        return imageDataStoreMgr.getImageStoreForWrite(stores);
     }
 
     @Override
@@ -110,7 +119,7 @@ public class DataStoreManagerImpl implements DataStoreManager {
         if (stores == null || stores.size() == 0) {
             return null;
         }
-        return imageDataStoreMgr.getImageStore(stores);
+        return imageDataStoreMgr.getImageStoreForWrite(stores);
     }
 
     @Override

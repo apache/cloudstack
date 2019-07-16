@@ -337,7 +337,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                 dataStore = pickExistingRootVolumeFromDataStore(profile, dataStore);
             }
         } else {
-            dataStore = _dataStoreMgr.getImageStore(dest.getDataCenter().getId());
+            dataStore = _dataStoreMgr.getImageStoreForWrite(dest.getDataCenter().getId());
         }
         return dataStore;
     }
@@ -449,7 +449,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     }
 
     private boolean deleteConfigDriveIso(final VirtualMachine vm) throws ResourceUnavailableException {
-        DataStore dataStore = _dataStoreMgr.getImageStore(vm.getDataCenterId());
+        DataStore dataStore = _dataStoreMgr.getImageStoreForWrite(vm.getDataCenterId());
         Long agentId = findAgentIdForImageStore(dataStore);
 
         if (VirtualMachineManager.VmConfigDriveOnPrimaryPool.value()) {

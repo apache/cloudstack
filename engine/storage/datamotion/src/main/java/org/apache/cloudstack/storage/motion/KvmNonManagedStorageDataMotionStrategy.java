@@ -197,7 +197,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
             Host destHost) {
         VMTemplateStoragePoolVO sourceVolumeTemplateStoragePoolVO = vmTemplatePoolDao.findByPoolTemplate(destStoragePool.getId(), srcVolumeInfo.getTemplateId());
         if (sourceVolumeTemplateStoragePoolVO == null && destStoragePool.getPoolType() == StoragePoolType.Filesystem) {
-            DataStore sourceTemplateDataStore = dataStoreManagerImpl.getImageStore(srcVolumeInfo.getDataCenterId());
+            DataStore sourceTemplateDataStore = dataStoreManagerImpl.getImageStoreForRead(srcVolumeInfo.getDataCenterId());
             if (sourceTemplateDataStore != null) {
                 TemplateInfo sourceTemplateInfo = templateDataFactory.getTemplate(srcVolumeInfo.getTemplateId(), sourceTemplateDataStore);
                 TemplateObjectTO sourceTemplate = new TemplateObjectTO(sourceTemplateInfo);

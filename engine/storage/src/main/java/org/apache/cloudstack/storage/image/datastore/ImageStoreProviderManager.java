@@ -42,5 +42,7 @@ public interface ImageStoreProviderManager {
 
     boolean registerDriver(String uuid, ImageStoreDriver driver);
 
-    DataStore getImageStore(List<DataStore> imageStores);
+    DataStore getImageStoreForRead(List<DataStore> imageStores);
+
+    DataStore getImageStoreForWrite(List<DataStore> imageStores);
 }
