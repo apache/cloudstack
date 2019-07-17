@@ -65,6 +65,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.utils.ssh.SshException;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.trilead.ssh2.Connection;
@@ -181,7 +182,7 @@ public class ResourceManagerImplTest {
 
     @Test
     public void testCheckAndMaintainErrorInMaintenanceRunningVms() throws NoTransitionException {
-        when(vmInstanceDao.listByHostId(hostId)).thenReturn(Arrays.asList(vm1, vm2));
+        when(vmInstanceDao.findByHostInStates(hostId, VirtualMachine.State.Migrating, VirtualMachine.State.Running, VirtualMachine.State.Starting, VirtualMachine.State.Stopping, VirtualMachine.State.Error, VirtualMachine.State.Unknown)).thenReturn(Arrays.asList(vm1, vm2));
         boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
         verify(resourceManager).attemptMaintain(host);
         Assert.assertFalse(enterMaintenanceMode);
