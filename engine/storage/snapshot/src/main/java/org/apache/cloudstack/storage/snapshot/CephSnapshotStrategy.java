@@ -68,7 +68,6 @@ public class CephSnapshotStrategy extends StorageSystemSnapshotStrategy {
     public boolean revertSnapshot(SnapshotInfo snapshotInfo) {
         VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
         ImageFormat imageFormat = volumeInfo.getFormat();
-//        TODO does this check makes sense?
         if (!ImageFormat.RAW.equals(imageFormat)) {
             s_logger.error(String.format("Does not support revert snapshot of the image format [%s] on Ceph/RBD. Can only rollback snapshots of format RAW", imageFormat));
         }
