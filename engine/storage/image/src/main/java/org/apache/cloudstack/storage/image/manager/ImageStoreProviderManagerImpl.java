@@ -177,4 +177,22 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
                 Math.round(_statsCollector.getImageStoreCapacityThreshold()*100)));
         return null;
     }
+
+    @Override
+    public List<DataStore> getImageStoresForWrite(List<DataStore> imageStores) {
+        List<DataStore> stores = new ArrayList<>();
+        for (DataStore imageStore : imageStores) {
+            // Return image store if used percentage is less then threshold value i.e. 90%.
+            if (_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
+                stores.add(imageStore);
+            }
+        }
+
+        // No store with space found
+        if (stores.isEmpty()) {
+            s_logger.error(String.format("Can't find image storage in zone with less than %d usage",
+                    Math.round(_statsCollector.getImageStoreCapacityThreshold() * 100)));
+        }
+        return stores;
+    }
 }

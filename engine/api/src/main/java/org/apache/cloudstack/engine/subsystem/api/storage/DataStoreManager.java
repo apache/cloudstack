@@ -37,6 +37,8 @@ public interface DataStoreManager {
 
     DataStore getImageStoreForWrite(long zoneId);
 
+    List<DataStore> getImageStoresForWrite(long zoneId);
+
     List<DataStore> getImageCacheStores(Scope scope);
 
     DataStore getImageCacheStore(long zoneId);

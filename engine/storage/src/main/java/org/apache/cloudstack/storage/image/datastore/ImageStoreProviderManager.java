@@ -45,4 +45,6 @@ public interface ImageStoreProviderManager {
     DataStore getImageStoreForRead(List<DataStore> imageStores);
 
     DataStore getImageStoreForWrite(List<DataStore> imageStores);
+
+    List<DataStore> getImageStoresForWrite(List<DataStore> imageStores);
 }
