@@ -1481,9 +1481,24 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("unable to update permissions for " + mediaType + " with id " + id);
         }
 
-        boolean isAdmin = _accountMgr.isAdmin(caller.getId());
+        Long ownerId = template.getAccountId();
+        Account owner = _accountMgr.getAccount(ownerId);
+        if (ownerId == null) {
+            // if there is no owner of the template then it's probably already a
+            // public template (or domain private template) so
+            // publishing to individual users is irrelevant
+            throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName());
+        }
+
+        if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            // Currently project owned templates cannot be shared outside project but is available to all users within project by default.
+            throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName() +
+                    ". Project owned templates cannot be shared outside template.");
+        }
+
         // check configuration parameter(allow.public.user.templates) value for
         // the template owner
+        boolean isAdmin = _accountMgr.isAdmin(caller.getId());
         boolean allowPublicUserTemplates = AllowPublicUserTemplates.valueIn(template.getAccountId());
         if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
             throw new InvalidParameterValueException("Only private " + mediaType + "s can be created.");
@@ -1495,14 +1510,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     "Invalid operation on accounts, the operation must be either 'add' or 'remove' in order to modify launch permissions." + "  Given operation is: '" +
                         operation + "'");
             }
-        }
-
-        Long ownerId = template.getAccountId();
-        if (ownerId == null) {
-            // if there is no owner of the template then it's probably already a
-            // public template (or domain private template) so
-            // publishing to individual users is irrelevant
-            throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName());
         }
 
         //Only admin or owner of the template should be able to change its permissions
@@ -1538,7 +1545,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         //Derive the domain id from the template owner as updateTemplatePermissions is not cross domain operation
-        Account owner = _accountMgr.getAccount(ownerId);
         final Domain domain = _domainDao.findById(owner.getDomainId());
         if ("add".equalsIgnoreCase(operation)) {
             final List<String> accountNamesFinal = accountNames;
