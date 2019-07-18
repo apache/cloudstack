@@ -359,3 +359,30 @@ CREATE VIEW `cloud`.`project_view` AS
         `cloud`.`account` ON account.id = project_account.account_id
             left join
         `cloud`.`project_account` pacct ON projects.id = pacct.project_id;
+
+-- KVM: Add background task to upload certificates for direct download
+CREATE TABLE `cloud`.`direct_download_certificate` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(40) NOT NULL,
+  `alias` varchar(255) NOT NULL,
+  `certificate` text NOT NULL,
+  `hypervisor_type` varchar(45) NOT NULL,
+  `zone_id` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `i_direct_download_certificate_alias` (`alias`),
+  KEY `fk_direct_download_certificate__zone_id` (`zone_id`),
+  CONSTRAINT `fk_direct_download_certificate__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`direct_download_certificate_host_map` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `certificate_id` bigint(20) unsigned NOT NULL,
+  `host_id` bigint(20) unsigned NOT NULL,
+  `revoked` int(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `fk_direct_download_certificate_host_map__host_id` (`host_id`),
+  KEY `fk_direct_download_certificate_host_map__certificate_id` (`certificate_id`),
+  CONSTRAINT `fk_direct_download_certificate_host_map__host_id` FOREIGN KEY (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_direct_download_certificate_host_map__certificate_id` FOREIGN KEY (`certificate_id`) REFERENCES `direct_download_certificate` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

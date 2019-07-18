@@ -27,7 +27,7 @@ from marvin.lib.base import (ServiceOffering,
 from marvin.lib.common import (get_pod,
                                get_zone)
 from nose.plugins.attrib import attr
-from marvin.cloudstackAPI import uploadTemplateDirectDownloadCertificate
+from marvin.cloudstackAPI import (uploadTemplateDirectDownloadCertificate, revokeTemplateDirectDownloadCertificate)
 from marvin.lib.decoratorGenerators import skipTestIf
 
 
@@ -92,6 +92,7 @@ class TestUploadDirectDownloadCertificates(cloudstackTestCase):
         cmd.hypervisor = self.hypervisor
         cmd.name = "marvin-test-verify-certs"
         cmd.certificate = self.certificates["invalid"]
+        cmd.zoneid = self.zone.id
 
         invalid_cert_uploadFails = False
         expired_cert_upload_fails = False
@@ -120,16 +121,28 @@ class TestUploadDirectDownloadCertificates(cloudstackTestCase):
 
         # Validate the following
         # 1. Valid certificates are uploaded to hosts
+        # 2. Revoke uploaded certificate from host
 
         cmd = uploadTemplateDirectDownloadCertificate.uploadTemplateDirectDownloadCertificateCmd()
         cmd.hypervisor = self.hypervisor
         cmd.name = "marvin-test-verify-certs"
         cmd.certificate = self.certificates["valid"]
+        cmd.zoneid = self.zone.id
 
         try:
             self.apiclient.uploadTemplateDirectDownloadCertificate(cmd)
         except Exception as e:
             self.fail("Valid certificate must be uploaded")
+
+        revokecmd = revokeTemplateDirectDownloadCertificate.revokeTemplateDirectDownloadCertificateCmd()
+        revokecmd.hypervisor = self.hypervisor
+        revokecmd.name = cmd.name
+        revokecmd.zoneid = self.zone.id
+
+        try:
+            self.apiclient.revokeTemplateDirectDownloadCertificate(revokecmd)
+        except Exception as e:
+            self.fail("Uploaded certificates should be revoked when needed")
 
         return
 

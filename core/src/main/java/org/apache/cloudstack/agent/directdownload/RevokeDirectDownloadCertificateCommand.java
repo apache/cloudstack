@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,23 +15,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+package org.apache.cloudstack.agent.directdownload;
 
-package org.apache.cloudstack.framework.agent.direct.download;
+import com.cloud.agent.api.Command;
 
-public interface DirectDownloadService {
+public class RevokeDirectDownloadCertificateCommand extends Command {
 
-    /**
-     * Download template/ISO into poolId bypassing secondary storage. Download performed by hostId
-     */
-    void downloadTemplate(long templateId, long poolId, long hostId);
+    private String certificateAlias;
 
-    /**
-     * Upload client certificate to each running host
-     */
-    boolean uploadCertificateToHosts(String certificateCer, String certificateName, String hypervisor, Long zoneId, Long hostId);
+    public RevokeDirectDownloadCertificateCommand(final String alias) {
+        this.certificateAlias = alias;
+    }
 
-    /**
-     * Upload a stored certificate on database with id 'certificateId' to host with id 'hostId'
-     */
-    boolean uploadCertificate(long certificateId, long hostId);
+    public String getCertificateAlias() {
+        return certificateAlias;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }

@@ -14,23 +14,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.direct.download;
 
-package org.apache.cloudstack.framework.agent.direct.download;
+import com.cloud.hypervisor.Hypervisor;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface DirectDownloadService {
+public interface DirectDownloadCertificate extends InternalIdentity, Identity {
 
-    /**
-     * Download template/ISO into poolId bypassing secondary storage. Download performed by hostId
-     */
-    void downloadTemplate(long templateId, long poolId, long hostId);
+    String getCertificate();
+    String getAlias();
+    Hypervisor.HypervisorType getHypervisorType();
 
-    /**
-     * Upload client certificate to each running host
-     */
-    boolean uploadCertificateToHosts(String certificateCer, String certificateName, String hypervisor, Long zoneId, Long hostId);
-
-    /**
-     * Upload a stored certificate on database with id 'certificateId' to host with id 'hostId'
-     */
-    boolean uploadCertificate(long certificateId, long hostId);
 }
