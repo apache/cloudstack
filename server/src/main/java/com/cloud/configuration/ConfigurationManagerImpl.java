@@ -3568,19 +3568,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 } else {
                     // For tagged or non-overlapping URIs we need to ensure there is no Public traffic type
                     boolean overlapped = false;
-                    if( network.getTrafficType() == TrafficType.Public ) {
+                    if (network.getTrafficType() == TrafficType.Public) {
                         overlapped = true;
                     } else {
                         final Long nwId = vlan.getNetworkId();
-                        if ( nwId != null ) {
+                        if (nwId != null) {
                             final Network nw = _networkModel.getNetwork(nwId);
-                            if ( nw != null && nw.getTrafficType() == TrafficType.Public ) {
+                            if (nw != null && nw.getTrafficType() == TrafficType.Public) {
                                 overlapped = true;
                             }
                         }
 
                     }
-                    if ( overlapped ) {
+                    if (overlapped) {
                         throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
                                 + " in zone " + zone.getName()
                                 + " has overlapped with the subnet. Please specify a different gateway/netmask.");
