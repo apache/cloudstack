@@ -102,7 +102,6 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     @Inject private SnapshotDataFactory snapshotDataFactory;
     @Inject private SnapshotDetailsDao snapshotDetailsDao;
     @Inject private SnapshotDataStoreDao snapshotStoreDao;
-    @Inject private VolumeDetailsDao volumeDetailsDao;
     @Inject private VMInstanceDao vmInstanceDao;
     @Inject private VMSnapshotDao vmSnapshotDao;
     @Inject private VMSnapshotService vmSnapshotService;
@@ -358,11 +357,12 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             success = snapshotSvr.revertSnapshot(snapshotInfo);
 
             if (!success) {
-                String errMsg = "Failed to revert a volume to a snapshot state";
+                String errMsg = String.format("Failed to revert volume [name:%s, format:%s] to snapshot [id:%s] state", volumeInfo.getName(), volumeInfo.getFormat(),
+                        snapshotInfo.getSnapshotId());
 
                 s_logger.error(errMsg);
 
-                throw new CloudRuntimeException("Failed to revert a volume to a snapshot state");
+                throw new CloudRuntimeException(errMsg);
             }
         } finally {
             if (getHypervisorRequiresResignature(volumeInfo)) {
