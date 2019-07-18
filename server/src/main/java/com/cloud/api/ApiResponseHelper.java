@@ -1808,6 +1808,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<String> regularAccounts = new ArrayList<String>();
         for (String accountName : accountNames) {
             Account account = ApiDBUtils.findAccountByNameDomain(accountName, templateOwner.getDomainId());
+            if (account == null) {
+                s_logger.error("Missing Account " + accountName + " in domain " + templateOwner.getDomainId());
+                continue;
+            }
+
             if (account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
                 regularAccounts.add(accountName);
             } else {

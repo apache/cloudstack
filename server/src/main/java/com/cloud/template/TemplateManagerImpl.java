@@ -32,28 +32,6 @@ import java.util.concurrent.Executors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.deploy.DeployDestination;
-import com.cloud.storage.ImageStoreUploadMonitorImpl;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.EncryptionUtil;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.Pair;
-import com.cloud.utils.EnumUtils;
-import com.cloud.vm.VmDetailConstants;
-import com.google.common.base.Joiner;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
-import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
-import org.apache.cloudstack.framework.async.AsyncCallFuture;
-import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
@@ -61,6 +39,7 @@ import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
@@ -69,6 +48,7 @@ import org.apache.cloudstack.api.command.user.template.CopyTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
@@ -95,6 +75,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.Templa
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -104,6 +85,9 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -111,6 +95,12 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -129,6 +119,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -148,6 +139,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.ImageStoreUploadMonitorImpl;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -186,6 +178,11 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.EncryptionUtil;
+import com.cloud.utils.EnumUtils;
+import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -200,11 +197,12 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+import com.google.common.base.Joiner;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class TemplateManagerImpl extends ManagerBase implements TemplateManager, TemplateApiService, Configurable {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
@@ -1483,9 +1481,24 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("unable to update permissions for " + mediaType + " with id " + id);
         }
 
-        boolean isAdmin = _accountMgr.isAdmin(caller.getId());
+        Long ownerId = template.getAccountId();
+        Account owner = _accountMgr.getAccount(ownerId);
+        if (ownerId == null) {
+            // if there is no owner of the template then it's probably already a
+            // public template (or domain private template) so
+            // publishing to individual users is irrelevant
+            throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName());
+        }
+
+        if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            // Currently project owned templates cannot be shared outside project but is available to all users within project by default.
+            throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName() +
+                    ". Project owned templates cannot be shared outside template.");
+        }
+
         // check configuration parameter(allow.public.user.templates) value for
         // the template owner
+        boolean isAdmin = _accountMgr.isAdmin(caller.getId());
         boolean allowPublicUserTemplates = AllowPublicUserTemplates.valueIn(template.getAccountId());
         if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
             throw new InvalidParameterValueException("Only private " + mediaType + "s can be created.");
@@ -1497,14 +1510,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     "Invalid operation on accounts, the operation must be either 'add' or 'remove' in order to modify launch permissions." + "  Given operation is: '" +
                         operation + "'");
             }
-        }
-
-        Long ownerId = template.getAccountId();
-        if (ownerId == null) {
-            // if there is no owner of the template then it's probably already a
-            // public template (or domain private template) so
-            // publishing to individual users is irrelevant
-            throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName());
         }
 
         //Only admin or owner of the template should be able to change its permissions
@@ -1540,7 +1545,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         //Derive the domain id from the template owner as updateTemplatePermissions is not cross domain operation
-        Account owner = _accountMgr.getAccount(ownerId);
         final Domain domain = _domainDao.findById(owner.getDomainId());
         if ("add".equalsIgnoreCase(operation)) {
             final List<String> accountNamesFinal = accountNames;

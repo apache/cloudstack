@@ -12421,6 +12421,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -35px -707px;
 }
 
+.shareTemplate .icon {
+  background-position: -165px -122px;
+}
+
+.shareTemplate:hover .icon {
+  background-position: -165px -704px;
+}
+
 .createVolume .icon {
   background-position: -70px -124px;
 }
