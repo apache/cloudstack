@@ -70,14 +70,15 @@ public class CephSnapshotStrategy extends StorageSystemSnapshotStrategy {
         ImageFormat imageFormat = volumeInfo.getFormat();
         if (!ImageFormat.RAW.equals(imageFormat)) {
             s_logger.error(String.format("Does not support revert snapshot of the image format [%s] on Ceph/RBD. Can only rollback snapshots of format RAW", imageFormat));
+            return false;
         }
 
         executeRevertSnapshot(snapshotInfo, volumeInfo);
 
-        return false;
+        return true;
     }
 
-    private boolean isSnapshotStoredOnRbdStoragePool(Snapshot snapshot) {
+    protected boolean isSnapshotStoredOnRbdStoragePool(Snapshot snapshot) {
         SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
         long snapshotStoragePoolId = snapshotStore.getDataStoreId();
         StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(snapshotStoragePoolId);

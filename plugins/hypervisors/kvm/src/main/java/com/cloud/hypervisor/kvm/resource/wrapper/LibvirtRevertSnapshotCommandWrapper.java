@@ -50,6 +50,10 @@ import com.cloud.utils.script.Script;
 public final class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSnapshotCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtRevertSnapshotCommandWrapper.class);
+    private static final String MON_HOST = "mon_host";
+    private static final String KEY = "key";
+    private static final String CLIENT_MOUNT_TIMEOUT = "client_mount_timeout";
+    private static final String RADOS_CONNECTION_TIMEOUT = "30";
 
     @Override
     public Answer execute(final RevertSnapshotCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -76,19 +80,20 @@ public final class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<Re
 
             if (primaryPool.getType() == StoragePoolType.RBD) {
                 Rados rados = new Rados(primaryPool.getAuthUserName());
-                rados.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
-                rados.confSet("key", primaryPool.getAuthSecret());
-                rados.confSet("client_mount_timeout", "30");
+                rados.confSet(MON_HOST, primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
+                rados.confSet(KEY, primaryPool.getAuthSecret());
+                rados.confSet(CLIENT_MOUNT_TIMEOUT, RADOS_CONNECTION_TIMEOUT);
                 rados.connect();
 
-                String[] rbdPoolANdVolumeAndSnapshot = snapshotRelPath.split("/");
+                String[] rbdPoolAndVolumeAndSnapshot = snapshotRelPath.split("/");
 
                 IoCTX io = rados.ioCtxCreate(primaryPool.getSourceDir());
                 Rbd rbd = new Rbd(io);
-                RbdImage image = rbd.open(rbdPoolANdVolumeAndSnapshot[1]);
+                RbdImage image = rbd.open(rbdPoolAndVolumeAndSnapshot[1]);
 
-                s_logger.debug(String.format("Attempting to rollback RBD snapshot [name:%s, id:%s, path:%s]", snapshot.getName(), snapshot.getId(), snapshotRelPath));
-                image.snapRollBack(rbdPoolANdVolumeAndSnapshot[2]);
+                s_logger.debug(String.format("Attempting to rollback RBD snapshot [name:%s], [pool:%s], [volumeid:%s], [snapshotid:%s]", snapshot.getName(),
+                        rbdPoolAndVolumeAndSnapshot[0], rbdPoolAndVolumeAndSnapshot[1], rbdPoolAndVolumeAndSnapshot[2]));
+                image.snapRollBack(rbdPoolAndVolumeAndSnapshot[2]);
 
                 rbd.close(image);
                 rados.ioCtxDestroy(io);

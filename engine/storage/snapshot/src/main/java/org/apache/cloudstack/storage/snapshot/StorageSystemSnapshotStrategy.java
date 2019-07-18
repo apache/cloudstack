@@ -317,6 +317,18 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             throw new CloudRuntimeException(errMsg);
         }
 
+        executeRevertSnapshot(snapshotInfo, volumeInfo);
+
+        return true;
+    }
+
+    /**
+     * Executes the SnapshotStrategyBase.revertSnapshot(SnapshotInfo) method, and handles the SnapshotVO table update and the Volume.Event state machine (RevertSnapshotRequested).
+     */
+    protected void executeRevertSnapshot(SnapshotInfo snapshotInfo, VolumeInfo volumeInfo) {
+        Long hostId = null;
+        boolean success = false;
+
         SnapshotVO snapshotVO = snapshotDao.acquireInLockTable(snapshotInfo.getId());
 
         if (snapshotVO == null) {
@@ -327,17 +339,6 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             throw new CloudRuntimeException(errMsg);
         }
 
-        executeRevertSnapshot(snapshotInfo, volumeInfo);
-
-        return true;
-    }
-
-    /**
-     * TODO
-     */
-    protected void executeRevertSnapshot(SnapshotInfo snapshotInfo, VolumeInfo volumeInfo) {
-        Long hostId = null;
-        boolean success = false;
         try {
             volumeInfo.stateTransit(Volume.Event.RevertSnapshotRequested);
 
