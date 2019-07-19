@@ -1511,26 +1511,6 @@
                             }
                         }
 
-                        // Optional Step - Pre-step 8
-                        if ($activeStep.hasClass('ovf-properties')) {
-                            var ok = true;
-                            if ($activeStep.find('input').length > 0) { //if no checkbox is checked
-                                $.each($activeStep.find('input'), function(index, item) {
-                                    var item = $activeStep.find('input#' + item.id);
-                                    if (item.val().length == 0) {
-                                        ok = false;
-                                        return;
-                                    }
-                                });
-                            }
-                            if (!ok) {
-                                cloudStack.dialog.notice({
-                                    message: 'Please complete every configuration item'
-                                });
-                                return false;
-                            }
-                        }
-
                         if (!$form.valid()) {
                             if ($form.find('input.error:visible, select.error:visible').length) {
                                 return false;

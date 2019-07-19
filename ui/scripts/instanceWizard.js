@@ -1028,13 +1028,15 @@
             var deployOvfProperties = [];
             if (ovfProps.length > 0) {
                 $(ovfProps).each(function(index, prop) {
-                    var selectField = args.$wizard.find('select[id=ovf-property-'+prop.key+']');
-                    var inputField = args.$wizard.find('input[id=ovf-property-'+prop.key+']');
+                    var selectField = args.$wizard.find('select[id="ovf-property-'+prop.key+'"]');
+                    var inputField = args.$wizard.find('input[id="ovf-property-'+prop.key+'"]');
                     var propValue = inputField.val() ? inputField.val() : selectField.val();
-                    deployOvfProperties.push({
-                        key: prop.key,
-                        value: propValue
-                    });
+                    if (propValue !== undefined) {
+                        deployOvfProperties.push({
+                            key: prop.key,
+                            value: propValue
+                        });
+                    }
                 });
                 for (var k = 0; k < deployOvfProperties.length; k++) {
                     deployVmData["ovfproperties[" + k + "].key"] = deployOvfProperties[k].key;
