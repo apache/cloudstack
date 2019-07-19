@@ -277,7 +277,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
 
         String basedn = _ldapConfiguration.getBaseDn(domainId);
         if (StringUtils.isBlank(basedn)) {
-            throw new IllegalArgumentException("ldap basedn is not configured");
+            throw new IllegalArgumentException(String.format("ldap basedn is not configured (for domain: %s)", domainId));
         }
         byte[] cookie = null;
         int pageSize = _ldapConfiguration.getLdapPageSize(domainId);

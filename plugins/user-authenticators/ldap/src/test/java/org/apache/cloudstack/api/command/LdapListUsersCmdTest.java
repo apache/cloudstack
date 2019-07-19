@@ -33,10 +33,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-//import org.mockito.internal.util.reflection.Whitebox;
-//import org.mockito.runners.MockitoJUnitRunner;
-//import org.powermock.api.mockito.PowerMockito;
-//import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.ArrayList;
@@ -47,6 +43,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -118,7 +115,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
 
         ldapListUsersCmd.execute();
 
-        verify(queryService, times(1)).searchForUsers(any());
+        verify(queryService, times(1)).searchForUsers(anyLong(), anyBoolean());
         assertNotEquals(0, ((ListResponse)ldapListUsersCmd.getResponseObject()).getResponses().size());
     }
 
@@ -159,7 +156,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
      */
     @Test
     public void isNotACloudstackUser() {
-        doReturn(new ListResponse<UserResponse>()).when(queryService).searchForUsers(any());
+        doReturn(new ListResponse<UserResponse>()).when(queryService).searchForUsers(anyLong(), anyBoolean());
 
         LdapUser ldapUser = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null);
 
@@ -174,11 +171,10 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
     @Test
     public void getListtypeOther() {
         when(cmdSpy.getListTypeString()).thenReturn("otHer", "anY");
-        String userfilter = cmdSpy.getUserFilterString();
 
+        String userfilter = cmdSpy.getUserFilterString();
         assertEquals("AnyDomain", userfilter);
 
-        // Big no-no: a second test in a test-method; don't do this at home
         userfilter = cmdSpy.getUserFilterString();
         assertEquals("AnyDomain", userfilter);
     }
@@ -194,11 +190,10 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
     }
 
     /**
-     * test whether values for 'userfilter'
+     * test whether values for 'userfilter' yield the right filter
      */
     @Test
     public void getUserFilter() throws NoSuchFieldException, IllegalAccessException {
-
         when(cmdSpy.getListTypeString()).thenReturn("otHer");
         LdapListUsersCmd.UserFilter userfilter = cmdSpy.getUserFilter();
 
@@ -209,10 +204,13 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         assertEquals(LdapListUsersCmd.UserFilter.ANY_DOMAIN, userfilter);
     }
 
+    /**
+     * test if the right exception is thrown on invalid input.
+     */
     @Test(expected = IllegalArgumentException.class)
-    public void getInvalidUserFilterValues() throws NoSuchFieldException, IllegalAccessException{
+    public void getInvalidUserFilterValues() throws NoSuchFieldException, IllegalAccessException {
         setHiddenField(ldapListUsersCmd, "userFilter", "flase");
-//        LdapListUsersCmd.UserFilter userfilter =
+// unused output:       LdapListUsersCmd.UserFilter userfilter =
                 ldapListUsersCmd.getUserFilter();
     }
 
@@ -229,7 +227,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
 
     /**
      * apply no filter
-     * todo make extensive userlist and check for annotations (usersources)
+     *
      * @throws NoSuchFieldException
      * @throws IllegalAccessException
      */
@@ -246,7 +244,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
 
     /**
      * filter all acs users
-     * todo make extensive userlist and check for annotations (usersources)
+     *
      * @throws NoSuchFieldException
      * @throws IllegalAccessException
      */
@@ -382,7 +380,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         ListResponse<UserResponse> queryServiceResponse = new ListResponse<>();
         queryServiceResponse.setResponses(responses);
 
-        doReturn(queryServiceResponse).when(queryService).searchForUsers(any());
+        doReturn(queryServiceResponse).when(queryService).searchForUsers(anyLong(), anyBoolean());
     }
 
     private UserResponse createMockUserResponse(String uid, User.Source source) {

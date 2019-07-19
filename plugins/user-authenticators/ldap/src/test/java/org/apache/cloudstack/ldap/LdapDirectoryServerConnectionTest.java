@@ -111,7 +111,6 @@ public class LdapDirectoryServerConnectionTest {
 
     @Test
     public void testEmbeddedLdapServerInitialization() throws IndexNotFoundException {
-//        expect:
         LdapServer ldapServer = embeddedLdapServer.getLdapServer();
         assertNotNull(ldapServer);
 
@@ -136,7 +135,6 @@ public class LdapDirectoryServerConnectionTest {
         java.util.Collections.sort(userList);
         List checkList = Arrays.asList("uid");
         assertEquals(userList, checkList);
-//        assertEquals(["uid"].sort(), embeddedLdapServer.getUserIndexMap().keySet().sort());
     }
 
 //    @Test

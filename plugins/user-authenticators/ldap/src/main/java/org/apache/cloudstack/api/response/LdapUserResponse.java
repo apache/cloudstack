@@ -22,13 +22,14 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import org.apache.cloudstack.api.LdapConstants;
 
 public class LdapUserResponse extends BaseResponse {
     @SerializedName(ApiConstants.EMAIL)
     @Param(description = "The user's email")
     private String email;
 
-    @SerializedName("principal")
+    @SerializedName(LdapConstants.PRINCIPAL)
     @Param(description = "The user's principle")
     private String principal;
 
@@ -125,5 +126,64 @@ public class LdapUserResponse extends BaseResponse {
 
     public void setUserSource(String userSource) {
         this.userSource = userSource;
+    }
+
+    public String toString() {
+        final String COLUMN = ": ";
+        final String COMMA = ", ";
+        StringBuilder selfRepresentation = new StringBuilder();
+        selfRepresentation.append(this.getClass().getName());
+        selfRepresentation.append('{');
+        boolean hascontent = false;
+        if (this.getUsername() != null) {
+            selfRepresentation.append(ApiConstants.USERNAME);
+            selfRepresentation.append(COLUMN);
+            selfRepresentation.append(this.getUsername());
+            hascontent = true;
+        }
+        if (this.getFirstname() != null) {
+            if(hascontent) selfRepresentation.append(COMMA);
+            selfRepresentation.append(ApiConstants.FIRSTNAME);
+            selfRepresentation.append(COLUMN);
+            selfRepresentation.append(this.getFirstname());
+            hascontent = true;
+        }
+        if (this.getLastname() != null) {
+            if(hascontent) selfRepresentation.append(COMMA);
+            selfRepresentation.append(ApiConstants.LASTNAME);
+            selfRepresentation.append(COLUMN);
+            selfRepresentation.append(this.getLastname());
+            hascontent = true;
+        }
+        if(this.getDomain() != null) {
+            if(hascontent) selfRepresentation.append(COMMA);
+            selfRepresentation.append(ApiConstants.DOMAIN);
+            selfRepresentation.append(COLUMN);
+            selfRepresentation.append(this.getDomain());
+            hascontent = true;
+        }
+        if (this.getEmail() != null) {
+            if(hascontent) selfRepresentation.append(COMMA);
+            selfRepresentation.append(ApiConstants.EMAIL);
+            selfRepresentation.append(COLUMN);
+            selfRepresentation.append(this.getEmail());
+            hascontent = true;
+        }
+        if (this.getPrincipal() != null) {
+            if(hascontent) selfRepresentation.append(COMMA);
+            selfRepresentation.append(LdapConstants.PRINCIPAL);
+            selfRepresentation.append(COLUMN);
+            selfRepresentation.append(this.getPrincipal());
+            hascontent = true;
+        }
+        if (this.getUserSource() != null) {
+            if (hascontent) selfRepresentation.append(COMMA);
+            selfRepresentation.append(ApiConstants.USER_SOURCE);
+            selfRepresentation.append(COLUMN);
+            selfRepresentation.append(this.getUserSource());
+        }
+        selfRepresentation.append('}');
+
+        return selfRepresentation.toString();
     }
 }

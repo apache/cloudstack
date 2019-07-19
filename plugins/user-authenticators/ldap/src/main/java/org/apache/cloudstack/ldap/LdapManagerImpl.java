@@ -247,7 +247,11 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         try {
             context = _ldapContextFactory.createBindContext(domainId);
             final String escapedUsername = LdapUtils.escapeLDAPSearchFilter(username);
-            LdapUserManager.Provider ldapProvider = _ldapConfiguration.getLdapProvider(null);
+            LdapUserManager.Provider ldapProvider = _ldapConfiguration.getLdapProvider(domainId);
+            if (ldapProvider == null) {
+                // feeble second attempt?
+                ldapProvider = _ldapConfiguration.getLdapProvider(null);
+            }
             LdapUserManager userManagerFactory = _ldapUserManagerFactory.getInstance(ldapProvider);
             return userManagerFactory.getUser(escapedUsername, type, name, context, domainId);
         } catch (NamingException | IOException e) {

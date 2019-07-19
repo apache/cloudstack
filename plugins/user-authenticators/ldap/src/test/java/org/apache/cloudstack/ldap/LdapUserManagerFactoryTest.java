@@ -17,6 +17,7 @@
 package org.apache.cloudstack.ldap;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -42,9 +43,13 @@ public class LdapUserManagerFactoryTest {
 
     @Spy
     @InjectMocks
-    LdapUserManagerFactory ldapUserManagerFactory = new LdapUserManagerFactory();
+    static LdapUserManagerFactory ldapUserManagerFactory = new LdapUserManagerFactory();
 
-    // circumvent springframework for these {code ManagerImpl}
+    /**
+     * circumvent springframework for these {code ManagerImpl}
+     */
+    @BeforeClass
+    public static void init()
     {
         ldapUserManagerFactory.ldapUserManagerMap.put(LdapUserManager.Provider.MICROSOFTAD, new ADLdapUserManagerImpl());
         ldapUserManagerFactory.ldapUserManagerMap.put(LdapUserManager.Provider.OPENLDAP, new OpenLdapUserManagerImpl());
