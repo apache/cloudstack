@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vpc;
 
-import org.apache.log4j.Logger;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -25,10 +26,15 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
+import org.apache.log4j.Logger;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.user.Account;
+import com.google.common.base.Strings;
 
 @APICommand(name = "updateVPCOffering", description = "Updates VPC offering", responseObject = VpcOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -51,6 +57,17 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "update state for the VPC offering; " + "supported states - Enabled/Disabled")
     private String state;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+            type = CommandType.STRING,
+            description = "the ID of the containing domain(s) as comma separated string, public for public offerings")
+    private String domainIds;
+
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.STRING,
+            description = "the ID of the containing zone(s) as comma separated string, all for all zones offerings",
+            since = "4.13")
+    private String zoneIds;
 
     @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the VPC offering, integer")
     private Integer sortKey;
@@ -75,10 +92,69 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
         return state;
     }
 
+    public List<Long> getDomainIds() {
+        List<Long> validDomainIds = new ArrayList<>();
+        if (!Strings.isNullOrEmpty(domainIds)) {
+            if (domainIds.contains(",")) {
+                String[] domains = domainIds.split(",");
+                for (String domain : domains) {
+                    Domain validDomain = _entityMgr.findByUuid(Domain.class, domain.trim());
+                    if (validDomain != null) {
+                        validDomainIds.add(validDomain.getId());
+                    } else {
+                        throw new InvalidParameterValueException("Failed to create VPC offering because invalid domain has been specified.");
+                    }
+                }
+            } else {
+                domainIds = domainIds.trim();
+                if (!domainIds.matches("public")) {
+                    Domain validDomain = _entityMgr.findByUuid(Domain.class, domainIds.trim());
+                    if (validDomain != null) {
+                        validDomainIds.add(validDomain.getId());
+                    } else {
+                        throw new InvalidParameterValueException("Failed to create VPC offering because invalid domain has been specified.");
+                    }
+                }
+            }
+        } else {
+            validDomainIds.addAll(_vpcProvSvc.getVpcOfferingDomains(id));
+        }
+        return validDomainIds;
+    }
+
+    public List<Long> getZoneIds() {
+        List<Long> validZoneIds = new ArrayList<>();
+        if (!Strings.isNullOrEmpty(zoneIds)) {
+            if (zoneIds.contains(",")) {
+                String[] zones = zoneIds.split(",");
+                for (String zone : zones) {
+                    DataCenter validZone = _entityMgr.findByUuid(DataCenter.class, zone.trim());
+                    if (validZone != null) {
+                        validZoneIds.add(validZone.getId());
+                    } else {
+                        throw new InvalidParameterValueException("Failed to create VPC offering because invalid zone has been specified.");
+                    }
+                }
+            } else {
+                zoneIds = zoneIds.trim();
+                if (!zoneIds.matches("all")) {
+                    DataCenter validZone = _entityMgr.findByUuid(DataCenter.class, zoneIds.trim());
+                    if (validZone != null) {
+                        validZoneIds.add(validZone.getId());
+                    } else {
+                        throw new InvalidParameterValueException("Failed to create VPC offering because invalid zone has been specified.");
+                    }
+                }
+            }
+        } else {
+            validZoneIds.addAll(_vpcProvSvc.getVpcOfferingZones(id));
+        }
+        return validZoneIds;
+    }
+
     public Integer getSortKey() {
         return sortKey;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

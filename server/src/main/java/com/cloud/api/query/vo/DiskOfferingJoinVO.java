@@ -20,14 +20,17 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOffering.Type;
+import com.cloud.storage.Storage;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -129,10 +132,10 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     private Date removed;
 
     @Column(name = "domain_id")
-    private long domainId;
+    private String domainId = null;
 
     @Column(name = "domain_uuid")
-    private String domainUuid;
+    private String domainUuid = null;
 
     @Column(name = "domain_name")
     private String domainName = null;
@@ -140,8 +143,21 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name = "domain_path")
     private String domainPath = null;
 
+    @Column(name = "zone_id")
+    private String zoneId = null;
+
+    @Column(name = "zone_uuid")
+    private String zoneUuid = null;
+
+    @Column(name = "zone_name")
+    private String zoneName = null;
+
     @Column(name = "display_offering")
     boolean displayOffering;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "state")
+    DiskOffering.State state;
 
     public DiskOfferingJoinVO() {
     }
@@ -224,22 +240,6 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
         return removed;
     }
 
-    public long getDomainId() {
-        return domainId;
-    }
-
-    public String getDomainUuid() {
-        return domainUuid;
-    }
-
-    public String getDomainName() {
-        return domainName;
-    }
-
-    public String getDomainPath() {
-        return domainPath;
-    }
-
     public int getSortKey() {
         return sortKey;
     }
@@ -279,4 +279,68 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     public Long getIopsWriteRateMax() { return iopsWriteRateMax; }
 
     public Long getIopsWriteRateMaxLength() { return iopsWriteRateMaxLength; }
+
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
+    }
+
+    public String getDomainUuid() {
+        return domainUuid;
+    }
+
+    public void setDomainUuid(String domainUuid) {
+        this.domainUuid = domainUuid;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
+    }
+
+    public String getDomainPath() {
+        return domainPath;
+    }
+
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZoneUuid() {
+        return zoneUuid;
+    }
+
+    public void setZoneUuid(String zoneUuid) {
+        this.zoneUuid = zoneUuid;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(String zoneName) {
+        this.zoneName = zoneName;
+    }
+
+    public DiskOffering.State getState() {
+        return state;
+    }
+
+    public void setState(DiskOffering.State state) {
+        this.state = state;
+    }
 }

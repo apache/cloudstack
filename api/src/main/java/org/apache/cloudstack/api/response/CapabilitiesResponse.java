@@ -84,6 +84,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if the user can recover and expunge virtualmachines, false otherwise", since = "4.6.0")
     private boolean allowUserExpungeRecoverVM;
 
+    @SerializedName("allowuserviewalldomainaccounts")
+    @Param(description = "true if users can see all accounts within the same domain, false otherwise")
+    private boolean allowUserViewAllDomainAccounts;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -142,5 +146,9 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setAllowUserExpungeRecoverVM(boolean allowUserExpungeRecoverVM) {
         this.allowUserExpungeRecoverVM = allowUserExpungeRecoverVM;
+    }
+
+    public void setAllowUserViewAllDomainAccounts(boolean allowUserViewAllDomainAccounts) {
+        this.allowUserViewAllDomainAccounts = allowUserViewAllDomainAccounts;
     }
 }

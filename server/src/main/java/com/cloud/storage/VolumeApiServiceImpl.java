@@ -440,11 +440,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("Please specify a custom sized disk offering.");
             }
 
-            if (diskOffering.getDomainId() == null) {
-                // do nothing as offering is public
-            } else {
-                _configMgr.checkDiskOfferingAccess(volumeOwner, diskOffering);
-            }
+            _configMgr.checkDiskOfferingAccess(volumeOwner, diskOffering, zone);
         }
 
         return false;
@@ -617,11 +613,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("This disk offering does not allow custom size");
             }
 
-            if (diskOffering.getDomainId() == null) {
-                // do nothing as offering is public
-            } else {
-                _configMgr.checkDiskOfferingAccess(caller, diskOffering);
-            }
+            _configMgr.checkDiskOfferingAccess(owner, diskOffering, _dcDao.findById(zoneId));
 
             if (diskOffering.getDiskSize() > 0) {
                 size = diskOffering.getDiskSize();
@@ -678,6 +670,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 // if zoneId is not provided, we default to create volume in the same zone as the snapshot zone.
                 zoneId = snapshotCheck.getDataCenterId();
             }
+
+            _configMgr.checkDiskOfferingAccess(null, diskOffering, _dcDao.findById(zoneId));
 
             if (diskOffering == null) { // Pure snapshot is being used to create volume.
                 diskOfferingId = snapshotCheck.getDiskOfferingId();
@@ -968,10 +962,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("There are no tags on the current disk offering. The new disk offering needs to have no tags, as well.");
             }
 
-            if (newDiskOffering.getDomainId() != null) {
-                // not a public offering; check access
-                _configMgr.checkDiskOfferingAccess(CallContext.current().getCallingAccount(), newDiskOffering);
-            }
+            _configMgr.checkDiskOfferingAccess(_accountMgr.getActiveAccountById(volume.getAccountId()), newDiskOffering, _dcDao.findById(volume.getDataCenterId()));
 
             if (newDiskOffering.isCustomized()) {
                 newSize = cmd.getSize();
@@ -2205,7 +2196,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException(String.format("We cannot assign a removed disk offering [id=%s] to a volume. ", newDiskOffering.getUuid()));
         }
         Account caller = CallContext.current().getCallingAccount();
-        _accountMgr.checkAccess(caller, newDiskOffering);
+        DataCenter zone = null;
+        Volume volume = _volsDao.findById(cmd.getId());
+        if (volume != null) {
+            zone = _dcDao.findById(volume.getDataCenterId());
+        }
+        _accountMgr.checkAccess(caller, newDiskOffering, zone);
         return newDiskOffering;
     }
 

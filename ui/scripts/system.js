@@ -496,11 +496,13 @@
                                                 if (args.data.account) {
                                                     if (args.data.account.account)
                                                         array1.push("&account=" + args.data.account.account);
+                                                        if (args.data.account.domainid) {
+                                                            array1.push("&domainid=" + args.data.account.domainid);
+                                                        }
                                                     if (args.data.account.systemvms) {
                                                         systvmsval = args.data.account.systemvms == "on" ? "true" : "false"
                                                         array1.push("&forsystemvms=" + systvmsval);
                                                     }
-                                                    array1.push("&domainid=" + args.data.account.domainid);
                                                 }
 
                                                 array1.push("&forVirtualNetwork=true");

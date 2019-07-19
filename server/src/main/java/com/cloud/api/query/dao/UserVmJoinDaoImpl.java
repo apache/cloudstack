@@ -37,12 +37,12 @@ import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.query.QueryManagerImpl;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
 import com.cloud.service.ServiceOfferingDetailsVO;
@@ -315,14 +315,14 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             }
             // Remove blacklisted settings if user is not admin
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                String[] userVmSettingsToHide = QueryManagerImpl.UserVMBlacklistedDetails.value().split(",");
+                String[] userVmSettingsToHide = QueryService.UserVMBlacklistedDetails.value().split(",");
                 for (String key : userVmSettingsToHide) {
                     resourceDetails.remove(key.trim());
                 }
             }
             userVmResponse.setDetails(resourceDetails);
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                userVmResponse.setReadOnlyUIDetails(QueryManagerImpl.UserVMReadOnlyUIDetails.value());
+                userVmResponse.setReadOnlyUIDetails(QueryService.UserVMReadOnlyUIDetails.value());
             }
         }
 

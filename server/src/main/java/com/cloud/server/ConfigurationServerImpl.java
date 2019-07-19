@@ -225,11 +225,11 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance", ProvisioningType.THIN, false, false, null);
             createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance", ProvisioningType.THIN, false, false, null);
             // Save default disk offerings
-            createdefaultDiskOffering(null, "Small", "Small Disk, 5 GB", ProvisioningType.THIN, 5, null, false, false);
-            createdefaultDiskOffering(null, "Medium", "Medium Disk, 20 GB", ProvisioningType.THIN, 20, null, false, false);
-            createdefaultDiskOffering(null, "Large", "Large Disk, 100 GB", ProvisioningType.THIN, 100, null, false, false);
-            createdefaultDiskOffering(null, "Large", "Large Disk, 100 GB", ProvisioningType.THIN, 100, null, false, false);
-            createdefaultDiskOffering(null, "Custom", "Custom Disk", ProvisioningType.THIN, 0, null, true, false);
+            createDefaultDiskOffering("Small", "Small Disk, 5 GB", ProvisioningType.THIN, 5, null, false, false);
+            createDefaultDiskOffering("Medium", "Medium Disk, 20 GB", ProvisioningType.THIN, 20, null, false, false);
+            createDefaultDiskOffering("Large", "Large Disk, 100 GB", ProvisioningType.THIN, 100, null, false, false);
+            createDefaultDiskOffering("Large", "Large Disk, 100 GB", ProvisioningType.THIN, 100, null, false, false);
+            createDefaultDiskOffering("Custom", "Custom Disk", ProvisioningType.THIN, 0, null, true, false);
 
             // Save the mount parent to the configuration table
             String mountParent = getMountParent();
@@ -920,13 +920,13 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         return pod;
     }
 
-    private DiskOfferingVO createdefaultDiskOffering(Long domainId, String name, String description, ProvisioningType provisioningType,
-            int numGibibytes, String tags, boolean isCustomized, boolean isSystemUse) {
+    private DiskOfferingVO createDefaultDiskOffering(String name, String description, ProvisioningType provisioningType,
+                                                     int numGibibytes, String tags, boolean isCustomized, boolean isSystemUse) {
         long diskSize = numGibibytes;
         diskSize = diskSize * 1024 * 1024 * 1024;
         tags = cleanupTags(tags);
 
-        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, provisioningType, diskSize, tags, isCustomized, null, null, null);
+        DiskOfferingVO newDiskOffering = new DiskOfferingVO(name, description, provisioningType, diskSize, tags, isCustomized, null, null, null);
         newDiskOffering.setUniqueName("Cloud.Com-" + name);
         // leaving the above reference to cloud.com in as it is an identifyer and has no real world relevance
         newDiskOffering.setSystemUse(isSystemUse);

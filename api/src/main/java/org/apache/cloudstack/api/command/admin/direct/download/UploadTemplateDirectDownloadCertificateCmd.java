@@ -23,7 +23,9 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.log4j.Logger;
@@ -56,6 +58,14 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
     @Parameter(name = ApiConstants.HYPERVISOR, type = BaseCmd.CommandType.STRING, required = true, description = "Hypervisor type")
     private String hypervisor;
 
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
+            description = "Zone to upload certificate", required = true)
+    private Long zoneId;
+
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
+            description = "(optional) the host ID to revoke certificate")
+    private Long hostId;
+
     @Override
     public void execute() {
         if (!hypervisor.equalsIgnoreCase("kvm")) {
@@ -64,7 +74,7 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
 
         try {
             LOG.debug("Uploading certificate " + name + " to agents for Direct Download");
-            boolean result = directDownloadManager.uploadCertificateToHosts(certificate, name, hypervisor);
+            boolean result = directDownloadManager.uploadCertificateToHosts(certificate, name, hypervisor, zoneId, hostId);
             SuccessResponse response = new SuccessResponse(getCommandName());
             response.setSuccess(result);
             setResponseObject(response);

@@ -358,6 +358,7 @@ public class ApiConstants {
     public static final String VNET = "vnet";
     public static final String IS_VOLATILE = "isvolatile";
     public static final String VOLUME_ID = "volumeid";
+    public static final String ZONE = "zone";
     public static final String ZONE_ID = "zoneid";
     public static final String ZONE_NAME = "zonename";
     public static final String NETWORK_TYPE = "networktype";

@@ -18,6 +18,7 @@
 package com.cloud.user;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,6 +38,8 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.cloud.api.query.dao.DiskOfferingJoinDao;
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -51,10 +54,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectDao;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
@@ -72,9 +71,9 @@ public class DomainManagerImplTest {
     @Mock
     AccountDao _accountDao;
     @Mock
-    DiskOfferingDao _diskOfferingDao;
+    DiskOfferingJoinDao _diskOfferingDao;
     @Mock
-    ServiceOfferingDao _offeringsDao;
+    ServiceOfferingJoinDao _offeringsDao;
     @Mock
     ProjectDao _projectDao;
     @Mock
@@ -253,8 +252,8 @@ public class DomainManagerImplTest {
         Mockito.when(_dedicatedDao.listByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<DedicatedResourceVO>());
         Mockito.when(_domainDao.remove(Mockito.anyLong())).thenReturn(true);
         Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.anyLong())).thenReturn(true);
-        Mockito.when(_diskOfferingDao.listByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<DiskOfferingVO>());
-        Mockito.when(_offeringsDao.findServiceOfferingByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<ServiceOfferingVO>());
+        Mockito.when(_diskOfferingDao.findByDomainId(Mockito.anyLong())).thenReturn(Collections.emptyList());
+        Mockito.when(_offeringsDao.findByDomainId(Mockito.anyLong())).thenReturn(Collections.emptyList());
 
         try {
             Assert.assertTrue(domainManager.deleteDomain(20l, false));
@@ -286,8 +285,8 @@ public class DomainManagerImplTest {
         Mockito.when(_resourceCountDao.removeEntriesByOwner(Mockito.anyLong(), Mockito.eq(ResourceOwnerType.Domain))).thenReturn(1l);
         Mockito.when(_resourceLimitDao.removeEntriesByOwner(Mockito.anyLong(), Mockito.eq(ResourceOwnerType.Domain))).thenReturn(1l);
         Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.anyLong())).thenReturn(true);
-        Mockito.when(_diskOfferingDao.listByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<DiskOfferingVO>());
-        Mockito.when(_offeringsDao.findServiceOfferingByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<ServiceOfferingVO>());
+        Mockito.when(_diskOfferingDao.findByDomainId(Mockito.anyLong())).thenReturn(Collections.emptyList());
+        Mockito.when(_offeringsDao.findByDomainId(Mockito.anyLong())).thenReturn(Collections.emptyList());
 
         try {
             Assert.assertTrue(domainManager.deleteDomain(20l, true));

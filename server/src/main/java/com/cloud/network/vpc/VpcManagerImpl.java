@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -39,9 +40,12 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -49,6 +53,8 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.api.query.dao.VpcOfferingJoinDao;
+import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenter;
@@ -58,6 +64,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -98,6 +105,7 @@ import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpc.dao.VpcOfferingDetailsDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.network.vpc.dao.VpcServiceMapDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
@@ -139,6 +147,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.google.common.base.Strings;
 
 public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
     private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);
@@ -153,6 +162,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     EntityManager _entityMgr;
     @Inject
     VpcOfferingDao _vpcOffDao;
+    @Inject
+    VpcOfferingJoinDao vpcOfferingJoinDao;
+    @Inject
+    VpcOfferingDetailsDao vpcOfferingDetailsDao;
     @Inject
     VpcOfferingServiceMapDao _vpcOffSvcMapDao;
     @Inject
@@ -205,6 +218,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     VpcVirtualNetworkApplianceManager _routerService;
     @Inject
     DomainRouterDao _routerDao;
+    @Inject
+    DomainDao domainDao;
 
     @Inject
     private VpcPrivateGatewayTransactionCallable vpcTxCallable;
@@ -344,8 +359,45 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create = true)
+    public VpcOffering createVpcOffering(CreateVPCOfferingCmd cmd) {
+        final String vpcOfferingName = cmd.getVpcOfferingName();
+        final String displayText = cmd.getDisplayText();
+        final List<String> supportedServices = cmd.getSupportedServices();
+        final Map<String, List<String>> serviceProviderList = cmd.getServiceProviders();
+        final Map serviceCapabilitystList = cmd.getServiceCapabilitystList();
+        final Long serviceOfferingId = cmd.getServiceOfferingId();
+        final List<Long> domainIds = cmd.getDomainIds();
+        final List<Long> zoneIds = cmd.getZoneIds();
+
+        // check if valid domain
+        if (CollectionUtils.isNotEmpty(cmd.getDomainIds())) {
+            for (final Long domainId: cmd.getDomainIds()) {
+                if (domainDao.findById(domainId) == null) {
+                    throw new InvalidParameterValueException("Please specify a valid domain id");
+                }
+            }
+        }
+
+        // check if valid zone
+        if (CollectionUtils.isNotEmpty(cmd.getZoneIds())) {
+            for (Long zoneId : cmd.getZoneIds()) {
+                if (_dcDao.findById(zoneId) == null)
+                    throw new InvalidParameterValueException("Please specify a valid zone id");
+            }
+        }
+
+        return createVpcOffering(vpcOfferingName, displayText, supportedServices,
+                serviceProviderList, serviceCapabilitystList, serviceOfferingId,
+                domainIds, zoneIds);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create = true)
     public VpcOffering createVpcOffering(final String name, final String displayText, final List<String> supportedServices, final Map<String, List<String>> serviceProviders,
-            final Map serviceCapabilitystList, final Long serviceOfferingId) {
+            final Map serviceCapabilitystList, final Long serviceOfferingId, List<Long> domainIds, List<Long> zoneIds) {
+
+        // Filter child domains when both parent and child domains are present
+        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
 
         final Map<Network.Service, Set<Network.Provider>> svcProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
         final Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
@@ -424,6 +476,21 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilitystList);
         final VpcOffering offering = createVpcOffering(name, displayText, svcProviderMap, false, null, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
                 redundantRouter);
+
+        if (offering != null) {
+            List<VpcOfferingDetailsVO> detailsVO = new ArrayList<>();
+            for (Long domainId : filteredDomainIds) {
+                detailsVO.add(new VpcOfferingDetailsVO(offering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
+            }
+            if (CollectionUtils.isNotEmpty(zoneIds)) {
+                for (Long zoneId : zoneIds) {
+                    detailsVO.add(new VpcOfferingDetailsVO(offering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
+                }
+            }
+            if (!detailsVO.isEmpty()) {
+                vpcOfferingDetailsDao.saveDetails(detailsVO);
+            }
+        }
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
 
         return offering;
@@ -578,15 +645,25 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @Override
-    public Pair<List<? extends VpcOffering>, Integer> listVpcOfferings(final Long id, final String name, final String displayText, final List<String> supportedServicesStr,
-            final Boolean isDefault, final String keyword, final String state, final Long startIndex, final Long pageSizeVal) {
+    public Pair<List<? extends VpcOffering>, Integer> listVpcOfferings(ListVPCOfferingsCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
+        final Long id = cmd.getId();
+        final String name = cmd.getVpcOffName();
+        final String displayText = cmd.getDisplayText();
+        final List<String> supportedServicesStr = cmd.getSupportedServices();
+        final Boolean isDefault = cmd.getIsDefault();
+        final String keyword = cmd.getKeyword();
+        final String state = cmd.getState();
+        final Long startIndex = cmd.getStartIndex();
+        final Long pageSizeVal = cmd.getPageSizeVal();
+        final Long zoneId = cmd.getZoneId();
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
         isAscending = isAscending == null ? Boolean.TRUE : isAscending;
-        final Filter searchFilter = new Filter(VpcOfferingVO.class, "sortKey", isAscending, null, null);
-        final SearchCriteria<VpcOfferingVO> sc = _vpcOffDao.createSearchCriteria();
+        final Filter searchFilter = new Filter(VpcOfferingJoinVO.class, "sortKey", isAscending, null, null);
+        final SearchCriteria<VpcOfferingJoinVO> sc = vpcOfferingJoinDao.createSearchCriteria();
 
         if (keyword != null) {
-            final SearchCriteria<VpcOfferingVO> ssc = _vpcOffDao.createSearchCriteria();
+            final SearchCriteria<VpcOfferingJoinVO> ssc = vpcOfferingJoinDao.createSearchCriteria();
             ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
@@ -613,13 +690,45 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
 
-        final List<VpcOfferingVO> offerings = _vpcOffDao.search(sc, searchFilter);
+        if (zoneId != null) {
+            SearchBuilder<VpcOfferingJoinVO> sb = vpcOfferingJoinDao.createSearchBuilder();
+            sb.and("zoneId", sb.entity().getZoneId(), Op.FIND_IN_SET);
+            sb.or("zId", sb.entity().getZoneId(), Op.NULL);
+            sb.done();
+            SearchCriteria<VpcOfferingJoinVO> zoneSC = sb.create();
+            zoneSC.setParameters("zoneId", String.valueOf(zoneId));
+            sc.addAnd("zoneId", SearchCriteria.Op.SC, zoneSC);
+        }
 
+        final List<VpcOfferingJoinVO> offerings = vpcOfferingJoinDao.search(sc, searchFilter);
+
+        // Remove offerings that are not associated with caller's domain
+        // TODO: Better approach
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && CollectionUtils.isNotEmpty(offerings)) {
+            ListIterator<VpcOfferingJoinVO> it = offerings.listIterator();
+            while (it.hasNext()) {
+                VpcOfferingJoinVO offering = it.next();
+                if(!Strings.isNullOrEmpty(offering.getDomainId())) {
+                    boolean toRemove = true;
+                    String[] domainIdsArray = offering.getDomainId().split(",");
+                    for (String domainIdString : domainIdsArray) {
+                        Long dId = Long.valueOf(domainIdString.trim());
+                        if (domainDao.isChildDomain(dId, caller.getDomainId())) {
+                            toRemove = false;
+                            break;
+                        }
+                    }
+                    if (toRemove) {
+                        it.remove();
+                    }
+                }
+            }
+        }
         // filter by supported services
         final boolean listBySupportedServices = supportedServicesStr != null && !supportedServicesStr.isEmpty() && !offerings.isEmpty();
 
         if (listBySupportedServices) {
-            final List<VpcOfferingVO> supportedOfferings = new ArrayList<VpcOfferingVO>();
+            final List<VpcOfferingJoinVO> supportedOfferings = new ArrayList<>();
             Service[] supportedServices = null;
 
             if (listBySupportedServices) {
@@ -636,7 +745,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
 
-            for (final VpcOfferingVO offering : offerings) {
+            for (final VpcOfferingJoinVO offering : offerings) {
                 if (areServicesSupportedByVpcOffering(offering.getId(), supportedServices)) {
                     supportedOfferings.add(offering);
                 }
@@ -644,15 +753,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
             final List<? extends VpcOffering> wPagination = StringUtils.applyPagination(supportedOfferings, startIndex, pageSizeVal);
             if (wPagination != null) {
-                final Pair<List<? extends VpcOffering>, Integer> listWPagination = new Pair<List<? extends VpcOffering>, Integer>(wPagination, supportedOfferings.size());
-                return listWPagination;
+                return new Pair<>(wPagination, supportedOfferings.size());
             }
             return new Pair<List<? extends VpcOffering>, Integer>(supportedOfferings, supportedOfferings.size());
         } else {
             final List<? extends VpcOffering> wPagination = StringUtils.applyPagination(offerings, startIndex, pageSizeVal);
             if (wPagination != null) {
-                final Pair<List<? extends VpcOffering>, Integer> listWPagination = new Pair<List<? extends VpcOffering>, Integer>(wPagination, offerings.size());
-                return listWPagination;
+                return new Pair<>(wPagination, offerings.size());
             }
             return new Pair<List<? extends VpcOffering>, Integer>(offerings, offerings.size());
         }
@@ -696,22 +803,41 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_UPDATE, eventDescription = "updating vpc offering")
     public VpcOffering updateVpcOffering(long vpcOffId, String vpcOfferingName, String displayText, String state) {
-        return updateVpcOfferingInternal(vpcOffId, vpcOfferingName, displayText, state, null);
+        return updateVpcOfferingInternal(vpcOffId, vpcOfferingName, displayText, state, null, null, null);
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_UPDATE, eventDescription = "updating vpc offering")
-    public VpcOffering updateVpcOffering(final UpdateVPCOfferingCmd vpcOfferingCmd) {
-        final long vpcOffId = vpcOfferingCmd.getId();
-        final String vpcOfferingName = vpcOfferingCmd.getVpcOfferingName();
-        final String displayText = vpcOfferingCmd.getDisplayText();
-        final String state = vpcOfferingCmd.getState();
-        final Integer sortKey = vpcOfferingCmd.getSortKey();
+    public VpcOffering updateVpcOffering(final UpdateVPCOfferingCmd cmd) {
+        final Long offeringId = cmd.getId();
+        final String vpcOfferingName = cmd.getVpcOfferingName();
+        final String displayText = cmd.getDisplayText();
+        final String state = cmd.getState();
+        final List<Long> domainIds = cmd.getDomainIds();
+        final List<Long> zoneIds = cmd.getZoneIds();
+        final Integer sortKey = cmd.getSortKey();
 
-        return updateVpcOfferingInternal(vpcOffId, vpcOfferingName, displayText, state, sortKey);
+        // check if valid domain
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            for (final Long domainId: domainIds) {
+                if (domainDao.findById(domainId) == null) {
+                    throw new InvalidParameterValueException("Please specify a valid domain id");
+                }
+            }
+        }
+
+        // check if valid zone
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            for (Long zoneId : zoneIds) {
+                if (_dcDao.findById(zoneId) == null)
+                    throw new InvalidParameterValueException("Please specify a valid zone id");
+            }
+        }
+
+        return updateVpcOfferingInternal(offeringId, vpcOfferingName, displayText, state, sortKey, domainIds, zoneIds);
     }
 
-    private VpcOffering updateVpcOfferingInternal(long vpcOffId, String vpcOfferingName, String displayText, String state, Integer sortKey) {
+    private VpcOffering updateVpcOfferingInternal(long vpcOffId, String vpcOfferingName, String displayText, String state, Integer sortKey, final List<Long> domainIds, final List<Long> zoneIds) {
         CallContext.current().setEventDetails(" Id: " + vpcOffId);
 
         // Verify input parameters
@@ -720,39 +846,102 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new InvalidParameterValueException("Unable to find vpc offering " + vpcOffId);
         }
 
+        List<Long> existingDomainIds = vpcOfferingDetailsDao.findDomainIds(vpcOffId);
+        Collections.sort(existingDomainIds);
+
+        List<Long> existingZoneIds = vpcOfferingDetailsDao.findZoneIds(vpcOffId);
+        Collections.sort(existingZoneIds);
+
+
+        // Filter child domains when both parent and child domains are present
+        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        Collections.sort(filteredDomainIds);
+
+        List<Long> filteredZoneIds = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            filteredZoneIds.addAll(zoneIds);
+        }
+        Collections.sort(filteredZoneIds);
+
+        final boolean updateNeeded = vpcOfferingName != null || displayText != null || state != null || sortKey != null;
+
         final VpcOfferingVO offering = _vpcOffDao.createForUpdate(vpcOffId);
 
-        if (vpcOfferingName != null) {
-            offering.setName(vpcOfferingName);
-        }
-
-        if (displayText != null) {
-            offering.setDisplayText(displayText);
-        }
-
-        if (state != null) {
-            boolean validState = false;
-            for (final VpcOffering.State st : VpcOffering.State.values()) {
-                if (st.name().equalsIgnoreCase(state)) {
-                    validState = true;
-                    offering.setState(st);
+        if (updateNeeded) {
+            if (vpcOfferingName != null) {
+                offering.setName(vpcOfferingName);
+            }
+            if (displayText != null) {
+                offering.setDisplayText(displayText);
+            }
+            if (state != null) {
+                boolean validState = false;
+                for (final VpcOffering.State st : VpcOffering.State.values()) {
+                    if (st.name().equalsIgnoreCase(state)) {
+                        validState = true;
+                        offering.setState(st);
+                    }
+                }
+                if (!validState) {
+                    throw new InvalidParameterValueException("Incorrect state value: " + state);
                 }
             }
-            if (!validState) {
-                throw new InvalidParameterValueException("Incorrect state value: " + state);
+            if (sortKey != null) {
+                offering.setSortKey(sortKey);
+            }
+
+            if (!_vpcOffDao.update(vpcOffId, offering)) {
+                return  null;
             }
         }
-
-        if (sortKey != null) {
-            offering.setSortKey(sortKey);
+        List<VpcOfferingDetailsVO> detailsVO = new ArrayList<>();
+        if(!filteredDomainIds.equals(existingDomainIds) || !filteredZoneIds.equals(existingZoneIds)) {
+            SearchBuilder<VpcOfferingDetailsVO> sb = vpcOfferingDetailsDao.createSearchBuilder();
+            sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+            sb.and("detailName", sb.entity().getName(), SearchCriteria.Op.EQ);
+            sb.done();
+            SearchCriteria<VpcOfferingDetailsVO> sc = sb.create();
+            sc.setParameters("offeringId", String.valueOf(vpcOffId));
+            if(!filteredDomainIds.equals(existingDomainIds)) {
+                sc.setParameters("detailName", ApiConstants.DOMAIN_ID);
+                vpcOfferingDetailsDao.remove(sc);
+                for (Long domainId : filteredDomainIds) {
+                    detailsVO.add(new VpcOfferingDetailsVO(vpcOffId, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
+                }
+            }
+            if(!filteredZoneIds.equals(existingZoneIds)) {
+                sc.setParameters("detailName", ApiConstants.ZONE_ID);
+                vpcOfferingDetailsDao.remove(sc);
+                for (Long zoneId : filteredZoneIds) {
+                    detailsVO.add(new VpcOfferingDetailsVO(vpcOffId, ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
+                }
+            }
         }
-
-        if (_vpcOffDao.update(vpcOffId, offering)) {
-            s_logger.debug("Updated VPC offeirng id=" + vpcOffId);
-            return _vpcOffDao.findById(vpcOffId);
-        } else {
-            return null;
+        if (!detailsVO.isEmpty()) {
+            for (VpcOfferingDetailsVO detailVO : detailsVO) {
+                vpcOfferingDetailsDao.persist(detailVO);
+            }
         }
+        s_logger.debug("Updated VPC offeirng id=" + vpcOffId);
+        return _vpcOffDao.findById(vpcOffId);
+    }
+
+    @Override
+    public List<Long> getVpcOfferingDomains(Long vpcOfferingId) {
+        final VpcOffering offeringHandle = _entityMgr.findById(VpcOffering.class, vpcOfferingId);
+        if (offeringHandle == null) {
+            throw new InvalidParameterValueException("Unable to find VPC offering " + vpcOfferingId);
+        }
+        return vpcOfferingDetailsDao.findDomainIds(vpcOfferingId);
+    }
+
+    @Override
+    public List<Long> getVpcOfferingZones(Long vpcOfferingId) {
+        final VpcOffering offeringHandle = _entityMgr.findById(VpcOffering.class, vpcOfferingId);
+        if (offeringHandle == null) {
+            throw new InvalidParameterValueException("Unable to find VPC offering " + vpcOfferingId);
+        }
+        return vpcOfferingDetailsDao.findZoneIds(vpcOfferingId);
     }
 
     @Override
@@ -770,6 +959,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // Validate vpc offering
         final VpcOfferingVO vpcOff = _vpcOffDao.findById(vpcOffId);
+        _accountMgr.checkAccess(owner, vpcOff, _dcDao.findById(zoneId));
         if (vpcOff == null || vpcOff.getState() != State.Enabled) {
             final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find vpc offering in " + State.Enabled + " state by specified id");
             if (vpcOff == null) {
@@ -780,7 +970,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw ex;
         }
 
-        final boolean isRegionLevelVpcOff = vpcOff.offersRegionLevelVPC();
+        final boolean isRegionLevelVpcOff = vpcOff.isOffersRegionLevelVPC();
         if (isRegionLevelVpcOff && networkDomain == null) {
             throw new InvalidParameterValueException("Network domain must be specified for region level VPC");
         }
@@ -809,9 +999,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        final boolean useDistributedRouter = vpcOff.supportsDistributedRouter();
+        final boolean useDistributedRouter = vpcOff.isSupportsDistributedRouter();
         final VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, owner.getId(), owner.getDomainId(), vpcOffId, cidr, networkDomain, useDistributedRouter, isRegionLevelVpcOff,
-                vpcOff.getRedundantRouter());
+                vpcOff.isRedundantRouter());
 
         return createVpc(displayVpc, vpc);
     }
@@ -2525,4 +2715,27 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return _ntwkMgr.areRoutersRunning(_routerDao.listByVpcId(vpc.getId()));
     }
 
+    private List<Long> filterChildSubDomains(final List<Long> domainIds) {
+        List<Long> filteredDomainIds = new ArrayList<>();
+        if (domainIds != null) {
+            filteredDomainIds.addAll(domainIds);
+        }
+        if (filteredDomainIds.size() > 1) {
+            for (int i = filteredDomainIds.size() - 1; i >= 1; i--) {
+                long first = filteredDomainIds.get(i);
+                for (int j = i - 1; j >= 0; j--) {
+                    long second = filteredDomainIds.get(j);
+                    if (domainDao.isChildDomain(filteredDomainIds.get(i), filteredDomainIds.get(j))) {
+                        filteredDomainIds.remove(j);
+                        i--;
+                    }
+                    if (domainDao.isChildDomain(filteredDomainIds.get(j), filteredDomainIds.get(i))) {
+                        filteredDomainIds.remove(i);
+                        break;
+                    }
+                }
+            }
+        }
+        return filteredDomainIds;
+    }
 }

@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.vpc;
 
+import java.util.Date;
+
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -59,13 +61,16 @@ public interface VpcOffering extends InternalIdentity, Identity {
     /**
      * @return true if the offering provides a distributed router capable of one-hop forwarding
      */
-    boolean supportsDistributedRouter();
+    boolean isSupportsDistributedRouter();
 
     /**
      * @return true if VPC created with the offering can span multiple zones in the region
      */
-    boolean offersRegionLevelVPC();
+    boolean isOffersRegionLevelVPC();
 
-    boolean getRedundantRouter();
+    boolean isRedundantRouter();
 
+    Date getRemoved();
+
+    Date getCreated();
 }

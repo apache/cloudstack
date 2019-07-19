@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNotNull;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -307,7 +308,7 @@ public class ManagementServerMock {
     }
 
     private ServiceOffering getServiceByName(String name) {
-        List<ServiceOfferingVO> service_list = _serviceOfferingDao.findPublicServiceOfferings();
+        List<ServiceOfferingVO> service_list = Collections.emptyList();
         for (ServiceOfferingVO service : service_list) {
             if (service.getName().equals(name)) {
                 return service;

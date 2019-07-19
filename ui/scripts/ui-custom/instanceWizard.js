@@ -277,6 +277,66 @@
                             }).click();
                         };
 
+                        if (isAdmin()) {
+                            $step.find('.select-deployment .podid').parent().show();
+                            $step.find('.select-deployment .clusterid').parent().show();
+                            $step.find('.select-deployment .hostid').parent().show();
+
+
+                            var updateFieldOptions = function(fieldClass, wizardField) {
+                                return function(data) {
+                                    var fieldSelect = $step.find('.select-deployment .' + fieldClass);
+                                    fieldSelect.find('option').remove().end();
+                                    $(data).each(function() {
+                                        fieldSelect.append(
+                                            $('<option>')
+                                            .attr({
+                                                value: this.id,
+                                                'wizard-field': wizardField,
+                                                'parentId': this.parentId
+                                            })
+                                            .html(this.description)
+                                            .data('json-obj', this)
+                                        );
+                                    });
+                                }
+                            };                        
+
+                            var $zoneSelect = $step.find('.select-deployment .zoneid');
+                            $zoneSelect.unbind('change');
+                            $zoneSelect.change(function() {
+                                zoneId = $zoneSelect.val();
+                                if (zoneId != null && isAdmin()) {
+                                    args.fetchPodList(updateFieldOptions('podid', 'pod'), zoneId);
+                                    args.fetchClusterList(updateFieldOptions('clusterid', 'cluster'), -1, zoneId);
+                                    args.fetchHostList(updateFieldOptions('hostid', 'host'), -1,  -1, zoneId);
+                                }
+                            });
+                            
+                            var $podSelect = $step.find('.select-deployment .podid');
+                            $podSelect.unbind('change');
+                            $podSelect.change(function() {
+                                podId = $podSelect.val();
+                                if (podId != null) {
+                                    args.fetchClusterList(updateFieldOptions('clusterid', 'cluster'), podId, -1);
+                                    args.fetchHostList(updateFieldOptions('hostid', 'host'), -1,  podId, -1);
+                                }
+                            });
+
+                            var $clusterSelect = $step.find('.select-deployment .clusterid');
+                            $clusterSelect.unbind('change');
+                            $clusterSelect.change(function() {
+                                clusterId = $clusterSelect.val();
+                                if (clusterId != null) {
+                                    args.fetchHostList(updateFieldOptions('hostid', 'host'), clusterId,  -1, -1);
+                                }
+                            });
+                        } else {
+                            $step.find('.select-deployment .podid').parent().hide();
+                            $step.find('.select-deployment .clusterid').parent().hide();
+                            $step.find('.select-deployment .hostid').parent().hide();
+                        }
+
                         return {
                             response: {
                                 success: function(args) {
@@ -286,13 +346,53 @@
                                         if(index == 0){
                                           initialValue = this.id;
                                         }
-                                        $step.find('.select-zone select').append(
+                                        $step.find('.select-deployment .zoneid').append(
                                             $('<option>')
                                             .attr({
                                                 value: this.id,
                                                 'wizard-field': 'zone'
                                             })
                                             .html(this.name)
+                                            .data('json-obj', this)
+                                        )
+                                    });
+                                    // Pods
+                                    $(args.data.pods).each(function() {
+                                        $step.find('.select-deployment .podid').append(
+                                            $('<option>')
+                                            .attr({
+                                                value: this.id,
+                                                'wizard-field': 'pod',
+                                                'parentId': this.parentId
+                                            })
+                                            .html(this.description)
+                                            .data('json-obj', this)
+                                        )
+                                    });
+                                    // Clusters
+                                    $(args.data.clusters).each(function() {
+                                        $step.find('.select-deployment .clusterid').append(
+                                            $('<option>')
+                                            .attr({
+                                                value: this.id,
+                                                'wizard-field': 'cluster',
+                                                'parentId': this.parentId
+                                            })
+                                            .html(this.description)
+                                            .data('json-obj', this)
+                                        )
+                                    });
+                                    // Hosts
+                                    $(args.data.hosts).each(function() {
+                                        $step.find('.select-deployment .hostid').append(
+                                            $('<option>')
+                                            .attr({
+                                                value: this.id,
+                                                'wizard-field': 'host',
+                                                'parentId': this.parentId
+                                            })
+                                            .html(this.description)
+                                            .data('json-obj', this)
                                         );
                                     });
 
@@ -309,7 +409,7 @@
                             var $inputs = $step.find('.wizard-step-conditional:visible')
                                 .find('input[type=radio]');
                             var $selected = $inputs.filter(function() {
-                                return $(this).val() == formData.templateid;
+                                return $(this).val() === formData.templateid;
                             });
 
                             if (!$selected.length) {

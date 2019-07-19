@@ -18,11 +18,9 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
-
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
 
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.offering.DiskOffering;
@@ -51,6 +49,28 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
     }
 
     @Override
+    public List<DiskOfferingJoinVO> findByDomainId(long domainId) {
+        SearchBuilder<DiskOfferingJoinVO> sb = createSearchBuilder();
+        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.FIND_IN_SET);
+        sb.done();
+
+        SearchCriteria<DiskOfferingJoinVO> sc = sb.create();
+        sc.setParameters("domainId", String.valueOf(domainId));
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DiskOfferingJoinVO> findByZoneId(long zoneId) {
+        SearchBuilder<DiskOfferingJoinVO> sb = createSearchBuilder();
+        sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.FIND_IN_SET);
+        sb.done();
+
+        SearchCriteria<DiskOfferingJoinVO> sc = sb.create();
+        sc.setParameters("zoneId", String.valueOf(zoneId));
+        return listBy(sc);
+    }
+
+    @Override
     public DiskOfferingResponse newDiskOfferingResponse(DiskOfferingJoinVO offering) {
 
         DiskOfferingResponse diskOfferingResponse = new DiskOfferingResponse();
@@ -63,9 +83,11 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         diskOfferingResponse.setMinIops(offering.getMinIops());
         diskOfferingResponse.setMaxIops(offering.getMaxIops());
 
-        diskOfferingResponse.setDomain(offering.getDomainName());
-        diskOfferingResponse.setDomainId(offering.getDomainUuid());
         diskOfferingResponse.setDisplayOffering(offering.isDisplayOffering());
+        diskOfferingResponse.setDomainId(offering.getDomainUuid());
+        diskOfferingResponse.setDomain(offering.getDomainPath());
+        diskOfferingResponse.setZoneId(offering.getZoneUuid());
+        diskOfferingResponse.setZone(offering.getZoneName());
 
         diskOfferingResponse.setTags(offering.getTags());
         diskOfferingResponse.setCustomized(offering.isCustomized());
