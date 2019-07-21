@@ -1330,6 +1330,18 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     /**
+     * Safely transit host into Maintenance mode
+     */
+    protected boolean setHostIntoMaintenance(HostVO host) throws NoTransitionException {
+        s_logger.debug("Host " + host.getUuid() + " entering in Maintenance");
+        resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
+                EventVO.LEVEL_INFO, EventTypes.EVENT_MAINTENANCE_PREPARE,
+                "completed maintenance for host " + host.getId(), 0);
+        return true;
+    }
+
+    /**
      * Set host into ErrorInMaintenance state, as errors occurred during VM migrations. Do the following:
      * - Cancel scheduled migrations for those which have already failed
      * - Configure VNC access for VMs (KVM hosts only)
@@ -1342,29 +1354,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return false;
     }
 
-    /**
-     * Safely transit host into Maintenance mode
-     */
-    protected boolean setHostIntoMaintenance(HostVO host) throws NoTransitionException {
-        s_logger.debug("Host " + host.getUuid() + " entering in Maintenance");
-        resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
-        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
-                EventVO.LEVEL_INFO, EventTypes.EVENT_MAINTENANCE_PREPARE,
-                "completed maintenance for host " + host.getId(), 0);
-        return true;
-    }
-
-    protected boolean setHostIntoPrepareForMaintenanceWithErrors(HostVO host, List<VMInstanceVO> errorVms) throws NoTransitionException {
+    protected boolean setHostIntoErrorInPrepareForMaintenance(HostVO host, List<VMInstanceVO> errorVms) throws NoTransitionException {
         s_logger.debug("Host " + host.getUuid() + " entering in PrepareForMaintenanceWithErrors state");
         configureVncAccessForKVMHostFailedMigrations(host, errorVms);
         resourceStateTransitTo(host, ResourceState.Event.UnableToMigrate, _nodeId);
-        return true;
+        return false;
     }
 
     protected boolean setHostIntoPrepareForMaintenanceAfterErrorsFixed(HostVO host) throws NoTransitionException {
         s_logger.debug("Host " + host.getUuid() + " entering in PrepareForMaintenance state as any previous corrections have been fixed");
         resourceStateTransitTo(host, ResourceState.Event.ErrorsCorrected, _nodeId);
-        return true;
+        return false;
     }
 
     /**
@@ -1412,16 +1412,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final boolean hasStoppingVms = CollectionUtils.isNotEmpty(_vmDao.findByHostInStates(hostId, State.Stopping));
         errorVms.addAll(failedMigrations);
 
-        // Step 3: If there are no pending migration retries but host still has no running VMs or ongoing migrations,
-        // or no VMs in failure state we move the host to ErrorInMaintenance state.
-        if (!hasPendingMigrationRetries && (hasRunningVms || (!hasRunningVms && !hasMigratingVms && hasVmsInFailureStates))) {
+        // Step 3: If there are no pending migration retries but host still has running VMs or,
+        // host has VMs in failure state / failed migrations we move the host to ErrorInMaintenance state.
+        if (!hasPendingMigrationRetries && (hasRunningVms || (!hasMigratingVms && hasVmsInFailureStates))) {
             return setHostIntoErrorInMaintenance(host, errorVms);
         }
 
         // Step 4: IF there are pending migrations or ongoing retries left or stopping VMs and there were errors or failed
         // migrations we put the host into ErrorInPrepareForMaintenance
-        if ((hasVmsInFailureStates || hasFailedMigrations) && (hasPendingMigrationRetries || hasMigratingVms || hasStoppingVms)) {
-            return setHostIntoPrepareForMaintenanceWithErrors(host, errorVms);
+        if ((hasPendingMigrationRetries || hasMigratingVms || hasStoppingVms) && (hasVmsInFailureStates || hasFailedMigrations)) {
+            return setHostIntoErrorInPrepareForMaintenance(host, errorVms);
         }
 
         // Step 5: If there were previously errors found, but not anymore it means the operator has fixed errors and we put

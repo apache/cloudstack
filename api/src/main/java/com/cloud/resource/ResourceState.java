@@ -25,11 +25,11 @@ public enum ResourceState {
     Creating,
     Enabled,
     Disabled,
+    ErrorInPrepareForMaintenance,
     PrepareForMaintenance,
     ErrorInMaintenance,
     Maintenance,
-    Error,
-    ErrorInPrepareForMaintenance;
+    Error;
 
     public enum Event {
         InternalCreated("Resource is created"),
