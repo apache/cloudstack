@@ -19,16 +19,10 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
-
-import junit.framework.TestCase;
-
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
+import junit.framework.TestCase;
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,6 +30,11 @@ import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Scanner;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(MemStat.class)
@@ -58,7 +57,7 @@ public class LibvirtVMDefTest extends TestCase {
     @Test
     public void testInterfaceEthernet() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
-        ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "/bin/if_up",100,0);
+        ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "/bin/if_up",100,1500);
 
         String expected =
             "<interface type='ethernet'>\n"
@@ -66,6 +65,7 @@ public class LibvirtVMDefTest extends TestCase {
                     + "<mtu size='1500'/>\n"
                     + "<mac address='00:11:22:aa:bb:dd'/>\n"
                     + "<model type='virtio'/>\n"
+                    + "<script path='/bin/if_up'/>\n"
                     + "<link state='up'/>\n"
                     + "</interface>\n";
 
@@ -75,7 +75,7 @@ public class LibvirtVMDefTest extends TestCase {
     @Test
     public void testInterfaceDirectNet() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
-        ifDef.defDirectNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "private", 100, 0);
+        ifDef.defDirectNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "private", 100, 1500);
 
         String expected =
             "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.DIRECT + "'>\n"
