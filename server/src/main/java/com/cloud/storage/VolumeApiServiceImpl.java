@@ -266,6 +266,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private List<StoragePoolAllocator> _storagePoolAllocators;
 
+    private List<HypervisorType> supportingDefaultHV;
+
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced", Long.class, "vm.job.check.interval", "3000", "Interval in milliseconds to check if the job is complete", false);
@@ -2857,7 +2859,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        verifyManagedStorage(volumeToAttachStoragePool.getId(), hostId);
+        if (volumeToAttachStoragePool != null) {
+            verifyManagedStorage(volumeToAttachStoragePool.getId(), hostId);
+        }
 
         // volumeToAttachStoragePool should be null if the VM we are attaching the disk to has never been started before
         DataStore dataStore = volumeToAttachStoragePool != null ? dataStoreMgr.getDataStore(volumeToAttachStoragePool.getId(), DataStoreRole.Primary) : null;
@@ -3003,6 +3007,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (host != null) {
             _hostDao.loadDetails(host);
             maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(host.getHypervisorType(), host.getDetail("product_version"));
+        } else {
+            HypervisorType hypervisorType = vm.getHypervisorType();
+            if (hypervisorType != null && CollectionUtils.isNotEmpty(supportingDefaultHV) && supportingDefaultHV.contains(hypervisorType)) {
+                maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(hypervisorType, "default");
+            }
         }
         if (maxDataVolumesSupported == null || maxDataVolumesSupported.intValue() <= 0) {
             maxDataVolumesSupported = 6; // 6 data disks by default if nothing
@@ -3050,6 +3059,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public boolean configure(String name, Map<String, Object> params) {
         String maxVolumeSizeInGbString = _configDao.getValue(Config.MaxVolumeSize.toString());
         _maxVolumeSizeInGb = NumbersUtil.parseLong(maxVolumeSizeInGbString, 2000);
+        supportingDefaultHV = _hypervisorCapabilitiesDao.getHypervisorsWithDefaultEntries();
         return true;
     }
 
