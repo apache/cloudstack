@@ -3815,29 +3815,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     continue;
                 }
                 // from here, subnet overlaps
-                if (!UriUtils.checkVlanUriOverlap(
+                if (vlanId.toLowerCase().contains(Vlan.UNTAGGED) || UriUtils.checkVlanUriOverlap(
                         BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId)),
                         BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlan.getVlanTag())))) {
-                    boolean overlapped = false;
-                    if( network.getTrafficType() == TrafficType.Public ) {
-                        overlapped = true;
-                    } else {
-                        final Long nwId = vlan.getNetworkId();
-                        if ( nwId != null ) {
-                            final Network nw = _networkModel.getNetwork(nwId);
-                            if ( nw != null && nw.getTrafficType() == TrafficType.Public ) {
-                                overlapped = true;
-                            }
-                        }
-
-                    }
-                    if ( overlapped ) {
-                        throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
-                                + " in zone " + zone.getName()
-                                + " has overlapped with the subnet. Please specify a different gateway/netmask.");
-                    }
-                } else {
-
+                    // For untagged VLAN Id and overlapping URIs we need to expand and verify IP ranges
                     final String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
                     final String otherVlanStartIP = otherVlanIpRange[0];
                     String otherVlanEndIP = null;
@@ -3854,8 +3835,28 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (!NetUtils.is31PrefixCidr(newCidr)) {
                         if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
                             throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." +
-                                " Please specify a different start IP/end IP.");
+                                    " Please specify a different start IP/end IP.");
                         }
+                    }
+                } else {
+                    // For tagged or non-overlapping URIs we need to ensure there is no Public traffic type
+                    boolean overlapped = false;
+                    if (network.getTrafficType() == TrafficType.Public) {
+                        overlapped = true;
+                    } else {
+                        final Long nwId = vlan.getNetworkId();
+                        if (nwId != null) {
+                            final Network nw = _networkModel.getNetwork(nwId);
+                            if (nw != null && nw.getTrafficType() == TrafficType.Public) {
+                                overlapped = true;
+                            }
+                        }
+
+                    }
+                    if (overlapped) {
+                        throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
+                                + " in zone " + zone.getName()
+                                + " has overlapped with the subnet. Please specify a different gateway/netmask.");
                     }
                 }
             }
