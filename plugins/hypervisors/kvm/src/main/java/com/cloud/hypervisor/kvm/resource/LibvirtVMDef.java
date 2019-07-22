@@ -17,14 +17,15 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import com.cloud.utils.net.NetUtils;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 
 public class LibvirtVMDef {
     private static final Logger s_logger = Logger.getLogger(LibvirtVMDef.class);
@@ -1024,7 +1025,7 @@ public class LibvirtVMDef {
          * Bridge Net
          */
         public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model, Integer mtu) {
-            defBridgeNet(brName, targetBrName, macAddr, model, 0, null);
+            defBridgeNet(brName, targetBrName, macAddr, model, 0, mtu);
         }
 
         public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model, Integer networkRateKBps, Integer mtu) {
