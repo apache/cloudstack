@@ -36,8 +36,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
 
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Service;
 import com.cloud.network.dao.IPAddressDao;
@@ -50,7 +50,6 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.net.Ip;
-import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class IpAddressManagerTest {
@@ -170,7 +169,7 @@ public class IpAddressManagerTest {
         assertTrue("Source NAT should be true", isSourceNat);
     }
 
-    @Test(expected = InvalidParameterValueException.class)
+    @Test
     public void assertSourceNatAllocatedNetwork() {
 
         NetworkVO networkAllocated = Mockito.mock(NetworkVO.class);
@@ -184,7 +183,7 @@ public class IpAddressManagerTest {
         Mockito.when(networkDao.findById(2L)).thenReturn(networkAllocated);
         doReturn(null).when(ipAddressManager).getExistingSourceNatInNetwork(1L, 2L);
 
-        ipAddressManager.isSourceNatAvailableForNetwork(account, ipAddressVO, networkAllocated);
+        assertTrue(ipAddressManager.isSourceNatAvailableForNetwork(account, ipAddressVO, networkAllocated));
     }
 
     @Test

@@ -17,9 +17,12 @@
 package com.cloud.service.dao;
 
 
-import org.springframework.stereotype.Component;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
+import org.springframework.stereotype.Component;
 
 import com.cloud.service.ServiceOfferingDetailsVO;
 
@@ -29,6 +32,30 @@ public class ServiceOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<Servic
     @Override
     public void addDetail(long resourceId, String key, String value, boolean display) {
         super.addDetail(new ServiceOfferingDetailsVO(resourceId, key, value, display));
+    }
+
+    @Override
+    public List<Long> findDomainIds(long resourceId) {
+        final List<Long> domainIds = new ArrayList<>();
+        for (final ServiceOfferingDetailsVO detail: findDetails(resourceId, ApiConstants.DOMAIN_ID)) {
+            final Long domainId = Long.valueOf(detail.getValue());
+            if (domainId > 0) {
+                domainIds.add(domainId);
+            }
+        }
+        return domainIds;
+    }
+
+    @Override
+    public List<Long> findZoneIds(long resourceId) {
+        final List<Long> zoneIds = new ArrayList<>();
+        for (final ServiceOfferingDetailsVO detail: findDetails(resourceId, ApiConstants.ZONE_ID)) {
+            final Long zoneId = Long.valueOf(detail.getValue());
+            if (zoneId > 0) {
+                zoneIds.add(zoneId);
+            }
+        }
+        return zoneIds;
     }
 
 }

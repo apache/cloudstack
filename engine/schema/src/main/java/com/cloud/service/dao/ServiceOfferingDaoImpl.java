@@ -50,10 +50,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     protected UserVmDetailsDao userVmDetailsDao;
 
     protected final SearchBuilder<ServiceOfferingVO> UniqueNameSearch;
-    protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByDomainIdSearch;
-    protected final SearchBuilder<ServiceOfferingVO> SystemServiceOffering;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByKeywordSearch;
-    protected final SearchBuilder<ServiceOfferingVO> PublicServiceOfferingSearch;
 
     public ServiceOfferingDaoImpl() {
         super();
@@ -62,23 +59,6 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         UniqueNameSearch.and("name", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
         UniqueNameSearch.and("system", UniqueNameSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
         UniqueNameSearch.done();
-
-        ServiceOfferingsByDomainIdSearch = createSearchBuilder();
-        ServiceOfferingsByDomainIdSearch.and("domainId", ServiceOfferingsByDomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        ServiceOfferingsByDomainIdSearch.done();
-
-        SystemServiceOffering = createSearchBuilder();
-        SystemServiceOffering.and("domainId", SystemServiceOffering.entity().getDomainId(), SearchCriteria.Op.EQ);
-        SystemServiceOffering.and("system", SystemServiceOffering.entity().isSystemUse(), SearchCriteria.Op.EQ);
-        SystemServiceOffering.and("vm_type", SystemServiceOffering.entity().getSpeed(), SearchCriteria.Op.EQ);
-        SystemServiceOffering.and("removed", SystemServiceOffering.entity().getRemoved(), SearchCriteria.Op.NULL);
-        SystemServiceOffering.done();
-
-        PublicServiceOfferingSearch = createSearchBuilder();
-        PublicServiceOfferingSearch.and("domainId", PublicServiceOfferingSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
-        PublicServiceOfferingSearch.and("system", PublicServiceOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
-        PublicServiceOfferingSearch.and("removed", PublicServiceOfferingSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        PublicServiceOfferingSearch.done();
 
         ServiceOfferingsByKeywordSearch = createSearchBuilder();
         ServiceOfferingsByKeywordSearch.or("name", ServiceOfferingsByKeywordSearch.entity().getName(), SearchCriteria.Op.EQ);
@@ -125,29 +105,6 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             // Assume it's conflict on unique name
             return findByName(offering.getUniqueName());
         }
-    }
-
-    @Override
-    public List<ServiceOfferingVO> findServiceOfferingByDomainId(Long domainId) {
-        SearchCriteria<ServiceOfferingVO> sc = ServiceOfferingsByDomainIdSearch.create();
-        sc.setParameters("domainId", domainId);
-        return listBy(sc);
-    }
-
-    @Override
-    public List<ServiceOfferingVO> findSystemOffering(Long domainId, Boolean isSystem, String vmType) {
-        SearchCriteria<ServiceOfferingVO> sc = SystemServiceOffering.create();
-        sc.setParameters("domainId", domainId);
-        sc.setParameters("system", isSystem);
-        sc.setParameters("vm_type", vmType);
-        return listBy(sc);
-    }
-
-    @Override
-    public List<ServiceOfferingVO> findPublicServiceOfferings() {
-        SearchCriteria<ServiceOfferingVO> sc = PublicServiceOfferingSearch.create();
-        sc.setParameters("system", false);
-        return listBy(sc);
     }
 
     @Override

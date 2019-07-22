@@ -29,9 +29,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.DomainVlanMapVO;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
@@ -44,6 +41,7 @@ import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
@@ -54,6 +52,7 @@ import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
+import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
@@ -1429,12 +1428,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         if (!sharedSourceNat) {
             if (getExistingSourceNatInNetwork(owner.getId(), network.getId()) == null) {
                 if (network.getGuestType() == GuestType.Isolated && network.getVpcId() == null && !ipToAssoc.isPortable()) {
-                    if (network.getState() == Network.State.Allocated) {
-                        //prevent associating an ip address to an allocated (unimplemented network).
-                        //it will cause the ip to become source nat, and it can't be disassociated later on.
-                        String msg = String.format("Network with UUID:%s is in allocated and needs to be implemented first before acquiring an IP address", network.getUuid());
-                        throw new InvalidParameterValueException(msg);
-                    }
                     isSourceNat = true;
                 }
             }

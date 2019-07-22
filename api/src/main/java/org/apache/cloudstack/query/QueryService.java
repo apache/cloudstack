@@ -103,6 +103,10 @@ public interface QueryService {
                     "network offering, zones), we use the flag to determine if the entities should be sorted ascending (when flag is true) " +
                     "or descending (when flag is false). Within the scope of the config all users see the same result.", true, ConfigKey.Scope.Global);
 
+    public static final ConfigKey<Boolean> AllowUserViewAllDomainAccounts = new ConfigKey<>("Advanced", Boolean.class,
+            "allow.user.view.all.domain.accounts", "false",
+            "Determines whether users can view all user accounts within the same domain", true, ConfigKey.Scope.Domain);
+
     ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
 
     ListResponse<EventResponse> searchForEvents(ListEventsCmd cmd);

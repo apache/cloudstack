@@ -55,4 +55,7 @@
     <bean id="loadBalancerVMMapDaoImpl" class="com.cloud.network.dao.LoadBalancerVMMapDaoImpl" />
     <bean id="imageStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl" />
     <bean id="messageBus" class="org.apache.cloudstack.framework.messagebus.MessageBusBase" />
+    <bean id="DiskOfferingDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDaoImpl" />
+    <bean id="networkOfferingJoinDaoImpl" class="com.cloud.api.query.dao.NetworkOfferingJoinDaoImpl" />
+    <bean id="networkOfferingDetailsDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDetailsDaoImpl" />
 </beans>

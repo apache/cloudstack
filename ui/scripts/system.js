@@ -496,11 +496,13 @@
                                                 if (args.data.account) {
                                                     if (args.data.account.account)
                                                         array1.push("&account=" + args.data.account.account);
+                                                        if (args.data.account.domainid) {
+                                                            array1.push("&domainid=" + args.data.account.domainid);
+                                                        }
                                                     if (args.data.account.systemvms) {
                                                         systvmsval = args.data.account.systemvms == "on" ? "true" : "false"
                                                         array1.push("&forsystemvms=" + systvmsval);
                                                     }
-                                                    array1.push("&domainid=" + args.data.account.domainid);
                                                 }
 
                                                 array1.push("&forVirtualNetwork=true");
@@ -2044,6 +2046,7 @@
                                                             $.ajax({
                                                                 url: createURL('listAccounts&domainid=' + args.domainId),
                                                                 data: {
+                                                                    details: 'min',
                                                                     listAll: true
                                                                 },
                                                                 success: function (json) {
@@ -2068,7 +2071,7 @@
                                                         select: function(args) {
                                                             var items = [];
                                                             $.ajax({
-                                                                url: createURL("listProjects&domainid=" + args.domainId),
+                                                                url: createURL("listProjects&details=min&domainid=" + args.domainId),
                                                                 dataType: "json",
                                                                 async: false,
                                                                 success: function(json) {
@@ -11039,7 +11042,7 @@
                                     }
                                 }
                                 $.ajax({
-                                    url: createURL("listAccounts&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                                    url: createURL("listAccounts&listAll=true&details=min&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                                     success: function (json) {
                                         var accountObjs = json.listaccountsresponse.account;
                                         if (accountObjs != null) {

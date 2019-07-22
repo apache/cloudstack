@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -42,6 +43,13 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the disk offering")
     private String diskOfferingName;
 
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            description = "id of zone disk offering is associated with",
+            since = "4.13")
+    private Long zoneId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -52,6 +60,10 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
 
     public String getDiskOfferingName() {
         return diskOfferingName;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
     }
 
     /////////////////////////////////////////////////////

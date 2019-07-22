@@ -83,7 +83,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 public class AccountManagetImplTestBase {
 
     @Mock
-    AccountDao accountDaoMock;
+    AccountDao _accountDao;
     @Mock
     ConfigurationDao _configDao;
     @Mock

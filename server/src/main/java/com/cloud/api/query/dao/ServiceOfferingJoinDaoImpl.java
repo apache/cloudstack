@@ -18,11 +18,9 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
-
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
@@ -48,6 +46,17 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
     }
 
     @Override
+    public List<ServiceOfferingJoinVO> findByDomainId(long domainId) {
+        SearchBuilder<ServiceOfferingJoinVO> sb = createSearchBuilder();
+        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.FIND_IN_SET);
+        sb.done();
+
+        SearchCriteria<ServiceOfferingJoinVO> sc = sb.create();
+        sc.setParameters("domainId", String.valueOf(domainId));
+        return listBy(sc);
+    }
+
+    @Override
     public ServiceOfferingResponse newServiceOfferingResponse(ServiceOfferingJoinVO offering) {
 
         ServiceOfferingResponse offeringResponse = new ServiceOfferingResponse();
@@ -69,6 +78,8 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setTags(offering.getTags());
         offeringResponse.setDomain(offering.getDomainName());
         offeringResponse.setDomainId(offering.getDomainUuid());
+        offeringResponse.setZone(offering.getZoneName());
+        offeringResponse.setZoneId(offering.getZoneUuid());
         offeringResponse.setNetworkRate(offering.getRateMbps());
         offeringResponse.setHostTag(offering.getHostTag());
         offeringResponse.setDeploymentPlanner(offering.getDeploymentPlanner());

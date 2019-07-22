@@ -16,8 +16,21 @@
 // under the License.
 package com.cloud.configuration;
 
-import java.util.List;
-
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
+import com.cloud.dc.Vlan;
+import com.cloud.domain.Domain;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -47,21 +60,7 @@ import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.Pod;
-import com.cloud.dc.Vlan;
-import com.cloud.domain.Domain;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Networks.TrafficType;
-import com.cloud.offering.DiskOffering;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import java.util.List;
 
 public interface ConfigurationService {
 
@@ -107,6 +106,20 @@ public interface ConfigurationService {
     boolean deleteServiceOffering(DeleteServiceOfferingCmd cmd);
 
     /**
+     * Retrieve ID of domains for a service offering
+     *
+     * @param serviceOfferingId
+     */
+    List<Long> getServiceOfferingDomains(Long serviceOfferingId);
+
+    /**
+     * Retrieve ID of domains for a service offering
+     *
+     * @param serviceOfferingId
+     */
+    List<Long> getServiceOfferingZones(Long serviceOfferingId);
+
+    /**
      * Updates a disk offering
      *
      * @param cmd
@@ -138,6 +151,20 @@ public interface ConfigurationService {
      * @return ID
      */
     DiskOffering createDiskOffering(CreateDiskOfferingCmd cmd);
+
+    /**
+     * Retrieve ID of domains for a disk offering
+     *
+     * @param diskOfferingId
+     */
+    List<Long> getDiskOfferingDomains(Long diskOfferingId);
+
+    /**
+     * Retrieve ID of domains for a disk offering
+     *
+     * @param diskOfferingId
+     */
+    List<Long> getDiskOfferingZones(Long diskOfferingId);
 
     /**
      * Creates a new pod based on the parameters specified in the command object
@@ -268,6 +295,20 @@ public interface ConfigurationService {
     Pair<List<? extends NetworkOffering>, Integer> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd);
 
     boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd);
+
+    /**
+     * Retrieve ID of domains for a network offering
+     *
+     * @param networkOfferingId
+     */
+    List<Long> getNetworkOfferingDomains(Long networkOfferingId);
+
+    /**
+     * Retrieve ID of domains for a network offering
+     *
+     * @param networkOfferingId
+     */
+    List<Long> getNetworkOfferingZones(Long networkOfferingId);
 
     Account getVlanAccount(long vlanId);
 

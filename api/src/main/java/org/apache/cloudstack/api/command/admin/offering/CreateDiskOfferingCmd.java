@@ -16,7 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
-import org.apache.log4j.Logger;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,10 +28,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
 
-import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.user.Account;
 
 @APICommand(name = "createDiskOffering", description = "Creates a disk offering.", responseObject = DiskOfferingResponse.class,
@@ -59,10 +64,19 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     private Boolean customized;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
-               type = CommandType.UUID,
-               entityType = DomainResponse.class,
-               description = "the ID of the containing domain, null for public offerings")
-    private Long domainId;
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "the ID of the containing domain(s), null for public offerings")
+    private List<Long> domainIds;
+
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            description = "the ID of the containing zone(s), null for public offerings",
+            since = "4.13")
+    private List<Long> zoneIds;
 
     @Parameter(name = ApiConstants.STORAGE_TYPE, type = CommandType.STRING, description = "the storage type of the disk offering. Values are local and shared.")
     private String storageType = ServiceOffering.StorageType.shared.toString();
@@ -166,8 +180,22 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         return maxIops;
     }
 
-    public Long getDomainId() {
-        return domainId;
+    public List<Long> getDomainIds() {
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            Set<Long> set = new LinkedHashSet<>(domainIds);
+            domainIds.clear();
+            domainIds.addAll(set);
+        }
+        return domainIds;
+    }
+
+    public List<Long> getZoneIds() {
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            Set<Long> set = new LinkedHashSet<>(zoneIds);
+            zoneIds.clear();
+            zoneIds.addAll(set);
+        }
+        return zoneIds;
     }
 
     public Long getBytesReadRate() {
@@ -222,7 +250,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         return storageType;
     }
 
-    public String getProvisioningType(){
+    public String getProvisioningType() {
         return provisioningType;
     }
 

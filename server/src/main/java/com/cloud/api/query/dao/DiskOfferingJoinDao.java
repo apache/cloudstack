@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.List;
+
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
@@ -23,6 +25,10 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.utils.db.GenericDao;
 
 public interface DiskOfferingJoinDao extends GenericDao<DiskOfferingJoinVO, Long> {
+
+    List<DiskOfferingJoinVO> findByDomainId(long domainId);
+
+    List<DiskOfferingJoinVO> findByZoneId(long zoneId);
 
     DiskOfferingResponse newDiskOfferingResponse(DiskOfferingJoinVO dof);
 

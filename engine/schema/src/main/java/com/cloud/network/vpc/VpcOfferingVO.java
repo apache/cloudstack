@@ -167,22 +167,32 @@ public class VpcOfferingVO implements VpcOffering {
     }
 
     @Override
+    public Date getRemoved() {
+        return removed;
+    }
+
+    @Override
+    public Date getCreated() {
+        return created;
+    }
+
+    @Override
     public Long getServiceOfferingId() {
         return serviceOfferingId;
     }
 
     @Override
-    public boolean supportsDistributedRouter() {
+    public boolean isSupportsDistributedRouter() {
         return supportsDistributedRouter;
     }
 
     @Override
-    public boolean offersRegionLevelVPC() {
+    public boolean isOffersRegionLevelVPC() {
         return offersRegionLevelVPC;
     }
 
     @Override
-    public boolean getRedundantRouter() {
+    public boolean isRedundantRouter() {
         return this.redundantRouter;
     }
 

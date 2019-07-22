@@ -18,28 +18,27 @@
  */
 package com.cloud.hypervisor.kvm.resource;
 
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.hypervisor.kvm.dpdk.DpdkDriver;
+import com.cloud.hypervisor.kvm.dpdk.DpdkDriverImpl;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
+import com.cloud.network.Networks;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.script.OutputInterpreter;
+import com.cloud.utils.script.Script;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.libvirt.LibvirtException;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
-
-import com.cloud.hypervisor.kvm.dpdk.DpdkDriver;
-import com.cloud.hypervisor.kvm.dpdk.DpdkDriverImpl;
-import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.libvirt.LibvirtException;
-
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.exception.InternalErrorException;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
-import com.cloud.network.Networks;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.script.OutputInterpreter;
-import com.cloud.utils.script.Script;
 
 public class OvsVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger.getLogger(OvsVifDriver.class);
@@ -106,7 +105,7 @@ public class OvsVifDriver extends VifDriverBase {
         intf.defDpdkNet(dpdkOvsPath, port, nic.getMac(),
                 getGuestNicModel(guestOsType, nicAdapter), 0,
                 dpdkDriver.getExtraDpdkProperties(extraConfig),
-                interfaceMode);
+                interfaceMode, nic.getMtu());
     }
 
     @Override

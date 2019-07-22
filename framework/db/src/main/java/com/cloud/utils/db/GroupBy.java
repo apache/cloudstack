@@ -63,6 +63,13 @@ public class GroupBy<J extends SearchBase<?, T, R>, T, R> {
 
     public void toSql(final StringBuilder builder) {
         builder.append(" GROUP BY ");
+        appendGroupByAttributes(builder);
+        if (_having != null) {
+            _having.toSql(builder);
+        }
+    }
+
+    public void appendGroupByAttributes(final StringBuilder builder) {
         for (final Pair<Func, Attribute> groupBy : _groupBys) {
             if (groupBy.first() != null) {
                 String func = groupBy.first().toString();
@@ -71,14 +78,9 @@ public class GroupBy<J extends SearchBase<?, T, R>, T, R> {
             } else {
                 builder.append(groupBy.second().table + "." + groupBy.second().columnName);
             }
-
             builder.append(", ");
         }
-
         builder.delete(builder.length() - 2, builder.length());
-        if (_having != null) {
-            _having.toSql(builder);
-        }
     }
 
     protected class Having {

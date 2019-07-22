@@ -125,6 +125,18 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
         return false;
     }
 
+    @Override
+    public List<Long> getServiceOfferingDomains(Long serviceOfferingId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<Long> getServiceOfferingZones(Long serviceOfferingId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationService#updateDiskOffering(org.apache.cloudstack.api.commands.UpdateDiskOfferingCmd)
      */
@@ -148,6 +160,18 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public DiskOffering createDiskOffering(CreateDiskOfferingCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<Long> getDiskOfferingDomains(Long diskOfferingId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<Long> getDiskOfferingZones(Long diskOfferingId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -286,6 +310,18 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     public boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public List<Long> getNetworkOfferingDomains(Long networkOfferingId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<Long> getNetworkOfferingZones(Long networkOfferingId) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     /* (non-Javadoc)
@@ -438,7 +474,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationManager#checkDiskOfferingAccess(com.cloud.user.Account, com.cloud.offering.DiskOffering)
      */
     @Override
-    public void checkDiskOfferingAccess(Account caller, DiskOffering dof) {
+    public void checkDiskOfferingAccess(Account caller, DiskOffering dof, DataCenter zone) {
         // TODO Auto-generated method stub
 
     }
@@ -448,9 +484,9 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability,
-            Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, GuestType type, boolean systemOnly, Long serviceOfferingId,
-            boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
-            Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc) {
+                                                   Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, GuestType type, boolean systemOnly, Long serviceOfferingId,
+                                                   boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
+                                                   Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc, List<Long> domainIds, List<Long> zoneIds) {
         // TODO Auto-generated method stub
         return null;
     }

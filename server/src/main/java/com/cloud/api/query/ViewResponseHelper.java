@@ -195,14 +195,14 @@ public class ViewResponseHelper {
         return new ArrayList<SecurityGroupResponse>(vrDataList.values());
     }
 
-    public static List<ProjectResponse> createProjectResponse(ProjectJoinVO... projects) {
+    public static List<ProjectResponse> createProjectResponse(EnumSet<DomainDetails> details, ProjectJoinVO... projects) {
         Hashtable<Long, ProjectResponse> prjDataList = new Hashtable<Long, ProjectResponse>();
         // Initialise the prjdatalist with the input data
         for (ProjectJoinVO p : projects) {
             ProjectResponse pData = prjDataList.get(p.getId());
             if (pData == null) {
                 // first time encountering this vm
-                pData = ApiDBUtils.newProjectResponse(p);
+                pData = ApiDBUtils.newProjectResponse(details, p);
                 prjDataList.put(p.getId(), pData);
             }
         }
@@ -538,10 +538,10 @@ public class ViewResponseHelper {
         }
     }
 
-    public static List<AccountResponse> createAccountResponse(ResponseView view, AccountJoinVO... accounts) {
+    public static List<AccountResponse> createAccountResponse(ResponseView view, EnumSet<DomainDetails> details, AccountJoinVO... accounts) {
         List<AccountResponse> respList = new ArrayList<AccountResponse>();
         for (AccountJoinVO vt : accounts){
-            respList.add(ApiDBUtils.newAccountResponse(view, vt));
+            respList.add(ApiDBUtils.newAccountResponse(view, details, vt));
         }
         return respList;
     }

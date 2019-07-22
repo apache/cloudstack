@@ -45,7 +45,7 @@ public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNTS,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "a comma delimited list of accounts. If specified, \"op\" parameter has to be passed in.")
+               description = "a comma delimited list of accounts within caller's domain. If specified, \"op\" parameter has to be passed in.")
     private List<String> accountNames;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the template ID")
@@ -80,7 +80,6 @@ public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
         if (accountNames != null && projectIds != null) {
             throw new InvalidParameterValueException("Accounts and projectIds can't be specified together");
         }
-
         return accountNames;
     }
 

@@ -50,6 +50,7 @@ public class ApiConstants {
     public static final String CERTIFICATE_CHAIN = "certchain";
     public static final String CERTIFICATE_FINGERPRINT = "fingerprint";
     public static final String CERTIFICATE_ID = "certid";
+    public static final String COPY_IMAGE_TAGS = "copyimagetags";
     public static final String CSR = "csr";
     public static final String PRIVATE_KEY = "privatekey";
     public static final String DOMAIN_SUFFIX = "domainsuffix";
@@ -358,6 +359,7 @@ public class ApiConstants {
     public static final String VNET = "vnet";
     public static final String IS_VOLATILE = "isvolatile";
     public static final String VOLUME_ID = "volumeid";
+    public static final String ZONE = "zone";
     public static final String ZONE_ID = "zoneid";
     public static final String ZONE_NAME = "zonename";
     public static final String NETWORK_TYPE = "networktype";
