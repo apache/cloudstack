@@ -3612,8 +3612,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                 Pair<VirtualDisk, String> vds = vmMo.getDiskDevice(file.getFileName(), true);
                                 long virtualsize = vds.first().getCapacityInKB() * 1024;
                                 long physicalsize = primaryStorageDatastoreMo.fileDiskSize(file.getPath());
-                                VolumeStatsEntry vse = new VolumeStatsEntry(chainInfo, physicalsize, virtualsize);
-                                statEntry.put(chainInfo, vse);
+                                if (statEntry.containsKey(chainInfo)) {
+                                    VolumeStatsEntry vse = statEntry.get(chainInfo);
+                                    if (vse != null) {
+                                        vse.setPhysicalSize(vse.getPhysicalSize() + physicalsize);
+                                        vse.setVirtualSize(vse.getVirtualSize() + virtualsize);
+                                    }
+                                } else {
+                                    VolumeStatsEntry vse = new VolumeStatsEntry(chainInfo, physicalsize, virtualsize);
+                                    statEntry.put(chainInfo, vse);
+                                }
                             }
                         }
                     }
