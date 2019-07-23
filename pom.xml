@@ -153,7 +153,7 @@
         <cs.neethi.version>2.0.4</cs.neethi.version>
         <cs.nitro.version>10.1</cs.nitro.version>
         <cs.opensaml.version>2.6.4</cs.opensaml.version>
-        <cs.rados-java.version>0.2.0</cs.rados-java.version>
+        <cs.rados-java.version>0.5.0</cs.rados-java.version>
         <cs.rampart.version>1.5.1</cs.rampart.version>
         <cs.reflections.version>0.9.11</cs.reflections.version>
         <cs.servicemix.version>2.5.8_1</cs.servicemix.version>
