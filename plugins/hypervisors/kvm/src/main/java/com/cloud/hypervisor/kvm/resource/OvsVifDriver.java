@@ -155,7 +155,7 @@ public class OvsVifDriver extends VifDriverBase {
                 String vnetId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
                 String brName = "OVSTunnel" + vnetId;
                 s_logger.debug("nic " + nic + " needs to be connected to LogicalSwitch " + brName);
-                intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps, nic.getMtu());
+                intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps, null);
             } else {
                 intf.defBridgeNet(_bridges.get("guest"), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps, nic.getMtu());
             }
