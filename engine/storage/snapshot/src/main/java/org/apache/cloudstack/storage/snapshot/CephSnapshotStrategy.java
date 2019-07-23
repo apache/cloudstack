@@ -38,7 +38,6 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 
-@Component
 public class CephSnapshotStrategy extends StorageSystemSnapshotStrategy {
     @Inject
     private SnapshotDataStoreDao snapshotStoreDao;
