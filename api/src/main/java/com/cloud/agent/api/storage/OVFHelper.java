@@ -148,8 +148,14 @@ public class OVFHelper {
                 throw new CloudRuntimeException("The ovf file info has incomplete disk info");
             }
             Long capacity = cdisk == null ? of._size : cdisk._capacity;
-            String controller = cdisk == null ? "" : cdisk._controller._name;
-            String controllerSubType = cdisk == null ? "" : cdisk._controller._subType;
+            String controller = "";
+            String controllerSubType = "";
+            if (cdisk != null) {
+                OVFDiskController cDiskController = cdisk._controller;
+                controller = cDiskController == null ? "" : cdisk._controller._name;
+                controllerSubType = cDiskController == null ? "" : cdisk._controller._subType;
+            }
+
             String dataDiskPath = ovfFile.getParent() + File.separator + of._href;
             File f = new File(dataDiskPath);
             if (!f.exists() || f.isDirectory()) {
