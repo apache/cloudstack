@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.configuration;
 
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -35,9 +39,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -65,6 +66,7 @@ import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.UpdateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
@@ -156,6 +158,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.gpu.GPU;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -3956,6 +3959,116 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         });
 
+    }
+
+    @Override
+    public Vlan updateVlanAndPublicIpRange(UpdateVlanIpRangeCmd cmd) throws ConcurrentOperationException,
+            ResourceUnavailableException, ResourceAllocationException{
+
+        return  updateVlanAndPublicIpRange(cmd.getId(), cmd.getStartIp(),cmd.getEndIp(),
+                cmd.getGateway(),cmd.getNetmask());
+    }
+
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_UPDATE, eventDescription = "update vlan ip Range", async
+            = false)
+    public Vlan updateVlanAndPublicIpRange(final long id, String startIp,
+                                           String endIp,
+                                           String gateway,
+                                           String netmask) throws ConcurrentOperationException{
+
+        // verify parameters
+        VlanVO vlanRange = _vlanDao.findById(id);
+        if (vlanRange == null) {
+            throw new InvalidParameterValueException("Please specify a valid IP range id.");
+        }
+
+        if (gateway == null) {
+            gateway = vlanRange.getVlanGateway();
+        }
+
+        if (netmask == null) {
+            netmask = vlanRange.getVlanNetmask();
+        }
+
+        final String[] existingVlanIPRangeArray = vlanRange.getIpRange().split("-");
+        final String currentStartIP= existingVlanIPRangeArray[0];
+        final String currentEndIP = existingVlanIPRangeArray [1];
+
+        if(startIp == null){
+            startIp= currentStartIP;
+        }
+
+        if(endIp == null){
+            endIp= currentEndIP;
+        }
+
+        // Check if the VLAN has any allocated public IPs
+        final List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(id);
+        for (final IPAddressVO ip : ips) {
+            if (ip.getState()== IpAddress.State.Allocated){
+                if (!Strings.isNullOrEmpty(startIp) && NetUtils.ip2Long(startIp) > NetUtils.ip2Long(ip.getAddress().addr())) {
+                    throw new InvalidParameterValueException("The start IP address must have a lower IP address value" +
+                            " " +
+                            "than" +
+                            " "+ ip.getAddress() +
+                            " which is already in use.");
+                }
+                if (!Strings.isNullOrEmpty(endIp) && NetUtils.ip2Long(endIp) < NetUtils.ip2Long(ip.getAddress().addr())) {
+                    throw new InvalidParameterValueException("The end IP address must have a higher IP address than "+ip.getAddress()+
+                            " " +
+                            "which is already in use");
+                }
+            }
+        }
+
+        // Check if the IP range is valid
+        final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+        final String cidrAddress = getCidrAddress(cidr);
+        final long cidrSize = getCidrSize(cidr);
+
+        //validate current IP range
+        checkIpRange(currentStartIP,currentEndIP,cidrAddress,cidrSize);
+
+        //validate new IP range
+        checkIpRange(startIp, endIp, cidrAddress, cidrSize);
+
+        if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
+            throw new InvalidParameterValueException("The gateway shouldn't overlap the new start/end ip " +
+                    "addresses");
+        }
+
+        VlanVO range = null;
+        try {
+            final String newStartIP= startIp;
+            final String newEndIP= endIp;
+
+            range = _vlanDao.acquireInLockTable(id, 30);
+            if (range == null) {
+                throw new CloudRuntimeException("Unable to acquire vlan configuration: " + id);
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("lock vlan " + id + " is acquired");
+            }
+
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(final TransactionStatus status) {
+
+                    vlanRange.setIpRange(vlanRange.getIpRange().replace(currentStartIP+"-", newStartIP+"-").replace(currentEndIP,
+                            newEndIP));
+                    _vlanDao.update(id, vlanRange);
+                }
+            });
+        } catch (final Exception e) {
+            s_logger.error("Unable to edit VlanRange due to " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to edit VlanRange. Please contact Cloud Support.");
+        }finally {
+            _vlanDao.releaseFromLockTable(id);
+        }
+
+        return vlanRange;
     }
 
     @Override
