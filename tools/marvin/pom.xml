@@ -159,7 +159,6 @@
                                     <executable>pip</executable>
                                     <arguments>
                                         <argument>install</argument>
-                                        <argument>--allow-external</argument>
                                         <argument>--upgrade</argument>
                                         <argument>Marvin-${project.version}.tar.gz</argument>
                                     </arguments>
