@@ -19,6 +19,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "updateVlanIpRange", description = "Updates a VLAN IP range.", responseObject =
         VlanIpRangeResponse.class,
+        since = "4.9.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVlanIpRangeCmd.class.getName());
