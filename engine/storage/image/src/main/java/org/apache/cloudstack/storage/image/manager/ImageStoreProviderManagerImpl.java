@@ -143,7 +143,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     }
 
     @Override
-    public DataStore getImageStoreForRead(List<DataStore> imageStores) {
+    public DataStore getRandomImageStore(List<DataStore> imageStores) {
         if (imageStores.size() > 1) {
             Collections.shuffle(imageStores);
         }
@@ -151,7 +151,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     }
 
     @Override
-    public DataStore getImageStoreForWrite(List<DataStore> imageStores) {
+    public DataStore getImageStoreWithFreeCapacity(List<DataStore> imageStores) {
         if (imageStores.size() > 1) {
             imageStores.sort(new Comparator<DataStore>() { // Sort data stores based on free capacity
                 @Override
@@ -179,7 +179,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     }
 
     @Override
-    public List<DataStore> getImageStoresForWrite(List<DataStore> imageStores) {
+    public List<DataStore> listImageStoresWithFreeCapacity(List<DataStore> imageStores) {
         List<DataStore> stores = new ArrayList<>();
         for (DataStore imageStore : imageStores) {
             // Return image store if used percentage is less then threshold value i.e. 90%.

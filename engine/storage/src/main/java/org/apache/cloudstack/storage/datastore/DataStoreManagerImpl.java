@@ -73,30 +73,30 @@ public class DataStoreManagerImpl implements DataStoreManager {
     }
 
     @Override
-    public DataStore getImageStoreForRead(long zoneId) {
+    public DataStore getRandomImageStore(long zoneId) {
         List<DataStore> stores = getImageStoresByScope(new ZoneScope(zoneId));
         if (stores == null || stores.size() == 0) {
             return null;
         }
-        return imageDataStoreMgr.getImageStoreForRead(stores);
+        return imageDataStoreMgr.getRandomImageStore(stores);
     }
 
     @Override
-    public DataStore getImageStoreForWrite(long zoneId) {
+    public DataStore getImageStoreWithFreeCapacity(long zoneId) {
         List<DataStore> stores = getImageStoresByScope(new ZoneScope(zoneId));
         if (stores == null || stores.size() == 0) {
             return null;
         }
-        return imageDataStoreMgr.getImageStoreForWrite(stores);
+        return imageDataStoreMgr.getImageStoreWithFreeCapacity(stores);
     }
 
     @Override
-    public List<DataStore> getImageStoresForWrite(long zoneId) {
+    public List<DataStore> listImageStoresWithFreeCapacity(long zoneId) {
         List<DataStore> stores = getImageStoresByScope(new ZoneScope(zoneId));
         if (stores == null || stores.size() == 0) {
             return null;
         }
-        return imageDataStoreMgr.getImageStoresForWrite(stores);
+        return imageDataStoreMgr.listImageStoresWithFreeCapacity(stores);
     }
 
     @Override
@@ -128,7 +128,7 @@ public class DataStoreManagerImpl implements DataStoreManager {
         if (stores == null || stores.size() == 0) {
             return null;
         }
-        return imageDataStoreMgr.getImageStoreForWrite(stores);
+        return imageDataStoreMgr.getImageStoreWithFreeCapacity(stores);
     }
 
     @Override

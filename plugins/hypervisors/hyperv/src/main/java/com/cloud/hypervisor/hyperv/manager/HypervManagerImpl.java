@@ -137,7 +137,7 @@ public class HypervManagerImpl implements HypervManager {
 
     private String getSecondaryStorageStoreUrl(long zoneId) {
         String secUrl = null;
-        DataStore secStore = _dataStoreMgr.getImageStoreForWrite(zoneId);
+        DataStore secStore = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
         if (secStore != null) {
             secUrl = secStore.getUri();
         }

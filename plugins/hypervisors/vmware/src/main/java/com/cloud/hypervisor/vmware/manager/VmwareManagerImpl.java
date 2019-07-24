@@ -493,7 +493,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         String secUrl = null;
         Long secId = null;
-        DataStore secStore = _dataStoreMgr.getImageStoreForWrite(dcId);
+        DataStore secStore = _dataStoreMgr.getImageStoreWithFreeCapacity(dcId);
         if (secStore != null) {
             secUrl = secStore.getUri();
             secId = secStore.getId();
@@ -517,7 +517,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public List<Pair<String, Long>> getSecondaryStorageStoresUrlAndIdList(long dcId) {
         List<Pair<String, Long>> urlIdList = new ArrayList<>();
-        List<DataStore> secStores = _dataStoreMgr.getImageStoresForWrite(dcId);
+        List<DataStore> secStores = _dataStoreMgr.listImageStoresWithFreeCapacity(dcId);
         if (!CollectionUtils.isNullOrEmpty(secStores)) {
             for (DataStore secStore : secStores) {
                 if (secStore != null) {

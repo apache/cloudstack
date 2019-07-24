@@ -2676,7 +2676,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Volume to be extracted has been removed or not in right state!");
         }
         // perform extraction
-        ImageStoreEntity secStore = (ImageStoreEntity)dataStoreMgr.getImageStoreForWrite(zoneId);
+        ImageStoreEntity secStore = (ImageStoreEntity)dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
         if (secStore == null) {
             throw new InvalidParameterValueException(String.format("Secondary storage to satisfy storage needs cannot be found for zone: %d", zoneId));
         }
