@@ -234,6 +234,6 @@ public class VlanVO implements Vlan {
     }
 
     public void setIpRange(String ipRange) {
-        this.ip6Range = ipRange;
+        this.ipRange = ipRange;
     }
 }
