@@ -1938,20 +1938,37 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType, List<String> volumeLocator, int timeout) {
+    public HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType, List<String> volumeLocators, int timeout) {
         List<HostVO> neighbors = _resourceMgr.listHostsInClusterByStatus(clusterId, Status.Up);
+        StoragePool storagePool = _storagePoolDao.findPoolByUUID(poolUuid);
         for (HostVO neighbor : neighbors) {
-            GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocator);
+            if (storagePool.isManaged()) {
+
+                volumeLocators = getVolumesByHost(neighbor, storagePool);
+
+            }
+
+            GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocators);
+
             if (timeout > 0) {
                 cmd.setWait(timeout/1000);
             }
+
             Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
+
             if (answer instanceof GetVolumeStatsAnswer){
                 GetVolumeStatsAnswer volstats = (GetVolumeStatsAnswer)answer;
                 return volstats.getVolumeStats();
             }
         }
         return null;
+    }
+
+    private List<String> getVolumesByHost(HostVO host, StoragePool pool){
+        List<UserVmVO> vmsPerHost = _vmDao.listByHostId(host.getId());
+        return vmsPerHost.stream()
+                .flatMap(vm -> _volsDao.findByInstanceIdAndPoolId(vm.getId(),pool.getId()).stream().map(vol -> vol.getPath()))
+                .collect(Collectors.toList());
     }
 
     @Override
