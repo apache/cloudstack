@@ -15,6 +15,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
+import com.cloud.utils.net.NetUtils;
 
 
 @APICommand(name = "updateVlanIpRange", description = "Updates a VLAN IP range.", responseObject =
@@ -45,6 +46,12 @@ public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "the beginning IP address in the VLAN IP range")
     private String startIp;
+    
+    @Parameter(name = ApiConstants.START_IPV6, type = CommandType.STRING, description = "the beginning IPv6 address in the IPv6 network range")
+    private String startIpv6;
+
+    @Parameter(name = ApiConstants.END_IPV6, type = CommandType.STRING, description = "the ending IPv6 address in the IPv6 network range")
+    private String endIpv6;
 
     @Parameter(name = ApiConstants.VLAN, type = CommandType.INTEGER, description = "Optional. the vlan the ip range sits on")
     private Integer vlan;
@@ -67,6 +74,21 @@ public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
     public String getStartIp() {
         return startIp;
     }
+    
+    public String getStartIpv6() {
+        if (startIpv6 == null) {
+            return null;
+        }
+        return NetUtils.standardizeIp6Address(startIpv6);
+    }
+
+    public String getEndIpv6() {
+        if (endIpv6 == null) {
+            return null;
+        }
+        return NetUtils.standardizeIp6Address(endIpv6);
+    }
+    
     public Integer getVlan() {
         return vlan;
     }
