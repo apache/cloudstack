@@ -90,7 +90,8 @@ config_guest() {
           modprobe pci_hotplug || true
           sed -i -e "/^s0:2345:respawn.*/d" /etc/inittab
           sed -i -e "/6:23:respawn/a\s0:2345:respawn:/sbin/getty -L 115200 ttyS0 vt102" /etc/inittab
-          systemctl enable --now qemu-guest-agent
+          systemctl enable qemu-guest-agent
+          systemctl start qemu-guest-agent
 
           # Wait for $CMDLINE file to be written by the qemu-guest-agent
           for i in {1..60}; do
