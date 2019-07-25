@@ -436,7 +436,7 @@ public class IPRangeConfig {
             problemIPs = savePrivateIPRange(txn, startIPLong, endIPLong, podId, zoneId);
         }
 
-        String[] linkLocalIps = NetUtils.getLinkLocalIPRange(10);
+        String[] linkLocalIps = NetUtils.getLinkLocalIPRange("169.254.0.0/16");
         long startLinkLocalIp = NetUtils.ip2Long(linkLocalIps[0]);
         long endLinkLocalIp = NetUtils.ip2Long(linkLocalIps[1]);
 

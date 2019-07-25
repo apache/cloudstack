@@ -44,6 +44,7 @@ import com.cloud.utils.script.Script;
 public class OvsVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger.getLogger(OvsVifDriver.class);
     private int _timeout;
+    private String _controlCidr = NetUtils.getLinkLocalCIDR();
     private DpdkDriver dpdkDriver;
 
     @Override
@@ -60,6 +61,11 @@ public class OvsVifDriver extends VifDriverBase {
         String dpdk = (String) params.get("openvswitch.dpdk.enabled");
         if (StringUtils.isNotBlank(dpdk) && Boolean.parseBoolean(dpdk)) {
             dpdkDriver = new DpdkDriverImpl();
+        }
+
+        String controlCidr = (String)params.get("control.cidr");
+        if (com.cloud.utils.StringUtils.isNotBlank(controlCidr)) {
+            _controlCidr = controlCidr;
         }
 
         String value = (String)params.get("scripts.timeout");
@@ -213,7 +219,7 @@ public class OvsVifDriver extends VifDriverBase {
     private void deleteExitingLinkLocalRouteTable(String linkLocalBr) {
         Script command = new Script("/bin/bash", _timeout);
         command.add("-c");
-        command.add("ip route | grep " + NetUtils.getLinkLocalCIDR());
+        command.add("ip route | grep " + _controlCidr);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         boolean foundLinkLocalBr = false;
@@ -222,15 +228,15 @@ public class OvsVifDriver extends VifDriverBase {
             for (String line : lines) {
                 String[] tokens = line.split(" ");
                 if (!tokens[2].equalsIgnoreCase(linkLocalBr)) {
-                    Script.runSimpleBashScript("ip route del " + NetUtils.getLinkLocalCIDR());
+                    Script.runSimpleBashScript("ip route del " + _controlCidr);
                 } else {
                     foundLinkLocalBr = true;
                 }
             }
         }
         if (!foundLinkLocalBr) {
-            Script.runSimpleBashScript("ip address add 169.254.0.1/16 dev " + linkLocalBr + ";" + "ip route add " + NetUtils.getLinkLocalCIDR() + " dev " + linkLocalBr + " src " +
-                    NetUtils.getLinkLocalGateway());
+            Script.runSimpleBashScript("ip address add " + NetUtils.getLinkLocalAddressFromCIDR(_controlCidr) + " dev " + linkLocalBr + ";" + "ip route add " + _controlCidr + " dev " + linkLocalBr + " src " +
+                    NetUtils.getLinkLocalGateway(_controlCidr));
         }
     }
 
@@ -238,7 +244,7 @@ public class OvsVifDriver extends VifDriverBase {
     public void createControlNetwork(String privBrName) {
         deleteExitingLinkLocalRouteTable(privBrName);
         if (!isExistingBridge(privBrName)) {
-            Script.runSimpleBashScript("ovs-vsctl add-br " + privBrName + "; ip link set " + privBrName + " up; ip address add 169.254.0.1/16 dev " + privBrName, _timeout);
+            Script.runSimpleBashScript("ovs-vsctl add-br " + privBrName + "; ip link set " + privBrName + " up; ip address add " + NetUtils.getLinkLocalAddressFromCIDR(_controlCidr) + " dev " + privBrName, _timeout);
         }
     }
 
