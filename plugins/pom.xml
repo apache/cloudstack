@@ -112,6 +112,7 @@
         <module>storage/image/sample</module>
         <module>storage/image/swift</module>
         <module>storage/volume/cloudbyte</module>
+        <module>storage/volume/datera</module>
         <module>storage/volume/default</module>
         <module>storage/volume/nexenta</module>
         <module>storage/volume/sample</module>
