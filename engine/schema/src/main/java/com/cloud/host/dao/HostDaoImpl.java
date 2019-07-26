@@ -90,7 +90,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> DcStorageIpAddressSearch;
     protected SearchBuilder<HostVO> PublicIpAddressSearch;
     protected SearchBuilder<HostVO> AnyIpAddressSearch;
-    protected SearchBuilder<HostVO> PrivateIpAddressSearch;
 
     protected SearchBuilder<HostVO> GuidSearch;
     protected SearchBuilder<HostVO> DcSearch;
@@ -224,10 +223,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         AnyIpAddressSearch.or("publicIpAddress", AnyIpAddressSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
         AnyIpAddressSearch.or("privateIpAddress", AnyIpAddressSearch.entity().getPrivateIpAddress(), SearchCriteria.Op.EQ);
         AnyIpAddressSearch.done();
-
-        PrivateIpAddressSearch = createSearchBuilder();
-        PrivateIpAddressSearch.and("privateIpAddress", PrivateIpAddressSearch.entity().getPrivateIpAddress(), SearchCriteria.Op.EQ);
-        PrivateIpAddressSearch.done();
 
         GuidSearch = createSearchBuilder();
         GuidSearch.and("guid", GuidSearch.entity().getGuid(), SearchCriteria.Op.EQ);
@@ -1094,13 +1089,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public HostVO findByPublicIp(String publicIp) {
         SearchCriteria<HostVO> sc = PublicIpAddressSearch.create();
         sc.setParameters("publicIpAddress", publicIp);
-        return findOneBy(sc);
-    }
-
-    @Override
-    public HostVO findByPrivateIp(String privateIp) {
-        SearchCriteria<HostVO> sc = PrivateIpAddressSearch.create();
-        sc.setParameters("privateIpAddress", privateIp);
         return findOneBy(sc);
     }
 
