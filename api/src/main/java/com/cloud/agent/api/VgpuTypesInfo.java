@@ -51,7 +51,7 @@ public class VgpuTypesInfo {
         return maxResolutionY;
     }
 
-    public Long getMaxVpuPerGpu() {
+    public Long getMaxVgpuPerGpu() {
         return maxVgpuPerGpu;
     }
 
