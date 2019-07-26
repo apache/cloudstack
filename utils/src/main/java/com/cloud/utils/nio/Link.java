@@ -489,7 +489,7 @@ public class Link {
             try {
                 sslEngine.closeInbound();
             } catch (SSLException e) {
-                s_logger.warn("This SSL engine was forced to close inbound due to end of stream.");
+                s_logger.warn("This SSL engine was forced to close inbound due to end of stream.", e);
             }
             sslEngine.closeOutbound();
             // After closeOutbound the engine will be set to WRAP state,

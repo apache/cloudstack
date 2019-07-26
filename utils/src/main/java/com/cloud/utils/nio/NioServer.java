@@ -25,6 +25,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Map;
 import java.util.WeakHashMap;
 
 import org.apache.cloudstack.framework.ca.CAService;
@@ -36,13 +37,13 @@ public class NioServer extends NioConnection {
     protected InetSocketAddress _localAddr;
     private ServerSocketChannel _serverSocket;
 
-    protected WeakHashMap<InetSocketAddress, Link> _links;
+    protected Map<String, Link> _links;
 
     public NioServer(final String name, final int port, final int workers, final HandlerFactory factory, final CAService caService) {
         super(name, port, workers, factory);
         setCAService(caService);
         _localAddr = null;
-        _links = new WeakHashMap<InetSocketAddress, Link>(1024);
+        _links = new WeakHashMap<String, Link>(10240);
     }
 
     public int getPort() {
@@ -61,7 +62,7 @@ public class NioServer extends NioConnection {
 
         _serverSocket.register(_selector, SelectionKey.OP_ACCEPT, null);
 
-        s_logger.info("NioConnection started and listening on " + _serverSocket.socket().getLocalSocketAddress());
+        s_logger.info("NioServer started and listening on " + _serverSocket.socket().getLocalSocketAddress());
     }
 
     @Override
@@ -75,12 +76,12 @@ public class NioServer extends NioConnection {
 
     @Override
     protected void registerLink(final InetSocketAddress addr, final Link link) {
-        _links.put(addr, link);
+        _links.put(addr.getAddress().toString(), link);
     }
 
     @Override
     protected void unregisterLink(final InetSocketAddress saddr) {
-        _links.remove(saddr);
+        _links.remove(saddr.getAddress().toString());
     }
 
     /**
@@ -93,7 +94,7 @@ public class NioServer extends NioConnection {
      * @return null if not sent.  attach object in link if sent.
      */
     public Object send(final InetSocketAddress saddr, final byte[] data) throws ClosedChannelException {
-        final Link link = _links.get(saddr);
+        final Link link = _links.get(saddr.getAddress().toString());
         if (link == null) {
             return null;
         }
