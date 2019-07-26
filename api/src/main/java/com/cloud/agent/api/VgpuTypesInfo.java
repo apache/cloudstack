@@ -17,50 +17,22 @@
 package com.cloud.agent.api;
 public class VgpuTypesInfo {
 
-    private String groupName;
     private String modelName;
-    private Long videoRam;
+    private String groupName;
     private Long maxHeads;
+    private Long videoRam;
     private Long maxResolutionX;
     private Long maxResolutionY;
     private Long maxVgpuPerGpu;
     private Long remainingCapacity;
     private Long maxCapacity;
 
-    public VgpuTypesInfo(String groupName, String modelName, Long videoRam, Long maxHeads, Long maxResolutionX, Long maxResolutionY, Long maxVgpuPerGpu, Long remainingCapacity, Long maxCapacity) {
-        this.groupName = groupName;
-        this.modelName = modelName;
-        this.videoRam = videoRam;
-        this.maxHeads = maxHeads;
-        this.maxResolutionX = maxResolutionX;
-        this.maxResolutionY = maxResolutionY;
-        this.maxVgpuPerGpu = maxVgpuPerGpu;
-        this.remainingCapacity = remainingCapacity;
-        this.maxCapacity = maxCapacity;
-    }
-
-    public VgpuTypesInfo() {
-        this.groupName = null;
-        this.modelName = null;
-        this.videoRam = null;
-        this.maxHeads = null;
-        this.maxResolutionX = null;
-        this.maxResolutionY = null;
-        this.maxVgpuPerGpu = null;
-        this.remainingCapacity = null;
-        this.maxCapacity = null;
+    public String getModelName() {
+        return modelName;
     }
 
     public String getGroupName() {
         return groupName;
-    }
-
-    public void setGroupName(final String groupName) {
-        this.groupName = groupName;
-    }
-
-    public String getModelName() {
-        return modelName;
     }
 
     public Long getVideoRam() {
@@ -79,7 +51,7 @@ public class VgpuTypesInfo {
         return maxResolutionY;
     }
 
-    public Long getMaxVgpuPerGpu() {
+    public Long getMaxVpuPerGpu() {
         return maxVgpuPerGpu;
     }
 
@@ -87,7 +59,7 @@ public class VgpuTypesInfo {
         return remainingCapacity;
     }
 
-    public void setRemainingCapacity(final Long remainingCapacity) {
+    public void setRemainingCapacity(Long remainingCapacity) {
         this.remainingCapacity = remainingCapacity;
     }
 
@@ -95,7 +67,20 @@ public class VgpuTypesInfo {
         return maxCapacity;
     }
 
-    public void setMaxCapacity(final Long maxCapacity) {
+    public void setMaxVmCapacity(Long maxCapacity) {
+        this.maxCapacity = maxCapacity;
+    }
+
+    public VgpuTypesInfo(String groupName, String modelName, Long videoRam, Long maxHeads, Long maxResolutionX, Long maxResolutionY, Long maxVgpuPerGpu,
+            Long remainingCapacity, Long maxCapacity) {
+        this.groupName = groupName;
+        this.modelName = modelName;
+        this.videoRam = videoRam;
+        this.maxHeads = maxHeads;
+        this.maxResolutionX = maxResolutionX;
+        this.maxResolutionY = maxResolutionY;
+        this.maxVgpuPerGpu = maxVgpuPerGpu;
+        this.remainingCapacity = remainingCapacity;
         this.maxCapacity = maxCapacity;
     }
 }
