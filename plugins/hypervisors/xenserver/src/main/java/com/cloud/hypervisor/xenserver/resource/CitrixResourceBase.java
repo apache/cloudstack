@@ -31,8 +31,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -5644,27 +5642,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             String dataDirectoryInSecondaryStore = localDir + "/" + DiagnosticsService.DIAGNOSTICS_DIRECTORY;
-            File dataDirectory = new File(dataDirectoryInSecondaryStore);
-            boolean existsInSecondaryStore = dataDirectory.exists() || dataDirectory.mkdir();
+            final CopyToSecondaryStorageAnswer answer;
+            final String scpResult = callHostPlugin(conn, "vmops", "secureCopyToHost", "hostfilepath", dataDirectoryInSecondaryStore,
+                    "srcip", vmIP, "srcfilepath", cmd.getFileName()).toLowerCase();
 
-            // Modify directory file permissions
-            Path path = Paths.get(dataDirectory.getAbsolutePath());
-            setDirFilePermissions(path);
-
-            if (existsInSecondaryStore) {
-                int port = 3922;
-                File permKey = new File("/root/.ssh/id_rsa.cloud");
-                SshHelper.scpFrom(vmIP, port, "root", permKey, dataDirectoryInSecondaryStore, diagnosticsZipFile);
-            }
-
-            File fileInSecondaryStore = new File(dataDirectoryInSecondaryStore + diagnosticsZipFile.replace("/root", ""));
-            if (fileInSecondaryStore.exists()) {
-                return new CopyToSecondaryStorageAnswer(cmd, true, "File copied to secondary storage successfully.");
+            if (scpResult.contains("success")) {
+                answer = new CopyToSecondaryStorageAnswer(cmd, true, "File copied to secondary storage successfully.");
             } else {
-                return new CopyToSecondaryStorageAnswer(cmd, false, "Zip file " + diagnosticsZipFile.replace("/root/", "") + "not found in secondary storage");
+                answer = new CopyToSecondaryStorageAnswer(cmd, false, "Zip file " + diagnosticsZipFile.replace("/root/", "") + "could not be copied to secondary storage due to " + scpResult);
             }
+            umountNfs(conn, secondaryStorageMountPath, localDir);
+            localDir = null;
+            return answer;
         } catch (Exception e) {
-            String msg = String.format("Exception caught zip file copy to secondary storage URI: " + secondaryStorageUrl, e);
+            String msg = "Exception caught zip file copy to secondary storage URI: " + secondaryStorageUrl + "Exception : " + e;
             s_logger.error(msg);
             return new CopyToSecondaryStorageAnswer(cmd, false, msg);
         } finally {
