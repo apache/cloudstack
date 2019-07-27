@@ -16,36 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
-import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 
 import com.cloud.network.Network;
-import com.cloud.utils.Pair;
 
 @APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class, responseView = ResponseView.Full, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListNetworksCmdByAdmin extends ListNetworksCmd {
-    public static final Logger s_logger = Logger.getLogger(ListNetworksCmdByAdmin.class.getName());
-
-    @Override
-    public void execute(){
-        Pair<List<? extends Network>, Integer> networks = _networkService.searchForNetworks(this);
-        ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
-        List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
-        for (Network network : networks.first()) {
-            NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(ResponseView.Full, network);
-            networkResponses.add(networkResponse);
-        }
-        response.setResponses(networkResponses, networks.second());
-        response.setResponseName(getCommandName());
-        setResponseObject(response);
-    }
-}
+public class ListNetworksCmdByAdmin extends ListNetworksCmd implements AdminCmd {}

@@ -17,9 +17,6 @@
 
 package org.apache.cloudstack.api.command.user.tag;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +28,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.TaggedResources;
 import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.event.EventTypes;
@@ -74,19 +72,7 @@ public class CreateTagsCmd extends BaseAsyncCmd {
     }
 
     public Map<String, String> getTags() {
-        Map<String, String> tagsMap = null;
-        if (!tag.isEmpty()) {
-            tagsMap = new HashMap<String, String>();
-            Collection<?> servicesCollection = tag.values();
-            Iterator<?> iter = servicesCollection.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> services = (HashMap<String, String>)iter.next();
-                String key = services.get("key");
-                String value = services.get("value");
-                tagsMap.put(key, value);
-            }
-        }
-        return tagsMap;
+        return TaggedResources.parseKeyValueMap(tag, true);
     }
 
     public List<String> getResourceIds() {

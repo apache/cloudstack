@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.utils.imagestore;
 
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -57,7 +58,7 @@ public class ImageStoreUtil {
             return "";
         }
         // raw
-        if ((output.contains("x86 boot") || output.contains("data")) && (isCorrectExtension(uripath, "raw") || isCorrectExtension(uripath, "img"))) {
+        if ((output.contains("x86 boot") || output.contains("data")) && (isCorrectExtension(uripath, "raw"))) {
             s_logger.debug("File at path " + path + " looks like a raw image :" + output);
             return "";
         }
@@ -90,23 +91,20 @@ public class ImageStoreUtil {
         return output;
     }
 
-    private static boolean isCorrectExtension(String path, String ext) {
-        if (path.toLowerCase().endsWith(ext)
-            || path.toLowerCase().endsWith(ext + ".gz")
-            || path.toLowerCase().endsWith(ext + ".bz2")
-            || path.toLowerCase().endsWith(ext + ".zip")) {
-            return true;
-        }
-        return false;
+    public static boolean isCorrectExtension(String path, String format) {
+        final String lowerCasePath = path.toLowerCase();
+        return UriUtils.getSupportedExtensions(format)
+                .stream()
+                .filter(ext -> !ext.equals(".metalink"))
+                .anyMatch(lowerCasePath::endsWith);
     }
 
-    private static boolean isCompressedExtension(String path) {
-        if (path.toLowerCase().endsWith(".gz")
-            || path.toLowerCase().endsWith(".bz2")
-            || path.toLowerCase().endsWith(".zip")) {
-            return true;
-        }
-        return false;
+    public static boolean isCompressedExtension(String path) {
+        final String lowerCasePath = path.toLowerCase();
+        return UriUtils.COMMPRESSION_FORMATS
+                       .stream()
+                       .map(extension -> "." + extension)
+                       .anyMatch(lowerCasePath::endsWith);
     }
 }
 

@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -43,7 +44,7 @@ import com.cloud.storage.Volume;
 
 @APICommand(name = "uploadVolume", description = "Uploads a data disk.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {Volume.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class UploadVolumeCmd extends BaseAsyncCmd {
+public class UploadVolumeCmd extends BaseAsyncCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(UploadVolumeCmd.class.getName());
     private static final String s_name = "uploadvolumeresponse";
 
@@ -145,7 +146,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
 
             Volume volume = _volumeService.uploadVolume(this);
             if (volume != null){
-            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, volume);
+            VolumeResponse response = _responseGenerator.createVolumeResponse(getResponseView(), volume);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
