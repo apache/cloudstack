@@ -3866,6 +3866,10 @@ table tr.selected td.actions .action.disabled .icon {
   background-position: -3px -368px;
 }
 
+.ui-dialog select {
+  overflow: scroll;
+}
+
 .ui-dialog.confirm .ui-button {
   margin-top: 0;
   margin-left: 11px;
