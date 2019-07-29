@@ -60,6 +60,7 @@ def zip_files(files):
         zf.close()
         print zf_name
 
+
 def execute_shell_script(script):
     # Ex. iptables.log
     outputfile = script + '.log'
