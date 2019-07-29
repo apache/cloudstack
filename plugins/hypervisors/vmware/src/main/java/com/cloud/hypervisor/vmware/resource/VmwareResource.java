@@ -45,11 +45,6 @@ import java.util.UUID;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import com.vmware.vim25.VirtualMachinePciPassthroughInfo;
-import com.vmware.vim25.VirtualPCIPassthrough;
-import com.vmware.vim25.VirtualPCIPassthroughVmiopBackingInfo;
-import com.vmware.vim25.VMwareDVSPortSetting;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -61,12 +56,6 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
-import org.joda.time.Duration;
-
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 import org.joda.time.Duration;
@@ -273,6 +262,7 @@ import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VmDetailConstants;
 import com.google.gson.Gson;
+
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.ComputeResourceSummary;
@@ -326,6 +316,9 @@ import com.vmware.vim25.VirtualMachineToolsStatus;
 import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VirtualUSBController;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
+import com.vmware.vim25.VirtualMachinePciPassthroughInfo;
+import com.vmware.vim25.VirtualPCIPassthrough;
+import com.vmware.vim25.VirtualPCIPassthroughVmiopBackingInfo;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
