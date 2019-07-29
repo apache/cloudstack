@@ -67,7 +67,7 @@ public class VgpuTypesInfo {
         return maxCapacity;
     }
 
-    public void setMaxVmCapacity(Long maxCapacity) {
+    public void setMaxCapacity(Long maxCapacity) {
         this.maxCapacity = maxCapacity;
     }
 

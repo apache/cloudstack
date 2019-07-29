@@ -85,7 +85,7 @@ public class VgpuResponse extends BaseResponse {
         this.remainingCapacity = remainingCapacity;
     }
 
-    public void setmaxCapacity(Long maxCapacity) {
+    public void setMaxCapacity(Long maxCapacity) {
         this.maxCapacity = maxCapacity;
     }
 }

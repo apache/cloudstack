@@ -131,7 +131,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                         vgpuResponse.setMaxResolutionY(vgpuType.getMaxResolutionY());
                         vgpuResponse.setMaxVgpuPerPgpu(vgpuType.getMaxVgpuPerPgpu());
                         vgpuResponse.setRemainingCapacity(vgpuType.getRemainingCapacity());
-                        vgpuResponse.setmaxCapacity(vgpuType.getMaxCapacity());
+                        vgpuResponse.setMaxCapacity(vgpuType.getMaxCapacity());
                         vgpus.add(vgpuResponse);
                     }
                     gpuResponse.setVgpu(vgpus);
