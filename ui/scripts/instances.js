@@ -1419,6 +1419,186 @@
 
                     },
 
+                    createVolume:{
+                        label: 'label.add.volume',
+                        messages: {
+                            confirm: function(args) {
+                                return 'message.add.volume';
+                            },
+                            notification: function(args) {
+                                return 'label.add.volume';
+                            }
+                        },
+
+                        createForm: {
+                            title: 'label.add.volume',
+                            desc: 'message.add.volume',
+                            fields: {
+                                name: {
+                                    docID: 'helpVolumeName',
+                                    label: 'label.name'
+                                },
+                                availabilityZone: {
+                                    label: 'label.availability.zone',
+                                    docID: 'helpVolumeAvailabilityZone',
+                                    select: function(args) {
+                                        $.ajax({
+                                            url: createURL("listZones&available=true"),
+                                            dataType: "json",
+                                            async: true,
+                                            success: function(json) {
+                                                var zoneObjs = json.listzonesresponse.zone;
+                                                args.response.success({
+                                                    descriptionField: 'name',
+                                                    data: zoneObjs
+                                                });
+                                            }
+                                        });
+                                    }
+                                },
+                                diskOffering: {
+                                    label: 'label.disk.offering',
+                                    docID: 'helpVolumeDiskOffering',
+                                    select: function(args) {
+                                        $.ajax({
+                                            url: createURL("listDiskOfferings"),
+                                            dataType: "json",
+                                            async: false,
+                                            success: function(json) {
+                                                diskofferingObjs = json.listdiskofferingsresponse.diskoffering;
+                                                var items = [];
+                                                $(diskofferingObjs).each(function() {
+                                                    items.push({
+                                                        id: this.id,
+                                                        description: this.displaytext
+                                                    });
+                                                });
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        });
+
+                                        args.$select.change(function() {
+                                            var diskOfferingId = $(this).val();
+                                            $(diskofferingObjs).each(function() {
+                                                if (this.id == diskOfferingId) {
+                                                    selectedDiskOfferingObj = this;
+                                                    return false; //break the $.each() loop
+                                                }
+                                            });
+                                            if (selectedDiskOfferingObj == null)
+                                                return;
+
+                                            var $form = $(this).closest('form');
+                                            var $diskSize = $form.find('.form-item[rel=diskSize]');
+                                            if (selectedDiskOfferingObj.iscustomized == true) {
+                                                $diskSize.css('display', 'inline-block');
+                                            } else {
+                                                $diskSize.hide();
+                                            }
+                                            var $minIops = $form.find('.form-item[rel=minIops]');
+                                            var $maxIops = $form.find('.form-item[rel=maxIops]');
+                                            if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                                $minIops.css('display', 'inline-block');
+                                                $maxIops.css('display', 'inline-block');
+                                            } else {
+                                                $minIops.hide();
+                                                $maxIops.hide();
+                                            }
+                                        });
+                                    }
+                                }
+
+                                ,
+                                diskSize: {
+                                    label: 'label.disk.size.gb',
+                                    docID: 'helpVolumeSizeGb',
+                                    validation: {
+                                        required: true,
+                                        number: true
+                                    },
+                                    isHidden: true
+                                },
+
+                                minIops: {
+                                    label: 'label.disk.iops.min',
+                                    validation: {
+                                        required: false,
+                                        number: true
+                                    },
+                                    isHidden: true
+                                },
+
+                                maxIops: {
+                                    label: 'label.disk.iops.max',
+                                    validation: {
+                                        required: false,
+                                        number: true
+                                    },
+                                    isHidden: true
+                                }
+
+                            }
+                        },
+
+                        action: function(args) {
+                            var data = {
+                                name: args.data.name,
+                                zoneId: args.data.availabilityZone,
+                                virtualMachineId: args.context.instances[0].id,
+                                diskOfferingId: args.data.diskOffering
+                            };
+
+                            // if(thisDialog.find("#size_container").css("display") != "none") { //wait for Brian to include $form in args
+                            if (selectedDiskOfferingObj.iscustomized == true) {
+                                $.extend(data, {
+                                    size: args.data.diskSize
+                                });
+                            }
+
+                            if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                if (args.data.minIops != "" && args.data.minIops > 0) {
+                                    $.extend(data, {
+                                        miniops: args.data.minIops
+                                    });
+                                }
+
+                                if (args.data.maxIops != "" && args.data.maxIops > 0) {
+                                    $.extend(data, {
+                                        maxiops: args.data.maxIops
+                                    });
+                                }
+                            }
+
+                            $.ajax({
+                                url: createURL('createVolume'),
+                                data: data,
+                                async: true,
+                                success: function(json) {
+                                    var jid = json.createvolumeresponse.jobid;
+                                    args.response.success({
+                                        _custom: {
+                                            jobId: jid,
+                                            getUpdatedItem: function(json) {
+                                                return json.queryasyncjobresultresponse.jobresult.volume;
+                                            },
+                                            getActionFilter: function() {
+                                                return vmActionfilter;
+                                            }
+                                        }
+                                    });
+                                },
+                                error: function(json) {
+                                    args.response.error(parseXMLHttpResponse(json));
+                                }
+                            });
+                        },
+                        notification: {
+                            poll: pollAsyncJobResult
+                        }
+                    },
+
                     changeAffinity: {
                         label: 'label.change.affinity',
 
@@ -3675,6 +3855,7 @@
 
             allowedActions.push("viewConsole");
             allowedActions.push("resetSSHKeyForVirtualMachine");
+            allowedActions.push("createVolume");
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("edit");
             if (isAdmin())
@@ -3691,6 +3872,7 @@
 
             allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors
             allowedActions.push("changeAffinity");
+            allowedActions.push("createVolume");
 
             if (isAdmin())
                 allowedActions.push("migrateToAnotherStorage");
