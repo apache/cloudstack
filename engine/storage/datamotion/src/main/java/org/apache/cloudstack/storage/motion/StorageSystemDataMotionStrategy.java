@@ -1828,7 +1828,10 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 String destPath = generateDestPath(destHost, destStoragePool, destVolumeInfo);
 
                 MigrateCommand.MigrateDiskInfo migrateDiskInfo;
-                if (sourceStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && destStoragePool.getPoolType() != StoragePoolType.NetworkFilesystem) {
+
+                boolean isNonManagedNfsToNfs = sourceStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem
+                        && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && !managedStorageDestination;
+                if (isNonManagedNfsToNfs) {
                     migrateDiskInfo = new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(),
                             MigrateCommand.MigrateDiskInfo.DiskType.FILE,
                             MigrateCommand.MigrateDiskInfo.DriverType.QCOW2,
@@ -1864,11 +1867,14 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             VMInstanceVO vm = _vmDao.findById(vmTO.getId());
             boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
+            boolean migrateNonSharedInc = isSourceAndDestinationPoolTypeOfNfs(volumeDataStoreMap);
+
             MigrateCommand migrateCommand = new MigrateCommand(vmTO.getName(), destHost.getPrivateIpAddress(), isWindows, vmTO, true);
             migrateCommand.setWait(StorageManager.KvmStorageOnlineMigrationWait.value());
             migrateCommand.setMigrateStorage(migrateStorage);
             migrateCommand.setMigrateDiskInfoList(migrateDiskInfoList);
             migrateCommand.setMigrateStorageManaged(managedStorageDestination);
+            migrateCommand.setMigrateNonSharedInc(migrateNonSharedInc);
 
             boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
             migrateCommand.setAutoConvergence(kvmAutoConvergence);
@@ -1903,6 +1909,23 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             callback.complete(result);
         }
+    }
+
+    /**
+     * Returns true if at least one of the entries on the map 'volumeDataStoreMap' has both source and destination storage pools of Network Filesystem (NFS).
+     */
+    protected boolean isSourceAndDestinationPoolTypeOfNfs(Map<VolumeInfo, DataStore> volumeDataStoreMap) {
+        for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
+            VolumeInfo srcVolumeInfo = entry.getKey();
+            DataStore destDataStore = entry.getValue();
+
+            StoragePoolVO destStoragePool = _storagePoolDao.findById(destDataStore.getId());
+            StoragePoolVO sourceStoragePool = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
+            if (sourceStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

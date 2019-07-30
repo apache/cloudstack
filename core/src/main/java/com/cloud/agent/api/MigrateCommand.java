@@ -32,6 +32,7 @@ public class MigrateCommand extends Command {
     private String destIp;
     private Map<String, MigrateDiskInfo> migrateStorage;
     private boolean migrateStorageManaged;
+    private boolean migrateNonSharedInc;
     private boolean autoConvergence;
     private String hostGuid;
     private boolean isWindows;
@@ -73,6 +74,14 @@ public class MigrateCommand extends Command {
 
     public void setMigrateStorageManaged(boolean migrateStorageManaged) {
         this.migrateStorageManaged = migrateStorageManaged;
+    }
+
+    public boolean isMigrateNonSharedInc() {
+        return migrateNonSharedInc;
+    }
+
+    public void setMigrateNonSharedInc(boolean migrateNonSharedInc) {
+        this.migrateNonSharedInc = migrateNonSharedInc;
     }
 
     public void setAutoConvergence(boolean autoConvergence) {
