@@ -1543,6 +1543,30 @@
                             }
                         }
 
+                        // Optional Step - Pre-step 8
+                        if ($activeStep.hasClass('ovf-properties')) {
+                            var ok = true;
+                            if ($activeStep.find('input').length > 0) { //if no checkbox is checked
+                                $.each($activeStep.find('input'), function(index, item) {
+                                    var item = $activeStep.find('input#' + item.id);
+                                    var internalCheck = true;
+                                    if (this.maxLength && this.maxLength !== -1) {
+                                        internalCheck = item.val().length <= this.maxLength;
+                                    } else if (this.min && this.max) {
+                                        var numberValue = parseFloat(item.val());
+                                        internalCheck = numberValue >= this.min && numberValue <= this.max;
+                                    }
+                                    ok = ok && internalCheck;
+                                });
+                            }
+                            if (!ok) {
+                                cloudStack.dialog.notice({
+                                    message: 'Please enter valid values for every property'
+                                });
+                                return false;
+                            }
+                        }
+
                         if (!$form.valid()) {
                             if ($form.find('input.error:visible, select.error:visible').length) {
                                 return false;
