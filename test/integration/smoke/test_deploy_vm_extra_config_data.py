@@ -39,7 +39,6 @@ from marvin.lib.common import (get_domain,
 from marvin.lib.utils import *
 from nose.plugins.attrib import attr
 
-
 class TestAddConfigtoDeployVM(cloudstackTestCase):
 
     @classmethod
@@ -186,7 +185,7 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
         return uuid_str[i + 1:].strip()
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_01_deploy_vm__with_extraconfig_throws_exception_kvm(self):
+    def test_01_deploy_vm_with_extraconfig_throws_exception_kvm(self):
         '''
         Test that extra config is not added when element tag is not added on the allowed list global config on KVM hosts
         '''
@@ -216,7 +215,7 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
             logging.debug(e)
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_02_deploy_vm__with_extraconfig_kvm(self):
+    def test_02_deploy_vm_with_extraconfig_kvm(self):
         '''
         Test that extra config is added on KVM hosts
         '''
@@ -287,7 +286,7 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
                 self.add_global_config(name, "")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_03_update_vm__with_extraconfig_kvm(self):
+    def test_03_update_vm_with_extraconfig_kvm(self):
         '''
         Test that extra config is added on KVM hosts
         '''
@@ -366,7 +365,7 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
                 self.add_global_config(name, "")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_05_deploy_vm__with_extraconfig_throws_exception_vmware(self):
+    def test_04_deploy_vm_with_extraconfig_throws_exception_vmware(self):
         '''
         Test that extra config is not added when configuration key is not added on the allowed list global config for VMWARE hosts
         '''
@@ -393,7 +392,7 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
             logging.debug(e)
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_06_deploy_vm__with_extraconfig_vmware(self):
+    def test_05_deploy_vm_with_extraconfig_vmware(self):
         '''
         Test that extra config is added on VMware hosts
         '''
@@ -447,7 +446,7 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
                 self.add_global_config(name, "")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_07_deploy_vm__with_extraconfig_throws_exception_xenserver(self):
+    def test_06_deploy_vm_with_extraconfig_throws_exception_xenserver(self):
         '''
         Test that extra config is not added when configuration key is not added on the allowed list global config for XenServer hosts
         '''
@@ -477,7 +476,7 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
             logging.debug(e)
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_08_deploy_vm__with_extraconfig_xenserver(self):
+    def test_07_deploy_vm_with_extraconfig_xenserver(self):
         hypervisor = self.hypervisor.lower()
         if hypervisor != 'xenserver':
             raise self.skipTest("Skipping test case for non-xenserver hypervisor")
