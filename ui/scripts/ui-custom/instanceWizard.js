@@ -135,27 +135,48 @@
                         var label = item[fields.label];
                         var description = item[fields.description];
 
-                        var qualifiersField;
-                        if (qualifiers) {
-                            qualifiersField = $('<select id=ovf-property-'+key+'>')
-                            if (qualifiers.startsWith("ValueMap")) {
-                                var possibleValues = qualifiers.replace("ValueMap","").substr(1).slice(0, -1).split(",");
-                                $(possibleValues).each(function() {
-                                    var qualifier = this.substr(1).slice(0, -1); //remove first and last quotes
-                                    var option = $('<option>')
-                                        .attr({
-                                            value: qualifier
-                                        })
-                                        .html(qualifier)
-                                    qualifiersField.append(option);
-                                });
-                            }
-                        } else if (type && type.toUpperCase() == "BOOLEAN") {
-                            qualifiersField = $('<select id=ovf-property-'+key+'>')
+                        var propertyField;
+
+                        if (type && type.toUpperCase() == "BOOLEAN") {
+                            propertyField = $('<select id=ovf-property-' + key + '>')
                                 .append($('<option>').attr({value: "True"}).html("True"))
                                 .append($('<option>').attr({value: "False"}).html("False"));
+                        } else if (type && (type.includes("int") || type.includes("real"))) {
+                            if (qualifiers && qualifiers.includes("MinValue") && qualifiers.includes("MaxValue")) {
+                                var split = qualifiers.split(",");
+                                var minValue = split[0].replace("MinValue(","").slice(0, -1);
+                                var maxValue = split[1].replace("MaxValue(","").slice(0, -1);
+                                propertyField = $('<input id=ovf-property-'+key+'>')
+                                    .attr({type: "number", min: minValue, max:maxValue})
+                                    .addClass('name').val(_s(this[fields.value]));
+                            } else {
+                                propertyField = $('<input id=ovf-property-'+key+'>').addClass('name').val(_s(this[fields.value]))
+                            }
+                        } else if (type && type.toUpperCase() == "STRING") {
+                            if (qualifiers) {
+                                propertyField = $('<select id=ovf-property-'+key+'>')
+                                if (qualifiers.startsWith("ValueMap")) {
+                                    var possibleValues = qualifiers.replace("ValueMap","").substr(1).slice(0, -1).split(",");
+                                    $(possibleValues).each(function() {
+                                        var qualifier = this.substr(1).slice(0, -1); //remove first and last quotes
+                                        var option = $('<option>')
+                                            .attr({
+                                                value: qualifier
+                                            })
+                                            .html(qualifier)
+                                        propertyField.append(option);
+                                    });
+                                } else if (qualifiers.startsWith("MaxLen")) {
+                                    var length = qualifiers.replace("MaxLen(","").slice(0,-1);
+                                    propertyField = $('<input id=ovf-property-'+key+'>')
+                                        .attr({maxlength : length})
+                                        .addClass('name').val(_s(this[fields.value]))
+                                }
+                            } else {
+                                propertyField = $('<input id=ovf-property-'+key+'>').addClass('name').val(_s(this[fields.value]))
+                            }
                         } else {
-                            qualifiersField = $('<input id=ovf-property-'+key+'>').addClass('name').val(_s(this[fields.value]))
+                            propertyField = $('<input id=ovf-property-'+key+'>').addClass('name').val(_s(this[fields.value]))
                         }
 
                         var $select = $('<div>')
@@ -165,7 +186,7 @@
                                     .addClass('select-desc')
                                     .addClass('ovf-property')
                                     .append($('<div>').addClass('name').html(_s(this[fields.label])))
-                                    .append(qualifiersField)
+                                    .append(propertyField)
                                     .append($('<div>').addClass('desc').html(_s(this[fields.description])))
                                     .data('json-obj', this)
                             );
