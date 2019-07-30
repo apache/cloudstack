@@ -3691,6 +3691,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ")
                             .append("with size ").append(usageRecord.getVirtualSize());
                 }
+                usageRecResponse.setSize(usageRecord.getVirtualSize());
                 usageRecResponse.setDescription(builder.toString());
             }
         }
