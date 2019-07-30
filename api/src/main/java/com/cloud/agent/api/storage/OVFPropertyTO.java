@@ -37,12 +37,13 @@ public class OVFPropertyTO implements OVFProperty {
     private Boolean userConfigurable;
     private String label;
     private String description;
+    private Boolean password;
 
     public OVFPropertyTO() {
     }
 
     public OVFPropertyTO(String key, String type, String value, String qualifiers, boolean userConfigurable,
-                       String label, String description) {
+                       String label, String description, boolean password) {
         this.key = key;
         this.type = type;
         this.value = value;
@@ -50,6 +51,7 @@ public class OVFPropertyTO implements OVFProperty {
         this.userConfigurable = userConfigurable;
         this.label = label;
         this.description = description;
+        this.password = password;
     }
 
     @Override
@@ -111,5 +113,13 @@ public class OVFPropertyTO implements OVFProperty {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Boolean isPassword() {
+        return password;
+    }
+
+    public void setPassword(Boolean password) {
+        this.password = password;
     }
 }

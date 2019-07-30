@@ -38,6 +38,10 @@ public class TemplateOVFPropertyResponse extends BaseResponse {
     @Param(description = "the ovf property value")
     private String value;
 
+    @SerializedName(ApiConstants.PASSWORD)
+    @Param(description = "is the ovf property a password")
+    private Boolean password;
+
     @SerializedName(ApiConstants.QUALIFIERS)
     @Param(description = "the ovf property qualifiers")
     private String qualifiers;
@@ -108,5 +112,13 @@ public class TemplateOVFPropertyResponse extends BaseResponse {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Boolean getPassword() {
+        return password;
+    }
+
+    public void setPassword(Boolean password) {
+        this.password = password;
     }
 }

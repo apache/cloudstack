@@ -50,6 +50,9 @@ public class TemplateOVFPropertyVO implements OVFProperty {
     @Column(name = "qualifiers")
     private String qualifiers;
 
+    @Column(name = "password")
+    private Boolean password;
+
     @Column(name = "user_configurable")
     private Boolean userConfigurable;
 
@@ -63,7 +66,7 @@ public class TemplateOVFPropertyVO implements OVFProperty {
     }
 
     public TemplateOVFPropertyVO(Long templateId, String key, String type, String value, String qualifiers,
-                                 Boolean userConfigurable, String label, String description) {
+                                 Boolean userConfigurable, String label, String description, Boolean password) {
         this.templateId = templateId;
         this.key = key;
         this.type = type;
@@ -72,6 +75,7 @@ public class TemplateOVFPropertyVO implements OVFProperty {
         this.userConfigurable = userConfigurable;
         this.label = label;
         this.description = description;
+        this.password = password;
     }
 
     public long getId() {
@@ -147,9 +151,17 @@ public class TemplateOVFPropertyVO implements OVFProperty {
         this.description = description;
     }
 
+    public Boolean isPassword() {
+        return password;
+    }
+
+    public void setPassword(Boolean password) {
+        this.password = password;
+    }
+
     @Override
     public String toString() {
-        return String.format("PROP - templateId=%s> key=%s value=%s type=%s qual=%s conf=%s label=%s desc=%s",
-                templateId, key, value, type, qualifiers, userConfigurable, label, description);
+        return String.format("PROP - templateId=%s> key=%s value=%s type=%s qual=%s conf=%s label=%s desc=%s password=%s",
+                templateId, key, value, type, qualifiers, userConfigurable, label, description, password);
     }
 }

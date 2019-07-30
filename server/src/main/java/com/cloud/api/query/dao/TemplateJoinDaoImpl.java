@@ -259,6 +259,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 propertyResponse.setUserConfigurable(property.isUserConfigurable());
                 propertyResponse.setLabel(property.getLabel());
                 propertyResponse.setDescription(property.getDescription());
+                propertyResponse.setPassword(property.isPassword());
                 templateResponse.addOvfProperty(propertyResponse);
             }
         }

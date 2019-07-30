@@ -109,9 +109,11 @@ public class OVFHelper {
         String userConfigurableStr = property.getAttribute("ovf:userConfigurable");
         boolean userConfigurable = StringUtils.isNotBlank(userConfigurableStr) &&
                 userConfigurableStr.equalsIgnoreCase("true");
+        String passStr = property.getAttribute("ovf:password");
+        boolean password = StringUtils.isNotBlank(passStr) && passStr.equalsIgnoreCase("true");
         String label = getChildNodeValue(node, "Label");
         String description = getChildNodeValue(node, "Description");
-        return new OVFPropertyTO(key, type, value, qualifiers, userConfigurable, label, description);
+        return new OVFPropertyTO(key, type, value, qualifiers, userConfigurable, label, description, password);
     }
 
     /**

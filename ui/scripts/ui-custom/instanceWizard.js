@@ -134,9 +134,11 @@
                         var qualifiers = item[fields.qualifiers];
                         var label = item[fields.label];
                         var description = item[fields.description];
+                        var password = item[fields.password];
 
                         var propertyField;
 
+                        var fieldType = password ? "password" : "text";
                         if (type && type.toUpperCase() == "BOOLEAN") {
                             propertyField = $('<select id=ovf-property-' + key + '>')
                                 .append($('<option>').attr({value: "True"}).html("True"))
@@ -146,11 +148,14 @@
                                 var split = qualifiers.split(",");
                                 var minValue = split[0].replace("MinValue(","").slice(0, -1);
                                 var maxValue = split[1].replace("MaxValue(","").slice(0, -1);
+                                fieldType = "number";
                                 propertyField = $('<input id=ovf-property-'+key+'>')
-                                    .attr({type: "number", min: minValue, max:maxValue})
+                                    .attr({type: fieldType, min: minValue, max:maxValue})
                                     .addClass('name').val(_s(this[fields.value]));
                             } else {
-                                propertyField = $('<input id=ovf-property-'+key+'>').addClass('name').val(_s(this[fields.value]))
+                                propertyField = $('<input id=ovf-property-'+key+'>')
+                                    .attr({type: fieldType})
+                                    .addClass('name').val(_s(this[fields.value]))
                             }
                         } else if (type && type.toUpperCase() == "STRING") {
                             if (qualifiers) {
@@ -161,7 +166,8 @@
                                         var qualifier = this.substr(1).slice(0, -1); //remove first and last quotes
                                         var option = $('<option>')
                                             .attr({
-                                                value: qualifier
+                                                value: qualifier,
+                                                type: fieldType
                                             })
                                             .html(qualifier)
                                         propertyField.append(option);
@@ -169,14 +175,18 @@
                                 } else if (qualifiers.startsWith("MaxLen")) {
                                     var length = qualifiers.replace("MaxLen(","").slice(0,-1);
                                     propertyField = $('<input id=ovf-property-'+key+'>')
-                                        .attr({maxlength : length})
+                                        .attr({maxlength : length, type: fieldType})
                                         .addClass('name').val(_s(this[fields.value]))
                                 }
                             } else {
-                                propertyField = $('<input id=ovf-property-'+key+'>').addClass('name').val(_s(this[fields.value]))
+                                propertyField = $('<input id=ovf-property-'+key+'>')
+                                    .attr({type: fieldType})
+                                    .addClass('name').val(_s(this[fields.value]))
                             }
                         } else {
-                            propertyField = $('<input id=ovf-property-'+key+'>').addClass('name').val(_s(this[fields.value]))
+                            propertyField = $('<input id=ovf-property-'+key+'>')
+                                .attr({type: fieldType})
+                                .addClass('name').val(_s(this[fields.value]))
                         }
 
                         var $select = $('<div>')
@@ -1324,7 +1334,8 @@
                                             value: 'value',
                                             qualifiers: 'qualifiers',
                                             label: 'label',
-                                            description : 'description'
+                                            description : 'description',
+                                            password : 'password'
                                         })
                                     );
                                 }

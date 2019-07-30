@@ -393,6 +393,7 @@ CREATE TABLE `cloud`.`template_ovf_properties` (
   `key` VARCHAR(100) NOT NULL,
   `type` VARCHAR(45) DEFAULT NULL,
   `value` VARCHAR(100) DEFAULT NULL,
+  `password` TINYINT(1) NOT NULL DEFAULT '0',
   `qualifiers` TEXT DEFAULT NULL,
   `user_configurable` TINYINT(1) NOT NULL DEFAULT '0',
   `label` TEXT DEFAULT NULL,

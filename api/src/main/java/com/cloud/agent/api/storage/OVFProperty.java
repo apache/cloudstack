@@ -29,4 +29,5 @@ public interface OVFProperty {
     Boolean isUserConfigurable();
     String getLabel();
     String getDescription();
+    Boolean isPassword();
 }

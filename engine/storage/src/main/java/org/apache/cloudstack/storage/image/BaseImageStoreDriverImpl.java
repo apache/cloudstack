@@ -177,7 +177,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             if (!templateOvfPropertiesDao.existsOption(templateId, property.getKey())) {
                 TemplateOVFPropertyVO option = new TemplateOVFPropertyVO(templateId, property.getKey(), property.getType(),
                         property.getValue(), property.getQualifiers(), property.isUserConfigurable(),
-                        property.getLabel(), property.getDescription());
+                        property.getLabel(), property.getDescription(), property.isPassword());
                 listToPersist.add(option);
             }
         }
