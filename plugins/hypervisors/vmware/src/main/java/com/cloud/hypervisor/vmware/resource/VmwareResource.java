@@ -3868,19 +3868,24 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 prepareNetworkFromNicInfo(new HostMO(getServiceContext(), _morHyperHost), nic, false, cmd.getVirtualMachine().getType());
             }
 
-            Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
-            String secStoreUrl = secStoreUrlAndId.first();
-            Long secStoreId = secStoreUrlAndId.second();
-            if (secStoreUrl == null) {
-                String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
-                throw new Exception(msg);
-            }
-            mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
+            List<Pair<String, Long>> secStoreUrlAndIdList = mgr.getSecondaryStorageStoresUrlAndIdList(Long.parseLong(_dcId));
+            for (Pair<String, Long> secStoreUrlAndId : secStoreUrlAndIdList) {
+                String secStoreUrl = secStoreUrlAndId.first();
+                Long secStoreId = secStoreUrlAndId.second();
+                if (secStoreUrl == null) {
+                    String msg = String.format("Secondary storage for dc %s is not ready yet?", _dcId);
+                    throw new Exception(msg);
+                }
 
-            ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnHost(secStoreUrl);
-            if (morSecDs == null) {
-                String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
-                throw new Exception(msg);
+                if (vm.getType() != VirtualMachine.Type.User) {
+                    mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
+                }
+
+                ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnHost(secStoreUrl);
+                if (morSecDs == null) {
+                    String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
+                    throw new Exception(msg);
+                }
             }
             return new PrepareForMigrationAnswer(cmd);
         } catch (Throwable e) {
@@ -4247,19 +4252,25 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 prepareNetworkFromNicInfo(new HostMO(getServiceContext(), morTgtHost), nic, false, vmTo.getType());
             }
 
-            // Ensure secondary storage mounted on target host
-            Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
-            String secStoreUrl = secStoreUrlAndId.first();
-            Long secStoreId = secStoreUrlAndId.second();
-            if (secStoreUrl == null) {
-                String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
-                throw new Exception(msg);
-            }
-            mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
-            ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnSpecificHost(secStoreUrl, tgtHyperHost);
-            if (morSecDs == null) {
-                String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
-                throw new Exception(msg);
+            // Ensure all secondary storage mounted on target host
+            List<Pair<String, Long>> secStoreUrlAndIdList = mgr.getSecondaryStorageStoresUrlAndIdList(Long.parseLong(_dcId));
+            for (Pair<String, Long> secStoreUrlAndId : secStoreUrlAndIdList) {
+                String secStoreUrl = secStoreUrlAndId.first();
+                Long secStoreId = secStoreUrlAndId.second();
+                if (secStoreUrl == null) {
+                    String msg = String.format("Secondary storage for dc %s is not ready yet?", _dcId);
+                    throw new Exception(msg);
+                }
+
+                if (vmTo.getType() != VirtualMachine.Type.User) {
+                    mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
+                }
+
+                ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnSpecificHost(secStoreUrl, tgtHyperHost);
+                if (morSecDs == null) {
+                    String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
+                    throw new Exception(msg);
+                }
             }
 
             if (srcHostApiVersion.compareTo("5.1") < 0) {

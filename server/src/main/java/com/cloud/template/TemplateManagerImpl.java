@@ -428,7 +428,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (storeUuid != null) {
             imageStore = _dataStoreMgr.getDataStore(storeUuid, DataStoreRole.Image);
         } else {
-            imageStore = _dataStoreMgr.getImageStore(zoneId);
+            imageStore = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
             if (imageStore == null) {
                 throw new CloudRuntimeException("cannot find an image store for zone " + zoneId);
             }
@@ -1356,7 +1356,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to delete iso, as it's used by other vms");
         }
 
-        if (zoneId != null && (_dataStoreMgr.getImageStore(zoneId) == null)) {
+        if (zoneId != null && (_dataStoreMgr.getImageStoreWithFreeCapacity(zoneId) == null)) {
             throw new InvalidParameterValueException("Failed to find a secondary storage store in the specified zone.");
         }
 
@@ -1631,7 +1631,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 volume = _volumeDao.findById(volumeId);
                 zoneId = volume.getDataCenterId();
             }
-            DataStore store = _dataStoreMgr.getImageStore(zoneId);
+            DataStore store = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
             if (store == null) {
                 throw new CloudRuntimeException("cannot find an image store for zone " + zoneId);
             }
@@ -1957,7 +1957,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public String getSecondaryStorageURL(long zoneId) {
-        DataStore secStore = _dataStoreMgr.getImageStore(zoneId);
+        DataStore secStore = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
         if (secStore == null) {
             return null;
         }

@@ -23,7 +23,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.StoragePool;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -59,6 +58,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -308,7 +308,12 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         if (nic.isDefaultNic() && _networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.ConfigDrive)) {
             LOG.trace(String.format("[prepareMigration] for vm: %s", vm.getInstanceName()));
             final DataStore dataStore = findDataStore(vm, dest);
-            addConfigDriveDisk(vm, dataStore);
+
+            try {
+                addConfigDriveDisk(vm, dataStore);
+            } catch (ResourceUnavailableException e) {
+                LOG.error("Failed to add config disk drive due to: ", e);
+            }
             return false;
         }
         else return  true;
@@ -332,7 +337,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                 dataStore = pickExistingRootVolumeFromDataStore(profile, dataStore);
             }
         } else {
-            dataStore = _dataStoreMgr.getImageStore(dest.getDataCenter().getId());
+            dataStore = _dataStoreMgr.getImageStoreWithFreeCapacity(dest.getDataCenter().getId());
         }
         return dataStore;
     }
@@ -444,7 +449,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     }
 
     private boolean deleteConfigDriveIso(final VirtualMachine vm) throws ResourceUnavailableException {
-        DataStore dataStore = _dataStoreMgr.getImageStore(vm.getDataCenterId());
+        DataStore dataStore = _dataStoreMgr.getImageStoreWithFreeCapacity(vm.getDataCenterId());
         Long agentId = findAgentIdForImageStore(dataStore);
 
         if (VirtualMachineManager.VmConfigDriveOnPrimaryPool.value()) {
@@ -473,7 +478,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return true;
     }
 
-    private void addConfigDriveDisk(final VirtualMachineProfile profile, final DataStore dataStore) {
+    private void addConfigDriveDisk(final VirtualMachineProfile profile, final DataStore dataStore) throws ResourceUnavailableException {
         boolean isoAvailable = false;
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
         for (DiskTO dataTo : profile.getDisks()) {
@@ -484,6 +489,10 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         }
         if (!isoAvailable) {
             TemplateObjectTO dataTO = new TemplateObjectTO();
+            if (dataStore == null) {
+                throw new ResourceUnavailableException("Config drive disk add failed, datastore not available",
+                        ConfigDriveNetworkElement.class, 0L);
+            }
             dataTO.setDataStore(dataStore.getTO());
             dataTO.setUuid(profile.getUuid());
             dataTO.setPath(isoPath);

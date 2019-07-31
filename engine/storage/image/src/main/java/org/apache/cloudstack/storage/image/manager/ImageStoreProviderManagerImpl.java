@@ -20,16 +20,13 @@ package org.apache.cloudstack.storage.image.manager;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
@@ -42,6 +39,8 @@ import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.ScopeType;
@@ -144,19 +143,56 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     }
 
     @Override
-    public DataStore getImageStore(List<DataStore> imageStores) {
+    public DataStore getRandomImageStore(List<DataStore> imageStores) {
         if (imageStores.size() > 1) {
-            Collections.shuffle(imageStores); // Randomize image store list.
-            Iterator<DataStore> i = imageStores.iterator();
-            DataStore imageStore = null;
-            while(i.hasNext()) {
-                imageStore = i.next();
+            Collections.shuffle(imageStores);
+        }
+        return imageStores.get(0);
+    }
+
+    @Override
+    public DataStore getImageStoreWithFreeCapacity(List<DataStore> imageStores) {
+        if (imageStores.size() > 1) {
+            imageStores.sort(new Comparator<DataStore>() { // Sort data stores based on free capacity
+                @Override
+                public int compare(DataStore store1, DataStore store2) {
+                    return Long.compare(_statsCollector.imageStoreCurrentFreeCapacity(store1),
+                            _statsCollector.imageStoreCurrentFreeCapacity(store2));
+                }
+            });
+            for (DataStore imageStore : imageStores) {
                 // Return image store if used percentage is less then threshold value i.e. 90%.
                 if (_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
                     return imageStore;
                 }
             }
+        } else if (imageStores.size() == 1) {
+            if (_statsCollector.imageStoreHasEnoughCapacity(imageStores.get(0))) {
+                return imageStores.get(0);
+            }
         }
-        return imageStores.get(0);
+
+        // No store with space found
+        s_logger.error(String.format("Can't find an image storage in zone with less than %d usage",
+                Math.round(_statsCollector.getImageStoreCapacityThreshold()*100)));
+        return null;
+    }
+
+    @Override
+    public List<DataStore> listImageStoresWithFreeCapacity(List<DataStore> imageStores) {
+        List<DataStore> stores = new ArrayList<>();
+        for (DataStore imageStore : imageStores) {
+            // Return image store if used percentage is less then threshold value i.e. 90%.
+            if (_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
+                stores.add(imageStore);
+            }
+        }
+
+        // No store with space found
+        if (stores.isEmpty()) {
+            s_logger.error(String.format("Can't find image storage in zone with less than %d usage",
+                    Math.round(_statsCollector.getImageStoreCapacityThreshold() * 100)));
+        }
+        return stores;
     }
 }
