@@ -3373,7 +3373,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     builder.append("Allocated VM usage ");
                 }
                 if (vm != null) {
-                    builder.append("for ").append(vm.getHostName()).append(" (").append(vm.getInstanceName()).append(", ").append(vm.getUuid()).append(") ");
+                    builder.append("for ").append(vm.getHostName()).append(" (").append(vm.getInstanceName()).append(") (").append(vm.getUuid()).append(") ");
                 }
                 if (svcOffering != null) {
                     builder.append("using service offering ").append(svcOffering.getName()).append(" (").append(svcOffering.getUuid()).append(") ");
