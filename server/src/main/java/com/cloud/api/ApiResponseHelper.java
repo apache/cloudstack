@@ -3684,6 +3684,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT_ON_PRIMARY) {
+            usageRecResponse.setSize(usageRecord.getVirtualSize());
             if (!oldFormat) {
                 final StringBuilder builder = new StringBuilder();
                 builder.append("VMSnapshot on primary storage usage");
