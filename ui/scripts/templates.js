@@ -1710,7 +1710,7 @@
                                                             var projectsByIds = {};
                                                             $.each(jsonProjects.listprojectsresponse.project, function(idx, project) {
                                                                 // Only add current domain's projects for add operation as update template permissions supports that
-                                                                if (project.domainid === g_domainid && operation === "add") {
+                                                                if ((project.domainid === g_domainid && operation === "add") || operation === "remove") {
                                                                     projectsByIds[project.id] = {
                                                                         projName: project.name,
                                                                         hasPermission: false
