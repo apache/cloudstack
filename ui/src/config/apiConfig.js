@@ -19,6 +19,21 @@ export const apiConfig = {
         label: 'Deploy VM',
         type: 'main',
         params: ['name', 'zoneid', 'diskofferingid']
+      },
+      {
+        api: 'startVirtualMachine',
+        icon: 'caret-right',
+        label: 'Start VM',
+        type: 'main',
+        params: ['name', 'zoneid', 'diskofferingid'],
+        hidden: true
+      },
+      {
+        api: 'stopVirtualMachine',
+        icon: 'stop',
+        label: 'Stop VM',
+        type: 'main',
+        params: ['name', 'zoneid', 'diskofferingid']
       }
     ]
   },
