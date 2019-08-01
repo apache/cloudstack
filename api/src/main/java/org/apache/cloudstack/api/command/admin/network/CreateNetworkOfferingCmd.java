@@ -20,9 +20,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -58,9 +63,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     private String displayText;
 
     @Parameter(name = ApiConstants.TRAFFIC_TYPE,
-               type = CommandType.STRING,
-               required = true,
-               description = "the traffic type for the network offering. Supported type in current release is GUEST only")
+            type = CommandType.STRING,
+            required = true,
+            description = "the traffic type for the network offering. Supported type in current release is GUEST only")
     private String traffictype;
 
     @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "the tags for the network offering.", length = 4096)
@@ -79,37 +84,37 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     private Boolean conserveMode;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
-               type = CommandType.UUID,
-               entityType = ServiceOfferingResponse.class,
-               description = "the service offering ID used by virtual router provider")
+            type = CommandType.UUID,
+            entityType = ServiceOfferingResponse.class,
+            description = "the service offering ID used by virtual router provider")
     private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.GUEST_IP_TYPE, type = CommandType.STRING, required = true, description = "guest type of the network offering: Shared or Isolated")
     private String guestIptype;
 
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES,
-               type = CommandType.LIST,
-               required = true,
-               collectionType = CommandType.STRING,
-               description = "services supported by the network offering")
+            type = CommandType.LIST,
+            required = true,
+            collectionType = CommandType.STRING,
+            description = "services supported by the network offering")
     private List<String> supportedServices;
 
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST,
-               type = CommandType.MAP,
-               description = "provider to service mapping. If not specified, the provider for the service will be mapped to the default provider on the physical network")
+            type = CommandType.MAP,
+            description = "provider to service mapping. If not specified, the provider for the service will be mapped to the default provider on the physical network")
     private Map serviceProviderList;
 
     @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "desired service capabilities as part of network offering")
     private Map serviceCapabilitystList;
 
     @Parameter(name = ApiConstants.SPECIFY_IP_RANGES,
-               type = CommandType.BOOLEAN,
-               description = "true if network offering supports specifying ip ranges; defaulted to false if not specified")
+            type = CommandType.BOOLEAN,
+            description = "true if network offering supports specifying ip ranges; defaulted to false if not specified")
     private Boolean specifyIpRanges;
 
     @Parameter(name = ApiConstants.IS_PERSISTENT,
-               type = CommandType.BOOLEAN,
-               description = "true if network offering supports persistent networks; defaulted to false if not specified")
+            type = CommandType.BOOLEAN,
+            description = "true if network offering supports persistent networks; defaulted to false if not specified")
     private Boolean isPersistent;
 
     @Parameter(name = ApiConstants.FOR_VPC,
@@ -118,25 +123,40 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     private Boolean forVpc;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.2.0", description = "Network offering details in key/value pairs."
-        + " Supported keys are internallbprovider/publiclbprovider with service provider as a value, and"
-        + " promiscuousmode/macaddresschanges/forgedtransmits with true/false as value to accept/reject the security settings if available for a nic/portgroup")
+            + " Supported keys are internallbprovider/publiclbprovider with service provider as a value, and"
+            + " promiscuousmode/macaddresschanges/forgedtransmits with true/false as value to accept/reject the security settings if available for a nic/portgroup")
     protected Map details;
 
     @Parameter(name = ApiConstants.EGRESS_DEFAULT_POLICY,
-               type = CommandType.BOOLEAN,
-               description = "true if guest network default egress policy is allow; false if default egress policy is deny")
+            type = CommandType.BOOLEAN,
+            description = "true if guest network default egress policy is allow; false if default egress policy is deny")
     private Boolean egressDefaultPolicy;
 
     @Parameter(name = ApiConstants.KEEPALIVE_ENABLED,
-               type = CommandType.BOOLEAN,
-               required = false,
-               description = "if true keepalive will be turned on in the loadbalancer. At the time of writing this has only an effect on haproxy; the mode http and httpclose options are unset in the haproxy conf file.")
+            type = CommandType.BOOLEAN,
+            required = false,
+            description = "if true keepalive will be turned on in the loadbalancer. At the time of writing this has only an effect on haproxy; the mode http and httpclose options are unset in the haproxy conf file.")
     private Boolean keepAliveEnabled;
 
     @Parameter(name = ApiConstants.MAX_CONNECTIONS,
-               type = CommandType.INTEGER,
-               description = "maximum number of concurrent connections supported by the network offering")
+            type = CommandType.INTEGER,
+            description = "maximum number of concurrent connections supported by the network offering")
     private Integer maxConnections;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "the ID of the containing domain(s), null for public offerings")
+    private List<Long> domainIds;
+
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            description = "the ID of the containing zone(s), null for public offerings",
+            since = "4.13")
+    private List<Long> zoneIds;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -227,7 +247,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             Collection servicesCollection = serviceProviderList.values();
             Iterator iter = servicesCollection.iterator();
             while (iter.hasNext()) {
-                HashMap<String, String> services = (HashMap<String, String>)iter.next();
+                HashMap<String, String> services = (HashMap<String, String>) iter.next();
                 String service = services.get("service");
                 String provider = services.get("provider");
                 List<String> providerList = null;
@@ -252,7 +272,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             Collection serviceCapabilityCollection = serviceCapabilitystList.values();
             Iterator iter = serviceCapabilityCollection.iterator();
             while (iter.hasNext()) {
-                HashMap<String, String> svcCapabilityMap = (HashMap<String, String>)iter.next();
+                HashMap<String, String> svcCapabilityMap = (HashMap<String, String>) iter.next();
                 Capability capability = null;
                 String svc = svcCapabilityMap.get("service");
                 String capabilityName = svcCapabilityMap.get("capabilitytype");
@@ -283,11 +303,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         }
 
         Collection paramsCollection = details.values();
-        Object objlist[]= paramsCollection.toArray();
-        Map<String, String> params = (Map<String, String>)(objlist[0]);
-        for(int i=1; i< objlist.length; i++)
-        {
-            params.putAll((Map<String, String>)(objlist[i]));
+        Object objlist[] = paramsCollection.toArray();
+        Map<String, String> params = (Map<String, String>) (objlist[0]);
+        for (int i = 1; i < objlist.length; i++) {
+            params.putAll((Map<String, String>) (objlist[i]));
         }
 
         return params;
@@ -297,7 +316,25 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         Map<String, String> data = getDetails();
         if (data == null)
             return null;
-        return data.get(NetworkOffering.Detail.servicepackageuuid+ "");
+        return data.get(NetworkOffering.Detail.servicepackageuuid + "");
+    }
+
+    public List<Long> getDomainIds() {
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            Set<Long> set = new LinkedHashSet<>(domainIds);
+            domainIds.clear();
+            domainIds.addAll(set);
+        }
+        return domainIds;
+    }
+
+    public List<Long> getZoneIds() {
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            Set<Long> set = new LinkedHashSet<>(zoneIds);
+            zoneIds.clear();
+            zoneIds.addAll(set);
+        }
+        return zoneIds;
     }
 
     /////////////////////////////////////////////////////

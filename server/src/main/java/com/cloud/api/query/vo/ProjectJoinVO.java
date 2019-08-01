@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.projects.Project.State;
-import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -76,37 +75,6 @@ public class ProjectJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     @Column(name = "domain_path")
     private String domainPath;
-
-    @Column(name = "tag_id")
-    private long tagId;
-
-    @Column(name = "tag_uuid")
-    private String tagUuid;
-
-    @Column(name = "tag_key")
-    private String tagKey;
-
-    @Column(name = "tag_value")
-    private String tagValue;
-
-    @Column(name = "tag_domain_id")
-    private long tagDomainId;
-
-    @Column(name = "tag_account_id")
-    private long tagAccountId;
-
-    @Column(name = "tag_resource_id")
-    private long tagResourceId;
-
-    @Column(name = "tag_resource_uuid")
-    private String tagResourceUuid;
-
-    @Column(name = "tag_resource_type")
-    @Enumerated(value = EnumType.STRING)
-    private ResourceObjectType tagResourceType;
-
-    @Column(name = "tag_customer")
-    private String tagCustomer;
 
     @Column(name = "project_account_id")
     private long projectAccountId;
@@ -162,46 +130,6 @@ public class ProjectJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     public String getOwner() {
         return owner;
-    }
-
-    public long getTagId() {
-        return tagId;
-    }
-
-    public String getTagUuid() {
-        return tagUuid;
-    }
-
-    public String getTagKey() {
-        return tagKey;
-    }
-
-    public String getTagValue() {
-        return tagValue;
-    }
-
-    public long getTagDomainId() {
-        return tagDomainId;
-    }
-
-    public long getTagAccountId() {
-        return tagAccountId;
-    }
-
-    public long getTagResourceId() {
-        return tagResourceId;
-    }
-
-    public String getTagResourceUuid() {
-        return tagResourceUuid;
-    }
-
-    public ResourceObjectType getTagResourceType() {
-        return tagResourceType;
-    }
-
-    public String getTagCustomer() {
-        return tagCustomer;
     }
 
     public long getAccountId() {

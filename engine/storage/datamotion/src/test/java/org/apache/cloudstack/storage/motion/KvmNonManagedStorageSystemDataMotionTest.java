@@ -18,13 +18,12 @@
  */
 package org.apache.cloudstack.storage.motion;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.host.Host;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -58,20 +57,21 @@ import com.cloud.agent.api.MigrateCommand;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KvmNonManagedStorageSystemDataMotionTest {
@@ -353,7 +353,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         Mockito.when(sourceTemplateInfo.getHypervisorType()).thenReturn(HypervisorType.KVM);
 
         Mockito.when(vmTemplatePoolDao.findByPoolTemplate(Mockito.anyLong(), Mockito.anyLong())).thenReturn(vmTemplateStoragePoolVO);
-        Mockito.when(dataStoreManagerImpl.getImageStore(Mockito.anyLong())).thenReturn(sourceTemplateDataStore);
+        Mockito.when(dataStoreManagerImpl.getRandomImageStore(Mockito.anyLong())).thenReturn(sourceTemplateDataStore);
         Mockito.when(templateDataFactory.getTemplate(Mockito.anyLong(), Mockito.eq(sourceTemplateDataStore))).thenReturn(sourceTemplateInfo);
         Mockito.when(templateDataFactory.getTemplate(Mockito.anyLong(), Mockito.eq(destDataStore))).thenReturn(sourceTemplateInfo);
         kvmNonManagedStorageDataMotionStrategy.copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, srcStoragePool, destDataStore, destStoragePool, destHost);
@@ -362,7 +362,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
 
         InOrder verifyInOrder = Mockito.inOrder(vmTemplatePoolDao, dataStoreManagerImpl, templateDataFactory, kvmNonManagedStorageDataMotionStrategy);
         verifyInOrder.verify(vmTemplatePoolDao, Mockito.times(1)).findByPoolTemplate(Mockito.anyLong(), Mockito.anyLong());
-        verifyInOrder.verify(dataStoreManagerImpl, Mockito.times(times)).getImageStore(Mockito.anyLong());
+        verifyInOrder.verify(dataStoreManagerImpl, Mockito.times(times)).getRandomImageStore(Mockito.anyLong());
         verifyInOrder.verify(templateDataFactory, Mockito.times(times)).getTemplate(Mockito.anyLong(), Mockito.eq(sourceTemplateDataStore));
         verifyInOrder.verify(templateDataFactory, Mockito.times(times)).getTemplate(Mockito.anyLong(), Mockito.eq(destDataStore));
         verifyInOrder.verify(kvmNonManagedStorageDataMotionStrategy, Mockito.times(times)).sendCopyCommand(Mockito.eq(destHost), Mockito.any(TemplateObjectTO.class),

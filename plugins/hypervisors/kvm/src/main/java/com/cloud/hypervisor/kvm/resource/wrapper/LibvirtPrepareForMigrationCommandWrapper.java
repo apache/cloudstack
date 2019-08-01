@@ -22,20 +22,28 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.GuestNetType;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Volume;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 
 @ResourceWrapper(handles =  PrepareForMigrationCommand.class)
 public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapper<PrepareForMigrationCommand, Answer, LibvirtComputingResource> {
@@ -56,6 +64,8 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
 
         final NicTO[] nics = vm.getNics();
 
+        Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
+
         boolean skipDisconnect = false;
 
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
@@ -63,8 +73,13 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vm.getName());
+
             for (final NicTO nic : nics) {
-                libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).plug(nic, null, "", null);
+                LibvirtVMDef.InterfaceDef interfaceDef = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).plug(nic, null, "", vm.getExtraConfig());
+                if (interfaceDef != null && interfaceDef.getNetType() == GuestNetType.VHOSTUSER) {
+                    DpdkTO to = new DpdkTO(interfaceDef.getDpdkOvsPath(), interfaceDef.getDpdkSourcePort(), interfaceDef.getInterfaceMode());
+                    dpdkInterfaceMapping.put(nic.getMac(), to);
+                }
             }
 
             /* setup disks, e.g for iso */
@@ -81,12 +96,19 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
                 return new PrepareForMigrationAnswer(command, "failed to connect physical disks to host");
             }
 
-            return new PrepareForMigrationAnswer(command);
-        } catch (final LibvirtException e) {
-            return new PrepareForMigrationAnswer(command, e.toString());
-        } catch (final InternalErrorException e) {
-            return new PrepareForMigrationAnswer(command, e.toString());
-        } catch (final URISyntaxException e) {
+            PrepareForMigrationAnswer answer = new PrepareForMigrationAnswer(command);
+            if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
+                answer.setDpdkInterfaceMapping(dpdkInterfaceMapping);
+            }
+            return answer;
+        } catch (final LibvirtException | CloudRuntimeException | InternalErrorException | URISyntaxException e) {
+            if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
+                for (DpdkTO to : dpdkInterfaceMapping.values()) {
+                    String cmd = String.format("ovs-vsctl del-port %s", to.getPort());
+                    s_logger.debug("Removing DPDK port: " + to.getPort());
+                    Script.runSimpleBashScript(cmd);
+                }
+            }
             return new PrepareForMigrationAnswer(command, e.toString());
         } finally {
             if (!skipDisconnect) {

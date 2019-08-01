@@ -31,13 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.Pair;
-import com.cloud.vm.dao.UserVmDetailsDao;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -49,21 +42,25 @@ import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.ObjectUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.GetVncPortCommand;
-import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetGPUStatsAnswer;
 import com.cloud.agent.api.GetGPUStatsCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetVncPortAnswer;
+import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.PropagateResourceEventCommand;
@@ -148,6 +145,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Manager;
@@ -177,6 +175,8 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 
@@ -1314,8 +1314,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         for (VMInstanceVO vm : vms) {
             GetVncPortAnswer vmVncPortAnswer = (GetVncPortAnswer) _agentMgr.easySend(hostId, new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
             if (vmVncPortAnswer != null) {
-                userVmDetailsDao.addDetail(vm.getId(), "kvm.vnc.address", vmVncPortAnswer.getAddress(), true);
-                userVmDetailsDao.addDetail(vm.getId(), "kvm.vnc.port", String.valueOf(vmVncPortAnswer.getPort()), true);
+                userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS, vmVncPortAnswer.getAddress(), true);
+                userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT, String.valueOf(vmVncPortAnswer.getPort()), true);
             }
         }
     }

@@ -607,6 +607,21 @@
                 },
                 storage: {
                     label: 'label.metrics.storagepool'
+                },
+                disk: {
+                    label: 'label.metrics.disk.usage',
+                    collapsible: true,
+                    columns: {
+                        diskioread: {
+                            label: 'label.metrics.disk.read'
+                        },
+                        diskiowrite: {
+                            label: 'label.metrics.disk.write'
+                        },
+                        diskiopstotal: {
+                            label: 'label.metrics.disk.iops.total'
+                        }
+                    }
                 }
             },
             dataProvider: function(args) {

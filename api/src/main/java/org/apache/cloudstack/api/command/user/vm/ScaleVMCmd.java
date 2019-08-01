@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -51,7 +52,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "scaleVirtualMachine", description = "Scales the virtual machine to a new service offering.", responseObject = SuccessResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ScaleVMCmd extends BaseAsyncCmd {
+public class ScaleVMCmd extends BaseAsyncCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ScaleVMCmd.class.getName());
     private static final String s_name = "scalevirtualmachineresponse";
 
@@ -152,7 +153,7 @@ public class ScaleVMCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
         if (result != null){
-            List<UserVmResponse> responseList = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result);
+            List<UserVmResponse> responseList = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result);
             UserVmResponse response = responseList.get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);

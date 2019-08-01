@@ -149,6 +149,10 @@
                             }
                         }
 
+                        $.extend(data, {
+                            details: 'min'
+                        });
+
                         $.ajax({
                             url: createURL('listAccounts'),
                             data: data,

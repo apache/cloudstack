@@ -19,14 +19,13 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = VpcOffering.class)
 @SuppressWarnings("unused")
@@ -67,6 +66,22 @@ public class VpcOfferingResponse extends BaseResponse {
     @Param(description = " indicated if the offering can support region level vpc", since = "4.4")
     private Boolean supportsRegionLevelVpc;
 
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
+    private String domainId;
+
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
+    private String domain;
+
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the zone ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
+    private String zoneId;
+
+    @SerializedName(ApiConstants.ZONE)
+    @Param(description = "the zone name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
+    private String zone;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -101,5 +116,37 @@ public class VpcOfferingResponse extends BaseResponse {
 
     public void setSupportsRegionLevelVpc(Boolean supports) {
         this.supportsRegionLevelVpc = supports;
+    }
+
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZone() {
+        return zone;
+    }
+
+    public void setZone(String zone) {
+        this.zone = zone;
     }
 }

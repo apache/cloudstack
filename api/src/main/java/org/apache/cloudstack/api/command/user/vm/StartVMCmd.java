@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -29,6 +31,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -47,7 +50,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "startVirtualMachine", responseObject = UserVmResponse.class, description = "Starts a virtual machine.", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class StartVMCmd extends BaseAsyncCmd {
+public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(StartVMCmd.class.getName());
 
     private static final String s_name = "startvirtualmachineresponse";
@@ -59,6 +62,18 @@ public class StartVMCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType=UserVmResponse.class,
             required = true, description = "The ID of the virtual machine")
     private Long id;
+
+    @Parameter(name = ApiConstants.POD_ID,
+            type = CommandType.UUID,
+            entityType = PodResponse.class,
+            description = "destination Pod ID to deploy the VM to - parameter available for root admin only")
+    private Long podId;
+
+    @Parameter(name = ApiConstants.CLUSTER_ID,
+            type = CommandType.UUID,
+            entityType = ClusterResponse.class,
+            description = "destination Cluster ID to deploy the VM to - parameter available for root admin only")
+    private Long clusterId;
 
     @Parameter(name = ApiConstants.HOST_ID,
                type = CommandType.UUID,
@@ -80,6 +95,14 @@ public class StartVMCmd extends BaseAsyncCmd {
 
     public Long getHostId() {
         return hostId;
+    }
+
+    public Long getPodId() {
+        return podId;
+    }
+
+    public Long getClusterId() {
+        return clusterId;
     }
 
     // ///////////////////////////////////////////////////
@@ -139,7 +162,7 @@ public class StartVMCmd extends BaseAsyncCmd {
             result = _userVmService.startVirtualMachine(this);
 
             if (result != null) {
-                UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result).get(0);
+                UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {

@@ -18,6 +18,7 @@ package com.cloud.storage;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -65,6 +67,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceType;
@@ -76,6 +79,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -146,6 +150,8 @@ public class VolumeApiServiceImplTest {
     private HostDao _hostDao;
     @Mock
     private StoragePoolTagsDao storagePoolTagsDao;
+    @Mock
+    private HypervisorCapabilitiesDao hypervisorCapabilitiesDao;
 
     private DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     private Class<?> _detachCmdClass = detachCmd.getClass();
@@ -409,7 +415,7 @@ public class VolumeApiServiceImplTest {
         when(volumeDataFactoryMock.getVolume(anyLong())).thenReturn(volumeInfoMock);
         when(volumeInfoMock.getState()).thenReturn(Volume.State.Allocated);
         when(volumeInfoMock.getPoolId()).thenReturn(1L);
-        volumeApiServiceImpl.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false);
+        volumeApiServiceImpl.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false, null);
     }
 
     @Test
@@ -419,7 +425,10 @@ public class VolumeApiServiceImplTest {
         when(volumeInfoMock.getInstanceId()).thenReturn(null);
         when(volumeInfoMock.getPoolId()).thenReturn(1L);
         when(volumeServiceMock.takeSnapshot(Mockito.any(VolumeInfo.class))).thenReturn(snapshotInfoMock);
-        volumeApiServiceImpl.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false);
+        final TaggedResourceService taggedResourceService = Mockito.mock(TaggedResourceService.class);
+        Mockito.when(taggedResourceService.createTags(anyObject(), anyObject(), anyObject(), anyObject())).thenReturn(null);
+        ReflectionTestUtils.setField(volumeApiServiceImpl, "taggedResourceService", taggedResourceService);
+        volumeApiServiceImpl.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false, null);
     }
 
     @Test

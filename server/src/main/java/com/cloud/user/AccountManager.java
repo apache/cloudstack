@@ -180,11 +180,12 @@ public interface AccountManager extends AccountService, Configurable {
 
     List<String> listAclGroupsByAccount(Long accountId);
 
-    public static final String MESSAGE_ADD_ACCOUNT_EVENT = "Message.AddAccount.Event";
+    String MESSAGE_ADD_ACCOUNT_EVENT = "Message.AddAccount.Event";
 
-    public static final String MESSAGE_REMOVE_ACCOUNT_EVENT = "Message.RemoveAccount.Event";
-    public static final ConfigKey<Boolean> UseSecretKeyInResponse = new ConfigKey<Boolean>("Advanced", Boolean.class, "use.secret.key.in.response", "false",
+    String MESSAGE_REMOVE_ACCOUNT_EVENT = "Message.RemoveAccount.Event";
+
+    ConfigKey<Boolean> UseSecretKeyInResponse = new ConfigKey<Boolean>("Advanced", Boolean.class, "use.secret.key.in.response", "false",
             "This parameter allows the users to enable or disable of showing secret key as a part of response for various APIs. By default it is set to false.", true);
 
-    boolean moveUser(long id, Long domainId, long accountId);
+    boolean moveUser(long id, Long domainId, Account newAccount);
 }

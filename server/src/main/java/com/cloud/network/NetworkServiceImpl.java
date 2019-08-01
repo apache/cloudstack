@@ -924,7 +924,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             _accountMgr.checkAccess(caller, null, true, ipVO);
         }
 
-        if (ipVO.isSourceNat()) {
+        Network guestNetwork = null;
+        final Long networkId = ipVO.getAssociatedWithNetworkId();
+        if (networkId != null) {
+            guestNetwork = getNetwork(networkId);
+        }
+        if (ipVO.isSourceNat() && guestNetwork != null && guestNetwork.getState() != Network.State.Allocated) {
             throw new IllegalArgumentException("ip address is used for source nat purposes and can not be disassociated.");
         }
 
@@ -941,9 +946,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         boolean success = _ipAddrMgr.disassociatePublicIpAddress(ipAddressId, userId, caller);
 
         if (success) {
-            Long networkId = ipVO.getAssociatedWithNetworkId();
-            if (networkId != null) {
-                Network guestNetwork = getNetwork(networkId);
+            if (guestNetwork != null) {
                 NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
                 Long vmId = ipVO.getAssociatedWithVmId();
                 if (offering.isElasticIp() && vmId != null) {
@@ -1060,6 +1063,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             }
             throw ex;
         }
+
+        Account owner = null;
+        if ((cmd.getAccountName() != null && domainId != null) || cmd.getProjectId() != null) {
+            owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), domainId, cmd.getProjectId());
+        } else {
+            owner = caller;
+        }
+
         // validate physical network and zone
         // Check if physical network exists
         PhysicalNetwork pNtwk = null;
@@ -1082,6 +1093,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         if (zone == null) {
             throw new InvalidParameterValueException("Specified zone id was not found");
         }
+
+        _accountMgr.checkAccess(owner, ntwkOff, zone);
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
             // See DataCenterVO.java
@@ -1150,12 +1163,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
         } else if (subdomainAccess != null) {
             throw new InvalidParameterValueException("Parameter subDomainAccess can be specified only with aclType=Domain");
-        }
-        Account owner = null;
-        if ((cmd.getAccountName() != null && domainId != null) || cmd.getProjectId() != null) {
-            owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), domainId, cmd.getProjectId());
-        } else {
-            owner = caller;
         }
 
         boolean ipv4 = true, ipv6 = false;
@@ -2034,6 +2041,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         }
 
         _accountMgr.checkAccess(callerAccount, null, true, network);
+        _accountMgr.checkAccess(_accountMgr.getActiveAccountById(network.getAccountId()), offering, _dcDao.findById(network.getDataCenterId()));
 
         if (cmd instanceof UpdateNetworkCmdByAdmin) {
             final Boolean hideIpAddressUsage = ((UpdateNetworkCmdByAdmin) cmd).getHideIpAddressUsage();
@@ -2553,6 +2561,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
         Vpc vpc = _vpcDao.findById(vpcId);
         _accountMgr.checkAccess(account, null, true, vpc);
+        _accountMgr.checkAccess(account, _vpcOfferingDao.findById(vpcOfferingId), _dcDao.findById(vpc.getZoneId()));
 
         if (vpc.getVpcOfferingId() == vpcOfferingId) {
             return vpc;

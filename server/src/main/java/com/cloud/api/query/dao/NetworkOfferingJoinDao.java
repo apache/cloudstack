@@ -15,7 +15,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-//* Use custom.scss to override the default CloudStack styles
-//* Use it as your global @import file for many scss files.
-//* Use lines like @import "database.scss"; inside here only.
-//* Custom scss is imported on bottom of cloudstack3.scss
+package com.cloud.api.query.dao;
+
+import java.util.List;
+
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+
+import com.cloud.api.query.vo.NetworkOfferingJoinVO;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.utils.db.GenericDao;
+
+public interface NetworkOfferingJoinDao extends GenericDao<NetworkOfferingJoinVO, Long> {
+
+    List<NetworkOfferingJoinVO> findByDomainId(long domainId);
+
+    List<NetworkOfferingJoinVO> findByZoneId(long zoneId);
+
+    NetworkOfferingResponse newNetworkOfferingResponse(NetworkOffering nof);
+
+    NetworkOfferingJoinVO newNetworkOfferingView(NetworkOffering nof);
+}

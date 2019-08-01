@@ -24,18 +24,17 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.datastore.DataStoreManagerImpl;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -47,6 +46,8 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -56,7 +57,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
-import org.apache.commons.collections.MapUtils;
 
 /**
  * Extends {@link StorageSystemDataMotionStrategy}, allowing KVM hosts to migrate VMs with the ROOT volume on a non managed local storage pool.
@@ -197,19 +197,21 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
             Host destHost) {
         VMTemplateStoragePoolVO sourceVolumeTemplateStoragePoolVO = vmTemplatePoolDao.findByPoolTemplate(destStoragePool.getId(), srcVolumeInfo.getTemplateId());
         if (sourceVolumeTemplateStoragePoolVO == null && destStoragePool.getPoolType() == StoragePoolType.Filesystem) {
-            DataStore sourceTemplateDataStore = dataStoreManagerImpl.getImageStore(srcVolumeInfo.getDataCenterId());
-            TemplateInfo sourceTemplateInfo = templateDataFactory.getTemplate(srcVolumeInfo.getTemplateId(), sourceTemplateDataStore);
-            TemplateObjectTO sourceTemplate = new TemplateObjectTO(sourceTemplateInfo);
+            DataStore sourceTemplateDataStore = dataStoreManagerImpl.getRandomImageStore(srcVolumeInfo.getDataCenterId());
+            if (sourceTemplateDataStore != null) {
+                TemplateInfo sourceTemplateInfo = templateDataFactory.getTemplate(srcVolumeInfo.getTemplateId(), sourceTemplateDataStore);
+                TemplateObjectTO sourceTemplate = new TemplateObjectTO(sourceTemplateInfo);
 
-            LOGGER.debug(String.format("Could not find template [id=%s, name=%s] on the storage pool [id=%s]; copying the template to the target storage pool.",
-                    srcVolumeInfo.getTemplateId(), sourceTemplateInfo.getName(), destDataStore.getId()));
+                LOGGER.debug(String.format("Could not find template [id=%s, name=%s] on the storage pool [id=%s]; copying the template to the target storage pool.",
+                        srcVolumeInfo.getTemplateId(), sourceTemplateInfo.getName(), destDataStore.getId()));
 
-            TemplateInfo destTemplateInfo = templateDataFactory.getTemplate(srcVolumeInfo.getTemplateId(), destDataStore);
-            final TemplateObjectTO destTemplate = new TemplateObjectTO(destTemplateInfo);
-            Answer copyCommandAnswer = sendCopyCommand(destHost, sourceTemplate, destTemplate, destDataStore);
+                TemplateInfo destTemplateInfo = templateDataFactory.getTemplate(srcVolumeInfo.getTemplateId(), destDataStore);
+                final TemplateObjectTO destTemplate = new TemplateObjectTO(destTemplateInfo);
+                Answer copyCommandAnswer = sendCopyCommand(destHost, sourceTemplate, destTemplate, destDataStore);
 
-            if (copyCommandAnswer != null && copyCommandAnswer.getResult()) {
-                updateTemplateReferenceIfSuccessfulCopy(srcVolumeInfo, srcStoragePool, destTemplateInfo, destDataStore);
+                if (copyCommandAnswer != null && copyCommandAnswer.getResult()) {
+                    updateTemplateReferenceIfSuccessfulCopy(srcVolumeInfo, srcStoragePool, destTemplateInfo, destDataStore);
+                }
             }
         }
     }

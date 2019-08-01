@@ -16,10 +16,14 @@
 // under the License.
 package com.cloud.service.dao;
 
+import java.util.List;
+
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface ServiceOfferingDetailsDao extends GenericDao<ServiceOfferingDetailsVO, Long>, ResourceDetailsDao<ServiceOfferingDetailsVO> {
+    List<Long> findDomainIds(final long resourceId);
+    List<Long> findZoneIds(final long resourceId);
 }

@@ -46,7 +46,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.hypervisor.kvm.dpdk.DPDKHelper;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.resource.RequestWrapper;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -2070,7 +2070,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.setPlatformEmulator(vmTO.getPlatformEmulator());
 
         Map<String, String> extraConfig = vmTO.getExtraConfig();
-        if (dpdkSupport && (!extraConfig.containsKey(DPDKHelper.DPDK_NUMA) || !extraConfig.containsKey(DPDKHelper.DPDK_HUGE_PAGES))) {
+        if (dpdkSupport && (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA) || !extraConfig.containsKey(DpdkHelper.DPDK_HUGE_PAGES))) {
             s_logger.info("DPDK is enabled but it needs extra configurations for CPU NUMA and Huge Pages for VM deployment");
         }
 
@@ -2107,7 +2107,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         grd.setVcpuNum(vcpus);
         vm.addComp(grd);
 
-        if (!extraConfig.containsKey(DPDKHelper.DPDK_NUMA)) {
+        if (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA)) {
             final CpuModeDef cmd = new CpuModeDef();
             cmd.setMode(_guestCpuMode);
             cmd.setModel(_guestCpuModel);
@@ -2235,7 +2235,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (MapUtils.isNotEmpty(extraConfig)) {
             StringBuilder extraConfigBuilder = new StringBuilder();
             for (String key : extraConfig.keySet()) {
-                if (!key.startsWith(DPDKHelper.DPDK_INTERFACE_PREFIX) && !key.equals(DPDKHelper.DPDK_VHOST_USER_MODE)) {
+                if (!key.startsWith(DpdkHelper.DPDK_INTERFACE_PREFIX) && !key.equals(DpdkHelper.DPDK_VHOST_USER_MODE)) {
                     extraConfigBuilder.append(extraConfig.get(key));
                 }
             }
@@ -2336,7 +2336,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             // if params contains a rootDiskController key, use its value (this is what other HVs are doing)
             DiskDef.DiskBus diskBusType = getDiskModelFromVMDetail(vmSpec);
-
             if (diskBusType == null) {
                 diskBusType = getGuestDiskModel(vmSpec.getPlatformEmulator());
             }
@@ -2375,7 +2374,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), pool.getSourceHost(), pool.getSourcePort(), null,
                             null, devId, diskBusType, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
                 } else if (pool.getType() == StoragePoolType.CLVM || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
-                    disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
+                    if (volume.getType() == Volume.Type.DATADISK) {
+                        disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
+                    }
+                    else {
+                        disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
+                    }
                 } else {
                     if (volume.getType() == Volume.Type.DATADISK) {
                         disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData, DiskDef.DiskFmtType.QCOW2);
@@ -2706,7 +2710,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem);
 
-        final String capabilities = String.join(",", info.getCapabilities());
+        String capabilities = String.join(",", info.getCapabilities());
+        if (dpdkSupport) {
+            capabilities += ",dpdk";
+        }
 
         final StartupRoutingCommand cmd =
                 new StartupRoutingCommand(info.getCpus(), info.getCpuSpeed(), info.getTotalMemory(), info.getReservedMemory(), capabilities, _hypervisorType,
@@ -3194,12 +3201,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return DiskDef.DiskBus.IDE;
         } else if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {
             return DiskDef.DiskBus.SCSI;
-        } else if (platformEmulator.startsWith("Ubuntu") || platformEmulator.startsWith("Fedora 13") || platformEmulator.startsWith("Fedora 12") || platformEmulator.startsWith("Fedora 11") ||
-                platformEmulator.startsWith("Fedora 10") || platformEmulator.startsWith("Fedora 9") || platformEmulator.startsWith("CentOS 5.3") || platformEmulator.startsWith("CentOS 5.4") ||
-                platformEmulator.startsWith("CentOS 5.5") || platformEmulator.startsWith("CentOS") || platformEmulator.startsWith("Fedora") ||
-                platformEmulator.startsWith("Red Hat Enterprise Linux 5.3") || platformEmulator.startsWith("Red Hat Enterprise Linux 5.4") ||
-                platformEmulator.startsWith("Red Hat Enterprise Linux 5.5") || platformEmulator.startsWith("Red Hat Enterprise Linux 6") || platformEmulator.startsWith("Debian GNU/Linux") ||
-                platformEmulator.startsWith("FreeBSD 10") || platformEmulator.startsWith("Oracle") || platformEmulator.startsWith("Other PV")) {
+        } else if (platformEmulator.contains("Ubuntu") ||
+                platformEmulator.startsWith("Fedora") ||
+                platformEmulator.startsWith("CentOS") ||
+                platformEmulator.startsWith("Red Hat Enterprise Linux") ||
+                platformEmulator.startsWith("Debian GNU/Linux") ||
+                platformEmulator.startsWith("FreeBSD") ||
+                platformEmulator.startsWith("Oracle") ||
+                platformEmulator.startsWith("Other PV")) {
             return DiskDef.DiskBus.VIRTIO;
         } else {
             return DiskDef.DiskBus.IDE;

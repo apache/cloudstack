@@ -784,7 +784,7 @@ body.install-wizard {
 
 .install-wizard .step {
   position: relative;
-  z-index: 10;
+  z-index: 11;
 }
 
 .install-wizard .step .tooltip-info {
@@ -3866,6 +3866,10 @@ table tr.selected td.actions .action.disabled .icon {
   background-position: -3px -368px;
 }
 
+.ui-dialog select {
+  overflow: scroll;
+}
+
 .ui-dialog.confirm .ui-button {
   margin-top: 0;
   margin-left: 11px;
@@ -4027,7 +4031,7 @@ textarea {
   font-size: 14px;
 }
 
-.ui-dialog div.form-container div.value label {
+#label_delete_volumes label {
   display: block;
   width: 119px;
   margin-top: 2px;
@@ -5545,6 +5549,15 @@ textarea {
   background: #d6d6d6;
 }
 
+.multi-wizard .content .section .larger-area {
+  height: 134px !important;
+}
+
+.multi-wizard .content .section .lower-area {
+  height: 35px !important ;
+  margin: 7px auto auto !important ;
+}
+
 .multi-wizard .content .section .select-area .desc {
   float: right;
   width: 155px;
@@ -5591,6 +5604,14 @@ textarea {
   -o-text-shadow: 0 2px 2px #efefef;
 }
 
+.multi-wizard .content .section.select-deployment .select-area select {
+  margin: 9px 0 0 14px;
+}
+
+.multi-wizard .content .section.select-deployment .select-area label.desc {
+  padding: 0;
+}
+
 .multi-wizard .content .section .select-area label.error {
   margin: 2px 0 0 14px;
   font-size: 10px;
@@ -5623,6 +5644,14 @@ textarea {
 
 .multi-wizard .content .section.select-template {
   height: 206px;
+}
+
+.multi-wizard .content .section.select-template {
+  height: 206px;
+}
+
+.multi-wizard .content .section.smaller-height {
+  height: 126px !important;
 }
 
 .multi-wizard .content.tab-view {
@@ -8154,7 +8183,6 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   display: block;
   float: left;
   max-width: 90%;
-  white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
 }
@@ -8447,6 +8475,10 @@ div#details-tab-aclRules td.cidrlist span {
   display: inline-block;
 }
 
+.recurring-snapshots .schedule .forms .formContainer {
+  min-height: 250px;
+}
+
 .recurring-snapshots .schedule .add-snapshot-actions {
   float: left;
   clear: both;
@@ -8510,6 +8542,11 @@ div#details-tab-aclRules td.cidrlist span {
   left: 5px;
 }
 
+.recurring-snapshots .schedule .forms .tagger form div.value label {
+  width: 25px;
+  top: 10px;
+}
+
 .recurring-snapshots .schedule .forms form label.error {
   float: left;
   width: 100%;
@@ -8520,6 +8557,10 @@ div#details-tab-aclRules td.cidrlist span {
   float: left;
   width: 100%;
   margin: 8px 0 0;
+}
+
+.recurring-snapshots .schedule .forms .tagger form .field {
+  margin: 0;
 }
 
 .recurring-snapshots .schedule .forms form .name {
@@ -8658,6 +8699,11 @@ div#details-tab-aclRules td.cidrlist span {
   margin: 0;
   margin: 0;
   padding: 0;
+}
+
+.recurring-snapshots .ui-tabs .tagger ul {
+    margin: 16px auto auto;
+    padding-bottom: 10px;
 }
 
 .recurring-snapshots .ui-tabs ul li a {
@@ -10692,6 +10738,11 @@ div#details-tab-aclRules td.cidrlist span {
   display: none;
 }
 
+.ui-dialog .tagger .tag-info.inside-form {
+  display: block;
+  text-align: left;
+}
+
 .ui-dialog.editTags .ui-button {
   float: right;
 }
@@ -12343,12 +12394,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .snapshot .icon,
-.takeSnapshot .icon {
+.takeSnapshot .icon,
+.storageSnapshot .icon {
   background-position: -36px -91px;
 }
 
 .snapshot:hover .icon,
-.takeSnapshot:hover .icon {
+.takeSnapshot:hover .icon,
+.storageSnapshot:hover .icon {
   background-position: -36px -673px;
 }
 
@@ -12370,6 +12423,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .downloadTemplate:hover .icon,
 .downloadISO:hover .icon {
   background-position: -35px -707px;
+}
+
+.shareTemplate .icon {
+  background-position: -165px -122px;
+}
+
+.shareTemplate:hover .icon {
+  background-position: -165px -704px;
 }
 
 .createVolume .icon {
@@ -12811,6 +12872,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -197px -647px;
 }
 
+.updateOfferingAccess .icon {
+  background-position: -165px -122px;
+}
+
+.updateOfferingAccess:hover .icon {
+  background-position: -165px -704px;
+}
+
 .accounts-wizard table {
   width: 100%;
   margin: 0;
@@ -13011,6 +13080,29 @@ div.gpugroups div.list-view {
 .ui-dialog .ui-button.add span {
   padding: 0 0 3px 18px;
   background: transparent url("../images/icons.png") no-repeat -626px -209px;
+}
+
+ul.ui-autocomplete.ui-menu {
+  width: 250px;
+  max-height: 100px;
+  background: #eee;
+  padding: 5px;
+  text-align: left;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 100;
+}
+
+.ui-menu .ui-menu-item {
+  cursor: pointer;
+}
+
+.ui-menu .ui-menu-item .ui-state-active {
+  background: #CBDDF3;
+}
+
+.ui-helper-hidden-accessible {
+  display: none;
 }
 
 .copy-template-destination-list div.text-search {

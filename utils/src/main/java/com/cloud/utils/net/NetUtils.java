@@ -34,6 +34,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.List;
+import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
@@ -410,10 +411,11 @@ public class NetUtils {
     }
 
     public static String[] getNetworkParams(final NetworkInterface nic) {
-        final List<InterfaceAddress> addrs = nic.getInterfaceAddresses();
+        List<InterfaceAddress> addrs = nic.getInterfaceAddresses();
         if (addrs == null || addrs.size() == 0) {
             return null;
         }
+        Collections.reverse(addrs); // reverse addresses because it has reverse order as "ip addr show"
         InterfaceAddress addr = null;
         for (final InterfaceAddress iaddr : addrs) {
             final InetAddress inet = iaddr.getAddress();
@@ -959,27 +961,34 @@ public class NetUtils {
         return "255.255.0.0";
     }
 
+    public static String getLinkLocalGateway(String cidr) {
+        return getLinkLocalFirstAddressFromCIDR(cidr);
+    }
+
     public static String getLinkLocalGateway() {
-        return "169.254.0.1";
+        return getLinkLocalGateway(getLinkLocalCIDR());
     }
 
     public static String getLinkLocalCIDR() {
         return "169.254.0.0/16";
     }
 
-    public static String[] getLinkLocalIPRange(final int size) {
-        if (size > 16 || size <= 0) {
-            return null;
-        }
-        /* reserve gateway */
-        final String[] range = getIpRangeFromCidr(getLinkLocalGateway(), MAX_CIDR - size);
+    public static String getLinkLocalFirstAddressFromCIDR(final String cidr) {
+        SubnetUtils subnetUtils = new SubnetUtils(cidr);
+        return subnetUtils.getInfo().getLowAddress();
+    }
 
-        if (range[0].equalsIgnoreCase(getLinkLocalGateway())) {
-            /* remove the gateway */
-            long ip = ip2Long(range[0]);
-            ip += 1;
-            range[0] = long2Ip(ip);
-        }
+    public static String getLinkLocalAddressFromCIDR(final String cidr) {
+        return getLinkLocalFirstAddressFromCIDR(cidr) + "/" + cidr2Netmask(cidr);
+    }
+
+    public static String[] getLinkLocalIPRange(final String cidr) {
+        final SubnetUtils subnetUtils = new SubnetUtils(cidr);
+        final String[] addresses = subnetUtils.getInfo().getAllAddresses();
+        final String[] range = new String[2];
+        range[0] = addresses[1];
+        range[1] = subnetUtils.getInfo().getHighAddress();
+
         return range;
     }
 
@@ -1213,9 +1222,9 @@ public class NetUtils {
 
     public static boolean validateIcmpCode(final long icmpCode) {
 
-        //Source - http://www.erg.abdn.ac.uk/~gorry/course/inet-pages/icmp-code.html
-        if (!(icmpCode >= 0 && icmpCode <= 15)) {
-            s_logger.warn("Icmp code should be within 0-15 range");
+        // Reference: https://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml#icmp-parameters-codes-9/#table-icmp-parameters-ext-classes
+        if (!(icmpCode >= 0 && icmpCode <= 16)) {
+            s_logger.warn("Icmp code should be within 0-16 range");
             return false;
         }
 

@@ -19,6 +19,7 @@
 package com.cloud.storage;
 
 import java.net.MalformedURLException;
+import java.util.Map;
 
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -93,7 +94,7 @@ public interface VolumeApiService {
 
     Volume detachVolumeFromVM(DetachVolumeCmd cmd);
 
-    Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup)
+    Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup, Map<String, String> tags)
             throws ResourceAllocationException;
 
     Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType) throws ResourceAllocationException;

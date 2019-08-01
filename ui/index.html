@@ -26,6 +26,7 @@
         <link type="text/css" rel="stylesheet" href="lib/jquery-ui/css/jquery-ui.css" />
         <link type="text/css" rel="stylesheet" href="lib/reset.css"/>
         <link type="text/css" rel="stylesheet" href="css/cloudstack3.css" />
+        <link type="text/css" rel="stylesheet" href="css/custom.css" />
     </head>
     <body>
         <!-- CloudStack widget content -->
@@ -93,17 +94,28 @@
                         <div class="step setup" wizard-step-id="setup">
                             <div class="content">
                                 <!-- Select a zone -->
-                                <div class="section select-zone">
-                                    <h3><translate key="label.select.a.zone"/></h3>
+                                <div class="section select-deployment">
+                                    <h3><translate key="label.select.deployment.infrastructure"/></h3>
                                     <p><translate key="message.select.a.zone"/></p>
-                                    <div class="select-area">
-                                        <div class="desc"></div>
-                                        <select name="zoneid" class="required" required>
-                                        </select>
+                                    <div class="select-area lower-area">
+                                        <select name="zoneid" class="zoneid required" required></select>
+                                        <label for="zoneid" class="desc"><translate key="label.zone"/></label>
+                                    </div>
+                                    <div class="select-area lower-area">
+                                        <select name="podid" class="podid"></select>
+                                        <label for="podid" class="desc"><translate key="label.pod"/></label>
+                                    </div>
+                                    <div class="select-area lower-area">
+                                        <select name="clusterid" class="clusterid"></select>
+                                        <label for="clusterid" class="desc"><translate key="label.cluster"/></label>
+                                    </div>
+                                    <div class="select-area lower-area">
+                                        <select name="hostid" class="hostid"></select>
+                                        <label for="hostid" class="desc"><translate key="label.host"/></label>
                                     </div>
                                 </div>
                                 <!-- Select template -->
-                                <div class="section select-template">
+                                <div class="section select-template smaller-height">
                                     <h3><translate key="label.select.iso.or.template" /></h3>
                                     <p></p>
                                     <div class="select-area">
@@ -1553,7 +1565,7 @@
                         </ul>
 
                         <!-- Hourly -->
-                        <div id="recurring-snapshots-hourly">
+                        <div id="recurring-snapshots-hourly" class="formContainer">
                             <form>
                                 <input type="hidden" name="snapshot-type" value="hourly" />
 
@@ -1583,11 +1595,14 @@
                                         <label for="maxsnaps"><translate key="label.snapshots" /></label>
                                     </div>
                                 </div>
+
+                                <!-- Tags -->
+                                <div class="field taggerContainer"></div>
                             </form>
                         </div>
 
                         <!-- Daily -->
-                        <div id="recurring-snapshots-daily">
+                        <div id="recurring-snapshots-daily" class="formContainer">
                             <form>
                                 <input type="hidden" name="snapshot-type" value="daily" />
 
@@ -1617,11 +1632,14 @@
                                         <label for="maxsnaps"><translate key="label.snapshots" /></label>
                                     </div>
                                 </div>
+
+                                <!-- Tags -->
+                                <div class="field taggerContainer"></div>
                             </form>
                         </div>
 
                         <!-- Weekly -->
-                        <div id="recurring-snapshots-weekly">
+                        <div id="recurring-snapshots-weekly" class="formContainer">
                             <form>
                                 <input type="hidden" name="snapshot-type" value="weekly" />
 
@@ -1659,11 +1677,14 @@
                                         <label for="maxsnaps"><translate key="label.snapshots" /></label>
                                     </div>
                                 </div>
+
+                                <!-- Tags -->
+                                <div class="field taggerContainer"></div>
                             </form>
                         </div>
 
                         <!-- Monthly -->
-                        <div id="recurring-snapshots-monthly">
+                        <div id="recurring-snapshots-monthly" class="formContainer">
                             <form>
                                 <input type="hidden" name="snapshot-type" value="monthly" />
 
@@ -1701,6 +1722,9 @@
                                         <label for="maxsnaps"><translate key="label.snapshots" /></label>
                                     </div>
                                 </div>
+
+                                <!-- Tags -->
+                                <div class="field taggerContainer"></div>
                             </form>
                         </div>
                     </div>

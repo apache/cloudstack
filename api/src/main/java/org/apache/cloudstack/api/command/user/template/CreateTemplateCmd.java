@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -53,7 +54,7 @@ import com.cloud.user.Account;
 @APICommand(name = "createTemplate", responseObject = TemplateResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
         + "A template created from this command is automatically designated as a private template visible to the account that created it.", responseView = ResponseView.Restricted,
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateTemplateCmd extends BaseAsyncCreateCmd {
+public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());
     private static final String s_name = "createtemplateresponse";
 
@@ -301,15 +302,14 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public void execute() {
         CallContext.current().setEventDetails(
             "Template Id: " + getEntityUuid() + ((getSnapshotId() == null) ? " from volume Id: " + this._uuidMgr.getUuid(Volume.class, getVolumeId()) : " from snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class, getSnapshotId())));
-        VirtualMachineTemplate template = null;
-        template = _templateService.createPrivateTemplate(this);
+        VirtualMachineTemplate template = _templateService.createPrivateTemplate(this);
 
         if (template != null) {
             List<TemplateResponse> templateResponses;
             if (isBareMetal()) {
-                templateResponses = _responseGenerator.createTemplateResponses(ResponseView.Restricted, template.getId(), vmId);
+                templateResponses = _responseGenerator.createTemplateResponses(getResponseView(), template.getId(), vmId);
             } else {
-                templateResponses = _responseGenerator.createTemplateResponses(ResponseView.Restricted, template.getId(), snapshotId, volumeId, false);
+                templateResponses = _responseGenerator.createTemplateResponses(getResponseView(), template.getId(), snapshotId, volumeId, false);
             }
             TemplateResponse response = new TemplateResponse();
             if (templateResponses != null && !templateResponses.isEmpty()) {

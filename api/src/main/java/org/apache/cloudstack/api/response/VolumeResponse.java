@@ -16,17 +16,18 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.serializer.Param;
-import com.cloud.storage.Volume;
-import com.google.gson.annotations.SerializedName;
+import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
 
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import com.cloud.serializer.Param;
+import com.cloud.storage.Volume;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Volume.class)
 @SuppressWarnings("unused")
@@ -152,12 +153,28 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private Long bytesWriteRate;
 
     @SerializedName("diskIopsReadRate")
-    @Param(description = "io requests read rate of the disk volume")
+    @Param(description = "io requests read rate of the disk volume per the disk offering")
     private Long iopsReadRate;
 
     @SerializedName("diskIopsWriteRate")
-    @Param(description = "io requests write rate of the disk volume")
+    @Param(description = "io requests write rate of the disk volume per the disk offering")
     private Long iopsWriteRate;
+
+    @SerializedName(ApiConstants.DISK_KBS_READ)
+    @Param(description = "the read (bytes) of disk on the vm")
+    private Long diskKbsRead;
+
+    @SerializedName(ApiConstants.DISK_KBS_WRITE)
+    @Param(description = "the write (bytes) of disk on the vm")
+    private Long diskKbsWrite;
+
+    @SerializedName(ApiConstants.DISK_IO_READ)
+    @Param(description = "the read (io) of disk on the vm")
+    private Long diskIORead;
+
+    @SerializedName(ApiConstants.DISK_IO_WRITE)
+    @Param(description = "the write (io) of disk on the vm")
+    private Long diskIOWrite;
 
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "Hypervisor the volume belongs to")
@@ -395,8 +412,40 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
         this.iopsWriteRate = iopsWriteRate;
     }
 
+    public Long getDiskKbsRead() {
+        return diskKbsRead;
+    }
+
+    public void setDiskKbsRead(Long diskKbsRead) {
+        this.diskKbsRead = diskKbsRead;
+    }
+
+    public Long getDiskKbsWrite() {
+        return diskKbsWrite;
+    }
+
+    public void setDiskKbsWrite(Long diskKbsWrite) {
+        this.diskKbsWrite = diskKbsWrite;
+    }
+
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    public Long getDiskIORead() {
+        return diskIORead;
+    }
+
+    public void setDiskIORead(Long diskIORead) {
+        this.diskIORead = diskIORead;
+    }
+
+    public Long getDiskIOWrite() {
+        return diskIOWrite;
+    }
+
+    public void setDiskIOWrite(Long diskIOWrite) {
+        this.diskIOWrite = diskIOWrite;
     }
 
     public void setHypervisor(String hypervisor) {

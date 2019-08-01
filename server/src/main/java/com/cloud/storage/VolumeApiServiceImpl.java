@@ -80,6 +80,7 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -114,6 +115,8 @@ import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.org.Grouping;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.server.ResourceTag;
+import com.cloud.server.TaggedResourceService;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -256,10 +259,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private StoragePoolTagsDao storagePoolTagsDao;
     @Inject
     private StorageUtil storageUtil;
+    @Inject
+    public TaggedResourceService taggedResourceService;
 
     protected Gson _gson;
 
     private List<StoragePoolAllocator> _storagePoolAllocators;
+
+    private List<HypervisorType> supportingDefaultHV;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -435,11 +442,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("Please specify a custom sized disk offering.");
             }
 
-            if (diskOffering.getDomainId() == null) {
-                // do nothing as offering is public
-            } else {
-                _configMgr.checkDiskOfferingAccess(volumeOwner, diskOffering);
-            }
+            _configMgr.checkDiskOfferingAccess(volumeOwner, diskOffering, zone);
         }
 
         return false;
@@ -555,7 +558,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long zoneId = cmd.getZoneId();
         Long diskOfferingId = null;
         DiskOfferingVO diskOffering = null;
-        Storage.ProvisioningType provisioningType;
         Long size = null;
         Long minIops = null;
         Long maxIops = null;
@@ -563,11 +565,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         VolumeVO parentVolume = null;
 
         // validate input parameters before creating the volume
-        if ((cmd.getSnapshotId() == null && cmd.getDiskOfferingId() == null) || (cmd.getSnapshotId() != null && cmd.getDiskOfferingId() != null)) {
-            throw new InvalidParameterValueException("Either disk Offering Id or snapshot Id must be passed whilst creating volume");
+        if (cmd.getSnapshotId() == null && cmd.getDiskOfferingId() == null) {
+            throw new InvalidParameterValueException("At least one of disk Offering ID or snapshot ID must be passed whilst creating volume");
         }
 
-        if (cmd.getSnapshotId() == null) {// create a new volume
+        // disallow passing disk offering ID with DATA disk volume snapshots
+        if (cmd.getSnapshotId() != null && cmd.getDiskOfferingId() != null) {
+            SnapshotVO snapshot = _snapshotDao.findById(cmd.getSnapshotId());
+            if (snapshot != null) {
+                parentVolume = _volsDao.findByIdIncludingRemoved(snapshot.getVolumeId());
+                if (parentVolume != null && parentVolume.getVolumeType() != Volume.Type.ROOT)
+                    throw new InvalidParameterValueException("Disk Offering ID cannot be passed whilst creating volume from snapshot other than ROOT disk snapshots");
+            }
+            parentVolume = null;
+        }
+
+        if (cmd.getDiskOfferingId() != null) { // create a new volume
 
             diskOfferingId = cmd.getDiskOfferingId();
             size = cmd.getSize();
@@ -602,11 +615,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("This disk offering does not allow custom size");
             }
 
-            if (diskOffering.getDomainId() == null) {
-                // do nothing as offering is public
-            } else {
-                _configMgr.checkDiskOfferingAccess(caller, diskOffering);
-            }
+            _configMgr.checkDiskOfferingAccess(owner, diskOffering, _dcDao.findById(zoneId));
 
             if (diskOffering.getDiskSize() > 0) {
                 size = diskOffering.getDiskSize();
@@ -641,13 +650,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
 
-            provisioningType = diskOffering.getProvisioningType();
-
             if (!validateVolumeSizeRange(size)) {// convert size from mb to gb
                 // for validation
                 throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size + " ,max volume size is:" + _maxVolumeSizeInGb);
             }
-        } else { // create volume from snapshot
+        }
+
+        if (cmd.getSnapshotId() != null) { // create volume from snapshot
             Long snapshotId = cmd.getSnapshotId();
             SnapshotVO snapshotCheck = _snapshotDao.findById(snapshotId);
             if (snapshotCheck == null) {
@@ -659,19 +668,27 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
             parentVolume = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
 
-            diskOfferingId = snapshotCheck.getDiskOfferingId();
-            diskOffering = _diskOfferingDao.findById(diskOfferingId);
             if (zoneId == null) {
                 // if zoneId is not provided, we default to create volume in the same zone as the snapshot zone.
                 zoneId = snapshotCheck.getDataCenterId();
             }
-            size = snapshotCheck.getSize(); // ; disk offering is used for tags
-            // purposes
 
-            minIops = snapshotCheck.getMinIops();
-            maxIops = snapshotCheck.getMaxIops();
+            _configMgr.checkDiskOfferingAccess(null, diskOffering, _dcDao.findById(zoneId));
 
-            provisioningType = diskOffering.getProvisioningType();
+            if (diskOffering == null) { // Pure snapshot is being used to create volume.
+                diskOfferingId = snapshotCheck.getDiskOfferingId();
+                diskOffering = _diskOfferingDao.findById(diskOfferingId);
+
+                minIops = snapshotCheck.getMinIops();
+                maxIops = snapshotCheck.getMaxIops();
+                size = snapshotCheck.getSize(); // ; disk offering is used for tags purposes
+            } else {
+                if (size < snapshotCheck.getSize()) {
+                    throw new InvalidParameterValueException(String.format("Invalid size for volume creation: %dGB, snapshot size is: %dGB",
+                            size / (1024 * 1024 * 1024), snapshotCheck.getSize() / (1024 * 1024 * 1024)));
+                }
+            }
+
             // check snapshot permissions
             _accountMgr.checkAccess(caller, null, true, snapshotCheck);
 
@@ -693,8 +710,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 // permission check
                 _accountMgr.checkAccess(caller, null, false, vm);
             }
-
         }
+
+        Storage.ProvisioningType provisioningType = diskOffering.getProvisioningType();
 
         // Check that the resource limit for primary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, displayVolume, new Long(size));
@@ -718,10 +736,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         String userSpecifiedName = getVolumeNameFromCommand(cmd);
 
-        VolumeVO volume = commitVolume(cmd, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
+        return commitVolume(cmd, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
                 _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()));
-
-        return volume;
     }
 
     private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final Account owner, final Boolean displayVolume, final Long zoneId, final Long diskOfferingId,
@@ -948,10 +964,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("There are no tags on the current disk offering. The new disk offering needs to have no tags, as well.");
             }
 
-            if (newDiskOffering.getDomainId() != null) {
-                // not a public offering; check access
-                _configMgr.checkDiskOfferingAccess(CallContext.current().getCallingAccount(), newDiskOffering);
-            }
+            _configMgr.checkDiskOfferingAccess(_accountMgr.getActiveAccountById(volume.getAccountId()), newDiskOffering, _dcDao.findById(volume.getDataCenterId()));
 
             if (newDiskOffering.isCustomized()) {
                 newSize = cmd.getSize();
@@ -1043,6 +1056,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // the requested change
 
         /* If this volume has never been beyond allocated state, short circuit everything and simply update the database. */
+        // We need to publish this event to usage_volume table
         if (volume.getState() == Volume.State.Allocated) {
             s_logger.debug("Volume is in the allocated state, but has never been created. Simply updating database with new size and IOPS.");
 
@@ -1056,7 +1070,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             _volsDao.update(volume.getId(), volume);
-
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
             return volume;
         }
 
@@ -1133,7 +1148,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private VolumeVO orchestrateResizeVolume(long volumeId, long currentSize, long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, Long newDiskOfferingId,
             boolean shrinkOk) {
-        VolumeVO volume = _volsDao.findById(volumeId);
+        final VolumeVO volume = _volsDao.findById(volumeId);
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
         boolean isManaged = storagePool.isManaged();
@@ -1209,13 +1224,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                         volService.resizeVolumeOnHypervisor(volumeId, newSize, hosts[0], instanceName);
                     }
                 }
-
-                volume.setSize(newSize);
-
-                _volsDao.update(volume.getId(), volume);
             }
-
-            volume = _volsDao.findById(volume.getId());
 
             if (newDiskOfferingId != null) {
                 volume.setDiskOfferingId(newDiskOfferingId);
@@ -1229,20 +1238,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             /* Update resource count for the account on primary storage resource */
             if (!shrinkOk) {
-                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplayVolume(), new Long(newSize - currentSize));
+                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplayVolume(), newSize - currentSize);
             } else {
-                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplayVolume(), new Long(currentSize - newSize));
+                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplayVolume(), currentSize - newSize);
             }
+
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
+
             return volume;
-        } catch (InterruptedException e) {
-            s_logger.warn("failed get resize volume result", e);
-            throw new CloudRuntimeException(e.getMessage());
-        } catch (ExecutionException e) {
-            s_logger.warn("failed get resize volume result", e);
-            throw new CloudRuntimeException(e.getMessage());
+
         } catch (Exception e) {
-            s_logger.warn("failed get resize volume result", e);
-            throw new CloudRuntimeException(e.getMessage());
+            throw new CloudRuntimeException("Exception caught during resize volume operation of volume UUID: " + volume.getUuid(), e);
         }
     }
 
@@ -2024,6 +2031,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Volume must be in ready state");
         }
 
+        if (vol.getPoolId() == storagePoolId) {
+            throw new InvalidParameterValueException("Volume " + vol + " is already on the destination storage pool");
+        }
+
         boolean liveMigrateVolume = false;
         Long instanceId = vol.getInstanceId();
         Long srcClusterId = null;
@@ -2187,7 +2198,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException(String.format("We cannot assign a removed disk offering [id=%s] to a volume. ", newDiskOffering.getUuid()));
         }
         Account caller = CallContext.current().getCallingAccount();
-        _accountMgr.checkAccess(caller, newDiskOffering);
+        DataCenter zone = null;
+        Volume volume = _volsDao.findById(cmd.getId());
+        if (volume != null) {
+            zone = _dcDao.findById(volume.getDataCenterId());
+        }
+        _accountMgr.checkAccess(caller, newDiskOffering, zone);
         return newDiskOffering;
     }
 
@@ -2330,7 +2346,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_CREATE, eventDescription = "taking snapshot", async = true)
-    public Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup)
+    public Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup, Map<String, String> tags)
+            throws ResourceAllocationException {
+        final Snapshot snapshot = takeSnapshotInternal(volumeId, policyId, snapshotId, account, quiescevm, locationType, asyncBackup);
+        if (snapshot != null && MapUtils.isNotEmpty(tags)) {
+            taggedResourceService.createTags(Collections.singletonList(snapshot.getUuid()), ResourceTag.ResourceObjectType.Snapshot, tags, null);
+        }
+        return snapshot;
+    }
+
+    private Snapshot takeSnapshotInternal(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup)
             throws ResourceAllocationException {
         VolumeInfo volume = volFactory.getVolume(volumeId);
         if (volume == null) {
@@ -2649,7 +2674,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Volume to be extracted has been removed or not in right state!");
         }
         // perform extraction
-        ImageStoreEntity secStore = (ImageStoreEntity)dataStoreMgr.getImageStore(zoneId);
+        ImageStoreEntity secStore = (ImageStoreEntity)dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
+        if (secStore == null) {
+            throw new InvalidParameterValueException(String.format("Secondary storage to satisfy storage needs cannot be found for zone: %d", zoneId));
+        }
         String value = _configDao.getValue(Config.CopyVolumeWait.toString());
         NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
 
@@ -2834,7 +2862,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        verifyManagedStorage(volumeToAttachStoragePool.getId(), hostId);
+        if (volumeToAttachStoragePool != null) {
+            verifyManagedStorage(volumeToAttachStoragePool.getId(), hostId);
+        }
 
         // volumeToAttachStoragePool should be null if the VM we are attaching the disk to has never been started before
         DataStore dataStore = volumeToAttachStoragePool != null ? dataStoreMgr.getDataStore(volumeToAttachStoragePool.getId(), DataStoreRole.Primary) : null;
@@ -2980,6 +3010,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (host != null) {
             _hostDao.loadDetails(host);
             maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(host.getHypervisorType(), host.getDetail("product_version"));
+        } else {
+            HypervisorType hypervisorType = vm.getHypervisorType();
+            if (hypervisorType != null && CollectionUtils.isNotEmpty(supportingDefaultHV) && supportingDefaultHV.contains(hypervisorType)) {
+                maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(hypervisorType, "default");
+            }
         }
         if (maxDataVolumesSupported == null || maxDataVolumesSupported.intValue() <= 0) {
             maxDataVolumesSupported = 6; // 6 data disks by default if nothing
@@ -3027,6 +3062,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public boolean configure(String name, Map<String, Object> params) {
         String maxVolumeSizeInGbString = _configDao.getValue(Config.MaxVolumeSize.toString());
         _maxVolumeSizeInGb = NumbersUtil.parseLong(maxVolumeSizeInGbString, 2000);
+        supportingDefaultHV = _hypervisorCapabilitiesDao.getHypervisorsWithDefaultEntries();
         return true;
     }
 

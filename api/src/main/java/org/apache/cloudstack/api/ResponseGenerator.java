@@ -439,7 +439,7 @@ public interface ResponseGenerator {
 
     UsageRecordResponse createUsageResponse(Usage usageRecord);
 
-    UsageRecordResponse createUsageResponse(Usage usageRecord, Map<String, Set<ResourceTagResponse>> resourceTagResponseMap);
+    UsageRecordResponse createUsageResponse(Usage usageRecord, Map<String, Set<ResourceTagResponse>> resourceTagResponseMap, boolean oldFormat);
 
     public Map<String, Set<ResourceTagResponse>> getUsageResourceTags();
 

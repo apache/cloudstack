@@ -23,7 +23,6 @@ import com.cloud.storage.Storage;
 import com.cloud.utils.db.GenericDao;
 
 public interface DiskOfferingDao extends GenericDao<DiskOfferingVO, Long> {
-    List<DiskOfferingVO> listByDomainId(long domainId);
 
     List<DiskOfferingVO> findPrivateDiskOffering();
 

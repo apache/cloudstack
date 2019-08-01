@@ -1,6 +1,6 @@
 [Unit]
 Description=CloudStack Agent service
-After=cloud-early-config.service network.target local-fs.target
+After=cloud-early-config.service network.target cloud-postinit.service local-fs.target
 
 [Install]
 WantedBy=multi-user.target

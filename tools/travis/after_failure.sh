@@ -20,4 +20,5 @@
 # failure.
 #
 find rat.txt -type f -exec echo -e "Printing RAT license-failures {} :\n" \; -exec cat {} \;
-find /tmp//MarvinLogs -type f -exec echo -e "Printing logfile {} :\n" \; -exec cat {} \;
+find /tmp//MarvinLogs -type f -exec echo -e "Printing marvin logs {} :\n" \; -exec cat {} \;
+find vmops.log -type f -exec echo -e "Printing management server logs {} :\n" \; -exec cat {} \;

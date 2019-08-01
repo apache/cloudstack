@@ -2709,7 +2709,7 @@ public class VirtualMachineMO extends BaseMO {
         return pathList;
     }
 
-    private String getDeviceBusName(List<VirtualDevice> allDevices, VirtualDevice theDevice) throws Exception {
+    public String getDeviceBusName(List<VirtualDevice> allDevices, VirtualDevice theDevice) throws Exception {
         for (VirtualDevice device : allDevices) {
             if (device.getKey() == theDevice.getControllerKey().intValue()) {
                 if (device instanceof VirtualIDEController) {

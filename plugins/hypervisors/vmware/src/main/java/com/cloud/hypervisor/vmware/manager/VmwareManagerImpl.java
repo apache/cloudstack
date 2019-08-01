@@ -48,10 +48,12 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
 
+import com.amazonaws.util.CollectionUtils;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -62,7 +64,6 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.cluster.ClusterManager;
-import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
@@ -492,7 +493,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         String secUrl = null;
         Long secId = null;
-        DataStore secStore = _dataStoreMgr.getImageStore(dcId);
+        DataStore secStore = _dataStoreMgr.getImageStoreWithFreeCapacity(dcId);
         if (secStore != null) {
             secUrl = secStore.getUri();
             secId = secStore.getId();
@@ -511,6 +512,32 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         return new Pair<String, Long>(secUrl, secId);
+    }
+
+    @Override
+    public List<Pair<String, Long>> getSecondaryStorageStoresUrlAndIdList(long dcId) {
+        List<Pair<String, Long>> urlIdList = new ArrayList<>();
+        List<DataStore> secStores = _dataStoreMgr.listImageStoresWithFreeCapacity(dcId);
+        if (!CollectionUtils.isNullOrEmpty(secStores)) {
+            for (DataStore secStore : secStores) {
+                if (secStore != null) {
+                    urlIdList.add(new Pair<>(secStore.getUri(), secStore.getId()));
+                }
+            }
+        }
+
+        if (urlIdList.isEmpty()) {
+            // we are using non-NFS image store, then use cache storage instead
+            s_logger.info("Secondary storage is not NFS, we need to use staging storage");
+            DataStore cacheStore = _dataStoreMgr.getImageCacheStore(dcId);
+            if (cacheStore != null) {
+                urlIdList.add(new Pair<>(cacheStore.getUri(), cacheStore.getId()));
+            } else {
+                s_logger.warn("No staging storage is found when non-NFS secondary storage is used");
+            }
+        }
+
+        return urlIdList;
     }
 
     @Override

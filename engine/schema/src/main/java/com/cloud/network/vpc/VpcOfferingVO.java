@@ -76,6 +76,9 @@ public class VpcOfferingVO implements VpcOffering {
     @Column(name = "redundant_router_service")
     boolean redundantRouter = false;
 
+    @Column(name = "sort_key")
+    int sortKey;
+
     public VpcOfferingVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -164,23 +167,41 @@ public class VpcOfferingVO implements VpcOffering {
     }
 
     @Override
+    public Date getRemoved() {
+        return removed;
+    }
+
+    @Override
+    public Date getCreated() {
+        return created;
+    }
+
+    @Override
     public Long getServiceOfferingId() {
         return serviceOfferingId;
     }
 
     @Override
-    public boolean supportsDistributedRouter() {
+    public boolean isSupportsDistributedRouter() {
         return supportsDistributedRouter;
     }
 
     @Override
-    public boolean offersRegionLevelVPC() {
+    public boolean isOffersRegionLevelVPC() {
         return offersRegionLevelVPC;
     }
 
     @Override
-    public boolean getRedundantRouter() {
+    public boolean isRedundantRouter() {
         return this.redundantRouter;
+    }
+
+    public void setSortKey(int key) {
+        sortKey = key;
+    }
+
+    public int getSortKey() {
+        return sortKey;
     }
 
 }

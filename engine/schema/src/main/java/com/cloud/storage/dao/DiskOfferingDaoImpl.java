@@ -23,15 +23,17 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
 import com.cloud.storage.Storage;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.springframework.stereotype.Component;
 
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.offering.DiskOffering.Type;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -41,7 +43,10 @@ import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
 public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> implements DiskOfferingDao {
-    private final SearchBuilder<DiskOfferingVO> DomainIdSearch;
+
+    @Inject
+    protected DiskOfferingDetailsDao detailsDao;
+
     private final SearchBuilder<DiskOfferingVO> PrivateDiskOfferingSearch;
     private final SearchBuilder<DiskOfferingVO> PublicDiskOfferingSearch;
     protected final SearchBuilder<DiskOfferingVO> UniqueNameSearch;
@@ -52,17 +57,11 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     protected final static long GB_UNIT_BYTES = 1024 * 1024 * 1024;
 
     protected DiskOfferingDaoImpl() {
-        DomainIdSearch = createSearchBuilder();
-        DomainIdSearch.and("domainId", DomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        DomainIdSearch.and("removed", DomainIdSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        DomainIdSearch.done();
-
         PrivateDiskOfferingSearch = createSearchBuilder();
         PrivateDiskOfferingSearch.and("diskSize", PrivateDiskOfferingSearch.entity().getDiskSize(), SearchCriteria.Op.EQ);
         PrivateDiskOfferingSearch.done();
 
         PublicDiskOfferingSearch = createSearchBuilder();
-        PublicDiskOfferingSearch.and("domainId", PublicDiskOfferingSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
         PublicDiskOfferingSearch.and("system", PublicDiskOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
         PublicDiskOfferingSearch.and("removed", PublicDiskOfferingSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         PublicDiskOfferingSearch.done();
@@ -72,15 +71,6 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         UniqueNameSearch.done();
 
         _typeAttr = _allAttributes.get("type");
-    }
-
-    @Override
-    public List<DiskOfferingVO> listByDomainId(long domainId) {
-        SearchCriteria<DiskOfferingVO> sc = DomainIdSearch.create();
-        sc.setParameters("domainId", domainId);
-        // FIXME: this should not be exact match, but instead should find all
-        // available disk offerings from parent domains
-        return listBy(sc);
     }
 
     @Override
@@ -119,7 +109,11 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     public List<DiskOfferingVO> findPublicDiskOfferings() {
         SearchCriteria<DiskOfferingVO> sc = PublicDiskOfferingSearch.create();
         sc.setParameters("system", false);
-        return listBy(sc);
+        List<DiskOfferingVO> offerings = listBy(sc);
+        if(offerings!=null) {
+            offerings.removeIf(o -> (!detailsDao.findDomainIds(o.getId()).isEmpty()));
+        }
+        return offerings;
     }
 
     @Override

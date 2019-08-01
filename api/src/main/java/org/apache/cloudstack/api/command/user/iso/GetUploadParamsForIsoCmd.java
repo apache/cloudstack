@@ -16,11 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
+import java.net.MalformedURLException;
+
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.AbstractGetUploadParamsCmd;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,11 +31,16 @@ import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import java.net.MalformedURLException;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = GetUploadParamsForIsoCmd.APINAME,
         description = "upload an existing ISO into the CloudStack cloud.",
         responseObject = GetUploadParamsResponse.class, since = "4.13",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
 

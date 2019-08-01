@@ -77,8 +77,8 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
     private String virtualMachineId;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "virtual machine name")
-    private String vmName;
+    @Param(description = "resource or virtual machine name")
+    private String resourceName;
 
     @SerializedName("offeringid")
     @Param(description = "offering ID")
@@ -186,8 +186,8 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
         this.virtualMachineId = virtualMachineId;
     }
 
-    public void setVmName(String vmName) {
-        this.vmName = vmName;
+    public void setResourceName(String name) {
+        this.resourceName = name;
     }
 
     public void setOfferingId(String offeringId) {

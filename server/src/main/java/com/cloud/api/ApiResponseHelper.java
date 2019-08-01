@@ -35,6 +35,7 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseGenerator;
@@ -179,6 +180,7 @@ import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
+import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
@@ -190,6 +192,7 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
@@ -384,13 +387,13 @@ public class ApiResponseHelper implements ResponseGenerator {
     // creates an account + user)
     @Override
     public AccountResponse createUserAccountResponse(ResponseView view, UserAccount user) {
-        return ApiDBUtils.newAccountResponse(view, ApiDBUtils.findAccountViewById(user.getAccountId()));
+        return ApiDBUtils.newAccountResponse(view, EnumSet.of(DomainDetails.all), ApiDBUtils.findAccountViewById(user.getAccountId()));
     }
 
     @Override
     public AccountResponse createAccountResponse(ResponseView view, Account account) {
         AccountJoinVO vUser = ApiDBUtils.newAccountView(account);
-        return ApiDBUtils.newAccountResponse(view, vUser);
+        return ApiDBUtils.newAccountResponse(view, EnumSet.of(DomainDetails.all), vUser);
     }
 
     @Override
@@ -556,7 +559,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
         }
-        snapshotResponse.setTags(tagResponses);
+        snapshotResponse.setTags(new HashSet<>(tagResponses));
 
         snapshotResponse.setObjectName("snapshot");
         return snapshotResponse;
@@ -657,6 +660,14 @@ public class ApiResponseHelper implements ResponseGenerator {
         policyResponse.setTimezone(policy.getTimezone());
         policyResponse.setForDisplay(policy.isDisplay());
         policyResponse.setObjectName("snapshotpolicy");
+
+        List<? extends ResourceTag> tags = _resourceTagDao.listBy(policy.getId(), ResourceObjectType.SnapshotPolicy);
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, false);
+            CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
+        }
+        policyResponse.setTags(new HashSet<>(tagResponses));
 
         return policyResponse;
     }
@@ -1801,6 +1812,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<String> regularAccounts = new ArrayList<String>();
         for (String accountName : accountNames) {
             Account account = ApiDBUtils.findAccountByNameDomain(accountName, templateOwner.getDomainId());
+            if (account == null) {
+                s_logger.error("Missing Account " + accountName + " in domain " + templateOwner.getDomainId());
+                continue;
+            }
+
             if (account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
                 regularAccounts.add(accountName);
             } else {
@@ -1921,23 +1937,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public NetworkOfferingResponse createNetworkOfferingResponse(NetworkOffering offering) {
-        NetworkOfferingResponse response = new NetworkOfferingResponse();
-        response.setId(offering.getUuid());
-        response.setName(offering.getName());
-        response.setDisplayText(offering.getDisplayText());
-        response.setTags(offering.getTags());
-        response.setTrafficType(offering.getTrafficType().toString());
-        response.setIsDefault(offering.isDefault());
-        response.setSpecifyVlan(offering.isSpecifyVlan());
-        response.setConserveMode(offering.isConserveMode());
-        response.setSpecifyIpRanges(offering.isSpecifyIpRanges());
-        response.setAvailability(offering.getAvailability().toString());
-        response.setIsPersistent(offering.isPersistent());
+        if (!(offering instanceof NetworkOfferingJoinVO)) {
+            offering = ApiDBUtils.newNetworkOfferingView(offering);
+        }
+        NetworkOfferingResponse response = ApiDBUtils.newNetworkOfferingResponse(offering);
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
-        response.setEgressDefaultPolicy(offering.isEgressDefaultPolicy());
-        response.setConcurrentConnections(offering.getConcurrentConnections());
-        response.setSupportsStrechedL2Subnet(offering.isSupportingStrechedL2());
-        response.setSupportsPublicAccess(offering.isSupportingPublicAccess());
         Long so = null;
         if (offering.getServiceOfferingId() != null) {
             so = offering.getServiceOfferingId();
@@ -1950,13 +1954,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setServiceOfferingId(soffering.getUuid());
             }
         }
-
-        if (offering.getGuestType() != null) {
-            response.setGuestIpType(offering.getGuestType().toString());
-        }
-
-        response.setState(offering.getState().name());
-
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(offering.getId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         for (Map.Entry<Service,Set<Provider>> entry : serviceProviderMap.entrySet()) {
@@ -1977,7 +1974,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
             svcRsp.setProviders(providers);
-
             if (Service.Lb == service) {
                 List<CapabilityResponse> lbCapResponse = new ArrayList<CapabilityResponse>();
 
@@ -2025,20 +2021,15 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                 svcRsp.setCapabilities(staticNatCapResponse);
             }
-
             serviceResponses.add(svcRsp);
         }
         response.setForVpc(_configMgr.isOfferingForVpc(offering));
-
         response.setServices(serviceResponses);
-
         //set network offering details
         Map<Detail, String> details = _ntwkModel.getNtwkOffDetails(offering.getId());
         if (details != null && !details.isEmpty()) {
             response.setDetails(details);
         }
-
-        response.setObjectName("networkoffering");
         return response;
     }
 
@@ -2288,7 +2279,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ProjectResponse createProjectResponse(Project project) {
         List<ProjectJoinVO> viewPrjs = ApiDBUtils.newProjectView(project);
-        List<ProjectResponse> listPrjs = ViewResponseHelper.createProjectResponse(viewPrjs.toArray(new ProjectJoinVO[viewPrjs.size()]));
+        List<ProjectResponse> listPrjs = ViewResponseHelper.createProjectResponse(EnumSet.of(DomainDetails.all), viewPrjs.toArray(new ProjectJoinVO[viewPrjs.size()]));
         assert listPrjs != null && listPrjs.size() == 1 : "There should be one project  returned";
         return listPrjs.get(0);
     }
@@ -2840,15 +2831,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public VpcOfferingResponse createVpcOfferingResponse(VpcOffering offering) {
-        VpcOfferingResponse response = new VpcOfferingResponse();
-        response.setId(offering.getUuid());
-        response.setName(offering.getName());
-        response.setDisplayText(offering.getDisplayText());
-        response.setIsDefault(offering.isDefault());
-        response.setState(offering.getState().name());
-        response.setSupportsDistributedRouter(offering.supportsDistributedRouter());
-        response.setSupportsRegionLevelVpc(offering.offersRegionLevelVPC());
-
+        if (!(offering instanceof VpcOfferingJoinVO)) {
+            offering = ApiDBUtils.newVpcOfferingView(offering);
+        }
+        VpcOfferingResponse response = ApiDBUtils.newVpcOfferingResponse(offering);
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(offering.getId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         for (Map.Entry<Service, Set<Provider>> entry : serviceProviderMap.entrySet()) {
@@ -2874,7 +2860,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             serviceResponses.add(svcRsp);
         }
         response.setServices(serviceResponses);
-        response.setObjectName("vpcoffering");
         return response;
     }
 
@@ -3296,11 +3281,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public UsageRecordResponse createUsageResponse(Usage usageRecord) {
-        return createUsageResponse(usageRecord, null);
+        return createUsageResponse(usageRecord, null, false);
     }
 
     @Override
-    public UsageRecordResponse createUsageResponse(Usage usageRecord, Map<String, Set<ResourceTagResponse>> resourceTagResponseMap) {
+    public UsageRecordResponse createUsageResponse(Usage usageRecord, Map<String, Set<ResourceTagResponse>> resourceTagResponseMap, boolean oldFormat) {
         UsageRecordResponse usageRecResponse = new UsageRecordResponse();
         Account account = ApiDBUtils.findAccountById(usageRecord.getAccountId());
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
@@ -3330,15 +3315,17 @@ public class ApiResponseHelper implements ResponseGenerator {
         usageRecResponse.setDescription(usageRecord.getDescription());
         usageRecResponse.setUsage(usageRecord.getUsageDisplay());
         usageRecResponse.setUsageType(usageRecord.getUsageType());
+        VMInstanceVO vmInstance = null;
         if (usageRecord.getVmInstanceId() != null) {
-            VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId());
-            if (vm != null) {
-                usageRecResponse.setVirtualMachineId(vm.getUuid());
+            vmInstance = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId());
+            if (vmInstance != null) {
+                usageRecResponse.setVirtualMachineId(vmInstance.getUuid());
             }
         }
-        usageRecResponse.setVmName(usageRecord.getVmName());
+        usageRecResponse.setResourceName(usageRecord.getVmName());
+        VMTemplateVO template = null;
         if (usageRecord.getTemplateId() != null) {
-            VMTemplateVO template = ApiDBUtils.findTemplateById(usageRecord.getTemplateId());
+            template = ApiDBUtils.findTemplateById(usageRecord.getTemplateId());
             if (template != null) {
                 usageRecResponse.setTemplateId(template.getUuid());
             }
@@ -3353,7 +3340,12 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setOfferingId(svcOffering.getUuid());
             }
             //VM Instance ID
-            VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
+            VMInstanceVO vm = null;
+            if (usageRecord.getUsageId() != null && usageRecord.getUsageId().equals(usageRecord.getVmInstanceId())) {
+                vm = vmInstance;
+            } else {
+                vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
+            }
             if (vm != null) {
                 resourceType = ResourceTag.ResourceObjectType.UserVm;
                 usageRecResponse.setUsageId(vm.getUuid());
@@ -3377,7 +3369,24 @@ public class ApiResponseHelper implements ResponseGenerator {
             } else if(svcOffering.getRamSize() != null) {
                 usageRecResponse.setMemory(svcOffering.getRamSize().longValue());
             }
-
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                if (usageRecord.getUsageType() == UsageTypes.RUNNING_VM) {
+                    builder.append("Running VM usage ");
+                } else if(usageRecord.getUsageType() == UsageTypes.ALLOCATED_VM) {
+                    builder.append("Allocated VM usage ");
+                }
+                if (vm != null) {
+                    builder.append("for ").append(vm.getHostName()).append(" (").append(vm.getInstanceName()).append(") (").append(vm.getUuid()).append(") ");
+                }
+                if (svcOffering != null) {
+                    builder.append("using service offering ").append(svcOffering.getName()).append(" (").append(svcOffering.getUuid()).append(") ");
+                }
+                if (template != null) {
+                    builder.append("and template ").append(template.getName()).append(" (").append(template.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.IP_ADDRESS) {
             //IP Address ID
             IPAddressVO ip = _entityMgr.findByIdIncludingRemoved(IPAddressVO.class, usageRecord.getUsageId().toString());
@@ -3403,46 +3412,80 @@ public class ApiResponseHelper implements ResponseGenerator {
             //Device Type
             resourceType = ResourceObjectType.UserVm;
             usageRecResponse.setType(usageRecord.getType());
+            VMInstanceVO vm = null;
+            HostVO host = null;
             if (usageRecord.getType().equals("DomainRouter") || usageRecord.getType().equals("UserVm")) {
                 //Domain Router Id
-                VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
+                vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
                 if (vm != null) {
                     resourceId = vm.getId();
                     usageRecResponse.setUsageId(vm.getUuid());
                 }
             } else {
                 //External Device Host Id
-                HostVO host = _entityMgr.findByIdIncludingRemoved(HostVO.class, usageRecord.getUsageId().toString());
+                host = _entityMgr.findByIdIncludingRemoved(HostVO.class, usageRecord.getUsageId().toString());
                 if (host != null) {
                     usageRecResponse.setUsageId(host.getUuid());
                 }
             }
             //Network ID
+            NetworkVO network = null;
             if((usageRecord.getNetworkId() != null) && (usageRecord.getNetworkId() != 0)) {
-                NetworkVO network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
+                network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
                 if (network != null) {
                     resourceType = ResourceObjectType.Network;
                     resourceId = network.getId();
                     usageRecResponse.setNetworkId(network.getUuid());
+                    usageRecResponse.setResourceName(network.getName());
                 }
+            }
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_SENT) {
+                    builder.append("Bytes sent by network ");
+                } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_RECEIVED) {
+                    builder.append("Bytes received by network ");
+                }
+                if (network != null) {
+                    builder.append(network.getName()).append(" (").append(network.getUuid()).append(") ");
+                }
+                if (vm != null) {
+                    builder.append("using router ").append(vm.getInstanceName()).append(" (").append(vm.getUuid()).append(")");
+                } else if (host != null) {
+                    builder.append("using host ").append(host.getName()).append(" (").append(host.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE
                 || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
             //Device Type
             usageRecResponse.setType(usageRecord.getType());
             resourceType = ResourceObjectType.Volume;
-            //VM Instance Id
-            VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId().toString());
-            if (vm != null) {
-                usageRecResponse.setVirtualMachineId(vm.getUuid());
-            }
             //Volume ID
             VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
             if (volume != null) {
                 usageRecResponse.setUsageId(volume.getUuid());
                 resourceId = volume.getId();
             }
-
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ) {
+                    builder.append("Disk I/O read requests");
+                } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE) {
+                    builder.append("Disk I/O write requests");
+                } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ) {
+                    builder.append("Disk I/O read bytes");
+                } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
+                    builder.append("Disk I/O write bytes");
+                }
+                if (vmInstance != null) {
+                    builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
+                }
+                if (volume != null) {
+                    builder.append(" and volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.VOLUME) {
             //Volume ID
             VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
@@ -3454,11 +3497,25 @@ public class ApiResponseHelper implements ResponseGenerator {
             //Volume Size
             usageRecResponse.setSize(usageRecord.getSize());
             //Disk Offering Id
+            DiskOfferingVO diskOff = null;
             if (usageRecord.getOfferingId() != null) {
-                DiskOfferingVO diskOff = _entityMgr.findByIdIncludingRemoved(DiskOfferingVO.class, usageRecord.getOfferingId().toString());
+                diskOff = _entityMgr.findByIdIncludingRemoved(DiskOfferingVO.class, usageRecord.getOfferingId().toString());
                 usageRecResponse.setOfferingId(diskOff.getUuid());
             }
-
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("Volume usage ");
+                if (volume != null) {
+                    builder.append("for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
+                }
+                if (diskOff != null) {
+                    builder.append(" with disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
+                }
+                if (template != null) {
+                    builder.append(" and template ").append(template.getName()).append(" (").append(template.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.TEMPLATE || usageRecord.getUsageType() == UsageTypes.ISO) {
             //Template/ISO ID
             VMTemplateVO tmpl = _entityMgr.findByIdIncludingRemoved(VMTemplateVO.class, usageRecord.getUsageId().toString());
@@ -3475,7 +3532,19 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
                 resourceType = ResourceObjectType.Template;
             }
-
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                if (usageRecord.getUsageType() == UsageTypes.TEMPLATE) {
+                    builder.append("Template usage");
+                } else if (usageRecord.getUsageType() == UsageTypes.ISO) {
+                    builder.append("ISO usage");
+                }
+                if (tmpl != null) {
+                    builder.append(" for ").append(tmpl.getName()).append(" (").append(tmpl.getUuid()).append(") ")
+                            .append("with size ").append(usageRecord.getSize()).append(" and virtual size ").append(usageRecord.getVirtualSize());
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.SNAPSHOT) {
             //Snapshot ID
             SnapshotVO snap = _entityMgr.findByIdIncludingRemoved(SnapshotVO.class, usageRecord.getUsageId().toString());
@@ -3486,7 +3555,15 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             //Snapshot Size
             usageRecResponse.setSize(usageRecord.getSize());
-
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("Snapshot usage ");
+                if (snap != null) {
+                    builder.append("for ").append(snap.getName()).append(" (").append(snap.getUuid()).append(") ")
+                            .append("with size ").append(usageRecord.getSize());
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.LOAD_BALANCER_POLICY) {
             //Load Balancer Policy ID
             LoadBalancerVO lb = _entityMgr.findByIdIncludingRemoved(LoadBalancerVO.class, usageRecord.getUsageId().toString());
@@ -3494,6 +3571,14 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (lb != null) {
                 usageRecResponse.setUsageId(lb.getUuid());
                 resourceId = lb.getId();
+            }
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("Loadbalancer policy usage ");
+                if (lb != null) {
+                    builder.append(lb.getName()).append(" (").append(lb.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.PORT_FORWARDING_RULE) {
             //Port Forwarding Rule ID
@@ -3503,19 +3588,44 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setUsageId(pf.getUuid());
                 resourceId = pf.getId();
             }
-
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("Port forwarding rule usage");
+                if (pf != null) {
+                    builder.append(" (").append(pf.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_OFFERING) {
             //Network Offering Id
             NetworkOfferingVO netOff = _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, usageRecord.getOfferingId().toString());
             usageRecResponse.setOfferingId(netOff.getUuid());
             //is Default
-            usageRecResponse.setDefault((usageRecord.getUsageId() == 1) ? true : false);
-
+            usageRecResponse.setDefault(usageRecord.getUsageId() == 1);
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("Network offering ");
+                if (netOff != null) {
+                    builder.append(netOff.getName()).append(" (").append(netOff.getUuid()).append(") usage ");
+                }
+                if (vmInstance != null) {
+                    builder.append("for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ");
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.VPN_USERS) {
             //VPN User ID
             VpnUserVO vpnUser = _entityMgr.findByIdIncludingRemoved(VpnUserVO.class, usageRecord.getUsageId().toString());
             if (vpnUser != null) {
                 usageRecResponse.setUsageId(vpnUser.getUuid());
+            }
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("VPN usage ");
+                if (vpnUser != null) {
+                    builder.append("for user ").append(vpnUser.getUsername()).append(" (").append(vpnUser.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.SECURITY_GROUP) {
             //Security Group Id
@@ -3525,13 +3635,23 @@ public class ApiResponseHelper implements ResponseGenerator {
                 resourceId = sg.getId();
                 usageRecResponse.setUsageId(sg.getUuid());
             }
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("Security group");
+                if (sg != null) {
+                    builder.append(" ").append(sg.getName()).append(" (").append(sg.getUuid()).append(") usage");
+                }
+                if (vmInstance != null) {
+                    builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT || usageRecord.getUsageType() == UsageTypes.VM_BACKUP) {
-            VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId().toString());
             resourceType = ResourceObjectType.UserVm;
-            if (vm != null) {
-                resourceId = vm.getId();
-                usageRecResponse.setVmName(vm.getInstanceName());
-                usageRecResponse.setUsageId(vm.getUuid());
+            if (vmInstance != null) {
+                resourceId = vmInstance.getId();
+                usageRecResponse.setResourceName(vmInstance.getInstanceName());
+                usageRecResponse.setUsageId(vmInstance.getUuid());
             }
             usageRecResponse.setSize(usageRecord.getSize());
             if (usageRecord.getVirtualSize() != null) {
@@ -3540,8 +3660,48 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (usageRecord.getOfferingId() != null) {
                 usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
             }
+            if (!oldFormat) {
+                VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+                DiskOfferingVO diskOff = null;
+                if (usageRecord.getOfferingId() != null) {
+                    diskOff = _entityMgr.findByIdIncludingRemoved(DiskOfferingVO.class, usageRecord.getOfferingId());
+                }
+                final StringBuilder builder = new StringBuilder();
+                builder.append("VMSnapshot usage");
+                if (vmInstance != null) {
+                    builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
+                }
+                if (volume != null) {
+                    builder.append(" with volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
+                }
+                if (diskOff != null) {
+                    builder.append(" using disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
+        } else if (usageRecord.getUsageType() == UsageTypes.VOLUME_SECONDARY) {
+            VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("Volume on secondary storage usage");
+                if (volume != null) {
+                    builder.append(" for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(") ")
+                            .append("with size ").append(usageRecord.getSize());
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
+        } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT_ON_PRIMARY) {
+            usageRecResponse.setSize(usageRecord.getVirtualSize());
+            if (!oldFormat) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("VMSnapshot on primary storage usage");
+                if (vmInstance != null) {
+                    builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ")
+                            .append("with size ").append(usageRecord.getVirtualSize());
+                }
+                usageRecResponse.setDescription(builder.toString());
+            }
         }
-
         if(resourceTagResponseMap != null && resourceTagResponseMap.get(resourceId + ":" + resourceType) != null) {
              usageRecResponse.setTags(resourceTagResponseMap.get(resourceId + ":" + resourceType));
         }

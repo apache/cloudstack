@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import com.google.common.base.Strings;
+
 import javax.naming.ConfigurationException;
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
@@ -54,16 +54,6 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
-
-import net.sf.cglib.proxy.Callback;
-import net.sf.cglib.proxy.CallbackFilter;
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.Factory;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.NoOp;
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
 
 import org.apache.log4j.Logger;
 
@@ -79,6 +69,17 @@ import com.cloud.utils.db.SearchCriteria.SelectType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
+import com.google.common.base.Strings;
+
+import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.CallbackFilter;
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.Factory;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.NoOp;
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Element;
 
 /**
  *  GenericDaoBase is a simple way to implement DAOs.  It DOES NOT
@@ -2014,8 +2015,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
         }
 
-        // we have to disable group by in getting count, since count for groupBy clause will be different.
-        //List<Object> groupByValues = addGroupBy(str, sc);
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
         final String sql = str.toString();
 
@@ -2033,14 +2032,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 i = addJoinAttributes(i, pstmt, joins);
             }
 
-            /*
-            if (groupByValues != null) {
-                for (Object value : groupByValues) {
-                    pstmt.setObject(i++, value);
-                }
-            }
-             */
-
             final ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 return rs.getInt(1);
@@ -2056,6 +2047,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @DB()
     protected StringBuilder createCountSelect(SearchCriteria<?> sc, final boolean whereClause) {
         StringBuilder sql = new StringBuilder(_count);
+        if (sc != null) {
+            Pair<GroupBy<?, ?, ?>, List<Object>> groupBys = sc.getGroupBy();
+            if (groupBys != null) {
+                final SqlGenerator generator = new SqlGenerator(_entityBeanType);
+                sql = new StringBuilder(generator.buildCountSqlWithGroupBy(groupBys.first()));
+            }
+        }
 
         if (!whereClause) {
             sql.delete(sql.length() - (_discriminatorClause == null ? 6 : 4), sql.length());

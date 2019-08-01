@@ -30,7 +30,15 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
      * @param name
      * @return
      */
-    public R findDetail(long resourceId, String name);
+    R findDetail(long resourceId, String name);
+
+    /**
+     * Find details by resourceId and key
+     * @param resourceId
+     * @param key
+     * @return
+     */
+    List<R> findDetails(long resourceId, String key);
 
     /**
      * Find details by key,value pair
@@ -39,7 +47,7 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
      * @param display
      * @return
      */
-    public List<R> findDetails(String key, String value, Boolean display);
+    List<R> findDetails(String key, String value, Boolean display);
 
     /**
      * Removes all details for the resource specified
@@ -47,12 +55,21 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
      */
     public void removeDetails(long resourceId);
 
+
     /**
      * Removes detail having resourceId and key specified (unique combination)
      * @param resourceId
      * @param key
      */
-    public void removeDetail(long resourceId, String key);
+    void removeDetail(long resourceId, String key);
+
+    /**
+     * Removes detail having resourceId and key, value specified (unique combination)
+     * @param resourceId
+     * @param key
+     * @param value
+     */
+    void removeDetail(long resourceId, String key, String value);
 
     /**
      * Lists all details for the resourceId

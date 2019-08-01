@@ -49,6 +49,7 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -62,6 +63,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMBackupResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupPolicy;
 import org.apache.cloudstack.backup.VMBackup;
@@ -74,6 +76,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -89,6 +92,7 @@ import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.HostTagDao;
 import com.cloud.api.query.dao.ImageStoreJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
+import com.cloud.api.query.dao.NetworkOfferingJoinDao;
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
 import com.cloud.api.query.dao.ProjectInvitationJoinDao;
 import com.cloud.api.query.dao.ProjectJoinDao;
@@ -100,6 +104,7 @@ import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
+import com.cloud.api.query.dao.VpcOfferingJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
@@ -112,6 +117,7 @@ import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.HostTagVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
+import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
@@ -123,6 +129,7 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -232,6 +239,7 @@ import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -310,6 +318,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -341,6 +350,7 @@ public class ApiDBUtils {
     static CapacityDao s_capacityDao;
     static DiskOfferingDao s_diskOfferingDao;
     static DiskOfferingJoinDao s_diskOfferingJoinDao;
+    static DiskOfferingDetailsDao s_diskOfferingDetailsDao;
     static DataCenterJoinDao s_dcJoinDao;
     static DomainDao s_domainDao;
     static DomainJoinDao s_domainJoinDao;
@@ -374,6 +384,7 @@ public class ApiDBUtils {
     static Site2SiteCustomerGatewayDao s_site2SiteCustomerGatewayDao;
     static DataCenterDao s_zoneDao;
     static NetworkOfferingDao s_networkOfferingDao;
+    static NetworkOfferingJoinDao s_networkOfferingJoinDao;
     static NetworkDao s_networkDao;
     static PhysicalNetworkDao s_physicalNetworkDao;
     static ConfigurationService s_configSvc;
@@ -424,6 +435,7 @@ public class ApiDBUtils {
     static VpcGatewayDao s_vpcGatewayDao;
     static VpcDao s_vpcDao;
     static VpcOfferingDao s_vpcOfferingDao;
+    static VpcOfferingJoinDao s_vpcOfferingJoinDao;
     static SnapshotPolicyDao s_snapshotPolicyDao;
     static AsyncJobDao s_asyncJobDao;
     static HostDetailsDao s_hostDetailsDao;
@@ -478,6 +490,8 @@ public class ApiDBUtils {
     private DiskOfferingDao diskOfferingDao;
     @Inject
     private DiskOfferingJoinDao diskOfferingJoinDao;
+    @Inject
+    private DiskOfferingDetailsDao diskOfferingDetailsDao;
     @Inject
     private DomainDao domainDao;
     @Inject
@@ -542,6 +556,8 @@ public class ApiDBUtils {
     private DataCenterDao zoneDao;
     @Inject
     private NetworkOfferingDao networkOfferingDao;
+    @Inject
+    private NetworkOfferingJoinDao networkOfferingJoinDao;
     @Inject
     private NetworkDao networkDao;
     @Inject
@@ -641,6 +657,8 @@ public class ApiDBUtils {
     @Inject
     private VpcOfferingDao vpcOfferingDao;
     @Inject
+    private VpcOfferingJoinDao vpcOfferingJoinDao;
+    @Inject
     private SnapshotPolicyDao snapshotPolicyDao;
     @Inject
     private AsyncJobDao asyncJobDao;
@@ -700,6 +718,7 @@ public class ApiDBUtils {
         s_dcJoinDao = dcJoinDao;
         s_diskOfferingDao = diskOfferingDao;
         s_diskOfferingJoinDao = diskOfferingJoinDao;
+        s_diskOfferingDetailsDao = diskOfferingDetailsDao;
         s_domainDao = domainDao;
         s_domainJoinDao = domainJoinDao;
         s_domainRouterDao = domainRouterDao;
@@ -731,6 +750,7 @@ public class ApiDBUtils {
         s_securityGroupDao = securityGroupDao;
         s_securityGroupJoinDao = securityGroupJoinDao;
         s_networkOfferingDao = networkOfferingDao;
+        s_networkOfferingJoinDao = networkOfferingJoinDao;
         s_networkDao = networkDao;
         s_physicalNetworkDao = physicalNetworkDao;
         s_configDao = configDao;
@@ -779,6 +799,7 @@ public class ApiDBUtils {
         s_asVmGroupDao = asVmGroupDao;
         s_vpcDao = vpcDao;
         s_vpcOfferingDao = vpcOfferingDao;
+        s_vpcOfferingJoinDao = vpcOfferingJoinDao;
         s_snapshotPolicyDao = snapshotPolicyDao;
         s_asyncJobDao = asyncJobDao;
         s_hostDetailsDao = hostDetailsDao;
@@ -1251,6 +1272,14 @@ public class ApiDBUtils {
         return s_networkMgr.convertNetworkToNetworkProfile(networkId);
     }
 
+    public static NetworkOfferingResponse newNetworkOfferingResponse(NetworkOffering offering) {
+        return s_networkOfferingJoinDao.newNetworkOfferingResponse(offering);
+    }
+
+    public static NetworkOfferingJoinVO newNetworkOfferingView(NetworkOffering offering) {
+        return s_networkOfferingJoinDao.newNetworkOfferingView(offering);
+    }
+
     public static NetworkOfferingVO findNetworkOfferingById(long networkOfferingId) {
         return s_networkOfferingDao.findByIdIncludingRemoved(networkOfferingId);
     }
@@ -1468,7 +1497,7 @@ public class ApiDBUtils {
     }
 
     public static UserVmDetailVO  findPublicKeyByVmId(long vmId) {
-        return s_userVmDetailsDao.findDetail(vmId, "SSH.PublicKey");
+        return s_userVmDetailsDao.findDetail(vmId, VmDetailConstants.SSH_PUBLIC_KEY);
     }
 
     public static void getAutoScaleVmGroupPolicies(long vmGroupId, List<AutoScalePolicy> scaleUpPolicies, List<AutoScalePolicy> scaleDownPolicies) {
@@ -1533,6 +1562,14 @@ public class ApiDBUtils {
 
     public static VpcOffering findVpcOfferingById(long offeringId) {
         return s_vpcOfferingDao.findById(offeringId);
+    }
+
+    public static VpcOfferingResponse newVpcOfferingResponse(VpcOffering offering) {
+        return s_vpcOfferingJoinDao.newVpcOfferingResponse(offering);
+    }
+
+    public static VpcOfferingJoinVO newVpcOfferingView(VpcOffering offering) {
+        return s_vpcOfferingJoinDao.newVpcOfferingView(offering);
     }
 
     public static NetworkACL findByNetworkACLId(long aclId) {
@@ -1780,12 +1817,8 @@ public class ApiDBUtils {
         return s_userAccountJoinDao.newUserView(usr);
     }
 
-    public static ProjectResponse newProjectResponse(ProjectJoinVO proj) {
-        return s_projectJoinDao.newProjectResponse(proj);
-    }
-
-    public static ProjectResponse fillProjectDetails(ProjectResponse rsp, ProjectJoinVO proj) {
-        return s_projectJoinDao.setProjectResponse(rsp, proj);
+    public static ProjectResponse newProjectResponse(EnumSet<DomainDetails> details, ProjectJoinVO proj) {
+        return s_projectJoinDao.newProjectResponse(details, proj);
     }
 
     public static List<ProjectJoinVO> newProjectView(Project proj) {
@@ -1889,8 +1922,8 @@ public class ApiDBUtils {
         return s_domainJoinDao.newDomainResponse(view, details, ve);
     }
 
-    public static AccountResponse newAccountResponse(ResponseView view, AccountJoinVO ve) {
-        AccountResponse response = s_accountJoinDao.newAccountResponse(view, ve);
+    public static AccountResponse newAccountResponse(ResponseView view, EnumSet<DomainDetails> details, AccountJoinVO ve) {
+        AccountResponse response = s_accountJoinDao.newAccountResponse(view, details, ve);
         // Populate account role information
         if (ve.getRoleId() != null) {
             Role role = s_roleService.findRole(ve.getRoleId());
