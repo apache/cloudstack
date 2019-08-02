@@ -4075,7 +4075,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (newServiceOffering.isDynamic()) {
             newServiceOffering.setDynamicFlag(true);
             _userVmMgr.validateCustomParameters(newServiceOffering, customparameters);
-            newServiceOffering = _offeringDao.getcomputeOffering(newServiceOffering, customparameters);
+            newServiceOffering = _offeringDao.getComputeOffering(newServiceOffering, customparameters);
         }
         _itMgr.checkIfCanUpgrade(systemVm, newServiceOffering);
 

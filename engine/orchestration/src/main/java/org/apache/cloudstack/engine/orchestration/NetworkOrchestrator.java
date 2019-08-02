@@ -3941,6 +3941,49 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return _nicDao.persist(nic);
     }
 
+    @DB
+    @Override
+    public Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final String ipAddress)
+            throws ConcurrentOperationException {
+        s_logger.debug("Allocating nic for vm " + vm.getUuid() + " in network " + network + " during ingestion");
+
+        NicVO vo = Transaction.execute(new TransactionCallback<NicVO>() {
+            @Override
+            public NicVO doInTransaction(TransactionStatus status) {
+                NicVO vo = new NicVO(network.getGuruName(), vm.getId(), network.getId(), vm.getType());
+                vo.setMacAddress(macAddress);
+                vo.setAddressFormat(Networks.AddressFormat.Ip4);
+                vo.setIPv4Address(ipAddress);
+                if (!Strings.isNullOrEmpty(ipAddress)) {
+                    vo.setIPv4Address(ipAddress);
+                }
+                if (!Strings.isNullOrEmpty(network.getGateway())) {
+                    vo.setIPv4Gateway(network.getGateway());
+                }
+                if (!Strings.isNullOrEmpty(network.getCidr())) {
+                    vo.setIPv4Netmask(NetUtils.cidr2Netmask(network.getCidr()));
+                }
+                vo.setBroadcastUri(network.getBroadcastUri());
+                vo.setMode(network.getMode());
+                vo.setState(Nic.State.Reserved);
+                vo.setReservationStrategy(ReservationStrategy.Start);
+                vo.setReservationId(UUID.randomUUID().toString());
+                vo.setDeviceId(deviceId);
+                vo.setIsolationUri(network.getBroadcastUri());
+                vo.setDeviceId(deviceId);
+                vo.setDefaultNic(isDefaultNic);
+                vo = _nicDao.persist(vo);
+                return vo;
+            }
+        });
+
+        final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
+        final NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
+                _networkModel.getNetworkTag(vm.getHypervisorType(), network));
+
+        return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
+    }
+
     @Override
     public String getConfigComponentName() {
         return NetworkOrchestrationService.class.getSimpleName();

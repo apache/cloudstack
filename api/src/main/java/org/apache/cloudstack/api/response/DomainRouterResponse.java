@@ -20,8 +20,6 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -29,6 +27,7 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = VirtualMachine.class)
 @SuppressWarnings("unused")
@@ -256,6 +255,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
 
     public void setGateway(String gateway) {
         this.gateway = gateway;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public void setName(String name) {
