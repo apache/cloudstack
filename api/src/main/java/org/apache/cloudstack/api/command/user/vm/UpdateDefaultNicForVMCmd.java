@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -44,7 +43,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "updateDefaultNicForVirtualMachine", description = "Changes the default NIC on a VM", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd implements UserCmd {
+public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateDefaultNicForVMCmd.class);
     private static final String s_name = "updatedefaultnicforvirtualmachineresponse";
 
@@ -112,7 +111,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd implements UserCmd {
         dc.add(VMDetails.valueOf("nics"));
         EnumSet<VMDetails> details = EnumSet.copyOf(dc);
         if (result != null){
-            UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", details, result).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", details, result).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -43,7 +42,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "copyTemplate", description = "Copies a template from one zone to another.", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CopyTemplateCmd extends BaseAsyncCmd implements UserCmd {
+public class CopyTemplateCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CopyTemplateCmd.class.getName());
     private static final String s_name = "copytemplateresponse";
 
@@ -179,7 +178,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd implements UserCmd {
             VirtualMachineTemplate template = _templateService.copyTemplate(this);
 
             if (template != null){
-                List<TemplateResponse> listResponse = _responseGenerator.createTemplateResponses(getResponseView(),
+                List<TemplateResponse> listResponse = _responseGenerator.createTemplateResponses(ResponseView.Restricted,
                                                             template, getDestinationZoneIds(), false);
                 TemplateResponse response = new TemplateResponse();
                 if (listResponse != null && !listResponse.isEmpty()) {

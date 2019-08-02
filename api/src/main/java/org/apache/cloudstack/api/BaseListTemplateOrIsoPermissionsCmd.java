@@ -21,15 +21,15 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.command.ResponseViewProvider;
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-public abstract class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd implements ResponseViewProvider {
+public abstract class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd {
     public Logger logger = getLogger();
     protected static final String s_name = "listtemplatepermissionsresponse";
+
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -76,10 +76,6 @@ public abstract class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd implem
         return "templateOrIso";
     }
 
-    @Override
-    public void execute() {
-        executeWithView(getResponseView());
-    }
 
     protected void executeWithView(ResponseView view) {
         List<String> accountNames = _templateService.listTemplatePermissions(this);
