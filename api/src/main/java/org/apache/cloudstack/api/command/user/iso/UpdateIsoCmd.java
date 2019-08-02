@@ -23,7 +23,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
 import com.cloud.template.VirtualMachineTemplate;
@@ -31,7 +30,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "updateIso", description = "Updates an ISO file.", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class UpdateIsoCmd extends BaseUpdateTemplateOrIsoCmd implements UserCmd {
+public class UpdateIsoCmd extends BaseUpdateTemplateOrIsoCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIsoCmd.class.getName());
     private static final String s_name = "updateisoresponse";
 
@@ -72,7 +71,7 @@ public class UpdateIsoCmd extends BaseUpdateTemplateOrIsoCmd implements UserCmd 
     public void execute() {
         VirtualMachineTemplate result = _templateService.updateTemplate(this);
         if (result != null) {
-            TemplateResponse response = _responseGenerator.createTemplateUpdateResponse(getResponseView(), result);
+            TemplateResponse response = _responseGenerator.createTemplateUpdateResponse(ResponseView.Restricted, result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

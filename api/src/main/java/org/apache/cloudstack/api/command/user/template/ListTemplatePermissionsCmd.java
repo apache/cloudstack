@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 
 import com.cloud.storage.Storage.ImageFormat;
@@ -30,7 +29,7 @@ import com.cloud.template.VirtualMachineTemplate;
 @APICommand(name = "listTemplatePermissions", description = "List template visibility and all accounts that have permissions to view this template.", responseObject = TemplatePermissionsResponse.class, responseView = ResponseView.Restricted,
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
-public class ListTemplatePermissionsCmd extends BaseListTemplateOrIsoPermissionsCmd implements UserCmd {
+public class ListTemplatePermissionsCmd extends BaseListTemplateOrIsoPermissionsCmd {
     protected String getResponseName() {
         return "listtemplatepermissionsresponse";
     }
@@ -48,6 +47,11 @@ public class ListTemplatePermissionsCmd extends BaseListTemplateOrIsoPermissions
     @Override
     protected boolean templateIsCorrectType(VirtualMachineTemplate template) {
         return !template.getFormat().equals(ImageFormat.ISO);
+    }
+
+    @Override
+    public void execute() {
+        executeWithView(ResponseView.Restricted);
     }
 
 }
