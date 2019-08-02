@@ -26,6 +26,7 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.storage.OVFProperty;
+import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.api.response.TemplateOVFPropertyResponse;
 import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import com.cloud.storage.TemplateOVFPropertyVO;
@@ -249,7 +250,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
      * Add OVF properties to template response when available
      */
     private void addOVFPropertiesToTemplateResponse(List<TemplateOVFPropertyVO> ovfProperties, TemplateResponse templateResponse) {
-        if (CollectionUtils.isNotEmpty(ovfProperties)) {
+        if (CollectionUtils.isNotEmpty(ovfProperties) && UserVmManager.DisplayVMOVFProperties.value()) {
             for (OVFProperty property : ovfProperties) {
                 TemplateOVFPropertyResponse propertyResponse = new TemplateOVFPropertyResponse();
                 propertyResponse.setKey(property.getKey());

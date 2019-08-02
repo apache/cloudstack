@@ -31,6 +31,7 @@ import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.storage.Upload;
 import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import com.cloud.storage.TemplateOVFPropertyVO;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -178,6 +179,10 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 TemplateOVFPropertyVO option = new TemplateOVFPropertyVO(templateId, property.getKey(), property.getType(),
                         property.getValue(), property.getQualifiers(), property.isUserConfigurable(),
                         property.getLabel(), property.getDescription(), property.isPassword());
+                if (property.isPassword()) {
+                    String encryptedPassword = DBEncryptionUtil.encrypt(property.getValue());
+                    option.setValue(encryptedPassword);
+                }
                 listToPersist.add(option);
             }
         }

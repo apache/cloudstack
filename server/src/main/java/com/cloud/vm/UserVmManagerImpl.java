@@ -40,6 +40,8 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.TemplateOVFPropertyVO;
+import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -484,6 +486,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private DpdkHelper dpdkHelper;
     @Inject
     private ResourceTagDao resourceTagDao;
+    @Inject
+    private TemplateOVFPropertiesDao templateOVFPropertiesDao;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -530,7 +534,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             "false", "allow additional arbitrary configuration to vm", true, ConfigKey.Scope.Account);
     private static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
             "On destroy, force-stop takes this value ", true);
-
 
     @Override
     public UserVmVO getVirtualMachine(long vmId) {
@@ -2480,6 +2483,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         if (userBlacklistedSettings.contains(detail.getName())) {
                             details.put(detail.getName(), detail.getValue());
                         }
+                        if (detail.getName().startsWith(ApiConstants.OVF_PROPERTIES)) {
+                            String ovfPropKey = detail.getName().replace(ApiConstants.OVF_PROPERTIES + "-", "");
+                            TemplateOVFPropertyVO ovfPropertyVO = templateOVFPropertiesDao.findByTemplateAndKey(vmInstance.getTemplateId(), ovfPropKey);
+                            if (ovfPropertyVO != null && ovfPropertyVO.isPassword()) {
+                                details.put(detail.getName(), DBEncryptionUtil.encrypt(detail.getValue()));
+                            }
+                        }
                     }
                 }
                 vmInstance.setDetails(details);
@@ -3907,11 +3917,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         String detailKey = ApiConstants.OVF_PROPERTIES + "-" + key;
                         String value = userVmOVFPropertiesMap.get(key);
 
-                        // Sanitize boolean values to expected format
-                        if (value.equalsIgnoreCase("True")) {
-                            value = "True";
-                        } else if (value.equalsIgnoreCase("False")) {
-                            value = "False";
+                        // Sanitize boolean values to expected format and encrypt passwords
+                        if (StringUtils.isNotBlank(value)) {
+                            if (value.equalsIgnoreCase("True")) {
+                                value = "True";
+                            } else if (value.equalsIgnoreCase("False")) {
+                                value = "False";
+                            } else {
+                                TemplateOVFPropertyVO ovfPropertyVO = templateOVFPropertiesDao.findByTemplateAndKey(vm.getTemplateId(), key);
+                                if (ovfPropertyVO.isPassword()) {
+                                    value = DBEncryptionUtil.encrypt(value);
+                                }
+                            }
                         }
                         vm.setDetail(detailKey, value);
                     }

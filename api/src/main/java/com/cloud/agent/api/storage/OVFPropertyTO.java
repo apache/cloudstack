@@ -42,6 +42,12 @@ public class OVFPropertyTO implements OVFProperty {
     public OVFPropertyTO() {
     }
 
+    public OVFPropertyTO(String key, String value, boolean password) {
+        this.key = key;
+        this.value = value;
+        this.password = password;
+    }
+
     public OVFPropertyTO(String key, String type, String value, String qualifiers, boolean userConfigurable,
                        String label, String description, boolean password) {
         this.key = key;

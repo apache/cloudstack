@@ -29,11 +29,14 @@ import javax.inject.Inject;
 
 import com.cloud.agent.api.MigrateVmToPoolCommand;
 import com.cloud.agent.api.UnregisterVMCommand;
+import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.TemplateOVFPropertyVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
@@ -48,7 +51,7 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
@@ -159,6 +162,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     VolumeDataFactory _volFactory;
     @Inject
     private VMTemplatePoolDao templateSpoolDao;
+    @Inject
+    private TemplateOVFPropertiesDao templateOVFPropertiesDao;
 
     protected VMwareGuru() {
         super();
@@ -363,15 +368,23 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             to.setPlatformEmulator(guestOsMapping.getGuestOsName());
         }
 
-        Map<String, String> ovfProperties = new HashMap<>();
+        List<OVFPropertyTO> ovfProperties = new ArrayList<>();
         for (String detailKey : details.keySet()) {
             if (detailKey.startsWith(ApiConstants.OVF_PROPERTIES)) {
-                String ovfProp = detailKey.replace(ApiConstants.OVF_PROPERTIES + "-", "");
-                ovfProperties.put(ovfProp, details.get(detailKey));
+                String ovfPropKey = detailKey.replace(ApiConstants.OVF_PROPERTIES + "-", "");
+                TemplateOVFPropertyVO templateOVFPropertyVO = templateOVFPropertiesDao.findByTemplateAndKey(vm.getTemplateId(), ovfPropKey);
+                if (templateOVFPropertyVO == null) {
+                    s_logger.warn(String.format("OVF property %s not found on template, discarding", ovfPropKey));
+                    continue;
+                }
+                String ovfValue = details.get(detailKey);
+                boolean isPassword = templateOVFPropertyVO.isPassword();
+                OVFPropertyTO propertyTO = new OVFPropertyTO(ovfPropKey, ovfValue, isPassword);
+                ovfProperties.add(propertyTO);
             }
         }
 
-        if (MapUtils.isNotEmpty(ovfProperties)) {
+        if (CollectionUtils.isNotEmpty(ovfProperties)) {
             removeOvfPropertiesFromDetails(ovfProperties, details);
             String templateInstallPath = null;
             List<DiskTO> rootDiskList = vm.getDisks().stream().filter(x -> x.getType() == Volume.Type.ROOT).collect(Collectors.toList());
@@ -397,15 +410,19 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                         vm.getTemplateId() + " on zone " + dataCenterId);
             }
 
-            Pair<String, Map<String, String>> pair = new Pair<>(templateInstallPath, ovfProperties);
+            Pair<String, List<OVFPropertyTO>> pair = new Pair<>(templateInstallPath, ovfProperties);
             to.setOvfProperties(pair);
         }
 
         return to;
     }
 
-    private void removeOvfPropertiesFromDetails(Map<String, String> ovfProperties, Map<String, String> details) {
-        for (String key : ovfProperties.keySet()) {
+    /*
+    Remove OVF properties from details to be sent to hypervisor (avoid duplicate data)
+     */
+    private void removeOvfPropertiesFromDetails(List<OVFPropertyTO> ovfProperties, Map<String, String> details) {
+        for (OVFPropertyTO propertyTO : ovfProperties) {
+            String key = propertyTO.getKey();
             details.remove(ApiConstants.OVF_PROPERTIES + "-" + key);
         }
     }
