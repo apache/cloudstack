@@ -2483,12 +2483,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         if (userBlacklistedSettings.contains(detail.getName())) {
                             details.put(detail.getName(), detail.getValue());
                         }
-                        if (detail.getName().startsWith(ApiConstants.OVF_PROPERTIES)) {
-                            String ovfPropKey = detail.getName().replace(ApiConstants.OVF_PROPERTIES + "-", "");
-                            TemplateOVFPropertyVO ovfPropertyVO = templateOVFPropertiesDao.findByTemplateAndKey(vmInstance.getTemplateId(), ovfPropKey);
-                            if (ovfPropertyVO != null && ovfPropertyVO.isPassword()) {
-                                details.put(detail.getName(), DBEncryptionUtil.encrypt(detail.getValue()));
-                            }
+                    }
+                }
+                for (String detailName : details.keySet()) {
+                    if (detailName.startsWith(ApiConstants.OVF_PROPERTIES)) {
+                        String ovfPropKey = detailName.replace(ApiConstants.OVF_PROPERTIES + "-", "");
+                        TemplateOVFPropertyVO ovfPropertyVO = templateOVFPropertiesDao.findByTemplateAndKey(vmInstance.getTemplateId(), ovfPropKey);
+                        if (ovfPropertyVO != null && ovfPropertyVO.isPassword()) {
+                            details.put(detailName, DBEncryptionUtil.encrypt(details.get(detailName)));
                         }
                     }
                 }
