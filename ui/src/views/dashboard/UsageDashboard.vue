@@ -79,7 +79,7 @@ export default {
       api('listVirtualMachines', { listall: true }).then(json => {
         var count = 0
         if (json && json.listvirtualmachinesresponse) {
-          count = json.listnetworksresponse.count
+          count = json.listvirtualmachinesresponse.count
         }
         this.stats.push({ name: 'Total VMs', count: count })
       })

@@ -25,14 +25,14 @@
           <a-icon type="setting"/>
           <span>测试</span>
         </a-menu-item>
-        <a-menu-item key="2" disabled>
+        <a-menu-item key="3" disabled>
           <a :href="helpUrl" target="_blank">
             <a-icon type="question-circle-o"></a-icon>
             <span>Help</span>
           </a>
         </a-menu-item>
         <a-menu-divider/>
-        <a-menu-item key="3">
+        <a-menu-item key="4">
           <a href="javascript:;" @click="handleLogout">
             <a-icon type="logout"/>
             <span>Logout</span>

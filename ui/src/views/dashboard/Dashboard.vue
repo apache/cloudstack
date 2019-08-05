@@ -11,7 +11,6 @@
 
 <script>
 import store from '@/store'
-import { mapState } from 'vuex'
 import CapacityDashboard from './CapacityDashboard'
 import UsageDashboard from './UsageDashboard'
 
@@ -27,7 +26,6 @@ export default {
       project: false
     }
   },
-  computed: mapState(['project']),
   mounted () {
     this.showCapacityDashboard = store.getters.apis.hasOwnProperty('listCapacity')
     this.project = store.getters.project !== undefined && store.getters.project.id !== undefined
