@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -47,7 +46,7 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "createVolume", responseObject = VolumeResponse.class, description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.", responseView = ResponseView.Restricted, entityType = {
         Volume.class, VirtualMachine.class},
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
+public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
     private static final String s_name = "createvolumeresponse";
 
@@ -224,7 +223,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
         CallContext.current().setEventDetails("Volume Id: " + getEntityUuid() + ((getSnapshotId() == null) ? "" : " from snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getSnapshotId())));
         Volume volume = _volumeService.createVolume(this);
         if (volume != null) {
-            VolumeResponse response = _responseGenerator.createVolumeResponse(getResponseView(), volume);
+            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, volume);
             //FIXME - have to be moved to ApiResponseHelper
             if (getSnapshotId() != null) {
                 Snapshot snap = _entityMgr.findById(Snapshot.class, getSnapshotId());

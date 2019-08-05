@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -45,7 +44,7 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "destroyVirtualMachine", description = "Destroys a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
-public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
+public class DestroyVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyVMCmd.class.getName());
 
     private static final String s_name = "destroyvirtualmachineresponse";
@@ -138,7 +137,7 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
 
         UserVmResponse response = new UserVmResponse();
         if (result != null) {
-            List<UserVmResponse> responses = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result);
+            List<UserVmResponse> responses = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result);
             if (responses != null && !responses.isEmpty()) {
                 response = responses.get(0);
             }

@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -45,7 +44,7 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "resetSSHKeyForVirtualMachine", responseObject = UserVmResponse.class, description = "Resets the SSH Key for virtual machine. " +
         "The virtual machine must be in a \"Stopped\" state. [async]", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class ResetVMSSHKeyCmd extends BaseAsyncCmd implements UserCmd {
+public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ResetVMSSHKeyCmd.class.getName());
 
@@ -144,7 +143,7 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd implements UserCmd {
         UserVm result = _userVmService.resetVMSSHKey(this);
 
         if (result != null) {
-            UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
