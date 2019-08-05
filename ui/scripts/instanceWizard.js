@@ -533,8 +533,6 @@
                 // if the user is leveraging a template, then we can show custom IOPS, if applicable
                 var canShowCustomIopsForServiceOffering = (args.currentData["select-template"] != "select-iso" ? true : false);
 
-                ovfProps = selectedTemplateObj.ovfproperties;
-
                 // get serviceOfferingObjs
                 var zoneid = args.currentData["zoneid"];
                 $(window).removeData("cloudStack.module.instanceWizard.serviceOfferingObjs");
@@ -961,8 +959,18 @@
                         });
                     }
                 });
+
+                $.ajax({
+                    url: createURL("listTemplateOvfProperties&id=" + selectedTemplateObj.id),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+                        ovfProps = json.listtemplateovfpropertiesresponse.ovfproperty;
+                    }
+                });
+
                 var $step = $('.step.sshkeyPairs:visible');
-                if (ovfProps.length == 0) {
+                if (ovfProps == null || ovfProps.length === 0) {
                     $step.addClass('next-skip-ovf-properties');
                 } else {
                     $step.removeClass('next-skip-ovf-properties');

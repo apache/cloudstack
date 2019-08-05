@@ -25,13 +25,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.agent.api.storage.OVFProperty;
-import com.cloud.vm.UserVmManager;
-import org.apache.cloudstack.api.response.TemplateOVFPropertyResponse;
-import com.cloud.storage.dao.TemplateOVFPropertiesDao;
-import com.cloud.storage.TemplateOVFPropertyVO;
 import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -74,8 +68,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private AccountService _accountService;
     @Inject
     private VMTemplateDao _vmTemplateDao;
-    @Inject
-    private TemplateOVFPropertiesDao templateOvfPropertiesDao;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -239,31 +231,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             templateResponse.setChildTemplates(childTemplatesSet);
         }
 
-        List<TemplateOVFPropertyVO> ovfProperties = templateOvfPropertiesDao.listByTemplateId(template.getId());
-        addOVFPropertiesToTemplateResponse(ovfProperties, templateResponse);
-
         templateResponse.setObjectName("template");
         return templateResponse;
-    }
-
-    /**
-     * Add OVF properties to template response when available
-     */
-    private void addOVFPropertiesToTemplateResponse(List<TemplateOVFPropertyVO> ovfProperties, TemplateResponse templateResponse) {
-        if (CollectionUtils.isNotEmpty(ovfProperties) && UserVmManager.DisplayVMOVFProperties.value()) {
-            for (OVFProperty property : ovfProperties) {
-                TemplateOVFPropertyResponse propertyResponse = new TemplateOVFPropertyResponse();
-                propertyResponse.setKey(property.getKey());
-                propertyResponse.setType(property.getType());
-                propertyResponse.setValue(property.getValue());
-                propertyResponse.setQualifiers(property.getQualifiers());
-                propertyResponse.setUserConfigurable(property.isUserConfigurable());
-                propertyResponse.setLabel(property.getLabel());
-                propertyResponse.setDescription(property.getDescription());
-                propertyResponse.setPassword(property.isPassword());
-                templateResponse.addOvfProperty(propertyResponse);
-            }
-        }
     }
 
     //TODO: This is to keep compatibility with 4.1 API, where updateTemplateCmd and updateIsoCmd will return a simpler TemplateResponse

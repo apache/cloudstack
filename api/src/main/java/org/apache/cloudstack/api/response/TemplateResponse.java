@@ -201,13 +201,8 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "true if template requires HVM enabled, false otherwise")
     private Boolean requiresHvm;
 
-    @SerializedName(ApiConstants.OVF_PROPERTIES)
-    @Param(description = "OVF properties if present")
-    private Set<TemplateOVFPropertyResponse> ovfProperties;
-
     public TemplateResponse() {
         tags = new LinkedHashSet<>();
-        ovfProperties = new LinkedHashSet<>();
     }
 
     @Override
@@ -406,13 +401,5 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setRequiresHvm(Boolean requiresHvm) {
         this.requiresHvm = requiresHvm;
-    }
-
-    public void setOvfProperties(Set<TemplateOVFPropertyResponse> ovfProperties) {
-        this.ovfProperties = ovfProperties;
-    }
-
-    public void addOvfProperty(TemplateOVFPropertyResponse property) {
-        this.ovfProperties.add(property);
     }
 }
