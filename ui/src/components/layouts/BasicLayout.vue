@@ -28,7 +28,6 @@ export default {
 <style lang="less">
   @import url('../../style/index.less');
 
-
   /*
  * The following styles are auto-applied to elements with
  * transition="page-transition" when their visibility is toggled

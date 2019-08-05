@@ -36,7 +36,6 @@ const err = (error) => {
 
 // request interceptor
 service.interceptors.request.use(config => {
-  const token = Vue.ls.get(ACCESS_TOKEN)
   const project = Vue.ls.get(CURRENT_PROJECT)
   if (config && config.params) {
     config.params['response'] = 'json'

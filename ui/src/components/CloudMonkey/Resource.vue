@@ -14,10 +14,10 @@
     <a-row>
       <a-col :span="16">
         <a-button
-          v-for="(action, index) in actions"
-          :key="index"
+          v-for="(action, actionIndex) in actions"
+          :key="actionIndex"
           :icon="action.icon"
-          :type="action.icon == 'delete' ? 'danger' : (action.icon == 'plus' ? 'primary' : 'default')"
+          :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
           shape="circle"
           style="margin-right: 5px"
           @click="execAction(action)"
@@ -42,21 +42,21 @@
     </a-row>
 
     <a-drawer
-      :title="action.label"
+      :title="currentAction.label"
       placement="right"
       width="75%"
       :closable="true"
       @close="closeAction"
       :visible="showAction"
     >
-      <a-spin :spinning="action.loading">
+      <a-spin :spinning="currentAction.loading">
         <a-form
           :form="form"
           @submit="handleSubmit"
           layout="vertical" >
           <a-form-item
-            v-for="(field, index) in action.params"
-            :key="index"
+            v-for="(field, fieldIndex) in currentAction.params"
+            :key="fieldIndex"
             :label="field.name"
             :v-bind="field.name">
 
@@ -77,7 +77,7 @@
                 :placeholder="field.description"
 
               >
-                <a-select-option v-for="(opt, index) in field.opts" :key="index">
+                <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                   {{ opt.name }}
                 </a-select-option>
               </a-select>
@@ -120,7 +120,7 @@
                 Cancel
               </a-button>
               <a-button
-                :loading="action.loading"
+                :loading="currentAction.loading"
                 type="primary"
                 html-type="submit">
                 Submit
@@ -200,7 +200,7 @@ export default {
       columns: [],
       items: [],
       selectedRowKeys: [],
-      action: {},
+      currentAction: {},
       showAction: false,
       actions: []
     }
@@ -251,7 +251,7 @@ export default {
           this.apiName = this.$route.meta.permission[0]
         }
       }
-      if (this.apiName && this.apiName !== '' && !this.columnKeys || this.columnKeys.length == 0) {
+      if (this.apiName && this.apiName !== '' && !this.columnKeys || this.columnKeys.length === 0) {
         for (const field of store.getters.apis[this.apiName]['response']) {
           this.columnKeys.push(field.name)
         }
@@ -290,12 +290,12 @@ export default {
           }
         }
         for (const key in json[responseName]) {
-          if (key == 'count') continue
+          if (key === 'count') continue
           objectName = key
           break
         }
         this.items = json[responseName][objectName]
-        if (!this.items || this.items.length == 0) {
+        if (!this.items || this.items.length === 0) {
           this.items = []
         }
         for (let idx = 0; idx < this.items.length; idx++) {
@@ -306,7 +306,7 @@ export default {
     getResource (id) {
       var res = {}
       for (const item of this.items) {
-        if (item.id == id) {
+        if (item.id === id) {
           res = item
           break
         }
@@ -317,14 +317,14 @@ export default {
       this.fetchData(value)
     },
     closeAction () {
-      this.action.loading = false
+      this.currentAction.loading = false
       this.showAction = false
-      this.action = {}
+      this.currentAction = {}
     },
     execAction (action) {
-      this.action = action
-      this.action['params'] = store.getters.apis[action.api]['params']
-      this.action['params'].sort(function (a, b) {
+      this.currentAction = action
+      this.currentAction['params'] = store.getters.apis[this.currentAction.api]['params']
+      this.currentAction['params'].sort(function (a, b) {
         if (a.name === 'name' && b.name !== 'name') { return -1 }
         if (a.name !== 'name' && b.name === 'name') { return -1 }
         if (a.name === 'id') { return -1 }
@@ -332,19 +332,19 @@ export default {
         if (a.name > b.name) { return 1 }
         return 0
       })
-      for (var param of this.action['params']) {
+      for (var param of this.currentAction['params']) {
         if (param.type === 'uuid' || param.name === 'account') {
           this.listUuidOpts(param)
         }
       }
       this.showAction = true
-      this.action.loading = false
+      this.currentAction.loading = false
     },
     listUuidOpts (param) {
       var paramName = param.name
       const possibleName = 'list' + paramName.replace('id', '').toLowerCase() + 's'
-      var possibleApi = undefined
-      if (paramName == 'id') {
+      var possibleApi
+      if (paramName === 'id') {
         possibleApi = this.apiName
       } else {
         for (const api in store.getters.apis) {
@@ -360,7 +360,7 @@ export default {
       param.loading = true
       param.opts = []
       var params = { listall: true }
-      if (possibleApi == 'listTemplates') {
+      if (possibleApi === 'listTemplates') {
         params['templatefilter'] = 'executable'
       }
       api(possibleApi, params).then(json => {
@@ -368,7 +368,7 @@ export default {
         for (const obj in json) {
           if (obj.includes('response')) {
             for (const res in json[obj]) {
-              if (res == 'count') {
+              if (res === 'count') {
                 continue
               }
               param.opts = json[obj][res]
@@ -379,6 +379,7 @@ export default {
           }
         }
       }).catch(function (error) {
+        console.log(error.stack)
         param.loading = false
       }).then(function () {
       })
@@ -387,11 +388,11 @@ export default {
       e.preventDefault()
       this.form.validateFields((err, values) => {
         if (!err) {
-          this.action.loading = true
+          this.currentAction.loading = true
           const params = {}
           for (const key in values) {
             const input = values[key]
-            for (const param of this.action['params']) {
+            for (const param of this.currentAction['params']) {
               if (param.name === key) {
                 if (input === undefined) {
                   if (param.type === 'boolean') {
@@ -409,7 +410,7 @@ export default {
             }
           }
 
-          api(this.action.api, params).then(json => {
+          api(this.currentAction.api, params).then(json => {
             console.log(json)
             this.closeAction()
           }).catch(function (error) {
