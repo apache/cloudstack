@@ -21,6 +21,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -34,7 +35,8 @@ import org.apache.cloudstack.context.CallContext;
 
 @APICommand(name = ListTemplateOVFProperties.APINAME,
         description = "List template OVF properties if available.",
-        responseObject = TemplateOVFPropertyResponse.class)
+        responseObject = TemplateOVFPropertyResponse.class,
+        authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
 public class ListTemplateOVFProperties extends BaseListCmd {
 
     public static final String APINAME = "listTemplateOvfProperties";

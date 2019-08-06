@@ -989,7 +989,7 @@
             // Step 8: Review
             function(args) {
                 var $step = $('.step.review:visible');
-                if (ovfProps.length == 0) {
+                if (ovfProps == null || ovfProps.length === 0) {
                     $step.addClass('previous-skip-ovf-properties');
                 } else {
                     $step.removeClass('previous-skip-ovf-properties');
@@ -1034,7 +1034,7 @@
             });
 
             var deployOvfProperties = [];
-            if (ovfProps.length > 0) {
+            if (ovfProps != null && ovfProps.length > 0) {
                 $(ovfProps).each(function(index, prop) {
                     var selectField = args.$wizard.find('select[id="ovf-property-'+prop.key+'"]');
                     var inputField = args.$wizard.find('input[id="ovf-property-'+prop.key+'"]');
