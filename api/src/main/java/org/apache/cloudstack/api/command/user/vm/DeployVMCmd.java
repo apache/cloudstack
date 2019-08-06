@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.LogLevel;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
@@ -207,6 +208,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     @Parameter(name = ApiConstants.OVF_PROPERTIES, type = CommandType.MAP, since = "4.13",
             description = "used to specify the OVF properties.")
+    @LogLevel(LogLevel.Log4jLevel.Off)
     private Map vmOvfProperties;
 
     /////////////////////////////////////////////////////

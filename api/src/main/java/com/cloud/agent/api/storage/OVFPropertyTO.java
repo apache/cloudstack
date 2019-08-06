@@ -19,6 +19,8 @@
 
 package com.cloud.agent.api.storage;
 
+import com.cloud.agent.api.LogLevel;
+
 /**
  * Used to represent travel objects like:
  * <Property ovf:key="RouteDefault" ovf:type="string" ovf:qualifiers="ValueMap{&quot;Default Route&quot;,&quot;Remote HTTP and SSH Client Routes&quot;}" ovf:value="Default Route" ovf:userConfigurable="true">
@@ -32,6 +34,7 @@ public class OVFPropertyTO implements OVFProperty {
 
     private String key;
     private String type;
+    @LogLevel(LogLevel.Log4jLevel.Off)
     private String value;
     private String qualifiers;
     private Boolean userConfigurable;
