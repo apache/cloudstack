@@ -722,41 +722,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 maxIops, parentVolume, userSpecifiedName,
                 _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()));
 
-        // one step operation - create volume in VM's cluster and attach it
-        // to the VM
-        Long vmId = cmd.getVirtualMachineId();
-        if (vmId != null) {
-            // Check that the virtual machine ID is valid and it's a user vm
-            UserVmVO vm = _userVmDao.findById(vmId);
-            if (vm == null || vm.getType() != VirtualMachine.Type.User) {
-                throw new InvalidParameterValueException("Please specify a valid User VM.");
-            }
-
-            // Check that the VM is in the correct state
-            if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
-                throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
-            }
-
-            // permission check
-            _accountMgr.checkAccess(caller, null, false, vm);
-            {
-                try {
-                    attachVolumeToVM(vmId, volume.getId(), volume.getDeviceId());
-                } catch (Exception ex) {
-                    StringBuilder message = new StringBuilder("Volume: ");
-                    message.append(volume.getName());
-                    message.append(" created successfully, but failed to attach the newly created volume to VM: ");
-                    message.append(vm.getDisplayName());
-                    message.append(" due to error: ");
-                    message.append(ex.getMessage());
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(message, ex);
-                    }
-                    throw new CloudRuntimeException(message.toString());
-                }
-            }
-        }
-
+        verifyVmAndAttachVolume(cmd.getVirtualMachineId(), volume);
+        
         return volume;
     }
 
@@ -1662,7 +1629,45 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return vol;
         }
     }
+    
+    public Volume verifyVmAndAttachVolume(Long vmId, VolumeVO volume){
 
+        Account caller = CallContext.current().getCallingAccount();
+        Volume vol = null;
+        if (vmId != null) {
+            // Check that the virtual machine ID is valid and it's a user vm
+            UserVmVO vm = _userVmDao.findById(vmId);
+            if (vm == null || vm.getType() != VirtualMachine.Type.User) {
+                throw new InvalidParameterValueException("Please specify a valid User VM.");
+            }
+
+            // Check that the VM is in the correct state
+            if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
+                throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
+            }
+
+            // permission check
+            _accountMgr.checkAccess(caller, null, false, vm);
+            {
+                try {
+                    vol = attachVolumeToVM(vmId, volume.getId(), volume.getDeviceId());
+                } catch (Exception ex) {
+                    StringBuilder message = new StringBuilder("Volume: ");
+                    message.append(volume.getName());
+                    message.append(" created successfully, but failed to attach the newly created volume to VM: ");
+                    message.append(vm.getDisplayName());
+                    message.append(" due to error: ");
+                    message.append(ex.getMessage());
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug(message, ex);
+                    }
+                    throw new CloudRuntimeException(message.toString());
+                }
+            }
+        }
+        return vol;
+    }
+    
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPDATE, eventDescription = "updating volume", async = true)
     public Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId, long entityOwnerId, String chainInfo) {
