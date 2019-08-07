@@ -636,8 +636,8 @@
                                                 $step.find('.custom-slider-container').show();
                                                 var setupSlider = function(sliderClassName, minVal, maxVal) {
                                                     $step.find('.custom-slider-container .' + sliderClassName + ' .size.min span').html(minVal);
-                                                    $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(minVal);
                                                     $step.find('.custom-slider-container .' + sliderClassName + ' .size.max span').html(maxVal);
+                                                    $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(minVal);
                                                     $step.find('.custom-slider-container .' + sliderClassName + ' .slider').each(function() {
                                                         var $slider = $(this);
                                                         $slider.slider({
@@ -651,20 +651,22 @@
                                                     });
 
                                                     $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').bind('change', function() {
-                                                        var val = $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val();
+                                                        var val = parseInt($(this).val(), 10);
                                                         if (val < minVal || val > maxVal) {
                                                             cloudStack.dialog.notice({ message: $.validator.format(_l('message.validate.range'), [minVal, maxVal]) });
                                                         }
                                                         if (val < minVal) {
                                                             val = minVal;
-                                                            $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(val);
+                                                            $(this).val(val);
                                                         }
                                                         if(val > maxVal) {
                                                             val = maxVal;
-                                                            $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(val);
+                                                            $(this).val(val);
                                                         }
                                                         $step.find('span.custom-slider-container .' + sliderClassName).html(_s(val));
+                                                        $step.find('.custom-slider-container .' + sliderClassName + ' span.ui-slider-handle').css('left', (((val-minVal)/(maxVal-minVal))*100)+'%');
                                                     });
+                                                    $step.find('.custom-slider-container .' + sliderClassName + ' span.ui-slider-handle').css('left', '0%');
                                                 }
                                                 setupSlider('slider-cpu-cores', minCpuNumber, maxCpuNumber);
                                                 setupSlider('slider-memory-mb', minMemory, maxMemory);
