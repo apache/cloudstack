@@ -34,7 +34,7 @@ public class MigrateKVMAsync implements Callable<Domain> {
     private String vmName = "";
     private String destIp = "";
     private boolean migrateStorage;
-    private boolean migrateStorageManaged;
+    private boolean migrateNonSharedInc;
     private boolean autoConvergence;
 
     // Libvirt Migrate Flags reference:
@@ -87,14 +87,14 @@ public class MigrateKVMAsync implements Callable<Domain> {
     private static final int LIBVIRT_VERSION_SUPPORTS_AUTO_CONVERGE = 1002003;
 
     public MigrateKVMAsync(final LibvirtComputingResource libvirtComputingResource, final Domain dm, final Connect dconn, final String dxml,
-                           final boolean migrateStorage, final boolean migrateStorageManaged, final boolean autoConvergence, final String vmName, final String destIp) {
+            final boolean migrateStorage, final boolean migrateNonSharedInc, final boolean autoConvergence, final String vmName, final String destIp) {
         this.libvirtComputingResource = libvirtComputingResource;
 
         this.dm = dm;
         this.dconn = dconn;
         this.dxml = dxml;
         this.migrateStorage = migrateStorage;
-        this.migrateStorageManaged = migrateStorageManaged;
+        this.migrateNonSharedInc = migrateNonSharedInc;
         this.autoConvergence = autoConvergence;
         this.vmName = vmName;
         this.destIp = destIp;
@@ -109,11 +109,11 @@ public class MigrateKVMAsync implements Callable<Domain> {
         }
 
         if (migrateStorage) {
-            if (migrateStorageManaged) {
-                flags |= VIR_MIGRATE_NON_SHARED_DISK;
-            } else {
+            if (migrateNonSharedInc) {
                 flags |= VIR_MIGRATE_PERSIST_DEST;
                 flags |= VIR_MIGRATE_NON_SHARED_INC;
+            } else {
+                flags |= VIR_MIGRATE_NON_SHARED_DISK;
             }
         }
 
