@@ -40,19 +40,31 @@ export default {
       if (this.isDisabled()) {
         return
       }
-      api('listProjects').then(json => {
-        this.projects = [{ name: 'Default View' }]
-        if (json && json.listprojectsresponse && json.listprojectsresponse.project) {
-          this.projects.push(...json.listprojectsresponse.project)
-        }
-        const currentProject = Vue.ls.get(CURRENT_PROJECT)
-        for (var project of this.projects) {
-          if (project.id === currentProject.id) {
-            this.selectedProject = project.name
-            break
+      // TODO: refactor fetching project list for project selector
+      this.projects = []
+      var page = 1
+      const getNextPage = () => {
+        api('listProjects', { listAll: true, details: 'min', page: page, pageSize: 500 }).then(json => {
+          if (this.projects.length === 0) {
+            this.projects.push({ name: 'Default View' })
           }
-        }
-      })
+          if (json && json.listprojectsresponse && json.listprojectsresponse.project) {
+            this.projects.push(...json.listprojectsresponse.project)
+          }
+          const currentProject = Vue.ls.get(CURRENT_PROJECT)
+          for (var project of this.projects) {
+            if (project.id === currentProject.id) {
+              this.selectedProject = project.name
+              break
+            }
+          }
+          if (this.projects.length - 1 < json.listprojectsresponse.count) {
+            page++
+            getNextPage()
+          }
+        })
+      }
+      getNextPage()
     },
     isDisabled () {
       return !store.getters.apis.hasOwnProperty('listProjects')
