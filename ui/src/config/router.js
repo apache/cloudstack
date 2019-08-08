@@ -1,6 +1,82 @@
 // eslint-disable-next-line
 import { UserLayout, BasicLayout, RouteView, BlankLayout, PageView } from '@/components/layouts'
 
+import compute from '@/config/section/compute'
+import storage from '@/config/section/storage'
+import network from '@/config/section/network'
+import image from '@/config/section/image'
+import project from '@/config/section/project'
+
+export function generateRouterMap (section) {
+  var map = {
+    name: section.name,
+    path: '/' + section.name,
+    meta: { title: section.title, keepAlive: true, icon: section.icon },
+    component: RouteView
+  }
+
+  if (section.component) {
+    map.component = section.component
+  }
+
+  if (section.permission) {
+    map.meta.permission = section.permission
+  }
+
+  if (section.columns) {
+    map.meta.columns = section.columns
+  }
+
+  if (section.actions) {
+    map.meta.actions = section.actions
+  }
+
+  if (section.children && section.children.length > 0) {
+    map.redirect = '/' + section.children[0].name
+    map.meta.permission = section.children[0].permission
+    map.children = []
+    for (const child of section.children) {
+      map.children.push({
+        name: child.name,
+        path: '/' + child.name,
+        meta: {
+          title: child.title,
+          keepAlive: true,
+          icon: child.icon,
+          permission: child.permission,
+          params: child.params ? child.params : {},
+          columns: child.columns,
+          actions: child.actions
+        },
+        component: child.component,
+        hideChildrenInMenu: true,
+        children: [
+          {
+            path: '/' + child.name + '/:id',
+            meta: {
+              title: child.title,
+              keepAlive: true,
+              icon: child.icon,
+              permission: child.permission,
+              params: child.params ? child.params : {},
+              actions: child.actions ? child.actions : []
+            },
+            component: child.viewComponent ? child.viewComponent : child.component
+          }
+        ]
+      })
+    }
+  } else {
+    map.hideChildrenInMenu = true
+    map.children = [{
+      path: '/' + section.name + '/:id',
+      actions: section.actions ? section.actions : [],
+      component: section.viewComponent ? section.viewComponent : section.component
+    }]
+  }
+  return map
+}
+
 export const asyncRouterMap = [
   {
     path: '/',
@@ -17,235 +93,11 @@ export const asyncRouterMap = [
         component: () => import('@/views/dashboard/Dashboard')
       },
 
-      // compute
-      {
-        path: '/compute',
-        name: 'compute',
-        meta: { title: 'Compute', keepAlive: true, icon: 'cloud', permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ] },
-        component: RouteView,
-        redirect: '/vm',
-        children: [
-          {
-            path: '/vm',
-            name: 'vm',
-            meta: { title: 'Instances', keepAlive: true, icon: 'desktop', permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/vm/:id',
-                meta: { title: 'Instances', keepAlive: true, icon: 'cloud', permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ] },
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          },
-          {
-            path: '/kubernetes',
-            name: 'kubernetes',
-            meta: { title: 'Kubernetes', keepAlive: true, icon: 'radar-chart', permission: [ 'listVirtualMachines' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/kubernetes/:id',
-                meta: { title: 'Instances', keepAlive: true, icon: 'cloud', permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ] },
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          },
-          {
-            path: '/ssh',
-            name: 'ssh',
-            meta: { title: 'SSH Keys', icon: 'key', permission: [ 'listSSHKeyPairs' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/ssh/:id',
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          },
-          {
-            path: '/affinitygroups',
-            name: 'affinitygroups',
-            meta: { title: 'Affinity Groups', icon: 'swap', permission: [ 'listAffinityGroups' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/affinitygroups/:id',
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          }
-        ]
-      },
-
-      // storage
-      {
-        path: '/storage',
-        name: 'storage',
-        meta: { title: 'Storage', keepAlive: true, icon: 'database', permission: [ 'listVolumesMetrics', 'listVolumes' ] },
-        component: RouteView,
-        redirect: '/volume',
-        children: [
-          {
-            path: '/volume',
-            name: 'volume',
-            meta: { title: 'Volumes', icon: 'hdd', permission: [ 'listVolumesMetrics', 'listVolumes' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/volume/:id',
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          },
-          {
-            path: '/snapshot',
-            name: 'snapshot',
-            meta: { title: 'Snapshots', icon: 'build', permission: [ 'listSnapshots' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/snapshot/:id',
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          },
-          {
-            path: '/vmsnapshot',
-            name: 'vmsnapshot',
-            meta: { title: 'VM Snapshots', icon: 'camera', permission: [ 'listVMSnapshot' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/vmsnapshot/:id',
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          }
-        ]
-      },
-
-      // network
-      {
-        path: '/network',
-        name: 'network',
-        meta: { title: 'Network', keepAlive: true, icon: 'wifi', permission: [ 'listNetworks' ] },
-        component: RouteView,
-        redirect: '/guestnetwork',
-        children: [
-          {
-            path: '/guestnetwork',
-            name: 'guestnetwork',
-            meta: { title: 'Guest Networks', icon: 'gateway', permission: [ 'listNetworks' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/guestnetwork/:id',
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          },
-          {
-            path: '/vpc',
-            name: 'vpc',
-            meta: { title: 'VPCs', icon: 'deployment-unit', permission: [ 'listVPCs' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/vpc/:id',
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          },
-          {
-            path: '/securitygroups',
-            name: 'securitygroups',
-            meta: { title: 'Security Groups', icon: 'fire', permission: [ 'listSecurityGroups' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/securitygroups/:id',
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          },
-          {
-            path: '/vpngateway',
-            name: 'vpngateway',
-            meta: { title: 'VPN Gateways', icon: 'lock', permission: [ 'listVpnCustomerGateways' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/vpngateway/:id',
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          }
-        ]
-      },
-
-      // image
-      {
-        path: '/image',
-        name: 'image',
-        meta: { title: 'Images', keepAlive: true, icon: 'picture', permission: [ 'listTemplates' ] },
-        component: RouteView,
-        redirect: '/template',
-        children: [
-          {
-            path: '/template',
-            name: 'template',
-            meta: { title: 'Templates', icon: 'save', permission: [ 'listTemplates' ], params: { 'templatefilter': 'executable' } },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/template/:id',
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          },
-          {
-            path: '/iso',
-            name: 'iso',
-            meta: { title: 'Isos', icon: 'usb', permission: [ 'listIsos' ] },
-            component: () => import('@/components/CloudMonkey/Resource.vue'),
-            hideChildrenInMenu: true,
-            children: [
-              {
-                path: '/iso/:id',
-                component: () => import('@/components/CloudMonkey/Resource.vue')
-              }
-            ]
-          }
-        ]
-      },
-
-      // project
-      {
-        path: '/project',
-        name: 'project',
-        meta: { title: 'Projects', icon: 'project', permission: [ 'listProjects' ] },
-        component: () => import('@/components/CloudMonkey/Resource.vue'),
-        hideChildrenInMenu: true,
-        children: [
-          {
-            path: '/project/:id',
-            component: () => import('@/components/CloudMonkey/Resource.vue')
-          }
-        ]
-      },
+      generateRouterMap(compute),
+      generateRouterMap(storage),
+      generateRouterMap(network),
+      generateRouterMap(image),
+      generateRouterMap(project),
 
       // audit
       {

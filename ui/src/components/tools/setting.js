@@ -1,5 +1,4 @@
 import { message } from 'ant-design-vue/es'
-// import defaultSettings from '../defaultSettings';
 
 let lessNodesAppended
 
@@ -88,8 +87,7 @@ const updateTheme = primaryColor => {
 }
 
 const updateInvertedMode = invertedMode => {
-  invertedMode = true;
-  console.log(invertedMode);
+  invertedMode = true
   invertedMode ? document.body.classList.add('layout-inverted-mode') : document.body.classList.remove('layout-inverted-mode')
 }
 

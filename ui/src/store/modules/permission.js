@@ -1,5 +1,4 @@
-import { apiConfig } from '@/config/apiConfig'
-import { asyncRouterMap, constantRouterMap } from '@/config/router.config'
+import { asyncRouterMap, constantRouterMap } from '@/config/router'
 
 function hasApi (apis, route) {
   if (route.meta && route.meta.permission) {
@@ -42,7 +41,7 @@ const permission = {
       return new Promise(resolve => {
         const apis = Object.keys(data.apis)
         const accessedRouters = filterAsyncRouter(asyncRouterMap, apis)
-        commit('SET_ROUTERS', asyncRouterMap)
+        commit('SET_ROUTERS', accessedRouters)
         resolve()
       })
     }

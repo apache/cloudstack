@@ -187,7 +187,6 @@
 
 <script>
 import { api } from '@/api'
-import { apiConfig } from '@/config/apiConfig'
 import store from '@/store'
 
 export default {
@@ -195,7 +194,6 @@ export default {
   data () {
     return {
       apiName: '',
-      config: {},
       loading: false,
       columns: [],
       items: [],
@@ -229,7 +227,6 @@ export default {
       if (!this.routeName) {
         this.routeName = this.$route.matched[this.$route.matched.length - 1].parent.name
       }
-      this.config = apiConfig[this.routeName]
       this.apiName = ''
       this.actions = []
       this.columns = []
@@ -242,16 +239,19 @@ export default {
       if (search !== '') {
         params['keyword'] = search
       }
-      if (this.config) {
-        this.apiName = this.config.listApi
-        this.actions = this.config.actions
-        this.columnKeys = this.config.column
-      } else {
-        if (this.$route && this.$route.meta && this.$route.meta.permission) {
-          this.apiName = this.$route.meta.permission[0]
+      if (this.$route && this.$route.meta && this.$route.meta.permission) {
+        this.apiName = this.$route.meta.permission[0]
+        if (this.$route.meta.columns) {
+          this.columnKeys = this.$route.meta.columns
+        }
+        if (this.$route.meta.actions) {
+          this.actions = this.$route.meta.actions
         }
       }
-      if (this.apiName && this.apiName !== '' && !this.columnKeys || this.columnKeys.length === 0) {
+      if (this.apiName === '' || this.apiName === undefined) {
+        return
+      }
+      if (!this.columnKeys || this.columnKeys.length === 0) {
         for (const field of store.getters.apis[this.apiName]['response']) {
           this.columnKeys.push(field.name)
         }

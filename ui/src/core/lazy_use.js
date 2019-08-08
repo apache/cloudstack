@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import VueStorage from 'vue-ls'
-import config from '@/config/defaultSettings'
+import config from '@/config/settings'
 
 // base library
 import '@/core/lazy_lib/components_use'

@@ -44,7 +44,7 @@
 </template>
 
 <script>
-import config from '@/config/defaultSettings'
+import config from '@/config/settings'
 import HeaderNotice from './HeaderNotice'
 import TranslationMenu from './TranslationMenu'
 import { mapActions, mapGetters } from 'vuex'
