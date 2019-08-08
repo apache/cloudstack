@@ -719,7 +719,7 @@ public class VmwareHelper {
             }
         } catch (Exception ex) {
             s_logger.info("[ignored]"
-                    + "failed toi get message for exception: " + e.getLocalizedMessage());
+                    + "failed to get message for exception: " + e.getLocalizedMessage());
         }
 
         return ExceptionUtil.toString(e, printStack);
