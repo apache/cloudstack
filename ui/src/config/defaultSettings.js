@@ -6,7 +6,7 @@ export default {
   fixedHeader: true, // sticky header
   fixSiderbar: true, // sticky siderbar
   autoHideHeader: false, //  auto hide header
-  colorWeak: false,
+  invertedMode: true,
   multiTab: false, // enable to have tab/route history stuff
   // CloudStack options
   apiBase: '/client/api',

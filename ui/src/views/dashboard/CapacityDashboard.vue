@@ -1,61 +1,73 @@
 <template>
   <div class="page-header-index-wide">
     <a-row :gutter="24" :style="{ marginTop: '24px' }">
-      <a-col :sm="24" :md="6" :xl="18" :style="{ marginBottom: '24px' }">
-        <a-col :sm="24" :md="6" :xl="20" :style="{ marginBottom: '24px' }">
-          <a-select
-            showSearch
-            optionFilterProp="children"
-            :defaultValue="zoneSelected.name"
-            :value="zoneSelected.name"
-            @change="changeZone"
-            style="width: 100%" >
-            <a-select-option v-for="(zone, index) in zones" :key="index">
-              {{ zone.name }}
-            </a-select-option>
-          </a-select>
-        </a-col>
-        <a-col :sm="24" :md="6" :xl="4" :style="{ marginBottom: '24px' }">
-          <a-button
-            type="primary"
-            @click="listCapacity(zoneSelected, true)">Fetch Latest Statistics</a-button>
-        </a-col>
-
-        <a-col
-          :sm="12"
-          :md="12"
-          :xl="6"
-          :style="{ marginBottom: '28px' }"
-          v-for="stat in stats"
-          :key="stat.type">
-          <chart-card :loading="loading" style="padding-top: 40px">
-            <div style="text-align: center">
-              <h4>{{ stat.name }}</h4>
-              <a-progress type="dashboard" :percent="parseFloat(stat.percentused, 10)" :width="100" />
-            </div>
-            <template slot="footer"><span>{{ stat.capacityused }} / {{ stat.capacitytotal }}</span></template>
-          </chart-card>
-        </a-col>
+      <a-col :sm="24" :md="24" :xl="18" :style="{ marginBottom: '24px' }">
+        <div class="ant-pro-capacity-dashboard__wrapper">
+          <div class="ant-pro-capacity-dashboard__select">
+            <a-select
+              showSearch
+              optionFilterProp="children"
+              :defaultValue="zoneSelected.name"
+              :value="zoneSelected.name"
+              @change="changeZone"
+              style="width: 100%" >
+              <a-select-option v-for="(zone, index) in zones" :key="index">
+                {{ zone.name }}
+              </a-select-option>
+            </a-select>
+          </div>
+          <div class="ant-pro-capacity-dashboard__button">
+            <a-button
+              type="primary"
+              @click="listCapacity(zoneSelected, true)">Fetch Latest Statistics</a-button>
+          </div>
+        </div>
+        <div class="ant-pro-capacity-dashboard__tile-wrapper">
+          <a-col
+            :xs="12"
+            :sm="12"
+            :md="8"
+            :xl="6"
+            :style="{ marginBottom: '28px' }"
+            v-for="stat in stats"
+            :key="stat.type">
+            <chart-card :loading="loading" style="padding-top: 40px">
+              <div style="text-align: center">
+                <h4>{{ stat.name }}</h4>
+                <a-progress type="dashboard" :percent="Number(parseFloat(stat.percentused, 10).toFixed(2))" :width="100" />
+              </div>
+              <template slot="footer"><span>{{ stat.capacityused }} / {{ stat.capacitytotal }}</span></template>
+            </chart-card>
+          </a-col>
+        </div>
       </a-col>
       <a-col :xl="6">
-        <chart-card style="margin-bottom: 24px">
-          <div style="text-align: center">
-            <h4>Alerts</h4>
-            <p>Some event data here...</p>
-          </div>
-        </chart-card>
-        <chart-card style="margin-bottom: 24px">
-          <div style="text-align: center">
-            <h4>Host Alerts</h4>
-            <p>Some event data here...</p>
-          </div>
-        </chart-card>
-        <chart-card style="margin-bottom: 24px">
-          <div style="text-align: center">
-            <h4>Events</h4>
-            <p>Some event data here...</p>
-          </div>
-        </chart-card>
+        <a-row class="ant-pro-capacity-dashboard__alert-wrapper" :gutter="24">
+          <a-col :md="8" :xl="24">
+            <chart-card style="margin-bottom: 24px">
+              <div style="text-align: center">
+                <h4>Alerts</h4>
+                <p>Some event data here...</p>
+              </div>
+            </chart-card>
+          </a-col>
+          <a-col :md="8" :xl="24">
+            <chart-card style="margin-bottom: 24px">
+              <div style="text-align: center">
+                <h4>Host Alerts</h4>
+                <p>Some event data here...</p>
+              </div>
+            </chart-card>
+          </a-col>
+          <a-col :md="8" :xl="24">
+            <chart-card style="margin-bottom: 24px">
+              <div style="text-align: center">
+                <h4>Events</h4>
+                <p>Some event data here...</p>
+              </div>
+            </chart-card>
+          </a-col>
+        </a-row>
       </a-col>
     </a-row>
   </div>
@@ -157,6 +169,23 @@ export default {
       a {
         //margin-left: 24px;
       }
+    }
+  }
+
+  .ant-pro-capacity-dashboard {
+    &__wrapper {
+      display: flex;
+      margin-bottom: 24px;
+    }
+
+    &__select {
+      width: 100%;
+      padding: 0 12px;
+    }
+
+    &__button {
+      width: auto;
+      padding: 0 12px;
     }
   }
 </style>

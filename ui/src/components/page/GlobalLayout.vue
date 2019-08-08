@@ -152,3 +152,30 @@ export default {
   }
 }
 </script>
+
+<style lang="less">
+// Todo try to get this rules scoped
+.ant-drawer.drawer-sider {
+  .sider {
+    box-shadow: none;
+  }
+
+  &.dark {
+    .ant-drawer-content {
+      background-color: rgb(0, 21, 41);
+    }
+  }
+
+  &.light {
+    box-shadow: none;
+
+    .ant-drawer-content {
+      background-color: #fff;
+    }
+  }
+
+  .ant-drawer-body {
+    padding: 0
+  }
+}
+</style>

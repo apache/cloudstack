@@ -1,7 +1,7 @@
 <template>
 
   <a-dropdown>
-    <span class="action ant-dropdown-link">
+    <span class="action ant-dropdown-link ant-pro-translation-menu">
       <a-icon type="global"></a-icon>
     </span>
     <a-menu slot="overlay" @click="onClick">

@@ -12,6 +12,8 @@ Install tools and dependencies:
 
 Build and run:
 
+    npm start
+    or
     npm run serve
 
 Production Build:

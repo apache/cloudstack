@@ -1,0 +1,36 @@
+.ant-pro-capacity-dashboard {
+  &__wrapper {
+    display: flex;
+    margin-bottom: 24px;
+    flex-wrap: nowrap;
+
+    .mobile & {
+      flex-wrap: wrap;
+    }
+  }
+
+  &__select {
+    width: 100%;
+    padding: 0 12px;
+
+    .mobile & {
+      margin-bottom: 12px;
+    }
+  }
+
+  &__button {
+    width: auto;
+    padding: 0 12px;
+  }
+
+  &__tile-wrapper:after {
+    content: "";
+    clear: both;
+    display: table;
+  }
+
+  &__alert-wrapper {
+    clear: both;
+    padding: 0 12px;
+  }
+}

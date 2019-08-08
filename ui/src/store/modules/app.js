@@ -4,7 +4,7 @@ import {
   DEFAULT_THEME,
   DEFAULT_LAYOUT_MODE,
   DEFAULT_COLOR,
-  DEFAULT_COLOR_WEAK,
+  DEFAULT_COLOR_INVERTED,
   DEFAULT_FIXED_HEADER,
   DEFAULT_FIXED_SIDEMENU,
   DEFAULT_FIXED_HEADER_HIDDEN,
@@ -23,7 +23,7 @@ const app = {
     fixSiderbar: false,
     autoHideHeader: false,
     color: null,
-    weak: false,
+    inverted: true,
     multiTab: true
   },
   mutations: {
@@ -67,9 +67,9 @@ const app = {
       Vue.ls.set(DEFAULT_COLOR, color)
       state.color = color
     },
-    TOGGLE_WEAK: (state, flag) => {
-      Vue.ls.set(DEFAULT_COLOR_WEAK, flag)
-      state.weak = flag
+    TOGGLE_INVERTED: (state, flag) => {
+      Vue.ls.set(DEFAULT_COLOR_INVERTED, flag)
+      state.inverted = flag
     },
     TOGGLE_MULTI_TAB: (state, bool) => {
       Vue.ls.set(DEFAULT_MULTI_TAB, bool)
@@ -110,8 +110,8 @@ const app = {
     ToggleColor ({ commit }, color) {
       commit('TOGGLE_COLOR', color)
     },
-    ToggleWeak ({ commit }, weakFlag) {
-      commit('TOGGLE_WEAK', weakFlag)
+    ToggleInverted ({ commit }, invertedFlag) {
+      commit('TOGGLE_INVERTED', invertedFlag)
     },
     ToggleMultiTab ({ commit }, bool) {
       commit('TOGGLE_MULTI_TAB', bool)

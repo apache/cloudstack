@@ -48,9 +48,10 @@ export default {
 </script>
 
 <style lang="less" scoped>
-  .header-notice{
+  .header-notice {
     display: inline-block;
     transition: all 0.3s;
+
     span {
       vertical-align: initial;
     }

@@ -87,9 +87,10 @@ const updateTheme = primaryColor => {
   }
 }
 
-const updateColorWeak = colorWeak => {
-  // document.body.className = colorWeak ? 'colorWeak' : '';
-  colorWeak ? document.body.classList.add('colorWeak') : document.body.classList.remove('colorWeak')
+const updateInvertedMode = invertedMode => {
+  invertedMode = true;
+  console.log(invertedMode);
+  invertedMode ? document.body.classList.add('layout-inverted-mode') : document.body.classList.remove('layout-inverted-mode')
 }
 
-export { updateTheme, colorList, updateColorWeak }
+export { updateTheme, colorList, updateInvertedMode }
