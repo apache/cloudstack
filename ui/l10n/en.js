@@ -1277,6 +1277,7 @@ var dictionary = {
 "label.outofbandmanagement.username":"Username",
 "label.override.guest.traffic":"Override Guest-Traffic",
 "label.override.public.traffic":"Override Public-Traffic",
+"label.ovf.properties":"OVF Properties",
 "label.ovm.traffic.label":"OVM traffic label",
 "label.ovm3.cluster":"Native Clustering",
 "label.ovm3.pool":"Native Pooling",
