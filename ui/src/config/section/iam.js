@@ -9,28 +9,28 @@ export default {
       title: 'Users',
       icon: 'user',
       permission: [ 'listUsers' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      component: () => import('@/components/CloudMonkey/Resource.vue')
     },
     {
       name: 'account',
       title: 'Accounts',
       icon: 'team',
       permission: [ 'listAccounts' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      component: () => import('@/components/CloudMonkey/Resource.vue')
     },
     {
       name: 'domain',
       title: 'Domains',
       icon: 'block',
       permission: [ 'listDomains' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      component: () => import('@/components/CloudMonkey/Resource.vue')
     },
     {
       name: 'role',
       title: 'Roles',
       icon: 'idcard',
       permission: [ 'listRoles' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      component: () => import('@/components/CloudMonkey/Resource.vue')
     }
   ]
 }

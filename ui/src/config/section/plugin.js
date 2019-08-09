@@ -9,14 +9,14 @@ export default {
       title: 'Quota',
       icon: 'pie-chart',
       permission: [ 'quotaSummary', 'quotaIsEnabled' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      component: () => import('@/components/CloudMonkey/Resource.vue')
     },
     {
       name: 'cloudian',
       title: 'Cloudian Storage',
       icon: 'cloud-download',
       permission: [ 'cloudianSsoLogin', 'cloudianIsEnabled' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      component: () => import('@/components/CloudMonkey/Resource.vue')
     }
   ]
 }
