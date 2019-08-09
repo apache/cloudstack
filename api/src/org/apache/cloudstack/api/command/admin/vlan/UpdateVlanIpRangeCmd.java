@@ -20,6 +20,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VlanIpRangeResponse;
@@ -34,14 +35,14 @@ import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
 
-@APICommand(name = "updateVlanIpRange", description = "Updates a VLAN IP range.", responseObject =
+@APICommand(name = UpdateVlanIpRangeCmd.APINAME, description = "Updates a VLAN IP range.", responseObject =
         VlanIpRangeResponse.class, since = "4.13.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
+    
+    public static final String APINAME = "updateVlanIpRange";
     public static final Logger s_logger = Logger.getLogger(UpdateVlanIpRangeCmd.class.getName());
-
-    private static final String s_name = "updatevlaniprangeresponse";
-
+    
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -62,7 +63,7 @@ public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "the beginning IP address in the VLAN IP range")
     private String startIp;
-    
+
     @Parameter(name = ApiConstants.START_IPV6, type = CommandType.STRING, description = "the beginning IPv6 address in the IPv6 network range")
     private String startIpv6;
 
@@ -90,7 +91,7 @@ public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
     public String getStartIp() {
         return startIp;
     }
-    
+
     public String getStartIpv6() {
         if (startIpv6 == null) {
             return null;
@@ -104,7 +105,7 @@ public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
         }
         return NetUtils.standardizeIp6Address(endIpv6);
     }
-    
+
     public Integer getVlan() {
         return vlan;
     }
@@ -143,7 +144,7 @@ public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override
