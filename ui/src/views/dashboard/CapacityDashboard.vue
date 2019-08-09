@@ -40,7 +40,7 @@
       </a-col>
 
       <a-col :xl="6">
-        <a-row class="ant-pro-capacity-dashboard__alert-wrapper" :gutter="12">
+        <a-row class="ant-pro-capacity-dashboard__alert-wrapper" :gutter="24">
           <a-col :xl="12" :style="{ marginBottom: '24px' }">
             <chart-card>
               <div style="text-align: center">
