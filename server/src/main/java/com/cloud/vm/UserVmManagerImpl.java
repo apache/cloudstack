@@ -4761,7 +4761,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (!(userVm.getHypervisorType().equals(HypervisorType.KVM) || userVm.getHypervisorType().equals(HypervisorType.VMware))) {
             return;
         }
-        s_logger.debug("Collect vm disk statistics from host before stopping Vm");
+        s_logger.debug("Collect vm disk statistics from host before stopping VM");
+        if (userVm.getHostId() == null) {
+            s_logger.error("Unable to collect vm disk statistics for VM as the host is null, skipping VM disk statistics collection");
+        }
         long hostId = userVm.getHostId();
         List<String> vmNames = new ArrayList<String>();
         vmNames.add(userVm.getInstanceName());
