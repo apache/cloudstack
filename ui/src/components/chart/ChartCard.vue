@@ -92,13 +92,14 @@ export default {
   }
 
   .chart-card-content {
+    margin-top: -42px;
     margin-bottom: 12px;
     position: relative;
-    height: 46px;
+    height: 100%;
     width: 100%;
 
     .content-fix {
-      position: absolute;
+      position: relative;
       left: 0;
       bottom: 0;
       width: 100%;

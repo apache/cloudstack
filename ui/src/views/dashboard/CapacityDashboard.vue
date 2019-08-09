@@ -1,7 +1,7 @@
 <template>
   <div class="page-header-index-wide">
     <a-row :gutter="24" :style="{ marginTop: '24px' }">
-      <a-col :sm="24" :md="24" :xl="18" :style="{ marginBottom: '24px' }">
+      <a-col :xl="18">
         <div class="ant-pro-capacity-dashboard__wrapper">
           <div class="ant-pro-capacity-dashboard__select">
             <a-select
@@ -22,16 +22,13 @@
               @click="listCapacity(zoneSelected, true)">Fetch Latest Statistics</a-button>
           </div>
         </div>
-        <div class="ant-pro-capacity-dashboard__tile-wrapper">
+        <a-row :gutter="24">
           <a-col
-            :xs="12"
-            :sm="12"
-            :md="8"
             :xl="6"
-            :style="{ marginBottom: '28px' }"
+            :style="{ marginBottom: '24px' }"
             v-for="stat in stats"
             :key="stat.type">
-            <chart-card :loading="loading" style="padding-top: 40px">
+            <chart-card :loading="loading">
               <div style="text-align: center">
                 <h4>{{ stat.name }}</h4>
                 <a-progress type="dashboard" :percent="Number(parseFloat(stat.percentused, 10).toFixed(2))" :width="100" />
@@ -39,32 +36,46 @@
               <template slot="footer"><span>{{ stat.capacityused }} / {{ stat.capacitytotal }}</span></template>
             </chart-card>
           </a-col>
-        </div>
+        </a-row>
       </a-col>
+
       <a-col :xl="6">
-        <a-row class="ant-pro-capacity-dashboard__alert-wrapper" :gutter="24">
-          <a-col :md="8" :xl="24">
-            <chart-card style="margin-bottom: 24px">
+        <a-row class="ant-pro-capacity-dashboard__alert-wrapper" :gutter="12">
+          <a-col :xl="12" :style="{ marginBottom: '24px' }">
+            <chart-card>
               <div style="text-align: center">
-                <h4>Alerts</h4>
-                <p>Some event data here...</p>
+                <h4>General Alerts</h4>
+                <a-button><router-link :to="{ name: 'alert' }"><a-icon type="flag" /></router-link></a-button>
               </div>
             </chart-card>
           </a-col>
-          <a-col :md="8" :xl="24">
-            <chart-card style="margin-bottom: 24px">
+          <a-col :xl="12" :style="{ marginBottom: '24px' }">
+            <chart-card>
               <div style="text-align: center">
-                <h4>Host Alerts</h4>
-                <p>Some event data here...</p>
+                <h4>Hosts in Alert</h4>
+                <a-button type="danger"><router-link :to="{ name: 'host' }"><a-icon type="desktop" /></router-link></a-button>
               </div>
             </chart-card>
           </a-col>
-          <a-col :md="8" :xl="24">
-            <chart-card style="margin-bottom: 24px">
+          <a-col :xl="24" :style="{ marginBottom: '24px' }">
+            <chart-card>
               <div style="text-align: center">
-                <h4>Events</h4>
-                <p>Some event data here...</p>
+                <a-button size="large"><router-link :to="{ name: 'event' }">View Events</router-link></a-button>
               </div>
+              <template slot="footer">
+                <div :style="{ paddingTop: '12px', paddingLeft: '3px' }">
+                  <a-timeline pending="Performing tasks...">
+                    <a-timeline-item>Some VR stuff...</a-timeline-item>
+                    <a-timeline-item color="red">
+                      <a-icon slot="dot" type="clock-circle-o" style="font-size: 16px;" />
+                      Deploying VM...
+                    </a-timeline-item>
+                    <a-timeline-item color="green">Some storage stuff...</a-timeline-item>
+                    <a-timeline-item color="blue">Some user login...</a-timeline-item>
+                    <a-timeline-item color="green">Template OK...</a-timeline-item>
+                  </a-timeline>
+                </div>
+              </template>
             </chart-card>
           </a-col>
         </a-row>
@@ -78,24 +89,12 @@ import { api } from '@/api'
 
 import ChartCard from '@/components/chart/ChartCard'
 import ACol from 'ant-design-vue/es/grid/Col'
-import ATooltip from 'ant-design-vue/es/tooltip/Tooltip'
-import MiniArea from '@/components/chart/MiniArea'
-import MiniBar from '@/components/chart/MiniBar'
-import MiniProgress from '@/components/chart/MiniProgress'
-import Bar from '@/components/chart/Bar'
-import Trend from '@/components/Trend'
 
 export default {
   name: 'CapacityDashboard',
   components: {
-    ATooltip,
     ACol,
-    ChartCard,
-    MiniArea,
-    MiniBar,
-    MiniProgress,
-    Bar,
-    Trend
+    ChartCard
   },
   data () {
     return {
@@ -180,12 +179,11 @@ export default {
 
     &__select {
       width: 100%;
-      padding: 0 12px;
     }
 
     &__button {
       width: auto;
-      padding: 0 12px;
+      padding-left: 12px;
     }
   }
 </style>
