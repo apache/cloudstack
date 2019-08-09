@@ -386,3 +386,19 @@ CREATE TABLE `cloud`.`direct_download_certificate_host_map` (
   CONSTRAINT `fk_direct_download_certificate_host_map__certificate_id` FOREIGN KEY (`certificate_id`) REFERENCES `direct_download_certificate` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- [Vmware] Allow configuring appliances on the VM instance wizard when OVF properties are available
+CREATE TABLE `cloud`.`template_ovf_properties` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `template_id` bigint(20) unsigned NOT NULL,
+  `key` VARCHAR(100) NOT NULL,
+  `type` VARCHAR(45) DEFAULT NULL,
+  `value` VARCHAR(100) DEFAULT NULL,
+  `password` TINYINT(1) NOT NULL DEFAULT '0',
+  `qualifiers` TEXT DEFAULT NULL,
+  `user_configurable` TINYINT(1) NOT NULL DEFAULT '0',
+  `label` TEXT DEFAULT NULL,
+  `description` TEXT DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_template_ovf_properties__template_id` FOREIGN KEY (`template_id`) REFERENCES `vm_template`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

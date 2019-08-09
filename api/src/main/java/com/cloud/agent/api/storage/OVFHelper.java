@@ -19,6 +19,7 @@ package com.cloud.agent.api.storage;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +39,9 @@ import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.to.DatadiskTO;
@@ -67,6 +70,92 @@ public class OVFHelper {
         } else {
             throw new InternalErrorException("Failed to read capacity and capacityAllocationUnits from the OVF file: " + ovfFilePath);
         }
+    }
+
+    /**
+     * Get the text value of a node's child with name "childNodeName", null if not present
+     * Example:
+     * <Node>
+     *    <childNodeName>Text value</childNodeName>
+     * </Node>
+     */
+    private String getChildNodeValue(Node node, String childNodeName) {
+        if (node != null && node.hasChildNodes()) {
+            NodeList childNodes = node.getChildNodes();
+            for (int i = 0; i < childNodes.getLength(); i++) {
+                Node value = childNodes.item(i);
+                if (value != null && value.getNodeName().equals(childNodeName)) {
+                    return value.getTextContent();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Create OVFProperty class from the parsed node. Note that some fields may not be present.
+     * The key attribute is required
+     */
+    protected OVFPropertyTO createOVFPropertyFromNode(Node node) {
+        Element property = (Element) node;
+        String key = property.getAttribute("ovf:key");
+        if (StringUtils.isBlank(key)) {
+            return null;
+        }
+
+        String value = property.getAttribute("ovf:value");
+        String type = property.getAttribute("ovf:type");
+        String qualifiers = property.getAttribute("ovf:qualifiers");
+        String userConfigurableStr = property.getAttribute("ovf:userConfigurable");
+        boolean userConfigurable = StringUtils.isNotBlank(userConfigurableStr) &&
+                userConfigurableStr.equalsIgnoreCase("true");
+        String passStr = property.getAttribute("ovf:password");
+        boolean password = StringUtils.isNotBlank(passStr) && passStr.equalsIgnoreCase("true");
+        String label = getChildNodeValue(node, "Label");
+        String description = getChildNodeValue(node, "Description");
+        return new OVFPropertyTO(key, type, value, qualifiers, userConfigurable, label, description, password);
+    }
+
+    /**
+     * Retrieve OVF properties from a parsed OVF file, with attribute 'ovf:userConfigurable' set to true
+     */
+    private List<OVFPropertyTO> getConfigurableOVFPropertiesFromDocument(Document doc) {
+        List<OVFPropertyTO> props = new ArrayList<>();
+        NodeList properties = doc.getElementsByTagName("Property");
+        if (properties != null) {
+            for (int i = 0; i < properties.getLength(); i++) {
+                Node node = properties.item(i);
+                if (node == null) {
+                    continue;
+                }
+                OVFPropertyTO prop = createOVFPropertyFromNode(node);
+                if (prop != null && prop.isUserConfigurable()) {
+                    props.add(prop);
+                }
+            }
+        }
+        return props;
+    }
+
+    /**
+     * Get properties from OVF file located on ovfFilePath
+     */
+    public List<OVFPropertyTO> getOVFPropertiesFromFile(String ovfFilePath) throws ParserConfigurationException, IOException, SAXException {
+        if (StringUtils.isBlank(ovfFilePath)) {
+            return new ArrayList<>();
+        }
+        File ovfFile = new File(ovfFilePath);
+        final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(ovfFile);
+        return getConfigurableOVFPropertiesFromDocument(doc);
+    }
+
+    /**
+     * Get properties from OVF XML string
+     */
+    protected List<OVFPropertyTO> getOVFPropertiesXmlString(final String ovfFilePath) throws ParserConfigurationException, IOException, SAXException {
+        InputSource is = new InputSource(new StringReader(ovfFilePath));
+        final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
+        return getConfigurableOVFPropertiesFromDocument(doc);
     }
 
     public List<DatadiskTO> getOVFVolumeInfo(final String ovfFilePath) {

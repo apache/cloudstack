@@ -5819,6 +5819,11 @@ textarea {
   overflow: hidden;
 }
 
+.multi-wizard .select-container .select .ovf-property {
+  max-width: 352px;
+  padding-left: 21px;
+}
+
 .multi-wizard .select-container .select .select-desc .name {
   margin: 0 0 5px;
   font-weight: bold;

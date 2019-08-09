@@ -199,6 +199,7 @@ public class ApiConstants {
     public static final String ISO_GUEST_OS_NONE = "None";
     public static final String JOB_ID = "jobid";
     public static final String JOB_STATUS = "jobstatus";
+    public static final String LABEL = "label";
     public static final String LASTNAME = "lastname";
     public static final String LEVEL = "level";
     public static final String LENGTH = "length";
@@ -233,6 +234,7 @@ public class ApiConstants {
     public static final String OS_NAME_FOR_HYPERVISOR = "osnameforhypervisor";
     public static final String OUTOFBANDMANAGEMENT_POWERSTATE = "outofbandmanagementpowerstate";
     public static final String OUTOFBANDMANAGEMENT_ENABLED = "outofbandmanagementenabled";
+    public static final String OVF_PROPERTIES = "ovfproperties";
     public static final String PARAMS = "params";
     public static final String PARENT_ID = "parentid";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
@@ -277,6 +279,7 @@ public class ApiConstants {
     public static final String RESPONSE = "response";
     public static final String REVERTABLE = "revertable";
     public static final String REGISTERED = "registered";
+    public static final String QUALIFIERS = "qualifiers";
     public static final String QUERY_FILTER = "queryfilter";
     public static final String SCHEDULE = "schedule";
     public static final String SCOPE = "scope";
@@ -334,6 +337,7 @@ public class ApiConstants {
     public static final String USER_ID = "userid";
     public static final String USE_SSL = "ssl";
     public static final String USERNAME = "username";
+    public static final String USER_CONFIGURABLE = "userconfigurable";
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
     public static final String Update_IN_SEQUENCE = "updateinsequence";

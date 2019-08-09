@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.vmware.vim25.VmConfigInfo;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -517,12 +518,18 @@ public class VmwareStorageProcessor implements StorageProcessor {
         hyperHost.importVmFromOVF(srcFileName, vmName, datastoreMo, "thin");
 
         VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+        VmConfigInfo vAppConfig;
         if (vmMo == null) {
             String msg =
                     "Failed to import OVA template. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage +
                             ", templateName: " + templateName + ", templateUuid: " + templateUuid;
             s_logger.error(msg);
             throw new Exception(msg);
+        } else {
+            vAppConfig = vmMo.getConfigInfo().getVAppConfig();
+            if (vAppConfig != null) {
+                s_logger.info("Found vApp configuration");
+            }
         }
 
         OVAProcessor processor = new OVAProcessor();
@@ -536,7 +543,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 // the same template may be deployed with multiple copies at per-datastore per-host basis,
                 // save the original template name from CloudStack DB as the UUID to associate them.
                 vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, templateName);
-                vmMo.markAsTemplate();
+                if (vAppConfig == null) {
+                    vmMo.markAsTemplate();
+                }
             } else {
                 vmMo.destroy();
 

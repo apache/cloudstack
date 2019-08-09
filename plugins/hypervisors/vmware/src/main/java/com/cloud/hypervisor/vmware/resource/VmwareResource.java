@@ -44,6 +44,19 @@ import java.util.UUID;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.vmware.vim25.ArrayUpdateOperation;
+import com.vmware.vim25.VAppOvfSectionInfo;
+import com.vmware.vim25.VAppOvfSectionSpec;
+import com.vmware.vim25.VAppProductInfo;
+import com.vmware.vim25.VAppProductSpec;
+import com.vmware.vim25.VAppPropertyInfo;
+import com.vmware.vim25.VAppPropertySpec;
+import com.vmware.vim25.VmConfigInfo;
+import com.vmware.vim25.VmConfigSpec;
+import org.apache.commons.collections.CollectionUtils;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -2229,6 +2242,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // config video card
             configureVideoCard(vmMo, vmSpec, vmConfigSpec);
 
+            // Set OVF properties (if available)
+            Pair<String, List<OVFPropertyTO>> ovfPropsMap = vmSpec.getOvfProperties();
+            VmConfigInfo templateVappConfig = null;
+            List<OVFPropertyTO> ovfProperties = null;
+            if (ovfPropsMap != null) {
+                String vmTemplate = ovfPropsMap.first();
+                s_logger.info("Find VM template " + vmTemplate);
+                VirtualMachineMO vmTemplateMO = dcMo.findVm(vmTemplate);
+                templateVappConfig = vmTemplateMO.getConfigInfo().getVAppConfig();
+                ovfProperties = ovfPropsMap.second();
+                // Set OVF properties (if available)
+                if (CollectionUtils.isNotEmpty(ovfProperties)) {
+                    s_logger.info("Copying OVF properties from template and setting them to the values the user provided");
+                    copyVAppConfigsFromTemplate(templateVappConfig, ovfProperties, vmConfigSpec);
+                }
+            }
+
             //
             // Configure VM
             //
@@ -2314,6 +2344,87 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return startAnswer;
         } finally {
         }
+    }
+
+
+    /**
+     * Set the ovf section spec from existing vApp configuration
+     */
+    protected List<VAppOvfSectionSpec> copyVAppConfigOvfSectionFromOVF(VmConfigInfo vAppConfig) {
+        List<VAppOvfSectionInfo> ovfSection = vAppConfig.getOvfSection();
+        List<VAppOvfSectionSpec> specs = new ArrayList<>();
+        for (VAppOvfSectionInfo info : ovfSection) {
+            VAppOvfSectionSpec spec = new VAppOvfSectionSpec();
+            spec.setInfo(info);
+            spec.setOperation(ArrayUpdateOperation.ADD);
+            specs.add(spec);
+        }
+        return specs;
+    }
+
+    private Map<String, Pair<String, Boolean>> getOVFMap(List<OVFPropertyTO> props) {
+        Map<String, Pair<String, Boolean>> map = new HashMap<>();
+        for (OVFPropertyTO prop : props) {
+            Pair<String, Boolean> pair = new Pair<>(prop.getValue(), prop.isPassword());
+            map.put(prop.getKey(), pair);
+        }
+        return map;
+    }
+
+    /**
+     * Set the properties section from existing vApp configuration and values set on ovfProperties
+     */
+    protected List<VAppPropertySpec> copyVAppConfigPropertySectionFromOVF(VmConfigInfo vAppConfig, List<OVFPropertyTO> ovfProperties) {
+        List<VAppPropertyInfo> productFromOvf = vAppConfig.getProperty();
+        List<VAppPropertySpec> specs = new ArrayList<>();
+        Map<String, Pair<String, Boolean>> ovfMap = getOVFMap(ovfProperties);
+        for (VAppPropertyInfo info : productFromOvf) {
+            VAppPropertySpec spec = new VAppPropertySpec();
+            if (ovfMap.containsKey(info.getId())) {
+                Pair<String, Boolean> pair = ovfMap.get(info.getId());
+                String value = pair.first();
+                boolean isPassword = pair.second();
+                info.setValue(isPassword ? DBEncryptionUtil.decrypt(value) : value);
+            }
+            spec.setInfo(info);
+            spec.setOperation(ArrayUpdateOperation.ADD);
+            specs.add(spec);
+        }
+        return specs;
+    }
+
+    /**
+     * Set the product section spec from existing vApp configuration
+     */
+    protected List<VAppProductSpec> copyVAppConfigProductSectionFromOVF(VmConfigInfo vAppConfig) {
+        List<VAppProductInfo> productFromOvf = vAppConfig.getProduct();
+        List<VAppProductSpec> specs = new ArrayList<>();
+        for (VAppProductInfo info : productFromOvf) {
+            VAppProductSpec spec = new VAppProductSpec();
+            spec.setInfo(info);
+            spec.setOperation(ArrayUpdateOperation.ADD);
+            specs.add(spec);
+        }
+        return specs;
+    }
+
+    /**
+     * Set the vApp configuration to vmConfig spec, copying existing configuration from vAppConfig
+     * and seting properties values from ovfProperties
+     */
+    protected void copyVAppConfigsFromTemplate(VmConfigInfo vAppConfig,
+                                                   List<OVFPropertyTO> ovfProperties,
+                                                   VirtualMachineConfigSpec vmConfig) throws Exception {
+        VmConfigSpec vmConfigSpec = new VmConfigSpec();
+        vmConfigSpec.getEula().addAll(vAppConfig.getEula());
+        vmConfigSpec.setInstallBootStopDelay(vAppConfig.getInstallBootStopDelay());
+        vmConfigSpec.setInstallBootRequired(vAppConfig.isInstallBootRequired());
+        vmConfigSpec.setIpAssignment(vAppConfig.getIpAssignment());
+        vmConfigSpec.getOvfEnvironmentTransport().addAll(vAppConfig.getOvfEnvironmentTransport());
+        vmConfigSpec.getProduct().addAll(copyVAppConfigProductSectionFromOVF(vAppConfig));
+        vmConfigSpec.getProperty().addAll(copyVAppConfigPropertySectionFromOVF(vAppConfig, ovfProperties));
+        vmConfigSpec.getOvfSection().addAll(copyVAppConfigOvfSectionFromOVF(vAppConfig));
+        vmConfig.setVAppConfig(vmConfigSpec);
     }
 
     private String appendFileType(String path, String fileType) {

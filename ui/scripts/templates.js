@@ -1822,6 +1822,21 @@
                                 }
                             }
                         },
+                        tabFilter: function (args) {
+                            $.ajax({
+                                url: createURL("listTemplateOvfProperties&id=" + args.context.templates[0].id),
+                                dataType: "json",
+                                async: false,
+                                success: function(json) {
+                                    ovfprops = json.listtemplateovfpropertiesresponse.ovfproperty;
+                                }
+                            });
+                            var hiddenTabs = [];
+                            if (ovfprops == null || ovfprops.length === 0) {
+                                hiddenTabs.push("ovfpropertiestab");
+                            }
+                            return hiddenTabs;
+                        },
                         tabs: {
                             details: {
                                 title: 'label.details',
@@ -2583,7 +2598,57 @@
 										}
 									}
 								})
-							}
+							},
+
+                            /**
+                             * OVF properties tab (only displayed when OVF properties are available)
+                             */
+                            ovfpropertiestab: {
+                                title: 'label.ovf.properties',
+                                listView: {
+                                    id: 'ovfproperties',
+                                    fields: {
+                                        label: {
+                                            label: 'label.label'
+                                        },
+                                        description: {
+                                            label: 'label.description'
+                                        },
+                                        value: {
+                                            label: 'label.value'
+                                        }
+                                    },
+                                    hideSearchBar: true,
+                                    dataProvider: function(args) {
+                                        $.ajax({
+                                            url: createURL("listTemplateOvfProperties"),
+                                            data: {
+                                                id: args.context.templates[0].id
+                                            },
+                                            success: function(json) {
+                                                var ovfprops = json.listtemplateovfpropertiesresponse.ovfproperty;
+                                                var listDetails = [];
+                                                for (index in ovfprops){
+                                                    var prop = ovfprops[index];
+                                                    var det = {};
+                                                    det['label'] = prop['label'];
+                                                    det['description'] = prop['description'];
+                                                    det['value'] = prop['value'];
+                                                    listDetails.push(det);
+                                                }
+                                                args.response.success({
+                                                    data: listDetails
+                                                });
+                                            },
+
+                                            error: function(json) {
+                                                args.response.error(parseXMLHttpResponse(json));
+                                            }
+                                        });
+
+                                    }
+                                }
+                            }
 						}
                     }
                 }

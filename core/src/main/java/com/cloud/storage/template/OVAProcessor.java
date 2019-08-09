@@ -26,6 +26,8 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import com.cloud.agent.api.storage.OVFPropertyTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -106,6 +108,11 @@ public class OVAProcessor extends AdapterBase implements Processor {
         try {
             OVFHelper ovfHelper = new OVFHelper();
             List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfo(ovfFile);
+            List<OVFPropertyTO> ovfProperties = ovfHelper.getOVFPropertiesFromFile(ovfFile);
+            if (CollectionUtils.isNotEmpty(ovfProperties)) {
+                s_logger.info("Found " + ovfProperties.size() + " configurable OVF properties");
+                info.ovfProperties = ovfProperties;
+            }
         } catch (Exception e) {
             s_logger.info("The ovf file " + ovfFile + " is invalid ", e);
             throw new InternalErrorException("OVA package has bad ovf file " + e.getMessage(), e);

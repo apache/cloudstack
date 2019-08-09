@@ -23,14 +23,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import com.cloud.agent.api.MigrateVmToPoolCommand;
 import com.cloud.agent.api.UnregisterVMCommand;
+import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.TemplateOVFPropertyVO;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.dao.TemplateOVFPropertiesDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -43,6 +51,7 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
@@ -151,6 +160,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     PrimaryDataStoreDao _storagePoolDao;
     @Inject
     VolumeDataFactory _volFactory;
+    @Inject
+    private VMTemplatePoolDao templateSpoolDao;
+    @Inject
+    private TemplateOVFPropertiesDao templateOVFPropertiesDao;
 
     protected VMwareGuru() {
         super();
@@ -354,7 +367,64 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         } else {
             to.setPlatformEmulator(guestOsMapping.getGuestOsName());
         }
+
+        List<OVFPropertyTO> ovfProperties = new ArrayList<>();
+        for (String detailKey : details.keySet()) {
+            if (detailKey.startsWith(ApiConstants.OVF_PROPERTIES)) {
+                String ovfPropKey = detailKey.replace(ApiConstants.OVF_PROPERTIES + "-", "");
+                TemplateOVFPropertyVO templateOVFPropertyVO = templateOVFPropertiesDao.findByTemplateAndKey(vm.getTemplateId(), ovfPropKey);
+                if (templateOVFPropertyVO == null) {
+                    s_logger.warn(String.format("OVF property %s not found on template, discarding", ovfPropKey));
+                    continue;
+                }
+                String ovfValue = details.get(detailKey);
+                boolean isPassword = templateOVFPropertyVO.isPassword();
+                OVFPropertyTO propertyTO = new OVFPropertyTO(ovfPropKey, ovfValue, isPassword);
+                ovfProperties.add(propertyTO);
+            }
+        }
+
+        if (CollectionUtils.isNotEmpty(ovfProperties)) {
+            removeOvfPropertiesFromDetails(ovfProperties, details);
+            String templateInstallPath = null;
+            List<DiskTO> rootDiskList = vm.getDisks().stream().filter(x -> x.getType() == Volume.Type.ROOT).collect(Collectors.toList());
+            if (rootDiskList.size() != 1) {
+                throw new CloudRuntimeException("Did not find only one root disk for VM " + vm.getHostName());
+            }
+
+            DiskTO rootDiskTO = rootDiskList.get(0);
+            DataStoreTO dataStore = rootDiskTO.getData().getDataStore();
+            StoragePoolVO storagePoolVO = _storagePoolDao.findByUuid(dataStore.getUuid());
+            long dataCenterId = storagePoolVO.getDataCenterId();
+            List<StoragePoolVO> pools = _storagePoolDao.listByDataCenterId(dataCenterId);
+            for (StoragePoolVO pool : pools) {
+                VMTemplateStoragePoolVO ref = templateSpoolDao.findByPoolTemplate(pool.getId(), vm.getTemplateId());
+                if (ref != null && ref.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                    templateInstallPath = ref.getInstallPath();
+                    break;
+                }
+            }
+
+            if (templateInstallPath == null) {
+                throw new CloudRuntimeException("Did not find the template install path for template " +
+                        vm.getTemplateId() + " on zone " + dataCenterId);
+            }
+
+            Pair<String, List<OVFPropertyTO>> pair = new Pair<>(templateInstallPath, ovfProperties);
+            to.setOvfProperties(pair);
+        }
+
         return to;
+    }
+
+    /*
+    Remove OVF properties from details to be sent to hypervisor (avoid duplicate data)
+     */
+    private void removeOvfPropertiesFromDetails(List<OVFPropertyTO> ovfProperties, Map<String, String> details) {
+        for (OVFPropertyTO propertyTO : ovfProperties) {
+            String key = propertyTO.getKey();
+            details.remove(ApiConstants.OVF_PROPERTIES + "-" + key);
+        }
     }
 
     /**
