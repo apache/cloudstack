@@ -1473,7 +1473,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(), vmInstance.getId(),
                     oldNicIdString, oldNetworkOfferingId, null, 0L, VirtualMachine.class.getName(), vmInstance.getUuid(), vmInstance.isDisplay());
 
-            if (vmInstance.getState() != State.Stopped) {
+            if (vmInstance.getState() == State.Running) {
                 try {
                     VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vmInstance);
                     User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
