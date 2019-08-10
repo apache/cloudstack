@@ -71,7 +71,7 @@ export default {
     {
       name: 'ms',
       title: 'Management Servers',
-      icon: 'environment',
+      icon: 'rocket',
       permission: [ 'listManagementServers' ],
       component: () => import('@/components/CloudMonkey/Resource.vue')
     }

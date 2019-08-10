@@ -25,6 +25,13 @@ export default {
       component: () => import('@/components/CloudMonkey/Resource.vue')
     },
     {
+      name: 'publicip',
+      title: 'Public IP Addresses',
+      icon: 'environment',
+      permission: [ 'listPublicIpAddresses' ],
+      component: () => import('@/components/CloudMonkey/Resource.vue')
+    },
+    {
       name: 'vpngateway',
       title: 'VPN Gateways',
       icon: 'lock',

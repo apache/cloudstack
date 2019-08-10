@@ -232,9 +232,11 @@ export default {
       this.columns = []
       this.columnKeys = []
       var params = { listall: true }
-      if (this.$route.meta.params) {
-        params = this.$route.meta.params
-        params['listall'] = 'true'
+      console.log(this.$route)
+      if (Object.keys(this.$route.query).length > 0) {
+        Object.assign(params, this.$route.query)
+      } else if (this.$route.meta.params) {
+        Object.assign(params, this.$route.meta.params)
       }
       if (search !== '') {
         params['keyword'] = search

@@ -1,7 +1,7 @@
 <template>
   <div class="page-header-index-wide">
-    <a-row :gutter="24" :style="{ marginTop: '24px' }">
-      <a-col :xl="18">
+    <a-row :gutter="12" :style="{ marginTop: '24px' }">
+      <a-col :xl="16">
         <div class="ant-pro-capacity-dashboard__wrapper">
           <div class="ant-pro-capacity-dashboard__select">
             <a-select
@@ -19,13 +19,29 @@
           <div class="ant-pro-capacity-dashboard__button">
             <a-button
               type="primary"
-              @click="listCapacity(zoneSelected, true)">Fetch Latest Statistics</a-button>
+              @click="listCapacity(zoneSelected, true)">Fetch Latest</a-button>
+          </div>
+          <div class="ant-pro-capacity-dashboard__button">
+            <a-button>
+              <router-link :to="{ name: 'alert' }">
+                <a-icon style="font-size: 16px; padding: 2px" type="flag" />
+              </router-link>
+            </a-button>
+          </div>
+          <div class="ant-pro-capacity-dashboard__button">
+            <a-button type="danger">
+              <router-link :to="{ name: 'host', query: {'state': 'Alert'} }">
+                <a-badge dot>
+                  <a-icon style="font-size: 16px" type="desktop" />
+                </a-badge>
+              </router-link>
+            </a-button>
           </div>
         </div>
-        <a-row :gutter="24">
+        <a-row :gutter="12">
           <a-col
             :xl="6"
-            :style="{ marginBottom: '24px' }"
+            :style="{ marginBottom: '12px' }"
             v-for="stat in stats"
             :key="stat.type">
             <chart-card :loading="loading">
@@ -39,46 +55,26 @@
         </a-row>
       </a-col>
 
-      <a-col :xl="6">
-        <a-row class="ant-pro-capacity-dashboard__alert-wrapper" :gutter="24">
-          <a-col :xl="12" :style="{ marginBottom: '24px' }">
-            <chart-card>
-              <div style="text-align: center">
-                <h4>General Alerts</h4>
-                <a-button><router-link :to="{ name: 'alert' }"><a-icon type="flag" /></router-link></a-button>
-              </div>
-            </chart-card>
-          </a-col>
-          <a-col :xl="12" :style="{ marginBottom: '24px' }">
-            <chart-card>
-              <div style="text-align: center">
-                <h4>Hosts in Alert</h4>
-                <a-button type="danger"><router-link :to="{ name: 'host' }"><a-icon type="desktop" /></router-link></a-button>
-              </div>
-            </chart-card>
-          </a-col>
-          <a-col :xl="24" :style="{ marginBottom: '24px' }">
-            <chart-card>
-              <div style="text-align: center">
-                <a-button size="large"><router-link :to="{ name: 'event' }">View Events</router-link></a-button>
-              </div>
-              <template slot="footer">
-                <div :style="{ paddingTop: '12px', paddingLeft: '3px' }">
-                  <a-timeline pending="Performing tasks...">
-                    <a-timeline-item>Some VR stuff...</a-timeline-item>
-                    <a-timeline-item color="red">
-                      <a-icon slot="dot" type="clock-circle-o" style="font-size: 16px;" />
-                      Deploying VM...
-                    </a-timeline-item>
-                    <a-timeline-item color="green">Some storage stuff...</a-timeline-item>
-                    <a-timeline-item color="blue">Some user login...</a-timeline-item>
-                    <a-timeline-item color="green">Template OK...</a-timeline-item>
-                  </a-timeline>
-                </div>
-              </template>
-            </chart-card>
-          </a-col>
-        </a-row>
+      <a-col :xl="8">
+        <chart-card>
+          <div style="text-align: center">
+            <a-button size="large"><router-link :to="{ name: 'event' }">View Events</router-link></a-button>
+          </div>
+          <template slot="footer">
+            <div :style="{ paddingTop: '12px', paddingLeft: '3px', whiteSpace: 'normal' }">
+              <a-timeline pending="...">
+                <a-timeline-item
+                  v-for="event in events"
+                  :key="event.id"
+                  :color="getEventColour(event)">
+                  <span :style="{ color: '#999' }">{{ event.created }}</span><br/>
+                  <span :style="{ color: '#666' }">{{ event.type }}</span><br/>
+                  <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
+                </a-timeline-item>
+              </a-timeline>
+            </div>
+          </template>
+        </chart-card>
       </a-col>
     </a-row>
   </div>
@@ -99,18 +95,19 @@ export default {
   data () {
     return {
       loading: true,
+      events: [],
       zones: [],
       zoneSelected: {},
       stats: []
     }
   },
   mounted () {
-    this.listZones()
+    this.fetchData()
   },
   watch: {
     '$route' (to, from) {
       if (to.name === 'dashboard') {
-        this.listZones()
+        this.fetchData()
       }
     }
   },
@@ -120,6 +117,10 @@ export default {
     }, 1000)
   },
   methods: {
+    fetchData () {
+      this.listZones()
+      this.listEvents()
+    },
     listCapacity (zone, latest = false) {
       const params = {
         zoneid: zone.id,
@@ -133,6 +134,30 @@ export default {
           this.stats = json.listcapacityresponse.capacity
         }
       })
+    },
+    listEvents () {
+      const params = {
+        page: 1,
+        pagesize: 5,
+        listall: true
+      }
+      this.loading = true
+      api('listEvents', params).then(json => {
+        this.events = []
+        this.loading = false
+        if (json && json.listeventsresponse && json.listeventsresponse.event) {
+          this.events = json.listeventsresponse.event
+        }
+      })
+    },
+    getEventColour (event) {
+      if (event.level === 'ERROR') {
+        return 'red'
+      }
+      if (event.state === 'Completed') {
+        return 'green'
+      }
+      return 'blue'
     },
     listZones () {
       api('listZones').then(json => {
@@ -174,7 +199,7 @@ export default {
   .ant-pro-capacity-dashboard {
     &__wrapper {
       display: flex;
-      margin-bottom: 24px;
+      margin-bottom: 12px;
     }
 
     &__select {
