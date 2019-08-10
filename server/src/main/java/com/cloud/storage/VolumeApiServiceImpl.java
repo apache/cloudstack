@@ -1635,21 +1635,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Account caller = CallContext.current().getCallingAccount();
         Volume vol = null;
         if (vmId != null) {
-            // Check that the virtual machine ID is valid and it's a user vm
             UserVmVO vm = _userVmDao.findById(vmId);
-            if (vm == null || vm.getType() != VirtualMachine.Type.User) {
-                throw new InvalidParameterValueException("Please specify a valid User VM.");
-            }
-
-            // Check that the VM is in the correct state
-            if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
-                throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
-            }
-
-            // permission check
-            _accountMgr.checkAccess(caller, null, false, vm);
-            {
-                try {
+            checkVmIdIsValidUservm(vm);
+            confirmVmStateIsRunningOrStopped(vm);
+            checkVmOwnershipPermissions(_accountMgr,caller,vm);
+            try {
                     vol = attachVolumeToVM(vmId, volume.getId(), volume.getDeviceId());
                 } catch (Exception ex) {
                     StringBuilder message = new StringBuilder("Volume: ");
@@ -1663,9 +1653,24 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     }
                     throw new CloudRuntimeException(message.toString());
                 }
-            }
         }
         return vol;
+    }
+
+    public void checkVmIdIsValidUservm(UserVmVO vm){
+        if (vm == null || vm.getType() != VirtualMachine.Type.User) {
+            throw new InvalidParameterValueException("Please specify a valid User VM.");
+        }
+    }
+
+    public void confirmVmStateIsRunningOrStopped(UserVmVO vm){
+        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
+            throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
+        }
+    }
+
+    public void checkVmOwnershipPermissions(AccountManager accountManager, Account caller, UserVmVO vm){
+        accountManager.checkAccess(caller, null, false, vm);
     }
     
     @Override
