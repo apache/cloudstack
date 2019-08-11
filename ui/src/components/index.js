@@ -21,7 +21,6 @@ import Trend from '@/components/Trend'
 import STable from '@/components/table'
 import MultiTab from '@/components/MultiTab'
 import Result from '@/components/Result'
-import IconSelector from '@/components/IconSelector'
 
 export {
   AvatarList,
@@ -43,6 +42,5 @@ export {
   Tree,
   STable,
   MultiTab,
-  Result,
-  IconSelector
+  Result
 }

@@ -6,7 +6,7 @@
         :style="{ marginTop: '24px' }">
         <a-row :gutter="12">
           <a-col
-            :xl="8"
+            :xl="12"
             v-for="stat in stats"
             :key="stat.type"
             :style="{ marginBottom: '12px' }">
@@ -26,7 +26,7 @@
         :style="{ marginTop: '24px' }">
         <chart-card>
           <div style="text-align: center">
-            <a-button size="large"><router-link :to="{ name: 'event' }">View Events</router-link></a-button>
+            <a-button><router-link :to="{ name: 'event' }">View Events</router-link></a-button>
           </div>
           <template slot="footer">
             <div :style="{ paddingTop: '12px', paddingLeft: '3px', whiteSpace: 'normal' }">
@@ -35,8 +35,8 @@
                   v-for="event in events"
                   :key="event.id"
                   :color="getEventColour(event)">
-                  <span :style="{ color: '#999' }">{{ event.created }}</span><br/>
-                  <span :style="{ color: '#666' }">{{ event.type }}</span><br/>
+                  <span :style="{ color: '#999' }"><small>{{ event.created }}</small></span><br/>
+                  <span :style="{ color: '#666' }"><small>{{ event.type }}</small></span><br/>
                   <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
                 </a-timeline-item>
               </a-timeline>

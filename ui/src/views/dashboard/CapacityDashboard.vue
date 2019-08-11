@@ -1,7 +1,7 @@
 <template>
   <div class="page-header-index-wide">
     <a-row :gutter="12" :style="{ marginTop: '24px' }">
-      <a-col :xl="16">
+      <a-col :xl="18">
         <div class="ant-pro-capacity-dashboard__wrapper">
           <div class="ant-pro-capacity-dashboard__select">
             <a-select
@@ -45,7 +45,7 @@
             v-for="stat in stats"
             :key="stat.type">
             <chart-card :loading="loading">
-              <div style="text-align: center">
+              <div style="text-align: center; white-space: nowrap; overflow: hidden;">
                 <h4>{{ stat.name }}</h4>
                 <a-progress type="dashboard" :percent="Number(parseFloat(stat.percentused, 10).toFixed(2))" :width="100" />
               </div>
@@ -55,10 +55,10 @@
         </a-row>
       </a-col>
 
-      <a-col :xl="8">
+      <a-col :xl="6">
         <chart-card>
           <div style="text-align: center">
-            <a-button size="large"><router-link :to="{ name: 'event' }">View Events</router-link></a-button>
+            <a-button><router-link :to="{ name: 'event' }">View Events</router-link></a-button>
           </div>
           <template slot="footer">
             <div :style="{ paddingTop: '12px', paddingLeft: '3px', whiteSpace: 'normal' }">
@@ -67,8 +67,8 @@
                   v-for="event in events"
                   :key="event.id"
                   :color="getEventColour(event)">
-                  <span :style="{ color: '#999' }">{{ event.created }}</span><br/>
-                  <span :style="{ color: '#666' }">{{ event.type }}</span><br/>
+                  <span :style="{ color: '#999' }"><small>{{ event.created }}</small></span><br/>
+                  <span :style="{ color: '#666' }"><small>{{ event.type }}</small></span><br/>
                   <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
                 </a-timeline-item>
               </a-timeline>
