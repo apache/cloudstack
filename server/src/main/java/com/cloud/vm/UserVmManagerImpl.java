@@ -4764,6 +4764,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         s_logger.debug("Collect vm disk statistics from host before stopping VM");
         if (userVm.getHostId() == null) {
             s_logger.error("Unable to collect vm disk statistics for VM as the host is null, skipping VM disk statistics collection");
+            return;
         }
         long hostId = userVm.getHostId();
         List<String> vmNames = new ArrayList<String>();
