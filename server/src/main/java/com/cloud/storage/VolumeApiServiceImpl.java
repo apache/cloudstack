@@ -1657,13 +1657,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return vol;
     }
 
-    public void checkVmIdIsValidUservm(UserVmVO vm){
+    public void checkVmIdIsValidUservm(UserVmVO vm) throws InvalidParameterValueException{
         if (vm == null || vm.getType() != VirtualMachine.Type.User) {
             throw new InvalidParameterValueException("Please specify a valid User VM.");
         }
     }
 
-    public void confirmVmStateIsRunningOrStopped(UserVmVO vm){
+    public void confirmVmStateIsRunningOrStopped(UserVmVO vm) throws InvalidParameterValueException{
         if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
             throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
         }
