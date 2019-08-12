@@ -78,6 +78,9 @@ public class CephSnapshotStrategy extends StorageSystemSnapshotStrategy {
 
     protected boolean isSnapshotStoredOnRbdStoragePool(Snapshot snapshot) {
         SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+        if (snapshotStore == null) {
+            return false;
+        }
         long snapshotStoragePoolId = snapshotStore.getDataStoreId();
         StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(snapshotStoragePoolId);
         return storagePoolVO.getPoolType() == StoragePoolType.RBD;
