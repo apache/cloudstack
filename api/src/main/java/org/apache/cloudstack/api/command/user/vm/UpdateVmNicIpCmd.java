@@ -62,10 +62,6 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
             description = "Secondary IP Address")
             private String ipAddr;
 
-    @Parameter(name = ApiConstants.MTU, type = CommandType.INTEGER, required = false,
-            description = "MTU size")
-            private int mtu;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -108,14 +104,6 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
             return null;
         }
         return ipAddr;
-    }
-
-    public int getMtu () {
-        if (mtu != 0) {
-            return mtu;
-        } else {
-            return 0;
-        }
     }
 
     public NetworkType getNetworkType() {

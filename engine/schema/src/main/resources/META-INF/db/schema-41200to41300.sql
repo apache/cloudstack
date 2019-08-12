@@ -36,7 +36,7 @@ ALTER TABLE `cloud`.`service_offering_details` CHANGE COLUMN `value` `value` TEX
 
 ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
 -- PR#3186 Add possibility to set MTU size for NIC
-ALTER TABLE `cloud`.`nics` ADD COLUMN `mtu` smallint (6) NOT NULL DEFAULT 0 COMMENT 'MTU size for the interface';
+ALTER TABLE `cloud`.`nics` ADD COLUMN `mtu` smallint (6) COMMENT 'MTU size for the interface';
 
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE VIEW `cloud`.`user_vm_view` AS
@@ -510,3 +510,6 @@ CREATE TABLE `cloud`.`direct_download_certificate_host_map` (
   CONSTRAINT `fk_direct_download_certificate_host_map__certificate_id` FOREIGN KEY (`certificate_id`) REFERENCES `direct_download_certificate` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- Add configuration to set the MTU for OVS and KVM
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'kvm.ovs.mtu.size', null,
+ 'Set the MTU for OVS and KVM (if not set default MTU will be considered, Attention: the main bridge will be automatically adjusted to this value)', null, null, null, 0);

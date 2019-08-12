@@ -65,9 +65,6 @@ public class AddNicToVMCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "IP Address for the new network")
     private String ipaddr;
 
-    @Parameter(name = ApiConstants.MTU, type = CommandType.INTEGER, description = "MTU size")
-    private int mtu;
-
     @Parameter(name = ApiConstants.MAC_ADDRESS, type = CommandType.STRING, description = "Mac Address for the new network")
     private String macaddr;
 
@@ -89,10 +86,6 @@ public class AddNicToVMCmd extends BaseAsyncCmd {
 
     public String getIpAddress() {
         return ipaddr;
-    }
-
-    public int getMtu() {
-        return mtu;
     }
 
     public String getMacAddress() {

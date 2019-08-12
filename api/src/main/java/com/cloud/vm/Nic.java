@@ -140,7 +140,7 @@ public interface Nic extends Identity, InternalIdentity {
 
     boolean getSecondaryIp();
 
-    int getMtu();
+    Integer getMtu();
 
     //
     // IPv4

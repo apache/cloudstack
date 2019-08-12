@@ -3031,14 +3031,6 @@
                                                 required: false,
                                                 ipv4: true
                                             }
-                                        },
-                                        mtu: {
-                                            label: 'label.mtu',
-                                            validation: {
-                                                number: true,
-                                                min: 1280,
-                                                max: 9216
-                                            }
                                         }
                                     }
                                 },
@@ -3050,10 +3042,6 @@
 
                                     if (args.data.ipaddress) {
                                         dataObj.ipaddress = args.data.ipaddress;
-                                    }
-
-                                    if (args.data.mtu) {
-                                        dataObj.mtu = args.data.mtu;
                                     }
 
                                     $.ajax({
@@ -3172,21 +3160,12 @@
                                                     });
                                                 }
                                             }
-                                        },
-                                      mtu: {
-                                        label: 'label.mtu',
-                                          validation: {
-                                              number: true,
-                                              min: 1280,
-                                              max: 9216
-                                          }
-                                      }
+                                        }
                                     }
                                 },
                                 action: function(args) {
                                     var dataObj = {
-                                        nicId: args.context.nics[0].id,
-                                        mtu: args.data.mtu
+                                        nicId: args.context.nics[0].id
                                     };
 
                                     if (args.data.ipaddress1) {
@@ -3311,9 +3290,6 @@
                                 converter: function(data) {
                                     return data ? _l('label.yes') : _l('label.no');
                                 }
-                            },
-                            mtu : {
-                                label: 'label.mtu'
                             }
                         }],
                         viewAll: {

@@ -48,7 +48,7 @@ public class NicProfile implements InternalIdentity, Serializable {
     URI broadcastUri;
     ReservationStrategy strategy;
     boolean defaultNic;
-    int mtu;
+    Integer mtu;
     Integer networkRate;
     boolean isSecurityGroupEnabled;
 
@@ -271,7 +271,7 @@ public class NicProfile implements InternalIdentity, Serializable {
         return mtu;
     }
 
-    public void setMtu(int mtu) {
+    public void setMtu(final Integer mtu) {
         this.mtu = mtu;
     }
 
