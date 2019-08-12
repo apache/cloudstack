@@ -167,7 +167,10 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         List<PodVlanMapVO> vlanMaps = _podVlanMapDao.listPodVlanMapsByPod(podId);
         List<VlanVO> result = new ArrayList<VlanVO>();
         for (PodVlanMapVO pvmvo : vlanMaps) {
-            result.add(findById(pvmvo.getVlanDbId()));
+            VlanVO vlanByPodId = findById(pvmvo.getVlanDbId());
+            if (vlanByPodId != null && vlanByPodId.getRemoved() == null) {
+                result.add(vlanByPodId);
+            }
         }
         return result;
     }
