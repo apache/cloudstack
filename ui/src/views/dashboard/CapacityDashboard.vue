@@ -17,11 +17,12 @@
         </div>
         <div class="ant-pro-capacity-dashboard__button">
           <a-tooltip placement="bottom">
-            <template slot='title'>
+            <template slot="title">
               Fetch Latest
             </template>
             <a-button
-              type="primary" shape="circle"
+              type="primary"
+              shape="circle"
               @click="listCapacity(zoneSelected, true)">
               <a-icon style="font-size: 16px; padding: 2px" type="reload" />
             </a-button>
@@ -29,7 +30,7 @@
         </div>
         <div class="ant-pro-capacity-dashboard__button">
           <a-tooltip placement="bottom">
-            <template slot='title'>
+            <template slot="title">
               View Alerts
             </template>
             <a-button shape="circle">
@@ -41,7 +42,7 @@
         </div>
         <div class="ant-pro-capacity-dashboard__button">
           <a-tooltip placement="bottom">
-            <template slot='title'>
+            <template slot="title">
               View Hosts in Alert State
             </template>
             <a-button type="danger" shape="circle">
