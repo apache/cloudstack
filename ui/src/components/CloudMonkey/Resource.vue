@@ -164,9 +164,9 @@
         <a slot="vmname" slot-scope="text, record" href="javascript:;">
           <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
         </a>
-        <template slot="state" slot-scope="text, record">
+        <template slot="state" slot-scope="text">
           <a-tooltip placement="right">
-            <template slot='title'>
+            <template slot="title">
               {{ text }}
             </template>
             <a-badge :title="text" :status="getBadgeStatus(text)"/>
@@ -434,31 +434,31 @@ export default {
         }
       })
     },
-    getRowClassName(record, index) {
-      if (index % 2 !== 0) {
+    getRowClassName (record, index) {
+      if (index % 2 === 0) {
         return 'light-row'
       }
       return 'dark-row'
     },
-    getBadgeStatus(state) {
-      var status = "default"
+    getBadgeStatus (state) {
+      var status = 'default'
       switch (state) {
-        case "Running":
-        case "Ready":
-        case "Up":
-        case "BackedUp":
-          status = "success"
+        case 'Running':
+        case 'Ready':
+        case 'Up':
+        case 'BackedUp':
+          status = 'success'
           break
-        case "Stopped":
-          status = "error"
+        case 'Stopped':
+          status = 'error'
           break
-        case "Migrating":
-        case "Starting":
-          status = "processing"
+        case 'Migrating':
+        case 'Starting':
+          status = 'processing'
           break
-        case "Alert":
-        case "Allocated":
-          status = "warning"
+        case 'Alert':
+        case 'Allocated':
+          status = 'warning'
           break
       }
       return status
