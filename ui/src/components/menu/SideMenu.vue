@@ -86,7 +86,6 @@ export default {
 
     .ant-menu-light {
       border-right-color: transparent;
-      padding: 24px 0;
     }
   }
 }

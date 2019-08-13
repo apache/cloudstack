@@ -131,30 +131,30 @@
       </a-spin>
     </a-drawer>
 
-    <span style="margin-left: 8px">
-      <template v-if="hasSelected">
-        {{ `Selected ${selectedRowKeys.length} items` }}
-      </template>
-    </span>
-
     <div v-if="$route.params && $route.params.id">
       <p v-for="(value, key) in getResource($route.params.id)" :key="key">
         <span>{{ key }}: </span>
         <span>{{ value }}</span>
       </p>
     </div>
-    <div v-else>
+    <div style="margin-top: 12px" v-else>
       <a-table
-        size="middle"
-        striped
+        size="small"
         :rowKey="record => record.id"
         :loading="loading"
         :columns="columns"
         :dataSource="items"
-        :scroll="{ x: true }"
+        :scroll="{ x: '100%' }"
+        :pagination="{ position: 'bottom', size: 'small', showSizeChanger: true }"
         :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
-        style="background: #fff"
+        :rowClassName="getRowClassName"
       >
+        <template slot="footer">
+          <span v-if="hasSelected">
+            {{ `Selected ${selectedRowKeys.length} items` }}
+          </span>
+        </template>
+
         <a slot="name" slot-scope="text, record" href="javascript:;">
           <router-link :to="{ path: $route.name + '/' + record.id }">{{ text }}</router-link>
         </a>
@@ -164,6 +164,15 @@
         <a slot="vmname" slot-scope="text, record" href="javascript:;">
           <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
         </a>
+        <template slot="state" slot-scope="text, record">
+          <a-tooltip placement="right">
+            <template slot='title'>
+              {{ text }}
+            </template>
+            <a-badge :title="text" :status="getBadgeStatus(text)"/>
+          </a-tooltip>
+        </template>
+
         <a slot="account" slot-scope="text, record" href="javascript:;">
           <router-link :to="{ path: '/account/' + record.accountid }">{{ text }}</router-link>
         </a>
@@ -268,15 +277,17 @@ export default {
       if (!this.columnKeys.includes('name')) {
         this.columnKeys = ['name', ...this.columnKeys]
       }
+      var counter = 0
       for (const key of this.columnKeys) {
         this.columns.push({
           title: key,
           dataIndex: key,
-          key: key,
+          key: counter++,
           scopedSlots: { customRender: key },
           sorter: (a, b) => a[key].length - b[key].length
         })
       }
+
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params['id'] = this.$route.params.id
@@ -423,6 +434,35 @@ export default {
         }
       })
     },
+    getRowClassName(record, index) {
+      if (index % 2 !== 0) {
+        return 'light-row'
+      }
+      return 'dark-row'
+    },
+    getBadgeStatus(state) {
+      var status = "default"
+      switch (state) {
+        case "Running":
+        case "Ready":
+        case "Up":
+        case "BackedUp":
+          status = "success"
+          break
+        case "Stopped":
+          status = "error"
+          break
+        case "Migrating":
+        case "Starting":
+          status = "processing"
+          break
+        case "Alert":
+        case "Allocated":
+          status = "warning"
+          break
+      }
+      return status
+    },
     start () {
       this.loading = true
       this.fetchData()
@@ -439,6 +479,19 @@ export default {
 }
 </script>
 
-<style scoped>
+<style>
+
+.ant-badge-status-dot {
+  width: 12px;
+  height: 12px;
+}
+
+.light-row {
+  background-color: #fff;
+}
+
+.dark-row {
+  background-color: #f5f5f5;
+}
 
 </style>
