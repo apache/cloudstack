@@ -1476,7 +1476,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(), vmInstance.getId(),
                     oldNicIdString, oldNetworkOfferingId, null, 0L, VirtualMachine.class.getName(), vmInstance.getUuid(), vmInstance.isDisplay());
 
-            if (vmInstance.getState() != State.Stopped) {
+            if (vmInstance.getState() == State.Running) {
                 try {
                     VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vmInstance);
                     User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
@@ -4806,7 +4806,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (!(userVm.getHypervisorType().equals(HypervisorType.KVM) || userVm.getHypervisorType().equals(HypervisorType.VMware))) {
             return;
         }
-        s_logger.debug("Collect vm disk statistics from host before stopping Vm");
+        s_logger.debug("Collect vm disk statistics from host before stopping VM");
+        if (userVm.getHostId() == null) {
+            s_logger.error("Unable to collect vm disk statistics for VM as the host is null, skipping VM disk statistics collection");
+            return;
+        }
         long hostId = userVm.getHostId();
         List<String> vmNames = new ArrayList<String>();
         vmNames.add(userVm.getInstanceName());

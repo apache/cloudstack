@@ -1062,7 +1062,7 @@ public class CommandSetupHelper {
         final NicVO defaultNic = _nicDao.findDefaultNicForVM(userVmId);
 
         // check if DNS provider is the domR
-        if (!_networkModel.isProviderSupportServiceInNetwork(defaultNic.getNetworkId(), Service.Dns, Provider.VirtualRouter)) {
+        if (defaultNic == null || !_networkModel.isProviderSupportServiceInNetwork(defaultNic.getNetworkId(), Service.Dns, Provider.VirtualRouter)) {
             return null;
         }
 

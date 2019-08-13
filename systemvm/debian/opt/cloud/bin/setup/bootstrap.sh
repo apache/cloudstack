@@ -68,6 +68,7 @@ config_guest() {
      xen-pv|xen-domU)
           systemctl stop ntpd
           systemctl disable ntpd
+          systemctl enable xe-daemon
           systemctl start xe-daemon
 
           cat /proc/cmdline > $CMDLINE
@@ -76,6 +77,7 @@ config_guest() {
      xen-hvm)
           systemctl stop ntpd
           systemctl disable ntpd
+          systemctl enable xe-daemon
           systemctl start xe-daemon
 
           if [ ! -f /usr/bin/xenstore-read ]; then
@@ -114,12 +116,14 @@ config_guest() {
           # system time sync'd with host via vmware tools
           systemctl stop ntpd
           systemctl disable ntpd
+          systemctl enable open-vm-tools
           systemctl start open-vm-tools
 
           vmtoolsd --cmd 'machine.id.get' > $CMDLINE
           ;;
      virtualpc|hyperv)
           # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
+          systemctl enable hyperv-daemons.hv-fcopy-daemon.service hyperv-daemons.hv-kvp-daemon.service hyperv-daemons.hv-vss-daemon.service
           systemctl start hyperv-daemons.hv-fcopy-daemon.service hyperv-daemons.hv-kvp-daemon.service hyperv-daemons.hv-vss-daemon.service
           sleep 5
           cp -f /var/opt/hyperv/.kvp_pool_0 $CMDLINE
