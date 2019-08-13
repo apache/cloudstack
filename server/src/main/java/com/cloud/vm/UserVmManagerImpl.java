@@ -505,7 +505,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final int MAX_HTTP_POST_LENGTH = 16 * MAX_USER_DATA_LENGTH_BYTES;
     private static final String KVM_OVS_MTU_KEY = "kvm.ovs.mtu.size";
 
-    private Integer _kvmOvsMtuSize;
+    private Integer _kvmOvsMtuSize = 0;
 
     @Inject
     private OrchestrationService _orchSrvc;

@@ -120,7 +120,7 @@ public class NicProfile implements InternalIdentity, Serializable {
         this.macAddress = requestedMacAddress;
     }
 
-    public NicProfile(String requestedIPv4, String requestedIPv6, String requestedMacAddress, int mtu) {
+    public NicProfile(String requestedIPv4, String requestedIPv6, String requestedMacAddress, Integer mtu) {
         this(requestedIPv4, requestedIPv6, requestedMacAddress);
         this.mtu = mtu;
     }
@@ -267,7 +267,7 @@ public class NicProfile implements InternalIdentity, Serializable {
         this.defaultNic = defaultNic;
     }
 
-    public int getMtu() {
+    public Integer getMtu() {
         return mtu;
     }
 
