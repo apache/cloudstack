@@ -16,25 +16,42 @@
           </a-select>
         </div>
         <div class="ant-pro-capacity-dashboard__button">
-          <a-button
-            type="primary"
-            @click="listCapacity(zoneSelected, true)">Fetch Latest</a-button>
+          <a-tooltip placement="bottom">
+            <template slot='title'>
+              Fetch Latest
+            </template>
+            <a-button
+              type="primary" shape="circle"
+              @click="listCapacity(zoneSelected, true)">
+              <a-icon style="font-size: 16px; padding: 2px" type="reload" />
+            </a-button>
+          </a-tooltip>
         </div>
         <div class="ant-pro-capacity-dashboard__button">
-          <a-button>
-            <router-link :to="{ name: 'alert' }">
-              <a-icon style="font-size: 16px; padding: 2px" type="flag" />
-            </router-link>
-          </a-button>
+          <a-tooltip placement="bottom">
+            <template slot='title'>
+              View Alerts
+            </template>
+            <a-button shape="circle">
+              <router-link :to="{ name: 'alert' }">
+                <a-icon style="font-size: 16px; padding: 2px" type="flag" />
+              </router-link>
+            </a-button>
+          </a-tooltip>
         </div>
         <div class="ant-pro-capacity-dashboard__button">
-          <a-button type="danger">
-            <router-link :to="{ name: 'host', query: {'state': 'Alert'} }">
-              <a-badge dot>
-                <a-icon style="font-size: 16px" type="desktop" />
-              </a-badge>
-            </router-link>
-          </a-button>
+          <a-tooltip placement="bottom">
+            <template slot='title'>
+              View Hosts in Alert State
+            </template>
+            <a-button type="danger" shape="circle">
+              <router-link :to="{ name: 'host', query: {'state': 'Alert'} }">
+                <a-badge dot>
+                  <a-icon style="font-size: 16px" type="desktop" />
+                </a-badge>
+              </router-link>
+            </a-button>
+          </a-tooltip>
         </div>
       </div>
       <a-row :gutter="12">

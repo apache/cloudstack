@@ -3,13 +3,10 @@
     <a-row :gutter="12">
       <a-col
         class="user-dashboard-chart-card"
-        :sm="12"
-        :md="12"
-        :xl="6"
-        :style="{ marginTop: '24px' }">
+        :xl="16">
         <a-row :gutter="12">
           <a-col
-            :xl="12"
+            :xl="8"
             v-for="stat in stats"
             :key="stat.type"
             :style="{ marginBottom: '12px' }">
@@ -82,48 +79,48 @@ export default {
   },
   methods: {
     fetchData () {
-      this.stats = []
+      this.stats = [{}, {}, {}, {}, {}, {}]
       api('listVirtualMachines', { state: 'Running', listall: true }).then(json => {
         var count = 0
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
         }
-        this.stats.push({ name: 'Running VMs', count: count, path: 'vm' })
+        this.stats.splice(0, 1, { name: 'Running VMs', count: count, path: 'vm' })
       })
       api('listVirtualMachines', { state: 'Stopped', listall: true }).then(json => {
         var count = 0
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
         }
-        this.stats.push({ name: 'Stopped VMs', count: count, path: 'vm' })
+        this.stats.splice(1, 1, { name: 'Stopped VMs', count: count, path: 'vm' })
       })
       api('listVirtualMachines', { listall: true }).then(json => {
         var count = 0
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
         }
-        this.stats.push({ name: 'Total VMs', count: count, path: 'vm' })
+        this.stats.splice(2, 1, { name: 'Total VMs', count: count, path: 'vm' })
       })
       api('listVolumes', { listall: true }).then(json => {
         var count = 0
         if (json && json.listvolumesresponse) {
           count = json.listvolumesresponse.count
         }
-        this.stats.push({ name: 'Total Volumes', count: count, path: 'volume' })
+        this.stats.splice(3, 1, { name: 'Total Volumes', count: count, path: 'volume' })
       })
       api('listNetworks', { listall: true }).then(json => {
         var count = 0
         if (json && json.listnetworksresponse) {
           count = json.listnetworksresponse.count
         }
-        this.stats.push({ name: 'Total Networks', count: count, path: 'guestnetwork' })
+        this.stats.splice(4, 1, { name: 'Total Networks', count: count, path: 'guestnetwork' })
       })
       api('listPublicIpAddresses', { listall: true }).then(json => {
         var count = 0
         if (json && json.listpublicipaddressesresponse) {
           count = json.listpublicipaddressesresponse.count
         }
-        this.stats.push({ name: 'Public IP Addresses', count: count, path: 'publicip' })
+        this.stats.splice(5, 1, { name: 'Public IP Addresses', count: count, path: 'publicip' })
       })
       this.listEvents()
     },
