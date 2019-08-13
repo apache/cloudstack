@@ -1,7 +1,7 @@
 <template>
-  <div class="antv-chart-mini">
-    <div class="chart-wrapper" :style="{ height: 46 }">
-      <v-chart :force-fit="true" :height="height" :data="data" :padding="[36, 5, 18, 5]">
+  <div class="mini-bar-wrapper">
+    <div class="mini-bar-wrapper2">
+      <v-chart class="mini-bar-chart" :force-fit="true" :data="data">
         <v-tooltip />
         <v-bar position="x*y" />
       </v-chart>
@@ -36,22 +36,38 @@ const scale = [{
   dataKey: 'y',
   title: '时间',
   min: 1,
-  max: 30
+  max: 22
 }]
 
 export default {
-  name: 'MiniBar',
+  name: 'MiniArea',
   data () {
     return {
       data,
       tooltip,
-      scale,
-      height: 100
+      scale
     }
   }
 }
 </script>
 
 <style lang="less" scoped>
-  @import "chart";
+.mini-bar {
+  &-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  &-wrapper2 {
+    position: absolute;
+    bottom: -28px;
+    width: 100%;
+    height: 46px;
+  }
+
+  &-chart {
+    padding: 36px 0 18px 0;
+    height: 100px;
+  }
+}
 </style>

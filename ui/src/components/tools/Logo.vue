@@ -1,6 +1,6 @@
 <template>
   <div class="logo">
-    <img src="../../assets/logo.png"/>
+    <img class="logo-image" src="../../assets/logo.png"/>
     <project-menu></project-menu>
   </div>
 </template>
@@ -28,8 +28,28 @@ export default {
 }
 </script>
 
-<style>
-  .logo img {
-    margin-right: 10px;
-  }
+<style type="less" scoped>
+.logo {
+  height: 64px;
+  position: relative;
+  line-height: 64px;
+  padding-left: 24px;
+  -webkit-transition: all .3s;
+  transition: all .3s;
+  background: #002140;
+  overflow: hidden;
+}
+
+.sider.light .logo {
+  background: #fff;
+  box-shadow: 1px 1px 0px 0px #e8e8e8;
+}
+
+.logo-image {
+  margin-right: 10px;
+  height: 32px;
+  width: 32px;
+  display: inline-block;
+  vertical-align: middle;
+}
 </style>

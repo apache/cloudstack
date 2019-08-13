@@ -1,5 +1,5 @@
 <template>
-  <v-chart :forceFit="true" height="400" :data="data" :padding="[20, 20, 95, 20]" :scale="scale">
+  <v-chart class="radar-chart" :forceFit="true" :data="data" :scale="scale">
     <v-tooltip></v-tooltip>
     <v-axis :dataKey="axis1Opts.dataKey" :line="axis1Opts.line" :tickLine="axis1Opts.tickLine" :grid="axis1Opts.grid" />
     <v-axis :dataKey="axis2Opts.dataKey" :line="axis2Opts.line" :tickLine="axis2Opts.tickLine" :grid="axis2Opts.grid" />
@@ -63,6 +63,11 @@ export default {
 }
 </script>
 
-<style scoped>
-
+<style lang="less" scoped>
+.radar {
+  &-chart {
+    height: 400px;
+    padding: 20 20 95 20;
+  }
+}
 </style>

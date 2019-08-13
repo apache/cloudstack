@@ -21,7 +21,7 @@ export default {
   props: {
     prefixCls: {
       type: String,
-      default: 'ant-pro-number-info'
+      default: 'number-info'
     },
     total: {
       type: Number,
@@ -50,5 +50,57 @@ export default {
 </script>
 
 <style lang="less" scoped>
-  @import "index";
+  @import '~ant-design-vue/lib/style/themes/default';
+
+  .number-info {
+
+    .number-info-subtitle {
+      color: @text-color-secondary;
+      font-size: @font-size-base;
+      height: 22px;
+      line-height: 22px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      word-break: break-all;
+      white-space: nowrap;
+    }
+
+    .number-info-value {
+      margin-top: 4px;
+      font-size: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      word-break: break-all;
+      white-space: nowrap;
+
+      & > span {
+        color: @heading-color;
+        display: inline-block;
+        line-height: 32px;
+        height: 32px;
+        font-size: 24px;
+        margin-right: 32px;
+      }
+
+      .sub-total {
+        color: @text-color-secondary;
+        font-size: @font-size-lg;
+        vertical-align: top;
+        margin-right: 0;
+        i {
+          font-size: 12px;
+          transform: scale(0.82);
+          margin-left: 4px;
+        }
+        :global {
+          .anticon-caret-up {
+            color: @red-6;
+          }
+          .anticon-caret-down {
+            color: @green-6;
+          }
+        }
+      }
+    }
+  }
 </style>

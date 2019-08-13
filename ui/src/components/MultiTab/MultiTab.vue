@@ -157,8 +157,8 @@ export default {
     })
 
     return (
-      <div class="ant-pro-multi-tab">
-        <div class="ant-pro-multi-tab-wrapper">
+      <div class="multi-tab">
+        <div class="multi-tab-wrapper">
           <a-tabs
             hideAdd
             type={'editable-card'}
@@ -173,3 +173,15 @@ export default {
   }
 }
 </script>
+
+<style lang="less" scoped>
+  .multi-tab {
+    margin: -23px -24px 24px -24px;
+    background: #fff;
+  }
+
+  .topmenu .multi-tab-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+</style>

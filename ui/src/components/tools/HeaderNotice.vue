@@ -5,8 +5,7 @@
     placement="bottomRight"
     :autoAdjustOverflow="true"
     :arrowPointAtCenter="true"
-    overlayClassName="ant-pro-header-notice__popover"
-    :overlayStyle="{ width: '300px', top: '50px' }">
+    overlayClassName="header-notice-popover">
     <template slot="content">
       <a-spin :spinning="loadding">
         <a-tabs>
@@ -38,9 +37,9 @@
         </a-tabs>
       </a-spin>
     </template>
-    <span @click="fetchNotice" class="ant-pro-header-notice__opener">
+    <span @click="fetchNotice" class="header-notice-opener">
       <a-badge count="12">
-        <a-icon class="ant-pro-header-notice__icon" type="bell" />
+        <a-icon class="header-notice-icon" type="bell" />
       </a-badge>
     </span>
   </a-popover>
@@ -76,27 +75,19 @@ export default {
     display: inline-block;
     transition: all 0.3s;
 
-    span {
-      vertical-align: initial;
-    }
-  }
-
-  .ant-pro-header-notice {
-
-    &__popover {
+    &-popover {
       top: 50px !important;
+      width: 300px;
+      top: 50px;
     }
 
-    &__opener {
+    &-opener {
       display: inline-block;
       transition: all 0.3s;
-
-      span {
-        vertical-align: initial;
-      }
+      vertical-align: initial;
     }
 
-    &__icon {
+    &-icon {
       font-size: 18px;
       padding: 4px;
     }

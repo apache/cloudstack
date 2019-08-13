@@ -151,7 +151,28 @@ export default {
 </script>
 
 <style lang="less" scoped>
-  .breadcrumb {
-    display: inline;
+.ant-layout-header {
+  .anticon-menu-fold {
+    font-size: 18px;
+    line-height: 1;
   }
+
+  .ant-breadcrumb {
+    display: inline;
+    vertical-align: text-bottom;
+  }
+
+  .ant-breadcrumb .anticon {
+    margin-top: -3px;
+    margin-left: 12px;
+  }
+
+  .anticon-home {
+    font-size: 14px;
+  }
+
+  .anticon {
+    vertical-align: middle;
+  }
+}
 </style>

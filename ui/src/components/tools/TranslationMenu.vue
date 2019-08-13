@@ -1,7 +1,7 @@
 <template>
 
   <a-dropdown>
-    <span class="action ant-dropdown-link ant-pro-translation-menu">
+    <span class="action ant-dropdown-link translation-menu">
       <a-icon type="global"></a-icon>
     </span>
     <a-menu slot="overlay" @click="onClick">
@@ -44,3 +44,10 @@ export default {
   }
 }
 </script>
+
+<style lang="less" scoped>
+.translation-menu {
+  font-size: 18px;
+  line-height: 1;
+}
+</style>

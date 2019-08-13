@@ -1,11 +1,10 @@
 <template>
-  <div :style="{ padding: '0 0 32px 32px' }">
-    <h4 :style="{ marginBottom: '20px' }">{{ title }}</h4>
+  <div class="bar-wrapper">
+    <h4 class="bar-headline">{{ title }}</h4>
     <v-chart
-      height="254"
+      class="bar-chart"
       :data="data"
-      :forceFit="true"
-      :padding="['auto', 'auto', '40', '50']">
+      :forceFit="true">
       <v-tooltip />
       <v-axis />
       <v-bar position="x*y"/>
@@ -55,3 +54,20 @@ export default {
   }
 }
 </script>
+
+<style lang="less" scoped>
+.bar {
+  &-wrapper {
+    padding: 0 0 32px 32px;
+  }
+
+  &-headline {
+    margin-bottom: 20px;
+  }
+
+  &-chart {
+    height: 254px;
+    padding: 0 0 40px 50px;
+  }
+}
+</style>

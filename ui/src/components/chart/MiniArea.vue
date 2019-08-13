@@ -1,7 +1,7 @@
 <template>
-  <div class="antv-chart-mini">
-    <div class="chart-wrapper" :style="{ height: 46 }">
-      <v-chart :force-fit="true" :height="height" :data="data" :padding="[36, 0, 18, 0]">
+  <div class="mini-area-wrapper">
+    <div class="mini-area-wrapper2">
+      <v-chart class="mini-area-chart" :force-fit="true" :data="data">
         <v-tooltip />
         <v-smooth-area position="x*y" />
       </v-chart>
@@ -28,6 +28,7 @@ const tooltip = [
     value: y
   })
 ]
+
 const scale = [{
   dataKey: 'x',
   min: 2
@@ -44,13 +45,29 @@ export default {
     return {
       data,
       tooltip,
-      scale,
-      height: 100
+      scale
     }
   }
 }
 </script>
 
 <style lang="less" scoped>
-  @import "chart";
+.mini-area {
+  &-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  &-wrapper2 {
+    position: absolute;
+    bottom: -28px;
+    width: 100%;
+    height: 46px;
+  }
+
+  &-chart {
+    padding: 36px 0 18px 0;
+    height: 100px;
+  }
+}
 </style>

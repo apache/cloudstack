@@ -1,16 +1,10 @@
+// todo refactor this file
 .layout.ant-layout {
   height: auto;
   overflow-x: hidden;
 
   &.mobile,
   &.tablet {
-
-    .ant-layout-content {
-
-      .content {
-        margin: 24px 0 0;
-      }
-    }
 
     .ant-table-wrapper {
       .ant-table-content {
@@ -120,9 +114,10 @@
   .header,
   .top-nav-header-index {
 
-    .user-wrapper {
+    .user-menu {
       float: right;
       height: 100%;
+      padding: 0 2px;
 
       .action {
         cursor: pointer;
@@ -153,7 +148,8 @@
     }
 
     &.dark {
-      .user-wrapper {
+
+      .user-menu {
 
         .action {
           color: rgba(255, 255, 255, 0.85);
@@ -305,12 +301,4 @@
       }
     }
   }
-
-  .layout-content {
-    margin: 24px 24px 0px;
-    height: 100%;
-    height: 64px;
-    padding: 0 12px 0 0;
-  }
-
 }

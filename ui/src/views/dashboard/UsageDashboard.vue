@@ -2,7 +2,10 @@
   <div class="page-header-index-wide">
     <a-row :gutter="12">
       <a-col
-        :xl="16"
+        class="user-dashboard-chart-card"
+        :sm="12"
+        :md="12"
+        :xl="6"
         :style="{ marginTop: '24px' }">
         <a-row :gutter="12">
           <a-col
@@ -10,7 +13,7 @@
             v-for="stat in stats"
             :key="stat.type"
             :style="{ marginBottom: '12px' }">
-            <chart-card :loading="loading">
+            <chart-card class="user-dashboard-chart-card" :loading="loading">
               <router-link :to="{ name: stat.path }">
                 <div style="text-align: center">
                   <h4>{{ stat.name }}</h4>
@@ -153,17 +156,15 @@ export default {
 </script>
 
 <style lang="less" scoped>
-  .extra-wrapper {
-    line-height: 55px;
-    //padding-right: 24px;
+  .user-dashboard {
+    margin-top: 24px;
 
-    .extra-item {
-      display: inline-block;
-      //margin-right: 24px;
+    &-chart-card {
+      padding-top: 24px;
+    }
 
-      a {
-        //margin-left: 24px;
-      }
+    &-chart-card-inner {
+      text-align: center;
     }
   }
 </style>

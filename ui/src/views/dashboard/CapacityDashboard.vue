@@ -1,83 +1,81 @@
 <template>
-  <div class="page-header-index-wide">
-    <a-row :gutter="12" :style="{ marginTop: '24px' }">
-      <a-col :xl="18">
-        <div class="ant-pro-capacity-dashboard__wrapper">
-          <div class="ant-pro-capacity-dashboard__select">
-            <a-select
-              showSearch
-              optionFilterProp="children"
-              :defaultValue="zoneSelected.name"
-              :value="zoneSelected.name"
-              @change="changeZone"
-              style="width: 100%" >
-              <a-select-option v-for="(zone, index) in zones" :key="index">
-                {{ zone.name }}
-              </a-select-option>
-            </a-select>
-          </div>
-          <div class="ant-pro-capacity-dashboard__button">
-            <a-button
-              type="primary"
-              @click="listCapacity(zoneSelected, true)">Fetch Latest</a-button>
-          </div>
-          <div class="ant-pro-capacity-dashboard__button">
-            <a-button>
-              <router-link :to="{ name: 'alert' }">
-                <a-icon style="font-size: 16px; padding: 2px" type="flag" />
-              </router-link>
-            </a-button>
-          </div>
-          <div class="ant-pro-capacity-dashboard__button">
-            <a-button type="danger">
-              <router-link :to="{ name: 'host', query: {'state': 'Alert'} }">
-                <a-badge dot>
-                  <a-icon style="font-size: 16px" type="desktop" />
-                </a-badge>
-              </router-link>
-            </a-button>
-          </div>
+  <a-row :gutter="12" :style="{ marginTop: '24px' }">
+    <a-col :xl="18">
+      <div class="ant-pro-capacity-dashboard__wrapper">
+        <div class="ant-pro-capacity-dashboard__select">
+          <a-select
+            showSearch
+            optionFilterProp="children"
+            :defaultValue="zoneSelected.name"
+            :value="zoneSelected.name"
+            @change="changeZone"
+            style="width: 100%" >
+            <a-select-option v-for="(zone, index) in zones" :key="index">
+              {{ zone.name }}
+            </a-select-option>
+          </a-select>
         </div>
-        <a-row :gutter="12">
-          <a-col
-            :xl="6"
-            :style="{ marginBottom: '12px' }"
-            v-for="stat in stats"
-            :key="stat.type">
-            <chart-card :loading="loading">
-              <div style="text-align: center; white-space: nowrap; overflow: hidden;">
-                <h4>{{ stat.name }}</h4>
-                <a-progress type="dashboard" :percent="Number(parseFloat(stat.percentused, 10).toFixed(2))" :width="100" />
-              </div>
-              <template slot="footer"><span>{{ stat.capacityused }} / {{ stat.capacitytotal }}</span></template>
-            </chart-card>
-          </a-col>
-        </a-row>
-      </a-col>
-
-      <a-col :xl="6">
-        <chart-card>
-          <div style="text-align: center">
-            <a-button><router-link :to="{ name: 'event' }">View Events</router-link></a-button>
-          </div>
-          <template slot="footer">
-            <div :style="{ paddingTop: '12px', paddingLeft: '3px', whiteSpace: 'normal' }">
-              <a-timeline pending="...">
-                <a-timeline-item
-                  v-for="event in events"
-                  :key="event.id"
-                  :color="getEventColour(event)">
-                  <span :style="{ color: '#999' }"><small>{{ event.created }}</small></span><br/>
-                  <span :style="{ color: '#666' }"><small>{{ event.type }}</small></span><br/>
-                  <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
-                </a-timeline-item>
-              </a-timeline>
+        <div class="ant-pro-capacity-dashboard__button">
+          <a-button
+            type="primary"
+            @click="listCapacity(zoneSelected, true)">Fetch Latest</a-button>
+        </div>
+        <div class="ant-pro-capacity-dashboard__button">
+          <a-button>
+            <router-link :to="{ name: 'alert' }">
+              <a-icon style="font-size: 16px; padding: 2px" type="flag" />
+            </router-link>
+          </a-button>
+        </div>
+        <div class="ant-pro-capacity-dashboard__button">
+          <a-button type="danger">
+            <router-link :to="{ name: 'host', query: {'state': 'Alert'} }">
+              <a-badge dot>
+                <a-icon style="font-size: 16px" type="desktop" />
+              </a-badge>
+            </router-link>
+          </a-button>
+        </div>
+      </div>
+      <a-row :gutter="12">
+        <a-col
+          :xl="6"
+          :style="{ marginBottom: '12px' }"
+          v-for="stat in stats"
+          :key="stat.type">
+          <chart-card :loading="loading">
+            <div style="text-align: center; white-space: nowrap; overflow: hidden;">
+              <h4>{{ stat.name }}</h4>
+              <a-progress type="dashboard" :percent="Number(parseFloat(stat.percentused, 10).toFixed(2))" :width="100" />
             </div>
-          </template>
-        </chart-card>
-      </a-col>
-    </a-row>
-  </div>
+            <template slot="footer"><span>{{ stat.capacityused }} / {{ stat.capacitytotal }}</span></template>
+          </chart-card>
+        </a-col>
+      </a-row>
+    </a-col>
+
+    <a-col :xl="6">
+      <chart-card>
+        <div style="text-align: center">
+          <a-button><router-link :to="{ name: 'event' }">View Events</router-link></a-button>
+        </div>
+        <template slot="footer">
+          <div :style="{ paddingTop: '12px', paddingLeft: '3px', whiteSpace: 'normal' }">
+            <a-timeline pending="...">
+              <a-timeline-item
+                v-for="event in events"
+                :key="event.id"
+                :color="getEventColour(event)">
+                <span :style="{ color: '#999' }"><small>{{ event.created }}</small></span><br/>
+                <span :style="{ color: '#666' }"><small>{{ event.type }}</small></span><br/>
+                <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
+              </a-timeline-item>
+            </a-timeline>
+          </div>
+        </template>
+      </chart-card>
+    </a-col>
+  </a-row>
 </template>
 
 <script>
@@ -182,33 +180,19 @@ export default {
 </script>
 
 <style lang="less" scoped>
-  .extra-wrapper {
-    line-height: 55px;
-    //padding-right: 24px;
-
-    .extra-item {
-      display: inline-block;
-      //margin-right: 24px;
-
-      a {
-        //margin-left: 24px;
-      }
-    }
+.ant-pro-capacity-dashboard {
+  &__wrapper {
+    display: flex;
+    margin-bottom: 12px;
   }
 
-  .ant-pro-capacity-dashboard {
-    &__wrapper {
-      display: flex;
-      margin-bottom: 12px;
-    }
-
-    &__select {
-      width: 100%;
-    }
-
-    &__button {
-      width: auto;
-      padding-left: 12px;
-    }
+  &__select {
+    width: 100%;
   }
+
+  &__button {
+    width: auto;
+    padding-left: 12px;
+  }
+}
 </style>

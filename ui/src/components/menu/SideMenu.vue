@@ -11,8 +11,7 @@
       :menu="menus"
       :theme="theme"
       :mode="mode"
-      @select="onSelect"
-      style="padding: 16px 0px;"></s-menu>
+      @select="onSelect"></s-menu>
   </a-layout-sider>
 
 </template>
@@ -60,3 +59,35 @@ export default {
   }
 }
 </script>
+
+<style lang="less" scoped>
+.sider {
+  box-shadow: 2px 0 6px rgba(0, 21, 41, .35);
+  position: relative;
+  z-index: 10;
+  height: auto;
+
+  .ant-layout-sider-children {
+    overflow-y: hidden;
+
+    &:hover {
+      overflow-y: auto;
+    }
+  }
+
+  &.ant-fixed-sidemenu {
+    position: fixed;
+    height: 100%;
+  }
+
+  &.light {
+    background-color: #fff;
+    box-shadow: 2px 0px 8px 0px rgba(29, 35, 41, 0.05);
+
+    .ant-menu-light {
+      border-right-color: transparent;
+      padding: 24px 0;
+    }
+  }
+}
+</style>

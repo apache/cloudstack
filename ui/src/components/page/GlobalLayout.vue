@@ -59,7 +59,7 @@
       />
 
       <!-- layout content -->
-      <a-layout-content :style="{ margin: $store.getters.multiTab ? '24px 24px 0' : '24px 24px 0', height: '100%', paddingTop: fixedHeader ? '40px' : '0' }">
+      <a-layout-content class="layout-content" :class="{'is-header-fixed': fixedHeader}">
         <slot></slot>
       </a-layout-content>
 
@@ -154,6 +154,12 @@ export default {
 </script>
 
 <style lang="less">
+.layout-content {
+  &.is-header-fixed {
+    margin: 68px 24px 0;
+  }
+}
+
 // Todo try to get this rules scoped
 .ant-drawer.drawer-sider {
   .sider {
