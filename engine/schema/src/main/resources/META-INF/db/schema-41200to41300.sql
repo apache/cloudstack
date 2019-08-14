@@ -32,7 +32,6 @@ INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid,hypervisor_type, hyper
 UPDATE `cloud`.`hypervisor_capabilities` SET max_guests_limit='1024', max_data_volumes_limit='59', max_hosts_per_cluster='64' WHERE (hypervisor_type='VMware' AND hypervisor_version='6.0' );
 UPDATE `cloud`.`hypervisor_capabilities` SET max_guests_limit='1024', max_data_volumes_limit='59', max_hosts_per_cluster='64' WHERE (hypervisor_type='VMware' AND hypervisor_version='6.5' );
 
-
 -- Add new OS versions
 INSERT INTO cloud.guest_os (id, uuid, category_id, display_name, created, is_user_defined) VALUES ('277', UUID(), '1', 'Ubuntu 17.04', now(), '0');
 INSERT INTO cloud.guest_os (id, uuid, category_id, display_name, created, is_user_defined) VALUES ('278', UUID(), '1', 'Ubuntu 17.10', now(), '0');
@@ -61,7 +60,6 @@ INSERT INTO cloud.guest_os (id, uuid, category_id, display_name, created, is_use
 INSERT INTO cloud.guest_os (id, uuid, category_id, display_name, created, is_user_defined) VALUES ('302', UUID(), '1', 'CentOS 6.8', now(), '0');
 INSERT INTO cloud.guest_os (id, uuid, category_id, display_name, created, is_user_defined) VALUES ('303', UUID(), '1', 'CentOS 6.9', now(), '0');
 INSERT INTO cloud.guest_os (id, uuid, category_id, display_name, created, is_user_defined) VALUES ('304', UUID(), '1', 'CentOS 6.10', now(), '0');
-
 
 -- Add New and missing VMware 6.5 Guest OSes
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.5', 'oracleLinux6Guest', 235, now(), 0);
@@ -111,8 +109,6 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 
 -- Copy VMware 6.5 Guest OSes to VMware 6.7
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'VMware', '6.7', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='VMware' AND hypervisor_version='6.5';
-
-
 
 -- Copy XenServer 7.1.0 to XenServer 7.1.1
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '7.1.1', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='7.1.1';
@@ -164,8 +160,6 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'KVM', 'default', 'Ubuntu 18.04 LTS', 279, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'KVM', 'default', 'Ubuntu 18.10', 280, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'KVM', 'default', 'Ubuntu 19.04', 281, now(), 0);
-
-
 
 -- DPDK client and server mode support
 ALTER TABLE `cloud`.`service_offering_details` CHANGE COLUMN `value` `value` TEXT NOT NULL;
