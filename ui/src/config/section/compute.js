@@ -10,11 +10,11 @@ export default {
       permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [
-        'name', 'instancename', 'state', 'nic[].ipaddress', 'zonename', 'account', 'domain',
+        'displayname', 'state', { 'ipaddress': (record) => { return record.nic[0].ipaddress } }, 'instancename', 'account', 'zonename',
         'cpunumber', 'cpuused', 'cputotal', 'memoryintfreekbs', 'memorytotal',
         'networkread', 'networkwrite', 'diskkbsread', 'diskkbswrite', 'diskiopstotal'
       ],
-      hidden: ['zonename', 'account', 'domain'],
+      hidden: ['instancename', 'account'],
       actions: [
         {
           api: 'deployVirtualMachine',
@@ -48,14 +48,44 @@ export default {
       title: 'SSH Keys',
       icon: 'key',
       permission: [ 'listSSHKeyPairs' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue')
+      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      columns: ['name', 'fingerprint', 'account', 'domain'],
+      actions: [
+        {
+          api: 'createSSHKeyPair',
+          icon: 'plus',
+          label: 'Create SSH key pair',
+          params: ['name', 'publickey', 'domainid']
+        },
+        {
+          api: 'deleteSSHKeyPair',
+          icon: 'delete',
+          label: 'Delete SSH key pair',
+          params: ['name', 'domainid', 'account']
+        }
+      ]
     },
     {
       name: 'affinitygroups',
       title: 'Affinity Groups',
       icon: 'swap',
       permission: [ 'listAffinityGroups' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue')
+      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      columns: ['name', 'type', 'description', 'account', 'domain'],
+      actions: [
+        {
+          api: 'createAffinityGroup',
+          icon: 'plus',
+          label: 'New Affinity Group',
+          params: ['name', 'description', 'type']
+        },
+        {
+          api: 'deleteAffinityGroup',
+          icon: 'delete',
+          label: 'Delete Affinity Group',
+          params: ['id']
+        }
+      ]
     }
   ]
 }

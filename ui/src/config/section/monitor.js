@@ -9,14 +9,16 @@ export default {
       title: 'Events',
       icon: 'schedule',
       permission: [ 'listEvents' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue')
+      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      columns: ['description', 'state', 'level', 'type', 'account', 'domain', 'created']
     },
     {
       name: 'alert',
       title: 'Alerts',
       icon: 'flag',
       permission: [ 'listAlerts' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue')
+      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      columns: ['description', 'type', 'sent']
     }
   ]
 }

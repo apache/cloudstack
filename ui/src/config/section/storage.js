@@ -9,7 +9,7 @@ export default {
       icon: 'hdd',
       permission: [ 'listVolumesMetrics', 'listVolumes' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),
-      columns: ['name', 'state', 'type', 'vmname', 'size', 'physicalsize', 'utilization', 'storage', 'hypervisor', 'account', 'domain', 'zonename'],
+      columns: ['name', 'state', 'type', 'vmname', 'size', 'physicalsize', 'utilization', 'storage', 'hypervisor', 'account', 'zonename'],
       hidden: ['storage', 'utilization'],
       actions: [
         {
@@ -74,7 +74,7 @@ export default {
       icon: 'build',
       permission: [ 'listSnapshots' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),
-      columns: ['volumename', 'name', 'state', 'intervaltype', 'created', 'account', 'domain']
+      columns: ['name', 'state', 'volumename', 'intervaltype', 'created', 'account']
     },
     {
       name: 'vmsnapshot',
@@ -82,7 +82,7 @@ export default {
       icon: 'camera',
       permission: [ 'listVMSnapshot' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),
-      columns: ['name', 'state', 'type', 'current', 'parent', 'created', 'account', 'domain']
+      columns: ['name', 'state', 'type', 'current', 'parent', 'created', 'account']
     }
   ]
 }

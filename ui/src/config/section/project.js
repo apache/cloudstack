@@ -3,5 +3,6 @@ export default {
   title: 'Projects',
   icon: 'project',
   permission: [ 'listProjects' ],
-  component: () => import('@/components/CloudMonkey/Resource.vue')
+  component: () => import('@/components/CloudMonkey/Resource.vue'),
+  columns: ['name', 'state', 'displaytext', 'account', 'domain']
 }
