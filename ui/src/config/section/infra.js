@@ -10,7 +10,7 @@ export default {
       icon: 'table',
       permission: [ 'listZones', 'listZonesMetrics' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),
-      columns: ['name', 'allocationstate', 'networktype', 'guestcidraddress' ]
+      columns: [ 'name', 'allocationstate', 'networktype', 'guestcidraddress' ]
     },
     {
       name: 'pod',
@@ -18,7 +18,7 @@ export default {
       icon: 'appstore',
       permission: [ 'listPods' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),
-      columns: ['name', 'allocationstate', 'gateway', 'netmask', 'zonename' ]
+      columns: [ 'name', 'allocationstate', 'gateway', 'netmask', 'zonename' ]
     },
     {
       name: 'cluster',
@@ -26,7 +26,7 @@ export default {
       icon: 'cluster',
       permission: [ 'listClusters', 'listClustersMetrics' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),
-      columns: ['name', 'allocationstate', 'clustertype', 'hypervisortype', 'podname', 'zonename' ]
+      columns: [ 'name', 'allocationstate', 'clustertype', 'hypervisortype', 'podname', 'zonename' ]
     },
     {
       name: 'host',
@@ -35,7 +35,7 @@ export default {
       permission: [ 'listHosts', 'listHostsMetrics' ],
       params: { 'type': 'routing' },
       component: () => import('@/components/CloudMonkey/Resource.vue'),
-      columns: ['name', 'state', 'resourcestate', 'ipaddress', 'hypervisor', 'hypervisorversion', 'clustername', 'zonename']
+      columns: [ 'name', 'state', 'resourcestate', 'ipaddress', 'hypervisor', 'hypervisorversion', 'clustername', 'zonename' ]
     },
     {
       name: 'storagepool',

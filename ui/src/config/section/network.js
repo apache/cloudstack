@@ -33,7 +33,7 @@ export default {
       icon: 'environment',
       permission: [ 'listPublicIpAddresses' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),
-      columns: ['ipaddress', 'state',  'associatednetworkname', 'virtualmachinename', 'allocated', 'account', 'zonename']
+      columns: ['ipaddress', 'state', 'associatednetworkname', 'virtualmachinename', 'allocated', 'account', 'zonename']
     },
     {
       name: 'vpngateway',
