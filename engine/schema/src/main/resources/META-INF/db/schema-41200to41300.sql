@@ -43,7 +43,6 @@ INSERT INTO cloud.guest_os (id, uuid, category_id, display_name, created, is_use
 INSERT INTO cloud.guest_os (id, uuid, category_id, display_name, created, is_user_defined) VALUES ('284', UUID(), '1', 'Red Hat Enterprise Linux 7.5', now(), '0');
 INSERT INTO cloud.guest_os (id, uuid, category_id, display_name, created, is_user_defined) VALUES ('285', UUID(), '1', 'Red Hat Enterprise Linux 7.6', now(), '0');
 INSERT INTO cloud.guest_os (id, uuid, category_id, display_name, created, is_user_defined) VALUES ('286', UUID(), '1', 'Red Hat Enterprise Linux 8.0', now(), '0');
-INSERT INTO cloud.guest_os (id, uuid, category_id, display_name, created, is_user_defined) VALUES ('288', UUID(), '6', 'Windows Server 2019 (64-bit)', now(), '0');
 INSERT INTO cloud.guest_os (id, uuid, category_id, display_name, created, is_user_defined) VALUES ('289', UUID(), '2', 'Debian GNU/Linux 9 (32-bit)', now(), '0');
 INSERT INTO cloud.guest_os (id, uuid, category_id, display_name, created, is_user_defined) VALUES ('290', UUID(), '2', 'Debian GNU/Linux 9 (64-bit)', now(), '0');
 INSERT INTO cloud.guest_os (id, uuid, category_id, display_name, created, is_user_defined) VALUES ('291', UUID(), '5', 'SUSE Linux Enterprise Server 15 (64-bit)', now(), '0');
@@ -87,7 +86,7 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.5', 'rhel7_64Guest', 283, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.5', 'rhel7_64Guest', 284, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.5', 'rhel7_64Guest', 285, now(), 0);
-INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.5', 'windows9Server64Guest', 288, now(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.5', 'windows9Server64Guest', 276, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.5', 'debian9Guest', 289, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.5', 'debian9_64Guest', 290, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.5', 'debian10Guest', 282, now(), 0);
@@ -120,7 +119,7 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '7.1.2', 'Debian Stretch 9.0', 289, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '7.1.2', 'Debian Stretch 9.0', 290, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '7.1.2', 'Ubuntu Bionic Beaver 18.04', 279, now(), 0);
-INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '7.1.2', 'Windows Server 2019 (64-bit)', 288, now(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '7.1.2', 'Windows Server 2019 (64-bit)', 276, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '7.1.2', 'CentOS 6 (64-bit', 303, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '7.1.2', 'CentOS 7', 283, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '7.1.2', 'CentOS 7', 284, now(), 0);
@@ -140,7 +139,7 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '8.0.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='7.6.0';
 
 -- Add New XenServer 8.0 Guest OSes
-INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '8.0.0', 'Windows Server 2019 (64-bit)', 288, now(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '8.0.0', 'Windows Server 2019 (64-bit)', 276, now(), 0);
 
 -- Add Missing KVM Guest OSes
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'KVM', 'default', 'CentOS 6.6', 262, now(), 0);
