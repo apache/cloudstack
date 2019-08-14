@@ -37,3 +37,11 @@
     - repeatly used elements like buttons, inputs
 7. components
     - complex elements like dropdown, forms, table, search (usualy include this to components/FooterToolbar/ folder)
+
+
+# The "/deep/" combinator
+- use the /deep/ combinator (or in other versions ">>>") helps us to exclude "scoped" rules into global
+- e.g. <style scoped> .a .b .c {}</style> will scope a generated data ID like .a .b .c[data-abcde] {}
+- but  <style scoped> .a /deep/ .b .c {} </style> will scope .a[data-abcde] .b .c {}
+- so everything after deep will be outside the defined scope
+- watch this article for technical information. https://vue-loader.vuejs.org/guide/scoped-css.html#child-component-root-elements

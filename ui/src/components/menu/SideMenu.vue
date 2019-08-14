@@ -67,7 +67,7 @@ export default {
   z-index: 10;
   height: auto;
 
-  .ant-layout-sider-children {
+  /deep/ .ant-layout-sider-children {
     overflow-y: hidden;
 
     &:hover {

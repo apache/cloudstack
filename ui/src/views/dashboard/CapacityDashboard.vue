@@ -1,21 +1,20 @@
 <template>
-  <a-row :gutter="12" :style="{ marginTop: '24px' }">
+  <a-row class="capacity-dashboard" :gutter="24">
     <a-col :xl="18">
-      <div class="ant-pro-capacity-dashboard__wrapper">
-        <div class="ant-pro-capacity-dashboard__select">
+      <div class="capacity-dashboard-wrapper">
+        <div class="capacity-dashboard-select">
           <a-select
             showSearch
             optionFilterProp="children"
             :defaultValue="zoneSelected.name"
             :value="zoneSelected.name"
-            @change="changeZone"
-            style="width: 100%" >
+            @change="changeZone">
             <a-select-option v-for="(zone, index) in zones" :key="index">
               {{ zone.name }}
             </a-select-option>
           </a-select>
         </div>
-        <div class="ant-pro-capacity-dashboard__button">
+        <div class="capacity-dashboard-button">
           <a-tooltip placement="bottom">
             <template slot="title">
               Fetch Latest
@@ -24,23 +23,23 @@
               type="primary"
               shape="circle"
               @click="listCapacity(zoneSelected, true)">
-              <a-icon style="font-size: 16px; padding: 2px" type="reload" />
+              <a-icon class="capacity-dashboard-button-icon" type="reload" />
             </a-button>
           </a-tooltip>
         </div>
-        <div class="ant-pro-capacity-dashboard__button">
+        <div class="capacity-dashboard-button">
           <a-tooltip placement="bottom">
             <template slot="title">
               View Alerts
             </template>
             <a-button shape="circle">
               <router-link :to="{ name: 'alert' }">
-                <a-icon style="font-size: 16px; padding: 2px" type="flag" />
+                <a-icon class="capacity-dashboard-button-icon" type="flag" />
               </router-link>
             </a-button>
           </a-tooltip>
         </div>
-        <div class="ant-pro-capacity-dashboard__button">
+        <div class="capacity-dashboard-button">
           <a-tooltip placement="bottom">
             <template slot="title">
               View Hosts in Alert State
@@ -48,7 +47,7 @@
             <a-button type="danger" shape="circle">
               <router-link :to="{ name: 'host', query: {'state': 'Alert'} }">
                 <a-badge dot>
-                  <a-icon style="font-size: 16px" type="desktop" />
+                  <a-icon class="capacity-dashboard-button-icon" type="desktop" />
                 </a-badge>
               </router-link>
             </a-button>
@@ -57,12 +56,14 @@
       </div>
       <a-row :gutter="12">
         <a-col
-          :xl="6"
+          :xs="12"
+          :sm="8"
+          :md="6"
           :style="{ marginBottom: '12px' }"
           v-for="stat in stats"
           :key="stat.type">
           <chart-card :loading="loading">
-            <div style="text-align: center; white-space: nowrap; overflow: hidden;">
+            <div class="capacity-dashboard-chart-card-inner">
               <h4>{{ stat.name }}</h4>
               <a-progress type="dashboard" :percent="Number(parseFloat(stat.percentused, 10).toFixed(2))" :width="100" />
             </div>
@@ -78,7 +79,7 @@
           <a-button><router-link :to="{ name: 'event' }">View Events</router-link></a-button>
         </div>
         <template slot="footer">
-          <div :style="{ paddingTop: '12px', paddingLeft: '3px', whiteSpace: 'normal' }">
+          <div class="capacity-dashboard-footer">
             <a-timeline pending="...">
               <a-timeline-item
                 v-for="event in events"
@@ -198,19 +199,42 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.ant-pro-capacity-dashboard {
-  &__wrapper {
+.capacity-dashboard {
+  margin-top: 24px;
+
+  &-wrapper {
     display: flex;
     margin-bottom: 12px;
   }
 
-  &__select {
-    width: 100%;
+  &-chart-card-inner {
+     text-align: center;
+     white-space: nowrap;
+     overflow: hidden;
   }
 
-  &__button {
+  &-select {
+    width: 100%; // for flexbox causes
+
+    .ant-select {
+      width: 100%; // to fill flex item width
+    }
+  }
+
+  &-button {
     width: auto;
     padding-left: 12px;
+  }
+
+  &-button-icon {
+    font-size: 16px;
+    padding: 2px;
+  }
+
+  &-footer {
+    padding-top: 12px;
+    padding-left: 3px;
+    white-space: normal;
   }
 }
 </style>

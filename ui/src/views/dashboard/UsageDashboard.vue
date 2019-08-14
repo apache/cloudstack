@@ -1,51 +1,48 @@
 <template>
-  <div class="page-header-index-wide">
-    <a-row :gutter="12">
-      <a-col
-        class="user-dashboard-chart-card"
-        :xl="16">
-        <a-row :gutter="12">
-          <a-col
-            :xl="8"
-            v-for="stat in stats"
-            :key="stat.type"
-            :style="{ marginBottom: '12px' }">
-            <chart-card class="user-dashboard-chart-card" :loading="loading">
-              <router-link :to="{ name: stat.path }">
-                <div style="text-align: center">
-                  <h4>{{ stat.name }}</h4>
-                  <h1>{{ stat.count == undefined ? 0 : stat.count }}</h1>
-                </div>
-              </router-link>
-            </chart-card>
-          </a-col>
-        </a-row>
-      </a-col>
-      <a-col
-        :xl="8"
-        :style="{ marginTop: '24px' }">
-        <chart-card>
-          <div style="text-align: center">
-            <a-button><router-link :to="{ name: 'event' }">View Events</router-link></a-button>
+  <a-row class="usage-dashboard" :gutter="24">
+    <a-col
+      :xl="16">
+      <a-row :gutter="12">
+        <a-col
+          class="usage-dashboard-chart-tile"
+          :xs="12"
+          :md="8"
+          v-for="stat in stats"
+          :key="stat.type">
+          <chart-card class="usage-dashboard-chart-card" :loading="loading">
+            <router-link :to="{ name: stat.path }">
+              <div class="usage-dashboard-chart-card-inner">
+                <h4>{{ stat.name }}</h4>
+                <h1>{{ stat.count == undefined ? 0 : stat.count }}</h1>
+              </div>
+            </router-link>
+          </chart-card>
+        </a-col>
+      </a-row>
+    </a-col>
+    <a-col
+      :xl="8">
+      <chart-card>
+        <div class="usage-dashboard-chart-card-inner">
+          <a-button><router-link :to="{ name: 'event' }">View Events</router-link></a-button>
+        </div>
+        <template slot="footer">
+          <div class="usage-dashboard-chart-footer">
+            <a-timeline pending="...">
+              <a-timeline-item
+                v-for="event in events"
+                :key="event.id"
+                :color="getEventColour(event)">
+                <span :style="{ color: '#999' }"><small>{{ event.created }}</small></span><br/>
+                <span :style="{ color: '#666' }"><small>{{ event.type }}</small></span><br/>
+                <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
+              </a-timeline-item>
+            </a-timeline>
           </div>
-          <template slot="footer">
-            <div :style="{ paddingTop: '12px', paddingLeft: '3px', whiteSpace: 'normal' }">
-              <a-timeline pending="...">
-                <a-timeline-item
-                  v-for="event in events"
-                  :key="event.id"
-                  :color="getEventColour(event)">
-                  <span :style="{ color: '#999' }"><small>{{ event.created }}</small></span><br/>
-                  <span :style="{ color: '#666' }"><small>{{ event.type }}</small></span><br/>
-                  <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
-                </a-timeline-item>
-              </a-timeline>
-            </div>
-          </template>
-        </chart-card>
-      </a-col>
-    </a-row>
-  </div>
+        </template>
+      </chart-card>
+    </a-col>
+  </a-row>
 </template>
 
 <script>
@@ -153,8 +150,12 @@ export default {
 </script>
 
 <style lang="less" scoped>
-  .user-dashboard {
+  .usage-dashboard {
     margin-top: 24px;
+
+    &-chart-tile {
+      margin-bottom: 12px;
+    }
 
     &-chart-card {
       padding-top: 24px;
@@ -162,6 +163,12 @@ export default {
 
     &-chart-card-inner {
       text-align: center;
+    }
+
+    &-footer {
+       padding-top: 12px;
+       padding-left: 3px;
+       white-space: normal;
     }
   }
 </style>
