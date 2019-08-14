@@ -68,11 +68,7 @@ export default {
   height: auto;
 
   /deep/ .ant-layout-sider-children {
-    overflow-y: hidden;
-
-    &:hover {
-      overflow-y: auto;
-    }
+    overflow-y: auto;
   }
 
   &.ant-fixed-sidemenu {
@@ -86,6 +82,14 @@ export default {
 
     .ant-menu-light {
       border-right-color: transparent;
+      padding: 14px 0;
+    }
+  }
+
+  &.dark {
+    .ant-menu-dark {
+      border-right-color: transparent;
+      padding: 14px 0;
     }
   }
 }

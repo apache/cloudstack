@@ -139,7 +139,6 @@
     </div>
     <div style="margin-top: 12px" v-else>
       <a-table
-        size="small"
         :rowKey="record => record.id"
         :loading="loading"
         :columns="columns"
@@ -274,17 +273,18 @@ export default {
           return 0
         })
       }
-      if (!this.columnKeys.includes('name')) {
-        this.columnKeys = ['name', ...this.columnKeys]
-      }
+
       var counter = 0
-      for (const key of this.columnKeys) {
+      for (var key of this.columnKeys) {
+        if (typeof key === 'object') {
+          key = Object.keys(key)[0]
+        }
         this.columns.push({
           title: key,
           dataIndex: key,
           key: counter++,
           scopedSlots: { customRender: key },
-          sorter: (a, b) => a[key].length - b[key].length
+          sorter: (a, b) => String(a[key]).length - String(b[key]).length
         })
       }
 
@@ -447,17 +447,26 @@ export default {
         case 'Ready':
         case 'Up':
         case 'BackedUp':
+        case 'Allocated':
+        case 'Implemented':
+        case 'Enabled':
+        case 'enabled':
+        case 'Active':
+        case 'Completed':
+        case 'Started':
           status = 'success'
           break
         case 'Stopped':
+        case 'Error':
           status = 'error'
           break
         case 'Migrating':
         case 'Starting':
+        case 'Scheduled':
           status = 'processing'
           break
         case 'Alert':
-        case 'Allocated':
+        case 'Created':
           status = 'warning'
           break
       }
@@ -491,7 +500,7 @@ export default {
 }
 
 .dark-row {
-  background-color: #f5f5f5;
+  background-color: #f9f9f9;
 }
 
 </style>
