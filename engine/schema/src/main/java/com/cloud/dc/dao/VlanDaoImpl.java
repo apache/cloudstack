@@ -168,7 +168,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         List<VlanVO> result = new ArrayList<VlanVO>();
         for (PodVlanMapVO pvmvo : vlanMaps) {
             VlanVO vlanByPodId = findById(pvmvo.getVlanDbId());
-            if (vlanByPodId != null && vlanByPodId.getRemoved() == null) {
+            if (vlanByPodId != null) {
                 result.add(vlanByPodId);
             }
         }
@@ -318,12 +318,6 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         }
 
         return null;
-//        String ipAddress = _ipAddressDao.assignIpAddress(accountId, domainId, vlan.getId(), false).getAddress();
-//        if (ipAddress == null) {
-//            return null;
-//        }
-//        return new Pair<String, VlanVO>(ipAddress, vlan);
-
     }
 
     @Override
