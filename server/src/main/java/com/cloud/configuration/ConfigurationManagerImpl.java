@@ -266,7 +266,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     DomainVlanMapDao _domainVlanMapDao;
     @Inject
-    PodVlanMapDao _podVlanMapDao;
+    PodVlanMapDao podVlanMapDao;
     @Inject
     DataCenterDao _zoneDao;
     @Inject
@@ -3950,7 +3950,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 } else if (podId != null) {
                     // This VLAN is pod-wide, so create a PodVlanMapVO entry
                     final PodVlanMapVO podVlanMapVO = new PodVlanMapVO(podId, vlan.getId());
-                    _podVlanMapDao.persist(podVlanMapVO);
+                    podVlanMapDao.persist(podVlanMapVO);
                 }
                 return vlan;
             }
@@ -4046,7 +4046,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
                 _publicIpAddressDao.deletePublicIPRange(vlanDbId);
+                s_logger.debug(String.format("Delete Public IP Range (from user_ip_address, where vlan_db_d=%s)", vlanDbId));
+
                 _vlanDao.remove(vlanDbId);
+                s_logger.debug(String.format("Mark vlan as Remove vlan (vlan_db_id=%s)", vlanDbId));
+
+                SearchBuilder<PodVlanMapVO> sb = podVlanMapDao.createSearchBuilder();
+                sb.and("vlan_db_id", sb.entity().getVlanDbId(), SearchCriteria.Op.EQ);
+                SearchCriteria<PodVlanMapVO> sc = sb.create();
+                sc.setParameters("vlan_db_id", vlanDbId);
+                podVlanMapDao.remove(sc);
+                s_logger.debug(String.format("Delete vlan_db_id=%s in pod_vlan_map", vlanDbId));
             }
         });
 
