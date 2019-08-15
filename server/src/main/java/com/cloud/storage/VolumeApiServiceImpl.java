@@ -723,7 +723,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()));
 
         verifyVmAndAttachVolume(cmd.getVirtualMachineId(), volume);
-        
         return volume;
     }
 
@@ -1629,7 +1628,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return vol;
         }
     }
-    
     public Volume verifyVmAndAttachVolume(Long vmId, VolumeVO volume){
 
         Account caller = CallContext.current().getCallingAccount();
@@ -1672,7 +1670,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public void checkVmOwnershipPermissions(AccountManager accountManager, Account caller, UserVmVO vm){
         accountManager.checkAccess(caller, null, false, vm);
     }
-    
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPDATE, eventDescription = "updating volume", async = true)
     public Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId, long entityOwnerId, String chainInfo) {
