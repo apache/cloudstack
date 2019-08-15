@@ -68,6 +68,7 @@ config_guest() {
      xen-pv|xen-domU)
           systemctl stop ntpd
           systemctl disable ntpd
+          systemctl enable xe-daemon
           systemctl start xe-daemon
 
           cat /proc/cmdline > $CMDLINE
@@ -76,6 +77,7 @@ config_guest() {
      xen-hvm)
           systemctl stop ntpd
           systemctl disable ntpd
+          systemctl enable xe-daemon
           systemctl start xe-daemon
 
           if [ ! -f /usr/bin/xenstore-read ]; then
@@ -85,12 +87,18 @@ config_guest() {
           sed -i "s/%/ /g" $CMDLINE
           ;;
      kvm)
-          # Configure hot-plug
-          modprobe acpiphp || true
-          modprobe pci_hotplug || true
+          # Configure kvm hotplug support
+          if grep -E 'CONFIG_HOTPLUG_PCI=y|CONFIG_HOTPLUG_PCI_ACPI=y' /boot/config-`uname -r`; then
+            log_it "acpiphp and pci_hotplug module already compiled in"
+          else
+            modprobe acpiphp 2> /dev/null && log_it "acpiphp module loaded" || true
+            modprobe pci_hotplug 2> /dev/null && log_it "pci_hotplug module loaded" || true
+          fi
+
           sed -i -e "/^s0:2345:respawn.*/d" /etc/inittab
           sed -i -e "/6:23:respawn/a\s0:2345:respawn:/sbin/getty -L 115200 ttyS0 vt102" /etc/inittab
-          systemctl enable --now qemu-guest-agent
+          systemctl enable qemu-guest-agent
+          systemctl start qemu-guest-agent
 
           # Wait for $CMDLINE file to be written by the qemu-guest-agent
           for i in {1..60}; do
@@ -108,12 +116,14 @@ config_guest() {
           # system time sync'd with host via vmware tools
           systemctl stop ntpd
           systemctl disable ntpd
+          systemctl enable open-vm-tools
           systemctl start open-vm-tools
 
           vmtoolsd --cmd 'machine.id.get' > $CMDLINE
           ;;
      virtualpc|hyperv)
           # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
+          systemctl enable hyperv-daemons.hv-fcopy-daemon.service hyperv-daemons.hv-kvp-daemon.service hyperv-daemons.hv-vss-daemon.service
           systemctl start hyperv-daemons.hv-fcopy-daemon.service hyperv-daemons.hv-kvp-daemon.service hyperv-daemons.hv-vss-daemon.service
           sleep 5
           cp -f /var/opt/hyperv/.kvp_pool_0 $CMDLINE

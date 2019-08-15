@@ -1362,11 +1362,19 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     }
 
     public boolean imageStoreHasEnoughCapacity(DataStore imageStore) {
+        if (!_storageStats.keySet().contains(imageStore.getId())) { // Stats not available for this store yet, can be a new store. Better to assume it has enough capacity?
+            return true;
+        }
         StorageStats imageStoreStats = _storageStats.get(imageStore.getId());
         if (imageStoreStats != null && (imageStoreStats.getByteUsed() / (imageStoreStats.getCapacityBytes() * 1.0)) <= _imageStoreCapacityThreshold) {
             return true;
         }
         return false;
+    }
+
+    public long imageStoreCurrentFreeCapacity(DataStore imageStore) {
+        StorageStats imageStoreStats = _storageStats.get(imageStore.getId());
+        return imageStoreStats != null ? Math.max(0, imageStoreStats.getCapacityBytes() - imageStoreStats.getByteUsed()) : 0;
     }
 
     /**
@@ -1573,5 +1581,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri};
+    }
+
+    public double getImageStoreCapacityThreshold() {
+        return _imageStoreCapacityThreshold;
     }
 }

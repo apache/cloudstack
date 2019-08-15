@@ -20,9 +20,11 @@
 package com.cloud.agent.api.storage;
 
 import java.io.File;
+import java.util.List;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.LogLevel;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
@@ -36,6 +38,8 @@ public class DownloadAnswer extends Answer {
     private long templateSize = 0L;
     private long templatePhySicalSize = 0L;
     private String checkSum;
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private List<OVFPropertyTO> ovfProperties;
 
     public String getCheckSum() {
         return checkSum;
@@ -146,4 +150,11 @@ public class DownloadAnswer extends Answer {
         return templatePhySicalSize;
     }
 
+    public List<OVFPropertyTO> getOvfProperties() {
+        return ovfProperties;
+    }
+
+    public void setOvfProperties(List<OVFPropertyTO> ovfProperties) {
+        this.ovfProperties = ovfProperties;
+    }
 }

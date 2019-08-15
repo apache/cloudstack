@@ -240,7 +240,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             fullSnapshot = snapshotFullBackup;
         }
         if (fullSnapshot) {
-            return dataStoreMgr.getImageStore(snapshot.getDataCenterId());
+            return dataStoreMgr.getImageStoreWithFreeCapacity(snapshot.getDataCenterId());
         } else {
             SnapshotInfo parentSnapshot = snapshot.getParent();
             // Note that DataStore information in parentSnapshot is for primary
@@ -251,7 +251,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 parentSnapshotOnBackupStore = _snapshotStoreDao.findBySnapshot(parentSnapshot.getId(), DataStoreRole.Image);
             }
             if (parentSnapshotOnBackupStore == null) {
-                return dataStoreMgr.getImageStore(snapshot.getDataCenterId());
+                return dataStoreMgr.getImageStoreWithFreeCapacity(snapshot.getDataCenterId());
             }
             return dataStoreMgr.getDataStore(parentSnapshotOnBackupStore.getDataStoreId(), parentSnapshotOnBackupStore.getRole());
         }

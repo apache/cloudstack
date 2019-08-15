@@ -3376,7 +3376,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     builder.append("Allocated VM usage ");
                 }
                 if (vm != null) {
-                    builder.append("for ").append(vm.getHostName()).append(" (").append(vm.getInstanceName()).append(", ").append(vm.getUuid()).append(") ");
+                    builder.append("for ").append(vm.getHostName()).append(" (").append(vm.getInstanceName()).append(") (").append(vm.getUuid()).append(") ");
                 }
                 if (svcOffering != null) {
                     builder.append("using service offering ").append(svcOffering.getName()).append(" (").append(svcOffering.getUuid()).append(") ");
@@ -3687,6 +3687,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT_ON_PRIMARY) {
+            usageRecResponse.setSize(usageRecord.getVirtualSize());
             if (!oldFormat) {
                 final StringBuilder builder = new StringBuilder();
                 builder.append("VMSnapshot on primary storage usage");

@@ -603,7 +603,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     protected Map<String, Object> createSecStorageVmInstance(long dataCenterId, SecondaryStorageVm.Role role) {
-        DataStore secStore = _dataStoreMgr.getImageStore(dataCenterId);
+        DataStore secStore = _dataStoreMgr.getImageStoreWithFreeCapacity(dataCenterId);
         if (secStore == null) {
             String msg = "No secondary storage available in zone " + dataCenterId + ", cannot create secondary storage vm";
             s_logger.warn(msg);
@@ -1117,8 +1117,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
 
-        DataStore secStore = _dataStoreMgr.getImageStore(dest.getDataCenter().getId());
-        assert (secStore != null);
+        DataStore secStore = _dataStoreMgr.getImageStoreWithFreeCapacity(dest.getDataCenter().getId());
+        if (secStore == null) {
+            s_logger.error(String.format("Unable to finalize virtual machine profile as no secondary storage available to satisfy storage needs for zone: %s", dest.getDataCenter().getUuid()));
+            return false;
+        }
 
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=secstorage");

@@ -607,7 +607,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             throw new InvalidParameterValueException("The DomR template cannot be deleted.");
         }
 
-        if (zoneIdList != null && (storeMgr.getImageStore(zoneIdList.get(0)) == null)) {
+        if (zoneIdList != null && (storeMgr.getImageStoreWithFreeCapacity(zoneIdList.get(0)) == null)) {
             throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
         }
 
@@ -620,7 +620,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         List<Long> zoneIdList = profile.getZoneIdList();
 
         if (zoneIdList != null &&
-                (storeMgr.getImageStore(zoneIdList.get(0)) == null)) {
+                (storeMgr.getImageStoreWithFreeCapacity(zoneIdList.get(0)) == null)) {
             throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
         }
 

@@ -123,6 +123,98 @@
                     });
                 };
 
+                var makeSelectsOvfProperties = function (data, fields) {
+                    var $selects = $('<div>');
+
+                    $(data).each(function() {
+                        var item = this;
+                        var key = item[fields.key];
+                        var type = item[fields.type];
+                        var value = item[fields.value];
+                        var qualifiers = item[fields.qualifiers];
+                        var label = item[fields.label];
+                        var description = item[fields.description];
+                        var password = item[fields.password];
+
+                        var propertyField;
+
+                        var fieldType = password ? "password" : "text";
+                        if (type && type.toUpperCase() == "BOOLEAN") {
+                            propertyField = $('<select id=ovf-property-' + key + '>')
+                                .append($('<option>').attr({value: "True"}).html("True"))
+                                .append($('<option>').attr({value: "False"}).html("False"));
+                        } else if (type && (type.includes("int") || type.includes("real"))) {
+                            if (qualifiers && qualifiers.includes("MinValue") && qualifiers.includes("MaxValue")) {
+                                var split = qualifiers.split(",");
+                                var minValue = split[0].replace("MinValue(","").slice(0, -1);
+                                var maxValue = split[1].replace("MaxValue(","").slice(0, -1);
+                                fieldType = "number";
+                                propertyField = $('<input id=ovf-property-'+key+'>')
+                                    .attr({type: fieldType, min: minValue, max:maxValue})
+                                    .addClass('name').val(_s(this[fields.value]));
+                            } else {
+                                propertyField = $('<input id=ovf-property-'+key+'>')
+                                    .attr({type: fieldType})
+                                    .addClass('name').val(_s(this[fields.value]))
+                            }
+                        } else if (type && type.toUpperCase() == "STRING") {
+                            if (qualifiers) {
+                                propertyField = $('<select id=ovf-property-'+key+'>')
+                                if (qualifiers.startsWith("ValueMap")) {
+                                    var possibleValues = qualifiers.replace("ValueMap","").substr(1).slice(0, -1).split(",");
+                                    $(possibleValues).each(function() {
+                                        var qualifier = this.substr(1).slice(0, -1); //remove first and last quotes
+                                        var option = $('<option>')
+                                            .attr({
+                                                value: qualifier,
+                                                type: fieldType
+                                            })
+                                            .html(qualifier)
+                                        propertyField.append(option);
+                                    });
+                                } else if (qualifiers.startsWith("MaxLen")) {
+                                    var length = qualifiers.replace("MaxLen(","").slice(0,-1);
+                                    propertyField = $('<input id=ovf-property-'+key+'>')
+                                        .attr({maxlength : length, type: fieldType})
+                                        .addClass('name').val(_s(this[fields.value]))
+                                }
+                            } else {
+                                propertyField = $('<input id=ovf-property-'+key+'>')
+                                    .attr({type: fieldType})
+                                    .addClass('name').val(_s(this[fields.value]))
+                            }
+                        } else {
+                            propertyField = $('<input id=ovf-property-'+key+'>')
+                                .attr({type: fieldType})
+                                .addClass('name').val(_s(this[fields.value]))
+                        }
+
+                        var $select = $('<div>')
+                            .addClass('select')
+                            .append(
+                                $('<div>')
+                                    .addClass('select-desc')
+                                    .addClass('ovf-property')
+                                    .append($('<div>').addClass('name').html(_s(this[fields.label])))
+                                    .append(propertyField)
+                                    .append($('<div>').addClass('desc').html(_s(this[fields.description])))
+                                    .data('json-obj', this)
+                            );
+                        $selects.append($select);
+                    });
+
+                    cloudStack.evenOdd($selects, 'div.select', {
+                        even: function($elem) {
+                            $elem.addClass('even');
+                        },
+                        odd: function($elem) {
+                            $elem.addClass('odd');
+                        }
+                    });
+
+                    return $selects.children();
+                };
+
                 var makeSelects = function(name, data, fields, options, selectedObj, selectedObjNonEditable) {
                     var $selects = $('<div>');
                     options = options ? options : {};
@@ -636,8 +728,8 @@
                                                 $step.find('.custom-slider-container').show();
                                                 var setupSlider = function(sliderClassName, minVal, maxVal) {
                                                     $step.find('.custom-slider-container .' + sliderClassName + ' .size.min span').html(minVal);
-                                                    $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(minVal);
                                                     $step.find('.custom-slider-container .' + sliderClassName + ' .size.max span').html(maxVal);
+                                                    $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(minVal);
                                                     $step.find('.custom-slider-container .' + sliderClassName + ' .slider').each(function() {
                                                         var $slider = $(this);
                                                         $slider.slider({
@@ -651,20 +743,22 @@
                                                     });
 
                                                     $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').bind('change', function() {
-                                                        var val = $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val();
+                                                        var val = parseInt($(this).val(), 10);
                                                         if (val < minVal || val > maxVal) {
                                                             cloudStack.dialog.notice({ message: $.validator.format(_l('message.validate.range'), [minVal, maxVal]) });
                                                         }
                                                         if (val < minVal) {
                                                             val = minVal;
-                                                            $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(val);
+                                                            $(this).val(val);
                                                         }
                                                         if(val > maxVal) {
                                                             val = maxVal;
-                                                            $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(val);
+                                                            $(this).val(val);
                                                         }
                                                         $step.find('span.custom-slider-container .' + sliderClassName).html(_s(val));
+                                                        $step.find('.custom-slider-container .' + sliderClassName + ' span.ui-slider-handle').css('left', (((val-minVal)/(maxVal-minVal))*100)+'%');
                                                     });
+                                                    $step.find('.custom-slider-container .' + sliderClassName + ' span.ui-slider-handle').css('left', '0%');
                                                 }
                                                 setupSlider('slider-cpu-cores', minCpuNumber, maxCpuNumber);
                                                 setupSlider('slider-memory-mb', minMemory, maxMemory);
@@ -1231,10 +1325,31 @@
                         };
                     },
 
+                    'ovfProperties': function($step, formData) {
+                        return {
+                            response: {
+                                success: function(args) {
+                                    $step.find('.content .select-container').append(
+                                        makeSelectsOvfProperties(args.data.ovfProperties, {
+                                            key: 'key',
+                                            type: 'type',
+                                            value: 'value',
+                                            qualifiers: 'qualifiers',
+                                            label: 'label',
+                                            description : 'description',
+                                            password : 'password'
+                                        })
+                                    );
+                                }
+                            }
+                        };
+                    },
+
                     'review': function($step, formData) {
                         $step.find('[wizard-field]').each(function() {
                             var field = $(this).attr('wizard-field');
                             var fieldName;
+
                             var $input = $wizard.find('[wizard-field=' + field + ']').filter(function() {
                                 return ($(this).is(':selected') ||
                                     $(this).is(':checked') ||
@@ -1423,6 +1538,37 @@
                             }
                         }
 
+                        // Step 7 - Skip OVF properties tab if there are no OVF properties for the template
+                        if ($activeStep.hasClass('sshkeyPairs')) {
+                            if ($activeStep.hasClass('next-skip-ovf-properties')) {
+                                showStep(8);
+                            }
+                        }
+
+                        // Optional Step - Pre-step 8
+                        if ($activeStep.hasClass('ovf-properties')) {
+                            var ok = true;
+                            if ($activeStep.find('input').length > 0) { //if no checkbox is checked
+                                $.each($activeStep.find('input'), function(index, item) {
+                                    var item = $activeStep.find('input#' + item.id);
+                                    var internalCheck = true;
+                                    if (this.maxLength && this.maxLength !== -1) {
+                                        internalCheck = item.val().length <= this.maxLength;
+                                    } else if (this.min && this.max) {
+                                        var numberValue = parseFloat(item.val());
+                                        internalCheck = numberValue >= this.min && numberValue <= this.max;
+                                    }
+                                    ok = ok && internalCheck;
+                                });
+                            }
+                            if (!ok) {
+                                cloudStack.dialog.notice({
+                                    message: 'Please enter valid values for every property'
+                                });
+                                return false;
+                            }
+                        }
+
                         if (!$form.valid()) {
                             if ($form.find('input.error:visible, select.error:visible').length) {
                                 return false;
@@ -1454,6 +1600,12 @@
                                 showStep(5);
                             } else {
                                 showStep(index);
+                            }
+                        }
+
+                        if ($activeStep.hasClass('review')) {
+                            if ($activeStep.hasClass('previous-skip-ovf-properties')) {
+                                showStep(7);
                             }
                         }
 
