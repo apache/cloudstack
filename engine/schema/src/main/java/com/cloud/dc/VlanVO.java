@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.dc;
 
-import java.util.Date;
-import java.util.UUID;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -27,6 +24,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import java.util.Date;
+import java.util.UUID;
 
 import com.cloud.utils.db.GenericDao;
 
@@ -234,6 +234,6 @@ public class VlanVO implements Vlan {
     }
 
     public void setIpRange(String ipRange) {
-        this.ip6Range = ipRange;
+        this.ipRange = ipRange;
     }
 }
