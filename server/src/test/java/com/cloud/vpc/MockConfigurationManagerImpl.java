@@ -16,12 +16,12 @@
 // under the License.
 package com.cloud.vpc;
 
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.UpdateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
@@ -252,8 +253,19 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationService#createVlanAndPublicIpRange(org.apache.cloudstack.api.commands.CreateVlanIpRangeCmd)
      */
     @Override
-    public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
-        ResourceAllocationException {
+    public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException,
+            ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException{
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#updateVlanAndPublicIpRange(org.apache.cloudstack.api
+     * .commands.UpdateVlanIpRangeCmd)
+     */
+    @Override
+    public Vlan updateVlanAndPublicIpRange(UpdateVlanIpRangeCmd cmd) throws ConcurrentOperationException,
+            ResourceUnavailableException, ResourceAllocationException{
         // TODO Auto-generated method stub
         return null;
     }

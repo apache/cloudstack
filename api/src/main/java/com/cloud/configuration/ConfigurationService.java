@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.UpdateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
@@ -269,8 +270,25 @@ public interface ConfigurationService {
      * @throws
      * @return The new Vlan object
      */
-    Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
-        ResourceAllocationException;
+    Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException,
+            ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException;
+
+    /**
+     * Updates the IP address Range for the VLAN on the database, a
+     *
+     * @param cmd
+     * @param vlanId
+     * @param gateway
+     * @param startIP
+     * @param endIP
+     * @param netmask
+     * @throws com.cloud.exception.ConcurrentOperationException
+     * @throws com.cloud.exception.ResourceUnavailableException
+     * @throws com.cloud.exception.ResourceAllocationException
+     * @return The updated Vlan object
+     */
+    Vlan updateVlanAndPublicIpRange(UpdateVlanIpRangeCmd cmd) throws ConcurrentOperationException,
+            ResourceUnavailableException, ResourceAllocationException;
 
     /**
      * Marks the the account with the default zone-id.

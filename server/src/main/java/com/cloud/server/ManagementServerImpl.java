@@ -16,6 +16,11 @@
 // under the License.
 package com.cloud.server;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,13 +37,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import com.cloud.storage.ScopeType;
-import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -242,6 +240,7 @@ import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.UpdateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vm.AddNicToVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
@@ -613,6 +612,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.IpAddress;
 import com.cloud.network.dao.IPAddressDao;
@@ -639,6 +639,7 @@ import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -2753,6 +2754,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RegisterCmd.class);
         cmdList.add(UpdateUserCmd.class);
         cmdList.add(CreateVlanIpRangeCmd.class);
+        cmdList.add(UpdateVlanIpRangeCmd.class);
         cmdList.add(DeleteVlanIpRangeCmd.class);
         cmdList.add(ListVlanIpRangesCmd.class);
         cmdList.add(DedicatePublicIpRangeCmd.class);

@@ -19,6 +19,13 @@ package com.cloud.event;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.annotation.Annotation;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.usage.Usage;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
@@ -69,12 +76,6 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RolePermission;
-import org.apache.cloudstack.annotation.Annotation;
-import org.apache.cloudstack.config.Configuration;
-import org.apache.cloudstack.ha.HAConfig;
-import org.apache.cloudstack.usage.Usage;
 
 public class EventTypes {
 
@@ -302,6 +303,7 @@ public class EventTypes {
     public static final String EVENT_VLAN_IP_RANGE_DELETE = "VLAN.IP.RANGE.DELETE";
     public static final String EVENT_VLAN_IP_RANGE_DEDICATE = "VLAN.IP.RANGE.DEDICATE";
     public static final String EVENT_VLAN_IP_RANGE_RELEASE = "VLAN.IP.RANGE.RELEASE";
+    public static final String EVENT_VLAN_IP_RANGE_UPDATE = "VLAN.IP.RANGE.UPDATE";
 
     public static final String EVENT_MANAGEMENT_IP_RANGE_CREATE = "MANAGEMENT.IP.RANGE.CREATE";
     public static final String EVENT_MANAGEMENT_IP_RANGE_DELETE = "MANAGEMENT.IP.RANGE.DELETE";
