@@ -16,8 +16,14 @@
 // under the License.
 package com.cloud.vm;
 
+<<<<<<< HEAD
 import java.io.IOException;
 import java.io.StringReader;
+=======
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+>>>>>>> Limit API from trying to start a VM that is already running
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -41,12 +47,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+<<<<<<< HEAD
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+=======
+>>>>>>> Limit API from trying to start a VM that is already running
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -4657,6 +4666,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // check if account/domain is with in resource limits to start a new vm
             ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
             resourceLimitCheck(owner, vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+        }
+
+        if (vm.getState()== State.Running){
+            throw new InvalidParameterValueException("The virtual machine "+ vm.getDisplayName()+ " is already running");
         }
 
         // check if vm is security group enabled
