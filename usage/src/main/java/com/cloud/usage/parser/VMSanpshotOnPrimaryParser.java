@@ -94,14 +94,14 @@ public class VMSanpshotOnPrimaryParser {
             }
             long duration = (endDateEffective.getTime() - created.getTime()) + 1;
             createUsageRecord(UsageTypes.VM_SNAPSHOT_ON_PRIMARY, duration, created, endDateEffective, account, usageRec.getId(), usageRec.getName(), usageRec.getZoneId(),
-                    usageRec.getVirtualSize(), usageRec.getPhysicalSize());
+                    usageRec.getVirtualSize(), usageRec.getPhysicalSize(), usageRec.getVmSnapshotId());
         }
 
         return true;
     }
 
     private static void createUsageRecord(int usageType, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, String name, long zoneId, long virtualSize,
-            long physicalSize) {
+                                          long physicalSize, Long vmSnapshotId) {
         // Our smallest increment is hourly for now
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total running time " + runningTime + "ms");
@@ -113,16 +113,16 @@ public class VMSanpshotOnPrimaryParser {
         String usageDisplay = dFormat.format(usage);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating VMSnapshot On Primary usage record for vm: " + vmId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate
+            s_logger.debug("Creating VMSnapshot Id: " + vmSnapshotId + " On Primary usage record for vm: " + vmId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate
                     + ", for account: " + account.getId());
         }
 
         // Create the usage record
-        String usageDesc = "VMSnapshot On Primary Usage: " + "VM Id: " + vmId;
+        String usageDesc = "VMSnapshot Id: " + vmSnapshotId + " On Primary Usage: VM Id: " + vmId;
         usageDesc += " Size: " + virtualSize;
 
         UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", usageType, new Double(usage), vmId, name, null, null,
-                vmId, physicalSize, virtualSize, startDate, endDate);
+                vmSnapshotId, physicalSize, virtualSize, startDate, endDate);
         s_usageDao.persist(usageRecord);
     }
 
