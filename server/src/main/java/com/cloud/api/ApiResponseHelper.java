@@ -31,6 +31,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -372,6 +374,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private IPAddressDao userIpAddressDao;
     @Inject
     NetworkDetailsDao networkDetailsDao;
+    @Inject
+    private VMSnapshotDao vmSnapshotDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -3643,11 +3647,14 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
-            resourceType = ResourceObjectType.UserVm;
-            if (vmInstance != null) {
-                resourceId = vmInstance.getId();
-                usageRecResponse.setResourceName(vmInstance.getInstanceName());
-                usageRecResponse.setUsageId(vmInstance.getUuid());
+            resourceType = ResourceObjectType.VMSnapshot;
+            if (usageRecord.getUsageId() != null) {
+                VMSnapshotVO vmSnapshotVO = vmSnapshotDao.findByIdIncludingRemoved(usageRecord.getUsageId());
+                if (vmSnapshotVO != null) {
+                    resourceId = vmSnapshotVO.getId();
+                    usageRecResponse.setResourceName(vmSnapshotVO.getDisplayName());
+                    usageRecResponse.setUsageId(vmSnapshotVO.getUuid());
+                }
             }
             usageRecResponse.setSize(usageRecord.getSize());
             if (usageRecord.getOfferingId() != null) {
@@ -3684,6 +3691,15 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT_ON_PRIMARY) {
+            resourceType = ResourceObjectType.VMSnapshot;
+            if (usageRecord.getUsageId() != null) {
+                VMSnapshotVO vmSnapshotVO = vmSnapshotDao.findByIdIncludingRemoved(usageRecord.getUsageId());
+                if (vmSnapshotVO != null) {
+                    resourceId = vmSnapshotVO.getId();
+                    usageRecResponse.setResourceName(vmSnapshotVO.getDisplayName());
+                    usageRecResponse.setUsageId(vmSnapshotVO.getUuid());
+                }
+            }
             usageRecResponse.setSize(usageRecord.getVirtualSize());
             if (!oldFormat) {
                 final StringBuilder builder = new StringBuilder();
