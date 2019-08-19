@@ -51,4 +51,5 @@ export default {
   display: inline-block;
   vertical-align: middle;
 }
+
 </style>

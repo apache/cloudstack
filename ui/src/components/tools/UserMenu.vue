@@ -23,7 +23,7 @@
         </a-menu-item>
         <a-menu-item class="user-menu-item" key="2" disabled>
           <a-icon class="user-menu-item-icon" type="setting"/>
-          <span class="user-menu-item-name">测试</span>
+          <span class="user-menu-item-name">Disabled</span>
         </a-menu-item>
         <a-menu-item class="user-menu-item" key="3" disabled>
           <a :href="helpUrl" target="_blank">
