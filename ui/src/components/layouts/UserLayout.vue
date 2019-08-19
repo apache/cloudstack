@@ -49,8 +49,9 @@ export default {
     .container {
       width: 100%;
       min-height: 100%;
-      background: #fff; // url(~@/assets/background.svg) no-repeat 50%;
-      background-size: 100%;
+      background: url(~@/assets/background.svg);
+      background-repeat: repeat;
+      background-size: 20%;
       padding-top: 75px;
       position: relative;
 
@@ -75,7 +76,7 @@ export default {
 
           .logo {
             width: 100%;
-            max-width: 480px;
+            max-width: 450px;
             vertical-align: top;
             border-style: none;
           }

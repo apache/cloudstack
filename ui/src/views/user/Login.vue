@@ -16,7 +16,7 @@
         <a-tab-pane key="tab1">
           <span slot="tab">
             <a-icon type="safety" />
-            CloudStack Login
+            <b>CloudStack Login</b>
           </span>
           <a-form-item>
             <a-input
@@ -65,33 +65,8 @@
         <a-tab-pane key="tab2" disabled>
           <span slot="tab">
             <a-icon type="audit" />
-            SAML
+            <b>SAML</b>
           </span>
-
-          <a-form-item>
-            <a-input size="large" type="text" placeholder="手机号" v-decorator="['mobile', {rules: [{ required: true, pattern: /^1[34578]\d{9}$/, message: '请输入正确的手机号' }], validateTrigger: 'change'}]">
-              <a-icon slot="prefix" type="mobile" :style="{ color: 'rgba(0,0,0,.25)' }"/>
-            </a-input>
-          </a-form-item>
-
-          <a-row :gutter="16">
-            <a-col class="gutter-row" :span="16">
-              <a-form-item>
-                <a-input size="large" type="text" placeholder="验证码" v-decorator="['captcha', {rules: [{ required: true, message: '请输入验证码' }], validateTrigger: 'blur'}]">
-                  <a-icon slot="prefix" type="mail" :style="{ color: 'rgba(0,0,0,.25)' }"/>
-                </a-input>
-              </a-form-item>
-            </a-col>
-            <a-col class="gutter-row" :span="8">
-              <a-button
-                class="getCaptcha"
-                tabindex="-1"
-                :disabled="state.smsSendBtn"
-                @click.stop.prevent="getCaptcha"
-                v-text="!state.smsSendBtn && '获取验证码' || (state.time+' s')"
-              ></a-button>
-            </a-col>
-          </a-row>
         </a-tab-pane>
       </a-tabs>
 
@@ -126,8 +101,7 @@ export default {
       state: {
         time: 60,
         loginBtn: false,
-        loginType: 0,
-        smsSendBtn: false
+        loginType: 0
       }
     }
   },
