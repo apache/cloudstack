@@ -3,7 +3,7 @@
     <div class="container">
       <div class="top">
         <div class="header">
-          <img src="~@/assets/banner.png" class="logo" alt="logo">
+          <img src="~@/assets/banner.svg" class="logo" alt="logo">
         </div>
       </div>
       <route-view></route-view>
@@ -74,6 +74,8 @@ export default {
           }
 
           .logo {
+            width: 100%;
+            max-width: 480px;
             vertical-align: top;
             border-style: none;
           }

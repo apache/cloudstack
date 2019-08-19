@@ -155,10 +155,16 @@
         </template>
 
         <a slot="name" slot-scope="text, record" href="javascript:;">
-          <router-link :to="{ path: $route.name + '/' + record.id }">{{ text }}</router-link>
+          <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+        </a>
+        <a slot="displayname" slot-scope="text, record" href="javascript:;">
+          <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
         </a>
         <a slot="username" slot-scope="text, record" href="javascript:;">
-          <router-link :to="{ path: $route.name + '/' + record.id }">{{ text }}</router-link>
+          <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+        </a>
+        <a slot="ipaddress" slot-scope="text, record" href="javascript:;">
+          <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
         </a>
         <a slot="vmname" slot-scope="text, record" href="javascript:;">
           <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
@@ -173,7 +179,8 @@
         </template>
 
         <a slot="account" slot-scope="text, record" href="javascript:;">
-          <router-link :to="{ path: '/account/' + record.accountid }">{{ text }}</router-link>
+          <router-link :to="{ path: '/account/' + record.accountid }" v-if="record.accountid">{{ text }}</router-link>
+          <router-link :to="{ path: '/account', query: { name: record.account } }" v-else>{{ text }}</router-link>
         </a>
         <a slot="domain" slot-scope="text, record" href="javascript:;">
           <router-link :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>

@@ -87,7 +87,7 @@ export default {
 <style lang="less" scoped>
 .project-wrapper {
   &-select {
-    width: 75%;
+    width: 70%;
   }
 }
 </style>

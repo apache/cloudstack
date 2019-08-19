@@ -1,6 +1,6 @@
 <template>
   <div class="logo">
-    <img class="logo-image" src="../../assets/logo.png"/>
+    <img class="logo-image" src="~@/assets/logo.svg"/>
     <project-menu></project-menu>
   </div>
 </template>
@@ -33,7 +33,7 @@ export default {
   height: 64px;
   position: relative;
   line-height: 64px;
-  padding-left: 24px;
+  padding-left: 8px;
   -webkit-transition: all .3s;
   transition: all .3s;
   background: #002140;
@@ -46,9 +46,8 @@ export default {
 }
 
 .logo-image {
-  margin-right: 10px;
-  height: 32px;
-  width: 32px;
+  width: 60px;
+  margin-right: 8px;
   display: inline-block;
   vertical-align: middle;
 }
