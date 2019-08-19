@@ -3648,8 +3648,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
             resourceType = ResourceObjectType.VMSnapshot;
+            VMSnapshotVO vmSnapshotVO = null;
             if (usageRecord.getUsageId() != null) {
-                VMSnapshotVO vmSnapshotVO = vmSnapshotDao.findByIdIncludingRemoved(usageRecord.getUsageId());
+                vmSnapshotVO = vmSnapshotDao.findByIdIncludingRemoved(usageRecord.getUsageId());
                 if (vmSnapshotVO != null) {
                     resourceId = vmSnapshotVO.getId();
                     usageRecResponse.setResourceName(vmSnapshotVO.getDisplayName());
@@ -3661,13 +3662,20 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
             }
             if (!oldFormat) {
-                VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+                VolumeVO volume = null;
+                if (vmSnapshotVO == null && usageRecord.getUsageId() != null) {
+                     volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+                }
+
                 DiskOfferingVO diskOff = null;
                 if (usageRecord.getOfferingId() != null) {
                     diskOff = _entityMgr.findByIdIncludingRemoved(DiskOfferingVO.class, usageRecord.getOfferingId());
                 }
                 final StringBuilder builder = new StringBuilder();
                 builder.append("VMSnapshot usage");
+                if (vmSnapshotVO != null) {
+                    builder.append(" Id: ").append(vmSnapshotVO.getId()).append(" (").append(vmSnapshotVO.getUuid()).append(") ");
+                }
                 if (vmInstance != null) {
                     builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
                 }
@@ -3692,8 +3700,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT_ON_PRIMARY) {
             resourceType = ResourceObjectType.VMSnapshot;
+            VMSnapshotVO vmSnapshotVO = null;
             if (usageRecord.getUsageId() != null) {
-                VMSnapshotVO vmSnapshotVO = vmSnapshotDao.findByIdIncludingRemoved(usageRecord.getUsageId());
+                vmSnapshotVO = vmSnapshotDao.findByIdIncludingRemoved(usageRecord.getUsageId());
                 if (vmSnapshotVO != null) {
                     resourceId = vmSnapshotVO.getId();
                     usageRecResponse.setResourceName(vmSnapshotVO.getDisplayName());
@@ -3704,6 +3713,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (!oldFormat) {
                 final StringBuilder builder = new StringBuilder();
                 builder.append("VMSnapshot on primary storage usage");
+                if (vmSnapshotVO != null) {
+                    builder.append(" Id: ").append(vmSnapshotVO.getId()).append(" (").append(vmSnapshotVO.getUuid()).append(") ");
+                }
                 if (vmInstance != null) {
                     builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ")
                             .append("with size ").append(usageRecord.getVirtualSize());
