@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -70,6 +71,12 @@ public class UsageEventUtils {
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
+                                         Long size, String entityType, String entityUUID, Map<String, String> details) {
+        saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size, details);
+        publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+    }
+
+    public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
         Long size, String entityType, String entityUUID) {
         saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size);
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
@@ -82,6 +89,12 @@ public class UsageEventUtils {
         }
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
 
+    }
+
+    public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
+                                         Long size, Long virtualSize, String entityType, String entityUUID, Map<String, String> details) {
+        saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size, virtualSize, details);
+        publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
@@ -142,9 +155,26 @@ public class UsageEventUtils {
         s_usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size));
     }
 
+    public static void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId, Long size, Map<String, String> details) {
+        UsageEventVO usageEventVO = new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size);
+        s_usageEventDao.persist(usageEventVO);
+        if (MapUtils.isNotEmpty(details)) {
+            s_usageEventDao.saveDetails(usageEventVO.getId(), details);
+        }
+    }
+
     public static void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId, Long size,
         Long virtualSize) {
         s_usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size, virtualSize));
+    }
+
+    public static void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId, Long size,
+                                      Long virtualSize, Map<String, String> details) {
+        UsageEventVO usageEventVO = new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size, virtualSize);
+        s_usageEventDao.persist(usageEventVO);
+        if (MapUtils.isNotEmpty(details)) {
+            s_usageEventDao.saveDetails(usageEventVO.getId(), details);
+        }
     }
 
     public static void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName) {

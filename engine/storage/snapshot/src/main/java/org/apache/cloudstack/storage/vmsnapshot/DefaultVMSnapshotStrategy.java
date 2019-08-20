@@ -18,12 +18,14 @@
  */
 package org.apache.cloudstack.storage.vmsnapshot;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.event.UsageEventVO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
@@ -337,14 +339,22 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 offeringId = offering.getId();
             }
         }
+        Map<String, String> details = new HashMap<>();
+        if (vmSnapshot != null) {
+            details.put(UsageEventVO.DynamicParameters.vmSnapshotId.name(), String.valueOf(vmSnapshot.getId()));
+        }
         UsageEventUtils.publishUsageEvent(type, vmSnapshot.getAccountId(), userVm.getDataCenterId(), userVm.getId(), vmSnapshot.getName(), offeringId, volume.getId(), // save volume's id into templateId field
-                volumeTo.getSize(), VMSnapshot.class.getName(), vmSnapshot.getUuid());
+                volumeTo.getSize(), VMSnapshot.class.getName(), vmSnapshot.getUuid(), details);
     }
 
     private void publishUsageEvent(String type, VMSnapshot vmSnapshot, UserVm userVm, Long vmSnapSize, Long virtualSize) {
         try {
+            Map<String, String> details = new HashMap<>();
+            if (vmSnapshot != null) {
+                details.put(UsageEventVO.DynamicParameters.vmSnapshotId.name(), String.valueOf(vmSnapshot.getId()));
+            }
             UsageEventUtils.publishUsageEvent(type, vmSnapshot.getAccountId(), userVm.getDataCenterId(), userVm.getId(), vmSnapshot.getName(), 0L, 0L, vmSnapSize, virtualSize,
-                    VMSnapshot.class.getName(), vmSnapshot.getUuid());
+                    VMSnapshot.class.getName(), vmSnapshot.getUuid(), details);
         } catch (Exception e) {
             s_logger.error("Failed to publis usage event " + type, e);
         }
