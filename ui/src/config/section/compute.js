@@ -10,7 +10,7 @@ export default {
       permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [
-        'displayname', 'state', { 'ipaddress': (record) => { return record.nic[0].ipaddress } }, 'instancename', 'account', 'zonename',
+        'displayname', 'state', 'instancename', { 'ipaddress': (record) => { return record.nic[0].ipaddress } }, 'account', 'zonename',
         'cpunumber', 'cpuused', 'cputotal', 'memoryintfreekbs', 'memorytotal',
         'networkread', 'networkwrite', 'diskkbsread', 'diskkbswrite', 'diskiopstotal'
       ],

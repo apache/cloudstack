@@ -42,42 +42,49 @@ export default {
       title: 'Primary Storages',
       icon: 'database',
       permission: [ 'listStoragePools', 'listStoragePoolsMetrics' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue')
+      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      columns: [ 'name', 'state', 'ipaddress', 'type', 'path', 'scope', 'clustername', 'zonename' ]
     },
     {
       name: 'imagestore',
       title: 'Secondary Storages',
       icon: 'picture',
       permission: [ 'listImageStores' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue')
+      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      columns: [ 'name', 'url', 'protocol', 'scope', 'zonename' ]
     },
     {
       name: 'systemvm',
       title: 'System VMs',
       icon: 'thunderbolt',
       permission: [ 'listSystemVms' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue')
+      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      columns: [ 'name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'hostname', 'zonename' ]
     },
     {
       name: 'router',
       title: 'Virtual Routers',
       icon: 'fork',
       permission: [ 'listRouters' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue')
+      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      columns: [ 'name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'redundantstate', 'version', 'hostname', 'account', 'zonename', 'requiresupgrade' ]
     },
     {
-      name: 'cpusockets',
+      name: 'cpusocket',
       title: 'CPU Sockets',
       icon: 'api',
       permission: [ 'listHosts' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue')
+      params: { 'type': 'routing' },
+      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      columns: [ 'hypervisor', 'hosts', 'cpusockets' ]
     },
     {
-      name: 'ms',
+      name: 'managementserver',
       title: 'Management Servers',
       icon: 'rocket',
       permission: [ 'listManagementServers' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue')
+      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      columns: [ 'name', 'state', 'version' ]
     }
   ]
 }

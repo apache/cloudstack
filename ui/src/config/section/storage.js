@@ -9,7 +9,7 @@ export default {
       icon: 'hdd',
       permission: [ 'listVolumesMetrics', 'listVolumes' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),
-      columns: ['name', 'state', 'type', 'vmname', 'size', 'physicalsize', 'utilization', 'storage', 'hypervisor', 'account', 'zonename'],
+      columns: ['name', 'state', 'type', 'vmname', 'size', 'physicalsize', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskiopstotal', 'storage', 'account', 'zonename'],
       hidden: ['storage', 'utilization'],
       actions: [
         {
