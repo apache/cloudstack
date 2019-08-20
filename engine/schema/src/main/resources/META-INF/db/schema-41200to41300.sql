@@ -27,6 +27,9 @@ INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hype
 
 -- Add VMware 6.7 hypervisor capabilities
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid,hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) VALUES (UUID(), 'VMware', '6.7', '1024', '0', '59', '64', '1', '1');
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid,hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) VALUES (UUID(), 'VMware', '6.7.1', '1024', '0', '59', '64', '1', '1');
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid,hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) VALUES (UUID(), 'VMware', '6.7.2', '1024', '0', '59', '64', '1', '1');
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid,hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) VALUES (UUID(), 'VMware', '6.7.3', '1024', '0', '59', '64', '1', '1');
 
 -- Update VMware 6.x hypervisor capabilities
 UPDATE `cloud`.`hypervisor_capabilities` SET max_guests_limit='1024', max_data_volumes_limit='59', max_hosts_per_cluster='64' WHERE (hypervisor_type='VMware' AND hypervisor_version='6.0' );
@@ -108,6 +111,9 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 
 -- Copy VMware 6.5 Guest OSes to VMware 6.7
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'VMware', '6.7', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='VMware' AND hypervisor_version='6.5';
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'VMware', '6.7.1', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='VMware' AND hypervisor_version='6.7';
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'VMware', '6.7.2', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='VMware' AND hypervisor_version='6.7.1';
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'VMware', '6.7.3', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='VMware' AND hypervisor_version='6.7.2';
 
 -- Copy XenServer 7.1.0 to XenServer 7.1.1
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '7.1.1', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='7.1.1';
@@ -534,4 +540,3 @@ CREATE TABLE `cloud`.`template_ovf_properties` (
 -- Add VM snapshot ID on usage helper tables
 ALTER TABLE `cloud_usage`.`usage_vmsnapshot` ADD COLUMN `vm_snapshot_id` BIGINT(20) NULL DEFAULT NULL AFTER `processed`;
 ALTER TABLE `cloud_usage`.`usage_snapshot_on_primary` ADD COLUMN `vm_snapshot_id` BIGINT(20) NULL DEFAULT NULL AFTER `deleted`;
-
