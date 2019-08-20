@@ -33,7 +33,7 @@ export default {
   height: 64px;
   position: relative;
   line-height: 64px;
-  padding-left: 8px;
+  padding-left: 12px;
   -webkit-transition: all .3s;
   transition: all .3s;
   background: #002140;
@@ -46,8 +46,8 @@ export default {
 }
 
 .logo-image {
-  width: 60px;
-  margin-right: 8px;
+  width: 54px;
+  margin-right: 12px;
   display: inline-block;
   vertical-align: middle;
 }

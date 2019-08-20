@@ -1,5 +1,5 @@
 <template>
-  <a-row class="capacity-dashboard" :gutter="24">
+  <a-row class="capacity-dashboard" :gutter="12">
     <a-col :xl="18">
       <div class="capacity-dashboard-wrapper">
         <div class="capacity-dashboard-select">

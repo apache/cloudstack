@@ -2,7 +2,7 @@
   <span class="project-wrapper" :disabled="true">
     <a-select
       class="project-wrapper-select"
-      size="default"
+      size="large"
       defaultValue="Default View"
       :value="selectedProject"
       :disabled="isDisabled()"
@@ -87,7 +87,7 @@ export default {
 <style lang="less" scoped>
 .project-wrapper {
   &-select {
-    width: 70%
+    width: 165px;
   }
 }
 </style>
