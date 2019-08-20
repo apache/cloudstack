@@ -531,3 +531,7 @@ CREATE TABLE `cloud`.`template_ovf_properties` (
   CONSTRAINT `fk_template_ovf_properties__template_id` FOREIGN KEY (`template_id`) REFERENCES `vm_template`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- Add VM snapshot ID on usage helper tables
+ALTER TABLE `cloud_usage`.`usage_vmsnapshot` ADD COLUMN `vm_snapshot_id` BIGINT(20) NULL DEFAULT NULL AFTER `processed`;
+ALTER TABLE `cloud_usage`.`usage_snapshot_on_primary` ADD COLUMN `vm_snapshot_id` BIGINT(20) NULL DEFAULT NULL AFTER `deleted`;
+

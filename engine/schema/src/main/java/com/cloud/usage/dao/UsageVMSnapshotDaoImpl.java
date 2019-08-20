@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.TimeZone;
 
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -36,12 +37,12 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Long> implements UsageVMSnapshotDao {
     public static final Logger s_logger = Logger.getLogger(UsageVMSnapshotDaoImpl.class.getName());
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, vm_id, disk_offering_id, size, created, processed "
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, vm_id, disk_offering_id, size, created, processed, vm_snapshot_id "
         + " FROM usage_vmsnapshot" + " WHERE account_id = ? " + " AND ( (created BETWEEN ? AND ?) OR "
         + "      (created < ? AND processed is NULL) ) ORDER BY created asc";
     protected static final String UPDATE_DELETED = "UPDATE usage_vmsnapshot SET processed = ? WHERE account_id = ? AND id = ? and vm_id = ?  and created = ?";
 
-    protected static final String PREVIOUS_QUERY = "SELECT id, zone_id, account_id, domain_id, vm_id, disk_offering_id,size, created, processed "
+    protected static final String PREVIOUS_QUERY = "SELECT id, zone_id, account_id, domain_id, vm_id, disk_offering_id,size, created, processed, vm_snapshot_id "
         + "FROM usage_vmsnapshot " + "WHERE account_id = ? AND id = ? AND vm_id = ? AND created < ? AND processed IS NULL " + "ORDER BY created desc limit 1";
 
     @Override
@@ -99,6 +100,8 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
                 Date processDate = null;
                 String createdTS = rs.getString(8);
                 String processed = rs.getString(9);
+                String snapId = rs.getString(10);
+                Long vmSnapshotId = StringUtils.isNotBlank(snapId) ? Long.valueOf(snapId) : null;
 
                 if (createdTS != null) {
                     createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
@@ -106,7 +109,9 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
                 if (processed != null) {
                     processDate = DateUtil.parseDateString(s_gmtTimeZone, processed);
                 }
-                usageRecords.add(new UsageVMSnapshotVO(vId, zoneId, acctId, dId, vmId, doId, size, createdDate, processDate));
+                UsageVMSnapshotVO usageVMSnapshotVO = new UsageVMSnapshotVO(vId, zoneId, acctId, dId, vmId, doId, size, createdDate, processDate);
+                usageVMSnapshotVO.setVmSnapshotId(vmSnapshotId);
+                usageRecords.add(usageVMSnapshotVO);
             }
         } catch (Exception e) {
             txn.rollback();
@@ -150,6 +155,8 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
                 Date processDate = null;
                 String createdTS = rs.getString(8);
                 String processed = rs.getString(9);
+                String snapId = rs.getString(10);
+                Long vmSnapshotId = StringUtils.isNotBlank(snapId) ? Long.valueOf(snapId) : null;
 
                 if (createdTS != null) {
                     createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
@@ -157,7 +164,9 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
                 if (processed != null) {
                     processDate = DateUtil.parseDateString(s_gmtTimeZone, processed);
                 }
-                usageRecords.add(new UsageVMSnapshotVO(vId, zoneId, acctId, dId, vmId, doId, size, createdDate, processDate));
+                UsageVMSnapshotVO usageVMSnapshotVO = new UsageVMSnapshotVO(vId, zoneId, acctId, dId, vmId, doId, size, createdDate, processDate);
+                usageVMSnapshotVO.setVmSnapshotId(vmSnapshotId);
+                usageRecords.add(usageVMSnapshotVO);
             }
         } catch (Exception e) {
             txn.rollback();

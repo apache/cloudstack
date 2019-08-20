@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.TimeZone;
 
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -36,7 +37,7 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 public class UsageVMSnapshotOnPrimaryDaoImpl extends GenericDaoBase<UsageSnapshotOnPrimaryVO, Long> implements UsageVMSnapshotOnPrimaryDao {
     public static final Logger s_logger = Logger.getLogger(UsageVMSnapshotOnPrimaryDaoImpl.class.getName());
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, vm_id, name, type, physicalsize, virtualsize, created, deleted "
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, vm_id, name, type, physicalsize, virtualsize, created, deleted, vm_snapshot_id "
         + " FROM usage_snapshot_on_primary" + " WHERE account_id = ? " + " AND ( (created < ? AND deleted is NULL)"
         + "     OR ( deleted BETWEEN ? AND ?)) ORDER BY created asc";
     protected static final String UPDATE_DELETED = "UPDATE usage_snapshot_on_primary SET deleted = ? WHERE account_id = ? AND id = ? and vm_id = ?  and created = ?";
@@ -95,6 +96,8 @@ public class UsageVMSnapshotOnPrimaryDaoImpl extends GenericDaoBase<UsageSnapsho
                 Date deleteDate = null;
                 String createdTS = rs.getString(10);
                 String deleted = rs.getString(11);
+                String snapId = rs.getString(12);
+                Long vmSnapshotId = StringUtils.isNotBlank(snapId) ? Long.valueOf(snapId) : null;
 
                 if (createdTS != null) {
                     createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
@@ -102,7 +105,9 @@ public class UsageVMSnapshotOnPrimaryDaoImpl extends GenericDaoBase<UsageSnapsho
                 if (deleted != null) {
                     deleteDate = DateUtil.parseDateString(s_gmtTimeZone, deleted);
                 }
-                usageRecords.add(new UsageSnapshotOnPrimaryVO(vId, zoneId, acctId, dId, vmId, name, type, virtaulSize, physicalSize, createdDate, deleteDate));
+                UsageSnapshotOnPrimaryVO usageSnapshotOnPrimaryVO = new UsageSnapshotOnPrimaryVO(vId, zoneId, acctId, dId, vmId, name, type, virtaulSize, physicalSize, createdDate, deleteDate);
+                usageSnapshotOnPrimaryVO.setVmSnapshotId(vmSnapshotId);
+                usageRecords.add(usageSnapshotOnPrimaryVO);
             }
         } catch (Exception e) {
             txn.rollback();

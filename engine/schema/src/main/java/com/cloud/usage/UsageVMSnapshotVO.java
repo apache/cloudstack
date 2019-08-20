@@ -60,6 +60,9 @@ public class UsageVMSnapshotVO implements InternalIdentity {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date processed;
 
+    @Column(name = "vm_snapshot_id")
+    private Long vmSnapshotId;
+
     protected UsageVMSnapshotVO() {
     }
 
@@ -120,10 +123,18 @@ public class UsageVMSnapshotVO implements InternalIdentity {
         return this.id;
     }
 
+    public Long getVmSnapshotId() {
+        return vmSnapshotId;
+    }
+
+    public void setVmSnapshotId(Long vmSnapshotId) {
+        this.vmSnapshotId = vmSnapshotId;
+    }
+
     @Override
     public String toString() {
         return "UsageVMSnapshotVO [id=" + id + ", zoneId=" + zoneId + ", accountId=" + accountId + ", domainId=" + domainId + ", vmId=" + vmId + ", diskOfferingId="
-                + diskOfferingId + ", size=" + size + ", created=" + created + ", processed=" + processed + "]";
+                + diskOfferingId + ", size=" + size + ", created=" + created + ", processed=" + processed + ", vmSnapshotId=" + vmSnapshotId + "]";
     }
 
 }
