@@ -11,7 +11,7 @@
         <a-list>
           <a-list-item>
             <a-list-item-meta title="Notifications">
-              <a-avatar :style="{backgroundColor: color, verticalAlign: 'middle'}" icon="notification" slot="avatar"/>
+              <a-avatar :style="{backgroundColor: '#6887d0', verticalAlign: 'middle'}" icon="notification" slot="avatar"/>
               <a-button size="small" slot="description" @click="clearJobs">Clear All</a-button>
             </a-list-item-meta>
           </a-list-item>

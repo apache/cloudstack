@@ -130,7 +130,7 @@
       </a-spin>
     </a-drawer>
 
-    <div v-if="$route.params && $route.params.id">
+    <div v-if="showDetails">
       <a-row :gutter="12">
         <a-col :xl="12">
           <chart-card class="info-card" v-if="resource.name">
@@ -144,7 +144,7 @@
             <template slot="footer"><span>{{ resource.id }}</span></template>
           </chart-card>
         </a-col>
-        <a-col :xl="6" v-for="(value, key) in getResource($route.params.id)" :key="key">
+        <a-col :xl="6" v-for="(value, key) in resource" :key="key">
           <chart-card class="info-card" v-if="key !== 'id' && key !== 'name'">
             <h4>{{ key }}</h4>
             <template slot="footer"><span>{{ value }}</span></template>
@@ -236,6 +236,7 @@ export default {
       selectedRowKeys: [],
       currentAction: {},
       showAction: false,
+      showDetails: false,
       actions: []
     }
   },
@@ -249,7 +250,7 @@ export default {
   },
   watch: {
     '$route' (to, from) {
-      if (to.path === this.$route.path) {
+      if (to.fullPath !== from.fullPath) {
         this.fetchData()
       }
     }
@@ -275,6 +276,11 @@ export default {
       }
       if (search !== '') {
         params['keyword'] = search
+      }
+      if (this.$route && this.$route.params && this.$route.params.id) {
+        this.showDetails = true
+      } else {
+        this.showDetails = false
       }
       if (this.$route && this.$route.meta && this.$route.meta.permission) {
         this.apiName = this.$route.meta.permission[0]
@@ -341,18 +347,12 @@ export default {
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx]['key'] = idx
         }
-      })
-    },
-    getResource (id) {
-      var res = {}
-      for (const item of this.items) {
-        if (item.id === id) {
-          res = item
-          break
+        if (this.items.length > 0) {
+          this.resource = this.items[0]
+        } else {
+          this.resource = {}
         }
-      }
-      this.resource = res
-      return this.resource
+      })
     },
     onSearch (value) {
       this.fetchData(value)
