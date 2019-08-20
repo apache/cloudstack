@@ -2,7 +2,7 @@
   <span class="project-wrapper" :disabled="true">
     <a-select
       class="project-wrapper-select"
-      size="large"
+      size="default"
       defaultValue="Default View"
       :value="selectedProject"
       :disabled="isDisabled()"

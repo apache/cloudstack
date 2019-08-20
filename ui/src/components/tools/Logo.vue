@@ -47,7 +47,7 @@ export default {
 
 .logo-image {
   width: 54px;
-  margin-right: 12px;
+  margin-right: 10px;
   display: inline-block;
   vertical-align: middle;
 }

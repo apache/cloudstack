@@ -156,7 +156,7 @@ export default {
 <style lang="less">
 .layout-content {
   &.is-header-fixed {
-    margin: 68px 24px 0;
+    margin: 76px 12px 0;
   }
 }
 

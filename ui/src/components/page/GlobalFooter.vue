@@ -1,10 +1,9 @@
 <template>
   <div class="footer">
     <div class="links">
-      <a href="https://github.com/apache/cloudstack" target="_blank">
+      <a href="https://github.com/apache/cloudstack-primate" target="_blank">
         <a-icon type="github"/>
       </a>
-      <a href="https://twitter.com/rhtyd">rhtyd</a>
     </div>
   </div>
 </template>

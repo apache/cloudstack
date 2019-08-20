@@ -1,6 +1,5 @@
 <template>
-  <div style="margin-top: 16px">
-
+  <div>
     <!--
     <font-awesome-icon :icon="['far', 'bell']" />
     <font-awesome-icon :icon="['fas', 'dharmachakra']" size='2x' />
@@ -132,10 +131,26 @@
     </a-drawer>
 
     <div v-if="$route.params && $route.params.id">
-      <p v-for="(value, key) in getResource($route.params.id)" :key="key">
-        <span>{{ key }}: </span>
-        <span>{{ value }}</span>
-      </p>
+      <a-row :gutter="12">
+        <a-col :xl="12">
+          <chart-card class="info-card" v-if="resource.name">
+            <h4>Name</h4>
+            <template slot="footer"><span>{{ resource.name }}</span></template>
+          </chart-card>
+        </a-col>
+        <a-col :xl="12">
+          <chart-card class="info-card" v-if="resource.id">
+            <h4>ID</h4>
+            <template slot="footer"><span>{{ resource.id }}</span></template>
+          </chart-card>
+        </a-col>
+        <a-col :xl="6" v-for="(value, key) in getResource($route.params.id)" :key="key">
+          <chart-card class="info-card" v-if="key !== 'id' && key !== 'name'">
+            <h4>{{ key }}</h4>
+            <template slot="footer"><span>{{ value }}</span></template>
+          </chart-card>
+        </a-col>
+      </a-row>
     </div>
     <div style="margin-top: 12px" v-else>
       <a-table
@@ -155,7 +170,8 @@
         </template>
 
         <a slot="name" slot-scope="text, record" href="javascript:;">
-          <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+          <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
+          <span v-else>{{ text }}</span>
         </a>
         <a slot="displayname" slot-scope="text, record" href="javascript:;">
           <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -203,15 +219,20 @@
 <script>
 import { api } from '@/api'
 import store from '@/store'
+import ChartCard from '@/components/chart/ChartCard'
 
 export default {
   name: 'Resource',
+  components: {
+    ChartCard
+  },
   data () {
     return {
       apiName: '',
       loading: false,
       columns: [],
       items: [],
+      resource: {},
       selectedRowKeys: [],
       currentAction: {},
       showAction: false,
@@ -247,7 +268,6 @@ export default {
       this.columns = []
       this.columnKeys = []
       var params = { listall: true }
-      console.log(this.$route)
       if (Object.keys(this.$route.query).length > 0) {
         Object.assign(params, this.$route.query)
       } else if (this.$route.meta.params) {
@@ -331,7 +351,8 @@ export default {
           break
         }
       }
-      return res
+      this.resource = res
+      return this.resource
     },
     onSearch (value) {
       this.fetchData(value)
@@ -498,8 +519,12 @@ export default {
 <style>
 
 .ant-badge-status-dot {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
+}
+
+.info-card {
+  margin-top: 12px;
 }
 
 .light-row {

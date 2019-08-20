@@ -200,8 +200,6 @@ export default {
 
 <style lang="less" scoped>
 .capacity-dashboard {
-  margin-top: 24px;
-
   &-wrapper {
     display: flex;
     margin-bottom: 12px;
