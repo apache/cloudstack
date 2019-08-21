@@ -16,6 +16,47 @@
 // under the License.
 package com.cloud.template;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
+import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
+import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
+import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.async.AsyncRpcContext;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.alert.AlertManager;
@@ -54,54 +95,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
-import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
-
-import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
-import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.log4j.Logger;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-
-import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
-import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
-import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
-import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
-import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.framework.async.AsyncCallFuture;
-import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.framework.async.AsyncRpcContext;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     private final static Logger s_logger = Logger.getLogger(HypervisorTemplateAdapter.class);
