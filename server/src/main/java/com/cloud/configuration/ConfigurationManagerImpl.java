@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1726,6 +1727,38 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final IllegalArgumentException ex) {
                 throw new InvalidParameterValueException("Unable to resolve Allocation State '" + allocationStateStr + "' to a supported state");
             }
+        }
+    }
+
+    private void checkAllocatedIpsAreWithinVlanRange(List<IPAddressVO> ips, String startIp, String endIp){
+        // Check if the VLAN has any allocated public IPs
+        List<IPAddressVO> listAllocatedIPs = new ArrayList<>();
+        for (final IPAddressVO ip : ips) {
+            if (ip.getState()== IpAddress.State.Allocated){
+                listAllocatedIPs.add(ip);
+            }
+        }
+        Collections.sort(listAllocatedIPs, Comparator.comparing(IPAddressVO::getAddress));
+        for (IPAddressVO allocatedIP : listAllocatedIPs){
+            if (!Strings.isNullOrEmpty(startIp) && NetUtils.ip2Long(startIp) > NetUtils.ip2Long(allocatedIP.getAddress().addr())) {
+                throw new InvalidParameterValueException("The start IP address must have a lower IP address value " +
+                        "than "+ allocatedIP.getAddress() + " which is already in use. The end IP must have a " +
+                        "higher IP address than "+ listAllocatedIPs.get(listAllocatedIPs.size() - 1).getAddress()+" .IPs " +
+                        "already allocated in this range: "+listAllocatedIPs.size());
+            }
+            if (!Strings.isNullOrEmpty(endIp) && NetUtils.ip2Long(endIp) < NetUtils.ip2Long(allocatedIP.getAddress().addr())) {
+                throw new InvalidParameterValueException("The start IP address must have a lower IP address value " +
+                        "than "+ listAllocatedIPs.get(0).getAddress() + " which is already in use. The end IP must have a " +
+                        "higher IP address than "+  allocatedIP.getAddress()+" .IPs " +
+                        "already allocated in this range: "+listAllocatedIPs.size());
+            }
+        }
+    }
+
+    private void checkGatewayOverlap(String startIp, String endIp, String gateway){
+        if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
+            throw new InvalidParameterValueException("The gateway shouldn't overlap the new start/end ip " +
+                    "addresses");
         }
     }
 
@@ -4004,22 +4037,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Check if the VLAN has any allocated public IPs
         final List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(id);
-        for (final IPAddressVO ip : ips) {
-            if (ip.getState()== IpAddress.State.Allocated){
-                if (!Strings.isNullOrEmpty(startIp) && NetUtils.ip2Long(startIp) > NetUtils.ip2Long(ip.getAddress().addr())) {
-                    throw new InvalidParameterValueException("The start IP address must have a lower IP address value" +
-                            " " +
-                            "than" +
-                            " "+ ip.getAddress() +
-                            " which is already in use.");
-                }
-                if (!Strings.isNullOrEmpty(endIp) && NetUtils.ip2Long(endIp) < NetUtils.ip2Long(ip.getAddress().addr())) {
-                    throw new InvalidParameterValueException("The end IP address must have a higher IP address than "+ip.getAddress()+
-                            " " +
-                            "which is already in use");
-                }
-            }
-        }
+        checkAllocatedIpsAreWithinVlanRange(ips,startIp,endIp);
 
         // Check if the IP range is valid
         final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
@@ -4032,10 +4050,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         //validate new IP range
         checkIpRange(startIp, endIp, cidrAddress, cidrSize);
 
-        if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
-            throw new InvalidParameterValueException("The gateway shouldn't overlap the new start/end ip " +
-                    "addresses");
-        }
+        checkGatewayOverlap(startIp,endIp,gateway);
 
         VlanVO range = null;
         try {
