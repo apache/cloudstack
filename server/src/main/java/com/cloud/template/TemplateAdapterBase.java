@@ -273,12 +273,12 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         List<Long> zoneId = cmd.getZoneIds();
         // ignore passed zoneId if we are using region wide image store or system template type
         List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
-        if ((stores != null && stores.size() > 0) || templateType.equals(TemplateType.SYSTEM)){
+        if ((stores != null && stores.size() > 0) || templateType.equals(TemplateType.SYSTEM)) {
             zoneId = null;
         }
 
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
-        if(hypervisorType == HypervisorType.None) {
+        if (hypervisorType == HypervisorType.None) {
             throw new InvalidParameterValueException("Hypervisor Type: " + cmd.getHypervisor() + " is invalid. Supported Hypervisor types are "
                     + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
         }
@@ -286,7 +286,6 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(),
                 cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId, hypervisorType, cmd.getChecksum(), true,
                 cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), templateType, cmd.isDirectDownload());
-
     }
 
     private TemplateType getTemplateType(RegisterTemplateCmd cmd) {
