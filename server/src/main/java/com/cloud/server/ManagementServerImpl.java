@@ -1443,7 +1443,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         StoragePool srcVolumePool = _poolDao.findById(volume.getPoolId());
         allPools = getAllStoragePoolCompatileWithVolumeSourceStoragePool(srcVolumePool);
         allPools.remove(srcVolumePool);
-        suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool);
+        if (vm != null) {
+            suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool);
+        } else {
+            suitablePools = allPools;
+        }
 
         return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
     }
