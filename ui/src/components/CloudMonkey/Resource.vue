@@ -10,24 +10,46 @@
     <font-awesome-icon icon="coffee" />
     -->
 
+    <a-breadcrumb class="breadcrumb" v-if="device === 'mobile'">
+      <a-breadcrumb-item v-for="(item, index) in breadList" :key="index">
+        <router-link
+          v-if="item.name"
+          :to="{ path: item.path === '' ? '/' : item.path }"
+        >
+          <a-icon v-if="index == 0" :type="item.meta.icon" />
+          {{ item.meta.title }}
+        </router-link>
+        <span v-else-if="$route.params.id">{{ $route.params.id }}</span>
+        <span v-else>{{ item.meta.title }}</span>
+      </a-breadcrumb-item>
+    </a-breadcrumb>
+
     <a-row>
       <a-col :span="16">
-        <a-button
-          v-for="(action, actionIndex) in actions"
-          :key="actionIndex"
-          :icon="action.icon"
-          :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
-          shape="circle"
-          style="margin-right: 5px"
-          @click="execAction(action)"
-        >
-        </a-button>
-        <a-button
-          @click="fetchData()"
-          :loading="loading"
-          shape="circle"
-          icon="reload"
-        />
+        <a-tooltip placement="bottom" v-for="(action, actionIndex) in actions" :key="actionIndex">
+          <template slot="title">
+            {{ action.label }}
+          </template>
+          <a-button
+            :icon="action.icon"
+            :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
+            shape="circle"
+            style="margin-right: 5px"
+            @click="execAction(action)"
+          >
+          </a-button>
+        </a-tooltip>
+        <a-tooltip placement="bottom">
+          <template slot="title">
+            {{ "Refresh" }}
+          </template>
+          <a-button
+            @click="fetchData()"
+            :loading="loading"
+            shape="circle"
+            icon="reload"
+          />
+        </a-tooltip>
       </a-col>
       <a-col :span="8" v-if="!$route.params || !$route.params.id">
         <a-input-search
@@ -237,7 +259,8 @@ export default {
       currentAction: {},
       showAction: false,
       showDetails: false,
-      actions: []
+      actions: [],
+      breadList: []
     }
   },
   computed: {
@@ -259,7 +282,15 @@ export default {
     this.form = this.$form.createForm(this)
   },
   methods: {
+    getBreadcrumb () {
+      this.breadList = []
+      this.name = this.$route.name
+      this.$route.matched.forEach((item) => {
+        this.breadList.push(item)
+      })
+    },
     fetchData (search = '') {
+      this.getBreadcrumb()
       this.routeName = this.$route.name
       if (!this.routeName) {
         this.routeName = this.$route.matched[this.$route.matched.length - 1].parent.name
@@ -533,6 +564,15 @@ export default {
 
 .dark-row {
   background-color: #f9f9f9;
+}
+
+.ant-breadcrumb {
+  vertical-align: text-bottom;
+  margin-bottom: 6px;
+}
+
+.ant-breadcrumb .anticon {
+  margin-left: 8px;
 }
 
 </style>
