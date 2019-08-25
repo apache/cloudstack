@@ -49,9 +49,7 @@ export default {
     .container {
       width: 100%;
       min-height: 100%;
-      background: url(~@/assets/background.svg);
-      background-repeat: repeat;
-      background-size: 20%;
+      background: rgb(255,255,255);
       padding-top: 75px;
       position: relative;
 
