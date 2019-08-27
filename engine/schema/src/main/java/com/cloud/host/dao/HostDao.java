@@ -111,4 +111,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     HostVO findHostInZoneToExecuteCommand(long zoneId, HypervisorType hypervisorType);
 
     List<HostVO> listAllHostsUpByZoneAndHypervisor(long zoneId, HypervisorType hypervisorType);
+
+    List<HostVO> listByClusterAndHypervisorType(long clusterId, HypervisorType hypervisorType);
 }

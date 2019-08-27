@@ -12669,6 +12669,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -100px -614px;
 }
 
+.startRollingMaintenance .icon {
+  background-position: -138px -65px;
+}
+
+.startRollingMaintenance:hover .icon {
+  background-position: -138px -65px;
+}
+
 .addVlanRange .icon,
 .addVmwareDc .icon {
   background-position: -37px -62px;

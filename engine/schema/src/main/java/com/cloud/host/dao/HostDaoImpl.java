@@ -109,6 +109,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> ClusterStatusSearch;
     protected SearchBuilder<HostVO> TypeNameZoneSearch;
     protected SearchBuilder<HostVO> AvailHypevisorInZone;
+    protected SearchBuilder<HostVO> ClusterHypervisorSearch;
 
     protected SearchBuilder<HostVO> DirectConnectSearch;
     protected SearchBuilder<HostVO> ManagedDirectConnectSearch;
@@ -292,6 +293,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         DirectlyConnectedSearch.and("statuses", DirectlyConnectedSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         DirectlyConnectedSearch.and("resourceState", DirectlyConnectedSearch.entity().getResourceState(), SearchCriteria.Op.NOTIN);
         DirectlyConnectedSearch.done();
+
+        ClusterHypervisorSearch = createSearchBuilder();
+        ClusterHypervisorSearch.and("clusterId", ClusterHypervisorSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        ClusterHypervisorSearch.and("hypervisor", ClusterHypervisorSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        ClusterHypervisorSearch.and("type", ClusterHypervisorSearch.entity().getType(), SearchCriteria.Op.EQ);
+        ClusterHypervisorSearch.and("status", ClusterHypervisorSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        ClusterHypervisorSearch.done();
 
         UnmanagedDirectConnectSearch = createSearchBuilder();
         UnmanagedDirectConnectSearch.and("resource", UnmanagedDirectConnectSearch.entity().getResource(), SearchCriteria.Op.NNULL);
@@ -1211,6 +1219,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                 .filter(x -> x.getStatus().equals(Status.Up) &&
                         x.getType() == Host.Type.Routing)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<HostVO> listByClusterAndHypervisorType(long clusterId, HypervisorType hypervisorType) {
+        SearchCriteria<HostVO> sc = ClusterHypervisorSearch.create();
+        sc.setParameters("clusterId", clusterId);
+        sc.setParameters("hypervisor", hypervisorType);
+        sc.setParameters("type", Type.Routing);
+        sc.setParameters("status", Status.Up);
+        return listBy(sc);
     }
 
     private ResultSet executeSqlGetResultsetForMethodFindHostInZoneToExecuteCommand(HypervisorType hypervisorType, long zoneId, TransactionLegacy tx, String sql) throws SQLException {

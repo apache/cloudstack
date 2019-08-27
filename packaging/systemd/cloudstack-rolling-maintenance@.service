@@ -15,11 +15,17 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/var/log/cloudstack/agent/security_group.log /var/log/cloudstack/agent/resizevolume.log /var/log/cloudstack/agent/rolling-maintenance.log {
-    copytruncate
-    daily
-    rotate 5
-    compress
-    missingok
-    size 10M
-}
+# Systemd unit file for CloudStack Rolling Maintenance
+
+[Unit]
+Description=Rolling maintenance executor %I
+After=network.target local-fs.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+WorkingDirectory=/usr/share/cloudstack-agent/lib/
+ExecStart=/usr/share/cloudstack-agent/lib/rolling-maintenance %I
+Restart=no
