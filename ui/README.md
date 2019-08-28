@@ -22,6 +22,7 @@ Production Build:
 
 Upgrade dependencies:
 
+    ncu -u
 
 Run Tests:
 
