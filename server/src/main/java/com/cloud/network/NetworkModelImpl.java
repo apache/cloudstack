@@ -594,9 +594,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             if (!hasFreeIps) {
                 return false;
             }
-            if (network.getIp6Gateway() != null) {
-                hasFreeIps = areThereIPv6AddressAvailableInNetwork(network.getId());
-            }
         } else {
             if (network.getCidr() == null) {
                 s_logger.debug("Network - " + network.getId() +  " has NULL CIDR.");
