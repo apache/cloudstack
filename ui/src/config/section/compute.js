@@ -75,11 +75,11 @@ export default {
       ]
     },
     {
-      name: 'kubernetes',
-      title: 'Kubernetes',
+      name: 'demo',
+      title: 'Demo',
       icon: 'radar-chart',
       permission: [ 'listVirtualMachines' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue')
+      component: () => import('@/components/CloudMonkey/Resource.vue'),
     },
     {
       name: 'ssh',
