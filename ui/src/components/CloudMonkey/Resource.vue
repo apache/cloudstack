@@ -26,7 +26,7 @@
 
     <a-row>
       <a-col :span="16">
-        <a-tooltip placement="bottom" v-for="(action, actionIndex) in actions" :key="actionIndex">
+        <a-tooltip placement="bottom" v-for="(action, actionIndex) in actions" :key="actionIndex" v-if="(!dataView && action.listView) || (dataView && action.dataView)">
           <template slot="title">
             {{ action.label }}
           </template>
@@ -152,7 +152,7 @@
       </a-spin>
     </a-drawer>
 
-    <div v-if="showDetails">
+    <div v-if="dataView">
       <a-row :gutter="12">
         <a-col :xl="12">
           <chart-card class="info-card" v-if="resource.name">
@@ -258,7 +258,7 @@ export default {
       selectedRowKeys: [],
       currentAction: {},
       showAction: false,
-      showDetails: false,
+      dataView: false,
       actions: [],
       breadList: []
     }
@@ -309,9 +309,9 @@ export default {
         params['keyword'] = search
       }
       if (this.$route && this.$route.params && this.$route.params.id) {
-        this.showDetails = true
+        this.dataView = true
       } else {
-        this.showDetails = false
+        this.dataView = false
       }
       if (this.$route && this.$route.meta && this.$route.meta.permission) {
         this.apiName = this.$route.meta.permission[0]

@@ -20,19 +20,57 @@ export default {
           api: 'deployVirtualMachine',
           icon: 'plus',
           label: 'Deploy VM',
-          params: ['name', 'zoneid', 'diskofferingid']
+          params: ['name', 'zoneid', 'diskofferingid'],
+          listView: true
         },
+        {
+          api: 'startVirtualMachine',
+          icon: 'right-square',
+          label: 'View Console',
+          dataView: true
+        },
+
         {
           api: 'startVirtualMachine',
           icon: 'caret-right',
           label: 'Start VM',
-          params: ['name', 'zoneid', 'diskofferingid']
+          params: ['name', 'zoneid', 'diskofferingid'],
+          listView: true,
+          dataView: true
         },
         {
           api: 'stopVirtualMachine',
           icon: 'stop',
           label: 'Stop VM',
-          params: ['name', 'zoneid', 'diskofferingid']
+          params: ['name', 'zoneid', 'diskofferingid'],
+          listView: true,
+          dataView: true
+        },
+        {
+          api: 'rebootVirtualMachine',
+          icon: 'sync',
+          label: 'Reboot VM',
+          dataView: true
+        },
+        {
+          api: 'migrateVirtualMachine',
+          icon: 'drag',
+          label: 'Migrate VM',
+          dataView: true
+        },
+        {
+          api: 'resetSSHKeyForVirtualMachine',
+          icon: 'lock',
+          label: 'Reset SSH Key',
+          dataView: true
+        },
+        {
+          api: 'destroyVirtualMachine',
+          icon: 'delete',
+          label: 'Destroy VM',
+          params: ['id'],
+          listView: true,
+          dataView: true
         }
       ]
     },
