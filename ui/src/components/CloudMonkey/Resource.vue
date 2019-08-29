@@ -404,7 +404,7 @@ export default {
         if (a.name > b.name) { return 1 }
         return 0
       })
-      for (var param of this.currentAction['params']) {
+      for (const param of this.currentAction['params']) {
         if (param.type === 'uuid' || param.name === 'account') {
           this.listUuidOpts(param)
         }
