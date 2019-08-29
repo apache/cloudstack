@@ -1,10 +1,8 @@
 <template>
-  <div id="userLayout" :class="['user-layout-wrapper', device]">
-    <div class="container">
-      <div class="top">
-        <div class="header">
-          <img src="~@/assets/banner.svg" class="logo" alt="logo">
-        </div>
+  <div id="userLayout" :class="['user-layout', device]">
+    <div class="user-layout-container">
+      <div class="user-layout-header">
+        <img src="~@/assets/banner.svg" class="user-layout-logo" alt="logo">
       </div>
       <route-view></route-view>
     </div>
@@ -32,100 +30,34 @@ export default {
 </script>
 
 <style lang="less" scoped>
-  #userLayout.user-layout-wrapper {
-    height: 100%;
+.user-layout {
+  height: 100%;
+  background: #fff;
 
-    &.mobile {
-      .container {
-        padding-top: 50px;
+  &-container {
+    padding: 3rem 0;
+    width: 100%;
 
-        .main {
-          max-width: 368px;
-          width: 98%;
-        }
-      }
-    }
-
-    .container {
-      width: 100%;
-      min-height: 100%;
-      background: rgb(255,255,255);
-      padding-top: 75px;
+    @media (min-height:600px) {
+      padding: 0;
       position: relative;
-
-      a {
-        text-decoration: none;
-      }
-
-      .top {
-        text-align: center;
-
-        .header {
-
-          .badge {
-            position: absolute;
-            display: inline-block;
-            line-height: 1;
-            vertical-align: middle;
-            margin-left: -12px;
-            margin-top: -10px;
-            opacity: 0.8;
-          }
-
-          .logo {
-            width: 100%;
-            max-width: 450px;
-            vertical-align: top;
-            border-style: none;
-          }
-
-          .title {
-            font-size: 33px;
-            color: rgba(0, 0, 0, .85);
-            font-family: Avenir, 'Helvetica Neue', Arial, Helvetica, sans-serif;
-            font-weight: 600;
-            position: relative;
-            top: 2px;
-          }
-        }
-        .desc {
-          font-size: 14px;
-          color: rgba(0, 0, 0, 0.45);
-          margin-top: 12px;
-          margin-bottom: 40px;
-        }
-      }
-
-      .main {
-        min-width: 260px;
-        width: 368px;
-        margin: 0 auto;
-      }
-
-      .footer {
-        position: absolute;
-        width: 100%;
-        bottom: 0;
-        padding: 0 16px;
-        margin: 48px 0 24px;
-        text-align: center;
-
-        .links {
-          margin-bottom: 8px;
-          font-size: 14px;
-          a {
-            color: rgba(0, 0, 0, 0.45);
-            transition: all 0.3s;
-            &:not(:last-child) {
-              margin-right: 40px;
-            }
-          }
-        }
-        .copyright {
-          color: rgba(0, 0, 0, 0.45);
-          font-size: 14px;
-        }
-      }
+      top: 50%;
+      transform: translateY(-50%);
+      margin-top: -50px;
     }
   }
+
+  &-logo {
+    width: 95%;
+    max-width: 450px;
+    border-style: none;
+    margin: 0 auto 2rem;
+    display: block;
+
+    .mobile & {
+      max-width: 300px;
+      margin-bottom: 1rem;
+    }
+  }
+}
 </style>

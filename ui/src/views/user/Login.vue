@@ -1,89 +1,85 @@
 <template>
-  <div class="main">
-    <a-form
-      id="formLogin"
-      class="user-layout-login"
-      ref="formLogin"
-      :form="form"
-      @submit="handleSubmit"
+  <a-form
+    id="formLogin"
+    class="user-layout-login"
+    ref="formLogin"
+    :form="form"
+    @submit="handleSubmit"
+  >
+    <a-tabs
+      :activeKey="customActiveKey"
+      size="large"
+      :tabBarStyle="{ textAlign: 'center', borderBottom: 'unset' }"
+      @change="handleTabClick"
     >
-      <a-tabs
-        :activeKey="customActiveKey"
+      <a-tab-pane key="tab1">
+        <span slot="tab">
+          <a-icon type="safety" />
+          <b>CloudStack Login</b>
+        </span>
+        <a-form-item>
+          <a-input
+            size="large"
+            type="text"
+            placeholder="Username"
+            v-decorator="[
+              'username',
+              {rules: [{ required: true, message: 'Enter your username' }, { validator: handleUsernameOrEmail }], validateTrigger: 'change'}
+            ]"
+          >
+            <a-icon slot="prefix" type="user" :style="{ color: 'rgba(0,0,0,.25)' }"/>
+          </a-input>
+        </a-form-item>
+
+        <a-form-item>
+          <a-input
+            size="large"
+            type="password"
+            autocomplete="false"
+            placeholder="Password"
+            v-decorator="[
+              'password',
+              {rules: [{ required: true, message: 'Enter your password' }], validateTrigger: 'blur'}
+            ]"
+          >
+            <a-icon slot="prefix" type="lock" :style="{ color: 'rgba(0,0,0,.25)' }"/>
+          </a-input>
+        </a-form-item>
+
+        <a-form-item>
+          <a-input
+            size="large"
+            type="text"
+            placeholder="Domain"
+            v-decorator="[
+              'domain',
+              {rules: [{ required: false, message: 'Enter your domain, leave empty for ROOT domain' }], validateTrigger: 'change'}
+            ]"
+          >
+            <a-icon slot="prefix" type="block" :style="{ color: 'rgba(0,0,0,.25)' }"/>
+          </a-input>
+        </a-form-item>
+
+      </a-tab-pane>
+      <a-tab-pane key="tab2" disabled>
+        <span slot="tab">
+          <a-icon type="audit" />
+          <b>SAML</b>
+        </span>
+      </a-tab-pane>
+    </a-tabs>
+
+    <a-form-item>
+      <a-button
         size="large"
-        :tabBarStyle="{ textAlign: 'center', borderBottom: 'unset' }"
-        @change="handleTabClick"
-      >
-        <a-tab-pane key="tab1">
-          <span slot="tab">
-            <a-icon type="safety" />
-            <b>CloudStack Login</b>
-          </span>
-          <a-form-item>
-            <a-input
-              size="large"
-              type="text"
-              placeholder="Username"
-              v-decorator="[
-                'username',
-                {rules: [{ required: true, message: 'Enter your username' }, { validator: handleUsernameOrEmail }], validateTrigger: 'change'}
-              ]"
-            >
-              <a-icon slot="prefix" type="user" :style="{ color: 'rgba(0,0,0,.25)' }"/>
-            </a-input>
-          </a-form-item>
-
-          <a-form-item>
-            <a-input
-              size="large"
-              type="password"
-              autocomplete="false"
-              placeholder="Password"
-              v-decorator="[
-                'password',
-                {rules: [{ required: true, message: 'Enter your password' }], validateTrigger: 'blur'}
-              ]"
-            >
-              <a-icon slot="prefix" type="lock" :style="{ color: 'rgba(0,0,0,.25)' }"/>
-            </a-input>
-          </a-form-item>
-
-          <a-form-item>
-            <a-input
-              size="large"
-              type="text"
-              placeholder="Domain"
-              v-decorator="[
-                'domain',
-                {rules: [{ required: false, message: 'Enter your domain, leave empty for ROOT domain' }], validateTrigger: 'change'}
-              ]"
-            >
-              <a-icon slot="prefix" type="block" :style="{ color: 'rgba(0,0,0,.25)' }"/>
-            </a-input>
-          </a-form-item>
-
-        </a-tab-pane>
-        <a-tab-pane key="tab2" disabled>
-          <span slot="tab">
-            <a-icon type="audit" />
-            <b>SAML</b>
-          </span>
-        </a-tab-pane>
-      </a-tabs>
-
-      <a-form-item>
-        <a-button
-          size="large"
-          type="primary"
-          htmlType="submit"
-          class="login-button"
-          :loading="state.loginBtn"
-          :disabled="state.loginBtn"
-        >Log In</a-button>
-      </a-form-item>
-
-    </a-form>
-
-  </div>
+        type="primary"
+        htmlType="submit"
+        class="login-button"
+        :loading="state.loginBtn"
+        :disabled="state.loginBtn"
+      >Log In</a-button>
+    </a-form-item>
+  </a-form>
 </template>
 
 <script>
@@ -177,6 +173,15 @@ export default {
 
 <style lang="less" scoped>
 .user-layout-login {
+  min-width: 260px;
+  width: 368px;
+  margin: 0 auto;
+
+  .mobile & {
+    max-width: 368px;
+    width: 98%;
+  }
+
   label {
     font-size: 14px;
   }
