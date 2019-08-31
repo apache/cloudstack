@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.storage.upload.params;
 
-import com.cloud.hypervisor.Hypervisor;
-
 import java.util.Map;
+
+import com.cloud.hypervisor.Hypervisor;
 
 public interface UploadParams {
     boolean isIso();
@@ -46,4 +46,5 @@ public interface UploadParams {
     boolean isDynamicallyScalable();
     boolean isRoutingType();
     boolean isDirectDownload();
+    String getType();
 }

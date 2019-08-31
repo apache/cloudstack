@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.storage.upload.params;
 
-import com.cloud.hypervisor.Hypervisor;
-
 import java.util.Map;
+
+import com.cloud.hypervisor.Hypervisor;
 
 public class TemplateUploadParams extends UploadParamsBase {
 
@@ -29,10 +29,10 @@ public class TemplateUploadParams extends UploadParamsBase {
                                 Long zoneId, Hypervisor.HypervisorType hypervisorType, String chksum,
                                 String templateTag, long templateOwnerId,
                                 Map details, Boolean sshkeyEnabled,
-                                Boolean isDynamicallyScalable, Boolean isRoutingType) {
+                                Boolean isDynamicallyScalable, Boolean isRoutingType, String type) {
         super(userId, name, displayText, bits, passwordEnabled, requiresHVM, isPublic, featured, isExtractable,
                 format, guestOSId, zoneId, hypervisorType, chksum, templateTag, templateOwnerId, details,
-                sshkeyEnabled, isDynamicallyScalable, isRoutingType);
+                sshkeyEnabled, isDynamicallyScalable, isRoutingType, type);
         setBootable(true);
     }
 }

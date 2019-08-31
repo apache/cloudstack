@@ -327,18 +327,22 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 params.isExtractable(), params.getFormat(), params.getGuestOSId(), zoneList,
                 params.getHypervisorType(), params.getChecksum(), params.isBootable(), params.getTemplateTag(), owner,
                 params.getDetails(), params.isSshKeyEnabled(), params.getImageStoreUuid(),
-                params.isDynamicallyScalable(), params.isRoutingType() ? TemplateType.ROUTING : TemplateType.USER, params.isDirectDownload());
+                params.isDynamicallyScalable(), params.isRoutingType() ? TemplateType.ROUTING : TemplateType.valueOf(params.getType()), params.isDirectDownload());
     }
 
     @Override
     public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
+        String templateType = TemplateType.USER.toString();
+        if (cmd.getSystem()){
+            templateType = TemplateType.SYSTEM.toString();
+        }
         UploadParams params = new TemplateUploadParams(CallContext.current().getCallingUserId(), cmd.getName(),
                 cmd.getDisplayText(), cmd.getBits(), BooleanUtils.toBoolean(cmd.isPasswordEnabled()),
                 BooleanUtils.toBoolean(cmd.getRequiresHvm()), BooleanUtils.toBoolean(cmd.isPublic()),
                 BooleanUtils.toBoolean(cmd.isFeatured()), BooleanUtils.toBoolean(cmd.isExtractable()), cmd.getFormat(), cmd.getOsTypeId(),
                 cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(),
                 cmd.getTemplateTag(), cmd.getEntityOwnerId(), cmd.getDetails(), BooleanUtils.toBoolean(cmd.isSshKeyEnabled()),
-                BooleanUtils.toBoolean(cmd.isDynamicallyScalable()), BooleanUtils.toBoolean(cmd.isRoutingType()));
+                BooleanUtils.toBoolean(cmd.isDynamicallyScalable()), BooleanUtils.toBoolean(cmd.isRoutingType()), templateType);
         return prepareUploadParamsInternal(params);
     }
 

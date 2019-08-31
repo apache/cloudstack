@@ -661,18 +661,12 @@
             <div class="multi-wizard zone-wizard">
                 <div class="progress">
                     <ul>
-                        <li class="first"><span class="number">1</span><span><translate key="label.zone.type"/></span><span class="arrow"></span></li>
-                        <li><span class="number">2</span><span><translate key="label.setup.zone"/></span><span class="arrow"></span></li>
-                        <li><span class="number">3</span><span><translate key="label.setup.network"/></span><span class="arrow"></span></li>
-                        <li style="display:none;"></li>
-                        <li style="display:none;"></li>
-                        <li style="display:none;"></li>
-                        <li style="display:none;"></li>
-                        <li><span class="number">4</span><span><translate key="label.add.resources"/></span><span class="arrow"></span></li>
-                        <li style="display:none;"></li>
-                        <li style="display:none;"></li>
-                        <li style="display:none;"></li>
-                        <li class="last"><span class="number">5</span><span><translate key="label.launch"/></span></li>
+                        <li class="first"><span class="number">2</span><span><translate key="label.zone.type"/></span><span class="arrow"></span></li>
+                        <li><span class="number">1</span><span><translate key="label.register.sytem.vm.template"/></span><span class="arrow"></span></li>
+                        <li><span class="number">3</span><span><translate key="label.setup.zone"/></span><span class="arrow"></span></li>
+                        <li><span class="number">4</span><span><translate key="label.setup.network"/></span><span class="arrow"></span></li>
+                        <li><span class="number">5</span><span><translate key="label.add.resources"/></span><span class="arrow"></span></li>
+                        <li class="last"><span class="number">6</span><span><translate key="label.launch"/></span></li>
                     </ul>
                 </div>
                 <div class="steps">
@@ -716,6 +710,15 @@
                                 </div>
                             </div>
                         </form>
+                    </div>
+                    <!-- Step : Register System VM Template: TODO: Move to last step before launch when done with functionality -->
+                    <div class="register-template" zone-wizard-form="selectSystemVm" zone-wizard-step-id="registerTemplate">
+                        <div class="info-desc">
+                            <translate key="message.desc.systemvmtemplate"/>
+                        </div>
+                        <div class="content input-area">
+                            <div class="select-container"></div>
+                        </div>
                     </div>
                     <!-- Step 2: Add zone -->
                     <div class="setup-zone" zone-wizard-form="zone"

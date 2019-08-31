@@ -396,6 +396,157 @@
         },
 
         forms: {
+            selectSystemVm:{
+                fields: {
+                    templateType: {
+                        label: "label.action.create.template.source.type",
+                        select: function(args){
+                            // hide some fields
+                            args.$select.change(function(){
+                                var $form = $(this).closest('form');
+                                if ($(this).val() == undefined || $(this).val() == null || $(this).val() == '') {
+                                    $form.find(".field[rel='url']").hide();
+                                    $form.find(".field[rel='name']").hide();
+                                    $form.find(".field[rel='description']").hide();
+                                    $form.find(".field[rel='hypervisor']").hide();
+                                    $form.find(".field[rel='hypervisor']").hide();
+                                    $form.find(".field[rel='activate']").hide();
+                                    $form.find(".field[rel='sourceZone']").hide();
+                                    $form.find(".field[rel='templates']").hide();
+                                } else {
+                                    $form.find(".field[rel='url']").show();
+                                    $form.find(".field[rel='name']").show();
+                                    $form.find(".field[rel='description']").show();
+                                    $form.find(".field[rel='hypervisor']").show();
+                                    $form.find(".field[rel='hypervisor']").show();
+                                    $form.find(".field[rel='activate']").show();
+                                    $form.find(".field[rel='sourceZone']").show();
+                                    $form.find(".field[rel='templates']").show();
+                                }
+                                if ($(this).val() == "copy"){
+                                    $form.find(".field[rel='url']").hide();
+                                    $form.find(".field[rel='name']").hide();
+                                    $form.find(".field[rel='description']").hide();
+                                    $form.find(".field[rel='hypervisor']").hide();
+                                } 
+                                if ($(this).val() == "official" || $(this).val() == "url" ){
+                                    $form.find(".field[rel='sourceZone']").hide();
+                                    $form.find(".field[rel='templates']").hide();
+                                } 
+                            });
+                            // Check if we have other zones.
+                            $.ajax({
+                                url: createURL("listZones&available=true"),
+                                dataType: "json",
+                                async: true,
+                                success: function(json) {
+                                    var data = [{},{
+                                        id: "url",
+                                        description: "URL"
+                                    },{
+                                        id: "official",
+                                        description: "Official Cloudstack System VM"
+                                    }]
+                                    var items = json.listzonesresponse.zone;
+                                    if (items.length > 0) {
+                                        data.push({
+                                            id: "copy",
+                                            description: "Copy from Zone"
+                                        })
+                                    }
+                                    args.response.success({
+                                        data: data
+                                    });
+                                }
+                            });
+                        }
+                    },
+                    name: {
+                        label: "label.name",
+                    },
+                    description: {
+                        label: "label.description"
+                    },
+                    hypervisor: {
+                        label: "label.hypervisor",
+                        select: function(args){
+                            $.ajax({
+                                url: createURL("listHypervisors"),
+                                dataType: "json",
+                                async: true,
+                                success: function(json) {
+                                    console.log(json);
+                                    items = json.listhypervisorsresponse.hypervisor;
+                                    data = [];
+                                    for (var i = 0; i < items.length; i++){
+                                        data.push({id: items[i].name, description: items[i].name})
+                                    }
+                                    args.response.success({
+                                        data: data
+                                    });
+                                }
+                            });
+                        }
+                    },
+                    url: {
+                        label: "label.url"
+                    },
+                    activate: {
+                        label: "label.action.create.template.activate",
+                        isBoolean: true,
+                        isChecked: true,
+                    },
+                    sourceZone: {
+                        label: "label.action.create.template.source.zone",
+                        select: function(args){
+                            $.ajax({
+                                url: createURL("listZones&available=true"),
+                                dataType: "json",
+                                async: true,
+                                success: function(json) {
+                                    var zoneObjs = [];
+                                    var items = json.listzonesresponse.zone;
+                                    if (items != null) {
+                                        for (var i = 0; i < items.length; i++) {
+                                            zoneObjs.push({
+                                                id: items[i].id,
+                                                description: items[i].name
+                                            });
+                                        }
+                                    }
+                                    args.response.success({
+                                        data: zoneObjs
+                                    });
+                                }
+                            });
+                        }
+                    },
+                    templates: {
+                        label: "label.action.create.template.source",
+                        dependsOn: "sourceZone",
+                        select: function(args){
+                            $.ajax({
+                                url: createURL("listTemplates&templateFilter=system&zoneId=" + args.sourceZone),
+                                dataType: "json",
+                                async: true,
+                                success: function(json) {
+                                    templates = [];
+                                    items = json.listtemplatesresponse.template;
+                                    for (var i = 0; i < items.length; i++){
+                                        templates.push({
+                                            id: items[i].id,
+                                            description: items[i].name
+                                        });
+                                    }
+                                    args.response.success({
+                                        data: templates
+                                    });
+                                }
+                            });
+                        }
+                    }
+                }
+            },
             zone: {
                 preFilter: function(args) {
                     var $form = args.$form;

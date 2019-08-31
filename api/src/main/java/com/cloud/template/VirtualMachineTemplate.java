@@ -26,8 +26,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.Volume.Event;
-import com.cloud.storage.Volume.State;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
 
@@ -75,6 +73,7 @@ public interface VirtualMachineTemplate extends ControlledEntity, Identity, Inte
         sharedexecutable, // ready templates that have been granted to the calling user by another user
         executable, // templates that are owned by the calling user, or public templates, that can be used to deploy a
         community, // returns templates that have been marked as public but not featured
+        system, // system vm templates
         all // all templates (only usable by admins)
     }
 

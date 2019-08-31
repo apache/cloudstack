@@ -1230,12 +1230,20 @@ cloudStack.docs = {
         desc: 'A unique name for the template. This will be visible to users, so choose something descriptive.',
         externalLink: ''
     },
+    helpRegisterTemplateType: {
+        desc: 'Choose Sytem VM Template type to register a system VM',
+        externalLink: ''
+    },
     helpRegisterTemplateDescription: {
         desc: 'Display text describing the template. This will be visible to users, so choose something descriptive.',
         externalLink: ''
     },
     helpRegisterTemplateURL: {
         desc: 'The Management Server will download the file from the specified URL, such as http://my.web.server/filename.vhd.gz',
+        externalLink: ''
+    },
+    helpRegisterTemplateActivate: {
+        desc: 'Activate this template as the Sytem VM Template to be used by CloudStack to create system VMs',
         externalLink: ''
     },
     helpRegisterTemplateDirectDownload: {

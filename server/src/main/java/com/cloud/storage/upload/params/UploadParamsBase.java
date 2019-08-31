@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.storage.upload.params;
 
-import com.cloud.hypervisor.Hypervisor;
-
 import java.util.Map;
+
+import com.cloud.hypervisor.Hypervisor;
 
 public abstract class UploadParamsBase implements UploadParams {
 
@@ -44,6 +44,7 @@ public abstract class UploadParamsBase implements UploadParams {
     private boolean sshkeyEnabled;
     private boolean isDynamicallyScalable;
     private boolean isRoutingType;
+    private String type;
 
     UploadParamsBase(long userId, String name, String displayText,
                                Integer bits, boolean passwordEnabled, boolean requiresHVM,
@@ -52,7 +53,7 @@ public abstract class UploadParamsBase implements UploadParams {
                                Long zoneId, Hypervisor.HypervisorType hypervisorType, String checksum,
                                String templateTag, long templateOwnerId,
                                Map details, boolean sshkeyEnabled,
-                               boolean isDynamicallyScalable, boolean isRoutingType) {
+                               boolean isDynamicallyScalable, boolean isRoutingType, String type) {
         this.userId = userId;
         this.name = name;
         this.displayText = displayText;
@@ -73,6 +74,7 @@ public abstract class UploadParamsBase implements UploadParams {
         this.sshkeyEnabled = sshkeyEnabled;
         this.isDynamicallyScalable = isDynamicallyScalable;
         this.isRoutingType = isRoutingType;
+        this.type = type;
     }
 
     UploadParamsBase(long userId, String name, String displayText, boolean isPublic, boolean isFeatured,
@@ -236,5 +238,13 @@ public abstract class UploadParamsBase implements UploadParams {
 
     void setHypervisorType(Hypervisor.HypervisorType hypervisorType) {
         this.hypervisorType = hypervisorType;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }
