@@ -50,7 +50,7 @@
               :loading="loading"
               :checked="autoRefresh"
               @change="toggleAutoRefresh"
-              />
+            />
           </a-tooltip>
           <a-tooltip placement="bottom">
             <template slot="title">
@@ -82,12 +82,13 @@
           <template slot="title">
             {{ "Auto-Refresh" }}
           </template>
-          <a-switch v-if="dataView"
+          <a-switch
+            v-if="dataView"
             style="float: right; margin: 5px;"
             :loading="loading"
             :checked="autoRefresh"
             @change="toggleAutoRefresh"
-            />
+          />
         </a-tooltip>
         <a-input-search
           size="default"
@@ -121,7 +122,7 @@
             :label="field.name"
             :v-bind="field.name"
             v-if="field.name !== 'id'"
-            >
+          >
 
             <span v-if="field.type==='boolean'">
               <a-switch
@@ -405,7 +406,7 @@ export default {
       }
       const doRefresh = this.doRefresh
       const fetchData = this.fetchData
-      setTimeout(function() {
+      setTimeout(function () {
         fetchData()
         doRefresh()
       }, 5000)
@@ -521,7 +522,7 @@ export default {
           })
 
           const fetchData = this.fetchData
-          setTimeout(function() {
+          setTimeout(function () {
             fetchData()
           }, 2500)
         }

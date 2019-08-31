@@ -53,7 +53,7 @@ export default {
           icon: 'sync',
           label: 'Reboot VM',
           dataView: true,
-          hidden: (record) => { return record.state !== 'Running' },
+          hidden: (record) => { return record.state !== 'Running' }
         },
         {
           api: 'restoreVirtualMachine',

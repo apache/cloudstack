@@ -6,11 +6,13 @@
       </a-col>
       <a-col :span="5">
         <a :href="'/client/console?cmd=access&vm=' + vm.id" target="_blank">
-          <a-avatar shape="square" :size="200"
+          <a-avatar
+            shape="square"
+            :size="200"
             style="color: #fff; backgroundColor: #333; width: 175px; height: 120px;">
             <span style="text-align: bottom">
-            <a-icon type="right-square"/>
-            {{ vm.instancename }}
+              <a-icon type="right-square"/>
+              {{ vm.instancename }}
             </span>
           </a-avatar>
         </a>
@@ -26,7 +28,7 @@
           Zone: <router-link :to="{ path: '/zone/' + vm.zoneid }">{{ vm.zonename }}</router-link> <br/>
 
           IP Addresses: <ul>
-            <li v-for="eth in vm.nic">
+            <li v-for="eth in vm.nic" :key="eth.id">
               {{ eth.ipaddress }} <router-link :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link> <br/>
             </li>
           </ul>
@@ -57,7 +59,7 @@
                 itemLayout="horizontal"
                 :dataSource="volumes"
               >
-                <a-list-item slot="renderItem" slot-scope="item, index">
+                <a-list-item slot="renderItem" slot-scope="item">
                   <a-list-item-meta :description="item.id">
                     <a slot="title" href="">
                       <router-link :to="{ path: '/volume/' + item.id }">{{ item.name }}</router-link>
@@ -77,16 +79,15 @@
                 </a-list-item>
               </a-list>
 
-
             </a-collapse-panel>
             <a-collapse-panel :header="'Network Adapter(s): ' + vm.nic.length" >
               <a-list
                 itemLayout="horizontal"
                 :dataSource="vm.nic"
               >
-                <a-list-item slot="renderItem" slot-scope="item, index">
+                <a-list-item slot="renderItem" slot-scope="item">
                   <a-list-item-meta :description="item.id">
-                    <a slot="title" href="https://vue.ant.design/">{{item.ipaddress}} <span v-show="item.isdefault">(Default)</span></a>
+                    <a slot="title" href="https://vue.ant.design/">{{ item.ipaddress }} <span v-show="item.isdefault">(Default)</span></a>
                     <a-avatar slot="avatar">
                       <font-awesome-icon :icon="['fas', 'ethernet']" />
                     </a-avatar>
@@ -106,7 +107,6 @@
         </a-card>
       </a-col>
 
-
     </a-row>
 
   </div>
@@ -123,8 +123,7 @@ export default {
   props: {
     vm: {
       type: Object,
-      required: true,
-      default: {}
+      required: true
     }
   },
   data () {
@@ -140,7 +139,7 @@ export default {
     }
   },
   methods: {
-    fetchData() {
+    fetchData () {
       api('listVolumes', { 'listall': true, 'virtualmachineid': this.vm.id }).then(json => {
         this.volumes = json.listvolumesresponse.volume
         this.totalStorage = 0
