@@ -19,13 +19,16 @@
         <p>
           ID: {{ vm.id }} <br/>
           State: {{ vm.state }} <br/>
-          Guest OS: {{ vm.ostypeid }} <br/>
-          Guest Template: {{ vm.templatename }} <br/>
-          Compute Offering: {{ vm.serviceofferingname }} <br/>
-          Host: {{ vm.hostname }} ({{ vm.hypervisor }}) <br/>
-          Zone: {{ vm.zonename }} <br/>
+          Guest OS: {{ guestOsName }} <br/>
+          Offering: <router-link :to="{ path: '/computeoffering/' + vm.serviceofferingid }">{{ vm.serviceofferingname }}</router-link> <br/>
+          Template: <router-link :to="{ path: '/template/' + vm.templateid }">{{ vm.templatename }}</router-link> <br/>
+          Host: <router-link :to="{ path: '/host/' + vm.hostid }">{{ vm.hostname }}</router-link> ({{ vm.hypervisor }}) <br/>
+          Zone: <router-link :to="{ path: '/zone/' + vm.zoneid }">{{ vm.zonename }}</router-link> <br/>
+
           IP Addresses: <ul>
-            <li v-for="eth in vm.nic">{{ eth.ipaddress }}</li>
+            <li v-for="eth in vm.nic">
+              {{ eth.ipaddress }} <router-link :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link> <br/>
+            </li>
           </ul>
         </p>
       </a-col>
@@ -56,13 +59,16 @@
               >
                 <a-list-item slot="renderItem" slot-scope="item, index">
                   <a-list-item-meta :description="item.id">
-                    <a slot="title" href="">{{item.name}} ({{ item.type }})</span></a>
+                    <a slot="title" href="">
+                      <router-link :to="{ path: '/volume/' + item.id }">{{ item.name }}</router-link>
+                    </a> ({{ item.type }})
                     <a-avatar slot="avatar">
                       <font-awesome-icon :icon="['fas', 'database']" />
                     </a-avatar>
                   </a-list-item-meta>
                   <p>
                     State: {{ item.state }}<br/>
+                    Type: {{ item.type }}<br/>
                     Size: {{ (item.size / (1024 * 1024 * 1024.0)).toFixed(4) }} GB<br/>
                     Physical Size: {{ (item.physicalsize / (1024 * 1024 * 1024.0)).toFixed(4) }} GB<br/>
                     Provisioning: {{ item.provisioningtype }}<br/>
@@ -86,7 +92,7 @@
                     </a-avatar>
                   </a-list-item-meta>
                   <p>
-                    Network: {{ item.networkname }}<br/>
+                    Network: <router-link :to="{ path: '/guestnetwork/' + item.networkid }">{{ item.networkname }}</router-link> <br/>
                     Mac Address: {{ item.macaddress }}<br/>
                     Netmask: {{ item.netmask }}<br/>
                     Gateway: {{ item.gateway }}<br/>
@@ -124,7 +130,8 @@ export default {
   data () {
     return {
       volumes: [],
-      totalStorage: 0
+      totalStorage: 0,
+      guestOsName: ''
     }
   },
   watch: {
@@ -134,14 +141,15 @@ export default {
   },
   methods: {
     fetchData() {
-      this.listVolumes()
-    },
-    listVolumes() {
       api('listVolumes', { 'listall': true, 'virtualmachineid': this.vm.id }).then(json => {
         this.volumes = json.listvolumesresponse.volume
+        this.totalStorage = 0
         for (var volume of this.volumes) {
           this.totalStorage += volume.size
         }
+      })
+      api('listOsTypes', { 'id': this.vm.ostypeid }).then(json => {
+        this.guestOsName = json.listostypesresponse.ostype[0].description
       })
     }
   }
