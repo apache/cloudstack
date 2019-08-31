@@ -1,6 +1,6 @@
 export default {
   name: 'config',
-  title: 'Configurations',
+  title: 'Configuration',
   icon: 'setting',
   permission: [ 'listConfigurations' ],
   children: [
@@ -14,7 +14,7 @@ export default {
     },
     {
       name: 'ldapsetting',
-      title: 'LDAP Settings',
+      title: 'LDAP Configuration',
       icon: 'team',
       permission: [ 'listLdapConfigurations' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),

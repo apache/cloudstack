@@ -13,6 +13,7 @@ import {
   DEFAULT_FIXED_SIDEMENU,
   DEFAULT_CONTENT_WIDTH_TYPE,
   DEFAULT_MULTI_TAB
+  // CURRENT_LOCALE
 } from '@/store/mutation-types'
 import config from '@/config/settings'
 
@@ -29,6 +30,7 @@ export default function Initializer () {
   store.commit('TOGGLE_MULTI_TAB', Vue.ls.get(DEFAULT_MULTI_TAB, config.multiTab))
   store.commit('SET_TOKEN', Vue.ls.get(ACCESS_TOKEN))
   store.commit('SET_PROJECT', Vue.ls.get(CURRENT_PROJECT))
+  // store.commit('CURRENT_LOCALE', Vue.ls.get(CURRENT_LOCALE), config.defaultLocale)
 
   // last step
 }

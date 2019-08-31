@@ -53,16 +53,50 @@ export default {
           dataView: true
         },
         {
+          api: 'createVMSnapshot',
+          icon: 'camera',
+          label: 'Create VM Snapshot',
+          dataView: true
+        },
+        {
+          api: 'restoreVirtualMachine',
+          icon: 'to-top',
+          label: 'Reinstall Instance',
+          dataView: true,
+          params: ['virtualmachineid']
+        },
+        {
+          api: 'attachIso',
+          icon: 'paper-clip',
+          label: 'Attach ISO to Instance',
+          dataView: true,
+          params: ['id', 'virtualmachineid']
+        },
+        {
           api: 'migrateVirtualMachine',
           icon: 'drag',
           label: 'Migrate VM',
           dataView: true
         },
         {
+          api: 'resetPasswordForVirtualMachine',
+          icon: 'key',
+          label: 'Reset Instance Password',
+          dataView: true,
+          params: ['id']
+        },
+        {
           api: 'resetSSHKeyForVirtualMachine',
           icon: 'lock',
           label: 'Reset SSH Key',
           dataView: true
+        },
+        {
+          api: 'changeServiceForVirtualMachine',
+          icon: 'swap',
+          label: 'Change Service Offering',
+          dataView: true,
+          params: ['id', 'serviceofferingid']
         },
         {
           api: 'destroyVirtualMachine',
@@ -79,11 +113,11 @@ export default {
       title: 'Demo',
       icon: 'radar-chart',
       permission: [ 'listVirtualMachines' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue')
+      component: () => import('@/components/Test.vue')
     },
     {
       name: 'ssh',
-      title: 'SSH Keys',
+      title: 'SSH Key Pairs',
       icon: 'key',
       permission: [ 'listSSHKeyPairs' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),

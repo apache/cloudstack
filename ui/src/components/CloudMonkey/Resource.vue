@@ -62,13 +62,15 @@
       </a-col>
     </a-row>
 
-    <a-drawer
+    <a-modal
       :title="currentAction.label"
-      placement="right"
-      width="75%"
-      :closable="true"
-      @close="closeAction"
       :visible="showAction"
+      :closable="true"
+      style="top: 20px;"
+      @ok="handleSubmit"
+      @cancel="closeAction"
+      :confirmLoading="currentAction.loading"
+      centered
     >
       <a-spin :spinning="currentAction.loading">
         <a-form
@@ -121,36 +123,9 @@
             </span>
           </a-form-item>
 
-          <a-form-item>
-            <div
-              :style="{
-                bottom: 0,
-                width: '100%',
-                borderTop: '1px solid #e8e8e8',
-                paddingTop: '24px',
-                textAlign: 'right',
-                left: 0,
-                background: '#fff',
-                borderRadius: '0 0 4px 4px',
-              }"
-            >
-              <a-button
-                style="marginRight: 8px"
-                @click="closeAction"
-              >
-                Cancel
-              </a-button>
-              <a-button
-                :loading="currentAction.loading"
-                type="primary"
-                html-type="submit">
-                Submit
-              </a-button>
-            </div>
-          </a-form-item>
         </a-form>
       </a-spin>
-    </a-drawer>
+    </a-modal>
 
     <div v-if="dataView">
       <a-row :gutter="12">
@@ -286,6 +261,9 @@ export default {
       this.breadList = []
       this.name = this.$route.name
       this.$route.matched.forEach((item) => {
+        if (item.meta.title) {
+          item.meta.title = this.$t(item.meta.title)
+        }
         this.breadList.push(item)
       })
     },
@@ -344,7 +322,7 @@ export default {
           key = Object.keys(key)[0]
         }
         this.columns.push({
-          title: key,
+          title: this.$t(key),
           dataIndex: key,
           key: counter++,
           scopedSlots: { customRender: key },
@@ -482,12 +460,16 @@ export default {
             }
           }
 
+          const closeAction = this.closeAction
+          const showError = this.$notification['error']
           api(this.currentAction.api, params).then(json => {
-            console.log(json)
-            this.closeAction()
+            closeAction()
           }).catch(function (error) {
-            console.log(error)
-            this.closeAction()
+            closeAction()
+            showError({
+              message: 'Request Failed',
+              description: error.response.headers['x-description']
+            })
           }).then(function () {
           })
         }

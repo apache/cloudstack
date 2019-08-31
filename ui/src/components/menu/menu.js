@@ -107,7 +107,7 @@ export default {
         <Item {...{ key: menu.path }}>
           <router-link {...{ props }}>
             {this.renderIcon(menu.meta.icon)}
-            <span>{menu.meta.title}</span>
+            <span>{this.$t(menu.meta.title)}</span>
           </router-link>
         </Item>
       )

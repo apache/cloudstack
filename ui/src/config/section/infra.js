@@ -39,7 +39,7 @@ export default {
     },
     {
       name: 'storagepool',
-      title: 'Primary Storages',
+      title: 'Primary Storage',
       icon: 'database',
       permission: [ 'listStoragePools', 'listStoragePoolsMetrics' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),

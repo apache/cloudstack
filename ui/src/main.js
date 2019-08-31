@@ -1,8 +1,9 @@
 import Vue from 'vue'
+import VueI18n from 'vue-i18n'
 import VueCookies from 'vue-cookies'
 import App from './App.vue'
 import router from './router'
-import store from './store/'
+import store from './store'
 import { VueAxios } from './utils/request'
 
 import Spin from 'ant-design-vue/es/spin/Spin'
@@ -22,7 +23,7 @@ library.add(fab, far, fas)
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 Vue.config.productionTip = false
 
-Vue.use(VueAxios, router, VueCookies)
+Vue.use(VueI18n, VueAxios, router, VueCookies)
 
 Spin.setDefaultIndicator({
   indicator: (h) => {
@@ -30,9 +31,31 @@ Spin.setDefaultIndicator({
   }
 })
 
+function loadLocaleMessages () {
+  const locales = require.context('./locales', true, /[A-Za-z0-9-_,\s]+\.json$/i)
+  const messages = {}
+  locales.keys().forEach(key => {
+    const matched = key.match(/([A-Za-z0-9-_]+)\./i)
+    if (matched && matched.length > 1) {
+      const locale = matched[1]
+      messages[locale] = locales(key)
+    }
+  })
+  return messages
+}
+
+const i18n = new VueI18n({
+  locale: Vue.ls.get('current_locale') || 'en',
+  fallbackLocale: 'en',
+  messages: loadLocaleMessages()
+})
+
+export default i18n
+
 new Vue({
   router,
   store,
+  i18n,
   created () {
     bootstrap()
   },
