@@ -16,9 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-import org.apache.log4j.Logger;
-
 import java.util.List;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,6 +29,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
@@ -61,13 +61,14 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     @Parameter(name = ApiConstants.TEMPLATE_FILTER,
                type = CommandType.STRING,
                required = true,
-               description = "possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\", and \"community\". "
+               description = "possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\",\"community\" and \"system\". "
                    + "* featured : templates that have been marked as featured and public. "
                    + "* self : templates that have been registered or created by the calling user. "
                    + "* selfexecutable : same as self, but only returns templates that can be used to deploy a new VM. "
                    + "* sharedexecutable : templates ready to be deployed that have been granted to the calling user by another user. "
                    + "* executable : templates that are owned by the calling user, or public templates, that can be used to deploy a VM. "
-                   + "* community : templates that have been marked as public but not featured. " + "* all : all templates (only usable by admins).")
+                   + "* community : templates that have been marked as public but not featured. " + "* all : all templates (only usable by admins)."
+                   + "* system: system templates for console proxy, secondary storage and routers.")
     private String templateFilter;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list templates by zoneId")

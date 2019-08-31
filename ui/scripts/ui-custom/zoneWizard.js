@@ -1423,7 +1423,7 @@
             var $dialog = $wizard.dialog({
                 title: _l('label.installWizard.addZone.title'),
                 closeOnEscape: false,
-                width: 750,
+                width: 885,
                 height: 665,
                 resizable: false
             });

@@ -1209,10 +1209,12 @@ cloudStack.validate = {
 
 cloudStack.preFilter = {
     createTemplate: function(args) {
+        args.$form.find('.form-item[rel=templateSource]').hide();
         if (isAdmin()) {
             args.$form.find('.form-item[rel=isPublic]').css('display', 'inline-block');
             args.$form.find('.form-item[rel=isFeatured]').css('display', 'inline-block');
             args.$form.find('.form-item[rel=isrouting]').css('display', 'inline-block');
+            args.$form.find('.form-item[rel=templatetype]').show();
         } else {
             if (g_userPublicTemplateEnabled == "true") {
                 args.$form.find('.form-item[rel=isPublic]').css('display', 'inline-block');
@@ -1220,6 +1222,8 @@ cloudStack.preFilter = {
                 args.$form.find('.form-item[rel=isPublic]').hide();
             }
             args.$form.find('.form-item[rel=isFeatured]').hide();
+            args.$form.find('.form-item[rel=templatetype]').hide();
+            $form.find(".form-item[rel='activate']").hide();
         }
     },
     addLoadBalancerDevice: function(args) { //add netscaler device OR add F5 device

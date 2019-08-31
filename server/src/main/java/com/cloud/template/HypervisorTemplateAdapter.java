@@ -609,9 +609,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         VMTemplateVO template = profile.getTemplate();
         List<Long> zoneIdList = profile.getZoneIdList();
 
-        if (template.getTemplateType() == TemplateType.SYSTEM) {
-            throw new InvalidParameterValueException("The DomR template cannot be deleted.");
-        }
+        // TODO: Add a check to see if this template is used by console proxy, router or storagevm - only root admin should be able to do this.
+        //if (template.getTemplateType() == TemplateType.SYSTEM) {
+        //    throw new InvalidParameterValueException("The DomR template cannot be deleted.");
+        //}
 
         if (zoneIdList != null && (storeMgr.getImageStoreWithFreeCapacity(zoneIdList.get(0)) == null)) {
             throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");

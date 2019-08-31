@@ -73,6 +73,9 @@
                         },
                         account: {
                             label: 'label.account'
+                        },
+                        templatetype: {
+                            label: 'label.type'
                         }
                     },
 
@@ -125,6 +128,140 @@
                                 docID: 'helpNetworkOfferingName',
                                 preFilter: cloudStack.preFilter.createTemplate,
                                 fields: {
+                                    templatetype : {
+                                        label: 'label.action.create.template.type',
+                                        docID : 'helpRegisterTemplateType',
+                                        select: function(args) {
+                                            args.$select.change(function(){
+                                                var $form = $(this).closest('form');
+                                                if ($(this).val() == "user"){
+                                                    $form.find(".form-item[rel='templateSource']").hide();
+                                                    $form.find(".form-item[rel='activate']").hide();
+                                                    $form.find(".form-item[rel='sourceTemplate']").hide();
+                                                    $form.find(".form-item[rel='isPasswordEnabled']").show();
+                                                    $form.find(".form-item[rel='requireshvm']").show();
+                                                    $form.find(".form-item[rel='isPublic']").show();
+                                                    $form.find(".form-item[rel='isExtractable']").show();
+                                                    $form.find(".form-item[rel='isdynamicallyscalable']").show();
+                                                    $form.find(".form-item[rel='directdownload']").show();
+                                                    $form.find(".form-item[rel='isFeatured']").show();
+                                                    $form.find(".form-item[rel='isrouting']").show();
+                                                } else {
+                                                    $form.find(".form-item[rel='templateSource']").show();
+                                                    $form.find(".form-item[rel='activate']").show();
+                                                    $form.find(".form-item[rel='isPasswordEnabled']").hide();
+                                                    $form.find(".form-item[rel='requireshvm']").hide();
+                                                    $form.find(".form-item[rel='isPublic']").hide();
+                                                    $form.find(".form-item[rel='isExtractable']").hide();
+                                                    $form.find(".form-item[rel='isdynamicallyscalable']").hide();
+                                                    $form.find(".form-item[rel='directdownload']").hide();
+                                                    $form.find(".form-item[rel='isFeatured']").hide();
+                                                    $form.find(".form-item[rel='isrouting']").hide();
+                                                    $("#label_action_create_template_source_template").val("url").change();
+                                                }
+                                            });
+                                            args.response.success({
+                                                data: [
+                                                    { id: "user", description: "User" },
+                                                    { id: "system", description: "System" },
+                                                ]
+                                            });
+                                        }
+                                    },
+                                    templateSource: {
+                                        label: "label.action.create.template.source.template",
+                                        select: function(args){
+                                            args.$select.change(function(){
+                                                console.log($(this).val());
+                                                var $form = $(this).closest('form');
+                                                if ($(this).val() == "copy"){
+                                                    $form.find(".form-item[rel='sourceZone']").show();
+                                                    $form.find(".form-item[rel='sourceTemplate']").show();
+                                                    $form.find(".form-item[rel='url']").hide();
+                                                    $form.find(".form-item[rel='name']").hide();
+                                                    $form.find(".form-item[rel='description']").hide();
+                                                    $form.find(".form-item[rel='hypervisor']").hide();
+                                                    $form.find(".form-item[rel='format']").hide();
+                                                } else {
+                                                    $form.find(".form-item[rel='sourceZone']").hide();
+                                                    $form.find(".form-item[rel='sourceTemplate']").hide();
+                                                    $form.find(".form-item[rel='url']").show();
+                                                    $form.find(".form-item[rel='name']").show();
+                                                    $form.find(".form-item[rel='description']").show();
+                                                    $form.find(".form-item[rel='hypervisor']").show();
+                                                    $form.find(".form-item[rel='format']").show();
+                                                }
+                                                if ($(this).val() == "official"){
+                                                    $form.find("input[name='url']").prop("disabled", "disabled");
+                                                } else {
+                                                    $form.find("input[name='url']").prop("disabled", false);
+                                                }
+
+                                            });
+                                            args.response.success({
+                                                data: [
+                                                    { id: "url", description: "URL" },
+                                                    { id: "copy", description: "Copy from Zone" },
+                                                    { id: "official", description: "Official Cloudstack Sytem VM" }
+                                                ]
+                                            });
+                                        }
+                                    },
+                                    sourceZone: { // Get list of zones
+                                        label : "label.action.create.template.source.zone",
+                                        select: function (args){
+                                            $.ajax({
+                                                url: createURL("listZones&available=true"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var zoneObjs = [];
+                                                    var items = json.listzonesresponse.zone;
+                                                    if (items != null) {
+                                                        for (var i = 0; i < items.length; i++) {
+                                                            zoneObjs.push({
+                                                                id: items[i].id,
+                                                                description: items[i].name
+                                                            });
+                                                        }
+                                                    }
+                                                    args.response.success({
+                                                        data: zoneObjs
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    }, 
+                                    sourceTemplate: {
+                                        label: "label.action.create.template.source.template",
+                                        dependsOn: 'sourceZone',
+                                        select: function(args){
+                                            $.ajax({
+                                                url: createURL("listTemplates&templateFilter=system&zoneId=" + args.sourceZone),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    templates = [];
+                                                    items = json.listtemplatesresponse.template;
+                                                    for (var i = 0; i < items.length; i++){
+                                                        templates.push({
+                                                            id: items[i].id,
+                                                            description: items[i].name
+                                                        });
+                                                    }
+                                                    args.response.success({
+                                                        data: templates
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    },
+                                    activate: {
+                                        label: "label.action.create.template.activate",
+                                        docID: 'helpRegisterTemplateActivate',
+                                        isBoolean: true,
+                                        isChecked: true
+                                    },
                                     url: {
                                         label: 'label.url',
                                         docID: 'helpRegisterTemplateURL',
@@ -212,7 +349,6 @@
                                                         zoneId = args.zone;
                                                 else
                                                         zoneId = args.zone[index];
-
                                                 var apiCmd;
                                                 if (zoneId == -1) { //All Zones
                                                     apiCmd = "listHypervisors";
@@ -293,7 +429,6 @@
                                                 data: items
                                             });
                                             args.$select.trigger('change');
-
                                         }
                                     },
 
@@ -617,7 +752,9 @@
                                     passwordEnabled: (args.data.isPasswordEnabled == "on"),
                                     isdynamicallyscalable: (args.data.isdynamicallyscalable == "on"),
                                     osTypeId: args.data.osTypeId,
-                                    hypervisor: args.data.hypervisor
+                                    hypervisor: args.data.hypervisor,
+                                    system: (args.data.templatetype == "system"),
+                                    activate: (args.data.activate == "on" && args.data.templatetype == "system")
                                 };
 
                                 if (args.$form.find('.form-item[rel=isPublic]').css("display") != "none") {
@@ -684,7 +821,6 @@
                                     });
                                 }
                                 // for hypervisor == VMware (ends here)
-
                                 $.ajax({
                                     url: createURL('registerTemplate'),
                                     data: data,
@@ -732,7 +868,9 @@
                                             passwordEnabled: (args.data.isPasswordEnabled == "on"),
                                             isdynamicallyscalable: (args.data.isdynamicallyscalable == "on"),
                                             osTypeId: args.data.osTypeId,
-                                            hypervisor: args.data.hypervisor
+                                            hypervisor: args.data.hypervisor,
+                                            system: (args.data.templatetype == "system"),
+                                            activate: (args.data.activate == "on" && args.data.templatetype == "system")
                                         };
 
                                         // for hypervisor == XenServer (starts here)
@@ -825,6 +963,55 @@
                                     }
                                 },
                                 fields: {
+
+                                    templatetype : {
+                                        label: 'label.action.create.template.type',
+                                        docID : 'helpRegisterTemplateType',
+                                        select: function(args) {
+                                            args.$select.change(function(){
+                                                var $form = $(this).closest('form');
+                                                if ($(this).val() == "user"){
+                                                    $form.find(".form-item[rel='templateSource']").hide();
+                                                    $form.find(".form-item[rel='activate']").hide();
+                                                    $form.find(".form-item[rel='sourceTemplate']").hide();
+                                                    $form.find(".form-item[rel='isPasswordEnabled']").show();
+                                                    $form.find(".form-item[rel='osTypeId']").show();
+                                                    $form.find(".form-item[rel='requireshvm']").show();
+                                                    $form.find(".form-item[rel='isPublic']").show();
+                                                    $form.find(".form-item[rel='isExtractable']").show();
+                                                    $form.find(".form-item[rel='isdynamicallyscalable']").show();
+                                                    $form.find(".form-item[rel='isFeatured']").show();
+                                                    $form.find(".form-item[rel='isrouting']").show();
+                                                    
+                                                } else {
+                                                    $form.find(".form-item[rel='templateSource']").show();
+                                                    $form.find(".form-item[rel='activate']").show();
+                                                    $form.find(".form-item[rel='isPasswordEnabled']").hide();
+                                                    $form.find(".form-item[rel='osTypeId']").hide();
+                                                    $form.find(".form-item[rel='requireshvm']").hide();
+                                                    $form.find(".form-item[rel='isPublic']").hide();
+                                                    $form.find(".form-item[rel='isExtractable']").hide();
+                                                    $form.find(".form-item[rel='isdynamicallyscalable']").hide();
+                                                    $form.find(".form-item[rel='isFeatured']").hide();
+                                                    $form.find(".form-item[rel='isrouting']").hide();
+                                                }
+                                            });
+                                            args.response.success({
+                                                data: [
+                                                    { id: "user", description: "User" },
+                                                    { id: "system", description: "System" },
+                                                ]
+                                            });
+                                        }
+                                    },
+
+                                    activate: {
+                                        label: "label.action.create.template.activate",
+                                        docID: 'helpRegisterTemplateActivate',
+                                        isBoolean: true,
+                                        isChecked: true
+                                    },
+
                                     templateFileUpload: {
                                         label: 'label.local.file',
                                         isFileUpload: true,

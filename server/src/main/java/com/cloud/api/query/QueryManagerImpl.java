@@ -3205,9 +3205,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long parentTemplateId = cmd.getParentTemplateId();
 
         boolean listAll = false;
-        if (templateFilter != null && templateFilter == TemplateFilter.all) {
+        if (templateFilter != null && templateFilter == TemplateFilter.all || templateFilter == TemplateFilter.system) {
             if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                throw new InvalidParameterValueException("Filter " + TemplateFilter.all + " can be specified by admin only");
+                throw new InvalidParameterValueException("Filter " + TemplateFilter.all + " or " + TemplateFilter.system + " can be specified by admin only");
             }
             listAll = true;
         }
@@ -3385,6 +3385,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     scc.addOr("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
                 }
                 sc.addAnd("publicTemplate", SearchCriteria.Op.SC, scc);
+            } else if (templateFilter == TemplateFilter.system){
+                sc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.SYSTEM);
             } else if (templateFilter == TemplateFilter.all && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                 SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
                 scc.addOr("publicTemplate", SearchCriteria.Op.EQ, true);
