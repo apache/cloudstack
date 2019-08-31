@@ -12,6 +12,7 @@
         :type="collapsed ? 'menu-unfold' : 'menu-fold'"
         @click="toggle"/>
 
+      <!--
       <a-breadcrumb class="breadcrumb" v-if="device !== 'mobile'">
         <a-breadcrumb-item v-for="(item, index) in breadList" :key="index">
           <router-link
@@ -25,6 +26,7 @@
           <span v-else>{{ item.meta.title }}</span>
         </a-breadcrumb-item>
       </a-breadcrumb>
+      -->
       <user-menu></user-menu>
     </div>
     <div v-else :class="['top-nav-header-index', theme]">

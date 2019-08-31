@@ -34,6 +34,22 @@ export default {
           listView: true
         },
         {
+          api: 'attachVolume',
+          icon: 'paper-clip',
+          label: 'Attach Volume',
+          params: ['id', 'virtualmachineid'],
+          dataView: true,
+          hidden: (record) => { return record.virtualmachineid }
+        },
+        {
+          api: 'detachVolume',
+          icon: 'link',
+          label: 'Detach Volume',
+          params: ['id', 'virtualmachineid'],
+          dataView: true,
+          hidden: (record) => { return !record.virtualmachineid }
+        },
+        {
           api: 'migrateVolume',
           icon: 'drag',
           label: 'Migrate Volume',
@@ -47,19 +63,8 @@ export default {
           type: 'main',
           params: ['id', 'virtualmachineid'],
           dataView: true
-        }, {
-          api: 'attachVolume',
-          icon: 'paper-clip',
-          label: 'Attach Volume',
-          params: ['id', 'virtualmachineid'],
-          dataView: true
-        }, {
-          api: 'detachVolume',
-          icon: 'link',
-          label: 'Detach Volume',
-          params: ['id', 'virtualmachineid'],
-          dataView: true
-        }, {
+        },
+        {
           api: 'extractVolume',
           icon: 'cloud-download',
           label: 'Download Volume',
@@ -76,8 +81,8 @@ export default {
           icon: 'delete',
           label: 'Delete Volume',
           params: ['id'],
-          listView: true,
-          dataView: true
+          dataView: true,
+          groupAction: true
         }
       ]
     },

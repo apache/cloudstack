@@ -10,7 +10,7 @@
     <font-awesome-icon icon="coffee" />
     -->
 
-    <a-breadcrumb class="breadcrumb" v-if="device === 'mobile'">
+    <a-breadcrumb class="breadcrumb">
       <a-breadcrumb-item v-for="(item, index) in breadList" :key="index">
         <router-link
           v-if="item.name"
@@ -26,7 +26,7 @@
 
     <a-row>
       <a-col :span="16">
-        <a-tooltip placement="bottom" v-for="(action, actionIndex) in actions" :key="actionIndex" v-if="(!dataView && action.listView) || (dataView && action.dataView)">
+        <a-tooltip placement="bottom" v-for="(action, actionIndex) in actions" :key="actionIndex" v-if="(!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) || (dataView && action.dataView)">
           <template slot="title">
             {{ action.label }}
           </template>
@@ -36,26 +36,64 @@
             shape="circle"
             style="margin-right: 5px"
             @click="execAction(action)"
+            :disabled="'hidden' in action ? dataView && action.hidden(resource) : false"
           >
           </a-button>
         </a-tooltip>
-        <a-tooltip placement="bottom">
+        <span v-if="!dataView" style="float: right; padding-right: 8px">
+          <a-tooltip placement="bottom">
+            <template slot="title">
+              {{ "Auto-Refresh" }}
+            </template>
+            <a-switch
+              style="margin: 8px;"
+              :loading="loading"
+              :checked="autoRefresh"
+              @change="toggleAutoRefresh"
+              />
+          </a-tooltip>
+          <a-tooltip placement="bottom">
+            <template slot="title">
+              {{ "Refresh" }}
+            </template>
+            <a-button
+              @click="fetchData()"
+              :loading="loading"
+              shape="circle"
+              icon="reload"
+            />
+          </a-tooltip>
+        </span>
+      </a-col>
+      <a-col :span="8">
+        <a-tooltip placement="bottom" v-if="dataView">
           <template slot="title">
             {{ "Refresh" }}
           </template>
           <a-button
+            style="float: right"
             @click="fetchData()"
             :loading="loading"
             shape="circle"
             icon="reload"
           />
         </a-tooltip>
-      </a-col>
-      <a-col :span="8" v-if="!$route.params || !$route.params.id">
+        <a-tooltip placement="bottom" v-if="dataView">
+          <template slot="title">
+            {{ "Auto-Refresh" }}
+          </template>
+          <a-switch v-if="dataView"
+            style="float: right; margin: 5px;"
+            :loading="loading"
+            :checked="autoRefresh"
+            @change="toggleAutoRefresh"
+            />
+        </a-tooltip>
         <a-input-search
           size="default"
           placeholder="Search"
           @search="onSearch"
+          v-if="!dataView"
         >
           <a-icon slot="prefix" type="search" />
         </a-input-search>
@@ -81,7 +119,9 @@
             v-for="(field, fieldIndex) in currentAction.params"
             :key="fieldIndex"
             :label="field.name"
-            :v-bind="field.name">
+            :v-bind="field.name"
+            v-if="field.name !== 'id'"
+            >
 
             <span v-if="field.type==='boolean'">
               <a-switch
@@ -128,26 +168,8 @@
     </a-modal>
 
     <div v-if="dataView">
-      <a-row :gutter="12">
-        <a-col :xl="12">
-          <chart-card class="info-card" v-if="resource.name">
-            <h4>Name</h4>
-            <template slot="footer"><span>{{ resource.name }}</span></template>
-          </chart-card>
-        </a-col>
-        <a-col :xl="12">
-          <chart-card class="info-card" v-if="resource.id">
-            <h4>ID</h4>
-            <template slot="footer"><span>{{ resource.id }}</span></template>
-          </chart-card>
-        </a-col>
-        <a-col :xl="6" v-for="(value, key) in resource" :key="key">
-          <chart-card class="info-card" v-if="key !== 'id' && key !== 'name'">
-            <h4>{{ key }}</h4>
-            <template slot="footer"><span>{{ value }}</span></template>
-          </chart-card>
-        </a-col>
-      </a-row>
+      <instance-view :vm="resource" v-if="routeName == 'vm'" />
+      <data-view :resource="resource" v-else />
     </div>
     <div style="margin-top: 12px" v-else>
       <a-table
@@ -217,16 +239,21 @@
 import { api } from '@/api'
 import store from '@/store'
 import ChartCard from '@/components/chart/ChartCard'
+import DataView from '@/components/widgets/DataView'
+import InstanceView from '@/components/widgets/InstanceView'
 
 export default {
   name: 'Resource',
   components: {
-    ChartCard
+    ChartCard,
+    DataView,
+    InstanceView
   },
   data () {
     return {
       apiName: '',
       loading: false,
+      autoRefresh: false,
       columns: [],
       items: [],
       resource: {},
@@ -291,6 +318,8 @@ export default {
       } else {
         this.dataView = false
       }
+      console.log(this.$route)
+      console.log(this.routeName)
       if (this.$route && this.$route.meta && this.$route.meta.permission) {
         this.apiName = this.$route.meta.permission[0]
         if (this.$route.meta.columns) {
@@ -365,6 +394,21 @@ export default {
     },
     onSearch (value) {
       this.fetchData(value)
+    },
+    toggleAutoRefresh () {
+      this.autoRefresh = !this.autoRefresh
+      this.doRefresh()
+    },
+    doRefresh () {
+      if (!this.autoRefresh) {
+        return
+      }
+      const doRefresh = this.doRefresh
+      const fetchData = this.fetchData
+      setTimeout(function() {
+        fetchData()
+        doRefresh()
+      }, 5000)
     },
     closeAction () {
       this.currentAction.loading = false
@@ -460,6 +504,10 @@ export default {
             }
           }
 
+          if ('id' in this.resource) {
+            params['id'] = this.resource['id']
+          }
+
           const closeAction = this.closeAction
           const showError = this.$notification['error']
           api(this.currentAction.api, params).then(json => {
@@ -470,8 +518,12 @@ export default {
               message: 'Request Failed',
               description: error.response.headers['x-description']
             })
-          }).then(function () {
           })
+
+          const fetchData = this.fetchData
+          setTimeout(function() {
+            fetchData()
+          }, 2500)
         }
       })
     },
@@ -550,7 +602,7 @@ export default {
 
 .ant-breadcrumb {
   vertical-align: text-bottom;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .ant-breadcrumb .anticon {

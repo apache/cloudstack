@@ -10,7 +10,8 @@ export default {
       permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [
-        'displayname', 'state', 'instancename', { 'ipaddress': (record) => { return record.nic[0].ipaddress } }, 'account', 'zonename',
+        { 'name': (record) => { return record.displayname } }, 'state', 'instancename',
+        { 'ipaddress': (record) => { return record.nic[0].ipaddress } }, 'account', 'zonename',
         'cpunumber', 'cpuused', 'cputotal', 'memoryintfreekbs', 'memorytotal',
         'networkread', 'networkwrite', 'diskkbsread', 'diskkbswrite', 'diskiopstotal'
       ],
@@ -24,33 +25,56 @@ export default {
           listView: true
         },
         {
-          api: 'startVirtualMachine',
-          icon: 'right-square',
-          label: 'View Console',
+          api: 'updateVirtualMachine',
+          icon: 'edit',
+          label: 'Update VM',
           dataView: true
         },
-
         {
           api: 'startVirtualMachine',
           icon: 'caret-right',
           label: 'Start VM',
-          params: ['name', 'zoneid', 'diskofferingid'],
-          listView: true,
-          dataView: true
+          dataView: true,
+          groupAction: true,
+          hidden: (record) => { return record.state !== 'Stopped' },
+          options: ['podid', 'clusterid', 'hostid']
         },
         {
           api: 'stopVirtualMachine',
           icon: 'stop',
           label: 'Stop VM',
-          params: ['name', 'zoneid', 'diskofferingid'],
-          listView: true,
-          dataView: true
+          dataView: true,
+          groupAction: true,
+          options: ['podid', 'clusterid', 'hostid'],
+          hidden: (record) => { return record.state !== 'Running' }
         },
         {
           api: 'rebootVirtualMachine',
           icon: 'sync',
           label: 'Reboot VM',
-          dataView: true
+          dataView: true,
+          hidden: (record) => { return record.state !== 'Running' },
+        },
+        {
+          api: 'restoreVirtualMachine',
+          icon: 'usb',
+          label: 'Reinstall Instance',
+          dataView: true,
+          params: ['virtualmachineid']
+        },
+        {
+          api: 'updateVMAffinityGroup',
+          icon: 'swap',
+          label: 'Update Affinity Group',
+          dataView: true,
+          params: ['id', 'serviceofferingid']
+        },
+        {
+          api: 'changeServiceForVirtualMachine',
+          icon: 'sliders',
+          label: 'Change Service Offering',
+          dataView: true,
+          params: ['id', 'serviceofferingid']
         },
         {
           api: 'createVMSnapshot',
@@ -59,16 +83,16 @@ export default {
           dataView: true
         },
         {
-          api: 'restoreVirtualMachine',
-          icon: 'to-top',
-          label: 'Reinstall Instance',
-          dataView: true,
-          params: ['virtualmachineid']
-        },
-        {
           api: 'attachIso',
           icon: 'paper-clip',
-          label: 'Attach ISO to Instance',
+          label: 'Attach ISO',
+          dataView: true,
+          params: ['id', 'virtualmachineid']
+        },
+        {
+          api: 'detachIso',
+          icon: 'link',
+          label: 'Detach ISO',
           dataView: true,
           params: ['id', 'virtualmachineid']
         },
@@ -76,7 +100,8 @@ export default {
           api: 'migrateVirtualMachine',
           icon: 'drag',
           label: 'Migrate VM',
-          dataView: true
+          dataView: true,
+          hidden: (record) => { return record.state !== 'Running' }
         },
         {
           api: 'resetPasswordForVirtualMachine',
@@ -92,19 +117,12 @@ export default {
           dataView: true
         },
         {
-          api: 'changeServiceForVirtualMachine',
-          icon: 'swap',
-          label: 'Change Service Offering',
-          dataView: true,
-          params: ['id', 'serviceofferingid']
-        },
-        {
           api: 'destroyVirtualMachine',
           icon: 'delete',
           label: 'Destroy VM',
           params: ['id'],
-          listView: true,
-          dataView: true
+          dataView: true,
+          groupAction: true
         }
       ]
     },
