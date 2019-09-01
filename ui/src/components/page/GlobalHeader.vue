@@ -12,21 +12,25 @@
         :type="collapsed ? 'menu-unfold' : 'menu-fold'"
         @click="toggle"/>
 
-      <!--
-      <a-breadcrumb class="breadcrumb" v-if="device !== 'mobile'">
+      <a-breadcrumb class="breadcrumb" v-if="device === 'desktop'">
         <a-breadcrumb-item v-for="(item, index) in breadList" :key="index">
           <router-link
             v-if="item.name"
             :to="{ path: item.path === '' ? '/' : item.path }"
           >
             <a-icon v-if="index == 0" :type="item.meta.icon" />
-            {{ item.meta.title }}
+            {{ $t(item.meta.title) }}
           </router-link>
-          <span v-else-if="$route.params.id">{{ $route.params.id }}</span>
-          <span v-else>{{ item.meta.title }}</span>
+          <span v-else-if="$route.params.id">
+            {{ $route.params.id }}
+            <a-button shape="circle" type="dashed" size="small" v-clipboard:copy="$route.params.id">
+              <a-icon type="copy" style="margin-left: 0px"/>
+            </a-button>
+          </span>
+          <span v-else>{{ $t(tem.meta.title) }}</span>
         </a-breadcrumb-item>
       </a-breadcrumb>
-      -->
+
       <user-menu></user-menu>
     </div>
     <div v-else :class="['top-nav-header-index', theme]">
