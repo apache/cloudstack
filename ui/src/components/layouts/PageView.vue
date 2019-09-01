@@ -2,7 +2,7 @@
   <div :style="!$route.meta.hiddenHeaderContent ? 'margin: -24px -24px 0px;' : null">
     <div class="page-menu-tabs">
       <a-tabs :tabBarStyle="{margin: 0}" @change="changeTab">
-        <a-tab-pane v-for="child in $route.permission" :tab="child.meta.title" :key="child.key"></a-tab-pane>
+        <a-tab-pane v-for="child in $route.permission" :tab="this.$t(child.meta.title)" :key="child.key"></a-tab-pane>
       </a-tabs>
     </div>
     <div class="content">
@@ -71,7 +71,7 @@ export default {
     },
     getPageMeta () {
       // eslint-disable-next-line
-      this.pageTitle = (typeof(this.title) === 'string' || !this.title) ? this.title : this.$route.meta.title
+      this.pageTitle = (typeof(this.title) === 'string' || !this.title) ? this.$t(this.title) : this.$t(this.$route.meta.title)
 
       const content = this.$refs.content
       if (content) {

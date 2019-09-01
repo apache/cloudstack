@@ -59,7 +59,6 @@ export default {
   },
   data () {
     return {
-      locale: null,
       enUS,
       arEG,
       caES,
@@ -81,16 +80,14 @@ export default {
   methods: {
     moment,
     onClick (e) {
-      const localeValue = e.key
-      this.locale = localeValue
+      var localeValue = e.key
       if (!localeValue) {
-        moment.locale('en')
-      } else {
-        moment.locale(localeValue)
-        this.$i18n.locale = e.key
-        Vue.ls.set('current_locale', e.key)
-        this.$router.go(0)
+        localeValue = 'en'
       }
+      this.$locale = localeValue
+      moment.locale(localeValue)
+      this.$i18n.locale = localeValue
+      Vue.ls.set('current_locale', localeValue)
     }
   }
 }

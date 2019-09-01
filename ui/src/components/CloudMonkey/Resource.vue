@@ -279,6 +279,11 @@ export default {
       if (to.fullPath !== from.fullPath) {
         this.fetchData()
       }
+    },
+    '$i18n.locale' (to, from) {
+      if (to !== from) {
+        this.fetchData()
+      }
     }
   },
   beforeCreate () {
@@ -289,9 +294,6 @@ export default {
       this.breadList = []
       this.name = this.$route.name
       this.$route.matched.forEach((item) => {
-        if (item.meta.title) {
-          item.meta.title = this.$t(item.meta.title)
-        }
         this.breadList.push(item)
       })
     },
@@ -319,8 +321,6 @@ export default {
       } else {
         this.dataView = false
       }
-      console.log(this.$route)
-      console.log(this.routeName)
       if (this.$route && this.$route.meta && this.$route.meta.permission) {
         this.apiName = this.$route.meta.permission[0]
         if (this.$route.meta.columns) {

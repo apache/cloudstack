@@ -2,9 +2,9 @@
   <a-breadcrumb class="breadcrumb">
     <a-breadcrumb-item v-for="(item, index) in breadList" :key="index">
       <router-link v-if="item.name != name" :to="{ path: item.path }">
-        {{ item.meta.title }}
+        {{ this.$t(item.meta.title) }}
       </router-link>
-      <span v-else>{{ item.meta.title }}</span>
+      <span v-else>{{ this.$t(item.meta.title) }}</span>
     </a-breadcrumb-item>
   </a-breadcrumb>
 </template>

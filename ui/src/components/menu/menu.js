@@ -121,7 +121,7 @@ export default {
         <SubMenu {...{ key: menu.path }}>
           <span slot="title">
             {this.renderIcon(menu.meta.icon)}
-            <span>{menu.meta.title}</span>
+            <span>{this.$t(menu.meta.title)}</span>
           </span>
           {itemArr}
         </SubMenu>
