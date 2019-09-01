@@ -4,8 +4,8 @@
       {{ text }}
     </template>
     <span>
-    <a-badge :title="text" :status="getBadgeStatus(text)" />
-    <span v-if="displayText">{{ text }}</span>
+      <a-badge :title="text" :status="getBadgeStatus(text)" />
+      <span v-if="displayText">{{ text }}</span>
     </span>
   </a-tooltip>
 </template>

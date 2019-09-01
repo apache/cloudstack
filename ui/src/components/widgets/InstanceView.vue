@@ -54,11 +54,11 @@
         <template v-for="(tag, index) in tags">
           <a-tooltip v-if="tag.length > 20" :key="tag" :title="tag">
             <a-tag :key="tag" :closable="index !== 0" :afterClose="() => handleClose(tag)">
-              {{`${tag.slice(0, 20)}...`}}
+              {{ `${tag.slice(0, 20)}...` }}
             </a-tag>
           </a-tooltip>
           <a-tag v-else :key="tag" :closable="index !== 0" :afterClose="() => handleClose(tag)">
-            {{tag}}
+            {{ tag }}
           </a-tag>
         </template>
 
@@ -76,7 +76,6 @@
         <a-tag v-else @click="showInput" style="background: #fff; borderStyle: dashed;">
           <a-icon type="plus" /> New Tag
         </a-tag>
-
 
       </a-col>
 
@@ -164,8 +163,6 @@
 
       </a-col>
 
-
-
     </a-row>
 
   </div>
@@ -195,7 +192,7 @@ export default {
       osLogo: 'linux',
       tags: [],
       inputVisible: false,
-      inputValue: '',
+      inputValue: ''
     }
   },
   watch: {
@@ -224,7 +221,7 @@ export default {
       Object.assign(this, {
         tags,
         inputVisible: false,
-        inputValue: '',
+        inputValue: ''
       })
     },
 
