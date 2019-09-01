@@ -17,10 +17,15 @@
           :to="{ path: item.path === '' ? '/' : item.path }"
         >
           <a-icon v-if="index == 0" :type="item.meta.icon" />
-          {{ item.meta.title }}
+          {{ $t(item.meta.title) }}
         </router-link>
-        <span v-else-if="$route.params.id">{{ $route.params.id }}</span>
-        <span v-else>{{ item.meta.title }}</span>
+        <span v-else-if="$route.params.id">
+          {{ $route.params.id }}
+          <a-button shape="circle" type="dashed" size="small" v-clipboard:copy="$route.params.id">
+            <a-icon type="copy" style="margin-left: 0px"/>
+          </a-button>
+        </span>
+        <span v-else>{{ $t(tem.meta.title) }}</span>
       </a-breadcrumb-item>
     </a-breadcrumb>
 
@@ -206,12 +211,7 @@
           <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
         </a>
         <template slot="state" slot-scope="text">
-          <a-tooltip placement="right">
-            <template slot="title">
-              {{ text }}
-            </template>
-            <a-badge :title="text" :status="getBadgeStatus(text)"/>
-          </a-tooltip>
+          <status :text="text" />
         </template>
 
         <a slot="account" slot-scope="text, record" href="javascript:;">
@@ -242,13 +242,15 @@ import store from '@/store'
 import ChartCard from '@/components/chart/ChartCard'
 import DataView from '@/components/widgets/DataView'
 import InstanceView from '@/components/widgets/InstanceView'
+import Status from '@/components/widgets/Status'
 
 export default {
   name: 'Resource',
   components: {
     ChartCard,
     DataView,
-    InstanceView
+    InstanceView,
+    Status
   },
   data () {
     return {

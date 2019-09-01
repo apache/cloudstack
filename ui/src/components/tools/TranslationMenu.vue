@@ -6,6 +6,7 @@
     </span>
     <a-menu slot="overlay" @click="onClick">
       <a-menu-item key="en" :value="enUS"><flag iso="gb"/> English</a-menu-item>
+      <a-menu-item key="hi" :value="hi"><flag iso="in"/> हिन्दी</a-menu-item>
       <a-menu-item key="ja_JP" :value="jpJP"><flag iso="jp"/> 日本語</a-menu-item>
       <a-menu-item key="ko_KR" :value="koKR"><flag iso="kr"/> 한국어</a-menu-item>
       <a-menu-item key="zh_CN" :value="zhCN"><flag iso="cn"/> 简体中文</a-menu-item>
