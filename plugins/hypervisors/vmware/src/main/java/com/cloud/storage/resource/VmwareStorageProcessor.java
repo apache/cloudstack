@@ -2007,6 +2007,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     diskController = vmMo.getRecommendedDiskController(null);
                 }
 
+                String vmMoGuestId = vmMo.getGuestId();
+                if (vmMoGuestId != null && vmMoGuestId.startsWith("darwin")) {
+                    diskController = DiskControllerType.ahci.toString();
+                }
+
                 vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs, diskController);
 
                 if (isManaged) {

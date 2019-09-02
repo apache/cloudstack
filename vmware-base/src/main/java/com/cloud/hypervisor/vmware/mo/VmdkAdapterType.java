@@ -20,6 +20,7 @@ public enum VmdkAdapterType {
     ide,
     lsilogic,
     buslogic,
+    ahci,
     none;
 
     public static VmdkAdapterType getAdapterType(DiskControllerType diskControllerType) {
@@ -29,6 +30,8 @@ public enum VmdkAdapterType {
             return VmdkAdapterType.buslogic;
         } else if (diskControllerType == DiskControllerType.lsilogic || diskControllerType == DiskControllerType.pvscsi || diskControllerType == DiskControllerType.lsisas1068) {
             return VmdkAdapterType.lsilogic;
+        } else if (diskControllerType == DiskControllerType.ahci) {
+            return VmdkAdapterType.ahci;
         } else {
             return VmdkAdapterType.none;
         }
@@ -41,6 +44,8 @@ public enum VmdkAdapterType {
             return VmdkAdapterType.lsilogic;
         } else if (vmdkAdapterType.equalsIgnoreCase("buslogic")) {
             return VmdkAdapterType.buslogic;
+        } else if (vmdkAdapterType.equalsIgnoreCase("ahci")) {
+            return VmdkAdapterType.ahci;
         } else {
             return VmdkAdapterType.none;
         }

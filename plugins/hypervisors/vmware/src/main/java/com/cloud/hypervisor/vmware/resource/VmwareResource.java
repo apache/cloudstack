@@ -1687,6 +1687,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         ensureScsiDiskControllers(vmMo, scsiDiskController, requiredNumScsiControllers, availableBusNum);
     }
 
+    private void ensureSataDiskControllers(VirtualMachineMO vmMo, String sataDiskController, int requiredNumSataControllers, int availableBusNum) throws Exception {
+        if (DiskControllerType.getType(sataDiskController) == DiskControllerType.ahci) {
+            vmMo.ensureAhciDeviceControllers(requiredNumSataControllers, availableBusNum);
+        }
+    }
+
     private void ensureScsiDiskControllers(VirtualMachineMO vmMo, String scsiDiskController, int requiredNumScsiControllers, int availableBusNum) throws Exception {
         // Pick the sub type of scsi
         if (DiskControllerType.getType(scsiDiskController) == DiskControllerType.pvscsi) {
@@ -1787,8 +1793,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VirtualMachineDiskInfoBuilder diskInfoBuilder = null;
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
             DiskControllerType systemVmScsiControllerType = DiskControllerType.lsilogic;
-            int firstScsiControllerBusNum = 0;
-            int numScsiControllerForSystemVm = 1;
+            int firstScsiControllerBusNum = 0, firstSataControllerBusNum = 0;
+            int numScsiControllerForSystemVm = 1, numSataController = 0;
             boolean hasSnapshot = false;
             if (vmMo != null) {
                 s_logger.info("VM " + vmInternalCSName + " already exists, tear down devices for reconfiguration");
@@ -1804,6 +1810,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     vmMo.tearDownDevices(new Class<?>[]{VirtualEthernetCard.class});
                 if (systemVm) {
                     ensureScsiDiskControllers(vmMo, systemVmScsiControllerType.toString(), numScsiControllerForSystemVm, firstScsiControllerBusNum);
+                } else if (guestOsId.startsWith("darwin")){ // Mac OS
+                    ensureSataDiskControllers(vmMo, DiskControllerType.ahci.toString(), numSataController, firstSataControllerBusNum);
                 } else {
                     ensureDiskControllers(vmMo, controllerInfo);
                 }
@@ -1832,6 +1840,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     if (systemVm) {
                         // System volumes doesn't require more than 1 SCSI controller as there is no requirement for data volumes.
                         ensureScsiDiskControllers(vmMo, systemVmScsiControllerType.toString(), numScsiControllerForSystemVm, firstScsiControllerBusNum);
+                    } else if (guestOsId.startsWith("darwin")){ // Mac OS
+                        ensureSataDiskControllers(vmMo, DiskControllerType.ahci.toString(), numSataController, firstSataControllerBusNum);
                     } else {
                         ensureDiskControllers(vmMo, controllerInfo);
                     }
@@ -1880,7 +1890,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                 s_logger.debug("Found registered vm " + vmInternalCSName + " at host " + hyperHost.getHyperHostName());
                             }
                         }
-                        tearDownVm(vmMo);
+                        tearDownVm(vmMo, guestOsId);
                     } else if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(), getReservedCpuMHZ(vmSpec),
                             vmSpec.getLimitCpuUse(), (int) (vmSpec.getMaxRam() / ResourceType.bytesToMiB), getReservedMemoryMb(vmSpec), guestOsId, rootDiskDataStoreDetails.first(), false,
                             controllerInfo, systemVm)) {
@@ -1941,8 +1951,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             int i = 0;
             int ideUnitNumber = 0;
             int scsiUnitNumber = 0;
+            int sataUnitNumber = 0;
             int ideControllerKey = vmMo.getIDEDeviceControllerKey();
             int scsiControllerKey = vmMo.getGenericScsiDeviceControllerKeyNoException();
+            int sataControllerKey = vmMo.getGenericSataDeviceControllerKeyNoException();
             int controllerKey;
 
             //
@@ -2042,6 +2054,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             //
             // Setup ROOT/DATA disk devices
             //
+
             DiskTO[] sortedDisks = sortVolumesByDeviceId(disks);
             for (DiskTO vol : sortedDisks) {
                 if (vol.getType() == Volume.Type.ISO)
@@ -2054,6 +2067,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (DiskControllerType.getType(diskController) == DiskControllerType.osdefault) {
                     diskController = vmMo.getRecommendedDiskController(null);
                 }
+
+                if (guestOsId.startsWith("darwin")) { // Mac OS
+                    controllerKey = sataControllerKey;
+                    diskController = DiskControllerType.ahci.toString();
+                }
+
                 if (DiskControllerType.getType(diskController) == DiskControllerType.ide) {
                     controllerKey = vmMo.getIDEControllerKey(ideUnitNumber);
                     if (vol.getType() == Volume.Type.DATADISK) {
@@ -2063,6 +2082,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             throw new CloudRuntimeException("Found more than 3 virtual disks attached to this VM [" + vmMo.getVmName() + "]. Unable to implement the disks over "
                                     + diskController + " controller, as maximum number of devices supported over IDE controller is 4 includeing CDROM device.");
                         }
+                    }
+                } else if (DiskControllerType.getType(diskController) == DiskControllerType.ahci){
+                    controllerKey = vmMo.getSataDiskControllerKeyNoException(diskController);
+                    if (controllerKey == -1) {
+                        // Retrieve existing controller and use.
+                        Ternary<Integer, Integer, DiskControllerType> vmSataControllerInfo = vmMo.getSataControllerInfo();
+                        DiskControllerType existingControllerType = vmSataControllerInfo.third();
+                        controllerKey = vmMo.getSataDiskControllerKeyNoException(existingControllerType.toString());
                     }
                 } else {
                     controllerKey = vmMo.getScsiDiskControllerKeyNoException(diskController);
@@ -2097,8 +2124,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     String[] diskChain = syncDiskChain(dcMo, vmMo, vmSpec, vol, matchingExistingDisk, dataStoresDetails);
                     if (controllerKey == scsiControllerKey && VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumber))
                         scsiUnitNumber++;
+
+                    int deviceNumber;
+                    if(controllerKey == vmMo.getIDEControllerKey(ideUnitNumber)) {
+                        deviceNumber = (ideUnitNumber++) % VmwareHelper.MAX_IDE_CONTROLLER_COUNT;
+                    } else if (controllerKey == vmMo.getSataDiskControllerKeyNoException(diskController)) {
+                        deviceNumber = sataUnitNumber++;
+                    } else {
+                        deviceNumber = scsiUnitNumber++;
+                    }
+
                     VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(),
-                            (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber)) ? ((ideUnitNumber++) % VmwareHelper.MAX_IDE_CONTROLLER_COUNT) : scsiUnitNumber++, i + 1);
+                            deviceNumber, i + 1);
 
                     if (vol.getType() == Volume.Type.ROOT)
                         rootDiskTO = vol;
@@ -2114,6 +2151,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         scsiUnitNumber++;
                     if (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber))
                         ideUnitNumber++;
+                    else if (controllerKey == vmMo.getSATAControllerKey(sataControllerKey))
+                        sataUnitNumber++;
                     else
                         scsiUnitNumber++;
                 }
@@ -2183,6 +2222,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.valueOf(vmSpec.getDetails().get(VmDetailConstants.NIC_ADAPTER));
+
+            if (guestOsId.startsWith("darwin")) { // Mac OS
+                nicDeviceType = VirtualEthernetCardType.E1000E;
+            }
+
             if (s_logger.isDebugEnabled())
                 s_logger.debug("VM " + vmInternalCSName + " will be started with NIC device type: " + nicDeviceType);
 
@@ -2615,7 +2659,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         vmConfigSpec.getDeviceChange().add(arrayVideoCardConfigSpecs);
     }
 
-    private void tearDownVm(VirtualMachineMO vmMo) throws Exception {
+    private void tearDownVm(VirtualMachineMO vmMo, String guestOsId) throws Exception {
 
         if (vmMo == null)
             return;
@@ -2625,8 +2669,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (!hasSnapshot)
             vmMo.tearDownDevices(new Class<?>[]{VirtualDisk.class, VirtualEthernetCard.class});
         else
-            vmMo.tearDownDevices(new Class<?>[]{VirtualEthernetCard.class});
-        vmMo.ensureScsiDeviceController();
+            vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class});
+        if (guestOsId.startsWith("darwin"))
+            vmMo.ensureSataDeviceController();
+        else
+            vmMo.ensureScsiDeviceController();
     }
 
     int getReservedMemoryMb(VirtualMachineTO vmSpec) {

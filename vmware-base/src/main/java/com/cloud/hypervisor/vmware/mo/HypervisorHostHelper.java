@@ -104,6 +104,7 @@ import com.vmware.vim25.VMwareDVSPortSetting;
 import com.vmware.vim25.VMwareDVSPortgroupPolicy;
 import com.vmware.vim25.VMwareDVSPvlanConfigSpec;
 import com.vmware.vim25.VMwareDVSPvlanMapEntry;
+import com.vmware.vim25.VirtualAHCIController;
 import com.vmware.vim25.VirtualBusLogicController;
 import com.vmware.vim25.VirtualController;
 import com.vmware.vim25.VirtualDevice;
@@ -1475,25 +1476,24 @@ public class HypervisorHostHelper {
             newDataDiskController = recommendedController;
         }
 
-        Pair<String, String> updatedControllerInfo = new Pair<String, String>(newRootDiskController, newDataDiskController);
-        String scsiDiskController = HypervisorHostHelper.getScsiController(updatedControllerInfo, recommendedController);
-        // If there is requirement for a SCSI controller, ensure to create those.
-        if (scsiDiskController != null) {
         int busNum = 0;
-            int maxControllerCount = VmwareHelper.MAX_SCSI_CONTROLLER_COUNT;
-            if (systemVm) {
-                maxControllerCount = 1;
-            }
-            while (busNum < maxControllerCount) {
-            VirtualDeviceConfigSpec scsiControllerSpec = new VirtualDeviceConfigSpec();
-                scsiControllerSpec = getControllerSpec(DiskControllerType.getType(scsiDiskController).toString(), busNum);
 
-            vmConfig.getDeviceChange().add(scsiControllerSpec);
-            busNum++;
-            }
-        }
+        if (guestOsIdentifier.startsWith("darwin")) {
 
-        if (guestOsIdentifier.startsWith("darwin")) { //Mac OS
+            s_logger.debug("Add SATA Controller for blank Mac OS VM " + vmName);
+
+            //For Mac OS X systems, ROOT disk need a SATA controller in order to work (beyond 10.12 OS X versions).
+            VirtualDeviceConfigSpec sataControllerSpec = new VirtualDeviceConfigSpec();
+            // To be valid, SATA Virtual Controller needs to be an instance of VirtualAHCIController class
+            // (which is a subclass of VirtualSATAController)
+            VirtualAHCIController sataControllerDevice = new VirtualAHCIController();
+            sataControllerDevice.setBusNumber(busNum++);
+            sataControllerDevice.setKey(-1);
+            sataControllerSpec.setDevice(sataControllerDevice);
+            sataControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+
+            vmConfig.getDeviceChange().add(sataControllerSpec);
+
             s_logger.debug("Add USB Controller device for blank Mac OS VM " + vmName);
 
             //For Mac OS X systems, the EHCI+UHCI controller is enabled by default and is required for USB mouse and keyboard access.
@@ -1503,6 +1503,24 @@ public class HypervisorHostHelper {
             usbControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
             vmConfig.getDeviceChange().add(usbControllerSpec);
+        } else {
+
+            Pair<String, String> updatedControllerInfo = new Pair<String, String>(newRootDiskController, newDataDiskController);
+            String scsiDiskController = HypervisorHostHelper.getScsiController(updatedControllerInfo, recommendedController);
+            // If there is requirement for a SCSI controller, ensure to create those.
+            if (scsiDiskController != null) {
+                int maxControllerCount = VmwareHelper.MAX_SCSI_CONTROLLER_COUNT;
+                if (systemVm) {
+                    maxControllerCount = 1;
+                }
+                while (busNum < maxControllerCount) {
+                    VirtualDeviceConfigSpec scsiControllerSpec = new VirtualDeviceConfigSpec();
+                    scsiControllerSpec = getControllerSpec(DiskControllerType.getType(scsiDiskController).toString(), busNum);
+                    vmConfig.getDeviceChange().add(scsiControllerSpec);
+                    busNum++;
+                }
+            }
+
         }
 
         VirtualMachineFileInfo fileInfo = new VirtualMachineFileInfo();
