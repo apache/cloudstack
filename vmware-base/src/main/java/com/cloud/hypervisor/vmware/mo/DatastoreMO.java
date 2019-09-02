@@ -403,8 +403,6 @@ public class DatastoreMO extends BaseMO {
             return rootDirectoryFilePath;
         }
 
-        String parentFolderPath;
-        String absoluteFileName = null;
         s_logger.info("Searching file " + fileName + " in " + datastorePath);
 
         HostDatastoreBrowserMO browserMo = getHostDatastoreBrowserMO();
@@ -416,22 +414,39 @@ public class DatastoreMO extends BaseMO {
             s_logger.error(msg);
             throw new CloudException(msg);
         }
+        String parentFolderPath;
+        String absoluteFileName = null;
         for (HostDatastoreBrowserSearchResults result : results) {
             List<FileInfo> info = result.getFile();
             if (info != null && info.size() > 0) {
                 for (FileInfo fi : info) {
-                    absoluteFileName = parentFolderPath = result.getFolderPath();
-                    s_logger.info("Found file " + fileName + " in datastore at " + absoluteFileName);
-                    if (parentFolderPath.endsWith("]"))
-                        absoluteFileName += " ";
-                    absoluteFileName += fi.getPath();
-                    if(isValidCloudStackFolderPath(parentFolderPath, searchExcludedFolders)) {
+                    String possibleFilename = null;
+                    possibleFilename = parentFolderPath = result.getFolderPath();
+                    if (parentFolderPath.endsWith("]")) {
+                        possibleFilename += " ";
+                    }
+                    possibleFilename += fi.getPath();
+                    if (results.size() > 1) {
+                        if (!caseInsensitive && !fi.getPath().endsWith(fileName)) {
+                            s_logger.info("Skipping: multiple files were found, file " + fileName + " in datastore at " + possibleFilename + " does not end in path =" + fi.getPath());
+                            continue;
+                        }
+                        if (caseInsensitive && !fi.getPath().toLowerCase().endsWith(fileName.toLowerCase())) {
+                            s_logger.info("Skipping: multiple files were found, file " + fileName + " in datastore at " + possibleFilename + " does not end in path =" + fi.getPath());
+                            continue;
+                        }
+                    }
+                    absoluteFileName = possibleFilename;
+                    s_logger.info("Found file " + fileName + " in datastore at " + absoluteFileName + ", path =" + fi.getPath());
+                    if (isValidCloudStackFolderPath(parentFolderPath, searchExcludedFolders)) {
+                        s_logger.debug("File searched = " + fileName + " and file returned from a valid CloudStack folder = " + absoluteFileName);
                         return absoluteFileName;
                     }
                     break;
                 }
             }
         }
+        s_logger.debug("File searched = " + fileName + " and file returned = " + absoluteFileName);
         return absoluteFileName;
     }
 
