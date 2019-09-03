@@ -10,7 +10,8 @@ const getters = {
   apis: state => state.user.apis,
   userInfo: state => state.user.info,
   addRouters: state => state.permission.addRouters,
-  multiTab: state => state.app.multiTab
+  multiTab: state => state.app.multiTab,
+  asyncJobIds: state => state.user.asyncJobIds
 }
 
 export default getters

@@ -234,6 +234,7 @@ import DataView from '@/components/widgets/DataView'
 import InstanceView from '@/components/widgets/InstanceView'
 import Status from '@/components/widgets/Status'
 import { mixinDevice } from '@/utils/mixin.js'
+import { constants } from 'crypto';
 
 export default {
   name: 'Resource',
@@ -506,9 +507,21 @@ export default {
           const closeAction = this.closeAction
           const showError = this.$notification['error']
           api(this.currentAction.api, params).then(json => {
+            for (const obj in json) {
+              if (obj.includes('response')) {
+                for (const res in json[obj]) {
+                  if (res === 'jobid') {
+                    this.$store.dispatch('AddAsyncJob', { 'title': this.currentAction.label, 'jobid': json[obj][res], 'description': this.resource.name, 'status': 'progress'})
+                    break
+                  }
+                }
+                break
+              }
+            }
             closeAction()
           }).catch(function (error) {
             closeAction()
+            console.log(error)
             showError({
               message: 'Request Failed',
               description: error.response.headers['x-description']

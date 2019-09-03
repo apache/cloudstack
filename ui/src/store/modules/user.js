@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import md5 from 'md5'
 import { login, logout, api } from '@/api'
-import { ACCESS_TOKEN, CURRENT_PROJECT } from '@/store/mutation-types'
+import { ACCESS_TOKEN, CURRENT_PROJECT, ASYNC_JOB_IDS } from '@/store/mutation-types'
 import { welcome } from '@/utils/util'
 // import VueCookies from 'vue-cookies'
 
@@ -13,7 +13,8 @@ const user = {
     avatar: '',
     info: {},
     apis: {},
-    project: {}
+    project: {},
+    asyncJobIds: []
   },
 
   mutations: {
@@ -36,6 +37,10 @@ const user = {
     },
     SET_APIS: (state, apis) => {
       state.apis = apis
+    },
+    SET_ASYNC_JOB_IDS: (state, jobsJsonArray) => {
+      Vue.ls.set(ASYNC_JOB_IDS, jobsJsonArray)
+      state.asyncJobIds = jobsJsonArray
     }
   },
 
@@ -61,6 +66,7 @@ const user = {
           Vue.ls.set(ACCESS_TOKEN, result.sessionkey, 60 * 60 * 1000)
           commit('SET_TOKEN', result.sessionkey)
           commit('SET_PROJECT', {})
+          commit('SET_ASYNC_JOB_IDS', [])
 
           resolve()
         }).catch(error => {
@@ -104,7 +110,6 @@ const user = {
         })
       })
     },
-
     Logout ({ commit, state }) {
       return new Promise((resolve) => {
         // Remove cookies
@@ -122,6 +127,7 @@ const user = {
         commit('SET_APIS', {})
         Vue.ls.remove(CURRENT_PROJECT)
         Vue.ls.remove(ACCESS_TOKEN)
+        Vue.ls.remove(ASYNC_JOB_IDS)
 
         logout(state.token).then(() => {
           resolve()
@@ -129,8 +135,12 @@ const user = {
           resolve()
         })
       })
+    },
+    AddAsyncJob ({ commit }, jobJson) {
+      var jobsArray = Vue.ls.get(ASYNC_JOB_IDS, [])
+      jobsArray.push(jobJson)
+      commit('SET_ASYNC_JOB_IDS', jobsArray)
     }
-
   }
 }
 
