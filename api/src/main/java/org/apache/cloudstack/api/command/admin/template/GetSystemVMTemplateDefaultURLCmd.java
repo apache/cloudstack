@@ -48,11 +48,6 @@ public class GetSystemVMTemplateDefaultURLCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.VERSION,
-            type = CommandType.STRING,
-            entityType = TemplateResponse.class,
-            description = "The CloudStack version for which to get the System VM Template URL.")
-    private String version;
 
     @Parameter(name = ApiConstants.HYPERVISOR,
             type = CommandType.STRING,
@@ -65,9 +60,6 @@ public class GetSystemVMTemplateDefaultURLCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    public String getVersion() {
-        return version;
-    }
 
     public String getHypervisor() {
         return hypervisor;
@@ -84,7 +76,7 @@ public class GetSystemVMTemplateDefaultURLCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to find the URL for version '%s' and hypervisor '%s'", version, hypervisor));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to find the URL for hypervisor '%s'", hypervisor));
         }
     }
 

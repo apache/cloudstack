@@ -172,7 +172,6 @@
                                         label: "label.action.create.template.source.template",
                                         select: function(args){
                                             args.$select.change(function(){
-                                                console.log($(this).val());
                                                 var $form = $(this).closest('form');
                                                 if ($(this).val() == "copy"){
                                                     $form.find(".form-item[rel='sourceZone']").show();
@@ -182,6 +181,7 @@
                                                     $form.find(".form-item[rel='description']").hide();
                                                     $form.find(".form-item[rel='hypervisor']").hide();
                                                     $form.find(".form-item[rel='format']").hide();
+                                                    
                                                 } else {
                                                     $form.find(".form-item[rel='sourceZone']").hide();
                                                     $form.find(".form-item[rel='sourceTemplate']").hide();
@@ -192,11 +192,16 @@
                                                     $form.find(".form-item[rel='format']").show();
                                                 }
                                                 if ($(this).val() == "official"){
-                                                    $form.find("input[name='url']").prop("disabled", "disabled");
+                                                    //$form.find("input[name='url']").prop("disabled", "disabled");
+                                                    //$form.find("input[name='name']").prop("disabled", "disabled");
+                                                    //$form.find("input[name='description']").prop("disabled", "disabled");
+                                                    $form.find("#label_os_type").val("df301873-cd84-11e9-954a-544810d74760").change()//  - debian 5 64bit
+                                                    $form.find(".form-item[rel='osTypeId']").hide();
                                                 } else {
-                                                    $form.find("input[name='url']").prop("disabled", false);
+                                                    //$form.find("input[name='url']").prop("disabled", false);
+                                                    //$form.find("input[name='name']").prop("disabled", false);
+                                                    //$form.find("input[name='description']").prop("disabled", false);
                                                 }
-
                                             });
                                             args.response.success({
                                                 data: [
@@ -380,6 +385,24 @@
                                             }
                                             args.$select.change(function() {
                                                 var $form = $(this).closest('form');
+                                                var hypervisor = $(this).val();
+                                                if ($form.find('#label_action_create_template_type').val() == "system" && $form.find('#label_action_create_template_source_template').val() == "official"){
+                                                    
+                                                    $.ajax({ 
+                                                        url: createURL("getSystemVMTemplateDefaultUrl"), 
+                                                        data: {
+                                                            hypervisor: $(this).val(),
+                                                        },
+                                                        success: function(json) {
+                                                            console.log(json);
+                                                            url = json.getsystemvmtemplatedefaulturlresponse.url.url;
+                                                            $form.find("input[name='url']").val(url);
+                                                            $form.find("input[name='name']").val("SystemVM Template (" + hypervisor + ")");
+                                                            $form.find("input[name='description']").val("SystemVM Template (" + hypervisor + ")");
+                                                        }
+                                                    });                                                    
+                                                }
+
                                                 if ($(this).val() == "VMware") {
                                                     $form.find('.form-item[rel=rootDiskControllerType]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=nicAdapterType]').css('display', 'inline-block');
@@ -938,7 +961,7 @@
                                             success: function(json) {
                                                 var uploadparams = json.postuploadtemplateresponse.getuploadparams;
                                                 var templateId = uploadparams.id;
-
+                                                console.log(json);
                                                 args.response.success({
                                                     url: uploadparams.postURL,
                                                     ajaxPost: true,
@@ -963,7 +986,6 @@
                                     }
                                 },
                                 fields: {
-
                                     templatetype : {
                                         label: 'label.action.create.template.type',
                                         docID : 'helpRegisterTemplateType',
@@ -982,7 +1004,6 @@
                                                     $form.find(".form-item[rel='isdynamicallyscalable']").show();
                                                     $form.find(".form-item[rel='isFeatured']").show();
                                                     $form.find(".form-item[rel='isrouting']").show();
-                                                    
                                                 } else {
                                                     $form.find(".form-item[rel='templateSource']").show();
                                                     $form.find(".form-item[rel='activate']").show();
@@ -1062,7 +1083,6 @@
                                         select: function(args) {
                                             if (args.zone == null)
                                                 return;
-
                                             var apiCmd;
                                             if (args.zone == -1) { //All Zones
                                                 //apiCmd = "listHypervisors&zoneid=-1"; //"listHypervisors&zoneid=-1" has been changed to return only hypervisors available in all zones (bug 8809)
@@ -1070,7 +1090,6 @@
                                             } else {
                                                 apiCmd = "listHypervisors&zoneid=" + args.zone;
                                             }
-
                                             $.ajax({
                                                 url: createURL(apiCmd),
                                                 dataType: "json",

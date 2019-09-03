@@ -22,7 +22,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -30,6 +29,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.upgrade.OfficialSystemVMTemplate;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade41200to41300 implements DbUpgrade {
@@ -101,49 +101,13 @@ public class Upgrade41200to41300 implements DbUpgrade {
             throw new CloudRuntimeException("updateSystemVmTemplates:Exception while getting hypervisor types from clusters", e);
         }
 
-        final Map<Hypervisor.HypervisorType, String> NewTemplateNameList = new HashMap<Hypervisor.HypervisorType, String>() {
-            {
-                put(Hypervisor.HypervisorType.KVM, "systemvm-kvm-4.11.3");
-                put(Hypervisor.HypervisorType.VMware, "systemvm-vmware-4.11.3");
-                put(Hypervisor.HypervisorType.XenServer, "systemvm-xenserver-4.11.3");
-                put(Hypervisor.HypervisorType.Hyperv, "systemvm-hyperv-4.11.3");
-                put(Hypervisor.HypervisorType.LXC, "systemvm-lxc-4.11.3");
-                put(Hypervisor.HypervisorType.Ovm3, "systemvm-ovm3-4.11.3");
-            }
-        };
+        final Map<Hypervisor.HypervisorType, String> NewTemplateNameList = OfficialSystemVMTemplate.getNewTemplateNameList();
 
-        final Map<Hypervisor.HypervisorType, String> routerTemplateConfigurationNames = new HashMap<Hypervisor.HypervisorType, String>() {
-            {
-                put(Hypervisor.HypervisorType.KVM, "router.template.kvm");
-                put(Hypervisor.HypervisorType.VMware, "router.template.vmware");
-                put(Hypervisor.HypervisorType.XenServer, "router.template.xenserver");
-                put(Hypervisor.HypervisorType.Hyperv, "router.template.hyperv");
-                put(Hypervisor.HypervisorType.LXC, "router.template.lxc");
-                put(Hypervisor.HypervisorType.Ovm3, "router.template.ovm3");
-            }
-        };
+        final Map<Hypervisor.HypervisorType, String> routerTemplateConfigurationNames = OfficialSystemVMTemplate.getRouterTemplateConfigurationNames();
 
-        final Map<Hypervisor.HypervisorType, String> newTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>() {
-            {
-                put(Hypervisor.HypervisorType.KVM, "https://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.3-kvm.qcow2.bz2");
-                put(Hypervisor.HypervisorType.VMware, "https://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.3-vmware.ova");
-                put(Hypervisor.HypervisorType.XenServer, "https://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.3-xen.vhd.bz2");
-                put(Hypervisor.HypervisorType.Hyperv, "https://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.3-hyperv.vhd.zip");
-                put(Hypervisor.HypervisorType.LXC, "https://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.3-kvm.qcow2.bz2");
-                put(Hypervisor.HypervisorType.Ovm3, "https://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.3-ovm.raw.bz2");
-            }
-        };
+        final Map<Hypervisor.HypervisorType, String> newTemplateUrl = OfficialSystemVMTemplate.getNewTemplateUrl();
 
-        final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>() {
-            {
-                put(Hypervisor.HypervisorType.KVM, "15ec268d0939a8fa0be1bc79f397a167");
-                put(Hypervisor.HypervisorType.XenServer, "ae96f35fb746524edc4ebc9856719d71");
-                put(Hypervisor.HypervisorType.VMware, "f50c82139430afce7e4e46d3a585abbd");
-                put(Hypervisor.HypervisorType.Hyperv, "abf411f6cdd9139716b5d8172ab903a6");
-                put(Hypervisor.HypervisorType.LXC, "15ec268d0939a8fa0be1bc79f397a167");
-                put(Hypervisor.HypervisorType.Ovm3, "c71f143a477f4c7a0d5e8c82ccb00220");
-            }
-        };
+        final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = OfficialSystemVMTemplate.getNewTemplateChecksum();
 
         for (final Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName : NewTemplateNameList.entrySet()) {
             LOG.debug("Updating " + hypervisorAndTemplateName.getKey() + " System Vms");

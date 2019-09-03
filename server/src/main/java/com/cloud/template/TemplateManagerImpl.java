@@ -22,13 +22,11 @@ import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemp
 import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemplateOvm3;
 import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemplateVmware;
 import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemplateXen;
-import static com.cloud.storage.template.TemplateConstants.DEFAULT_BASE_SYSTEMVM_URL;
 
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -184,6 +182,7 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
+import com.cloud.upgrade.OfficialSystemVMTemplate;
 import com.cloud.upgrade.dao.VersionDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -608,28 +607,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public GetSystemVMTemplateDefaultURLResponse getSystemVMTemplateDefaultURL(GetSystemVMTemplateDefaultURLCmd cmd) {
-        List<VMTemplateVO> vmTemplateVOS = getSystemVMTemplatesByUrlVersionMatch(cmd);
-        Optional<VMTemplateVO> maxIdTemplate = vmTemplateVOS.stream().max(Comparator.comparing(VMTemplateVO::getId));
         GetSystemVMTemplateDefaultURLResponse urlResponse = new GetSystemVMTemplateDefaultURLResponse();
-        urlResponse.setUrl(maxIdTemplate.orElse(vmTemplateVOS.get(0)).getUrl());
+        if (cmd.getHypervisor() != null && HypervisorType.getType(cmd.getHypervisor()) != null) {
+            urlResponse.setUrl(OfficialSystemVMTemplate.getNewTemplateUrl().get(HypervisorType.getType(cmd.getHypervisor())));
+        }
         return urlResponse;
-    }
-
-    private List<VMTemplateVO> getSystemVMTemplatesByUrlVersionMatch(GetSystemVMTemplateDefaultURLCmd cmd) {
-        String version = resolveVersion(Optional.ofNullable(cmd.getVersion()).orElse(""));
-        List<VMTemplateVO> vmTemplateVOS = _tmpltDao.listSystemVMTemplatesByUrlLike(DEFAULT_BASE_SYSTEMVM_URL + "%" + version, cmd.getHypervisor());
-        if (!vmTemplateVOS.isEmpty()) {
-            return vmTemplateVOS;
-        } else {
-            throw new CloudRuntimeException(String.format("Unable find System VM Template URL for version %s and hypervisor %s.", version, cmd.getHypervisor()));
-        }
-    }
-
-    private String resolveVersion(String version) {
-        if (org.apache.commons.lang3.StringUtils.isBlank(version)) {
-            version = Optional.ofNullable(versionDao.getCurrentVersion()).orElse("");
-        }
-        return formatVersion(version);
     }
 
     private String formatVersion(String version) {

@@ -236,7 +236,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         List<VMTemplateVO> systemvmTmplts = _tmpltDao.listAllSystemVMTemplates();
         for (VMTemplateVO template : systemvmTmplts) {
-            if (template.getName().equalsIgnoreCase(name) || template.getDisplayText().equalsIgnoreCase(displayText)) {
+            if (template.getTemplateType() != TemplateType.SYSTEM && (template.getName().equalsIgnoreCase(name) || template.getDisplayText().equalsIgnoreCase(displayText))) {
                 throw new IllegalArgumentException("Cannot use reserved names for templates");
             }
         }
