@@ -70,8 +70,6 @@
                 $network.find('.traffic-type-draggable').each(function() {
                     var $trafficType = $(this);
                     var trafficTypeID = $trafficType.attr('traffic-type-id');
-
-
                     trafficTypeConfiguration[trafficTypeID] = $trafficType.data('traffic-type-data');
                 });
 

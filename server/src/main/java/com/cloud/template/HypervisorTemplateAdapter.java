@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
 import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
@@ -33,6 +34,7 @@ import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -608,11 +610,12 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateProfile profile = super.prepareDelete(cmd);
         VMTemplateVO template = profile.getTemplate();
         List<Long> zoneIdList = profile.getZoneIdList();
+        // TODO: Add a check to see if this template is used by console proxy, router or storagevm
+        if (CallContext.current().getCallingAccount().getRoleId() != RoleType.Admin.getId() && template.getTemplateType() == TemplateType.SYSTEM){
+            throw new InvalidParameterValueException("The DomR template cannot be deleted.");
+        }
 
-        // TODO: Add a check to see if this template is used by console proxy, router or storagevm - only root admin should be able to do this.
-        //if (template.getTemplateType() == TemplateType.SYSTEM) {
-        //    throw new InvalidParameterValueException("The DomR template cannot be deleted.");
-        //}
+
 
         if (zoneIdList != null && (storeMgr.getImageStoreWithFreeCapacity(zoneIdList.get(0)) == null)) {
             throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");

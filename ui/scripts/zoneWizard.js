@@ -404,6 +404,7 @@
                             // hide some fields
                             args.$select.change(function(){
                                 var $form = $(this).closest('form');
+                                // Empty value
                                 if ($(this).val() == undefined || $(this).val() == null || $(this).val() == '') {
                                     $form.find(".field[rel='url']").hide();
                                     $form.find(".field[rel='name']").hide();
@@ -413,6 +414,7 @@
                                     $form.find(".field[rel='activate']").hide();
                                     $form.find(".field[rel='sourceZone']").hide();
                                     $form.find(".field[rel='templates']").hide();
+                                // URL
                                 } else {
                                     $form.find(".field[rel='url']").show();
                                     $form.find(".field[rel='name']").show();
@@ -423,12 +425,14 @@
                                     $form.find(".field[rel='sourceZone']").show();
                                     $form.find(".field[rel='templates']").show();
                                 }
+                                // Copy from Zone
                                 if ($(this).val() == "copy"){
                                     $form.find(".field[rel='url']").hide();
                                     $form.find(".field[rel='name']").hide();
                                     $form.find(".field[rel='description']").hide();
                                     $form.find(".field[rel='hypervisor']").hide();
                                 } 
+                                // Official cloudstack system vm
                                 if ($(this).val() == "official" || $(this).val() == "url" ){
                                     $form.find(".field[rel='sourceZone']").hide();
                                     $form.find(".field[rel='templates']").hide();
@@ -469,22 +473,107 @@
                     },
                     hypervisor: {
                         label: "label.hypervisor",
+                        dependsOn: "templateType",
                         select: function(args){
+                            var selectedType = $('#selectSystemVm_label_action_create_template_source_type').val();
                             $.ajax({
                                 url: createURL("listHypervisors"),
                                 dataType: "json",
                                 async: true,
                                 success: function(json) {
-                                    console.log(json);
                                     items = json.listhypervisorsresponse.hypervisor;
                                     data = [];
                                     for (var i = 0; i < items.length; i++){
+                                        if (selectedType == "official" && (items[i].name == "BareMetal" || items[i].name == "Ovm" )){
+                                            continue;
+                                        }
                                         data.push({id: items[i].name, description: items[i].name})
                                     }
                                     args.response.success({
                                         data: data
                                     });
                                 }
+                            });
+                            args.$select.change(function() {
+                                var $form = $(this).closest('form');
+                                var hypervisor = $(this).val();
+                                if ($form.find('#selectSystemVm_label_action_create_template_source_type').val() == "official"){   
+                                    $.ajax({ 
+                                        url: createURL("getSystemVMTemplateDefaultUrl"), 
+                                        data: {
+                                            hypervisor: hypervisor,
+                                        },
+                                        success: function(json) {
+                                            url = json.getsystemvmtemplatedefaulturlresponse.url.url;
+                                            $form.find("#selectSystemVm_label_url").val(url);
+                                            $form.find("#selectSystemVm_label_name").val("SystemVM Template (" + hypervisor + ")");
+                                            $form.find("#selectSystemVm_label_description").val("SystemVM Template (" + hypervisor + ")");
+                                        }
+                                    });                                                    
+                                }
+                            });
+                        }
+                    },
+                    format: {
+                        label: 'label.format',
+                        docID: 'helpRegisterTemplateFormat',
+                        dependsOn: 'hypervisor',
+                        select: function(args) {
+                            var items = [];
+                            if (args.hypervisor == "XenServer") {
+                                items.push({
+                                    id: 'VHD',
+                                    description: 'VHD'
+                                });
+                            } else if (args.hypervisor == "VMware") {
+                                items.push({
+                                    id: 'OVA',
+                                    description: 'OVA'
+                                });
+                            } else if (args.hypervisor == "KVM") {
+                                items.push({
+                                    id: 'QCOW2',
+                                    description: 'QCOW2'
+                                });
+                                items.push({
+                                    id: 'RAW',
+                                    description: 'RAW'
+                                });
+                                items.push({
+                                    id: 'VHD',
+                                    description: 'VHD'
+                                });
+                                items.push({
+                                    id: 'VMDK',
+                                    description: 'VMDK'
+                                });
+                            } else if (args.hypervisor == "BareMetal") {
+                                items.push({
+                                    id: 'BareMetal',
+                                    description: 'BareMetal'
+                                });
+                            } else if (args.hypervisor == "Ovm") {
+                                items.push({
+                                    id: 'RAW',
+                                    description: 'RAW'
+                                });
+                            } else if (args.hypervisor == "LXC") {
+                                items.push({
+                                    id: 'TAR',
+                                    description: 'TAR'
+                                });
+                            } else if (args.hypervisor == "Hyperv") {
+                                items.push({
+                                    id: 'VHD',
+                                    description: 'VHD'
+                                });
+                                items.push({
+                                    id: 'VHDX',
+                                    description: 'VHDX'
+                                });
+                            }
+                            args.response.success({
+                                data: items
                             });
                         }
                     },
@@ -2413,7 +2502,6 @@
             var success = args.response.success;
             var error = args.response.error;
             var message = args.response.message;
-            //var data = args.data;
             var startFn = args.startFn;
             var data = args.data;
 
@@ -4712,7 +4800,8 @@
 
                 addSecondaryStorage: function(args) {
                     if (args.data.secondaryStorage.provider == '') {
-                        complete({
+
+                        stepFns.addSystemTemplate({
                             data: args.data
                         });
                         return; //skip addSecondaryStorage if provider dropdown is blank
@@ -4743,7 +4832,7 @@
                             url: createURL('addImageStore'),
                             data: data,
                             success: function(json) {
-                                complete({
+                                stepFns.addSystemTemplate({
                                     data: $.extend(args.data, {
                                         returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
                                     })
@@ -4778,7 +4867,7 @@
                             url: createURL('addImageStore'),
                             data: data,
                             success: function(json) {
-                                complete({
+                                stepFns.addSystemTemplate({
                                     data: $.extend(args.data, {
                                         returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
                                     })
@@ -4794,7 +4883,7 @@
                         });
                     } else if (args.data.secondaryStorage.provider == 'S3') {
                         if($wizard.find('form[rel=secondaryStorage]').find('div[rel=name]').find('input').attr("disabled") == "disabled") { //Name textbox is disabled (and populated with S3 image setore name) when S3 image store exists. In this case, do not call addImageStore to create S3 image store.
-                            complete({
+                            stepFns.addSystemTemplate({
                                 data: args.data
                             });
                         } else { //Name textbox is not disabled when S3 image store does not exist. In this case, call addImageStore to create S3 image store.
@@ -4837,7 +4926,7 @@
                                 success: function(json) {
                                     g_regionsecondaryenabled = true;
 
-                                    complete({
+                                    stepFns.addSystemTemplate({
                                         data: $.extend(args.data, {
                                             returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
                                         })
@@ -4909,7 +4998,7 @@
                             success: function(json) {
                                 g_regionsecondaryenabled = true;
 
-                                complete({
+                                stepFns.addSystemTemplate({
                                     data: $.extend(args.data, {
                                         returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
                                     })
@@ -4919,6 +5008,73 @@
                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                 error('addSecondaryStorage', errorMsg, {
                                     fn: 'addSecondaryStorage',
+                                    args: args
+                                });
+                            }
+                        });
+                    }
+                },
+
+                addSystemTemplate: function(args) {
+                    console.log(args);
+                    var templateType = args.data.selectSystemVm.templateType;
+                    if (templateType == '') {
+                        complete({
+                            data: args.data
+                        });
+                        return; //skip addSystemTemplate if templateType dropdown is blank
+                    }
+                    message(_l('message.registering.systemVM'));
+
+                    if (templateType == 'url' || templateType == 'official'){
+                        var data = {
+                            name: args.data.selectSystemVm.name,
+                            displayText: args.data.selectSystemVm.description,
+                            url: args.data.selectSystemVm.url,
+                            zoneids: args.data.returnedZone.id,
+                            format: args.data.selectSystemVm.format,
+                            isextractable: false,
+                            passwordEnabled: false,
+                            isdynamicallyscalable: false,
+                            osTypeId: 'df301873-cd84-11e9-954a-544810d74760', // debian 64bit
+                            hypervisor: args.data.returnedCluster.hypervisortype,
+                            system: true,
+                            activate: true,
+                        };
+                        $.ajax({
+                            url: createURL('registerTemplate'),
+                            data: data,
+                            success: function(json) {
+                                complete({
+                                    data: args.data
+                                });
+                            },
+                            error: function(XMLHttpResponse) {
+                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                error('addSystemTemplate', errorMsg, {
+                                    fn: 'addSystemTemplate',
+                                    args: args
+                                });
+                            }
+                        });
+                    } else if (templateType == 'copy'){
+                        var data = {
+                            id: args.data.selectSystemVm.templates,
+                            destzoneids: args.data.returnedZone.id,
+                            sourcezoneid: args.selectSystemVm.sourceZone
+                       };
+                        $.ajax({
+                            url: createURL('copyTemplate'),
+                            data: data,
+                            success: function(json) {
+                                complete({
+                                    data: args.data
+                                });
+                            },
+                            error: function(XMLHttpResponse) {
+                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                error('addSystemTemplate', errorMsg, {
+                                    fn: 'addSystemTemplate',
                                     args: args
                                 });
                             }

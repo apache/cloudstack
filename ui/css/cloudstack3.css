@@ -12623,11 +12623,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -68px -612px;
 }
 
-.enableMaintenanceMode .icon {
+.enableMaintenanceMode .icon, 
+.activateTemplate .icon {
   background-position: -138px -65px;
 }
 
-.enableMaintenanceMode:hover .icon {
+.enableMaintenanceMode:hover .icon,
+.activateTemplate:hover .icon {
   background-position: -138px -647px;
 }
 

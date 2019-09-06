@@ -192,16 +192,9 @@
                                                     $form.find(".form-item[rel='format']").show();
                                                 }
                                                 if ($(this).val() == "official"){
-                                                    //$form.find("input[name='url']").prop("disabled", "disabled");
-                                                    //$form.find("input[name='name']").prop("disabled", "disabled");
-                                                    //$form.find("input[name='description']").prop("disabled", "disabled");
                                                     $form.find("#label_os_type").val("df301873-cd84-11e9-954a-544810d74760").change()//  - debian 5 64bit
                                                     $form.find(".form-item[rel='osTypeId']").hide();
-                                                } else {
-                                                    //$form.find("input[name='url']").prop("disabled", false);
-                                                    //$form.find("input[name='name']").prop("disabled", false);
-                                                    //$form.find("input[name='description']").prop("disabled", false);
-                                                }
+                                                } 
                                             });
                                             args.response.success({
                                                 data: [
@@ -368,16 +361,22 @@
                                                     async: false,
                                                     success: function(json) {
                                                         var hypervisorObjs = json.listhypervisorsresponse.hypervisor;
-
+                                                        var selectedType = $('#label_action_create_template_type').val();
                                                         $(hypervisorObjs).each(function() {
                                                         // Only if this hypervisor isn't already part of this
                                                         // list, then add to the drop down
                                                            if (distinctHVNames.indexOf(this.name) < 0 ){
-                                                               distinctHVNames.push(this.name);
-                                                               items.push({
-                                                                   id: this.name,
-                                                                   description: this.name
-                                                               });
+                                                               console.log(selecteType);
+                                                               console.log(this.name);
+                                                            if (selectedType == "official" && (this.name == "BareMetal" || this.name == "Ovm" )){
+                                                                // do nothing
+                                                            } else {
+                                                                distinctHVNames.push(this.name);
+                                                                items.push({
+                                                                    id: this.name,
+                                                                    description: this.name
+                                                                });
+                                                            }
                                                            }
                                                         });
                                                     }
@@ -391,10 +390,9 @@
                                                     $.ajax({ 
                                                         url: createURL("getSystemVMTemplateDefaultUrl"), 
                                                         data: {
-                                                            hypervisor: $(this).val(),
+                                                            hypervisor: hypervisor,
                                                         },
                                                         success: function(json) {
-                                                            console.log(json);
                                                             url = json.getsystemvmtemplatedefaulturlresponse.url.url;
                                                             $form.find("input[name='url']").val(url);
                                                             $form.find("input[name='name']").val("SystemVM Template (" + hypervisor + ")");
@@ -997,7 +995,6 @@
                                                     $form.find(".form-item[rel='activate']").hide();
                                                     $form.find(".form-item[rel='sourceTemplate']").hide();
                                                     $form.find(".form-item[rel='isPasswordEnabled']").show();
-                                                    $form.find(".form-item[rel='osTypeId']").show();
                                                     $form.find(".form-item[rel='requireshvm']").show();
                                                     $form.find(".form-item[rel='isPublic']").show();
                                                     $form.find(".form-item[rel='isExtractable']").show();
@@ -1008,13 +1005,13 @@
                                                     $form.find(".form-item[rel='templateSource']").show();
                                                     $form.find(".form-item[rel='activate']").show();
                                                     $form.find(".form-item[rel='isPasswordEnabled']").hide();
-                                                    $form.find(".form-item[rel='osTypeId']").hide();
                                                     $form.find(".form-item[rel='requireshvm']").hide();
                                                     $form.find(".form-item[rel='isPublic']").hide();
                                                     $form.find(".form-item[rel='isExtractable']").hide();
                                                     $form.find(".form-item[rel='isdynamicallyscalable']").hide();
                                                     $form.find(".form-item[rel='isFeatured']").hide();
                                                     $form.find(".form-item[rel='isrouting']").hide();
+                                                    $form.find("#label_os_type").val("df301873-cd84-11e9-954a-544810d74760").change();
                                                 }
                                             });
                                             args.response.success({
@@ -2026,6 +2023,28 @@
                                         }
                                     }); //end ajax
                                 }
+                            },
+                            activateTemplate: {
+                                'label': 'label.action.activate.template',
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.action.activate.template';
+                                    }
+                                },
+                                action: function(args){
+                                    $.ajax({
+                                        url: createURL('activateSystemVMTemplate'),
+                                        data: {id: args.context.templates[0].id},
+                                        async: false,
+                                        success: function(json) {
+                                            args.response.success();
+                                        },
+                                        error: function(json) {
+                                            args.response.error(parseXMLHttpResponse(json));
+                                        }
+                                        
+                                    });
+                                }
                             }
                         },
                         tabFilter: function (args) {
@@ -2317,9 +2336,9 @@
                                     detailView: {
                                         noCompact: true,
                                         actions: {
-                                             remove: {
-                                                 label: 'label.action.delete.template',
-                                                 createForm: {
+                                            remove: {
+                                                label: 'label.action.delete.template',
+                                                createForm: {
                                                     title: 'label.action.delete.template',
                                                     desc: function(args) {
                                                        if(args.context.templates[0].crossZones == true) {
@@ -2335,45 +2354,45 @@
                                                             isChecked: false
                                                         }
                                                     }
-                                                 },
-                                                 messages: {
-                                                     notification: function(args) {
-                                                         return 'label.action.delete.template';
-                                                     }
-                                                 },
-                                                 action: function(args) {
-                                                     var queryParams = "deleteTemplate&id=" + args.context.templates[0].id;
-                                                     if (!args.context.templates[0].crossZones){
-                                                        queryParams += "&zoneid=" + args.context.zones[0].zoneid;
-                                                     }
-                                                     $.ajax({
-                                                         url: createURL(queryParams + "&forced=" + (args.data.forced == "on")),
-                                                         dataType: "json",
-                                                         async: true,
-                                                         success: function(json) {
-                                                             var jid = json.deletetemplateresponse.jobid;
-                                                             args.response.success({
-                                                                 _custom: {
-                                                                     jobId: jid
-                                                                 }
-                                                             });
-                                                         }
-                                                     });
-                                                 },
-                                                 notification: {
-                                                     poll: pollAsyncJobResult
-                                                 }
-                                             },
-                                             copyTemplate: {
-                                                 label: 'label.action.copy.template',
-                                                 messages: {
-                                                     success: function(args) {
-                                                         return 'message.template.copying';
-                                                     },
-                                                     notification: function(args) {
-                                                         return 'label.action.copy.template';
-                                                     }
-                                                 },
+                                                },
+                                                messages: {
+                                                    notification: function(args) {
+                                                        return 'label.action.delete.template';
+                                                    }
+                                                },
+                                                action: function(args) {
+                                                    var queryParams = "deleteTemplate&id=" + args.context.templates[0].id;
+                                                    if (!args.context.templates[0].crossZones){
+                                                       queryParams += "&zoneid=" + args.context.zones[0].zoneid;
+                                                    }
+                                                    $.ajax({
+                                                        url: createURL(queryParams + "&forced=" + (args.data.forced == "on")),
+                                                        dataType: "json",
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var jid = json.deletetemplateresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: jid
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            },
+                                            copyTemplate: {
+                                                label: 'label.action.copy.template',
+                                                messages: {
+                                                    success: function(args) {
+                                                        return 'message.template.copying';
+                                                    },
+                                                    notification: function(args) {
+                                                        return 'label.action.copy.template';
+                                                    }
+                                                },
                                                 action: {
                                                     custom: cloudStack.uiCustom.copyTemplate({
                                                         listView: {
@@ -2385,33 +2404,33 @@
                                                                     }
                                                                 },
                                                                 dataProvider: function(args) {
-                                                                     var data = {
+                                                                    var data = {
                                                                         page: args.page,
                                                                         pagesize: pageSize
                                                                     };
                                                                     if (args.filterBy.search.value) {
                                                                         data.keyword = args.filterBy.search.value;
                                                                     }
-                                                                     $.ajax({
-                                                                             url: createURL("listZones&available=true"),
-                                                                             dataType: "json",
-                                                                             data: data,
-                                                                             async: true,
-                                                                             success: function(json) {
-                                                                                 var zoneObjs = [];
-                                                                                 var items = json.listzonesresponse.zone;
-                                                                                 if (items != null) {
-                                                                                     for (var i = 0; i < items.length; i++) {
-                                                                                         if (args.context.zones[0].zoneid != items[i].id) {
-                                                                                             zoneObjs.push({
-                                                                                                 id: items[i].id,
-                                                                                                 destinationZoneName: items[i].name
-                                                                                             });
-                                                                                         }
-                                                                                     }
-                                                                                     args.response.success({
-                                                                                         data: zoneObjs
-                                                                                     });
+                                                                    $.ajax({
+                                                                            url: createURL("listZones&available=true"),
+                                                                            dataType: "json",
+                                                                            data: data,
+                                                                            async: true,
+                                                                            success: function(json) {
+                                                                                var zoneObjs = [];
+                                                                                var items = json.listzonesresponse.zone;
+                                                                                if (items != null) {
+                                                                                    for (var i = 0; i < items.length; i++) {
+                                                                                        if (args.context.zones[0].zoneid != items[i].id) {
+                                                                                            zoneObjs.push({
+                                                                                                id: items[i].id,
+                                                                                                destinationZoneName: items[i].name
+                                                                                            });
+                                                                                        }
+                                                                                    }
+                                                                                    args.response.success({
+                                                                                        data: zoneObjs
+                                                                                    });
                                                                                 }else if(args.page == 1) {
 							                             args.response.success({
                                                                                          data: []
@@ -2444,30 +2463,30 @@
                                                                  sourcezoneid: args.context.zones[0].zoneid
                                                             };
 
-                                                             $.ajax({
-                                                                 url: createURL('copyTemplate'),
-                                                                 data: data,
-                                                                 success: function(json) {
-                                                                     var jid = json.copytemplateresponse.jobid;
-                                                                     args.response.success({
-                                                                         _custom: {
-                                                                             jobId: jid,
-                                                                             getUpdatedItem: function(json) {
-                                                                                 return {}; //nothing in this template needs to be updated
-                                                                             },
-                                                                             getActionFilter: function() {
-                                                                                 return templateActionfilter;
-                                                                             }
-                                                                         }
-                                                                     });
-                                                                 }
-                                                             });
-                                                         }
+                                                            $.ajax({
+                                                                url: createURL('copyTemplate'),
+                                                                data: data,
+                                                                success: function(json) {
+                                                                    var jid = json.copytemplateresponse.jobid;
+                                                                    args.response.success({
+                                                                        _custom: {
+                                                                            jobId: jid,
+                                                                            getUpdatedItem: function(json) {
+                                                                                return {}; //nothing in this template needs to be updated
+                                                                            },
+                                                                            getActionFilter: function() {
+                                                                                return templateActionfilter;
+                                                                            }
+                                                                        }
+                                                                    });
+                                                                }
+                                                            });
+                                                        }
                                                     })
-                                                 },
-                                                 notification: {
-                                                     poll: pollAsyncJobResult
-                                                 }
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
                                             }
                                         },
 
@@ -4015,7 +4034,6 @@
             //do nothing
         } else {
             allowedActions.push("edit");
-
             allowedActions.push("copyTemplate");
         }
 
@@ -4037,6 +4055,10 @@
             //do nothing
         } else {
             allowedActions.push("remove");
+        }
+
+        if (isAdmin() && jsonObj.templatetype == "SYSTEM"){
+            allowedActions.push("activateTemplate");
         }
 
         return allowedActions;
