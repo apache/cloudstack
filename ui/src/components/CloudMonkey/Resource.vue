@@ -1,6 +1,7 @@
 <template>
   <div>
-    <a-breadcrumb class="breadcrumb" v-if="device !== 'desktop'">
+    <a-breadcrumb class="breadcrumb" v-if="device !== 'desktop'" style="margin-left: -16px; margin-right: -16px; margin-top: -16px">
+      <a-card :bordered="true">
       <a-breadcrumb-item v-for="(item, index) in breadList" :key="index">
         <router-link
           v-if="item.name"
@@ -17,10 +18,11 @@
         </span>
         <span v-else>{{ $t(tem.meta.title) }}</span>
       </a-breadcrumb-item>
+      </a-card>
     </a-breadcrumb>
 
     <a-row>
-      <a-col :span="16">
+      <a-col :span="17">
         <a-tooltip placement="bottom" v-for="(action, actionIndex) in actions" :key="actionIndex" v-if="(!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) || (dataView && action.dataView)">
           <template slot="title">
             {{ action.label }}
@@ -35,7 +37,7 @@
           >
           </a-button>
         </a-tooltip>
-        <span v-if="!dataView" style="float: right; padding-right: 8px">
+        <span v-if="!dataView" style="float: right; padding-right: 8px; margin-top: -2px">
           <a-tooltip placement="bottom">
             <template slot="title">
               {{ "Auto-Refresh" }}
@@ -58,9 +60,13 @@
               icon="reload"
             />
           </a-tooltip>
+          <a-button-group style="margin-left: 10px" v-if="!dataView">
+            <a-button icon="bars" @click="tableView=true" />
+            <a-button icon="appstore" @click="tableView=false" />
+          </a-button-group>
         </span>
       </a-col>
-      <a-col :span="8">
+      <a-col :span="7">
         <a-tooltip placement="bottom" v-if="dataView">
           <template slot="title">
             {{ "Refresh" }}
@@ -85,6 +91,7 @@
             @change="toggleAutoRefresh"
           />
         </a-tooltip>
+
         <a-input-search
           size="default"
           placeholder="Search"
@@ -168,6 +175,44 @@
       <data-view :resource="resource" v-else />
     </div>
     <div style="margin-top: 12px" v-else>
+      <a-row :gutter="12" v-show="!tableView">
+        <a-col v-for="item in items" :md="24" :lg="4">
+          <a-card
+            hoverable
+            style="width: 250px; margin-bottom: 12px">
+            <template class="ant-card-actions" slot="actions">
+              <a-icon type="edit" />
+              <a-icon type="setting" />
+              <a-icon type="ellipsis" />
+            </template>
+            <a-card-meta>
+              <div slot="avatar">
+                <a-icon :type="$route.meta.icon" style="padding-right: 5px" />
+              </div>
+              <div slot="title">
+                <router-link :to="{ path: $route.path + '/' + item.id }" v-if="item.id">{{ item.name || item.displayname }}</router-link>
+                <span v-else>{{ item.name }}</span>
+              </div>
+              <div slot="description" style="height: 80px">
+                <status :text="item.state" displayText />
+                <div v-if="item.ipaddress">
+                  <a-icon type="wifi" style="padding-right: 5px" />
+                  <router-link :to="{ path: $route.path + '/' + item.id }">{{ item.ipaddress }}</router-link>
+                </div>
+                <div v-if="item.vmname">
+                  <a-icon type="desktop" style="padding-right: 5px" />
+                  <router-link :to="{ path: '/vm/' + item.virtualmachineid }">{{ item.vmname }}</router-link>
+                </div>
+                <div v-if="item.zonename">
+                  <a-icon type="table" style="padding-right: 5px" />
+                  <router-link :to="{ path: '/zone/' + item.zoneid }">{{ item.zonename }}</router-link>
+                </div>
+              </div>
+            </a-card-meta>
+          </a-card>
+        </a-col>
+      </a-row>
+
       <a-table
         :rowKey="record => record.id"
         :loading="loading"
@@ -177,6 +222,7 @@
         :pagination="{ position: 'bottom', size: 'small', showSizeChanger: true }"
         :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
         :rowClassName="getRowClassName"
+        v-show="tableView"
       >
         <template slot="footer">
           <span v-if="hasSelected">
@@ -258,7 +304,8 @@ export default {
       showAction: false,
       dataView: false,
       actions: [],
-      breadList: []
+      breadList: [],
+      tableView: true
     }
   },
   computed: {
