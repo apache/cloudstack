@@ -50,7 +50,7 @@ public class ImageStoreUtil {
         if (isCompressedExtension(uripath)) {
             command = "file -z ";
         }
-        String output = Script.runSimpleBashScript(command + path + " | cut -d: -f2", 60000);
+        String output = Script.runSimpleBashScript(command + "'" + path + "' exit" + "  | cut -d: -f2", 60000);
 
         // vmdk
         if ((output.contains("VMware") || output.contains("data")) && isCorrectExtension(uripath, "vmdk")) {

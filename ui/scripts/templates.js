@@ -181,7 +181,7 @@
                                                     $form.find(".form-item[rel='description']").hide();
                                                     $form.find(".form-item[rel='hypervisor']").hide();
                                                     $form.find(".form-item[rel='format']").hide();
-                                                    
+                                                    $form.find(".form-item[rel='osTypeId']").hide();
                                                 } else {
                                                     $form.find(".form-item[rel='sourceZone']").hide();
                                                     $form.find(".form-item[rel='sourceTemplate']").hide();
@@ -190,6 +190,7 @@
                                                     $form.find(".form-item[rel='description']").show();
                                                     $form.find(".form-item[rel='hypervisor']").show();
                                                     $form.find(".form-item[rel='format']").show();
+                                                    $form.find(".form-item[rel='osTypeId']").show();
                                                 }
                                                 if ($(this).val() == "official"){
                                                     $form.find("#label_os_type").val("df301873-cd84-11e9-954a-544810d74760").change()//  - debian 5 64bit
@@ -331,6 +332,7 @@
                                         docID: 'helpRegisterTemplateHypervisor',
                                         dependsOn: 'zone',
                                         select: function(args) {
+                                            var selectedType = $('#label_action_create_template_source_template').val();
                                             if (args.zone == null)
                                                 return;
                                             // We want only distinct Hypervisor entries to be visible to the user
@@ -361,22 +363,19 @@
                                                     async: false,
                                                     success: function(json) {
                                                         var hypervisorObjs = json.listhypervisorsresponse.hypervisor;
-                                                        var selectedType = $('#label_action_create_template_type').val();
                                                         $(hypervisorObjs).each(function() {
                                                         // Only if this hypervisor isn't already part of this
                                                         // list, then add to the drop down
-                                                           if (distinctHVNames.indexOf(this.name) < 0 ){
-                                                               console.log(selecteType);
-                                                               console.log(this.name);
-                                                            if (selectedType == "official" && (this.name == "BareMetal" || this.name == "Ovm" )){
-                                                                // do nothing
-                                                            } else {
-                                                                distinctHVNames.push(this.name);
-                                                                items.push({
-                                                                    id: this.name,
-                                                                    description: this.name
-                                                                });
-                                                            }
+                                                            if (distinctHVNames.indexOf(this.name) < 0 ){
+                                                                if (selectedType == "official" && (this.name == "BareMetal" || this.name == "Ovm")){
+                                                                    // do nothing
+                                                                } else {
+                                                                    distinctHVNames.push(this.name);
+                                                                    items.push({
+                                                                        id: this.name,
+                                                                        description: this.name
+                                                                    });
+                                                                }
                                                            }
                                                         });
                                                     }
@@ -441,11 +440,13 @@
                                                     $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
                                                 }
                                             });
-
-                                            items.push({
-                                                id: "Any",
-                                                description: "Any"
-                                            });
+                                            if (selectedType != "official"){
+                                                items.push({
+                                                    id: "Any",
+                                                    description: "Any"
+                                                });
+                                            }
+                                            
                                             args.response.success({
                                                 data: items
                                             });
