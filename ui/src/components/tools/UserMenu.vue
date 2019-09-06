@@ -12,18 +12,14 @@
         <a-menu-item class="user-menu-item" key="0">
           <router-link :to="{ name: 'account' }">
             <a-icon class="user-menu-item-icon" type="user"/>
-            <span class="user-menu-item-name">Profile</span>
-          </router-link>
-        </a-menu-item>
-        <a-menu-item class="user-menu-item" key="1">
-          <router-link :to="{ name: 'account' }">
-            <a-icon class="user-menu-item-icon" type="setting"/>
             <span class="user-menu-item-name">Account</span>
           </router-link>
         </a-menu-item>
         <a-menu-item class="user-menu-item" key="2" disabled>
-          <a-icon class="user-menu-item-icon" type="setting"/>
-          <span class="user-menu-item-name">Disabled</span>
+          <router-link :to="{ name: 'account' }">
+            <a-icon class="user-menu-item-icon" type="setting"/>
+            <span class="user-menu-item-name">Settings</span>
+          </router-link>
         </a-menu-item>
         <a-menu-item class="user-menu-item" key="3" disabled>
           <a :href="helpUrl" target="_blank">

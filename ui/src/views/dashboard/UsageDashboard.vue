@@ -28,7 +28,7 @@
         </div>
         <template slot="footer">
           <div class="usage-dashboard-chart-footer">
-            <a-timeline pending="...">
+            <a-timeline>
               <a-timeline-item
                 v-for="event in events"
                 :key="event.id"
@@ -124,7 +124,7 @@ export default {
     listEvents () {
       const params = {
         page: 1,
-        pagesize: 5,
+        pagesize: 6,
         listall: true
       }
       this.loading = true
