@@ -1,88 +1,174 @@
 <template>
-  <div style="padding-top: 12px">
+  <div style="padding-top: 12px" class="page-header-index-wide page-header-wrapper-grid-content-main">
     <a-row :gutter="12">
-      <a-col :span="24">
-        <h2>
-          <font-awesome-icon :icon="['fab', osLogo]" size="lg" style="color: #666;" />
-          {{ vm.name }} <span v-if="vm.instancename">({{ vm.instancename }})</span>
-          <a :href="'/client/console?cmd=access&vm=' + vm.id" target="_blank">
-            <a-button shape="circle">
-              <a-icon type="right-square" />
-            </a-button>
-          </a>
-        </h2>
+      <a-col :md="24" :lg="7">
+        <a-card :bordered="true">
+          <div class="account-center-avatarHolder">
+            <div class="avatar">
+              <font-awesome-icon :icon="['fab', osLogo]" size="4x" style="color: #666;" />
+            </div>
+            <div class="username">{{ vm.name }}
+              <a :href="'/client/console?cmd=access&vm=' + vm.id" target="_blank">
+                <a-button shape="circle" >
+                  <a-icon type="right-square" />
+                </a-button>
+              </a>
+
+            </div>
+            <div class="bio">
+              <a-tag>{{ vm.instancename }}</a-tag>
+              <a-tag :color="vm.haenable ? 'green': 'red'">HA</a-tag>
+              <a-tag :color="vm.isdynamicallyscalable ? 'green': 'red'">Dynamic Scalable</a-tag>
+            </div>
+          </div>
+          <div class="account-center-detail">
+            <p>
+              <status :text="vm.state" style="padding-left: 8px; padding-right: 5px"/>{{ vm.state}}
+            </p>
+            <p>
+              <font-awesome-icon :icon="['fab', osLogo]" size="lg"/> {{ guestOsName }} <br/>
+            </p>
+            <p>
+              <font-awesome-icon :icon="['fas', 'microchip']" />
+              {{ vm.cpunumber }} CPU x {{ vm.cpuspeed }} Mhz
+              (<router-link :to="{ path: '/computeoffering/' + vm.serviceofferingid }">{{ vm.serviceofferingname }}</router-link>)
+            </p>
+            <p>
+              <font-awesome-icon :icon="['fas', 'memory']" />
+              {{ vm.memory }} MB Memory
+            </p>
+            <p>
+              <font-awesome-icon :icon="['fas', 'database']" />
+              {{ (totalStorage / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage
+              (<router-link :to="{ path: '/template/' + vm.templateid }">{{ vm.templatename }}</router-link>)
+            </p>
+            <p>
+              <font-awesome-icon :icon="['fas', 'ethernet']" />
+              {{ vm.nic.length }} NIC(s): <br/>
+              <span style="padding-left: 34px" v-for="eth in vm.nic" :key="eth.id">
+                {{ eth.ipaddress }} <router-link :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link> <br/>
+              </span>
+            </p>
+            <p v-if="vm.group">
+              <a-icon type="team" style="margin-left: 6px; margin-right: 10px" />
+              {{ vm.group }}
+            </p>
+
+            <p v-if="vm.hostid">
+              <a-icon type="desktop" style="margin-left: 6px; margin-right: 12px" />
+              <router-link :to="{ path: '/host/' + vm.hostid }">{{ vm.hostname }}</router-link> ({{ vm.hypervisor }})
+            </p>
+            <p>
+              <a-icon type="table" style="margin-left: 6px; margin-right: 12px" />
+              <router-link :to="{ path: '/zone/' + vm.zoneid }">{{ vm.zonename }}</router-link>
+            </p>
+            <p>
+              <a-icon type="user" style="margin-left: 6px; margin-right: 12px" />
+              <router-link :to="{ path: '/account?name=' + vm.account }">{{ vm.account }}</router-link>
+            </p>
+            <p>
+              <a-icon type="block" style="margin-left: 6px; margin-right: 12px" />
+              <router-link :to="{ path: '/domain/' + vm.domainid }">{{ vm.domain }}</router-link>
+            </p>
+            <p>
+              <a-icon type="calendar" style="margin-left: 6px; margin-right: 8px" /> {{ vm.created }}
+            </p>
+          </div>
+          <a-divider/>
+
+          <div class="account-center-tags">
+            <div class="tagsTitle">Tags</div>
+            <div>
+              <a-tag closable>key=value</a-tag>
+              <a-tag color="green">green</a-tag>
+              <a-tag color="red">red</a-tag>
+              <a-tag color="blue">blue</a-tag>
+
+              <template v-for="(tag, index) in tags">
+                <a-tooltip v-if="tag.length > 20" :key="tag" :title="tag">
+                  <a-tag :key="tag" :closable="index !== 0" :afterClose="() => handleClose(tag)">
+                    {{ `${tag.slice(0, 20)}...` }}
+                  </a-tag>
+                </a-tooltip>
+                <a-tag v-else :key="tag" :closable="index !== 0" :afterClose="() => handleClose(tag)">
+                  {{ tag }}
+                </a-tag>
+              </template>
+
+              <a-input
+                v-if="inputVisible"
+                ref="input"
+                type="text"
+                size="small"
+                :style="{ width: '78px' }"
+                :value="inputValue"
+                @change="handleInputChange"
+                @blur="handleInputConfirm"
+                @keyup.enter="handleInputConfirm"
+              />
+              <a-tag v-else @click="showInput" style="background: #fff; borderStyle: dashed;">
+                <a-icon type="plus" /> New Tag
+              </a-tag>
+            </div>
+          </div>
+          <a-divider :dashed="true"/>
+
+          <div class="account-center-team">
+            <div class="teamTitle">Notes</div>
+            <a-comment>
+              <a-avatar
+                slot="avatar"
+                icon="edit"
+              />
+              <div slot="content">
+                <a-form-item>
+                  <a-textarea :rows="4" @change="handleChange" :value="value" ></a-textarea>
+                </a-form-item>
+                <a-form-item>
+                  <a-button
+                    htmlType="submit"
+                    :loading="submitting"
+                    @click="handleSubmit"
+                    type="primary"
+                  >
+                    Add Note
+                  </a-button>
+                </a-form-item>
+              </div>
+            </a-comment>
+
+          </div>
+        </a-card>
       </a-col>
-      <a-col :span="8">
-        <p>
-          <status :text="vm.state" displayText /> <br/>
-          <font-awesome-icon :icon="['fab', osLogo]" size="lg" style="color: #666;" /> {{ guestOsName }} <br/>
-          <font-awesome-icon :icon="['fas', 'microchip']" />
-          CPU: {{ vm.cpunumber }} x {{ vm.cpuspeed }} Mhz <br/>
-          <font-awesome-icon :icon="['fas', 'memory']" />
-          Memory: {{ vm.memory }} MiB <br/>
-          <font-awesome-icon :icon="['fas', 'database']" />
-          Storage: {{ (totalStorage / (1024 * 1024 * 1024.0)).toFixed(2) }} GiB <br/>
-          <font-awesome-icon :icon="['fas', 'ethernet']" /> {{ vm.nic.length }} NIC(s): <br/>
-          <span v-for="eth in vm.nic" :key="eth.id">
-            {{ eth.ipaddress }} <router-link :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link> <br/>
+      <a-col :md="24" :lg="17">
+        <a-card
+          style="width:100%"
+          :bordered="true"
+          :tabList="tabListNoTitle"
+          :activeTabKey="noTitleKey"
+          @tabChange="key => handleTabChange(key, 'noTitleKey')"
+        >
+          <span slot="customRender" slot-scope="item">
+            <a-icon type="home"/>{{item.tab}}
           </span>
-        </p>
-      </a-col>
+          <a-collapse v-model="activeKey">
+            <a-collapse-panel :header="'ISO: ' + vm.isoname" v-if="vm.isoid" key="1">
+              <a-list
+                itemLayout="horizontal">
+                <a-list-item>
+                  <a-list-item-meta :description="vm.isoid">
+                    <a slot="title" href="">
+                      <router-link :to="{ path: '/iso/' + vm.isoid }">{{ vm.isoname }}</router-link>
+                    </a> ({{ vm.isoname }})
+                    <a-avatar slot="avatar">
+                      <font-awesome-icon :icon="['fas', 'compact-disc']" />
+                    </a-avatar>
+                  </a-list-item-meta>
+                </a-list-item>
+              </a-list>
+            </a-collapse-panel>
 
-      <a-col :span="8">
-        <p>
-          HA: {{ vm.haenable }} <br />
-          Dynamic Scalable: {{ vm.isdynamicallyscalable }} <br />
-          Offering: <router-link :to="{ path: '/computeoffering/' + vm.serviceofferingid }">{{ vm.serviceofferingname }}</router-link> <br/>
-          Template: <router-link :to="{ path: '/template/' + vm.templateid }">{{ vm.templatename }}</router-link> <br/>
-          Host: <router-link :to="{ path: '/host/' + vm.hostid }">{{ vm.hostname }}</router-link> ({{ vm.hypervisor }}) <br/>
-          Zone: <router-link :to="{ path: '/zone/' + vm.zoneid }">{{ vm.zonename }}</router-link> <br/>
-          Account: <router-link :to="{ path: '/account?name=' + vm.account }">{{ vm.account }}</router-link> <br />
-          Domain: <router-link :to="{ path: '/domain/' + vm.domainid }">{{ vm.domain }}</router-link> <br/>
-          Created: {{ vm.created }} <br />
-
-        </p>
-      </a-col>
-
-      <a-col :span="8">
-
-        <a-tag closable>key=value</a-tag>
-        <a-tag color="green">green</a-tag>
-        <a-tag color="red">red</a-tag>
-        <a-tag color="blue">blue</a-tag>
-
-        <template v-for="(tag, index) in tags">
-          <a-tooltip v-if="tag.length > 20" :key="tag" :title="tag">
-            <a-tag :key="tag" :closable="index !== 0" :afterClose="() => handleClose(tag)">
-              {{ `${tag.slice(0, 20)}...` }}
-            </a-tag>
-          </a-tooltip>
-          <a-tag v-else :key="tag" :closable="index !== 0" :afterClose="() => handleClose(tag)">
-            {{ tag }}
-          </a-tag>
-        </template>
-
-        <a-input
-          v-if="inputVisible"
-          ref="input"
-          type="text"
-          size="small"
-          :style="{ width: '78px' }"
-          :value="inputValue"
-          @change="handleInputChange"
-          @blur="handleInputConfirm"
-          @keyup.enter="handleInputConfirm"
-        />
-        <a-tag v-else @click="showInput" style="background: #fff; borderStyle: dashed;">
-          <a-icon type="plus" /> New Tag
-        </a-tag>
-
-      </a-col>
-
-      <a-col :span="16">
-        <a-card title="VM Hardware">
-          <a-collapse>
-            <a-collapse-panel :header="'Storage: ' + volumes.length" >
+            <a-collapse-panel :header="'Disks: ' + volumes.length" key="2">
               <a-list
                 itemLayout="horizontal"
                 :dataSource="volumes"
@@ -108,19 +194,24 @@
               </a-list>
 
             </a-collapse-panel>
-            <a-collapse-panel :header="'Network Adapter(s): ' + vm.nic.length" >
+            <a-collapse-panel :header="'Network Adapter(s): ' + vm.nic.length" key="3" >
               <a-list
                 itemLayout="horizontal"
                 :dataSource="vm.nic"
               >
                 <a-list-item slot="renderItem" slot-scope="item">
                   <a-list-item-meta :description="item.id">
-                    <a slot="title" href="https://vue.ant.design/">{{ item.ipaddress }} <span v-show="item.isdefault">(Default)</span></a>
+                    <span slot="title" href="">
+                      <span v-show="item.isdefault">(Default) </span>
+                      <router-link :to="{ path: '/guestnetwork/' + item.networkid }">{{ item.networkname }} </router-link>
+                      {{ item.ipaddress }}
+                    </span>
                     <a-avatar slot="avatar">
                       <font-awesome-icon :icon="['fas', 'ethernet']" />
                     </a-avatar>
                   </a-list-item-meta>
                   <p>
+                    <span v-if="item.ipaddress">Address: {{ item.ipaddress }} <br/></span>
                     Network: <router-link :to="{ path: '/guestnetwork/' + item.networkid }">{{ item.networkname }}</router-link> <br/>
                     Type: {{ item.type }}<br/>
                     Mac Address: {{ item.macaddress }}<br/>
@@ -133,36 +224,10 @@
               </a-list>
             </a-collapse-panel>
           </a-collapse>
+
+
         </a-card>
       </a-col>
-
-      <a-col :span="8">
-        Notes
-        <a-comment>
-          <a-avatar
-            slot="avatar"
-            icon="cloud"
-            alt="Han Solo"
-          />
-          <div slot="content">
-            <a-form-item>
-              <a-textarea :rows="4" @change="handleChange" :value="value" ></a-textarea>
-            </a-form-item>
-            <a-form-item>
-              <a-button
-                htmlType="submit"
-                :loading="submitting"
-                @click="handleSubmit"
-                type="primary"
-              >
-                Add Note
-              </a-button>
-            </a-form-item>
-          </div>
-        </a-comment>
-
-      </a-col>
-
     </a-row>
 
   </div>
@@ -192,7 +257,30 @@ export default {
       osLogo: 'linux',
       tags: [],
       inputVisible: false,
-      inputValue: ''
+      inputValue: '',
+      activeKey: ['1', '2', '3'],
+
+      tags: ['os=centos', 'tag=value', 'demo=true'],
+      tagInputVisible: false,
+      tagInputValue: '',
+      teams: [],
+      teamSpinning: true,
+      tabListNoTitle: [
+        {
+          key: 'summary',
+          tab: 'Hardware'
+        },
+        {
+          key: 'stats',
+          tab: 'Statistics'
+        },
+        {
+          key: 'settings',
+          tab: 'Settings'
+        }
+      ],
+      noTitleKey: 'summary'
+
     }
   },
   watch: {
@@ -265,5 +353,91 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="less" scoped>
+.page-header-wrapper-grid-content-main {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  transition: 0.3s;
+  .account-center-avatarHolder {
+    text-align: center;
+    margin-bottom: 24px;
+    & > .avatar {
+      margin: 0 auto;
+      padding-top: 20px;
+      width: 104px;
+      //height: 104px;
+      margin-bottom: 20px;
+      border-radius: 50%;
+      overflow: hidden;
+      img {
+        height: 100%;
+        width: 100%;
+      }
+    }
+    .username {
+      color: rgba(0, 0, 0, 0.85);
+      font-size: 20px;
+      line-height: 28px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+  }
+  .account-center-detail {
+    p {
+      margin-bottom: 8px;
+      padding-left: 12px;
+      position: relative;
+
+      font-awesome-icon, .svg-inline--fa {
+        width: 30px;
+      }
+    }
+    .title {
+      background-position: 0 0;
+    }
+    .group {
+      background-position: 0 -22px;
+    }
+    .address {
+      background-position: 0 -44px;
+    }
+  }
+  .account-center-tags {
+    .ant-tag {
+      margin-bottom: 8px;
+    }
+  }
+  .account-center-team {
+    .members {
+      a {
+        display: block;
+        margin: 12px 0;
+        line-height: 24px;
+        height: 24px;
+        .member {
+          font-size: 14px;
+          color: rgba(0, 0, 0, 0.65);
+          line-height: 24px;
+          max-width: 100px;
+          vertical-align: top;
+          margin-left: 12px;
+          transition: all 0.3s;
+          display: inline-block;
+        }
+        &:hover {
+          span {
+            color: #1890ff;
+          }
+        }
+      }
+    }
+  }
+  .tagsTitle,
+  .teamTitle {
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.85);
+    margin-bottom: 12px;
+  }
+}
 </style>
