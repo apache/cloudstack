@@ -2,6 +2,7 @@
 
   <a-dropdown>
     <span class="action ant-dropdown-link translation-menu">
+      <flag :iso="flag" style="font-size: 12px; margin-right: -25px; margin-top: -20px" />
       <a-icon type="global"></a-icon>
     </span>
     <a-menu slot="overlay" @click="onClick">
@@ -60,6 +61,7 @@ export default {
   },
   data () {
     return {
+      flag: 'gb',
       enUS,
       arEG,
       caES,
@@ -89,6 +91,7 @@ export default {
       moment.locale(localeValue)
       this.$i18n.locale = localeValue
       Vue.ls.set('current_locale', localeValue)
+      this.flag = e.item.$children[0].iso
     }
   }
 }
