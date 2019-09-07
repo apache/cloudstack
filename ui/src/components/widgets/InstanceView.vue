@@ -80,9 +80,6 @@
             <div class="tagsTitle">Tags</div>
             <div>
               <a-tag closable>key=value</a-tag>
-              <a-tag color="green">green</a-tag>
-              <a-tag color="red">red</a-tag>
-              <a-tag color="blue">blue</a-tag>
 
               <template v-for="(tag, index) in tags">
                 <a-tooltip v-if="tag.length > 20" :key="tag" :title="tag">
