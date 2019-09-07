@@ -126,6 +126,7 @@ export default {
         }
       ]
     },
+    /*
     {
       name: 'demo',
       title: 'Demo',
@@ -133,6 +134,7 @@ export default {
       permission: [ 'listVirtualMachines' ],
       component: () => import('@/components/Test.vue')
     },
+    */
     {
       name: 'ssh',
       title: 'SSH Key Pairs',

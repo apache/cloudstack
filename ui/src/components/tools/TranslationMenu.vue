@@ -2,8 +2,7 @@
 
   <a-dropdown>
     <span class="action ant-dropdown-link translation-menu">
-      <flag :iso="flag" style="font-size: 12px; margin-right: -25px; margin-top: -20px" />
-      <a-icon type="global"></a-icon>
+      <flag :iso="flag" />
     </span>
     <a-menu slot="overlay" @click="onClick">
       <a-menu-item key="en" :value="enUS"><flag iso="gb"/> English</a-menu-item>

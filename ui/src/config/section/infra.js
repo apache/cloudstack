@@ -7,7 +7,7 @@ export default {
     {
       name: 'zone',
       title: 'Zones',
-      icon: 'table',
+      icon: 'global',
       permission: [ 'listZones', 'listZonesMetrics' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [ 'name', 'allocationstate', 'networktype', 'guestcidraddress' ]

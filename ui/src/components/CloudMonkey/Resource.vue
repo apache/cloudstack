@@ -176,10 +176,10 @@
     </div>
     <div style="margin-top: 12px" v-else>
       <a-row :gutter="12" v-show="!tableView">
-        <a-col v-for="item in items" :md="24" :lg="4" :key="item.id">
+        <a-col v-for="item in items" :md="24" :lg="6" :key="item.id">
           <a-card
             hoverable
-            style="width: 250px; margin-bottom: 12px">
+            style="margin-bottom: 12px">
             <template class="ant-card-actions" slot="actions">
               <a-icon type="edit" />
               <a-icon type="setting" />

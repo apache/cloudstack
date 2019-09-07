@@ -1,7 +1,7 @@
 <template>
   <div style="padding-top: 12px" class="page-header-index-wide page-header-wrapper-grid-content-main">
     <a-row :gutter="12">
-      <a-col :md="24" :lg="7">
+      <a-col :md="24" :lg="7" style="margin-bottom: 12px">
         <a-card :bordered="true">
           <div class="account-center-avatarHolder">
             <div class="avatar">
@@ -59,7 +59,7 @@
               <router-link :to="{ path: '/host/' + vm.hostid }">{{ vm.hostname }}</router-link> ({{ vm.hypervisor }})
             </p>
             <p>
-              <a-icon type="table" style="margin-left: 6px; margin-right: 12px" />
+              <a-icon type="global" style="margin-left: 6px; margin-right: 12px" />
               <router-link :to="{ path: '/zone/' + vm.zoneid }">{{ vm.zonename }}</router-link>
             </p>
             <p>
