@@ -166,8 +166,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setDomainId(template.getDomainUuid());
         templateResponse.setDomainName(template.getDomainName());
 
-        // If the user is an 'Admin' or 'the owner of template', add the template download status
-        if (view == ResponseView.Full ||  template.getAccountId() == CallContext.current().getCallingAccount().getId() ) {
+        // If the user is an 'Admin' or 'the owner of template' or template belongs to a project, add the template download status
+        if (view == ResponseView.Full ||
+                template.getAccountId() == CallContext.current().getCallingAccount().getId() ||
+                template.getAccountType() == Account.ACCOUNT_TYPE_PROJECT) {
             String templateStatus = getTemplateStatus(template);
             if (templateStatus != null) {
                 templateResponse.setStatus(templateStatus);
@@ -327,6 +329,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         isoResponse.setOsTypeId(iso.getGuestOSUuid());
         isoResponse.setOsTypeName(iso.getGuestOSName());
         isoResponse.setBits(iso.getBits());
+        isoResponse.setPasswordEnabled(iso.isEnablePassword());
 
         // populate owner.
         ApiResponseHelper.populateOwner(isoResponse, iso);

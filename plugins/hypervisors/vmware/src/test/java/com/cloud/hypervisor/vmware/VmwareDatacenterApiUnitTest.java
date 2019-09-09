@@ -36,6 +36,7 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.vmware.dao.LegacyZoneDao;
@@ -354,6 +355,11 @@ public class VmwareDatacenterApiUnitTest {
         @Bean
         public HostDao hostDao() {
             return Mockito.mock(HostDao.class);
+        }
+
+        @Bean
+        public HostDetailsDao hostDetailsDao() {
+            return Mockito.mock(HostDetailsDao.class);
         }
 
         @Bean

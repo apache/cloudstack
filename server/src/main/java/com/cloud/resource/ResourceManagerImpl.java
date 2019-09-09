@@ -26,11 +26,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -42,6 +42,7 @@ import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -54,12 +55,12 @@ import org.springframework.stereotype.Component;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.GetVncPortCommand;
-import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetGPUStatsAnswer;
 import com.cloud.agent.api.GetGPUStatsCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetVncPortAnswer;
+import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.PropagateResourceEventCommand;
@@ -144,6 +145,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Manager;
@@ -173,6 +175,8 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 
@@ -269,6 +273,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private GenericSearchBuilder<HostVO, String> _hypervisorsInDC;
 
     private SearchBuilder<HostGpuGroupsVO> _gpuAvailability;
+
+    private Map<Long,Integer> retryHostMaintenance = new ConcurrentHashMap<>();
 
     private void insertListener(final Integer event, final ResourceListener listener) {
         List<ResourceListener> lst = _lifeCycleListeners.get(event);
@@ -1222,6 +1228,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         ActionEventUtils.onStartedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), EventTypes.EVENT_MAINTENANCE_PREPARE, "starting maintenance for host " + hostId, true, 0);
         _agentMgr.pullAgentToMaintenance(hostId);
+        setHostMaintenanceRetries(host);
 
         /* TODO: move below to listener */
         if (host.getType() == Host.Type.Routing) {
@@ -1247,6 +1254,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
         return true;
+    }
+
+    /**
+     * Set retries for transiting the host into Maintenance
+     */
+    protected void setHostMaintenanceRetries(HostVO host) {
+        Integer retries = HostMaintenanceRetries.valueIn(host.getClusterId());
+        retryHostMaintenance.put(host.getId(), retries);
+        s_logger.debug(String.format("Setting the host %s (%s) retries for Maintenance mode: %s",
+                host.getId(), host.getName(), retries));
     }
 
     @Override
@@ -1297,8 +1314,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         for (VMInstanceVO vm : vms) {
             GetVncPortAnswer vmVncPortAnswer = (GetVncPortAnswer) _agentMgr.easySend(hostId, new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
             if (vmVncPortAnswer != null) {
-                userVmDetailsDao.addDetail(vm.getId(), "kvm.vnc.address", vmVncPortAnswer.getAddress(), true);
-                userVmDetailsDao.addDetail(vm.getId(), "kvm.vnc.port", String.valueOf(vmVncPortAnswer.getPort()), true);
+                userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS, vmVncPortAnswer.getAddress(), true);
+                userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT, String.valueOf(vmVncPortAnswer.getPort()), true);
             }
         }
     }
@@ -1348,7 +1365,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return CollectionUtils.isEmpty(failedMigrations) ?
                     setHostIntoMaintenance(host) :
                     setHostIntoErrorInMaintenance(host, failedMigrations);
+        } else if (retryHostMaintenance.containsKey(host.getId())) {
+            Integer retriesLeft = retryHostMaintenance.get(host.getId());
+            if (retriesLeft != null) {
+                if (retriesLeft <= 0) {
+                    retryHostMaintenance.remove(host.getId());
+                    s_logger.debug(String.format("No retries left while preparing KVM host %s (%s) for Maintenance, " +
+                                    "please investigate this connection.",
+                            host.getId(), host.getName()));
+                    return setHostIntoErrorInMaintenance(host, failedMigrations);
+                }
+                retriesLeft--;
+                retryHostMaintenance.put(host.getId(), retriesLeft);
+                s_logger.debug(String.format("Retries left preparing KVM host %s (%s) for Maintenance: %s",
+                        host.getId(), host.getName(), retriesLeft));
+            }
         }
+
         return false;
     }
 
@@ -2311,44 +2344,76 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
 
+        handleAgentIfNotConnected(host, vms_migrating);
+
         try {
             resourceStateTransitTo(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
             _agentMgr.pullAgentOutMaintenance(hostId);
-
-            // for kvm, need to log into kvm host, restart cloudstack-agent
-            if ((host.getHypervisorType() == HypervisorType.KVM && !vms_migrating) || host.getHypervisorType() == HypervisorType.LXC) {
-
-                final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(Config.KvmSshToAgentEnabled.key()));
-                if (!sshToAgent) {
-                    s_logger.info("Configuration tells us not to SSH into Agents. Please restart the Agent (" + hostId + ")  manually");
-                    return true;
-                }
-
-                _hostDao.loadDetails(host);
-                final String password = host.getDetail("password");
-                final String username = host.getDetail("username");
-                if (password == null || username == null) {
-                    s_logger.debug("Can't find password/username");
-                    return false;
-                }
-                final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(host.getPrivateIpAddress(), 22, username, password);
-                if (connection == null) {
-                    s_logger.debug("Failed to connect to host: " + host.getPrivateIpAddress());
-                    return false;
-                }
-
-                try {
-                    SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloudstack-agent restart");
-                    s_logger.debug("cloudstack-agent restart result: " + result.toString());
-                } catch (final SshException e) {
-                    return false;
-                }
-            }
-
-            return true;
+            retryHostMaintenance.remove(hostId);
         } catch (final NoTransitionException e) {
             s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);
             return false;
+        }
+
+        return true;
+
+    }
+
+    /**
+     * Handle agent (if available) if its not connected before cancelling maintenance.
+     * Agent must be connected before cancelling maintenance.
+     * If the host status is not Up:
+     * - If kvm.ssh.to.agent is true, then SSH into the host and restart the agent.
+     * - If kvm.shh.to.agent is false, then fail cancelling maintenance
+     */
+    protected void handleAgentIfNotConnected(HostVO host, boolean vmsMigrating) {
+        final boolean isAgentOnHost = host.getHypervisorType() == HypervisorType.KVM ||
+                host.getHypervisorType() == HypervisorType.LXC;
+        if (!isAgentOnHost || vmsMigrating || host.getStatus() == Status.Up) {
+            return;
+        }
+        final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(KvmSshToAgentEnabled.key()));
+        if (sshToAgent) {
+            Pair<String, String> credentials = getHostCredentials(host);
+            connectAndRestartAgentOnHost(host, credentials.first(), credentials.second());
+        } else {
+            throw new CloudRuntimeException("SSH access is disabled, cannot cancel maintenance mode as " +
+                    "host agent is not connected");
+        }
+    }
+
+    /**
+     * Get host credentials
+     * @throws CloudRuntimeException if username or password are not found
+     */
+    protected Pair<String, String> getHostCredentials(HostVO host) {
+        _hostDao.loadDetails(host);
+        final String password = host.getDetail("password");
+        final String username = host.getDetail("username");
+        if (password == null || username == null) {
+            throw new CloudRuntimeException("SSH to agent is enabled, but username/password credentials are not found");
+        }
+        return new Pair<>(username, password);
+    }
+
+    /**
+     * True if agent is restarted via SSH. Assumes kvm.ssh.to.agent = true and host status is not Up
+     */
+    protected void connectAndRestartAgentOnHost(HostVO host, String username, String password) {
+        final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(
+                host.getPrivateIpAddress(), 22, username, password);
+        if (connection == null) {
+            throw new CloudRuntimeException("SSH to agent is enabled, but failed to connect to host: " + host.getPrivateIpAddress());
+        }
+        try {
+            SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(
+                    connection, "service cloudstack-agent restart");
+            if (result.getReturnCode() != 0) {
+                throw new CloudRuntimeException("Could not restart agent on host " + host.getId() + " due to: " + result.getStdErr());
+            }
+            s_logger.debug("cloudstack-agent restart result: " + result.toString());
+        } catch (final SshException e) {
+            throw new CloudRuntimeException("SSH to agent is enabled, but agent restart failed", e);
         }
     }
 
@@ -2907,5 +2972,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             s_logger.error("Unable to release host reservation for host: " + hostId, t);
             return false;
         }
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ResourceManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {HostMaintenanceRetries};
     }
 }

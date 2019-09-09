@@ -23,9 +23,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.MigrateVmToPoolCommand;
+import com.cloud.agent.api.UnregisterVMCommand;
+import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.TemplateOVFPropertyVO;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.dao.TemplateOVFPropertiesDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -38,6 +51,7 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
@@ -115,11 +129,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Inject
     private GuestOSDao _guestOsDao;
     @Inject
-    GuestOSHypervisorDao _guestOsHypervisorDao;
+    private GuestOSHypervisorDao _guestOsHypervisorDao;
     @Inject
     private HostDao _hostDao;
     @Inject
     private HostDetailsDao _hostDetailsDao;
+    @Inject
+    private ClusterDetailsDao _clusterDetailsDao;
     @Inject
     private CommandExecLogDao _cmdExecLogDao;
     @Inject
@@ -144,17 +160,21 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     PrimaryDataStoreDao _storagePoolDao;
     @Inject
     VolumeDataFactory _volFactory;
+    @Inject
+    private VMTemplatePoolDao templateSpoolDao;
+    @Inject
+    private TemplateOVFPropertiesDao templateOVFPropertiesDao;
 
     protected VMwareGuru() {
         super();
     }
 
     public static final ConfigKey<Boolean> VmwareReserveCpu = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.cpu", "Advanced", "false",
-        "Specify whether or not to reserve CPU when not overprovisioning, In case of cpu overprovisioning we will always reserve cpu.", true, ConfigKey.Scope.Cluster,
+        "Specify whether or not to reserve CPU when deploying an instance.", true, ConfigKey.Scope.Cluster,
         null);
 
     public static final ConfigKey<Boolean> VmwareReserveMemory = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.mem", "Advanced", "false",
-        "Specify whether or not to reserve memory when not overprovisioning, In case of memory overprovisioning we will always reserve memory.", true,
+        "Specify whether or not to reserve memory when deploying an instance.", true,
         ConfigKey.Scope.Cluster, null);
 
     protected ConfigKey<Boolean> VmwareEnableNestedVirtualization = new ConfigKey<Boolean>(Boolean.class, "vmware.nested.virtualization", "Advanced", "false",
@@ -347,7 +367,64 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         } else {
             to.setPlatformEmulator(guestOsMapping.getGuestOsName());
         }
+
+        List<OVFPropertyTO> ovfProperties = new ArrayList<>();
+        for (String detailKey : details.keySet()) {
+            if (detailKey.startsWith(ApiConstants.OVF_PROPERTIES)) {
+                String ovfPropKey = detailKey.replace(ApiConstants.OVF_PROPERTIES + "-", "");
+                TemplateOVFPropertyVO templateOVFPropertyVO = templateOVFPropertiesDao.findByTemplateAndKey(vm.getTemplateId(), ovfPropKey);
+                if (templateOVFPropertyVO == null) {
+                    s_logger.warn(String.format("OVF property %s not found on template, discarding", ovfPropKey));
+                    continue;
+                }
+                String ovfValue = details.get(detailKey);
+                boolean isPassword = templateOVFPropertyVO.isPassword();
+                OVFPropertyTO propertyTO = new OVFPropertyTO(ovfPropKey, ovfValue, isPassword);
+                ovfProperties.add(propertyTO);
+            }
+        }
+
+        if (CollectionUtils.isNotEmpty(ovfProperties)) {
+            removeOvfPropertiesFromDetails(ovfProperties, details);
+            String templateInstallPath = null;
+            List<DiskTO> rootDiskList = vm.getDisks().stream().filter(x -> x.getType() == Volume.Type.ROOT).collect(Collectors.toList());
+            if (rootDiskList.size() != 1) {
+                throw new CloudRuntimeException("Did not find only one root disk for VM " + vm.getHostName());
+            }
+
+            DiskTO rootDiskTO = rootDiskList.get(0);
+            DataStoreTO dataStore = rootDiskTO.getData().getDataStore();
+            StoragePoolVO storagePoolVO = _storagePoolDao.findByUuid(dataStore.getUuid());
+            long dataCenterId = storagePoolVO.getDataCenterId();
+            List<StoragePoolVO> pools = _storagePoolDao.listByDataCenterId(dataCenterId);
+            for (StoragePoolVO pool : pools) {
+                VMTemplateStoragePoolVO ref = templateSpoolDao.findByPoolTemplate(pool.getId(), vm.getTemplateId());
+                if (ref != null && ref.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                    templateInstallPath = ref.getInstallPath();
+                    break;
+                }
+            }
+
+            if (templateInstallPath == null) {
+                throw new CloudRuntimeException("Did not find the template install path for template " +
+                        vm.getTemplateId() + " on zone " + dataCenterId);
+            }
+
+            Pair<String, List<OVFPropertyTO>> pair = new Pair<>(templateInstallPath, ovfProperties);
+            to.setOvfProperties(pair);
+        }
+
         return to;
+    }
+
+    /*
+    Remove OVF properties from details to be sent to hypervisor (avoid duplicate data)
+     */
+    private void removeOvfPropertiesFromDetails(List<OVFPropertyTO> ovfProperties, Map<String, String> details) {
+        for (OVFPropertyTO propertyTO : ovfProperties) {
+            String key = propertyTO.getKey();
+            details.remove(ApiConstants.OVF_PROPERTIES + "-" + key);
+        }
     }
 
     /**
@@ -639,5 +716,36 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         details.put(VmwareReserveCpu.key(), VmwareReserveCpu.valueIn(clusterId).toString());
         details.put(VmwareReserveMemory.key(), VmwareReserveMemory.valueIn(clusterId).toString());
         return details;
+    }
+
+    @Override
+    public List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination) {
+        List<Command> commands = new ArrayList<Command>();
+
+        // OfflineVmwareMigration: specialised migration command
+        List<VolumeVO> volumes = _volumeDao.findByInstance(vm.getId());
+        List<VolumeTO> vols = new ArrayList<>();
+        for (Volume volume : volumes) {
+            VolumeTO vol = new VolumeTO(volume,destination);
+            vols.add(vol);
+        }
+        MigrateVmToPoolCommand migrateVmToPoolCommand = new MigrateVmToPoolCommand(vm.getInstanceName(), vols, destination.getUuid(), true);
+        commands.add(migrateVmToPoolCommand);
+
+        // OfflineVmwareMigration: cleanup if needed
+        final Long destClusterId = destination.getClusterId();
+        final Long srcClusterId = getClusterId(vm.getId());
+
+        if (srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId)) {
+            final String srcDcName = _clusterDetailsDao.getVmwareDcName(srcClusterId);
+            final String destDcName = _clusterDetailsDao.getVmwareDcName(destClusterId);
+            if (srcDcName != null && destDcName != null && !srcDcName.equals(destDcName)) {
+                final UnregisterVMCommand unregisterVMCommand = new UnregisterVMCommand(vm.getInstanceName(), true);
+                unregisterVMCommand.setCleanupVmFiles(true);
+
+                commands.add(unregisterVMCommand);
+            }
+        }
+        return commands;
     }
 }

@@ -28,8 +28,8 @@ import java.util.TimeZone;
 import org.apache.log4j.Logger;
 
 import com.cloud.cluster.ClusterInvalidSessionException;
-import com.cloud.cluster.ManagementServerHost;
-import com.cloud.cluster.ManagementServerHost.State;
+import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.management.ManagementServerHost.State;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;

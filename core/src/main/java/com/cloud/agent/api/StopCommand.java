@@ -19,6 +19,7 @@
 
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.vm.VirtualMachine;
 
@@ -34,6 +35,15 @@ public class StopCommand extends RebootCommand {
     boolean checkBeforeCleanup = false;
     String controlIp = null;
     boolean forceStop = false;
+    private Map<String, DpdkTO> dpdkInterfaceMapping;
+
+    public Map<String, DpdkTO> getDpdkInterfaceMapping() {
+        return dpdkInterfaceMapping;
+    }
+
+    public void setDpdkInterfaceMapping(Map<String, DpdkTO> dpdkInterfaceMapping) {
+        this.dpdkInterfaceMapping = dpdkInterfaceMapping;
+    }
     /**
      * On KVM when using iSCSI-based managed storage, if the user shuts a VM down from the guest OS (as opposed to doing so from CloudStack),
      * we need to pass to the KVM agent a list of applicable iSCSI volumes that need to be disconnected.

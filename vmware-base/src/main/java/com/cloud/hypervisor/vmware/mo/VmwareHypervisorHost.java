@@ -58,8 +58,8 @@ public interface VmwareHypervisorHost {
     boolean createVm(VirtualMachineConfigSpec vmSpec) throws Exception;
 
     boolean createBlankVm(String vmName, String vmInternalCSName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB,
-        int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent,
-        Pair<String, String> controllerInfo, Boolean systemVm) throws Exception;
+                          int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent,
+                          Pair<String, String> controllerInfo, Boolean systemVm) throws Exception;
 
     void importVmFromOVF(String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption) throws Exception;
 

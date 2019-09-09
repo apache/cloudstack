@@ -29,9 +29,9 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
-import javax.naming.ConfigurationException;
-
+import org.apache.cloudstack.utils.linux.MemStat;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,9 +52,11 @@ import com.cloud.hypervisor.kvm.resource.OvsVifDriver;
 import com.cloud.network.Networks;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
+
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(Script.class)
+@PrepareForTest(value = {Script.class, MemStat.class})
 public class LibvirtReplugNicCommandWrapperTest {
+
     private static final String part_1 =
             "<domain type='kvm' id='143'>\n"
             + "  <name>i-85-285-VM</name>\n"
@@ -179,12 +181,24 @@ public class LibvirtReplugNicCommandWrapperTest {
             + "</domain>\n";
 
     private static final String fullfile = part_1 + part_2 + part_3;
+    public static final String GUEST_BR = "guestbr0";
 
     private LibvirtComputingResource res;
     private final Domain _domain = mock(Domain.class);
 
+    final String memInfo = "MemTotal:        5830236 kB\n" +
+            "MemFree:          156752 kB\n" +
+            "Buffers:          326836 kB\n" +
+            "Cached:          2606764 kB\n" +
+            "SwapCached:            0 kB\n" +
+            "Active:          4260808 kB\n" +
+            "Inactive:         949392 kB\n";
+
     @Before
-    public void setUp() throws LibvirtException, ConfigurationException {
+    public void setUp() throws Exception {
+        Scanner scanner = new Scanner(memInfo);
+        PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
+
         // Use a spy because we only want to override getVifDriverClass
         LibvirtComputingResource resReal = new LibvirtComputingResource();
         res = spy(resReal);
@@ -201,7 +215,7 @@ public class LibvirtReplugNicCommandWrapperTest {
         BDDMockito.given(Script.findScript(anyString(), anyString())).willReturn("dummypath/tofile.sh");
 
         Map<String, String> pifs = new HashMap<>();
-        pifs.put("alubr0", "alubr0");
+        pifs.put(GUEST_BR, "eth0");
 
         Map<String, Object> params = new HashMap<>();
         params.put("libvirt.computing.resource", res);
@@ -215,7 +229,7 @@ public class LibvirtReplugNicCommandWrapperTest {
 
         doReturn(helper).when(res).getLibvirtUtilitiesHelper();
         doReturn(bridgeVifDriver).when(res).getVifDriver(eq(Networks.TrafficType.Guest), anyString());
-        doReturn(ovsVifDriver).when(res).getVifDriver(Networks.TrafficType.Guest, "alubr0");
+        doReturn(ovsVifDriver).when(res).getVifDriver(Networks.TrafficType.Guest, GUEST_BR);
         doReturn(bridgeVifDriver).when(res).getVifDriver(not(eq(Networks.TrafficType.Guest)));
         doReturn(Arrays.asList(bridgeVifDriver, ovsVifDriver)).when(res).getAllVifDrivers();
 
@@ -225,7 +239,6 @@ public class LibvirtReplugNicCommandWrapperTest {
 
     @Test
     public void testReplugNic() throws LibvirtException {
-
         final String expectedDetachXml =
                 "<interface type='bridge'>\n"
                         + "<source bridge='breth2-234'/>\n"
@@ -236,23 +249,29 @@ public class LibvirtReplugNicCommandWrapperTest {
                         + "</interface>\n";
         final String expectedAttachXml =
                 "<interface type='bridge'>\n"
-                        + "<source bridge='alubr0'/>\n"
+                        + "<source bridge='eth0'/>\n"
                         + "<target dev='vnet10'/>\n"
                         + "<mac address='02:00:7c:98:00:02'/>\n"
                         + "<model type='virtio'/>\n"
                         + "<virtualport type='openvswitch'>\n"
                         + "</virtualport>\n"
+                        + "<vlan trunk='no'>\n"
+                        + "<tag id='100'/>\n"
+                        + "</vlan>"
                         + "<link state='down'/>\n"
                         + "<address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>\n"
                         + "</interface>\n";
         final String expectedUpdateXml =
                 "<interface type='bridge'>\n"
-                        + "<source bridge='alubr0'/>\n"
+                        + "<source bridge='eth0'/>\n"
                         + "<target dev='vnet10'/>\n"
                         + "<mac address='02:00:7c:98:00:02'/>\n"
                         + "<model type='virtio'/>\n"
                         + "<virtualport type='openvswitch'>\n"
                         + "</virtualport>\n"
+                        + "<vlan trunk='no'>\n"
+                        + "<tag id='100'/>\n"
+                        + "</vlan>"
                         + "<link state='up'/>\n"
                         + "<address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>\n"
                         + "</interface>\n";
@@ -260,9 +279,10 @@ public class LibvirtReplugNicCommandWrapperTest {
         final LibvirtReplugNicCommandWrapper wrapper = new LibvirtReplugNicCommandWrapper();
         final NicTO nic = new NicTO();
         nic.setType(Networks.TrafficType.Guest);
-        nic.setName("alubr0");
-        nic.setBroadcastType(Networks.BroadcastDomainType.Vsp);
+        nic.setName(GUEST_BR);
+        nic.setBroadcastType(Networks.BroadcastDomainType.Vlan);
         nic.setMac("02:00:7c:98:00:02");
+        nic.setBroadcastUri(Networks.BroadcastDomainType.Vlan.toUri(100));
         final ReplugNicCommand command = new ReplugNicCommand(nic, "i-85-285-VM", VirtualMachine.Type.User);
         final Answer result = wrapper.execute(command, res);
 

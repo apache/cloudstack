@@ -73,6 +73,7 @@
                                 preFilter: function(args) {
                                     if (isAdmin()) {
                                     } else {
+                                        args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
                                         args.$form.find('.form-item[rel=isPublic]').hide();
                                         args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
                                         args.$form.find('.form-item[rel=deploymentPlanner]').hide();
@@ -136,11 +137,70 @@
                                             });
                                         }
                                     },
-                                    isCustomized: {
-                                        label: 'label.custom',
-                                        isBoolean: true,
-                                        isReverse: true,
-                                        isChecked: false
+                                    offeringType: {
+                                        label: 'label.compute.offering.type',
+                                        docID: 'helpComputeOfferingType',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'fixed',
+                                                description: _l('label.compute.offering.fixed')
+                                            });
+                                            items.push({
+                                                id: 'customConstrained',
+                                                description: _l('label.compute.offering.custom.constrained')
+                                            });
+                                            items.push({
+                                                id: 'customUnconstrained',
+                                                description: _l('label.compute.offering.custom.unconstrained')
+                                            });
+
+                                            args.response.success({
+                                                data: items
+                                            });
+
+                                            args.$select.change(function() {
+                                                var $form = $(this).closest('form');
+
+                                                var $cpuNumber = $form.find('.form-item[rel=cpuNumber]');
+                                                var $cpuSpeed = $form.find('.form-item[rel=cpuSpeed]');
+                                                var $memory = $form.find('.form-item[rel=memory]');
+
+                                                var $minCPUNumber = $form.find('.form-item[rel=minCPUNumber]');
+                                                var $maxCPUNumber = $form.find('.form-item[rel=maxCPUNumber]');
+                                                var $minMemory = $form.find('.form-item[rel=minMemory]');
+                                                var $maxMemory = $form.find('.form-item[rel=maxMemory]');
+
+                                                var type = $(this).val();
+                                                if (type == 'fixed') {
+                                                    $minCPUNumber.hide();
+                                                    $maxCPUNumber.hide();
+                                                    $minMemory.hide();
+                                                    $maxMemory.hide();
+
+                                                    $cpuNumber.css('display', 'inline-block');
+                                                    $cpuSpeed.css('display', 'inline-block');
+                                                    $memory.css('display', 'inline-block');
+                                                } else if (type == 'customConstrained') {
+                                                    $cpuNumber.hide();
+                                                    $memory.hide();
+
+                                                    $cpuSpeed.css('display', 'inline-block');
+                                                    $minCPUNumber.css('display', 'inline-block');
+                                                    $maxCPUNumber.css('display', 'inline-block');
+                                                    $minMemory.css('display', 'inline-block');
+                                                    $maxMemory.css('display', 'inline-block');
+                                                } else {
+                                                    $cpuNumber.hide();
+                                                    $memory.hide();
+                                                    $cpuSpeed.hide();
+                                                    $minCPUNumber.hide();
+                                                    $maxCPUNumber.hide();
+                                                    $minMemory.hide();
+                                                    $maxMemory.hide();
+                                                }
+                                            });
+                                        }
                                     },
                                     cpuNumber: {
                                         label: 'label.num.cpu.cores',
@@ -164,6 +224,39 @@
                                         label: 'label.memory.mb',
                                         dependsOn: 'isCustomized',
                                         docID: 'helpComputeOfferingMemory',
+                                        validation: {
+                                            required: true,
+                                            number: true
+                                        }
+                                    },
+                                    // Custom Compute Offering
+                                    minCPUNumber: {
+                                        label: 'label.min.cpu.cores',
+                                        docID: 'helpComputeOfferingMinCPUCores',
+                                        validation: {
+                                            required: true,
+                                            number: true
+                                        }
+                                    },
+                                    maxCPUNumber: {
+                                        label: 'label.max.cpu.cores',
+                                        docID: 'helpComputeOfferingMaxCPUCores',
+                                        validation: {
+                                            required: true,
+                                            number: true
+                                        }
+                                    },
+                                    minMemory: {
+                                        label: 'label.memory.minimum.mb',
+                                        docID: 'helpComputeOfferingMinMemory',
+                                        validation: {
+                                            required: true,
+                                            number: true
+                                        }
+                                    },
+                                    maxMemory: {
+                                        label: 'label.memory.maximum.mb',
+                                        docID: 'helpComputeOfferingMaxMemory',
                                         validation: {
                                             required: true,
                                             number: true
@@ -554,14 +647,21 @@
                                             });
                                         }
                                     },
-
                                     domainId: {
                                         label: 'label.domain',
                                         docID: 'helpComputeOfferingDomain',
                                         dependsOn: 'isPublic',
+                                        isMultiple: true,
+                                        validation: {
+                                            required: true
+                                        },
                                         select: function(args) {
                                             $.ajax({
-                                                url: createURL("listDomains&listAll=true"),
+                                                url: createURL('listDomains'),
+                                                data: {
+                                                    listAll: true,
+                                                    details: 'min'
+                                                },
                                                 dataType: "json",
                                                 async: false,
                                                 success: function(json) {
@@ -583,22 +683,59 @@
                                             });
                                         },
                                         isHidden: true
+                                    },
+                                    zoneId: {
+                                        label: 'label.zone',
+                                        docID: 'helpComputeOfferingZone',
+                                        isMultiple: true,
+                                        validation: {
+                                            allzonesonly: true
+                                        },
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listZones"),
+                                                data: {available: 'true'},
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var items = [];
+                                                    var zoneObjs = json.listzonesresponse.zone;
+                                                    $(zoneObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.name
+                                                        });
+                                                    });
+                                                    items.sort(function(a, b) {
+                                                        return a.description.localeCompare(b.description);
+                                                    });
+                                                    items.unshift({
+                                                        id: -1,
+                                                        description: "All Zones"
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        }
                                     }
                                 }
                             },
 
                             action: function(args) {
+                                var isFixedOfferingType = args.data.offeringType == 'fixed';
                                 var data = {
                                     issystem: false,
                                     name: args.data.name,
                                     displaytext: args.data.description,
                                     storageType: args.data.storageType,
                                     provisioningType :args.data.provisioningType,
-                                    customized: (args.data.isCustomized == "on")
+                                    customized: !isFixedOfferingType
                                 };
 
                                 //custom fields (begin)
-                                if (args.data.isCustomized != "on") {
+                                if (isFixedOfferingType) {
                                     $.extend(data, {
                                         cpuNumber: args.data.cpuNumber
                                     });
@@ -608,6 +745,24 @@
                                     $.extend(data, {
                                         memory: args.data.memory
                                     });
+                                } else {
+                                    if(args.data.cpuSpeed != null && args.data.minCPUNumber != null && args.data.maxCPUNumber != null && args.data.minMemory != null && args.data.maxMemory != null){
+                                        $.extend(data, {
+                                            cpuSpeed: args.data.cpuSpeed
+                                        });
+                                        $.extend(data, {
+                                            mincpunumber: args.data.minCPUNumber
+                                        });
+                                        $.extend(data, {
+                                            maxcpunumber: args.data.maxCPUNumber
+                                        });
+                                        $.extend(data, {
+                                            minmemory: args.data.minMemory
+                                        });
+                                        $.extend(data, {
+                                            maxmemory: args.data.maxMemory
+                                        });
+                                    }
                                 }
                                 //custom fields (end)
 
@@ -716,8 +871,18 @@
                                 });
 
                                 if (args.data.isPublic != "on") {
+                                    var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                    if (domainId) {
+                                        $.extend(data, {
+                                            domainid: domainId
+                                        });
+                                    }
+                                }
+
+                                var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
+                                if (zoneId) {
                                     $.extend(data, {
-                                        domainid: args.data.domainId
+                                        zoneid: zoneId
                                     });
                                 }
 
@@ -820,6 +985,204 @@
                                             args.response.error(parseXMLHttpResponse(data));
                                         }
                                     });
+                                },
+                                notification: {
+                                    poll: function(args) {
+                                        args.complete();
+                                    }
+                                }
+                            },
+
+                            updateOfferingAccess: {
+                                label: 'label.action.update.offering.access',
+                                messages: {
+                                    notification: function(args) {
+                                        return 'label.action.update.offering.access';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.compute.offering.access',
+                                    desc: '',
+                                    preFilter: function(args) {
+                                        if (isAdmin()) {
+                                        } else {
+                                            args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
+                                            args.$form.find('.form-item[rel=isPublic]').hide();
+                                            args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                            args.$form.find('.form-item[rel=zoneId]').hide();
+                                        }
+                                        var formOffering = args.context.serviceOfferings[0];
+                                        $.ajax({
+                                            url: createURL('listServiceOfferings&isrecursive=true'),
+                                            data: {
+                                                id: args.context.serviceOfferings[0].id
+                                            },
+                                            dataType: "json",
+                                            async: false,
+                                            success: function (json) {
+                                                var item = json.listserviceofferingsresponse.serviceoffering[0];
+                                                formOffering = item;
+                                                args.response.success({
+                                                    data: item
+                                                });
+                                            }
+                                        }); //end ajax
+                                        var offeringDomainIds = formOffering.domainid;
+                                        if (offeringDomainIds) {
+                                            args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
+                                            args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.split(",") : [offeringDomainIds];
+                                            var options = args.$form.find('.form-item[rel=domainId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringDomainIds, function(domainIdIndex, domainId) {
+                                                    domainId = domainId.toString().trim();
+                                                    if ($(option).val() === domainId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        } else {
+                                            if (isAdmin()) {
+                                                args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', true);
+                                            }
+                                        }
+                                        var offeringZoneIds = formOffering.zoneid;
+                                        if (offeringZoneIds) {
+                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.split(",") : [offeringZoneIds];
+                                            var options = args.$form.find('.form-item[rel=zoneId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringZoneIds, function(zoneIdIndex, zoneId) {
+                                                    zoneId = zoneId.toString().trim();
+                                                    if ($(option).val() === zoneId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        }
+                                    },
+                                    fields: {
+                                        isPublic: {
+                                            label: 'label.public',
+                                            isBoolean: true,
+                                            isReverse: true,
+                                            isChecked: false,
+                                            docID: 'helpComputeOfferingPublic'
+                                        },
+                                        domainId: {
+                                            label: 'label.domain',
+                                            docID: 'helpComputeOfferingDomain',
+                                            dependsOn: 'isPublic',
+                                            isMultiple: true,
+                                            isHidden: true,
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL('listDomains'),
+                                                    data: {
+                                                        listAll: true,
+                                                        details: 'min'
+                                                    },
+                                                    dataType: "json",
+                                                    async: false,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                        var options = args.$form.find('.form-item[rel=domainId]').children('option');
+                                                        $.each(options, function() {
+                                                            console.log($(this).val());
+                                                        });
+                                                        console.log("Hello! "+options);
+                                                    }
+                                                });
+                                            }
+                                        },
+                                        zoneId: {
+                                            label: 'label.zone',
+                                            docID: 'helpComputeOfferingZone',
+                                            isMultiple: true,
+                                            validation: {
+                                                allzonesonly: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL("listZones"),
+                                                    data: {available: 'true'},
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var zoneObjs = json.listzonesresponse.zone;
+                                                        $(zoneObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.name
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        items.unshift({
+                                                            id: -1,
+                                                            description: "All Zones",
+                                                            selected: true
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                },
+                                action: function(args) {
+                                    var data = {
+                                        id: args.context.serviceOfferings[0].id
+                                    };
+                                    if (args.data.isPublic != "on") {
+                                        var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                        if (domainId) {
+                                            $.extend(data, {
+                                                domainid: domainId
+                                            });
+                                        }
+                                    } else {
+                                        $.extend(data, {
+                                            domainid: "public"
+                                        });
+                                    }
+                                    var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
+                                    if (zoneId) {
+                                        $.extend(data, {
+                                            zoneid: zoneId
+                                        });
+                                    }
+                                    $.ajax({
+                                        url: createURL('updateServiceOffering'),
+                                        data: data,
+                                        dataType: "json",
+                                        async: false,
+                                        success: function (json) {
+                                            var item = json.updateserviceofferingresponse.serviceoffering;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    }); //end ajax
                                 },
                                 notification: {
                                     poll: function(args) {
@@ -955,6 +1318,9 @@
                                     domain: {
                                         label: 'label.domain'
                                     },
+                                    zone: {
+                                        label: 'label.zone'
+                                    },
                                     created: {
                                         label: 'label.created',
                                         converter: cloudStack.converters.toLocalDate
@@ -1033,6 +1399,7 @@
                                 preFilter: function(args) {
                                     if (isAdmin()) {
                                     } else {
+                                        args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
                                         args.$form.find('.form-item[rel=isPublic]').hide();
                                         args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
                                     }
@@ -1714,6 +2081,7 @@
                                 preFilter: function(args) {
                                     if (isAdmin()) {
                                     } else {
+                                        args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
                                         args.$form.find('.form-item[rel=isPublic]').hide();
                                         args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
                                         args.$form.find('.form-item[rel=tags]').hide();
@@ -1998,6 +2366,10 @@
                                         label: 'label.domain',
                                         docID: 'helpDiskOfferingDomain',
                                         dependsOn: 'isPublic',
+                                        isMultiple: true,
+                                        validation: {
+                                            required: true
+                                        },
                                         select: function(args) {
                                             $.ajax({
                                                 url: createURL('listDomains'),
@@ -2026,6 +2398,42 @@
                                             });
                                         },
                                         isHidden: true
+                                    },
+                                    zoneId: {
+                                        label: 'label.zone',
+                                        docID: 'helpDiskOfferingZone',
+                                        isMultiple: true,
+                                        validation: {
+                                            allzonesonly: true
+                                        },
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listZones"),
+                                                data: {available: 'true'},
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var items = [];
+                                                    var zoneObjs = json.listzonesresponse.zone;
+                                                    $(zoneObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.name
+                                                        });
+                                                    });
+                                                    items.sort(function(a, b) {
+                                                        return a.description.localeCompare(b.description);
+                                                    });
+                                                    items.unshift({
+                                                        id: -1,
+                                                        description: "All Zones"
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        }
                                     }
                                 }
                             },
@@ -2106,8 +2514,18 @@
                                 }
 
                                 if (args.data.isPublic != "on") {
+                                    var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                    if (domainId) {
+                                        $.extend(data, {
+                                            domainid: domainId
+                                        });
+                                    }
+                                }
+
+                                var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
+                                if (zoneId) {
                                     $.extend(data, {
-                                        domainid: args.data.domainId
+                                        zoneid: zoneId
                                     });
                                 }
 
@@ -2185,6 +2603,198 @@
                                             args.response.error(parseXMLHttpResponse(data));
                                         }
                                     });
+                                },
+                                notification: {
+                                    poll: function(args) {
+                                        args.complete();
+                                    }
+                                }
+                            },
+
+                            updateOfferingAccess: {
+                                label: 'label.action.update.offering.access',
+                                messages: {
+                                    notification: function(args) {
+                                        return 'label.action.update.offering.access';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.disk.offering.access',
+                                    desc: '',
+                                    preFilter: function(args) {
+                                        if (isAdmin()) {
+                                        } else {
+                                            args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
+                                            args.$form.find('.form-item[rel=isPublic]').hide();
+                                            args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                            args.$form.find('.form-item[rel=zoneId]').hide();
+                                        }
+                                        var formOffering = args.context.diskOfferings[0];
+                                        $.ajax({
+                                            url: createURL('listDiskOfferings'),
+                                            data: {
+                                                id: args.context.diskOfferings[0].id
+                                            },
+                                            dataType: "json",
+                                            async: false,
+                                            success: function (json) {
+                                            var item = json.listdiskofferingsresponse.diskoffering[0];
+                                                formOffering = item;
+                                                args.response.success({
+                                                    data: item
+                                                });
+                                            }
+                                        }); //end ajax
+                                        var offeringDomainIds = formOffering.domainid;
+                                        if (offeringDomainIds) {
+                                            args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
+                                            args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.split(",") : [offeringDomainIds];
+                                            var options = args.$form.find('.form-item[rel=domainId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringDomainIds, function(domainIdIndex, domainId) {
+                                                    domainId = domainId.toString().trim();
+                                                    if ($(option).val() === domainId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        } else {
+                                            if (isAdmin()) {
+                                                args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', true);
+                                            }
+                                        }
+                                        var offeringZoneIds = formOffering.zoneid;
+                                        if (offeringZoneIds) {
+                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.split(",") : [offeringZoneIds];
+                                            var options = args.$form.find('.form-item[rel=zoneId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringZoneIds, function(zoneIdIndex, zoneId) {
+                                                    zoneId = zoneId.toString().trim();
+                                                    if ($(option).val() === zoneId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        }
+                                    },
+                                    fields: {
+                                        isPublic: {
+                                            label: 'label.public',
+                                            isBoolean: true,
+                                            isReverse: true,
+                                            isChecked: false,
+                                            docID: 'helpDiskOfferingPublic'
+                                        },
+                                        domainId: {
+                                            label: 'label.domain',
+                                            docID: 'helpDiskOfferingDomain',
+                                            dependsOn: 'isPublic',
+                                            isMultiple: true,
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL('listDomains'),
+                                                    data: {
+                                                        listAll: true,
+                                                        details: 'min'
+                                                    },
+                                                    dataType: "json",
+                                                    async: false,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            },
+                                            isHidden: true
+                                        },
+                                        zoneId: {
+                                            label: 'label.zone',
+                                            docID: 'helpDiskOfferingZone',
+                                            isMultiple: true,
+                                            validation: {
+                                                allzonesonly: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL("listZones"),
+                                                    data: {available: 'true'},
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var zoneObjs = json.listzonesresponse.zone;
+                                                        $(zoneObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.name
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        items.unshift({
+                                                            id: -1,
+                                                            description: "All Zones"
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                },
+                                action: function(args) {
+                                    var data = {
+                                        id: args.context.diskOfferings[0].id
+                                    };
+                                    if (args.data.isPublic != "on") {
+                                        var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                        if (domainId) {
+                                            $.extend(data, {
+                                                domainid: domainId
+                                            });
+                                        }
+                                    } else {
+                                        $.extend(data, {
+                                            domainid: "public"
+                                        });
+                                    }
+                                    var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
+                                    if (zoneId) {
+                                        $.extend(data, {
+                                            zoneid: zoneId
+                                        });
+                                    }
+                                    $.ajax({
+                                        url: createURL('updateDiskOffering'),
+                                        data: data,
+                                        dataType: "json",
+                                        async: false,
+                                        success: function (json) {
+                                            var item = json.updatediskofferingresponse.diskoffering;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    }); //end ajax
                                 },
                                 notification: {
                                     poll: function(args) {
@@ -2282,6 +2892,9 @@
                                     domain: {
                                         label: 'label.domain'
                                     },
+                                    zone: {
+                                        label: 'label.zone'
+                                    },
                                     storagetype: {
                                         label: 'label.storage.type'
                                     },
@@ -2292,16 +2905,19 @@
 
                                 dataProvider: function(args) {
                                     var data = {
+                                        isrecursive: true,
                                         id: args.context.diskOfferings[0].id
                                     };
-                                    var listDiskOfferingsOptions = {
-                                        isRecursive: true,
-                                        data: data
-                                    };
-                                    var diskOfferings = cloudStack.listDiskOfferings(listDiskOfferingsOptions);
-                                    args.response.success({
-                                        actionFilter: diskOfferingActionfilter,
-                                        data: diskOfferings[0]
+                                    $.ajax({
+                                        url: createURL('listDiskOfferings'),
+                                        dataType: "json",
+                                        data: data,
+                                        success: function(json) {
+                                            var item = json.listdiskofferingsresponse.diskoffering[0];
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
                                     });
                                 }
                             }
@@ -2405,7 +3021,7 @@
                                             $userDataL2.hide();
                                             $supportedServices.css('display', 'inline-block');
                                             if ($useVpcCb.is(':checked')) { //if useVpc is checked,
-                                                $useVpcCb.removeAttr("checked"); //remove "checked" attribute in useVpc
+                                                $useVpcCb.prop("checked", false); //remove "checked" attribute in useVpc
                                             }
                                             $conservemode.css('display', 'inline-block');
                                         } else if ($guestTypeField.val() == 'Isolated') { //Isolated network offering
@@ -2424,7 +3040,7 @@
                                         //p.s. Netscaler is supported in both vpc and non-vpc
                                         if ($useVpc.is(':visible') && $useVpcCb.is(':checked')) { //*** vpc ***
                                             $optionsOfProviders.each(function(index) {
-                                                if ($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter' || $(this).val() == 'Netscaler'  || $(this).val() == 'NuageVsp' || $(this).val() == 'NuageVspVpc' || $(this).val() == 'BigSwitchBcf' || $(this).val() == 'ConfigDrive') {
+                                                if ($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter' || $(this).val() == 'Netscaler'  || $(this).val() == 'BigSwitchBcf' || $(this).val() == 'ConfigDrive') {
                                                     $(this).attr('disabled', false);
                                                 } else {
                                                     $(this).attr('disabled', true);
@@ -2700,17 +3316,12 @@
                                         }
 
                                         //PublicAccess checkbox should be displayed only when 'Connectivity' service is checked
-                                        if (args.$form.find('.form-item[rel=\"service.Connectivity.isEnabled\"]').find('input[type=checkbox]').is(':checked') && $guestTypeField.val() == 'Shared' &&
-                                            args.$form.find('.form-item[rel=\"service.Connectivity.provider\"]').find('select').val() == 'NuageVsp') {
+                                        if (args.$form.find('.form-item[rel=\"service.Connectivity.isEnabled\"]').find('input[type=checkbox]').is(':checked')
+                                            && $guestTypeField.val() == 'Shared'
+                                            && args.$form.find('.form-item[rel=\"service.Connectivity.provider\"]').find('select').val() == 'NuageVsp') {
                                             $supportspublicaccess.css('display', 'inline-block');
                                         } else {
                                             $supportspublicaccess.hide();
-                                        }
-
-                                        //Uncheck specifyVlan checkbox when (1)guest type is Shared and (2)NuageVsp is selected as a Connectivity provider
-                                        if ($guestTypeField.val() == 'Shared') {
-                                            var $specifyVlanCheckbox = args.$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]');
-                                            $specifyVlanCheckbox.attr('checked', args.$form.find('.form-item[rel=\"service.Connectivity.provider\"]').find('select').val() != 'NuageVsp')
                                         }
                                     });
 
@@ -3001,9 +3612,9 @@
                                                                                 });
                                                                             }
                                                                         } else { //canenableindividualservice == true
-                                                                            if ($thisProviderDropdown.context.name in providerDropdownsForciblyChangedTogether) { //if this provider dropdown is one of provider dropdowns forcibly changed together earlier, make other forcibly changed provider dropdowns restore default option (i.e. 1st option in dropdown)
+                                                                            if (this.name in providerDropdownsForciblyChangedTogether) { //if this provider dropdown is one of provider dropdowns forcibly changed together earlier, make other forcibly changed provider dropdowns restore default option (i.e. 1st option in dropdown)
                                                                                 for (var key in providerDropdownsForciblyChangedTogether) {
-                                                                                    if (key == $thisProviderDropdown.context.name)
+                                                                                    if (key == this.name)
                                                                                         continue; //skip to next item in for loop
                                                                                     else
                                                                                         $("select[name='" + key + "'] option:first").attr("selected", "selected");
@@ -3242,6 +3853,86 @@
                                                 ]
                                             });
                                         }
+                                    },
+                                    isPublic: {
+                                        label: 'label.public',
+                                        isBoolean: true,
+                                        isReverse: true,
+                                        isChecked: false,
+                                        docID: 'helpNetworkOfferingPublic'
+                                    },
+                                    domainId: {
+                                        label: 'label.domain',
+                                        docID: 'helpNetworkOfferingDomain',
+                                        dependsOn: 'isPublic',
+                                        isMultiple: true,
+                                        validation: {
+                                            required: true
+                                        },
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL('listDomains'),
+                                                data: {
+                                                    listAll: true,
+                                                    details: 'min'
+                                                },
+                                                dataType: "json",
+                                                async: false,
+                                                success: function(json) {
+                                                    var items = [];
+                                                    var domainObjs = json.listdomainsresponse.domain;
+                                                    $(domainObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.path
+                                                        });
+                                                    });
+                                                    items.sort(function(a, b) {
+                                                        return a.description.localeCompare(b.description);
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        },
+                                        isHidden: true
+                                    },
+                                    zoneId: {
+                                        label: 'label.zone',
+                                        docID: 'helpNetworkOfferingZone',
+                                        isMultiple: true,
+                                        validation: {
+                                            allzonesonly: true
+                                        },
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listZones"),
+                                                data: {available: 'true'},
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var items = [];
+                                                    var zoneObjs = json.listzonesresponse.zone;
+                                                    $(zoneObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.name
+                                                        });
+                                                    });
+                                                    items.sort(function(a, b) {
+                                                        return a.description.localeCompare(b.description);
+                                                    });
+                                                    items.unshift({
+                                                        id: -1,
+                                                        description: "All Zones"
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        }
                                     }
                                 }
                             },
@@ -3315,7 +4006,7 @@
                                     } else if (value != '') { // normal data (serviceData.length ==1), e.g. "name", "displayText", "networkRate", "guestIpType", "lbType" (unwanted), "availability" (unwated when value is "Optional"), "egressdefaultpolicy", "state" (unwanted), "status" (unwanted), "allocationstate" (unwanted)
                                         if (key == "useVpc") {
                                             inputData['forvpc'] = value;
-                                        } else if (!(key ==  "lbType"  || (key == "availability" && value == "Optional") || key == "state" || key == "status" || key == "allocationstate" || key == "useVpc" )) {
+                                        } else if (!(key ==  "lbType"  || (key == "availability" && value == "Optional") || key == "state" || key == "status" || key == "allocationstate" || key == "useVpc" || key == "isPublic" || key == "domainId" || key == "zoneId")) {
                                             inputData[key] = value;
                                         }
                                     }
@@ -3350,7 +4041,7 @@
                                         inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'StretchedL2Subnet';
                                         inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
                                         serviceCapabilityIndex++;
-                                    } else if (k == 'supportspublicaccess' && ("Connectivity" in serviceProviderMap) && serviceProviderMap['Connectivity'] == 'NuageVsp') {
+                                    } else if (k == 'supportspublicaccess' && ("Connectivity" in serviceProviderMap)) {
                                         inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'Connectivity';
                                         inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'PublicAccess';
                                         inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
@@ -3456,6 +4147,22 @@
 
                                 if (args.$form.find('.form-item[rel=serviceofferingid]').css("display") == "none")
                                     delete inputData.serviceofferingid;
+
+                                if (args.data.isPublic != "on") {
+                                    var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                    if (domainId) {
+                                        $.extend(inputData, {
+                                            domainid: domainId
+                                        });
+                                    }
+                                }
+
+                                var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
+                                if (zoneId) {
+                                    $.extend(inputData, {
+                                        zoneid: zoneId
+                                    });
+                                }
 
                                 inputData['traffictype'] = 'GUEST'; //traffic type dropdown has been removed since it has only one option ('Guest'). Hardcode traffic type value here.
 
@@ -3642,6 +4349,191 @@
                                         });
                                     }
                                 }
+                            },
+
+                            updateOfferingAccess: {
+                                label: 'label.action.update.offering.access',
+                                messages: {
+                                    notification: function(args) {
+                                        return 'label.action.update.offering.access';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.network.offering.access',
+                                    desc: '',
+                                    preFilter: function(args) {
+                                        var formOffering = args.context.networkOfferings[0];
+                                        $.ajax({
+                                            url: createURL('listNetworkOfferings'),
+                                            data: {
+                                                id: args.context.networkOfferings[0].id
+                                            },
+                                            dataType: "json",
+                                            async: false,
+                                            success: function (json) {
+                                            var item = json.listnetworkofferingsresponse.networkoffering[0];
+                                                formOffering = item;
+                                                args.response.success({
+                                                    data: item
+                                                });
+                                            }
+                                        }); //end ajax
+                                        var offeringDomainIds = formOffering.domainid;
+                                        if (offeringDomainIds) {
+                                            args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
+                                            args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.split(",") : [offeringDomainIds];
+                                            var options = args.$form.find('.form-item[rel=domainId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringDomainIds, function(domainIdIndex, domainId) {
+                                                    domainId = domainId.toString().trim();
+                                                    if ($(option).val() === domainId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        } else {
+                                            if (isAdmin()) {
+                                                args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', true);
+                                            }
+                                        }
+                                        var offeringZoneIds = formOffering.zoneid;
+                                        if (offeringZoneIds) {
+                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.split(",") : [offeringZoneIds];
+                                            var options = args.$form.find('.form-item[rel=zoneId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringZoneIds, function(zoneIdIndex, zoneId) {
+                                                    zoneId = zoneId.toString().trim();
+                                                    if ($(option).val() === zoneId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        }
+                                    },
+                                    fields: {
+                                        isPublic: {
+                                            label: 'label.public',
+                                            isBoolean: true,
+                                            isReverse: true,
+                                            isChecked: false,
+                                            docID: 'helpNetworkOfferingPublic'
+                                        },
+                                        domainId: {
+                                            label: 'label.domain',
+                                            docID: 'helpNetworkOfferingDomain',
+                                            dependsOn: 'isPublic',
+                                            isMultiple: true,
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL('listDomains'),
+                                                    data: {
+                                                        listAll: true,
+                                                        details: 'min'
+                                                    },
+                                                    dataType: "json",
+                                                    async: false,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            },
+                                            isHidden: true
+                                        },
+                                        zoneId: {
+                                            label: 'label.zone',
+                                            docID: 'helpNetworkOfferingZone',
+                                            isMultiple: true,
+                                            validation: {
+                                                allzonesonly: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL("listZones"),
+                                                    data: {available: 'true'},
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var zoneObjs = json.listzonesresponse.zone;
+                                                        $(zoneObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.name
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        items.unshift({
+                                                            id: -1,
+                                                            description: "All Zones"
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                },
+                                action: function(args) {
+                                    var data = {
+                                        id: args.context.networkOfferings[0].id
+                                    };
+                                    if (args.data.isPublic != "on") {
+                                        var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                        if (domainId) {
+                                            $.extend(data, {
+                                                domainid: domainId
+                                            });
+                                        }
+                                    } else {
+                                        $.extend(data, {
+                                            domainid: "public"
+                                        });
+                                    }
+                                    var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
+                                    if (zoneId) {
+                                        $.extend(data, {
+                                            zoneid: zoneId
+                                        });
+                                    }
+                                    $.ajax({
+                                        url: createURL('updateNetworkOffering'),
+                                        data: data,
+                                        dataType: "json",
+                                        async: false,
+                                        success: function (json) {
+                                            var item = json.updatenetworkofferingresponse.networkoffering;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    }); //end ajax
+                                },
+                                notification: {
+                                    poll: function(args) {
+                                        args.complete();
+                                    }
+                                }
                             }
                         },
                         tabs: {
@@ -3749,6 +4641,12 @@
                                     },
                                     serviceCapabilities: {
                                         label: 'label.service.capabilities'
+                                    },
+                                    domain: {
+                                        label: 'label.domain'
+                                    },
+                                    zone: {
+                                        label: 'label.zone'
                                     },
                                     tags: {
                                         label: 'label.tags'
@@ -3902,8 +4800,8 @@
                                             networkServiceObjs.push({
                                                 name: 'Dhcp',
                                                 provider: [
-                                                       {name: 'VpcVirtualRouter'},
-                                                       {name: 'NuageVsp'}]
+                                                       {name: 'VpcVirtualRouter'}
+                                                ]
                                             });
                                             networkServiceObjs.push({
                                                 name: 'Dns',
@@ -3925,21 +4823,18 @@
                                                 name: 'StaticNat',
                                                 provider: [
                                                        {name: 'VpcVirtualRouter'},
-                                                       {name: 'NuageVsp'},
                                                        {name: 'BigSwitchBcf'}]
                                             });
                                             networkServiceObjs.push({
                                                 name: 'SourceNat',
                                                 provider: [
                                                        {name: 'VpcVirtualRouter'},
-                                                       {name: 'NuageVsp'},
                                                        {name: 'BigSwitchBcf'}]
                                             });
                                             networkServiceObjs.push({
                                                 name: 'NetworkACL',
                                                 provider: [
                                                        {name: 'VpcVirtualRouter'},
-                                                       {name: 'NuageVsp'},
                                                        {name: 'BigSwitchBcf'}]
                                             });
                                             networkServiceObjs.push({
@@ -3963,8 +4858,7 @@
                                                     {name: 'BigSwitchBcf'},
                                                     {name: 'NiciraNvp'},
                                                     {name: 'Ovs'},
-                                                    {name: 'JuniperContrailVpcRouter'},
-                                                    {name: 'NuageVsp'}
+                                                    {name: 'JuniperContrailVpcRouter'}
                                                 ]
                                             });
 
@@ -4065,6 +4959,86 @@
                                         isHidden: true,
                                         dependsOn: 'service.SourceNat.isEnabled',
                                         isBoolean: true
+                                    },
+                                    isPublic: {
+                                        label: 'label.public',
+                                        isBoolean: true,
+                                        isReverse: true,
+                                        isChecked: false,
+                                        docID: 'helpVpcOfferingPublic'
+                                    },
+                                    domainId: {
+                                        label: 'label.domain',
+                                        docID: 'helpVpcOfferingDomain',
+                                        dependsOn: 'isPublic',
+                                        isMultiple: true,
+                                        validation: {
+                                            required: true
+                                        },
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL('listDomains'),
+                                                data: {
+                                                    listAll: true,
+                                                    details: 'min'
+                                                },
+                                                dataType: "json",
+                                                async: false,
+                                                success: function(json) {
+                                                    var items = [];
+                                                    var domainObjs = json.listdomainsresponse.domain;
+                                                    $(domainObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.path
+                                                        });
+                                                    });
+                                                    items.sort(function(a, b) {
+                                                        return a.description.localeCompare(b.description);
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        },
+                                        isHidden: true
+                                    },
+                                    zoneId: {
+                                        label: 'label.zone',
+                                        docID: 'helpVpcOfferingZone',
+                                        isMultiple: true,
+                                        validation: {
+                                            allzonesonly: true
+                                        },
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listZones"),
+                                                data: {available: 'true'},
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var items = [];
+                                                    var zoneObjs = json.listzonesresponse.zone;
+                                                    $(zoneObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.name
+                                                        });
+                                                    });
+                                                    items.sort(function(a, b) {
+                                                        return a.description.localeCompare(b.description);
+                                                    });
+                                                    items.unshift({
+                                                        id: -1,
+                                                        description: "All Zones"
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        }
                                     }
                                 }//end of fields
                             }, //end of createForm
@@ -4074,6 +5048,7 @@
                                 var inputData = {};
                                 var serviceProviderMap = {};
                                 var serviceCapabilityIndex = 0;
+                                var excludedKeys = ['isPublic', 'domainId', 'zoneId', 'state', 'status', 'allocationstate']
                                 $.each(formData, function(key, value) {
                                     var serviceData = key.split('.');
                                     if (serviceData.length > 1) {
@@ -4101,7 +5076,7 @@
                                             serviceCapabilityIndex++;
                                         }
 
-                                    } else if (value != '') { // Normal data
+                                    } else if (value != '' && $.inArray(key, excludedKeys) == -1) { // Normal data
                                         inputData[key] = value;
                                     }
                                 });
@@ -4119,6 +5094,22 @@
                                     inputData['serviceProviderList[' + serviceProviderIndex + '].provider'] = value;
                                     serviceProviderIndex++;
                                 });
+
+                                if (args.data.isPublic != "on") {
+                                    var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                    if (domainId) {
+                                        $.extend(inputData, {
+                                            domainid: domainId
+                                        });
+                                    }
+                                }
+
+                                var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : undefined;
+                                if (zoneId) {
+                                    $.extend(inputData, {
+                                        zoneid: zoneId
+                                    });
+                                }
 
                                 $.ajax({
                                     url: createURL('createVPCOffering'),
@@ -4266,7 +5257,15 @@
                                             id: args.context.vpcOfferings[0].id
                                         },
                                         success: function(json) {
-                                            args.response.success();
+                                            var jid = json.deletevpcofferingresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getActionFilter: function() {
+                                                        return vpcOfferingActionfilter;
+                                                    }
+                                                }
+                                            });
                                         },
                                         error: function(data) {
                                             args.response.error(parseXMLHttpResponse(data));
@@ -4282,13 +5281,191 @@
                                     }
                                 },
                                 notification: {
-                                    poll: function(args) {
-                                        args.complete({
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+
+                            updateOfferingAccess: {
+                                label: 'label.action.update.offering.access',
+                                messages: {
+                                    notification: function(args) {
+                                        return 'label.action.update.offering.access';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.vpc.offering.access',
+                                    desc: '',
+                                    preFilter: function(args) {
+                                        var formOffering = args.context.vpcOfferings[0];
+                                        $.ajax({
+                                            url: createURL('listVPCOfferings'),
                                             data: {
-                                                state: 'Destroyed'
+                                                id: args.context.vpcOfferings[0].id
                                             },
-                                            actionFilter: vpcOfferingActionfilter
+                                            dataType: "json",
+                                            async: false,
+                                            success: function (json) {
+                                            var item = json.listvpcofferingsresponse.vpcoffering[0];
+                                                formOffering = item;
+                                                args.response.success({
+                                                    data: item
+                                                });
+                                            }
+                                        }); //end ajax
+                                        var offeringDomainIds = formOffering.domainid;
+                                        if (offeringDomainIds) {
+                                            args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
+                                            args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                            offeringDomainIds = offeringDomainIds.indexOf(",") != -1 ? offeringDomainIds.split(",") : [offeringDomainIds];
+                                            var options = args.$form.find('.form-item[rel=domainId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringDomainIds, function(domainIdIndex, domainId) {
+                                                    domainId = domainId.toString().trim();
+                                                    if ($(option).val() === domainId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        } else {
+                                            if (isAdmin()) {
+                                                args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', true);
+                                            }
+                                        }
+                                        var offeringZoneIds = formOffering.zoneid;
+                                        if (offeringZoneIds) {
+                                            offeringZoneIds = offeringZoneIds.indexOf(",") != -1 ? offeringZoneIds.split(",") : [offeringZoneIds];
+                                            var options = args.$form.find('.form-item[rel=zoneId]').find('option');
+                                            $.each(options, function(optionIndex, option) {
+                                                $.each(offeringZoneIds, function(zoneIdIndex, zoneId) {
+                                                    zoneId = zoneId.toString().trim();
+                                                    if ($(option).val() === zoneId) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            });
+                                        }
+                                    },
+                                    fields: {
+                                        isPublic: {
+                                            label: 'label.public',
+                                            isBoolean: true,
+                                            isReverse: true,
+                                            isChecked: false,
+                                            docID: 'helpVpcOfferingPublic'
+                                        },
+                                        domainId: {
+                                            label: 'label.domain',
+                                            docID: 'helpVpcOfferingDomain',
+                                            dependsOn: 'isPublic',
+                                            isMultiple: true,
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL('listDomains'),
+                                                    data: {
+                                                        listAll: true,
+                                                        details: 'min'
+                                                    },
+                                                    dataType: "json",
+                                                    async: false,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            },
+                                            isHidden: true
+                                        },
+                                        zoneId: {
+                                            label: 'label.zone',
+                                            docID: 'helpVpcOfferingZone',
+                                            isMultiple: true,
+                                            validation: {
+                                                allzonesonly: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL("listZones"),
+                                                    data: {available: 'true'},
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        var zoneObjs = json.listzonesresponse.zone;
+                                                        $(zoneObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.name
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        items.unshift({
+                                                            id: -1,
+                                                            description: "All Zones"
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                },
+                                action: function(args) {
+                                    var data = {
+                                        id: args.context.vpcOfferings[0].id
+                                    };
+                                    if (args.data.isPublic != "on") {
+                                        var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                        if (domainId) {
+                                            $.extend(data, {
+                                                domainid: domainId
+                                            });
+                                        }
+                                    } else {
+                                        $.extend(data, {
+                                            domainid: "public"
                                         });
+                                    }
+                                    var zoneId = (args.data.zoneId && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId != -1 ? args.data.zoneId : "all";
+                                    if (zoneId) {
+                                        $.extend(data, {
+                                            zoneid: zoneId
+                                        });
+                                    }
+                                    $.ajax({
+                                        url: createURL('updateVPCOffering'),
+                                        data: data,
+                                        dataType: "json",
+                                        async: false,
+                                        success: function (json) {
+                                            var item = json.updatevpcofferingresponse.vpcoffering;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    }); //end ajax
+                                },
+                                notification: {
+                                    poll: function(args) {
+                                        args.complete();
                                     }
                                 }
                             }
@@ -4342,6 +5519,12 @@
                                     serviceCapabilities: {
                                         label: 'label.service.capabilities'
                                     },
+                                    domain: {
+                                        label: 'label.domain'
+                                    },
+                                    zone: {
+                                        label: 'label.zone'
+                                    },
                                     tags: {
                                         label: 'label.tags'
                                     }
@@ -4386,6 +5569,7 @@
         var allowedActions = [];
         allowedActions.push("edit");
         allowedActions.push("remove");
+        allowedActions.push("updateOfferingAccess");
         return allowedActions;
     };
 
@@ -4402,6 +5586,7 @@
         var allowedActions = [];
         allowedActions.push("edit");
         allowedActions.push("remove");
+        allowedActions.push("updateOfferingAccess");
         return allowedActions;
     };
 
@@ -4421,6 +5606,7 @@
 
         if (jsonObj.isdefault == false)
             allowedActions.push("remove");
+        allowedActions.push("updateOfferingAccess");
 
         return allowedActions;
     };
@@ -4441,6 +5627,7 @@
 
         if (jsonObj.isdefault == false)
             allowedActions.push("remove");
+        allowedActions.push("updateOfferingAccess");
 
         return allowedActions;
     };

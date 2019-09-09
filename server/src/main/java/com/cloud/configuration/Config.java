@@ -187,14 +187,6 @@ public enum Config {
             "3600",
             "Timeout (in seconds) to synchronize storage pool operations.",
             null),
-    PrimaryStorageDownloadWait(
-            "Storage",
-            TemplateManager.class,
-            Integer.class,
-            "primary.storage.download.wait",
-            "10800",
-            "In second, timeout for download template to primary storage",
-            null),
     CreateVolumeFromSnapshotWait(
             "Storage",
             StorageManager.class,
@@ -566,7 +558,6 @@ public enum Config {
             "The interval (in milliseconds) when host stats are retrieved from agents.",
             null),
     HostRetry("Advanced", AgentManager.class, Integer.class, "host.retry", "2", "Number of times to retry hosts for creating a volume", null),
-    IntegrationAPIPort("Advanced", ManagementServer.class, Integer.class, "integration.api.port", null, "Default API port. To disable set it to 0 or negative.", null),
     InvestigateRetryInterval(
             "Advanced",
             HighAvailabilityManager.class,
@@ -858,7 +849,7 @@ public enum Config {
             "The interval (in milliseconds) when vm stats are retrieved from agents.",
             null),
     VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
-    VolumeStatsInterval("Advanced", ManagementServer.class, Integer.class, "volume.stats.interval", "60000", "Interval (in seconds) to report volume statistics.", null),
+    VolumeStatsInterval("Advanced", ManagementServer.class, Integer.class, "volume.stats.interval", "60000", "Interval (in miliseconds) to report volume statistics.", null),
     VmTransitionWaitInterval(
             "Advanced",
             ManagementServer.class,
@@ -898,14 +889,6 @@ public enum Config {
             "vm.disk.throttling.bytes_write_rate",
             "0",
             "Default disk I/O writerate in bytes per second allowed in User vm's disk.",
-            null),
-    KvmAutoConvergence(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "kvm.auto.convergence",
-            "false",
-            "Setting this to 'true' allows KVM to use auto convergence to complete VM migration (libvirt version 1.2.3+ and QEMU version 1.6+)",
             null),
     ControlCidr(
             "Advanced",
@@ -1003,14 +986,6 @@ public enum Config {
             "network.loadbalancer.basiczone.elb.gc.interval.minutes",
             "30",
             "Garbage collection interval to destroy unused ELB vms in minutes. Minimum of 5",
-            null),
-    SortKeyAlgorithm(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "sortkey.algorithm",
-            "false",
-            "Sort algorithm for those who use sort key(template, disk offering, service offering, network offering), true means ascending sort while false means descending sort",
             null),
     EnableEC2API("Advanced", ManagementServer.class, Boolean.class, "enable.ec2.api", "false", "enable EC2 API on CloudStack", null),
     EnableS3API("Advanced", ManagementServer.class, Boolean.class, "enable.s3.api", "false", "enable Amazon S3 API on CloudStack", null),
@@ -1211,14 +1186,6 @@ public enum Config {
     KvmPublicNetwork("Hidden", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),
     KvmPrivateNetwork("Hidden", ManagementServer.class, String.class, "kvm.private.network.device", null, "Specify the private bridge on host for private network", null),
     KvmGuestNetwork("Hidden", ManagementServer.class, String.class, "kvm.guest.network.device", null, "Specify the private bridge on host for private network", null),
-    KvmSshToAgentEnabled(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "kvm.ssh.to.agent",
-            "true",
-            "Specify whether or not the management server is allowed to SSH into KVM Agents",
-            null),
 
     // Hyperv
     HypervPublicNetwork(
@@ -1439,7 +1406,6 @@ public enum Config {
             "true",
             "Allow subdomains to use networks dedicated to their parent domain(s)",
             null),
-    EncodeApiResponse("Advanced", ManagementServer.class, Boolean.class, "encode.api.response", "false", "Do URL encoding for the api response, false by default", null),
     DnsBasicZoneUpdates(
             "Advanced",
             NetworkOrchestrationService.class,
@@ -1693,14 +1659,6 @@ public enum Config {
             null),
     VpcMaxNetworks("Advanced", ManagementServer.class, Integer.class, "vpc.max.networks", "3", "Maximum number of networks per vpc", null),
     DetailBatchQuerySize("Advanced", ManagementServer.class, Integer.class, "detail.batch.query.size", "2000", "Default entity detail batch query size for listing", null),
-    ConcurrentSnapshotsThresholdPerHost(
-            "Advanced",
-            ManagementServer.class,
-            Long.class,
-            "concurrent.snapshots.threshold.perhost",
-            null,
-            "Limits number of snapshots that can be handled by the host concurrently; default is NULL - unlimited",
-            null),
     NetworkIPv6SearchRetryMax(
             "Network",
             ManagementServer.class,

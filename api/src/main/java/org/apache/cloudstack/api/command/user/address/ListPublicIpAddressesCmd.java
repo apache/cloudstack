@@ -86,6 +86,13 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
                description = "lists all public IP addresses associated to the network specified")
     private Long associatedNetworkId;
 
+    @Parameter(name = ApiConstants.NETWORK_ID,
+            type = CommandType.UUID,
+            entityType = NetworkResponse.class,
+            description = "lists all public IP addresses by source network ID",
+            since = "4.13.0")
+    private Long networkId;
+
     @Parameter(name = ApiConstants.IS_SOURCE_NAT, type = CommandType.BOOLEAN, description = "list only source NAT IP addresses")
     private Boolean isSourceNat;
 
@@ -131,6 +138,10 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
 
     public Long getAssociatedNetworkId() {
         return associatedNetworkId;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
     }
 
     public Boolean isSourceNat() {

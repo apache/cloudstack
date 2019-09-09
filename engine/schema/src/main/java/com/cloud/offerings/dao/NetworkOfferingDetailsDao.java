@@ -16,16 +16,18 @@
 // under the License.
 package com.cloud.offerings.dao;
 
+import java.util.List;
 import java.util.Map;
+
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingDetailsVO;
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 public interface NetworkOfferingDetailsDao extends ResourceDetailsDao<NetworkOfferingDetailsVO> {
-
     Map<NetworkOffering.Detail, String> getNtwkOffDetails(long offeringId);
-
     String getDetail(long offeringId, Detail detailName);
+    List<Long> findDomainIds(final long resourceId);
+    List<Long> findZoneIds(final long resourceId);
 }

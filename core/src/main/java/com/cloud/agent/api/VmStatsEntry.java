@@ -19,22 +19,25 @@
 
 package com.cloud.agent.api;
 
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmStats;
 
 public class VmStatsEntry implements VmStats {
 
-    double cpuUtilization;
-    double networkReadKBs;
-    double networkWriteKBs;
-    double diskReadIOs;
-    double diskWriteIOs;
-    double diskReadKBs;
-    double diskWriteKBs;
-    double memoryKBs;
-    double intfreememoryKBs;
-    double targetmemoryKBs;
-    int numCPUs;
-    String entityType;
+    private long vmId;
+    private UserVmVO userVmVO;
+    private double cpuUtilization;
+    private double networkReadKBs;
+    private double networkWriteKBs;
+    private double diskReadIOs;
+    private double diskWriteIOs;
+    private double diskReadKBs;
+    private double diskWriteKBs;
+    private double memoryKBs;
+    private double intfreememoryKBs;
+    private double targetmemoryKBs;
+    private int numCPUs;
+    private String entityType;
 
     public VmStatsEntry() {
     }
@@ -50,14 +53,12 @@ public class VmStatsEntry implements VmStats {
         this.entityType = entityType;
     }
 
-    public VmStatsEntry(double cpuUtilization, double networkReadKBs, double networkWriteKBs, double diskReadKBs, double diskWriteKBs, int numCPUs, String entityType) {
-        this.cpuUtilization = cpuUtilization;
-        this.networkReadKBs = networkReadKBs;
-        this.networkWriteKBs = networkWriteKBs;
-        this.diskReadKBs = diskReadKBs;
-        this.diskWriteKBs = diskWriteKBs;
-        this.numCPUs = numCPUs;
-        this.entityType = entityType;
+    public long getVmId() {
+        return vmId;
+    }
+
+    public void setVmId(long vmId) {
+        this.vmId = vmId;
     }
 
     @Override
@@ -164,6 +165,14 @@ public class VmStatsEntry implements VmStats {
 
     public void setEntityType(String entityType) {
         this.entityType = entityType;
+    }
+
+    public UserVmVO getUserVmVO() {
+        return userVmVO;
+    }
+
+    public void setUserVmVO(UserVmVO userVmVO) {
+        this.userVmVO = userVmVO;
     }
 
 }

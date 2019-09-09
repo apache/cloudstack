@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -229,6 +230,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         DcSearch = createSearchBuilder();
         DcSearch.and("dc", DcSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        DcSearch.and("hypervisorType", DcSearch.entity().getHypervisorType(), Op.EQ);
         DcSearch.and("type", DcSearch.entity().getType(), Op.EQ);
         DcSearch.and("status", DcSearch.entity().getStatus(), Op.EQ);
         DcSearch.and("resourceState", DcSearch.entity().getResourceState(), Op.EQ);
@@ -1117,6 +1119,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<HostVO> listAllHostsByZoneAndHypervisorType(long zoneId, HypervisorType hypervisorType) {
+        SearchCriteria<HostVO> sc = DcSearch.create();
+        sc.setParameters("dc", zoneId);
+        if (hypervisorType != null) {
+            sc.setParameters("hypervisorType", hypervisorType.toString());
+        }
+        return listBy(sc);
+    }
+
+    @Override
     public List<Long> listClustersByHostTag(String hostTagOnOffering) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
@@ -1177,6 +1189,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         } catch (SQLException e) {
             throw new CloudRuntimeException(e);
         }
+    }
+
+    @Override
+    public List<HostVO> listAllHostsUpByZoneAndHypervisor(long zoneId, HypervisorType hypervisorType) {
+        return listByDataCenterIdAndHypervisorType(zoneId, hypervisorType)
+                .stream()
+                .filter(x -> x.getStatus().equals(Status.Up) &&
+                        x.getType() == Host.Type.Routing)
+                .collect(Collectors.toList());
     }
 
     private ResultSet executeSqlGetResultsetForMethodFindHostInZoneToExecuteCommand(HypervisorType hypervisorType, long zoneId, TransactionLegacy tx, String sql) throws SQLException {

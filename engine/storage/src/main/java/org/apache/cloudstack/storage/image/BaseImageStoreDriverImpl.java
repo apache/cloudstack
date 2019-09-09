@@ -27,7 +27,12 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.storage.Upload;
+import com.cloud.storage.dao.TemplateOVFPropertiesDao;
+import com.cloud.storage.TemplateOVFPropertyVO;
+import com.cloud.utils.crypt.DBEncryptionUtil;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -99,6 +104,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     AccountDao _accountDao;
     @Inject
     ResourceLimitService _resourceLimitMgr;
+    @Inject
+    TemplateOVFPropertiesDao templateOvfPropertiesDao;
 
     protected String _proxy = null;
 
@@ -162,6 +169,29 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         }
     }
 
+    /**
+     * Persist OVF properties as template details for template with id = templateId
+     */
+    private void persistOVFProperties(List<OVFPropertyTO> ovfProperties, long templateId) {
+        List<TemplateOVFPropertyVO> listToPersist = new ArrayList<>();
+        for (OVFPropertyTO property : ovfProperties) {
+            if (!templateOvfPropertiesDao.existsOption(templateId, property.getKey())) {
+                TemplateOVFPropertyVO option = new TemplateOVFPropertyVO(templateId, property.getKey(), property.getType(),
+                        property.getValue(), property.getQualifiers(), property.isUserConfigurable(),
+                        property.getLabel(), property.getDescription(), property.isPassword());
+                if (property.isPassword()) {
+                    String encryptedPassword = DBEncryptionUtil.encrypt(property.getValue());
+                    option.setValue(encryptedPassword);
+                }
+                listToPersist.add(option);
+            }
+        }
+        if (CollectionUtils.isNotEmpty(listToPersist)) {
+            s_logger.debug("Persisting " + listToPersist.size() + " OVF properties for template " + templateId);
+            templateOvfPropertiesDao.saveOptions(listToPersist);
+        }
+    }
+
     protected Void createTemplateAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback,
         CreateContext<CreateCmdResult> context) {
         if (s_logger.isDebugEnabled()) {
@@ -170,10 +200,14 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         DownloadAnswer answer = callback.getResult();
         DataObject obj = context.data;
         DataStore store = obj.getDataStore();
+        List<OVFPropertyTO> ovfProperties = answer.getOvfProperties();
 
         TemplateDataStoreVO tmpltStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), obj.getId());
         if (tmpltStoreVO != null) {
             if (tmpltStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                if (CollectionUtils.isNotEmpty(ovfProperties)) {
+                    persistOVFProperties(ovfProperties, obj.getId());
+                }
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Template is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
@@ -212,6 +246,9 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 VMTemplateVO templateDaoBuilder = _templateDao.createForUpdate();
                 templateDaoBuilder.setChecksum(answer.getCheckSum());
                 _templateDao.update(obj.getId(), templateDaoBuilder);
+            }
+            if (CollectionUtils.isNotEmpty(ovfProperties)) {
+                persistOVFProperties(ovfProperties, obj.getId());
             }
 
             CreateCmdResult result = new CreateCmdResult(null, null);

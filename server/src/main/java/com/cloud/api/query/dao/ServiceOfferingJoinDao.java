@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.List;
+
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
@@ -23,6 +25,8 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.utils.db.GenericDao;
 
 public interface ServiceOfferingJoinDao extends GenericDao<ServiceOfferingJoinVO, Long> {
+
+    List<ServiceOfferingJoinVO> findByDomainId(long domainId);
 
     ServiceOfferingResponse newServiceOfferingResponse(ServiceOfferingJoinVO offering);
 

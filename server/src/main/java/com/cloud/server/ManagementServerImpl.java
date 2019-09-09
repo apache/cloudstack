@@ -65,7 +65,8 @@ import org.apache.cloudstack.api.command.admin.config.ListDeploymentPlannersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
-import org.apache.cloudstack.api.command.admin.direct.download.UploadTemplateDirectDownloadCertificate;
+import org.apache.cloudstack.api.command.admin.direct.download.RevokeTemplateDirectDownloadCertificateCmd;
+import org.apache.cloudstack.api.command.admin.direct.download.UploadTemplateDirectDownloadCertificateCmd;
 import org.apache.cloudstack.api.command.admin.domain.CreateDomainCmd;
 import org.apache.cloudstack.api.command.admin.domain.DeleteDomainCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
@@ -104,6 +105,7 @@ import org.apache.cloudstack.api.command.admin.iso.ListIsoPermissionsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.iso.RegisterIsoCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.loadbalancer.ListLoadBalancerRuleInstancesCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
@@ -215,10 +217,10 @@ import org.apache.cloudstack.api.command.admin.usage.AddTrafficTypeCmd;
 import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficTypeCmd;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
-import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypesCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListUsageTypesCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.UpdateTrafficTypeCmd;
@@ -336,6 +338,7 @@ import org.apache.cloudstack.api.command.user.iso.CopyIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.DetachIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
@@ -407,6 +410,7 @@ import org.apache.cloudstack.api.command.user.region.ha.gslb.ListGlobalLoadBalan
 import org.apache.cloudstack.api.command.user.region.ha.gslb.RemoveFromGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.UpdateGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.resource.GetCloudIdentifierCmd;
+import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListHypervisorsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListResourceLimitsCmd;
 import org.apache.cloudstack.api.command.user.resource.UpdateResourceCountCmd;
@@ -440,6 +444,7 @@ import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.ListTemplateOVFProperties;
 import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
@@ -529,6 +534,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -549,7 +555,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.QueryManagerImpl;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -606,6 +611,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.IpAddress;
 import com.cloud.network.dao.IPAddressDao;
@@ -632,6 +638,7 @@ import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -808,6 +815,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private GuestOsDetailsDao _guestOsDetailsDao;
     @Inject
     private KeystoreManager _ksMgr;
+    @Inject
+    private DpdkHelper dpdkHelper;
 
     private LockMasterListener _lockMasterListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -1103,6 +1112,32 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends Cluster>, Integer>(result.first(), result.second());
     }
 
+    private HypervisorType getHypervisorType(VMInstanceVO vm, StoragePool srcVolumePool, VirtualMachineProfile profile) {
+        HypervisorType type = null;
+        if (vm == null) {
+            StoragePoolVO poolVo = _poolDao.findById(srcVolumePool.getId());
+            if (ScopeType.CLUSTER.equals(poolVo.getScope())) {
+                Long clusterId = poolVo.getClusterId();
+                if (clusterId != null) {
+                    ClusterVO cluster = _clusterDao.findById(clusterId);
+                    type = cluster.getHypervisorType();
+                }
+            } else if (ScopeType.ZONE.equals(poolVo.getScope())) {
+                Long zoneId = poolVo.getDataCenterId();
+                if (zoneId != null) {
+                    DataCenterVO dc = _dcDao.findById(zoneId);
+                }
+            }
+
+            if (null == type) {
+                type = srcVolumePool.getHypervisor();
+            }
+        } else {
+            type = profile.getHypervisorType();
+        }
+        return type;
+    }
+
     @Override
     public Pair<List<? extends Host>, Integer> searchForServers(final ListHostsCmd cmd) {
 
@@ -1273,6 +1308,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
 
+        if (dpdkHelper.isVMDpdkEnabled(vm.getId())) {
+            excludeNonDPDKEnabledHosts(plan, excludes);
+        }
+
         // call affinitygroup chain
         final long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
 
@@ -1303,6 +1342,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(otherHosts, suitableHosts, requiresStorageMotion);
+    }
+
+    /**
+     * Add non DPDK enabled hosts to the avoid list
+     */
+    private void excludeNonDPDKEnabledHosts(DataCenterDeployment plan, ExcludeList excludes) {
+        long dataCenterId = plan.getDataCenterId();
+        Long clusterId = plan.getClusterId();
+        Long podId = plan.getPodId();
+        List<HostVO> hosts = _hostDao.listAllUpAndEnabledNonHAHosts(Type.Routing, clusterId, podId, dataCenterId, null);
+        for (HostVO host : hosts) {
+            if (!dpdkHelper.isHostDpdkEnabled(host.getId())) {
+                excludes.addHost(host.getId());
+            }
+        }
     }
 
     private boolean hasSuitablePoolsForVolume(final VolumeVO volume, final Host host, final VirtualMachineProfile vmProfile) {
@@ -1388,7 +1442,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         StoragePool srcVolumePool = _poolDao.findById(volume.getPoolId());
         allPools = getAllStoragePoolCompatileWithVolumeSourceStoragePool(srcVolumePool);
         allPools.remove(srcVolumePool);
-        suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool);
+        if (vm != null) {
+            suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool);
+        } else {
+            suitablePools = allPools;
+        }
 
         return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
     }
@@ -1433,10 +1491,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null, null, null);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        // OfflineVmwareMigration: vm might be null here; deal!
+        HypervisorType type = getHypervisorType(vm, srcVolumePool, profile);
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
         //This is an override mechanism so we can list the possible local storage pools that a volume in a shared pool might be able to be migrated to
-        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, profile.getHypervisorType());
+        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, type);
         diskProfile.setUseLocalStorage(true);
 
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
@@ -1818,6 +1878,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Object keyword = cmd.getKeyword();
         final Long physicalNetworkId = cmd.getPhysicalNetworkId();
         final Long associatedNetworkId = cmd.getAssociatedNetworkId();
+        final Long sourceNetworkId = cmd.getNetworkId();
         final Long zone = cmd.getZoneId();
         final String address = cmd.getIpAddress();
         final Long vlan = cmd.getVlanId();
@@ -1863,7 +1924,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("vlanDbId", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("physicalNetworkId", sb.entity().getPhysicalNetworkId(), SearchCriteria.Op.EQ);
-        sb.and("associatedNetworkIdEq", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.EQ);
+        sb.and("associatedNetworkId", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.EQ);
+        sb.and("sourceNetworkId", sb.entity().getSourceNetworkId(), SearchCriteria.Op.EQ);
         sb.and("isSourceNat", sb.entity().isSourceNat(), SearchCriteria.Op.EQ);
         sb.and("isStaticNat", sb.entity().isOneToOneNat(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
@@ -1961,7 +2023,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (associatedNetworkId != null) {
-            sc.setParameters("associatedNetworkIdEq", associatedNetworkId);
+            sc.setParameters("associatedNetworkId", associatedNetworkId);
+        }
+
+        if (sourceNetworkId != null) {
+            sc.setParameters("sourceNetworkId", sourceNetworkId);
         }
 
         if (forDisplay != null) {
@@ -2673,7 +2739,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteTrafficMonitorCmd.class);
         cmdList.add(DeleteTrafficTypeCmd.class);
         cmdList.add(GenerateUsageRecordsCmd.class);
-        cmdList.add(GetUsageRecordsCmd.class);
+        cmdList.add(ListUsageRecordsCmd.class);
         cmdList.add(RemoveRawUsageRecordsCmd.class);
         cmdList.add(ListTrafficMonitorsCmd.class);
         cmdList.add(ListTrafficTypeImplementorsCmd.class);
@@ -2841,6 +2907,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ExtractTemplateCmd.class);
         cmdList.add(ListTemplatePermissionsCmd.class);
         cmdList.add(ListTemplatesCmd.class);
+        cmdList.add(ListDetailOptionsCmd.class);
         cmdList.add(RegisterTemplateCmd.class);
         cmdList.add(UpdateTemplateCmd.class);
         cmdList.add(UpdateTemplatePermissionsCmd.class);
@@ -3038,7 +3105,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ReleasePodIpCmdByAdmin.class);
         cmdList.add(CreateManagementNetworkIpRangeCmd.class);
         cmdList.add(DeleteManagementNetworkIpRangeCmd.class);
-        cmdList.add(UploadTemplateDirectDownloadCertificate.class);
+        cmdList.add(UploadTemplateDirectDownloadCertificateCmd.class);
+        cmdList.add(RevokeTemplateDirectDownloadCertificateCmd.class);
+        cmdList.add(ListMgmtsCmd.class);
+        cmdList.add(GetUploadParamsForIsoCmd.class);
+        cmdList.add(ListTemplateOVFProperties.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
@@ -3421,8 +3492,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Integer apiLimitInterval = Integer.valueOf(_configDao.getValue(Config.ApiLimitInterval.key()));
         final Integer apiLimitMax = Integer.valueOf(_configDao.getValue(Config.ApiLimitMax.key()));
 
-        final boolean allowUserViewDestroyedVM = (QueryManagerImpl.AllowUserViewDestroyedVM.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
+        final boolean allowUserViewDestroyedVM = (QueryService.AllowUserViewDestroyedVM.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
         final boolean allowUserExpungeRecoverVM = (UserVmManager.AllowUserExpungeRecoverVm.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
+
+        final boolean allowUserViewAllDomainAccounts = (QueryService.AllowUserViewAllDomainAccounts.valueIn(caller.getDomainId()));
 
         // check if region-wide secondary storage is used
         boolean regionSecondaryEnabled = false;
@@ -3443,6 +3516,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("KVMSnapshotEnabled", KVMSnapshotEnabled);
         capabilities.put("allowUserViewDestroyedVM", allowUserViewDestroyedVM);
         capabilities.put("allowUserExpungeRecoverVM", allowUserExpungeRecoverVM);
+        capabilities.put("allowUserViewAllDomainAccounts", allowUserViewAllDomainAccounts);
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);
@@ -3642,6 +3716,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Pair<List<? extends SSHKeyPair>, Integer> listSSHKeyPairs(final ListSSHKeyPairsCmd cmd) {
         final String name = cmd.getName();
         final String fingerPrint = cmd.getFingerprint();
+        final String keyword = cmd.getKeyword();
 
         final Account caller = getCaller();
         final List<Long> permittedAccounts = new ArrayList<Long>();
@@ -3664,6 +3739,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (fingerPrint != null) {
             sc.addAnd("fingerprint", SearchCriteria.Op.EQ, fingerPrint);
+        }
+
+        if (keyword != null) {
+            sc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addOr("fingerprint", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
 
         final Pair<List<SSHKeyPairVO>, Integer> result = _sshKeyPairDao.searchAndCount(sc, searchFilter);

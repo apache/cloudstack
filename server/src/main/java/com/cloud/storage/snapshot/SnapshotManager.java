@@ -56,6 +56,9 @@ public interface SnapshotManager extends Configurable {
     public static final ConfigKey<Integer> BackupRetryInterval = new ConfigKey<Integer>(Integer.class, "backup.retry.interval", "Advanced", "300",
             "Time in seconds between retries in backing up snapshot to secondary", false, ConfigKey.Scope.Global, null);
 
+    public static final ConfigKey<Boolean> BackupSnapshotAfterTakingSnapshot = new ConfigKey<Boolean>(Boolean.class, "snapshot.backup.to.secondary",  "Snapshots", "true",
+            "Indicates whether to always backup primary storage snapshot to secondary storage", false, ConfigKey.Scope.Global, null);
+
     void deletePoliciesForVolume(Long volumeId);
 
     /**

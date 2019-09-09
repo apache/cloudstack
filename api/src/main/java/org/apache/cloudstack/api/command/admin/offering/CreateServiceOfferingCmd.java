@@ -18,10 +18,11 @@ package org.apache.cloudstack.api.command.admin.offering;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -30,10 +31,16 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.Storage;
 import com.cloud.user.Account;
+import com.google.common.base.Strings;
 
 @APICommand(name = "createServiceOffering", description = "Creates a service offering.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -70,8 +77,8 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     private Boolean limitCpuUse;
 
     @Parameter(name = ApiConstants.IS_VOLATILE,
-               type = CommandType.BOOLEAN,
-               description = "true if the virtual machine needs to be volatile so that on every reboot of VM, original root disk is dettached then destroyed and a fresh root disk is created and attached to VM")
+            type = CommandType.BOOLEAN,
+            description = "true if the virtual machine needs to be volatile so that on every reboot of VM, original root disk is dettached then destroyed and a fresh root disk is created and attached to VM")
     private Boolean isVolatile;
 
     @Parameter(name = ApiConstants.STORAGE_TYPE, type = CommandType.STRING, description = "the storage type of the service offering. Values are local and shared.")
@@ -81,10 +88,19 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     private String tags;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
-               type = CommandType.UUID,
-               entityType = DomainResponse.class,
-               description = "the ID of the containing domain, null for public offerings")
-    private Long domainId;
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "the ID of the containing domain(s), null for public offerings")
+    private List<Long> domainIds;
+
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            description = "the ID of the containing zone(s), null for public offerings",
+            since = "4.13")
+    private List<Long> zoneIds;
 
     @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.STRING, description = "the host tag for this service offering.")
     private String hostTag;
@@ -93,18 +109,18 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     private Boolean isSystem;
 
     @Parameter(name = ApiConstants.SYSTEM_VM_TYPE,
-               type = CommandType.STRING,
-               description = "the system VM type. Possible types are \"domainrouter\", \"consoleproxy\" and \"secondarystoragevm\".")
+            type = CommandType.STRING,
+            description = "the system VM type. Possible types are \"domainrouter\", \"consoleproxy\" and \"secondarystoragevm\".")
     private String systemVmType;
 
     @Parameter(name = ApiConstants.NETWORKRATE,
-               type = CommandType.INTEGER,
-               description = "data transfer rate in megabits per second allowed. Supported only for non-System offering and system offerings having \"domainrouter\" systemvmtype")
+            type = CommandType.INTEGER,
+            description = "data transfer rate in megabits per second allowed. Supported only for non-System offering and system offerings having \"domainrouter\" systemvmtype")
     private Integer networkRate;
 
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER,
-               type = CommandType.STRING,
-               description = "The deployment planner heuristics used to deploy a VM of this offering. If null, value of global config vm.deployment.planner is used")
+            type = CommandType.STRING,
+            description = "The deployment planner heuristics used to deploy a VM of this offering. If null, value of global config vm.deployment.planner is used")
     private String deploymentPlanner;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_DETAILS, type = CommandType.MAP, description = "details for planner, used to store specific parameters")
@@ -113,14 +129,38 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, required = false, description = "bytes read rate of the disk offering")
     private Long bytesReadRate;
 
+    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX, type = CommandType.LONG, required = false, description = "burst bytes read rate of the disk offering")
+    private Long bytesReadRateMax;
+
+    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    private Long bytesReadRateMaxLength;
+
     @Parameter(name = ApiConstants.BYTES_WRITE_RATE, type = CommandType.LONG, required = false, description = "bytes write rate of the disk offering")
     private Long bytesWriteRate;
+
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX, type = CommandType.LONG, required = false, description = "burst bytes write rate of the disk offering")
+    private Long bytesWriteRateMax;
+
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    private Long bytesWriteRateMaxLength;
 
     @Parameter(name = ApiConstants.IOPS_READ_RATE, type = CommandType.LONG, required = false, description = "io requests read rate of the disk offering")
     private Long iopsReadRate;
 
+    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX, type = CommandType.LONG, required = false, description = "burst requests read rate of the disk offering")
+    private Long iopsReadRateMax;
+
+    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    private Long iopsReadRateMaxLength;
+
     @Parameter(name = ApiConstants.IOPS_WRITE_RATE, type = CommandType.LONG, required = false, description = "io requests write rate of the disk offering")
     private Long iopsWriteRate;
+
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX, type = CommandType.LONG, required = false, description = "burst io requests write rate of the disk offering")
+    private Long iopsWriteRateMax;
+
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    private Long iopsWriteRateMaxLength;
 
     @Parameter(name = ApiConstants.CUSTOMIZED_IOPS, type = CommandType.BOOLEAN, required = false, description = "whether compute offering iops is custom or not", since = "4.4")
     private Boolean customizedIops;
@@ -138,6 +178,37 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             since = "4.4")
     private Integer hypervisorSnapshotReserve;
 
+    // Introduce 4 new optional paramaters to work custom compute offerings
+    @Parameter(name = ApiConstants.CUSTOMIZED,
+            type = CommandType.BOOLEAN,
+            since = "4.13",
+            description = "Whether service offering size is custom or not")
+    private Boolean customized;
+
+    @Parameter(name = ApiConstants.MAX_CPU_NUMBER,
+            type = CommandType.INTEGER,
+            description = "The maximum number of CPUs to be set with Custom Computer Offering",
+            since = "4.13")
+    private Integer maxCPU;
+
+    @Parameter(name = ApiConstants.MIN_CPU_NUMBER,
+            type = CommandType.INTEGER,
+            description = "The minimum number of CPUs to be set with Custom Computer Offering",
+            since = "4.13")
+    private Integer minCPU;
+
+    @Parameter(name = ApiConstants.MAX_MEMORY,
+            type = CommandType.INTEGER,
+            description = "The maximum memroy size of the custom service offering in MB",
+            since = "4.13")
+    private Integer maxMemory;
+
+    @Parameter(name = ApiConstants.MIN_MEMORY,
+            type = CommandType.INTEGER,
+            description = "The minimum memroy size of the custom service offering in MB",
+            since = "4.13")
+    private Integer minMemory;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -151,10 +222,13 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public String getDisplayText() {
+        if (Strings.isNullOrEmpty(displayText)) {
+            throw new InvalidParameterValueException("Failed to create service offering because the offering display text has not been spified.");
+        }
         return displayText;
     }
 
-    public String getProvisioningType(){
+    public String getProvisioningType() {
         return provisioningType;
     }
 
@@ -163,6 +237,9 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public String getServiceOfferingName() {
+        if (Strings.isNullOrEmpty(serviceOfferingName)) {
+            throw new InvalidParameterValueException("Failed to create service offering because offering name has not been spified.");
+        }
         return serviceOfferingName;
     }
 
@@ -186,8 +263,22 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return tags;
     }
 
-    public Long getDomainId() {
-        return domainId;
+    public List<Long> getDomainIds() {
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            Set<Long> set = new LinkedHashSet<>(domainIds);
+            domainIds.clear();
+            domainIds.addAll(set);
+        }
+        return domainIds;
+    }
+
+    public List<Long> getZoneIds() {
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            Set<Long> set = new LinkedHashSet<>(zoneIds);
+            zoneIds.clear();
+            zoneIds.addAll(set);
+        }
+        return zoneIds;
     }
 
     public String getHostTag() {
@@ -210,18 +301,12 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return deploymentPlanner;
     }
 
-    public boolean isCustomized() {
-        return (cpuNumber == null || memory == null || cpuSpeed == null);
-    }
-
     public Map<String, String> getDetails() {
-        Map<String, String> detailsMap = null;
-        if (details != null && !details.isEmpty()) {
-            detailsMap = new HashMap<String, String>();
+        Map<String, String> detailsMap = new HashMap<>();
+        if (MapUtils.isNotEmpty(details)) {
             Collection<?> props = details.values();
-            Iterator<?> iter = props.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> detail = (HashMap<String, String>) iter.next();
+            for (Object prop : props) {
+                HashMap<String, String> detail = (HashMap<String, String>) prop;
                 detailsMap.put(detail.get("key"), detail.get("value"));
             }
         }
@@ -232,16 +317,48 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return bytesReadRate;
     }
 
+    public Long getBytesReadRateMax() {
+        return bytesReadRateMax;
+    }
+
+    public Long getBytesReadRateMaxLength() {
+        return bytesReadRateMaxLength;
+    }
+
     public Long getBytesWriteRate() {
         return bytesWriteRate;
+    }
+
+    public Long getBytesWriteRateMax() {
+        return bytesWriteRateMax;
+    }
+
+    public Long getBytesWriteRateMaxLength() {
+        return bytesWriteRateMaxLength;
     }
 
     public Long getIopsReadRate() {
         return iopsReadRate;
     }
 
+    public Long getIopsReadRateMax() {
+        return iopsReadRateMax;
+    }
+
+    public Long getIopsReadRateMaxLength() {
+        return iopsReadRateMaxLength;
+    }
+
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    public Long getIopsWriteRateMax() {
+        return iopsWriteRateMax;
+    }
+
+    public Long getIopsWriteRateMaxLength() {
+        return iopsWriteRateMaxLength;
     }
 
     public Boolean isCustomizedIops() {
@@ -258,6 +375,36 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public Integer getHypervisorSnapshotReserve() {
         return hypervisorSnapshotReserve;
+    }
+
+    /**
+     * If customized parameter is true, then cpuNumber, memory and cpuSpeed must be null
+     * Check if the optional params min/max CPU/Memory have been specified
+     * @return true if the following conditions are satisfied;
+     * - cpuNumber, memory and cpuSpeed are all null when customized parameter is set to true
+     * - min/max CPU/Memory params are all null or all set
+     */
+    public boolean isCustomized() {
+        if (customized != null){
+            return customized;
+        }
+        return (cpuNumber == null || memory == null);
+    }
+
+    public Integer getMaxCPUs() {
+        return maxCPU;
+    }
+
+    public Integer getMinCPUs() {
+        return minCPU;
+    }
+
+    public Integer getMaxMemory() {
+        return maxMemory;
+    }
+
+    public Integer getMinMemory() {
+        return minMemory;
     }
 
     /////////////////////////////////////////////////////

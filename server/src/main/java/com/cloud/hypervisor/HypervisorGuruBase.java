@@ -22,7 +22,9 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
@@ -40,6 +42,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.storage.StoragePool;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
@@ -71,7 +74,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Inject
     private ResourceManager _resourceMgr;
     @Inject
-    private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     private ServiceOfferingDao _serviceOfferingDao;
 
@@ -125,6 +128,34 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         return to;
     }
 
+    /**
+     * Add extra configuration from VM details. Extra configuration is stored as details starting with 'extraconfig'
+     */
+    private void addExtraConfig(Map<String, String> details, VirtualMachineTO to) {
+        for (String key : details.keySet()) {
+            if (key.startsWith(ApiConstants.EXTRA_CONFIG)) {
+                to.addExtraConfig(key, details.get(key));
+            }
+        }
+    }
+
+    /**
+     * Add extra configurations from service offering to the VM TO.
+     * Extra configuration keys are expected in formats:
+     * - "extraconfig-N"
+     * - "extraconfig-CONFIG_NAME"
+     */
+    protected void addServiceOfferingExtraConfiguration(ServiceOffering offering, VirtualMachineTO to) {
+        List<ServiceOfferingDetailsVO> details = _serviceOfferingDetailsDao.listDetails(offering.getId());
+        if (CollectionUtils.isNotEmpty(details)) {
+            for (ServiceOfferingDetailsVO detail : details) {
+                if (detail.getName().startsWith(ApiConstants.EXTRA_CONFIG)) {
+                    to.addExtraConfig(detail.getName(), detail.getValue());
+                }
+            }
+        }
+    }
+
     protected VirtualMachineTO toVirtualMachineTO(VirtualMachineProfile vmProfile) {
         ServiceOffering offering = _serviceOfferingDao.findById(vmProfile.getId(), vmProfile.getServiceOfferingId());
         VirtualMachine vm = vmProfile.getVirtualMachine();
@@ -168,11 +199,14 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         Map<String, String> detailsInVm = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
         if (detailsInVm != null) {
             to.setDetails(detailsInVm);
+            addExtraConfig(detailsInVm, to);
         }
 
+        addServiceOfferingExtraConfiguration(offering, to);
+
         // Set GPU details
-        ServiceOfferingDetailsVO offeringDetail = null;
-        if ((offeringDetail = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null) {
+        ServiceOfferingDetailsVO offeringDetail = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString());
+        if (offeringDetail != null) {
             ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
             to.setGpuDevice(_resourceMgr.getGPUDevice(vm.getHostId(), groupName.getValue(), offeringDetail.getValue()));
         }
@@ -188,6 +222,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setConfigDriveLabel(vmProfile.getConfigDriveLabel());
         to.setConfigDriveIsoRootFolder(vmProfile.getConfigDriveIsoRootFolder());
         to.setConfigDriveIsoFile(vmProfile.getConfigDriveIsoFile());
+        to.setState(vm.getState());
 
         return to;
     }
@@ -224,4 +259,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         return null;
     }
 
+    @Override
+    public List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination) {
+        return null;
+    }
 }

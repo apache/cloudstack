@@ -29,9 +29,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.DomainVlanMapVO;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
@@ -44,6 +41,7 @@ import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
@@ -54,10 +52,10 @@ import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
+import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
@@ -1378,16 +1376,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             }
         }
 
-        NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        boolean sharedSourceNat = offering.isSharedSourceNat();
-        boolean isSourceNat = false;
-        if (!sharedSourceNat) {
-            if (getExistingSourceNatInNetwork(owner.getId(), networkId) == null) {
-                if (network.getGuestType() == GuestType.Isolated && network.getVpcId() == null && !ipToAssoc.isPortable()) {
-                    isSourceNat = true;
-                }
-            }
-        }
+        boolean isSourceNat = isSourceNatAvailableForNetwork(owner, ipToAssoc, network);
 
         s_logger.debug("Associating ip " + ipToAssoc + " to network " + network);
 
@@ -1423,6 +1412,27 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 }
             }
         }
+    }
+
+    /**
+     * Prevents associating an IP address to an allocated (unimplemented network) network, throws an Exception otherwise
+     * @param owner Used to check if the user belongs to the Network
+     * @param ipToAssoc IP address to be associated to a Network, can only be associated to an implemented network for Source NAT
+     * @param network Network to which IP address is to be associated with, must not be in allocated state for Source NAT Network/IP association
+     * @return true if IP address can be successfully associated with Source NAT network
+     */
+    protected boolean isSourceNatAvailableForNetwork(Account owner, IPAddressVO ipToAssoc, Network network) {
+        NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        boolean sharedSourceNat = offering.isSharedSourceNat();
+        boolean isSourceNat = false;
+        if (!sharedSourceNat) {
+            if (getExistingSourceNatInNetwork(owner.getId(), network.getId()) == null) {
+                if (network.getGuestType() == GuestType.Isolated && network.getVpcId() == null && !ipToAssoc.isPortable()) {
+                    isSourceNat = true;
+                }
+            }
+        }
+        return isSourceNat;
     }
 
     protected boolean isSharedNetworkOfferingWithServices(long networkOfferingId) {
@@ -2027,7 +2037,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
                 if (network.getGateway() != null) {
                     if (nic.getIPv4Address() == null) {
-                        ipv4 = true;
                         PublicIp ip = null;
 
                         //Get ip address from the placeholder and don't allocate a new one
@@ -2063,30 +2072,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     nic.setIPv4Dns2(dc.getDns2());
                 }
 
-                //FIXME - get ipv6 address from the placeholder if it's stored there
-                if (network.getIp6Gateway() != null) {
-                    if (nic.getIPv6Address() == null) {
-                        UserIpv6Address ip = _ipv6Mgr.assignDirectIp6Address(dc.getId(), vm.getOwner(), network.getId(), requestedIpv6);
-                        Vlan vlan = _vlanDao.findById(ip.getVlanId());
-                        nic.setIPv6Address(ip.getAddress().toString());
-                        nic.setIPv6Gateway(vlan.getIp6Gateway());
-                        nic.setIPv6Cidr(vlan.getIp6Cidr());
-                        if (ipv4) {
-                            nic.setFormat(AddressFormat.DualStack);
-                        } else {
-                            nic.setIsolationUri(IsolationType.Vlan.toUri(vlan.getVlanTag()));
-                            nic.setBroadcastType(BroadcastDomainType.Vlan);
-                            nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan.getVlanTag()));
-                            nic.setFormat(AddressFormat.Ip6);
-                            nic.setReservationId(String.valueOf(vlan.getVlanTag()));
-                            if(nic.getMacAddress() == null) {
-                                nic.setMacAddress(ip.getMacAddress());
-                            }
-                        }
-                    }
-                    nic.setIPv6Dns1(dc.getIp6Dns1());
-                    nic.setIPv6Dns2(dc.getIp6Dns2());
-                }
+                _ipv6Mgr.setNicIp6Address(nic, dc, network);
             }
         });
     }
@@ -2136,29 +2122,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     nic.setIPv4Dns2(dc.getDns2());
                 }
 
-                // TODO: the IPv6 logic is not changed.
-                //FIXME - get ipv6 address from the placeholder if it's stored there
-                if (network.getIp6Gateway() != null) {
-                    if (nic.getIPv6Address() == null) {
-                        UserIpv6Address ip = _ipv6Mgr.assignDirectIp6Address(dc.getId(), vm.getOwner(), network.getId(), requestedIpv6);
-                        Vlan vlan = _vlanDao.findById(ip.getVlanId());
-                        nic.setIPv6Address(ip.getAddress().toString());
-                        nic.setIPv6Gateway(vlan.getIp6Gateway());
-                        nic.setIPv6Cidr(vlan.getIp6Cidr());
-                        if (ipv4) {
-                            nic.setFormat(AddressFormat.DualStack);
-                        } else {
-                            nic.setIsolationUri(IsolationType.Vlan.toUri(vlan.getVlanTag()));
-                            nic.setBroadcastType(BroadcastDomainType.Vlan);
-                            nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan.getVlanTag()));
-                            nic.setFormat(AddressFormat.Ip6);
-                            nic.setReservationId(String.valueOf(vlan.getVlanTag()));
-                            nic.setMacAddress(ip.getMacAddress());
-                        }
-                    }
-                    nic.setIPv6Dns1(dc.getIp6Dns1());
-                    nic.setIPv6Dns2(dc.getIp6Dns2());
-                }
+                _ipv6Mgr.setNicIp6Address(nic, dc, network);
             }
         });
     }

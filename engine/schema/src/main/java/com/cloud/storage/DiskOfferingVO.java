@@ -50,9 +50,6 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name = "id")
     long id;
 
-    @Column(name = "domain_id")
-    Long domainId;
-
     @Column(name = "unique_name")
     private String uniqueName;
 
@@ -106,16 +103,41 @@ public class DiskOfferingVO implements DiskOffering {
     int sortKey;
 
     @Column(name = "bytes_read_rate")
-    Long bytesReadRate;
+    private Long bytesReadRate;
+
+    @Column(name = "bytes_read_rate_max")
+    private Long bytesReadRateMax;
+
+    @Column(name = "bytes_read_rate_max_length")
+    private Long bytesReadRateMaxLength;
 
     @Column(name = "bytes_write_rate")
-    Long bytesWriteRate;
+    private Long bytesWriteRate;
+
+    @Column(name = "bytes_write_rate_max")
+    private Long bytesWriteRateMax;
+
+    @Column(name = "bytes_write_rate_max_length")
+    private Long bytesWriteRateMaxLength;
 
     @Column(name = "iops_read_rate")
-    Long iopsReadRate;
+    private Long iopsReadRate;
+
+    @Column(name = "iops_read_rate_max")
+    private Long iopsReadRateMax;
+
+    @Column(name = "iops_read_rate_max_length")
+    private Long iopsReadRateMaxLength;
 
     @Column(name = "iops_write_rate")
-    Long iopsWriteRate;
+    private Long iopsWriteRate;
+
+    @Column(name = "iops_write_rate_max")
+    private Long iopsWriteRateMax;
+
+    @Column(name = "iops_write_rate_max_length")
+    private Long iopsWriteRateMaxLength;
+
 
     @Column(name = "cache_mode", updatable = true, nullable = false)
     @Enumerated(value = EnumType.STRING)
@@ -138,9 +160,8 @@ public class DiskOfferingVO implements DiskOffering {
         uuid = UUID.randomUUID().toString();
     }
 
-    public DiskOfferingVO(Long domainId, String name, String displayText, Storage.ProvisioningType provisioningType, long diskSize, String tags, boolean isCustomized, Boolean isCustomizedIops,
+    public DiskOfferingVO(String name, String displayText, Storage.ProvisioningType provisioningType, long diskSize, String tags, boolean isCustomized, Boolean isCustomizedIops,
             Long minIops, Long maxIops, DiskCacheMode cacheMode) {
-        this.domainId = domainId;
         this.name = name;
         this.displayText = displayText;
         this.provisioningType = provisioningType;
@@ -157,9 +178,8 @@ public class DiskOfferingVO implements DiskOffering {
         this.cacheMode = cacheMode;
     }
 
-    public DiskOfferingVO(Long domainId, String name, String displayText, Storage.ProvisioningType provisioningType, long diskSize, String tags, boolean isCustomized, Boolean isCustomizedIops,
-            Long minIops, Long maxIops) {
-        this.domainId = domainId;
+    public DiskOfferingVO(String name, String displayText, Storage.ProvisioningType provisioningType, long diskSize, String tags, boolean isCustomized, Boolean isCustomizedIops,
+                          Long minIops, Long maxIops) {
         this.name = name;
         this.displayText = displayText;
         this.provisioningType = provisioningType;
@@ -178,7 +198,6 @@ public class DiskOfferingVO implements DiskOffering {
 
     public DiskOfferingVO(String name, String displayText, Storage.ProvisioningType provisioningType, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse,
             boolean customized) {
-        domainId = null;
         type = Type.Service;
         this.name = name;
         this.displayText = displayText;
@@ -188,30 +207,12 @@ public class DiskOfferingVO implements DiskOffering {
         this.useLocalStorage = useLocalStorage;
         this.systemUse = systemUse;
         this.customized = customized;
-        uuid = UUID.randomUUID().toString();
-        state = State.Active;
-    }
-
-    // domain specific offerings constructor (null domainId implies public
-    // offering)
-    public DiskOfferingVO(String name, String displayText, Storage.ProvisioningType provisioningType, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse,
-            boolean customized, Long domainId) {
-        type = Type.Service;
-        this.name = name;
-        this.displayText = displayText;
-        this.provisioningType = provisioningType;
-        this.tags = tags;
-        this.recreatable = recreatable;
-        this.useLocalStorage = useLocalStorage;
-        this.systemUse = systemUse;
-        this.customized = customized;
-        this.domainId = domainId;
         uuid = UUID.randomUUID().toString();
         state = State.Active;
     }
 
     public DiskOfferingVO(long id, String name, String displayText, Storage.ProvisioningType provisioningType, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage,
-            boolean systemUse, boolean customized, boolean customizedIops, Long domainId, Long minIops, Long maxIops) {
+            boolean systemUse, boolean customized, boolean customizedIops, Long minIops, Long maxIops) {
         this.id = id;
         type = Type.Service;
         this.name = name;
@@ -223,7 +224,6 @@ public class DiskOfferingVO implements DiskOffering {
         this.systemUse = systemUse;
         this.customized = customized;
         this.customizedIops = customizedIops;
-        this.domainId = domainId;
         uuid = UUID.randomUUID().toString();
         state = State.Active;
         this.minIops = minIops;
@@ -304,11 +304,6 @@ public class DiskOfferingVO implements DiskOffering {
     }
 
     @Override
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    @Override
     public Type getType() {
         return type;
     }
@@ -316,10 +311,6 @@ public class DiskOfferingVO implements DiskOffering {
     @Override
     public boolean isRecreatable() {
         return recreatable;
-    }
-
-    public void setDomainId(Long domainId) {
-        this.domainId = domainId;
     }
 
     @Override
@@ -472,9 +463,9 @@ public class DiskOfferingVO implements DiskOffering {
     }
 
     @Override
-    public Long getBytesReadRate() {
-        return bytesReadRate;
-    }
+    public Long getBytesReadRate() { return bytesReadRate; }
+
+
 
     @Override
     public void setBytesWriteRate(Long bytesWriteRate) {
@@ -484,6 +475,44 @@ public class DiskOfferingVO implements DiskOffering {
     @Override
     public Long getBytesWriteRate() {
         return bytesWriteRate;
+    }
+
+    @Override
+    public Long getBytesWriteRateMax() {
+        return bytesWriteRateMax;
+    }
+
+    public void setBytesWriteRateMax(Long bytesWriteRateMax) {
+        this.bytesWriteRateMax = bytesWriteRateMax;
+    }
+
+    @Override
+    public Long getBytesWriteRateMaxLength() {
+        return bytesWriteRateMaxLength;
+    }
+
+    public void setBytesWriteRateMaxLength(Long bytesWriteRateMaxLength) {
+        this.bytesWriteRateMaxLength = bytesWriteRateMaxLength;
+    }
+
+    @Override
+    public Long getBytesReadRateMax() {
+        return bytesReadRateMax;
+    }
+
+    @Override
+    public void setBytesReadRateMax(Long bytesReadRateMax) {
+        this.bytesReadRateMax = bytesReadRateMax;
+    }
+
+    @Override
+    public Long getBytesReadRateMaxLength() {
+        return bytesReadRateMaxLength;
+    }
+
+    @Override
+    public void setBytesReadRateMaxLength(Long bytesReadRateMaxLength) {
+        this.bytesReadRateMaxLength = bytesReadRateMaxLength;
     }
 
     @Override
@@ -497,6 +526,26 @@ public class DiskOfferingVO implements DiskOffering {
     }
 
     @Override
+    public Long getIopsReadRateMax() {
+        return iopsReadRateMax;
+    }
+
+    @Override
+    public void setIopsReadRateMax(Long iopsReadRateMax) {
+        this.iopsReadRateMax = iopsReadRateMax;
+    }
+
+    @Override
+    public Long getIopsReadRateMaxLength() {
+        return iopsReadRateMaxLength;
+    }
+
+    @Override
+    public void setIopsReadRateMaxLength(Long iopsReadRateMaxLength) {
+        this.iopsReadRateMaxLength = iopsReadRateMaxLength;
+    }
+
+    @Override
     public void setIopsWriteRate(Long iopsWriteRate) {
         this.iopsWriteRate = iopsWriteRate;
     }
@@ -504,6 +553,26 @@ public class DiskOfferingVO implements DiskOffering {
     @Override
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    @Override
+    public Long getIopsWriteRateMax() {
+        return iopsWriteRateMax;
+    }
+
+    @Override
+    public void setIopsWriteRateMax(Long iopsWriteRateMax) {
+        this.iopsWriteRateMax = iopsWriteRateMax;
+    }
+
+    @Override
+    public Long getIopsWriteRateMaxLength() {
+        return iopsWriteRateMaxLength;
+    }
+
+    @Override
+    public void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength) {
+        this.iopsWriteRateMaxLength = iopsWriteRateMaxLength;
     }
 
     @Override

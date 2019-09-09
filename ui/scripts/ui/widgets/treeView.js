@@ -103,7 +103,7 @@
             var $li = $target.closest('li');
 
             if ($target.is('li div.expand') && $li.data('tree-view-item-obj')) {
-                if ($li.find('ul').size()) {
+                if ($li.find('ul').length) {
                     $li.find('ul').remove();
                     $li.removeClass('expanded');
 
@@ -128,7 +128,7 @@
                 $treeView.find('li .name').removeClass('selected');
                 $target.addClass('selected');
 
-                if ($browser && $browser.size()) {
+                if ($browser && $browser.length) {
                     $browser.cloudBrowser('addPanel', {
                         partial: true,
                         title: $target.html(),

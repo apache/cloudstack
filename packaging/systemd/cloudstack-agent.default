@@ -15,11 +15,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-JAVA=/usr/bin/java
-JAVA_HEAP_INITIAL=256m
-JAVA_HEAP_MAX=2048m
+JAVA_OPTS="-Djava.io.tmpdir=/usr/share/cloudstack-agent/tmp -Xms256m -Xmx2048m"
+
+CLASSPATH="/usr/share/cloudstack-agent/lib/*:/usr/share/cloudstack-agent/plugins/*:/etc/cloudstack/agent:/usr/share/cloudstack-common/scripts"
+
 JAVA_CLASS=com.cloud.agent.AgentShell
-JAVA_TMPDIR=/usr/share/cloudstack-agent/tmp
 
 #You can uncomment this if you want to enable Java remote debugging.
 #Feel free to change the parameters at your will. The 'address' field defines the port to be used.

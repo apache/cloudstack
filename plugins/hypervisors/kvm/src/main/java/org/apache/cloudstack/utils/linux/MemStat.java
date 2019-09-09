@@ -22,30 +22,47 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+
 public class MemStat {
+    /*
+        Gather Memory Statistics of the current node by opening /proc/meminfo
+        which contains the memory information in KiloBytes.
+
+        Convert this all to bytes and return Long as a type with the information
+        in bytes
+     */
     protected final static String MEMINFO_FILE = "/proc/meminfo";
     protected final static String FREE_KEY = "MemFree";
     protected final static String CACHE_KEY = "Cached";
     protected final static String TOTAL_KEY = "MemTotal";
+    long reservedMemory;
+    long overCommitMemory;
 
-    private final Map<String, Double> _memStats = new HashMap<String, Double>();
+    private final Map<String, Long> _memStats = new HashMap<>();
 
     public MemStat() {
+        this(0,0);
     }
 
-    public Double getTotal() {
-        return _memStats.get(TOTAL_KEY);
+    public MemStat(long reservedMemory, long overCommitMemory) {
+        this.reservedMemory = reservedMemory;
+        this.overCommitMemory = overCommitMemory;
+        this.refresh();
     }
 
-    public Double getAvailable() {
+    public long getTotal() {
+        return _memStats.get(TOTAL_KEY) - reservedMemory + overCommitMemory;
+    }
+
+    public long getAvailable() {
         return getFree() + getCache();
     }
 
-    public Double getFree() {
-        return _memStats.get(FREE_KEY);
+    public long getFree() {
+        return _memStats.get(FREE_KEY) - reservedMemory + overCommitMemory;
     }
 
-    public Double getCache() {
+    public long getCache() {
         return _memStats.get(CACHE_KEY);
     }
 
@@ -63,7 +80,7 @@ public class MemStat {
         while(scanner.hasNext()) {
             String[] stats = scanner.next().split("\\:\\s+");
             if (stats.length == 2) {
-                _memStats.put(stats[0], Double.valueOf(stats[1].replaceAll("\\s+\\w+","")));
+                _memStats.put(stats[0], Long.valueOf(stats[1].replaceAll("\\s+\\w+","")) * 1024L);
             }
         }
     }

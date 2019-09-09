@@ -53,8 +53,9 @@ public class QuotaTypes extends UsageTypes {
         quotaTypeList.put(VM_DISK_IO_READ, new QuotaTypes(VM_DISK_IO_READ, "VM_DISK_IO_READ", "GB", "VM Disk usage(I/O Read)"));
         quotaTypeList.put(VM_DISK_IO_WRITE, new QuotaTypes(VM_DISK_IO_WRITE, "VM_DISK_IO_WRITE", "GB", "VM Disk usage(I/O Write)"));
         quotaTypeList.put(VM_DISK_BYTES_READ, new QuotaTypes(VM_DISK_BYTES_READ, "VM_DISK_BYTES_READ", "GB", "VM Disk usage(Bytes Read)"));
-        quotaTypeList.put(VM_DISK_BYTES_WRITE, new QuotaTypes(VM_DISK_BYTES_WRITE, "VPN_USERS", "GB", "VM Disk usage(Bytes Write)"));
+        quotaTypeList.put(VM_DISK_BYTES_WRITE, new QuotaTypes(VM_DISK_BYTES_WRITE, "VM_DISK_BYTES_WRITE", "GB", "VM Disk usage(Bytes Write)"));
         quotaTypeList.put(VM_SNAPSHOT, new QuotaTypes(VM_SNAPSHOT, "VM_SNAPSHOT", "GB-Month", "VM Snapshot storage usage"));
+        quotaTypeList.put(VOLUME_SECONDARY, new QuotaTypes(VOLUME_SECONDARY, "VOLUME_SECONDARY", "GB-Month", "Volume secondary storage usage"));
         quotaTypeList.put(VM_SNAPSHOT_ON_PRIMARY, new QuotaTypes(VM_SNAPSHOT_ON_PRIMARY, "VM_SNAPSHOT_ON_PRIMARY", "GB-Month", "VM Snapshot primary storage usage"));
         quotaTypeList.put(CPU_CLOCK_RATE, new QuotaTypes(CPU_CLOCK_RATE, "CPU_CLOCK_RATE", "Compute-Month", "Quota tariff for using 1 CPU of clock rate 100MHz"));
         quotaTypeList.put(CPU_NUMBER, new QuotaTypes(CPU_NUMBER, "CPU_NUMBER", "Compute-Month", "Quota tariff for running VM that has 1vCPU"));

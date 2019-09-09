@@ -43,6 +43,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 
 @Component
 public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao {
@@ -80,6 +81,24 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         sc.setParameters("zoneId", zoneId);
         sc.setParameters("vlanId", vlanId);
         return findOneBy(sc);
+    }
+
+    /**
+     * Returns a vlan by the network id and if the given IPv4 is in the network IP range.
+     */
+    @Override
+    public VlanVO findByNetworkIdAndIpv4(long networkId, String ipv4Address) {
+        List<VlanVO> vlanVoList = listVlansByNetworkId(networkId);
+        for (VlanVO vlan : vlanVoList) {
+            String ipRange = vlan.getIpRange();
+            String[] ipRangeParts = ipRange.split("-");
+            String startIP = ipRangeParts[0];
+            String endIP = ipRangeParts[1];
+            if (NetUtils.isIpInRange(ipv4Address, startIP, endIP)) {
+                return vlan;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -148,7 +167,10 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         List<PodVlanMapVO> vlanMaps = _podVlanMapDao.listPodVlanMapsByPod(podId);
         List<VlanVO> result = new ArrayList<VlanVO>();
         for (PodVlanMapVO pvmvo : vlanMaps) {
-            result.add(findById(pvmvo.getVlanDbId()));
+            VlanVO vlanByPodId = findById(pvmvo.getVlanDbId());
+            if (vlanByPodId != null) {
+                result.add(vlanByPodId);
+            }
         }
         return result;
     }
@@ -296,12 +318,6 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         }
 
         return null;
-//        String ipAddress = _ipAddressDao.assignIpAddress(accountId, domainId, vlan.getId(), false).getAddress();
-//        if (ipAddress == null) {
-//            return null;
-//        }
-//        return new Pair<String, VlanVO>(ipAddress, vlan);
-
     }
 
     @Override

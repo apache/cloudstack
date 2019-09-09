@@ -42,5 +42,38 @@ public interface ImageStoreProviderManager {
 
     boolean registerDriver(String uuid, ImageStoreDriver driver);
 
-    DataStore getImageStore(List<DataStore> imageStores);
+    /**
+     * Return a random DataStore from the a list of DataStores.
+     *
+     * @param imageStores the list of image stores from which a random store
+     *                    to be returned
+     * @return            random DataStore
+     */
+    DataStore getRandomImageStore(List<DataStore> imageStores);
+
+    /**
+     * Return a DataStore which has free capacity. Stores will be sorted
+     * based on their free space and capacity check will be done based on
+     * the predefined threshold value. If a store is full beyond the
+     * threshold it won't be considered for response. First store in the
+     * sorted list free capacity will be returned. When there is no store
+     * with free capacity in the list a null value will be returned.
+     *
+     * @param imageStores the list of image stores from which stores with free
+     *                    capacity stores to be returned
+     * @return            the DataStore which has free capacity
+     */
+    DataStore getImageStoreWithFreeCapacity(List<DataStore> imageStores);
+
+    /**
+     * Return a list of DataStore which have free capacity. Free capacity check
+     * will be done based on the predefined threshold value. If a store is full
+     * beyond the threshold it won't be considered for response. An empty list
+     * will be returned when no store in the parameter list has free capacity.
+     *
+     * @param imageStores the list of image stores from which stores with free
+     *                    capacity stores to be returned
+     * @return            the list of DataStore which have free capacity
+     */
+    List<DataStore> listImageStoresWithFreeCapacity(List<DataStore> imageStores);
 }

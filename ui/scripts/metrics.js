@@ -478,6 +478,9 @@
                     columns: {
                         memorytotal: {
                             label: 'label.metrics.allocated'
+                        },
+                        memoryused: {
+                            label: 'label.metrics.memory.used.avg'
                         }
                     }
                 },
@@ -525,6 +528,12 @@
                     url: createURL('listVirtualMachinesMetrics'),
                     data: data,
                     success: function(json) {
+                        json.listvirtualmachinesmetricsresponse.virtualmachine.forEach(function(vm) {
+                            var memUsedPercent = (vm.memorykbs && vm.memoryintfreekbs) ? (Math.round((vm.memorykbs - vm.memoryintfreekbs) * 10000 / vm.memorykbs) / 100).toString() + "%" : "";
+                            $.extend(vm,{
+                                memoryused: memUsedPercent
+                            })
+                        });
                         args.response.success({
                             data: json.listvirtualmachinesmetricsresponse.virtualmachine
                         });
@@ -544,6 +553,15 @@
     cloudStack.sections.metrics.volumes = {
         title: 'label.metrics',
         listView: {
+            preFilter: function(args) {
+                var hiddenFields = [];
+                if (!isAdmin()) {
+                    hiddenFields.push('physicalsize');
+                    hiddenFields.push('storage');
+                    hiddenFields.push('storagetype');
+                }
+                return hiddenFields;
+            },
             id: 'volumes',
             fields: {
                 name: {
@@ -590,6 +608,21 @@
                 storage: {
                     label: 'label.metrics.storagepool'
                 },
+                disk: {
+                    label: 'label.metrics.disk.usage',
+                    collapsible: true,
+                    columns: {
+                        diskioread: {
+                            label: 'label.metrics.disk.read'
+                        },
+                        diskiowrite: {
+                            label: 'label.metrics.disk.write'
+                        },
+                        diskiopstotal: {
+                            label: 'label.metrics.disk.iops.total'
+                        }
+                    }
+                }
             },
             dataProvider: function(args) {
                 var data = {listAll: true};

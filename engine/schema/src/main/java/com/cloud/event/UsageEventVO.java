@@ -31,7 +31,7 @@ import com.cloud.utils.db.GenericDao;
 @Table(name = "usage_event")
 public class UsageEventVO implements UsageEvent {
     public enum DynamicParameters {
-        cpuSpeed, cpuNumber, memory
+        cpuSpeed, cpuNumber, memory, vmSnapshotId
     };
 
     @Id
@@ -70,7 +70,7 @@ public class UsageEventVO implements UsageEvent {
     private String resourceType;
 
     @Column(name = "processed")
-    boolean processed;
+    private boolean processed;
 
     @Column(name = "virtual_size")
     private Long virtualSize;

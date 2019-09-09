@@ -128,6 +128,15 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public List<VolumeVO> findByInstanceIdAndPoolId(long instanceId, long poolId) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instanceId", instanceId);
+        sc.setParameters("poolId", poolId);
+        sc.setParameters("notDestroyed", Volume.State.Destroy);
+        return listBy(sc);
+    }
+
+    @Override
     public VolumeVO findByPoolIdName(long poolId, String name) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("poolId", poolId);
@@ -145,6 +154,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             sc.setParameters("vType", volumeType.toString());
         }
 
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VolumeVO> findByPoolIdAndState(long poolId, Volume.State state) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("poolId", poolId);
+        sc.setParameters("state", state);
         return listBy(sc);
     }
 

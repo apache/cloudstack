@@ -19,10 +19,15 @@ package com.cloud.upgrade.dao;
 
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.log4j.Logger;
 
 public class Upgrade41120to41200 implements DbUpgrade {
+
+    final static Logger LOG = Logger.getLogger(Upgrade41120to41200.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -52,7 +57,15 @@ public class Upgrade41120to41200 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+        updateManagementServerHostUuid(conn);
+    }
 
+    private void updateManagementServerHostUuid(Connection conn) {
+        try (final PreparedStatement updateStatement = conn.prepareStatement("UPDATE cloud.mshost SET uuid=UUID()")) {
+            updateStatement.executeUpdate();
+        } catch (SQLException e) {
+            LOG.error("Failed to add an UUID to each management server.", e);
+        }
     }
 
     @Override

@@ -211,7 +211,7 @@ public class CommandSetupHelper {
         cmds.addCommand("users", cmd);
     }
 
-    public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, final Commands cmds) {
+    public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, boolean remove, final Commands cmds) {
         final DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIPv4Address(), vm.getHostName(), nic.getIPv6Address(),
                 _networkModel.getExecuteInSeqNtwkElmtCmd());
 
@@ -229,6 +229,7 @@ public class CommandSetupHelper {
         dhcpCommand.setDefaultDns(ipaddress);
         dhcpCommand.setDuid(NetUtils.getDuidLL(nic.getMacAddress()));
         dhcpCommand.setDefault(nic.isDefaultNic());
+        dhcpCommand.setRemove(remove);
 
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -622,7 +623,7 @@ public class CommandSetupHelper {
             final NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
             if (nic != null) {
                 s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
-                createDhcpEntryCommand(router, vm, nic, cmds);
+                createDhcpEntryCommand(router, vm, nic, false, cmds);
             }
         }
     }
@@ -1061,7 +1062,7 @@ public class CommandSetupHelper {
         final NicVO defaultNic = _nicDao.findDefaultNicForVM(userVmId);
 
         // check if DNS provider is the domR
-        if (!_networkModel.isProviderSupportServiceInNetwork(defaultNic.getNetworkId(), Service.Dns, Provider.VirtualRouter)) {
+        if (defaultNic == null || !_networkModel.isProviderSupportServiceInNetwork(defaultNic.getNetworkId(), Service.Dns, Provider.VirtualRouter)) {
             return null;
         }
 

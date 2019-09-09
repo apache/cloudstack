@@ -18,10 +18,12 @@ package com.cloud.hypervisor;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
@@ -33,6 +35,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -47,6 +50,8 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     GuestOSHypervisorDao _guestOsHypervisorDao;
     @Inject
     HostDao _hostDao;
+    @Inject
+    DpdkHelper dpdkHelper;
 
     public static final Logger s_logger = Logger.getLogger(KVMGuru.class);
 
@@ -107,6 +112,17 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         VirtualMachineTO to = toVirtualMachineTO(vm);
         setVmQuotaPercentage(to, vm);
 
+        if (dpdkHelper.isDpdkvHostUserModeSettingOnServiceOffering(vm)) {
+            dpdkHelper.setDpdkVhostUserMode(to, vm);
+        }
+
+        if (to.getType() == VirtualMachine.Type.User && MapUtils.isNotEmpty(to.getExtraConfig()) &&
+                to.getExtraConfig().containsKey(DpdkHelper.DPDK_NUMA) && to.getExtraConfig().containsKey(DpdkHelper.DPDK_HUGE_PAGES)) {
+            for (final NicTO nic : to.getNics()) {
+                nic.setDpdkEnabled(true);
+            }
+        }
+
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findByIdIncludingRemoved(vm.getVirtualMachine().getGuestOSId());
         to.setOs(guestOS.getDisplayName());
@@ -126,6 +142,10 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
 
     @Override
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
+        if (cmd instanceof StorageSubSystemCommand) {
+            StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
+            c.setExecuteInSequence(false);
+        }
         if (cmd instanceof CopyCommand) {
             CopyCommand c = (CopyCommand) cmd;
             boolean inSeq = true;
@@ -137,12 +157,11 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                 inSeq = false;
             }
             c.setExecuteInSequence(inSeq);
+            if (c.getSrcTO().getHypervisorType() == HypervisorType.KVM) {
+                return new Pair<>(true, hostId);
+            }
         }
-        if (cmd instanceof StorageSubSystemCommand) {
-            StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
-            c.setExecuteInSequence(false);
-        }
-        return new Pair<Boolean, Long>(false, new Long(hostId));
+        return new Pair<>(false, hostId);
     }
 
     @Override

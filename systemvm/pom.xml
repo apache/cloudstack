@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.12.0.0-SNAPSHOT</version>
+        <version>4.14.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <properties>
@@ -86,12 +86,6 @@
                                     <directory>target</directory>
                                     <includes>
                                         <include>agent.zip</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <directory>debian/root/.ssh</directory>
-                                    <includes>
-                                        <include>authorized_keys</include>
                                     </includes>
                                 </resource>
                             </resources>
@@ -166,7 +160,6 @@
                         <argument>systemvm.iso</argument>
                         <argument>agent.zip</argument>
                         <argument>cloud-scripts.tgz</argument>
-                        <argument>authorized_keys</argument>
                     </arguments>
                 </configuration>
             </plugin>

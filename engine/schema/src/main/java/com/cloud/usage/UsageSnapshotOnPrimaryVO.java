@@ -66,6 +66,9 @@ public class UsageSnapshotOnPrimaryVO implements InternalIdentity {
     @Column(name = "virtualsize")
     private Long virtualSize;
 
+    @Column(name = "vm_snapshot_id")
+    private Long vmSnapshotId;
+
     protected UsageSnapshotOnPrimaryVO() {
     }
 
@@ -136,10 +139,18 @@ public class UsageSnapshotOnPrimaryVO implements InternalIdentity {
         return this.id;
     }
 
+    public Long getVmSnapshotId() {
+        return vmSnapshotId;
+    }
+
+    public void setVmSnapshotId(Long vmSnapshotId) {
+        this.vmSnapshotId = vmSnapshotId;
+    }
+
     @Override
     public String toString() {
         return "UsageSnapshotOnPrimaryVO [id=" + id + ", zoneId=" + zoneId + ", accountId=" + accountId + ", domainId=" + domainId + ", vmId=" + vmId + ", name=" + name
-                + ", snapshotType=" + snapshotType + ", physicalSize=" + physicalSize + ", created=" + created + ", deleted=" + deleted + ", virtualSize=" + virtualSize + "]";
+                + ", snapshotType=" + snapshotType + ", physicalSize=" + physicalSize + ", created=" + created + ", deleted=" + deleted + ", virtualSize=" + virtualSize + ", vmSnapshotId=" + vmSnapshotId + "]";
     }
 
 }

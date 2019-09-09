@@ -447,6 +447,23 @@ public class VirtualMachineMO extends BaseMO {
         return false;
     }
 
+    public boolean changeDatastore(ManagedObjectReference morDataStore) throws Exception {
+        VirtualMachineRelocateSpec relocateSpec = new VirtualMachineRelocateSpec();
+        relocateSpec.setDatastore(morDataStore);
+
+        ManagedObjectReference morTask = _context.getService().relocateVMTask(_mor, relocateSpec, null);
+
+        boolean result = _context.getVimClient().waitForTask(morTask);
+        if (result) {
+            _context.waitForTaskProgressDone(morTask);
+            return true;
+        } else {
+            s_logger.error("VMware change datastore relocateVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+        }
+
+        return false;
+    }
+
     public boolean relocate(ManagedObjectReference morTargetHost) throws Exception {
         VirtualMachineRelocateSpec relocateSpec = new VirtualMachineRelocateSpec();
         relocateSpec.setHost(morTargetHost);
@@ -2692,7 +2709,7 @@ public class VirtualMachineMO extends BaseMO {
         return pathList;
     }
 
-    private String getDeviceBusName(List<VirtualDevice> allDevices, VirtualDevice theDevice) throws Exception {
+    public String getDeviceBusName(List<VirtualDevice> allDevices, VirtualDevice theDevice) throws Exception {
         for (VirtualDevice device : allDevices) {
             if (device.getKey() == theDevice.getControllerKey().intValue()) {
                 if (device instanceof VirtualIDEController) {
@@ -2946,10 +2963,18 @@ public class VirtualMachineMO extends BaseMO {
         List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
                 getDynamicProperty(_mor, "config.hardware.device");
         if(devices != null && devices.size() > 0) {
+            long isoDevices = devices.stream()
+                    .filter(x -> x instanceof VirtualCdrom && x.getBacking() instanceof VirtualCdromIsoBackingInfo)
+                    .count();
             for(VirtualDevice device : devices) {
-                if(device instanceof VirtualCdrom && device.getBacking() instanceof VirtualCdromIsoBackingInfo &&
-                        ((VirtualCdromIsoBackingInfo)device.getBacking()).getFileName().equals(filename)) {
-                    return device;
+                if(device instanceof VirtualCdrom && device.getBacking() instanceof VirtualCdromIsoBackingInfo) {
+                    if (((VirtualCdromIsoBackingInfo)device.getBacking()).getFileName().equals(filename)) {
+                        return device;
+                    } else if (isoDevices == 1L){
+                        s_logger.warn(String.format("VM ISO filename %s differs from the expected filename %s",
+                                ((VirtualCdromIsoBackingInfo)device.getBacking()).getFileName(), filename));
+                        return device;
+                    }
                 }
             }
         }
@@ -3281,7 +3306,7 @@ public class VirtualMachineMO extends BaseMO {
         virtualHardwareVersion = getVirtualHardwareVersion();
 
         // Check if guest operating system supports memory hotadd
-        if (guestOsDescriptor.isSupportsMemoryHotAdd()) {
+        if (guestOsDescriptor != null && guestOsDescriptor.isSupportsMemoryHotAdd()) {
             guestOsSupportsMemoryHotAdd = true;
         }
         // Check if virtual machine is using hardware version 7 or later.

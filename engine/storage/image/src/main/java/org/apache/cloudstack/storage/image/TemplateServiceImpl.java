@@ -409,8 +409,15 @@ public class TemplateServiceImpl implements TemplateService {
                                     _templateDao.update(tmplt.getId(), tmlpt);
 
                                     if (tmplt.getState() == VirtualMachineTemplate.State.NotUploaded || tmplt.getState() == VirtualMachineTemplate.State.UploadInProgress) {
+                                        VirtualMachineTemplate.Event event = VirtualMachineTemplate.Event.OperationSucceeded;
+                                        // For multi-disk OVA, check and create data disk templates
+                                        if (tmplt.getFormat().equals(ImageFormat.OVA)) {
+                                            if (!createOvaDataDiskTemplates(_templateFactory.getTemplate(tmlpt.getId(), store))) {
+                                                event = VirtualMachineTemplate.Event.OperationFailed;
+                                            }
+                                        }
                                         try {
-                                            stateMachine.transitTo(tmplt, VirtualMachineTemplate.Event.OperationSucceeded, null, _templateDao);
+                                            stateMachine.transitTo(tmplt, event, null, _templateDao);
                                         } catch (NoTransitionException e) {
                                             s_logger.error("Unexpected state transition exception for template " + tmplt.getName() + ". Details: " + e.getMessage());
                                         }
@@ -701,7 +708,7 @@ public class TemplateServiceImpl implements TemplateService {
             return null;
         }
 
-        // Check if OVA contains additional data disks. If yes, create Datadisk templates for each of the additional datadisk present in the OVA
+        // For multi-disk OVA, check and create data disk templates
         if (template.getFormat().equals(ImageFormat.OVA)) {
             if (!createOvaDataDiskTemplates(template)) {
                 template.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
@@ -729,8 +736,8 @@ public class TemplateServiceImpl implements TemplateService {
         return null;
     }
 
-
-    protected boolean createOvaDataDiskTemplates(TemplateInfo parentTemplate) {
+    @Override
+    public boolean createOvaDataDiskTemplates(TemplateInfo parentTemplate) {
         try {
             // Get Datadisk template (if any) for OVA
             List<DatadiskTO> dataDiskTemplates = new ArrayList<DatadiskTO>();

@@ -17,19 +17,24 @@
 
 package org.apache.cloudstack.api;
 
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.api.command.admin.volume.ListVolumesCmdByAdmin;
+import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.metrics.MetricsService;
 import org.apache.cloudstack.response.VolumeMetricsResponse;
 
-import javax.inject.Inject;
-import java.util.List;
-
-@APICommand(name = ListVolumesMetricsCmd.APINAME, description = "Lists volume metrics", responseObject = VolumeMetricsResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
-        since = "4.9.3", authorized = {RoleType.Admin,  RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListVolumesMetricsCmd extends ListVolumesCmdByAdmin {
+@APICommand(name = ListVolumesMetricsCmd.APINAME,
+        description = "Lists volume metrics",
+        responseObject = VolumeMetricsResponse.class,
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false,
+        since = "4.9.3",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+public class ListVolumesMetricsCmd extends ListVolumesCmd {
     public static final String APINAME = "listVolumesMetrics";
 
     @Inject
@@ -41,7 +46,7 @@ public class ListVolumesMetricsCmd extends ListVolumesCmdByAdmin {
     }
 
     @Override
-    public void execute()  {
+    public void execute() {
         final List<VolumeMetricsResponse> metricsResponses = metricsService.listVolumeMetrics(_queryService.searchForVolumes(this).getResponses());
         ListResponse<VolumeMetricsResponse> response = new ListResponse<>();
         response.setResponses(metricsResponses, metricsResponses.size());

@@ -30,6 +30,7 @@ import org.apache.cloudstack.jobs.JobInfo;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -46,6 +47,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     private final SearchBuilder<AsyncJobVO> expiringUnfinishedAsyncJobSearch;
     private final SearchBuilder<AsyncJobVO> expiringCompletedAsyncJobSearch;
     private final SearchBuilder<AsyncJobVO> failureMsidAsyncJobSearch;
+    private final GenericSearchBuilder<AsyncJobVO, Long> asyncJobTypeSearch;
 
     public AsyncJobDaoImpl() {
         pendingAsyncJobSearch = createSearchBuilder();
@@ -93,6 +95,13 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         failureMsidAsyncJobSearch.and("status", failureMsidAsyncJobSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         failureMsidAsyncJobSearch.and("job_cmd", failureMsidAsyncJobSearch.entity().getCmd(), Op.IN);
         failureMsidAsyncJobSearch.done();
+
+        asyncJobTypeSearch = createSearchBuilder(Long.class);
+        asyncJobTypeSearch.select(null, SearchCriteria.Func.COUNT, asyncJobTypeSearch.entity().getId());
+        asyncJobTypeSearch.and("job_info", asyncJobTypeSearch.entity().getCmdInfo(),Op.LIKE);
+        asyncJobTypeSearch.and("job_cmd", asyncJobTypeSearch.entity().getCmd(), Op.IN);
+        asyncJobTypeSearch.and("status", asyncJobTypeSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        asyncJobTypeSearch.done();
 
     }
 
@@ -226,5 +235,15 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         sc.setParameters("status", AsyncJobVO.Status.FAILED);
         sc.setParameters("job_cmd", (Object[])cmds);
         return listBy(sc);
+    }
+
+    @Override
+    public long countPendingJobs(String havingInfo, String... cmds) {
+        SearchCriteria<Long> sc = asyncJobTypeSearch.create();
+        sc.setParameters("status", JobInfo.Status.IN_PROGRESS);
+        sc.setParameters("job_cmd", (Object[])cmds);
+        sc.setParameters("job_info", "%" + havingInfo + "%");
+        List<Long> results = customSearch(sc, null);
+        return results.get(0);
     }
 }

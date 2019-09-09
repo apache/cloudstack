@@ -198,6 +198,7 @@ public class AgentRoutingResource extends AgentStorageResource {
         cmd.setName(agentHost.getName());
         cmd.setGuid(agentHost.getGuid());
         cmd.setVersion(agentHost.getVersion());
+        cmd.setHypervisorVersion(agentHost.getVersion());
         cmd.setAgentTag("agent-simulator");
         cmd.setDataCenter(String.valueOf(agentHost.getDataCenterId()));
         cmd.setPod(String.valueOf(agentHost.getPodId()));

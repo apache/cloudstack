@@ -62,7 +62,7 @@ public class StorageCacheRandomAllocator implements StorageCacheAllocator {
             return null;
         }
 
-        return imageStoreMgr.getImageStore(cacheStores);
+        return imageStoreMgr.getImageStoreWithFreeCapacity(cacheStores);
     }
 
     @Override
@@ -88,6 +88,6 @@ public class StorageCacheRandomAllocator implements StorageCacheAllocator {
                 }
             }
         }
-        return imageStoreMgr.getImageStore(cacheStores);
+        return imageStoreMgr.getImageStoreWithFreeCapacity(cacheStores);
     }
 }

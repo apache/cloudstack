@@ -18,14 +18,13 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.offering.DiskOffering;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = DiskOffering.class)
 public class DiskOfferingResponse extends BaseResponse {
@@ -34,12 +33,20 @@ public class DiskOfferingResponse extends BaseResponse {
     private String id;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID this disk offering belongs to. Ignore this information as it is not currently applicable.")
+    @Param(description = "the domain ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name this disk offering belongs to. Ignore this information as it is not currently applicable.")
+    @Param(description = "the domain name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
     private String domain;
+
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the zone ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
+    private String zoneId;
+
+    @SerializedName(ApiConstants.ZONE)
+    @Param(description = "the zone name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
+    private String zone;
 
     @SerializedName(ApiConstants.NAME)
     @Param(description = "the name of the disk offering")
@@ -92,17 +99,49 @@ public class DiskOfferingResponse extends BaseResponse {
     @Param(description = "bytes read rate of the disk offering")
     private Long bytesReadRate;
 
+    @SerializedName("diskBytesReadRateMax")
+    @Param(description = "burst bytes read rate of the disk offering")
+    private Long bytesReadRateMax;
+
+    @SerializedName("diskBytesReadRateMaxLength")
+    @Param(description = "length (in seconds) of the burst")
+    private Long bytesReadRateMaxLength;
+
     @SerializedName("diskBytesWriteRate")
     @Param(description = "bytes write rate of the disk offering")
     private Long bytesWriteRate;
+
+    @SerializedName("diskBytesWriteRateMax")
+    @Param(description = "burst bytes write rate of the disk offering")
+    private Long bytesWriteRateMax;
+
+    @SerializedName("diskBytesWriteRateMaxLength")
+    @Param(description = "length (in seconds) of the burst")
+    private Long bytesWriteRateMaxLength;
 
     @SerializedName("diskIopsReadRate")
     @Param(description = "io requests read rate of the disk offering")
     private Long iopsReadRate;
 
+    @SerializedName("diskIopsReadRateMax")
+    @Param(description = "burst io requests read rate of the disk offering")
+    private Long iopsReadRateMax;
+
+    @SerializedName("diskIopsReadRateMaxLength")
+    @Param(description = "length (in second) of the burst")
+    private Long iopsReadRateMaxLength;
+
     @SerializedName("diskIopsWriteRate")
     @Param(description = "io requests write rate of the disk offering")
     private Long iopsWriteRate;
+
+    @SerializedName("diskIopsWriteRateMax")
+    @Param(description = "burst io requests write rate of the disk offering")
+    private Long iopsWriteRateMax;
+
+    @SerializedName("diskIopsWriteRateMaxLength")
+    @Param(description = "length (in seconds) of the burst")
+    private Long iopsWriteRateMaxLength;
 
     @SerializedName("cacheMode")
     @Param(description = "the cache mode to use for this disk offering. none, writeback or writethrough", since = "4.4")
@@ -143,6 +182,22 @@ public class DiskOfferingResponse extends BaseResponse {
 
     public void setDomain(String domain) {
         this.domain = domain;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZone() {
+        return zone;
+    }
+
+    public void setZone(String zone) {
+        this.zone = zone;
     }
 
     public String getName() {
@@ -253,15 +308,47 @@ public class DiskOfferingResponse extends BaseResponse {
         this.bytesReadRate = bytesReadRate;
     }
 
+    public void setBytesReadRateMax(Long bytesReadRateMax) {
+        this.bytesReadRateMax = bytesReadRateMax;
+    }
+
+    public void setBytesReadRateMaxLength(Long bytesReadRateMaxLength) {
+        this.bytesReadRateMaxLength = bytesReadRateMaxLength;
+    }
+
     public void setBytesWriteRate(Long bytesWriteRate) {
         this.bytesWriteRate = bytesWriteRate;
+    }
+
+    public void setBytesWriteRateMax(Long bytesWriteRateMax) {
+        this.bytesWriteRateMax = bytesWriteRateMax;
+    }
+
+    public void setBytesWriteRateMaxLength(Long bytesWriteRateMaxLength) {
+        this.bytesWriteRateMaxLength = bytesWriteRateMaxLength;
     }
 
     public void setIopsReadRate(Long iopsReadRate) {
         this.iopsReadRate = iopsReadRate;
     }
 
+    public void setIopsReadRateMax(Long iopsReadRateMax) {
+        this.iopsReadRateMax = iopsReadRateMax;
+    }
+
+    public void setIopsReadRateMaxLength(Long iopsReadRateMaxLength) {
+        this.iopsReadRateMaxLength = iopsReadRateMaxLength;
+    }
+
     public void setIopsWriteRate(Long iopsWriteRate) {
         this.iopsWriteRate = iopsWriteRate;
+    }
+
+    public void setIopsWriteRateMax(Long iopsWriteRateMax) {
+        this.iopsWriteRateMax = iopsWriteRateMax;
+    }
+
+    public void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength) {
+        this.iopsWriteRateMaxLength = iopsWriteRateMaxLength;
     }
 }

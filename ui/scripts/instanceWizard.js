@@ -16,12 +16,114 @@
 // under the License.
 
 (function($, cloudStack) {
-    var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, sharedTemplateObjs, featuredIsoObjs, communityIsoObjs, myIsoObjs, sharedIsoObjs, serviceOfferingObjs, community, networkObjs;
+    var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, sharedTemplateObjs, featuredIsoObjs, communityIsoObjs, myIsoObjs, sharedIsoObjs, serviceOfferingObjs, community, networkObjs, ovfProps;
     var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj;
     var selectedTemplateOrIso; //'select-template', 'select-iso'
     var step6ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group', 'select-advanced-sg'(advanced sg-enabled zone)
 
     cloudStack.instanceWizard = {
+
+        fetchPodList: function (podcallback, parentId) {
+            var urlString = "listPods";
+            if (parentId != -1) {
+                urlString += "&zoneid=" + parentId
+            }
+            $.ajax({
+                url: createURL(urlString),
+                dataType: "json",
+                async: false,
+                success: function (json) {
+                    var pods = [{
+                        id: -1,
+                        description: 'Default',
+                        parentId: -1
+                    }];
+                    var podsObjs = json.listpodsresponse.pod;
+                    if (podsObjs !== undefined) {
+                        $(podsObjs).each(function () {
+                            pods.push({
+                                id: this.id,
+                                description: this.name,
+                                parentId: this.zoneid
+                            });
+                        });
+                    }
+                    podcallback(pods);
+                }
+            });
+        },
+
+        fetchClusterList: function (clustercallback, parentId, zoneId) {
+            var urlString = "listClusters";
+            // If Pod ID is not specified, filter clusters by Zone
+            if (parentId != -1) {
+                urlString += "&podid=" + parentId;
+            } else if (zoneId != -1) {
+                urlString += "&zoneid=" + zoneId;
+            }
+
+            $.ajax({
+                url: createURL(urlString),
+                dataType: "json",
+                async: false,
+                success: function (json) {
+                    var clusters = [{
+                        id: -1,
+                        description: 'Default',
+                        parentId: -1
+                    }];
+                    var clusterObjs = json.listclustersresponse.cluster;
+                    if (clusterObjs != undefined) {
+                        $(clusterObjs).each(function () {
+                            clusters.push({
+                                id: this.id,
+                                description: this.name,
+                                parentId: this.podid
+                            });
+                        });
+                    }
+                    clustercallback(clusters);
+                }
+            });
+        },
+
+        fetchHostList: function (hostcallback, parentId, podId, zoneId) {
+            // If Cluster ID is not specified, filter hosts by Zone or Pod
+            var urlString = "listHosts&state=Up&type=Routing";
+
+            if (parentId != -1) {
+                urlString += "&clusterid=" + parentId;
+            } else if (podId != -1) {
+                urlString += "&podid=" + podId;
+            } else if (zoneId != -1) {
+                urlString += "&zoneid=" + zoneId
+            }
+
+            $.ajax({
+                url: createURL(urlString),
+                dataType: "json",
+                async: false,
+                success: function (json) {
+                    var hosts = [{
+                        id: -1,
+                        description: 'Default',
+                        parentId: -1
+                    }];
+                    var hostObjs = json.listhostsresponse.host;
+                    if (hostObjs != undefined) {
+                        $(hostObjs).each(function () {
+                            hosts.push({
+                                id: this.id,
+                                description: this.name,
+                                parentId: this.clusterid
+                            });
+                        });
+                    }
+                    hostcallback(hosts);
+                }
+            });
+        },
+
         //min disk offering  size when custom disk size is used
         minDiskOfferingSize: function() {
             return g_capabilities.customdiskofferingminsize;
@@ -94,18 +196,106 @@
                 }
                 //in all other cases (as well as from instance page) all zones are populated to dropdown
                 else {
+                    var postData = {};
+                    var zones = [{
+                        id: -1,
+                        name: 'Default'
+                    }];
                     $.ajax({
                         url: createURL("listZones&available=true"),
                         dataType: "json",
                         async: false,
                         success: function(json) {
                             zoneObjs = json.listzonesresponse.zone;
-                            args.response.success({
-                                data: {
-                                    zones: zoneObjs
-                                }
+                            $(zoneObjs).each(function() {
+                                zones.push({
+                                    id: this.id,
+                                    name: this.name
+                                });
                             });
                         }
+                    });
+
+                    $.extend(postData, {
+                        "zones": zones
+                    });
+
+                    if (isAdmin()) {                       
+                        pods = [{
+                            id: -1,
+                            description: 'Default',
+                            parentId: -1
+                        }];
+                        $.ajax({
+                            url: createURL("listPods"),
+                            dataType: "json",
+                            async: false,
+                            success: function(json) {
+                                if (json.listpodsresponse.pod != undefined) {
+                                    podObjs = json.listpodsresponse.pod;
+                                    $(podObjs).each(function() {
+                                        pods.push({
+                                            id: this.id,
+                                            description: this.name,
+                                            parentId: this.zoneid
+                                        });
+                                    });
+                                }
+                            }
+                        });
+                        clusters = [{
+                            id: -1,
+                            description: 'Default',
+                            parentId: -1
+                        }];
+                        $.ajax({
+                            url: createURL("listClusters"),
+                            dataType: "json",
+                            async: false,
+                            success: function(json) {
+                                  if (json.listclustersresponse.cluster != undefined) {
+                                      clusterObjs = json.listclustersresponse.cluster;
+                                      $(clusterObjs).each(function() {
+                                          clusters.push({
+                                              id: this.id,
+                                              description: this.name,
+                                              parentId: this.podid
+                                          });
+                                      });
+                                  }
+                            }
+                        });
+                        hosts = [{
+                            id: -1,
+                            description: 'Default',
+                            parentId: -1
+                        }];
+                        $.ajax({
+                            url: createURL("listHosts&state=Up&type=Routing"),
+                            dataType: "json",
+                            async: false,
+                            success: function(json) {
+                                  if (json.listhostsresponse.host != undefined) {
+                                      hostObjs = json.listhostsresponse.host;
+                                      $(hostObjs).each(function() {
+                                          hosts.push({
+                                              id: this.id,
+                                              description: this.name,
+                                              parentId: this.clusterid
+                                          });
+                                      });
+                                  }
+                            }
+                        });
+                        $.extend(postData, {
+                            "pods": pods,
+                            "clusters": clusters,
+                            "hosts": hosts
+                        });
+
+                    } 
+                    args.response.success({
+                        data: postData
                     });
                 }
             },
@@ -113,6 +303,7 @@
             // Step 2: Select template
             function(args) {
                 $(zoneObjs).each(function() {
+                    args.currentData.zoneid = (args.currentData.zoneid == -1)? this.id : args.currentData.zoneid ;
                     if (this.id == args.currentData.zoneid) {
                         selectedZoneObj = this;
                         return false; //break the $.each() loop
@@ -342,8 +533,8 @@
                 // if the user is leveraging a template, then we can show custom IOPS, if applicable
                 var canShowCustomIopsForServiceOffering = (args.currentData["select-template"] != "select-iso" ? true : false);
 
-
                 // get serviceOfferingObjs
+                var zoneid = args.currentData["zoneid"];
                 $(window).removeData("cloudStack.module.instanceWizard.serviceOfferingObjs");
                 $(window).trigger("cloudStack.module.instanceWizard.serviceOffering.dataProvider", {
                     context: args.context,
@@ -354,6 +545,9 @@
                         url: createURL("listServiceOfferings&issystem=false"),
                         dataType: "json",
                         async: false,
+                        data: {
+                            zoneid: zoneid
+                        },
                         success: function(json) {
                             serviceOfferingObjs = json.listserviceofferingsresponse.serviceoffering;
                         }
@@ -377,6 +571,7 @@
             // Step 4: Data disk offering
             function(args) {
                 var isRequired = (args.currentData["select-template"] == "select-iso" ? true : false);
+                var zoneid = args.currentData["zoneid"];
                 var templateFilter = 'executable'
                 if (isAdmin()) {
                     templateFilter = 'all'
@@ -384,6 +579,9 @@
                 $.ajax({
                     url: createURL("listDiskOfferings"),
                     dataType: "json",
+                    data: {
+                        zoneid: zoneid
+                    },
                     async: true,
                     success: function(json) {
                         diskOfferingObjs = json.listdiskofferingsresponse.diskoffering;
@@ -539,7 +737,7 @@
                     var defaultNetworkArray = [],
                         optionalNetworkArray = [];
                     var networkData = {
-                        zoneId: args.currentData.zoneid,
+                        zoneId: selectedZoneObj.id,
                         canusefordeploy: true
                     };
 
@@ -644,6 +842,7 @@
 
 
                     // get networkObjsToPopulate
+                    var zoneid = args.currentData["zoneid"];
                     $(window).removeData("cloudStack.module.instanceWizard.networkObjs");
                     $(window).trigger("cloudStack.module.instanceWizard.network.dataProvider", {
                         context: args.context,
@@ -661,8 +860,11 @@
                         url: createURL("listNetworkOfferings"),
                         dataType: "json",
                         data: {
+                            zoneid: zoneid
+                        },
+                        data: {
                             forvpc: false,
-                            zoneid: args.currentData.zoneid,
+                            zoneid: selectedZoneObj.id,
                             guestiptype: 'Isolated',
                             supportedServices: 'SourceNat',
                             specifyvlan: false,
@@ -757,11 +959,41 @@
                         });
                     }
                 });
+
+                $.ajax({
+                    url: createURL("listTemplateOvfProperties&id=" + selectedTemplateObj.id),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+                        ovfProps = json.listtemplateovfpropertiesresponse.ovfproperty;
+                    }
+                });
+
+                var $step = $('.step.sshkeyPairs:visible');
+                if (ovfProps == null || ovfProps.length === 0) {
+                    $step.addClass('next-skip-ovf-properties');
+                } else {
+                    $step.removeClass('next-skip-ovf-properties');
+                }
+            },
+
+            // Step PRE-8: Configure OVF Properties (if available) for the template
+            function(args) {
+                args.response.success({
+                    data: {
+                        ovfProperties: ovfProps
+                    }
+                });
             },
 
             // Step 8: Review
             function(args) {
-                return false;
+                var $step = $('.step.review:visible');
+                if (ovfProps == null || ovfProps.length === 0) {
+                    $step.addClass('previous-skip-ovf-properties');
+                } else {
+                    $step.removeClass('previous-skip-ovf-properties');
+                }
             }
         ],
         action: function(args) {
@@ -769,9 +1001,28 @@
             var deployVmData = {};
 
             //step 1 : select zone
+            zoneId = (args.data.zoneid == -1)? selectedZoneObj.id : args.data.zoneid;
             $.extend(deployVmData, {
-                zoneid : args.data.zoneid
+                zoneid : zoneId
             });
+
+            if (args.data.podid != -1) {
+                $.extend(deployVmData, {
+                    podid : args.data.podid
+                });
+            }
+
+            if (args.data.clusterid != -1) {
+                $.extend(deployVmData, {
+                    clusterid : args.data.clusterid
+                });
+            }
+
+            if (args.data.hostid != -1) {
+                $.extend(deployVmData, {
+                    hostid : args.data.hostid
+                });
+            }
 
             //step 2: select template
             $.extend(deployVmData, {
@@ -781,6 +1032,25 @@
             $.extend(deployVmData, {
                 hypervisor : selectedHypervisor
             });
+
+            var deployOvfProperties = [];
+            if (ovfProps != null && ovfProps.length > 0) {
+                $(ovfProps).each(function(index, prop) {
+                    var selectField = args.$wizard.find('select[id="ovf-property-'+prop.key+'"]');
+                    var inputField = args.$wizard.find('input[id="ovf-property-'+prop.key+'"]');
+                    var propValue = inputField.val() ? inputField.val() : selectField.val();
+                    if (propValue !== undefined) {
+                        deployOvfProperties.push({
+                            key: prop.key,
+                            value: propValue
+                        });
+                    }
+                });
+                for (var k = 0; k < deployOvfProperties.length; k++) {
+                    deployVmData["ovfproperties[" + k + "].key"] = deployOvfProperties[k].key;
+                    deployVmData["ovfproperties[" + k + "].value"] = deployOvfProperties[k].value;
+                }
+            }
 
             if (args.$wizard.find('input[name=rootDiskSize]').parent().css('display') != 'none')  {
                 if (args.$wizard.find('input[name=rootDiskSize]').val().length > 0) {
@@ -809,6 +1079,17 @@
                 if (args.$wizard.find('input[name=compute-memory]').val().length > 0)  {
                     $.extend(deployVmData, {
                         'details[0].memory' : args.$wizard.find('input[name=compute-memory]').val()
+                    });
+                }
+            } else if (args.$wizard.find('input[name=slider-compute-cpu-cores]').parent().parent().css('display') != 'none') {
+                if (args.$wizard.find('input[name=slider-compute-cpu-cores]').val().length > 0)  {
+                    $.extend(deployVmData, {
+                        'details[0].cpuNumber' : args.$wizard.find('input[name=slider-compute-cpu-cores]').val()
+                    });
+                }
+                if (args.$wizard.find('input[name=slider-compute-memory]').val().length > 0)  {
+                    $.extend(deployVmData, {
+                        'details[0].memory' : args.$wizard.find('input[name=slider-compute-memory]').val()
                     });
                 }
             }
@@ -1094,8 +1375,9 @@
 
             var userdata = args.data.userdata;
             if (userdata != null && userdata.length > 0) {
+
                 $.extend(deployVmData, {
-                    userdata : encodeURIComponent(btoa(userdata))
+                    userdata : encodeURIComponent(btoa(cloudStack.sanitizeReverse(userdata)))
                 });
             }
 

@@ -202,7 +202,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     private Boolean requiresHvm;
 
     public TemplateResponse() {
-        tags = new LinkedHashSet<ResourceTagResponse>();
+        tags = new LinkedHashSet<>();
     }
 
     @Override

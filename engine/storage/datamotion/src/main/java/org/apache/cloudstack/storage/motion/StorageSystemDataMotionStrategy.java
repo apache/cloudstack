@@ -18,61 +18,18 @@
  */
 package org.apache.cloudstack.storage.motion;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.CopyVolumeAnswer;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.MigrateAnswer;
-import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.ModifyTargetsAnswer;
-import com.cloud.agent.api.ModifyTargetsCommand;
-import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.storage.MigrateVolumeAnswer;
-import com.cloud.agent.api.storage.MigrateVolumeCommand;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.DiskTO;
-import com.cloud.agent.api.to.NfsTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.configuration.Config;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.OperationTimedoutException;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.resource.ResourceState;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeDetailVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.GuestOSCategoryDao;
-import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.SnapshotDetailsDao;
-import com.cloud.storage.dao.SnapshotDetailsVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.VMInstanceDao;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
-import com.google.common.base.Preconditions;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
@@ -85,6 +42,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
@@ -110,53 +68,121 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 
-import org.springframework.stereotype.Component;
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.MigrateAnswer;
+import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
+import com.cloud.agent.api.ModifyTargetsAnswer;
+import com.cloud.agent.api.ModifyTargetsCommand;
+import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.storage.CheckStorageAvailabilityCommand;
+import com.cloud.agent.api.storage.CopyVolumeAnswer;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.MigrateVolumeAnswer;
+import com.cloud.agent.api.storage.MigrateVolumeCommand;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.configuration.Config;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceState;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.MigrationOptions;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.google.common.base.Preconditions;
 
-import javax.inject.Inject;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
-@Component
 public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private static final Logger LOGGER = Logger.getLogger(StorageSystemDataMotionStrategy.class);
     private static final Random RANDOM = new Random(System.nanoTime());
     private static final int LOCK_TIME_IN_SECONDS = 300;
     private static final String OPERATION_NOT_SUPPORTED = "This operation is not supported.";
 
-    @Inject private AgentManager _agentMgr;
-    @Inject private ConfigurationDao _configDao;
-    @Inject private DataStoreManager dataStoreMgr;
-    @Inject private DiskOfferingDao _diskOfferingDao;
-    @Inject private GuestOSCategoryDao _guestOsCategoryDao;
-    @Inject private GuestOSDao _guestOsDao;
-    @Inject private ClusterDao clusterDao;
-    @Inject private HostDao _hostDao;
-    @Inject private HostDetailsDao hostDetailsDao;
-    @Inject private PrimaryDataStoreDao _storagePoolDao;
-    @Inject private SnapshotDao _snapshotDao;
-    @Inject private SnapshotDataStoreDao _snapshotDataStoreDao;
-    @Inject private SnapshotDetailsDao _snapshotDetailsDao;
-    @Inject private VMInstanceDao _vmDao;
-    @Inject private VMTemplateDao _vmTemplateDao;
-    @Inject private VolumeDao _volumeDao;
-    @Inject private VolumeDataFactory _volumeDataFactory;
-    @Inject private VolumeDetailsDao volumeDetailsDao;
-    @Inject private VolumeService _volumeService;
-    @Inject private StorageCacheManager cacheMgr;
-    @Inject private EndPointSelector selector;
+    @Inject
+    protected AgentManager agentManager;
+    @Inject
+    private ConfigurationDao _configDao;
+    @Inject
+    private DataStoreManager dataStoreMgr;
+    @Inject
+    protected DiskOfferingDao _diskOfferingDao;
+    @Inject
+    private GuestOSCategoryDao _guestOsCategoryDao;
+    @Inject
+    private GuestOSDao _guestOsDao;
+    @Inject
+    private ClusterDao clusterDao;
+    @Inject
+    private HostDao _hostDao;
+    @Inject
+    protected PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    private SnapshotDao _snapshotDao;
+    @Inject
+    private SnapshotDataStoreDao _snapshotDataStoreDao;
+    @Inject
+    private SnapshotDetailsDao _snapshotDetailsDao;
+    @Inject
+    private VMInstanceDao _vmDao;
+    @Inject
+    private VMTemplateDao _vmTemplateDao;
+    @Inject
+    private VolumeDao _volumeDao;
+    @Inject
+    private VolumeDataFactory _volumeDataFactory;
+    @Inject
+    private VolumeDetailsDao volumeDetailsDao;
+    @Inject
+    private VolumeService _volumeService;
+    @Inject
+    private StorageCacheManager cacheMgr;
+    @Inject
+    private EndPointSelector selector;
+    @Inject
+    VMTemplatePoolDao templatePoolDao;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -251,29 +277,37 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     @Override
-    public StrategyPriority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+    public final StrategyPriority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
         if (HypervisorType.KVM.equals(srcHost.getHypervisorType())) {
-            Set<VolumeInfo> volumeInfoSet = volumeMap.keySet();
+            return internalCanHandle(volumeMap, srcHost, destHost);
+        }
+        return StrategyPriority.CANT_HANDLE;
+    }
 
-            for (VolumeInfo volumeInfo : volumeInfoSet) {
-                StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
+    /**
+     * Handles migrating volumes on managed Storage.
+     */
+    protected StrategyPriority internalCanHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+        Set<VolumeInfo> volumeInfoSet = volumeMap.keySet();
 
-                if (storagePoolVO.isManaged()) {
-                    return StrategyPriority.HIGHEST;
-                }
-            }
+        for (VolumeInfo volumeInfo : volumeInfoSet) {
+            StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
 
-            Collection<DataStore> dataStores = volumeMap.values();
-
-            for (DataStore dataStore : dataStores) {
-                StoragePoolVO storagePoolVO = _storagePoolDao.findById(dataStore.getId());
-
-                if (storagePoolVO.isManaged()) {
-                    return StrategyPriority.HIGHEST;
-                }
+            if (storagePoolVO.isManaged()) {
+                return StrategyPriority.HIGHEST;
             }
         }
 
+        Collection<DataStore> dataStores = volumeMap.values();
+
+        for (DataStore dataStore : dataStores) {
+            StoragePoolVO storagePoolVO = _storagePoolDao.findById(dataStore.getId());
+
+            if (storagePoolVO.isManaged()) {
+                return StrategyPriority.HIGHEST;
+            }
+
+        }
         return StrategyPriority.CANT_HANDLE;
     }
 
@@ -916,8 +950,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 }
             }
 
-            String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-            int primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+            int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
             CopyCommand copyCommand = new CopyCommand(snapshotInfo.getTO(), destOnStore.getTO(), primaryStorageDownloadWait,
                     VirtualMachineManager.ExecuteInSequence.value());
 
@@ -943,7 +976,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 copyCommand.setOptions(srcDetails);
 
-                copyCmdAnswer = (CopyCmdAnswer)_agentMgr.send(hostVO.getId(), copyCommand);
+                copyCmdAnswer = (CopyCmdAnswer)agentManager.send(hostVO.getId(), copyCommand);
 
                 if (!copyCmdAnswer.getResult()) {
                     errMsg = copyCmdAnswer.getDetails();
@@ -1091,8 +1124,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 verifyCopyCmdAnswer(copyCmdAnswer, snapshotInfo);
             }
 
-            String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-            int primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+            int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
 
             CopyCommand copyCommand = new CopyCommand(snapshotInfo.getTO(), volumeInfo.getTO(), primaryStorageDownloadWait,
                     VirtualMachineManager.ExecuteInSequence.value());
@@ -1110,7 +1142,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             copyCommand.setOptions(srcDetails);
 
-            copyCmdAnswer = (CopyCmdAnswer)_agentMgr.send(hostVO.getId(), copyCommand);
+            copyCmdAnswer = (CopyCmdAnswer)agentManager.send(hostVO.getId(), copyCommand);
 
             if (!copyCmdAnswer.getResult()) {
                 errMsg = copyCmdAnswer.getDetails();
@@ -1584,8 +1616,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     private CopyCmdAnswer copyImageToVolume(DataObject srcDataObject, VolumeInfo destVolumeInfo, HostVO hostVO) {
-        String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-        int primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+        int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
 
         CopyCommand copyCommand = new CopyCommand(srcDataObject.getTO(), destVolumeInfo.getTO(), primaryStorageDownloadWait,
                 VirtualMachineManager.ExecuteInSequence.value());
@@ -1599,7 +1630,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             copyCommand.setOptions2(destDetails);
 
-            copyCmdAnswer = (CopyCmdAnswer)_agentMgr.send(hostVO.getId(), copyCommand);
+            copyCmdAnswer = (CopyCmdAnswer)agentManager.send(hostVO.getId(), copyCommand);
         }
         catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
             String msg = "Failed to copy image : ";
@@ -1676,11 +1707,57 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     /**
+     * Return expected MigrationOptions for a linked clone volume live storage migration
+     */
+    protected MigrationOptions createLinkedCloneMigrationOptions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo, String srcVolumeBackingFile, String srcPoolUuid, Storage.StoragePoolType srcPoolType) {
+        VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(destVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId());
+        boolean updateBackingFileReference = ref == null;
+        String backingFile = ref != null ? ref.getInstallPath() : srcVolumeBackingFile;
+        return new MigrationOptions(srcPoolUuid, srcPoolType, backingFile, updateBackingFileReference);
+    }
+
+    /**
+     * Return expected MigrationOptions for a full clone volume live storage migration
+     */
+    protected MigrationOptions createFullCloneMigrationOptions(VolumeInfo srcVolumeInfo, VirtualMachineTO vmTO, Host srcHost, String srcPoolUuid, Storage.StoragePoolType srcPoolType) {
+        return new MigrationOptions(srcPoolUuid, srcPoolType, srcVolumeInfo.getPath());
+    }
+
+    /**
+     * Prepare hosts for KVM live storage migration depending on volume type by setting MigrationOptions on destination volume:
+     * - Linked clones (backing file on disk): Decide if template (backing file) should be copied to destination storage prior disk creation
+     * - Full clones (no backing file): Take snapshot of the VM prior disk creation
+     * Return this information
+     */
+    protected void setVolumeMigrationOptions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo,
+                                             VirtualMachineTO vmTO, Host srcHost, StoragePoolVO destStoragePool) {
+        if (!destStoragePool.isManaged()) {
+            String srcVolumeBackingFile = getVolumeBackingFile(srcVolumeInfo);
+
+            String srcPoolUuid = srcVolumeInfo.getDataStore().getUuid();
+            StoragePoolVO srcPool = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
+            Storage.StoragePoolType srcPoolType = srcPool.getPoolType();
+
+            MigrationOptions migrationOptions;
+            if (StringUtils.isNotBlank(srcVolumeBackingFile)) {
+                migrationOptions = createLinkedCloneMigrationOptions(srcVolumeInfo, destVolumeInfo,
+                        srcVolumeBackingFile, srcPoolUuid, srcPoolType);
+            } else {
+                migrationOptions = createFullCloneMigrationOptions(srcVolumeInfo, vmTO, srcHost, srcPoolUuid, srcPoolType);
+            }
+            migrationOptions.setTimeout(StorageManager.KvmStorageOnlineMigrationWait.value());
+            destVolumeInfo.setMigrationOptions(migrationOptions);
+        }
+    }
+
+    /**
      * For each disk to migrate:
-     *   Create a volume on the target storage system.
-     *   Make the newly created volume accessible to the target KVM host.
-     *   Send a command to the target KVM host to connect to the newly created volume.
-     * Send a command to the source KVM host to migrate the VM and its storage.
+     * <ul>
+     *  <li>Create a volume on the target storage system.</li>
+     *  <li>Make the newly created volume accessible to the target KVM host.</li>
+     *  <li>Send a command to the target KVM host to connect to the newly created volume.</li>
+     *  <li>Send a command to the source KVM host to migrate the VM and its storage.</li>
+     * </ul>
      */
     @Override
     public void copyAsync(Map<VolumeInfo, DataStore> volumeDataStoreMap, VirtualMachineTO vmTO, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
@@ -1691,17 +1768,29 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException("Invalid hypervisor type (only KVM supported for this operation at the time being)");
             }
 
-            verifyLiveMigrationMapForKVM(volumeDataStoreMap);
+            verifyLiveMigrationForKVM(volumeDataStoreMap, destHost);
+
+            VMInstanceVO vmInstance = _vmDao.findById(vmTO.getId());
+            vmTO.setState(vmInstance.getState());
+            List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<MigrateDiskInfo>();
 
             Map<String, MigrateCommand.MigrateDiskInfo> migrateStorage = new HashMap<>();
             Map<VolumeInfo, VolumeInfo> srcVolumeInfoToDestVolumeInfo = new HashMap<>();
 
+            boolean managedStorageDestination = false;
             for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
                 VolumeInfo srcVolumeInfo = entry.getKey();
                 DataStore destDataStore = entry.getValue();
 
                 VolumeVO srcVolume = _volumeDao.findById(srcVolumeInfo.getId());
                 StoragePoolVO destStoragePool = _storagePoolDao.findById(destDataStore.getId());
+                StoragePoolVO sourceStoragePool = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
+
+                if (!shouldMigrateVolume(sourceStoragePool, destHost, destStoragePool)) {
+                    continue;
+                }
+
+                copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
 
                 VolumeVO destVolume = duplicateVolumeOnAnotherStorage(srcVolume, destStoragePool);
                 VolumeInfo destVolumeInfo = _volumeDataFactory.getVolume(destVolume.getId(), destDataStore);
@@ -1713,14 +1802,22 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 // move the volume from Ready to Migrating
                 destVolumeInfo.processEvent(Event.MigrationRequested);
 
+                setVolumeMigrationOptions(srcVolumeInfo, destVolumeInfo, vmTO, srcHost, destStoragePool);
+
                 // create a volume on the destination storage
                 destDataStore.getDriver().createAsync(destDataStore, destVolumeInfo, null);
 
-                destVolume = _volumeDao.findById(destVolume.getId());
+                managedStorageDestination = destStoragePool.isManaged();
+                String volumeIdentifier = managedStorageDestination ? destVolumeInfo.get_iScsiName() : destVolumeInfo.getUuid();
 
-                destVolume.setPath(destVolume.get_iScsiName());
+                destVolume = _volumeDao.findById(destVolume.getId());
+                destVolume.setPath(volumeIdentifier);
+
+                setVolumePath(destVolume);
 
                 _volumeDao.update(destVolume.getId(), destVolume);
+
+                postVolumeCreationActions(srcVolumeInfo, destVolumeInfo, vmTO, srcHost);
 
                 destVolumeInfo = _volumeDataFactory.getVolume(destVolume.getId(), destDataStore);
 
@@ -1728,13 +1825,23 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 _volumeService.grantAccess(destVolumeInfo, destHost, destDataStore);
 
-                String connectedPath = connectHostToVolume(destHost, destVolumeInfo.getPoolId(), destVolumeInfo.get_iScsiName());
+                String destPath = generateDestPath(destHost, destStoragePool, destVolumeInfo);
 
-                MigrateCommand.MigrateDiskInfo migrateDiskInfo = new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(),
-                        MigrateCommand.MigrateDiskInfo.DiskType.BLOCK,
-                        MigrateCommand.MigrateDiskInfo.DriverType.RAW,
-                        MigrateCommand.MigrateDiskInfo.Source.DEV,
-                        connectedPath);
+                MigrateCommand.MigrateDiskInfo migrateDiskInfo;
+
+                boolean isNonManagedNfsToNfs = sourceStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem
+                        && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && !managedStorageDestination;
+                if (isNonManagedNfsToNfs) {
+                    migrateDiskInfo = new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(),
+                            MigrateCommand.MigrateDiskInfo.DiskType.FILE,
+                            MigrateCommand.MigrateDiskInfo.DriverType.QCOW2,
+                            MigrateCommand.MigrateDiskInfo.Source.FILE,
+                            connectHostToVolume(destHost, destVolumeInfo.getPoolId(), volumeIdentifier));
+                } else {
+                    migrateDiskInfo = configureMigrateDiskInfo(srcVolumeInfo, destPath);
+                    migrateDiskInfo.setSourceDiskOnStorageFileSystem(isStoragePoolTypeOfFile(sourceStoragePool));
+                    migrateDiskInfoList.add(migrateDiskInfo);
+                }
 
                 migrateStorage.put(srcVolumeInfo.getPath(), migrateDiskInfo);
 
@@ -1744,7 +1851,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(vmTO);
 
             try {
-                Answer pfma = _agentMgr.send(destHost.getId(), pfmc);
+                Answer pfma = agentManager.send(destHost.getId(), pfmc);
 
                 if (pfma == null || !pfma.getResult()) {
                     String details = pfma != null ? pfma.getDetails() : "null answer returned";
@@ -1760,18 +1867,19 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             VMInstanceVO vm = _vmDao.findById(vmTO.getId());
             boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
+            boolean migrateNonSharedInc = isSourceAndDestinationPoolTypeOfNfs(volumeDataStoreMap);
+
             MigrateCommand migrateCommand = new MigrateCommand(vmTO.getName(), destHost.getPrivateIpAddress(), isWindows, vmTO, true);
-
             migrateCommand.setWait(StorageManager.KvmStorageOnlineMigrationWait.value());
-
             migrateCommand.setMigrateStorage(migrateStorage);
+            migrateCommand.setMigrateDiskInfoList(migrateDiskInfoList);
+            migrateCommand.setMigrateStorageManaged(managedStorageDestination);
+            migrateCommand.setMigrateNonSharedInc(migrateNonSharedInc);
 
-            String autoConvergence = _configDao.getValue(Config.KvmAutoConvergence.toString());
-            boolean kvmAutoConvergence = Boolean.parseBoolean(autoConvergence);
-
+            boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
             migrateCommand.setAutoConvergence(kvmAutoConvergence);
 
-            MigrateAnswer migrateAnswer = (MigrateAnswer)_agentMgr.send(srcHost.getId(), migrateCommand);
+            MigrateAnswer migrateAnswer = (MigrateAnswer)agentManager.send(srcHost.getId(), migrateCommand);
 
             boolean success = migrateAnswer != null && migrateAnswer.getResult();
 
@@ -1803,6 +1911,85 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         }
     }
 
+    /**
+     * Returns true if at least one of the entries on the map 'volumeDataStoreMap' has both source and destination storage pools of Network Filesystem (NFS).
+     */
+    protected boolean isSourceAndDestinationPoolTypeOfNfs(Map<VolumeInfo, DataStore> volumeDataStoreMap) {
+        for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
+            VolumeInfo srcVolumeInfo = entry.getKey();
+            DataStore destDataStore = entry.getValue();
+
+            StoragePoolVO destStoragePool = _storagePoolDao.findById(destDataStore.getId());
+            StoragePoolVO sourceStoragePool = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
+            if (sourceStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns true. This method was implemented considering the classes that extend this {@link StorageSystemDataMotionStrategy} and cannot migrate volumes from certain types of source storage pools and/or to a different kind of destiny storage pool.
+     */
+    protected boolean shouldMigrateVolume(StoragePoolVO sourceStoragePool, Host destHost, StoragePoolVO destStoragePool) {
+        return true;
+    }
+
+    /**
+     * Returns true if the storage pool type is {@link StoragePoolType.Filesystem}.
+     */
+    protected boolean isStoragePoolTypeOfFile(StoragePoolVO sourceStoragePool) {
+        return sourceStoragePool.getPoolType() == StoragePoolType.Filesystem;
+    }
+
+    /**
+     * Returns the iScsi connection path.
+     */
+    protected String generateDestPath(Host destHost, StoragePoolVO destStoragePool, VolumeInfo destVolumeInfo) {
+        return connectHostToVolume(destHost, destVolumeInfo.getPoolId(), destVolumeInfo.get_iScsiName());
+    }
+
+    /**
+     * Configures a {@link MigrateDiskInfo} object with disk type of BLOCK, Driver type RAW and Source DEV
+     */
+    protected MigrateCommand.MigrateDiskInfo configureMigrateDiskInfo(VolumeInfo srcVolumeInfo, String destPath) {
+        return new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(),
+                MigrateCommand.MigrateDiskInfo.DiskType.BLOCK,
+                MigrateCommand.MigrateDiskInfo.DriverType.RAW,
+                MigrateCommand.MigrateDiskInfo.Source.DEV, destPath);
+    }
+
+    /**
+     * Sets the volume path as the iScsi name in case of a configured iScsi.
+     */
+    protected void setVolumePath(VolumeVO volume) {
+        volume.setPath(volume.get_iScsiName());
+    }
+
+    /**
+     * For this strategy it is not necessary to copy the template before migrating the VM.
+     * However, classes that extend this one may need to copy the template to the target storage pool before migrating the VM.
+     */
+    protected void copyTemplateToTargetFilesystemStorageIfNeeded(VolumeInfo srcVolumeInfo, StoragePool srcStoragePool, DataStore destDataStore, StoragePool destStoragePool,
+            Host destHost) {
+        // This method is used by classes that extend this one
+    }
+
+    /*
+     * Return backing file for volume (if any), only for KVM volumes
+     */
+    private String getVolumeBackingFile(VolumeInfo srcVolumeInfo) {
+        if (srcVolumeInfo.getHypervisorType() == HypervisorType.KVM &&
+                srcVolumeInfo.getTemplateId() != null && srcVolumeInfo.getPoolId() != null) {
+            VMTemplateVO template = _vmTemplateDao.findById(srcVolumeInfo.getTemplateId());
+            if (template.getFormat() != null && template.getFormat() != Storage.ImageFormat.ISO) {
+                VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(srcVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId());
+                return ref != null ? ref.getInstallPath() : null;
+            }
+        }
+        return null;
+    }
+
     private void handlePostMigration(boolean success, Map<VolumeInfo, VolumeInfo> srcVolumeInfoToDestVolumeInfo, VirtualMachineTO vmTO, Host destHost) {
         if (!success) {
             try {
@@ -1810,7 +1997,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 pfmc.setRollback(true);
 
-                Answer pfma = _agentMgr.send(destHost.getId(), pfmc);
+                Answer pfma = agentManager.send(destHost.getId(), pfmc);
 
                 if (pfma == null || !pfma.getResult()) {
                     String details = pfma != null ? pfma.getDetails() : "null answer returned";
@@ -1913,7 +2100,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         return _volumeDao.persist(newVol);
     }
 
-    private String connectHostToVolume(Host host, long storagePoolId, String iqn) {
+    protected String connectHostToVolume(Host host, long storagePoolId, String iqn) {
         ModifyTargetsCommand modifyTargetsCommand = getModifyTargetsCommand(storagePoolId, iqn, true);
 
         return sendModifyTargetsCommand(modifyTargetsCommand, host.getId()).get(0);
@@ -1951,7 +2138,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     private List<String> sendModifyTargetsCommand(ModifyTargetsCommand cmd, long hostId) {
-        ModifyTargetsAnswer modifyTargetsAnswer = (ModifyTargetsAnswer)_agentMgr.easySend(hostId, cmd);
+        ModifyTargetsAnswer modifyTargetsAnswer = (ModifyTargetsAnswer)agentManager.easySend(hostId, cmd);
 
         if (modifyTargetsAnswer == null) {
             throw new CloudRuntimeException("Unable to get an answer to the modify targets command");
@@ -1966,10 +2153,40 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         return modifyTargetsAnswer.getConnectedPaths();
     }
 
-    /*
-    * At a high level: The source storage cannot be managed and the destination storage must be managed.
+    /**
+     * Update reference on template_spool_ref table of copied template to destination storage
+     */
+    protected void updateCopiedTemplateReference(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo) {
+        VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(srcVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId());
+        VMTemplateStoragePoolVO newRef = new VMTemplateStoragePoolVO(destVolumeInfo.getPoolId(), ref.getTemplateId());
+        newRef.setDownloadPercent(100);
+        newRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        newRef.setState(ObjectInDataStoreStateMachine.State.Ready);
+        newRef.setTemplateSize(ref.getTemplateSize());
+        newRef.setLocalDownloadPath(ref.getLocalDownloadPath());
+        newRef.setInstallPath(ref.getInstallPath());
+        templatePoolDao.persist(newRef);
+    }
+
+    /**
+     * Handle post destination volume creation actions depending on the migrating volume type: full clone or linked clone
+     */
+    protected void postVolumeCreationActions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo, VirtualMachineTO vmTO, Host srcHost) {
+        MigrationOptions migrationOptions = destVolumeInfo.getMigrationOptions();
+        if (migrationOptions != null) {
+            if (migrationOptions.getType() == MigrationOptions.Type.LinkedClone && migrationOptions.isCopySrcTemplate()) {
+                updateCopiedTemplateReference(srcVolumeInfo, destVolumeInfo);
+            }
+        }
+    }
+
+    /**
+    * At a high level: The source storage cannot be managed and
+    *                  the destination storages can be all managed or all not managed, not mixed.
     */
-    private void verifyLiveMigrationMapForKVM(Map<VolumeInfo, DataStore> volumeDataStoreMap) {
+    protected void verifyLiveMigrationForKVM(Map<VolumeInfo, DataStore> volumeDataStoreMap, Host destHost) {
+        Boolean storageTypeConsistency = null;
+        Map<String, Storage.StoragePoolType> sourcePools = new HashMap<>();
         for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
             VolumeInfo volumeInfo = entry.getKey();
 
@@ -1991,8 +2208,44 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException("Destination storage pool with ID " + dataStore.getId() + " was not located.");
             }
 
-            if (!destStoragePoolVO.isManaged()) {
-                throw new CloudRuntimeException("Migrating a volume online with KVM can currently only be done when moving to managed storage.");
+            if (storageTypeConsistency == null) {
+                storageTypeConsistency = destStoragePoolVO.isManaged();
+            } else if (storageTypeConsistency != destStoragePoolVO.isManaged()) {
+                throw new CloudRuntimeException("Destination storage pools must be either all managed or all not managed");
+            }
+
+            if (!destStoragePoolVO.isManaged() && destStoragePoolVO.getPoolType() == StoragePoolType.NetworkFilesystem) {
+                if (destStoragePoolVO.getScope() != ScopeType.CLUSTER) {
+                    throw new CloudRuntimeException("KVM live storage migrations currently support cluster-wide " +
+                            "not managed NFS destination storage");
+                }
+                if (!sourcePools.containsKey(srcStoragePoolVO.getUuid())) {
+                    sourcePools.put(srcStoragePoolVO.getUuid(), srcStoragePoolVO.getPoolType());
+                }
+            }
+        }
+        verifyDestinationStorage(sourcePools, destHost);
+    }
+
+    /**
+     * Perform storage validation on destination host for KVM live storage migrations.
+     * Validate that volume source storage pools are mounted on the destination host prior the migration
+     * @throws CloudRuntimeException if any source storage pool is not mounted on the destination host
+     */
+    private void verifyDestinationStorage(Map<String, Storage.StoragePoolType> sourcePools, Host destHost) {
+        if (MapUtils.isNotEmpty(sourcePools)) {
+            LOGGER.debug("Verifying source pools are already available on destination host " + destHost.getUuid());
+            CheckStorageAvailabilityCommand cmd = new CheckStorageAvailabilityCommand(sourcePools);
+            try {
+                Answer answer = agentManager.send(destHost.getId(), cmd);
+                if (answer == null || !answer.getResult()) {
+                    throw new CloudRuntimeException("Storage verification failed on host "
+                            + destHost.getUuid() +": " + answer.getDetails());
+                }
+            } catch (AgentUnavailableException | OperationTimedoutException e) {
+                e.printStackTrace();
+                throw new CloudRuntimeException("Cannot perform storage verification on host " + destHost.getUuid() +
+                        "due to: " + e.getMessage());
             }
         }
     }
@@ -2057,8 +2310,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             HostVO hostVO = getHost(volumeInfo.getDataCenterId(), HypervisorType.KVM, false);
             DataStore srcDataStore = volumeInfo.getDataStore();
 
-            String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-            int primaryStorageDownloadWait = NumberUtils.toInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+            int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
 
             CopyCommand copyCommand = new CopyCommand(volumeInfo.getTO(), templateInfo.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
 
@@ -2073,7 +2325,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 copyCommand.setOptions(srcDetails);
 
-                copyCmdAnswer = (CopyCmdAnswer)_agentMgr.send(hostVO.getId(), copyCommand);
+                copyCmdAnswer = (CopyCmdAnswer)agentManager.send(hostVO.getId(), copyCommand);
 
                 if (!copyCmdAnswer.getResult()) {
                     errMsg = copyCmdAnswer.getDetails();
@@ -2337,7 +2589,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         try {
             _volumeService.grantAccess(dataObj, hostVO, dataStore);
 
-            answer = (ResignatureAnswer)_agentMgr.send(hostVO.getId(), command);
+            answer = (ResignatureAnswer)agentManager.send(hostVO.getId(), command);
         }
         catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
             keepGrantedAccess = false;
@@ -2414,7 +2666,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             _volumeService.grantAccess(destVolumeInfo, hostVO, destVolumeInfo.getDataStore());
 
-            MigrateVolumeAnswer migrateVolumeAnswer = (MigrateVolumeAnswer)_agentMgr.send(hostVO.getId(), migrateVolumeCommand);
+            MigrateVolumeAnswer migrateVolumeAnswer = (MigrateVolumeAnswer)agentManager.send(hostVO.getId(), migrateVolumeCommand);
 
             if (migrateVolumeAnswer == null || !migrateVolumeAnswer.getResult()) {
                 if (migrateVolumeAnswer != null && !StringUtils.isEmpty(migrateVolumeAnswer.getDetails())) {
@@ -2482,7 +2734,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 _volumeService.grantAccess(srcVolumeInfo, hostVO, srcVolumeInfo.getDataStore());
             }
 
-            CopyVolumeAnswer copyVolumeAnswer = (CopyVolumeAnswer)_agentMgr.send(hostVO.getId(), copyVolumeCommand);
+            CopyVolumeAnswer copyVolumeAnswer = (CopyVolumeAnswer)agentManager.send(hostVO.getId(), copyVolumeCommand);
 
             if (copyVolumeAnswer == null || !copyVolumeAnswer.getResult()) {
                 if (copyVolumeAnswer != null && !StringUtils.isEmpty(copyVolumeAnswer.getDetails())) {
@@ -2540,8 +2792,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private CopyCmdAnswer performCopyOfVdi(VolumeInfo volumeInfo, SnapshotInfo snapshotInfo, HostVO hostVO) {
         Snapshot.LocationType locationType = snapshotInfo.getLocationType();
 
-        String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-        int primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+        int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
 
         DataObject srcData = snapshotInfo;
         CopyCmdAnswer copyCmdAnswer = null;
@@ -2571,7 +2822,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             copyCommand.setOptions2(destDetails);
 
-            copyCmdAnswer = (CopyCmdAnswer)_agentMgr.send(hostVO.getId(), copyCommand);
+            copyCmdAnswer = (CopyCmdAnswer)agentManager.send(hostVO.getId(), copyCommand);
         }
         catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
             String msg = "Failed to perform VDI copy : ";

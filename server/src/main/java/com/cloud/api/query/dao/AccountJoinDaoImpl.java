@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.EnumSet;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -23,6 +24,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
@@ -57,13 +59,16 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
     }
 
     @Override
-    public AccountResponse newAccountResponse(ResponseView view, AccountJoinVO account) {
+    public AccountResponse newAccountResponse(ResponseView view, EnumSet<DomainDetails> details, AccountJoinVO account) {
         AccountResponse accountResponse = new AccountResponse();
         accountResponse.setId(account.getUuid());
         accountResponse.setName(account.getAccountName());
         accountResponse.setAccountType(account.getType());
         accountResponse.setDomainId(account.getDomainUuid());
         accountResponse.setDomainName(account.getDomainName());
+        StringBuilder domainPath = new StringBuilder("ROOT");
+        (domainPath.append(account.getDomainPath())).deleteCharAt(domainPath.length() - 1);
+        accountResponse.setDomainPath(domainPath.toString());
         accountResponse.setState(account.getState().toString());
         accountResponse.setNetworkDomain(account.getNetworkDomain());
         accountResponse.setDefaultZone(account.getDataCenterUuid());
@@ -73,17 +78,19 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         accountResponse.setBytesReceived(account.getBytesReceived());
         accountResponse.setBytesSent(account.getBytesSent());
 
-        boolean fullView = (view == ResponseView.Full && _acctMgr.isRootAdmin(account.getId()));
-        setResourceLimits(account, fullView, accountResponse);
+        if (details.contains(DomainDetails.all) || details.contains(DomainDetails.resource)) {
+            boolean fullView = (view == ResponseView.Full && _acctMgr.isRootAdmin(account.getId()));
+            setResourceLimits(account, fullView, accountResponse);
 
-        //get resource limits for projects
-        long projectLimit = ApiDBUtils.findCorrectResourceLimit(account.getProjectLimit(), account.getId(), ResourceType.project);
-        String projectLimitDisplay = (fullView || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit);
-        long projectTotal = (account.getProjectTotal() == null) ? 0 : account.getProjectTotal();
-        String projectAvail = (fullView || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit - projectTotal);
-        accountResponse.setProjectLimit(projectLimitDisplay);
-        accountResponse.setProjectTotal(projectTotal);
-        accountResponse.setProjectAvailable(projectAvail);
+            //get resource limits for projects
+            long projectLimit = ApiDBUtils.findCorrectResourceLimit(account.getProjectLimit(), account.getId(), ResourceType.project);
+            String projectLimitDisplay = (fullView || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit);
+            long projectTotal = (account.getProjectTotal() == null) ? 0 : account.getProjectTotal();
+            String projectAvail = (fullView || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit - projectTotal);
+            accountResponse.setProjectLimit(projectLimitDisplay);
+            accountResponse.setProjectTotal(projectTotal);
+            accountResponse.setProjectAvailable(projectAvail);
+        }
 
         // set async job
         if (account.getJobId() != null) {

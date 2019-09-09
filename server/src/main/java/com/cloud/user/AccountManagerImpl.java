@@ -37,8 +37,10 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
+import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -75,6 +77,7 @@ import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -112,9 +115,11 @@ import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -1019,8 +1024,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @DB
     @ActionEvents({@ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account"),
         @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")})
-    public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email, final String timezone, String accountName,
-            final short accountType, final Long roleId, Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID, final String userUUID,
+    public UserAccount createUserAccount(final String userName, final String password, final String firstName,
+                                         final String lastName, final String email, final String timezone,
+                                         String accountName, final short accountType, final Long roleId, Long domainId,
+                                         final String networkDomain, final Map<String, String> details,
+                                         String accountUUID, final String userUUID,
             final User.Source source) {
 
         if (accountName == null) {
@@ -1155,7 +1163,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         UserVO user = retrieveAndValidateUser(updateUserCmd);
         s_logger.debug("Updating user with Id: " + user.getUuid());
 
-        validateAndUpdatApiAndSecretKeyIfNeeded(updateUserCmd, user);
+        validateAndUpdateApiAndSecretKeyIfNeeded(updateUserCmd, user);
         Account account = retrieveAndValidateAccount(user);
 
         validateAndUpdateFirstNameIfNeeded(updateUserCmd, user);
@@ -1344,7 +1352,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      * <li>If a pair of keys is provided, we validate to see if there is an user already using the provided API key. If there is someone else using, we throw an {@link InvalidParameterValueException} because two users cannot have the same API key.
      * </ul>
      */
-    protected void validateAndUpdatApiAndSecretKeyIfNeeded(UpdateUserCmd updateUserCmd, UserVO user) {
+    protected void validateAndUpdateApiAndSecretKeyIfNeeded(UpdateUserCmd updateUserCmd, UserVO user) {
         String apiKey = updateUserCmd.getApiKey();
         String secretKey = updateUserCmd.getSecretKey();
 
@@ -1687,6 +1695,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public AccountVO updateAccount(UpdateAccountCmd cmd) {
         Long accountId = cmd.getId();
         Long domainId = cmd.getDomainId();
+        Long roleId = cmd.getRoleId();
         String accountName = cmd.getAccountName();
         String newAccountName = cmd.getNewName();
         String networkDomain = cmd.getNetworkDomain();
@@ -1700,6 +1709,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             account = _accountDao.findEnabledAccount(accountName, domainId);
         }
 
+        final AccountVO acctForUpdate = _accountDao.findById(account.getId());
+
         // Check if account exists
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             s_logger.error("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
@@ -1712,25 +1723,48 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         // Check if user performing the action is allowed to modify this account
-        checkAccess(getCurrentCallingAccount(), _domainMgr.getDomain(account.getDomainId()));
+        Account caller = getCurrentCallingAccount();
+        checkAccess(caller, _domainMgr.getDomain(account.getDomainId()));
 
-        // check if the given account name is unique in this domain for updating
-        Account duplicateAcccount = _accountDao.findActiveAccount(newAccountName, domainId);
-        if (duplicateAcccount != null && duplicateAcccount.getId() != account.getId()) {
-            throw new InvalidParameterValueException(
-                    "There already exists an account with the name:" + newAccountName + " in the domain:" + domainId + " with existing account id:" + duplicateAcccount.getId());
+        if(newAccountName != null) {
+
+            if (newAccountName.isEmpty()) {
+                throw new InvalidParameterValueException("The new account name for account '" + account.getUuid() + "' " +
+                        "within domain '" + domainId + "'  is empty string. Account will be not renamed.");
+            }
+
+            // check if the new proposed account name is absent in the domain
+            Account existingAccount = _accountDao.findActiveAccount(newAccountName, domainId);
+            if (existingAccount != null && existingAccount.getId() != account.getId()) {
+                throw new InvalidParameterValueException("The account with the proposed name '" +
+                        newAccountName + "' exists in the domain '" +
+                        domainId + "' with existing account id '" + existingAccount.getId() + "'");
+            }
+
+            acctForUpdate.setAccountName(newAccountName);
         }
 
         if (networkDomain != null && !networkDomain.isEmpty()) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
-                throw new InvalidParameterValueException(
-                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                throw new InvalidParameterValueException("Invalid network domain or format. " +
+                        "Total length shouldn't exceed 190 chars. Every domain part must be between 1 and 63 " +
+                        "characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
                                 + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
 
-        final AccountVO acctForUpdate = _accountDao.findById(account.getId());
-        acctForUpdate.setAccountName(newAccountName);
+
+        if (roleId != null) {
+            final List<Role> roles = cmd.roleService.listRoles();
+            final boolean roleNotFound = roles.stream().filter(r -> r.getId() == roleId).count() == 0;
+            if (roleNotFound) {
+                throw new InvalidParameterValueException("Role with ID '" + roleId.toString() + "' " +
+                        "is not found or not available for the account '" + account.getUuid() + "' " +
+                        "in the domain '" + domainId + "'.");
+            }
+
+            acctForUpdate.setRoleId(roleId);
+        }
 
         if (networkDomain != null) {
             if (networkDomain.isEmpty()) {
@@ -1741,17 +1775,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         final Account accountFinal = account;
-        success = Transaction.execute(new TransactionCallback<Boolean>() {
-            @Override
-            public Boolean doInTransaction(TransactionStatus status) {
-                boolean success = _accountDao.update(accountFinal.getId(), acctForUpdate);
+        success = Transaction.execute((TransactionCallback<Boolean>) status -> {
+            boolean success1 = _accountDao.update(accountFinal.getId(), acctForUpdate);
 
-                if (details != null && success) {
-                    _accountDetailsDao.update(accountFinal.getId(), details);
-                }
-
-                return success;
+            if (details != null && success1) {
+                _accountDetailsDao.update(accountFinal.getId(), details);
             }
+
+            return success1;
         });
 
         if (success) {
@@ -1789,13 +1820,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public boolean moveUser(long id, Long domainId, long accountId) {
+    public boolean moveUser(long id, Long domainId, Account newAccount) {
         UserVO user = getValidUserVO(id);
         Account oldAccount = _accountDao.findById(user.getAccountId());
         checkAccountAndAccess(user, oldAccount);
-        Account newAccount = _accountDao.findById(accountId);
         checkIfNotMovingAcrossDomains(domainId, newAccount);
-        return moveUser(user, accountId);
+        return moveUser(user, newAccount.getId());
     }
 
     private boolean moveUser(UserVO user, long newAccountId) {
@@ -2801,9 +2831,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public void checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException {
+    public void checkAccess(Account account, ServiceOffering so, DataCenter zone) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
-            if (checker.checkAccess(account, so)) {
+            if (checker.checkAccess(account, so, zone)) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Access granted to " + account + " to " + so + " by " + checker.getName());
                 }
@@ -2816,9 +2846,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public void checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException {
+    public void checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
-            if (checker.checkAccess(account, dof)) {
+            if (checker.checkAccess(account, dof, zone)) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Access granted to " + account + " to " + dof + " by " + checker.getName());
                 }
@@ -2828,6 +2858,36 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         assert false : "How can all of the security checkers pass on checking this caller?";
         throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + dof);
+    }
+
+    @Override
+    public void checkAccess(Account account, NetworkOffering nof, DataCenter zone) throws PermissionDeniedException {
+        for (SecurityChecker checker : _securityCheckers) {
+            if (checker.checkAccess(account, nof, zone)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Access granted to " + account + " to " + nof + " by " + checker.getName());
+                }
+                return;
+            }
+        }
+
+        assert false : "How can all of the security checkers pass on checking this caller?";
+        throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + nof);
+    }
+
+    @Override
+    public void checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException {
+        for (SecurityChecker checker : _securityCheckers) {
+            if (checker.checkAccess(account, vof, zone)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Access granted to " + account + " to " + vof + " by " + checker.getName());
+                }
+                return;
+            }
+        }
+
+        assert false : "How can all of the security checkers pass on checking this caller?";
+        throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + vof);
     }
 
     @Override

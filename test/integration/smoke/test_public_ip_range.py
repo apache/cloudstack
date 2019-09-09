@@ -297,6 +297,12 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
             "Check whether System VM Public IP is in range dedicated to system vms"
         )
 
+        # Disable Zone to be sure System VMs will not get recreated between calls
+        cmd = updateZone.updateZoneCmd()
+        cmd.id = self.zone.id
+        cmd.allocationstate = 'Disabled'
+        self.apiclient.updateZone(cmd)
+
         # Delete System VM and IP range, so System VM can get IP from original ranges
         self.debug("Destroying System VM: %s" % systemvm_id)
         cmd = destroySystemVm.destroySystemVmCmd()
@@ -305,6 +311,12 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
 
         domain_id = public_ip_range.vlan.domainid
         public_ip_range.delete(self.apiclient)
+
+        # Enable Zone
+        cmd = updateZone.updateZoneCmd()
+        cmd.id = self.zone.id
+        cmd.allocationstate = 'Enabled'
+        self.apiclient.updateZone(cmd)
 
         # Wait for System VM to start and check System VM public IP
         systemvm_id = self.wait_for_system_vm_start(
@@ -353,10 +365,14 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
             "vlan":self.services["vlan"]
         }
 
-        self.base_system_vm(
-            services,
-            'secondarystoragevm'
-        )
+        try:
+            self.base_system_vm(
+                services,
+                'secondarystoragevm'
+            )
+        except Exception:
+            self.delete_range()
+
         return
 
     @attr(tags = ["advanced", "publiciprange", "dedicate", "release"], required_hardware="false")
@@ -377,8 +393,45 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
             "vlan":self.services["vlan"]
         }
 
-        self.base_system_vm(
-            services,
-            'consoleproxy'
-        )
+        try:
+            self.base_system_vm(
+                services,
+                'consoleproxy'
+            )
+        except Exception:
+            self.delete_range()
+
         return
+
+    def delete_range(self):
+
+        # List System VMs
+        system_vms = list_ssvms(
+            self.apiclient,
+        )
+
+        # Disable Zone to be sure System VMs will not get recreated between calls
+        cmd = updateZone.updateZoneCmd()
+        cmd.id = self.zone.id
+        cmd.allocationstate = 'Disabled'
+        self.apiclient.updateZone(cmd)
+
+        # Delete System VM and IP range, so System VM can get IP from original ranges
+        for v in system_vms:
+            self.debug("Destroying System VM: %s" % v.id)
+            cmd = destroySystemVm.destroySystemVmCmd()
+            cmd.id = v.id
+            self.apiclient.destroySystemVm(cmd)
+
+        public_ip_range = PublicIpRange.list(
+            self.apiclient,
+            forsystemvms=True
+        )
+
+        public_ip_range.delete(self.apiclient)
+
+        # Enable Zone
+        cmd = updateZone.updateZoneCmd()
+        cmd.id = self.zone.id
+        cmd.allocationstate = 'Enabled'
+        self.apiclient.updateZone(cmd)

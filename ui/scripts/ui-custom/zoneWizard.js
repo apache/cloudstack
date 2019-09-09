@@ -22,7 +22,7 @@
         if (!options) options = {};
 
         var $forms = $wizard.find('form').filter(function() {
-            return !options.all ? !$(this).closest('.multi-edit').size() : true;
+            return !options.all ? !$(this).closest('.multi-edit').length : true;
         });
         var $physicalNetworkItems = $wizard.find(
             '.steps .setup-physical-network .select-container.multi'
@@ -33,7 +33,7 @@
             '.steps .setup-storage-traffic .data-body .data-item');
         var groupedForms = {};
 
-        if ($physicalNetworkItems.find('li.traffic-type-draggable.storage').size()) {
+        if ($physicalNetworkItems.find('li.traffic-type-draggable.storage').length) {
             $wizard.find('li.conditional.storage-traffic').show();
         } else {
             $wizard.find('li.conditional.storage-traffic').hide();
@@ -93,7 +93,7 @@
                     // Traffic type configuration data
                     trafficTypeConfiguration: trafficTypeConfiguration,
 
-                    guestConfiguration: $guestForm.size() ? cloudStack.serializeForm($guestForm) : null
+                    guestConfiguration: $guestForm.length ? cloudStack.serializeForm($guestForm) : null
                 };
             }
         );
@@ -172,7 +172,7 @@
      */
     var customValidation = {
         networkRanges: function($form) {
-            if ($form.closest('.multi-edit').find('.data-item').size()) {
+            if ($form.closest('.multi-edit').find('.data-item').length) {
                 return true;
             }
 
@@ -184,7 +184,7 @@
 
         physicalNetworks: function($form) {
             var $enabledPhysicalNetworks = $form.filter(':not(.disabled)').filter(function() {
-                return $(this).find('.traffic-type-draggable').size();
+                return $(this).find('.traffic-type-draggable').length;
             });
             var $trafficTypes = $enabledPhysicalNetworks.find('.traffic-type-draggable');
             var $configuredTrafficTypes = $trafficTypes.filter(function() {
@@ -193,8 +193,8 @@
                 return ($trafficType.data('traffic-type-data') != null);
             });
 
-            if ($enabledPhysicalNetworks.size() > 1 &&
-                $configuredTrafficTypes.size() != $trafficTypes.size()) {
+            if ($enabledPhysicalNetworks.length > 1 &&
+                $configuredTrafficTypes.length != $trafficTypes.length) {
                 cloudStack.dialog.notice({
                     message: _l('message.configure.all.traffic.types')
                 });
@@ -215,9 +215,9 @@
         var $physicalNetworks = $step.find('.select-container.multi');
         var isCustomValidated;
 
-        if ($multiEditForm.size()) {
+        if ($multiEditForm.length) {
             isCustomValidated = customValidation.networkRanges($multiEditForm);
-        } else if ($physicalNetworks.size()) {
+        } else if ($physicalNetworks.length) {
             isCustomValidated = customValidation.physicalNetworks($physicalNetworks);
         } else {
             isCustomValidated = true;
@@ -240,7 +240,7 @@
             var $existingPhysicalNetworks = physicalNetwork.getNetworks($wizard);
 
             // Initialize physical networks
-            if (!$existingPhysicalNetworks.size()) {
+            if (!$existingPhysicalNetworks.length) {
                 physicalNetwork.add($wizard);
             } else if (!isAdvancedNetwork($wizard)) {
                 $existingPhysicalNetworks.filter(':first').siblings().each(function() {
@@ -459,12 +459,12 @@
                 return $(this).attr('traffic-type-id') == trafficTypeID;
             });
 
-            if (physicalNetwork.isTrafficTypeClone($trafficType) && !$container.closest('.select-container.multi').size()) {
+            if (physicalNetwork.isTrafficTypeClone($trafficType) && !$container.closest('.select-container.multi').length) {
                 // Get traffic type from original container
                 return $trafficType.filter(function() {
                     return $(this).closest(
                         physicalNetwork.getOriginalTrafficContainer($trafficType)
-                    ).size();
+                    ).length;
                 });
             }
 
@@ -516,10 +516,10 @@
             var $trafficType = physicalNetwork.getTrafficType(trafficTypeID, $container);
             var $dropArea = $physicalNetwork.find('.drop-container ul');
 
-            if ($physicalNetwork.find('.traffic-type-draggable[traffic-type-id=' + trafficTypeID + ']').size()) return false;
+            if ($physicalNetwork.find('.traffic-type-draggable[traffic-type-id=' + trafficTypeID + ']').length) return false;
 
             if (physicalNetwork.isTrafficTypeClone($trafficType)) {
-                if (!physicalNetwork.getTrafficType(trafficTypeID, $physicalNetwork).size()) {
+                if (!physicalNetwork.getTrafficType(trafficTypeID, $physicalNetwork).length) {
                     $trafficType = $trafficType.clone()
                         .removeClass('disabled')
                         .appendTo($dropArea)
@@ -563,7 +563,7 @@
                 );
 
                 if (physicalNetwork.isTrafficTypeClone($trafficType) &&
-                    $physicalNetworks.find('.traffic-type-draggable[traffic-type-id=' + trafficTypeID + ']').size() > 1) {
+                    $physicalNetworks.find('.traffic-type-draggable[traffic-type-id=' + trafficTypeID + ']').length > 1) {
                     $trafficType.remove();
                 }
             }
@@ -580,10 +580,10 @@
                 return false;
 
             var $emptyContainers = $containers.filter(function() {
-                return !$(this).find('li').size();
+                return !$(this).find('li').length;
             });
 
-            return !$emptyContainers.size() ? $containers.size() : false;
+            return !$emptyContainers.length ? $containers.length : false;
         },
 
         /**
@@ -598,7 +598,7 @@
             $allPhysicalNetworks.each(function() {
                 var $ul = $(this).find('.drop-container ul');
 
-                if (!$(this).find('li').size()) {
+                if (!$(this).find('li').length) {
                     $(this).addClass('disabled');
                     $ul.fadeOut();
                 } else {
@@ -609,8 +609,8 @@
 
             $containers.each(function() {
                 var $currentContainer = $(this);
-                if (!$currentContainer.find('li').size() &&
-                    $containers.size() > containerTotal) {
+                if (!$currentContainer.find('li').length &&
+                    $containers.length > containerTotal) {
                     $currentContainer.remove();
                 }
             });
@@ -753,7 +753,7 @@
 
                     $ul.addClass('active');
 
-                    if (!$ul.find('li').size()) {
+                    if (!$ul.find('li').length) {
                         $(this).closest('.select-container.multi').removeClass('disabled');
                         $ul.fadeIn();
                     }
@@ -772,7 +772,7 @@
                     var trafficTypeData = ui.draggable.data('traffic-type-data');
 
                     if (trafficTypeID == 'guest' &&
-                        ui.draggable.closest('.select-container.multi').size()) {
+                        ui.draggable.closest('.select-container.multi').length) {
                         ui.draggable.remove();
                     }
 
@@ -880,7 +880,7 @@
 
             // Only use networks w/ guest traffic type
             $physicalNetworks = $physicalNetworks.filter(function() {
-                return $(this).find('li.guest').size();
+                return $(this).find('li.guest').length;
 
                 return true;
             });
@@ -1101,7 +1101,7 @@
                 var targetIndex = index - 1;
 
                 if (index <= 1) targetIndex = 0;
-                if (targetIndex == $steps.size()) {
+                if (targetIndex == $steps.length) {
                     completeAction();
                 }
 
@@ -1130,7 +1130,7 @@
                 }
 
                 if (formID) {
-                    if (!$targetStep.find('form').size()) {
+                    if (!$targetStep.find('form').length) {
                         makeForm(args, formID, formState).appendTo($targetStep.find('.content.input-area .select-container'));
 
                         setTimeout(function() {
@@ -1185,7 +1185,7 @@
                         }
                 }
 
-                if ($uiCustom.size()) {
+                if ($uiCustom.length) {
                     $uiCustom.each(function() {
                         var $item = $(this);
                         var id = $item.attr('ui-custom');
@@ -1210,7 +1210,7 @@
                 $nextButton.removeClass('final post-launch');
 
                 // Show launch button if last step
-                if ($targetStep.index() == $steps.size() - 1 || options.nextStep) {
+                if ($targetStep.index() == $steps.length - 1 || options.nextStep) {
                     $nextButton.find('span').html(options.nextStep ? _l('label.save.changes') : _l('label.launch.zone'));
                     $nextButton.addClass('final');
 
@@ -1225,7 +1225,7 @@
                 }).toggleClass('active');
 
                 setTimeout(function() {
-                    if (!$targetStep.find('input[type=radio]:checked').size()) {
+                    if (!$targetStep.find('input[type=radio]:checked').length) {
                         $targetStep.find('input[type=radio]:first').click();
                     }
                 }, 50);
@@ -1329,25 +1329,25 @@
                 }
 
                 // Next button
-                if ($target.closest('div.button.next').size()) {
+                if ($target.closest('div.button.next').length) {
                     var $step = $steps.filter(':visible');
                     // Validation
                     var $form = $('form:visible').filter(function() {
                         // Don't include multi-edit (validation happens separately)
-                        return !$(this).closest('.multi-edit').size();
+                        return !$(this).closest('.multi-edit').length;
                     });
 
                     // Handle validation for custom UI components
                     var isCustomValidated = checkCustomValidation($step);
-                    if (($form.size() && !$form.valid()) || !isCustomValidated) {
-                        if (($form && $form.find('.error:visible').size()) || !isCustomValidated)
+                    if (($form.length && !$form.valid()) || !isCustomValidated) {
+                        if (($form && $form.find('.error:visible').length) || !isCustomValidated)
                             return false;
                     }
 
                     //when hypervisor is BareMetal (begin)
                     var data = getData($wizard);
                     if (('zone' in data) && (data.zone.hypervisor == 'BareMetal')) {
-                        if ($('.zone-wizard:visible').find('#add_zone_guest_traffic_desc:visible').size() > 0) { //$steps.filter(':visible').index() == 6
+                        if ($('.zone-wizard:visible').find('#add_zone_guest_traffic_desc:visible').length > 0) { //$steps.filter(':visible').index() == 6
                             showStep('launch');
                             completeAction();
                             return false;
@@ -1355,10 +1355,10 @@
                     }
                     //when hypervisor is BareMetal (end)
 
-                    if (!$target.closest('.button.next.final').size())
+                    if (!$target.closest('.button.next.final').length)
                         showStep($steps.filter(':visible').index() + 2);
                     else {
-                        if ($target.closest('.button.next.final.post-launch').size()) {
+                        if ($target.closest('.button.next.final.post-launch').length) {
                             showStep('launch');
                         }
 
@@ -1369,21 +1369,21 @@
                 }
 
                 // Previous button
-                if ($target.closest('div.button.previous').size()) {
+                if ($target.closest('div.button.previous').length) {
                     showStep($steps.filter(':visible').index(), true);
 
                     return false;
                 }
 
                 // Close button
-                if ($target.closest('div.button.cancel').size()) {
+                if ($target.closest('div.button.cancel').length) {
                     close();
 
                     return false;
                 }
 
                 // Edit link
-                if ($target.closest('div.edit').size()) {
+                if ($target.closest('div.edit').length) {
                     var $edit = $target.closest('div.edit');
 
                     showStep($edit.find('a').attr('href'));
@@ -1395,7 +1395,7 @@
                 var $editTrafficTypeButton = $target.closest('.drop-container .traffic-type-draggable .edit-traffic-type');
                 var $trafficType = $editTrafficTypeButton.closest('.traffic-type-draggable');
 
-                if ($editTrafficTypeButton.size()) {
+                if ($editTrafficTypeButton.length) {
                     physicalNetwork.editTrafficTypeDialog($trafficType);
 
                     return false;

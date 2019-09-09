@@ -80,8 +80,9 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         final Commands commands = new Commands(Command.OnError.Stop);
         final NicVO nicVo = dhcp.getNicVo();
         final UserVmVO userVM = dhcp.getUserVM();
+        final boolean remove = dhcp.isRemove();
 
-        _commandSetupHelper.createDhcpEntryCommand(router, userVM, nicVo, commands);
+        _commandSetupHelper.createDhcpEntryCommand(router, userVM, nicVo, remove, commands);
 
         return _networkGeneralHelper.sendCommandsToRouter(router, commands);
     }

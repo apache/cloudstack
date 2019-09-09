@@ -107,6 +107,20 @@ public interface ConfigurationService {
     boolean deleteServiceOffering(DeleteServiceOfferingCmd cmd);
 
     /**
+     * Retrieve ID of domains for a service offering
+     *
+     * @param serviceOfferingId
+     */
+    List<Long> getServiceOfferingDomains(Long serviceOfferingId);
+
+    /**
+     * Retrieve ID of domains for a service offering
+     *
+     * @param serviceOfferingId
+     */
+    List<Long> getServiceOfferingZones(Long serviceOfferingId);
+
+    /**
      * Updates a disk offering
      *
      * @param cmd
@@ -138,6 +152,20 @@ public interface ConfigurationService {
      * @return ID
      */
     DiskOffering createDiskOffering(CreateDiskOfferingCmd cmd);
+
+    /**
+     * Retrieve ID of domains for a disk offering
+     *
+     * @param diskOfferingId
+     */
+    List<Long> getDiskOfferingDomains(Long diskOfferingId);
+
+    /**
+     * Retrieve ID of domains for a disk offering
+     *
+     * @param diskOfferingId
+     */
+    List<Long> getDiskOfferingZones(Long diskOfferingId);
 
     /**
      * Creates a new pod based on the parameters specified in the command object
@@ -268,6 +296,20 @@ public interface ConfigurationService {
     Pair<List<? extends NetworkOffering>, Integer> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd);
 
     boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd);
+
+    /**
+     * Retrieve ID of domains for a network offering
+     *
+     * @param networkOfferingId
+     */
+    List<Long> getNetworkOfferingDomains(Long networkOfferingId);
+
+    /**
+     * Retrieve ID of domains for a network offering
+     *
+     * @param networkOfferingId
+     */
+    List<Long> getNetworkOfferingZones(Long networkOfferingId);
 
     Account getVlanAccount(long vlanId);
 

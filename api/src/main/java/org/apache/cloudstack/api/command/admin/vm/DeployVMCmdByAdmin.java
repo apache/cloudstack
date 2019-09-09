@@ -16,6 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vm;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -39,6 +43,19 @@ import com.cloud.vm.VirtualMachine;
 public class DeployVMCmdByAdmin extends DeployVMCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmdByAdmin.class.getName());
 
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "destination Pod ID to deploy the VM to - parameter available for root admin only", since = "4.13")
+    private Long podId;
+
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "destination Cluster ID to deploy the VM to - parameter available for root admin only", since = "4.13")
+    private Long clusterId;
+
+    public Long getPodId() {
+        return podId;
+    }
+
+    public Long getClusterId() {
+        return clusterId;
+    }
 
     @Override
     public void execute(){

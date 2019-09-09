@@ -51,6 +51,11 @@
         <property name="registry" ref="apiCheckersRegistry" />
         <property name="typeClass" value="org.apache.cloudstack.acl.APIChecker" />
     </bean>
+
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="apiAclCheckersRegistry" />
+        <property name="typeClass" value="org.apache.cloudstack.acl.APIAclChecker" />
+    </bean>
     
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
         <property name="registry" ref="querySelectorsRegistry" />

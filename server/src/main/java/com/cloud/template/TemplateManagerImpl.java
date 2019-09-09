@@ -32,26 +32,6 @@ import java.util.concurrent.Executors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.deploy.DeployDestination;
-import com.cloud.storage.ImageStoreUploadMonitorImpl;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.EncryptionUtil;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.Pair;
-import com.cloud.utils.EnumUtils;
-import com.google.common.base.Joiner;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
-import org.apache.cloudstack.framework.async.AsyncCallFuture;
-import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
@@ -59,6 +39,7 @@ import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
@@ -67,6 +48,7 @@ import org.apache.cloudstack.api.command.user.template.CopyTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
@@ -93,6 +75,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.Templa
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -102,6 +85,9 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -109,6 +95,12 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -127,6 +119,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -146,6 +139,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.ImageStoreUploadMonitorImpl;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -184,6 +178,11 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.EncryptionUtil;
+import com.cloud.utils.EnumUtils;
+import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -198,11 +197,12 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+import com.google.common.base.Joiner;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class TemplateManagerImpl extends ManagerBase implements TemplateManager, TemplateApiService, Configurable {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
@@ -349,11 +349,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating post upload template")
-    public GetUploadParamsResponse registerTemplateForPostUpload(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException, MalformedURLException {
-        TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
-        TemplateProfile profile = adapter.prepare(cmd);
+    /**
+     * Internal register template or ISO method - post local upload
+     * @param adapter
+     * @param profile
+     */
+    private GetUploadParamsResponse registerPostUploadInternal(TemplateAdapter adapter,
+                                                               TemplateProfile profile) throws MalformedURLException {
+
         List<TemplateOrVolumePostUploadCommand> payload = adapter.createTemplateForPostUpload(profile);
 
         if(CollectionUtils.isNotEmpty(payload)) {
@@ -403,6 +406,21 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ISO_CREATE, eventDescription = "creating post upload iso")
+    public GetUploadParamsResponse registerIsoForPostUpload(GetUploadParamsForIsoCmd cmd) throws ResourceAllocationException, MalformedURLException {
+        TemplateAdapter adapter = getAdapter(HypervisorType.None);
+        TemplateProfile profile = adapter.prepare(cmd);
+        return registerPostUploadInternal(adapter, profile);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating post upload template")
+    public GetUploadParamsResponse registerTemplateForPostUpload(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException, MalformedURLException {
+        TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
+        TemplateProfile profile = adapter.prepare(cmd);
+        return registerPostUploadInternal(adapter, profile);
+    }
 
     @Override
     public DataStore getImageStore(String storeUuid, Long zoneId) {
@@ -410,7 +428,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (storeUuid != null) {
             imageStore = _dataStoreMgr.getDataStore(storeUuid, DataStoreRole.Image);
         } else {
-            imageStore = _dataStoreMgr.getImageStore(zoneId);
+            imageStore = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
             if (imageStore == null) {
                 throw new CloudRuntimeException("cannot find an image store for zone " + zoneId);
             }
@@ -558,6 +576,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (vm.getIsoId() != null) {
             Map<Volume, StoragePool> storageForDisks = dest.getStorageForDisks();
             Long poolId = null;
+            TemplateInfo template;
             if (MapUtils.isNotEmpty(storageForDisks)) {
                 for (StoragePool storagePool : storageForDisks.values()) {
                     if (poolId != null && storagePool.getId() != poolId) {
@@ -565,8 +584,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     }
                     poolId = storagePool.getId();
                 }
+                template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
+            } else {
+                template = _tmplFactory.getTemplate(vm.getIsoId(), DataStoreRole.Primary, dest.getDataCenter().getId());
             }
-            TemplateInfo template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
+
             if (template == null){
                 s_logger.error("Failed to prepare ISO on secondary or cache storage");
                 throw new CloudRuntimeException("Failed to prepare ISO on secondary or cache storage");
@@ -1334,7 +1356,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to delete iso, as it's used by other vms");
         }
 
-        if (zoneId != null && (_dataStoreMgr.getImageStore(zoneId) == null)) {
+        if (zoneId != null && (_dataStoreMgr.getImageStoreWithFreeCapacity(zoneId) == null)) {
             throw new InvalidParameterValueException("Failed to find a secondary storage store in the specified zone.");
         }
 
@@ -1459,9 +1481,24 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("unable to update permissions for " + mediaType + " with id " + id);
         }
 
-        boolean isAdmin = _accountMgr.isAdmin(caller.getId());
+        Long ownerId = template.getAccountId();
+        Account owner = _accountMgr.getAccount(ownerId);
+        if (ownerId == null) {
+            // if there is no owner of the template then it's probably already a
+            // public template (or domain private template) so
+            // publishing to individual users is irrelevant
+            throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName());
+        }
+
+        if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            // Currently project owned templates cannot be shared outside project but is available to all users within project by default.
+            throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName() +
+                    ". Project owned templates cannot be shared outside template.");
+        }
+
         // check configuration parameter(allow.public.user.templates) value for
         // the template owner
+        boolean isAdmin = _accountMgr.isAdmin(caller.getId());
         boolean allowPublicUserTemplates = AllowPublicUserTemplates.valueIn(template.getAccountId());
         if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
             throw new InvalidParameterValueException("Only private " + mediaType + "s can be created.");
@@ -1473,14 +1510,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     "Invalid operation on accounts, the operation must be either 'add' or 'remove' in order to modify launch permissions." + "  Given operation is: '" +
                         operation + "'");
             }
-        }
-
-        Long ownerId = template.getAccountId();
-        if (ownerId == null) {
-            // if there is no owner of the template then it's probably already a
-            // public template (or domain private template) so
-            // publishing to individual users is irrelevant
-            throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName());
         }
 
         //Only admin or owner of the template should be able to change its permissions
@@ -1499,9 +1528,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (isExtractable != null) {
-            // Only Root admins allowed to change it for templates
-            if (!template.getFormat().equals(ImageFormat.ISO) && !_accountMgr.isRootAdmin(caller.getId())) {
-                throw new InvalidParameterValueException("Only ROOT admins are allowed to modify isExtractable attribute.");
+            // Only Root admins and owners are allowed to change it for templates
+            if (!template.getFormat().equals(ImageFormat.ISO) && caller.getId() != ownerId && !isAdmin) {
+                throw new InvalidParameterValueException("Only ROOT admins and template owners are allowed to modify isExtractable attribute.");
             } else {
                 // For Isos normal user can change it, as their are no derivatives.
                 updatedTemplate.setExtractable(isExtractable.booleanValue());
@@ -1516,7 +1545,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         //Derive the domain id from the template owner as updateTemplatePermissions is not cross domain operation
-        Account owner = _accountMgr.getAccount(ownerId);
         final Domain domain = _domainDao.findById(owner.getDomainId());
         if ("add".equalsIgnoreCase(operation)) {
             final List<String> accountNamesFinal = accountNames;
@@ -1603,7 +1631,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 volume = _volumeDao.findById(volumeId);
                 zoneId = volume.getDataCenterId();
             }
-            DataStore store = _dataStoreMgr.getImageStore(zoneId);
+            DataStore store = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
             if (store == null) {
                 throw new CloudRuntimeException("cannot find an image store for zone " + zoneId);
             }
@@ -1895,7 +1923,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 }
             }
             if (cmd.getDetails() != null) {
-                details.remove("Encrypted.Password"); // new password will be generated during vm deployment from password enabled template
+                details.remove(VmDetailConstants.ENCRYPTED_PASSWORD); // new password will be generated during vm deployment from password enabled template
                 details.putAll(cmd.getDetails());
             }
             if (!details.isEmpty()) {
@@ -1929,7 +1957,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public String getSecondaryStorageURL(long zoneId) {
-        DataStore secStore = _dataStoreMgr.getImageStore(zoneId);
+        DataStore secStore = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
         if (secStore == null) {
             return null;
         }

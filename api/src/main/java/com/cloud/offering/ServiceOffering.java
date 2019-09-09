@@ -104,9 +104,6 @@ public interface ServiceOffering extends DiskOffering, InfrastructureEntity, Int
     @Override
     boolean isUseLocalStorage();
 
-    @Override
-    Long getDomainId();
-
     /**
      * @return tag that should be present on the host needed, optional parameter
      */

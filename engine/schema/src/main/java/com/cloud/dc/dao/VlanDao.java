@@ -27,6 +27,8 @@ public interface VlanDao extends GenericDao<VlanVO, Long> {
 
     VlanVO findByZoneAndVlanId(long zoneId, String vlanId);
 
+    VlanVO findByNetworkIdAndIpv4(long networkId, String ipv4Address);
+
     List<VlanVO> listByZone(long zoneId);
 
     List<VlanVO> listByType(Vlan.VlanType vlanType);

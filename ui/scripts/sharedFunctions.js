@@ -35,6 +35,8 @@ var g_cloudstackversion = null;
 var g_queryAsyncJobResultInterval = 3000;
 var g_idpList = null;
 var g_appendIdpDomain = false;
+var g_sortKeyIsAscending = false;
+var g_allowUserViewAllDomainAccounts = false;
 
 //keyboard keycode
 var keycode_Enter = 13;
@@ -347,6 +349,10 @@ var addGuestNetworkDialog = {
                     label: 'label.vlan.id',
                     docID: 'helpGuestNetworkZoneVLANID'
                 },
+                bypassVlanOverlapCheck: {
+                    label: 'label.bypass.vlan.overlap.check',
+                    isBoolean: true
+                },
                 isolatedpvlanId: {
                     label: 'label.secondary.isolated.vlan.id'
                 },
@@ -507,7 +513,7 @@ var addGuestNetworkDialog = {
                     select: function(args) {
                         var items = [];
                         $.ajax({
-                            url: createURL("listProjects&listAll=true"),
+                            url: createURL("listProjects&listAll=true&details=min"),
                             dataType: "json",
                             async: false,
                             success: function(json) {
@@ -529,7 +535,7 @@ var addGuestNetworkDialog = {
                 networkOfferingId: {
                     label: 'label.network.offering',
                     docID: 'helpGuestNetworkZoneNetworkOffering',
-                    dependsOn: ['zoneId', 'physicalNetworkId', 'scope'],
+                    dependsOn: ['zoneId', 'physicalNetworkId', 'scope', 'domainId'],
                     select: function(args) {
                         if(args.$form.find('.form-item[rel=zoneId]').find('select').val() == null || args.$form.find('.form-item[rel=zoneId]').find('select').val().length == 0) {
                             args.response.success({
@@ -565,6 +571,11 @@ var addGuestNetworkDialog = {
                             $.extend(data, {
                                 guestiptype: 'Shared'
                             });
+                            if (args.scope == "domain-specific") {
+                                $.extend(data, {
+                                    domainid: args.domainId
+                                });
+                            }
                         }
 
                         var items = [];
@@ -672,7 +683,7 @@ var addGuestNetworkDialog = {
                     label: 'label.ipv6.gateway',
                     docID: 'helpGuestNetworkZoneGateway',
                     validation: {
-                        ipv6: true
+                    	ipv6CustomJqueryValidator: true
                     }
                 },
                 ip6cidr: {
@@ -685,14 +696,14 @@ var addGuestNetworkDialog = {
                     label: 'label.ipv6.start.ip',
                     docID: 'helpGuestNetworkZoneStartIP',
                     validation: {
-                        ipv6: true
+                    	ipv6CustomJqueryValidator: true
                     }
                 },
                 endipv6: {
                     label: 'label.ipv6.end.ip',
                     docID: 'helpGuestNetworkZoneEndIP',
                     validation: {
-                        ipv6: true
+                    	ipv6CustomJqueryValidator: true
                     }
                },
                 //IPv6 (end)
@@ -700,7 +711,16 @@ var addGuestNetworkDialog = {
                 networkdomain: {
                     label: 'label.network.domain',
                     docID: 'helpGuestNetworkZoneNetworkDomain'
+                },
+
+                hideipaddressusage: {
+                    label: 'label.network.hideipaddressusage',
+                    dependsOn: ['zoneId', 'physicalNetworkId', 'scope'],
+                    isBoolean: true,
+                    isChecked: false,
+                    docID: 'helpGuestNetworkHideIpAddressUsage'
                 }
+
             }
         },
 
@@ -739,6 +759,9 @@ var addGuestNetworkDialog = {
             if ($form.find('.form-item[rel=vlanId]').css("display") != "none"){
                 cloudStack.addVlanToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, args.data.vlanId)
             }
+            if ($form.find('.form-item[rel=bypassVlanOverlapCheck]').css("display") != "none"){
+                array1.push("&bypassVlanOverlapCheck=" + encodeURIComponent((args.data.bypassVlanOverlapCheck == "on")));
+            }
             if (($form.find('.form-item[rel=isolatedpvlanId]').css("display") != "none") && (args.data.isolatedpvlanId != null && args.data.isolatedpvlanId.length > 0)){
                 array1.push("&isolatedpvlan=" + encodeURIComponent(args.data.isolatedpvlanId));
             }
@@ -754,7 +777,7 @@ var addGuestNetworkDialog = {
                 } else { //domain-specific
                     array1.push("&acltype=domain");
 
-                    if ($form.find('.form-item[rel=subdomainaccess]:visible input:checked').size())
+                    if ($form.find('.form-item[rel=subdomainaccess]:visible input:checked').length)
                         array1.push("&subdomainaccess=true");
                     else
                         array1.push("&subdomainaccess=false");
@@ -788,6 +811,10 @@ var addGuestNetworkDialog = {
             if (args.data.networkdomain != null && args.data.networkdomain.length > 0){
                 array1.push("&networkdomain=" + encodeURIComponent(args.data.networkdomain));
             }
+            if (args.data.hideipaddressusage != null && args.data.hideipaddressusage) {
+                array1.push("&hideipaddressusage=true")
+            }
+
             $.ajax({
                 url: createURL("createNetwork" + array1.join("")),
                 dataType: "json",
@@ -824,13 +851,6 @@ var addL2GuestNetwork = {
             }
         },
 
-        preFilter: function(args) {
-            if (isAdmin())
-                return true;
-            else
-                return false;
-        },
-
         createForm: {
             title: 'label.add.l2.guest.network',
             fields: {
@@ -860,7 +880,7 @@ var addL2GuestNetwork = {
                             url: createURL('listZones'),
                             success: function(json) {
                                 var zones = $.grep(json.listzonesresponse.zone, function(zone) {
-                                    return (zone.networktype == 'Advanced' && zone.securitygroupsenabled != true); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
+                                    return (zone.networktype == 'Advanced'); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
                                 });
 
                                 args.response.success({
@@ -875,94 +895,6 @@ var addL2GuestNetwork = {
                         });
                     }
                 },
-                networkOfferingId: {
-                    label: 'label.network.offering',
-                    validation: {
-                        required: true
-                    },
-                    dependsOn: 'zoneId',
-                    docID: 'helpGuestNetworkNetworkOffering',
-                    select: function(args) {
-                        var data = {
-                            zoneid: args.zoneId,
-                            guestiptype: 'L2',
-                            state: 'Enabled'
-                        };
-
-                        if ('vpc' in args.context) { //from VPC section
-                            $.extend(data, {
-                                forVpc: true
-                            });
-                        }
-                        else { //from guest network section
-                            var vpcs;
-                            $.ajax({
-                                url: createURL('listVPCs'),
-                                data: {
-                                    listAll: true
-                                },
-                                async: false,
-                                success: function(json) {
-                                    vpcs = json.listvpcsresponse.vpc;
-                                }
-                            });
-                            if (vpcs == null || vpcs.length == 0) { //if there is no VPC in the system
-                                $.extend(data, {
-                                    forVpc: false
-                                });
-                            }
-                        }
-
-                        if(!isAdmin()) { //normal user is not aware of the VLANs in the system, so normal user is not allowed to create network with network offerings whose specifyvlan = true
-                            $.extend(data, {
-                                specifyvlan: false
-                            });
-                        }
-
-                        $.ajax({
-                            url: createURL('listNetworkOfferings'),
-                            data: data,
-                            success: function(json) {
-                                if(!json.listnetworkofferingsresponse || !json.listnetworkofferingsresponse.networkoffering){
-                                    return;
-                                }
-                                var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
-                                args.$select.change(function() {
-                                    var $vlan = args.$select.closest('form').find('[rel=vlan]');
-                                    var networkOffering = $.grep(
-                                        networkOfferingObjs, function(netoffer) {
-                                            return netoffer.id == args.$select.val();
-                                        }
-                                    )[0];
-
-                                    if (networkOffering.specifyvlan) {
-                                        $vlan.css('display', 'inline-block');
-                                    } else {
-                                        $vlan.hide();
-                                    }
-                                });
-
-                                args.response.success({
-                                    data: $.map(networkOfferingObjs, function(zone) {
-                                        return {
-                                            id: zone.id,
-                                            description: zone.name
-                                        };
-                                    })
-                                });
-                            }
-                        });
-                    }
-                },
-
-                vlan: {
-                    label: 'label.vlan',
-                    validation: {
-                        required: true
-                    },
-                    isHidden: true
-                },
-
                 domain: {
                     label: 'label.domain',
                     isHidden: function(args) {
@@ -1011,6 +943,107 @@ var addL2GuestNetwork = {
                         }
                     }
                 },
+                networkOfferingId: {
+                    label: 'label.network.offering',
+                    validation: {
+                        required: true
+                    },
+                    dependsOn: (isAdmin() || isDomainAdmin()) ? ['zoneId', 'domain'] : 'zoneId', // domain is visible only for admins
+                    docID: 'helpGuestNetworkNetworkOffering',
+                    select: function(args) {
+                        var data = {
+                            zoneid: args.zoneId,
+                            guestiptype: 'L2',
+                            state: 'Enabled'
+                        };
+
+                        if ((isAdmin() || isDomainAdmin())) { // domain is visible only for admins
+                            $.extend(data, {
+                                domainid: args.domain
+                            });
+                        }
+
+                        if ('vpc' in args.context) { //from VPC section
+                            $.extend(data, {
+                                forVpc: true
+                            });
+                        }
+                        else { //from guest network section
+                            var vpcs;
+                            $.ajax({
+                                url: createURL('listVPCs'),
+                                data: {
+                                    listAll: true
+                                },
+                                async: false,
+                                success: function(json) {
+                                    vpcs = json.listvpcsresponse.vpc;
+                                }
+                            });
+                            if (vpcs == null || vpcs.length == 0) { //if there is no VPC in the system
+                                $.extend(data, {
+                                    forVpc: false
+                                });
+                            }
+                        }
+
+                        if(!isAdmin()) { //normal user is not aware of the VLANs in the system, so normal user is not allowed to create network with network offerings whose specifyvlan = true
+                            $.extend(data, {
+                                specifyvlan: false
+                            });
+                        }
+
+                        $.ajax({
+                            url: createURL('listNetworkOfferings'),
+                            data: data,
+                            success: function(json) {
+                                if(!json.listnetworkofferingsresponse || !json.listnetworkofferingsresponse.networkoffering){
+                                    return;
+                                }
+                                var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                                args.$select.change(function() {
+                                    var $vlan = args.$select.closest('form').find('[rel=vlan]');
+                                    var $bypassVlanOverlapCheck = args.$select.closest('form').find('[rel=bypassVlanOverlapCheck]');
+                                    var networkOffering = $.grep(
+                                        networkOfferingObjs, function(netoffer) {
+                                            return netoffer.id == args.$select.val();
+                                        }
+                                    )[0];
+
+                                    if (networkOffering.specifyvlan) {
+                                        $vlan.css('display', 'inline-block');
+                                        $bypassVlanOverlapCheck.css('display', 'inline-block');
+                                    } else {
+                                        $vlan.hide();
+                                        $bypassVlanOverlapCheck.hide();
+                                    }
+                                });
+
+                                args.response.success({
+                                    data: $.map(networkOfferingObjs, function(zone) {
+                                        return {
+                                            id: zone.id,
+                                            description: zone.name
+                                        };
+                                    })
+                                });
+                            }
+                        });
+                    }
+                },
+
+                vlan: {
+                    label: 'label.vlan',
+                    validation: {
+                        required: true
+                    },
+                    isHidden: true
+                },
+                bypassVlanOverlapCheck: {
+                    label: 'label.bypass.vlan.overlap.check',
+                    isBoolean: true,
+                    isHidden: true
+                },
                 account: {
                     label: 'label.account',
                     validation: {
@@ -1036,7 +1069,8 @@ var addL2GuestNetwork = {
 
             if (args.$form.find('.form-item[rel=vlan]').css('display') != 'none') {
                 $.extend(dataObj, {
-                    vlan: args.data.vlan
+                    vlan: args.data.vlan,
+                    bypassVlanOverlapCheck: (args.data.bypassVlanOverlapCheck == "on")
                 });
             }
 
@@ -2396,7 +2430,7 @@ cloudStack.api = {
                     url: createURL(updateCommand),
                     data: {
                         id: args.context[objType].id,
-                        sortKey: args.index
+                        sortKey: args.sortKey
                     },
                     success: function(json) {
                         args.response.success();
@@ -2534,6 +2568,39 @@ function strOrFunc(arg, args) {
     return arg;
 }
 
+function sortArrayByKey(arrayToSort, sortKey, reverse) {
+
+    if(!arrayToSort){
+        return;
+    }
+    // Move smaller items towards the front
+    // or back of the array depending on if
+    // we want to sort the array in reverse
+    // order or not.
+    var moveSmaller = reverse ? 1 : -1;
+
+    // Move larger items towards the front
+    // or back of the array depending on if
+    // we want to sort the array in reverse
+    // order or not.
+    var moveLarger = reverse ? -1 : 1;
+
+    /**
+     * @param  {*} a
+     * @param  {*} b
+     * @return {Number}
+     */
+    arrayToSort.sort(function(a, b) {
+        if (a[sortKey] < b[sortKey]) {
+            return moveSmaller;
+        }
+        if (a[sortKey] > b[sortKey]) {
+            return moveLarger;
+        }
+        return 0;
+    });
+}
+
 $.validator.addMethod("netmask", function(value, element) {
     if (this.optional(element) && value.length == 0)
         return true;
@@ -2566,7 +2633,7 @@ $.validator.addMethod("ipv6cidr", function(value, element) {
         return false;
     }
 
-    if (!$.validator.methods.ipv6.call(this, parts[0], element))
+    if (!$.validator.methods.ipv6CustomJqueryValidator.call(this, parts[0], element))
         return false;
 
     if (parts[1] != Number(parts[1]).toString()) //making sure that "", " ", "00", "0 ","2  ", etc. will not pass
@@ -2599,6 +2666,19 @@ $.validator.addMethod("ipv4cidr", function(value, element) {
     return true;
 }, "The specified IPv4 CIDR is invalid.");
 
+$.validator.addMethod("ipv46cidrs", function(value, element) {
+    var result = true;
+    if (value) {
+        var validatorThis = this;
+        value.split(',').forEach(function(item){
+            if (result && !$.validator.methods.ipv46cidr.call(validatorThis, item.trim(), element)) {
+                result = false;
+            }
+        })
+    }
+    return result;
+}, "The specified IPv4/IPv6 CIDR input is invalid.");
+
 $.validator.addMethod("ipv46cidr", function(value, element) {
     if (this.optional(element) && value.length == 0)
         return true;
@@ -2608,6 +2688,23 @@ $.validator.addMethod("ipv46cidr", function(value, element) {
 
     return false;
 }, "The specified IPv4/IPv6 CIDR is invalid.");
+
+jQuery.validator.addMethod("ipv4AndIpv6AddressValidator", function(value, element) {
+    if (this.optional(element) && value.length == 0) {
+        return true;
+	}
+    if (jQuery.validator.methods.ipv4.call(this, value, element) || jQuery.validator.methods.ipv6CustomJqueryValidator.call(this, value, element)) {
+        return true;
+    }
+    return false;
+}, "The specified IPv4/IPv6 address is invalid.");
+
+jQuery.validator.addMethod("ipv6CustomJqueryValidator", function(value, element) {
+    if (value == '::'){
+    	return true;
+    }
+    return jQuery.validator.methods.ipv6.call(this, value, element);
+}, "The specified IPv6 address is invalid.");
 
 
 $.validator.addMethod("allzonesonly", function(value, element){

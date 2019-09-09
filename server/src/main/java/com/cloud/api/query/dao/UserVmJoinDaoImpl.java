@@ -28,7 +28,9 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
@@ -37,6 +39,7 @@ import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -305,13 +308,27 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
         // set resource details map
         // Allow passing details to end user
-        List<UserVmDetailVO> vmDetails = _userVmDetailsDao.listDetails(userVm.getId());
+        // Honour the display field and only return if display is set to true
+        List<UserVmDetailVO> vmDetails = _userVmDetailsDao.listDetails(userVm.getId(), true);
         if (vmDetails != null) {
             Map<String, String> resourceDetails = new HashMap<String, String>();
             for (UserVmDetailVO userVmDetailVO : vmDetails) {
-                resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
+                if (!userVmDetailVO.getName().startsWith(ApiConstants.OVF_PROPERTIES) ||
+                        (UserVmManager.DisplayVMOVFProperties.value() && userVmDetailVO.getName().startsWith(ApiConstants.OVF_PROPERTIES))) {
+                    resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
+                }
+            }
+            // Remove blacklisted settings if user is not admin
+            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                String[] userVmSettingsToHide = QueryService.UserVMBlacklistedDetails.value().split(",");
+                for (String key : userVmSettingsToHide) {
+                    resourceDetails.remove(key.trim());
+                }
             }
             userVmResponse.setDetails(resourceDetails);
+            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                userVmResponse.setReadOnlyUIDetails(QueryService.UserVMReadOnlyUIDetails.value());
+            }
         }
 
         userVmResponse.setObjectName(objectName);

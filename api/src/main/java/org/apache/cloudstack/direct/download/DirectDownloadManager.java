@@ -19,7 +19,21 @@ package org.apache.cloudstack.direct.download;
 
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
-public interface DirectDownloadManager extends DirectDownloadService, PluggableService {
+public interface DirectDownloadManager extends DirectDownloadService, PluggableService, Configurable {
 
+    ConfigKey<Long> DirectDownloadCertificateUploadInterval = new ConfigKey<>("Advanced", Long.class,
+            "direct.download.certificate.background.task.interval",
+            "0",
+            "This interval (in hours) controls a background task to sync hosts within enabled zones " +
+                    "missing uploaded certificates for direct download." +
+                    "Only certificates which have not been revoked from hosts are uploaded",
+            false);
+
+    /**
+     * Revoke direct download certificate with alias 'alias' from hosts of hypervisor type 'hypervisor'
+     */
+    boolean revokeCertificateAlias(String certificateAlias, String hypervisor, Long zoneId, Long hostId);
 }

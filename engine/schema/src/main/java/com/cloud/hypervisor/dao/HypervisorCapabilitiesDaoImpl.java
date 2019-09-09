@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -105,5 +106,17 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
     public Boolean isVmSnapshotEnabled(HypervisorType hypervisorType, String hypervisorVersion) {
         HypervisorCapabilitiesVO result = getCapabilities(hypervisorType, hypervisorVersion);
         return result.getVmSnapshotEnabled();
+    }
+
+    @Override
+    public List<HypervisorType> getHypervisorsWithDefaultEntries() {
+        SearchCriteria<HypervisorCapabilitiesVO> sc = HypervisorTypeAndVersionSearch.create();
+        sc.setParameters("hypervisorVersion", DEFAULT_VERSION);
+        List<HypervisorCapabilitiesVO> hypervisorCapabilitiesVOS = listBy(sc);
+        List<HypervisorType> hvs = new ArrayList<>();
+        for (HypervisorCapabilitiesVO capabilitiesVO : hypervisorCapabilitiesVOS) {
+            hvs.add(capabilitiesVO.getHypervisorType());
+        }
+        return hvs;
     }
 }

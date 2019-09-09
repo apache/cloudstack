@@ -69,11 +69,23 @@
                                 async: false,
                                 success: function(json) {
                                     var jid = json.deletedomainresponse.jobid;
+                                    var wasDomainDeletedWithSuccess = false;
+                                    $.ajax({
+                                        url: createURL("queryAsyncJobResult&jobId=" + jid),
+                                        dataType: "json",
+                                        async: false,
+                                        success: function(json) {
+                                            wasDomainDeletedWithSuccess = json.queryasyncjobresultresponse.jobresultcode ==  0;
+                                        }
+                                    });
                                     args.response.success({
                                         _custom: {
                                             jobId: jid
                                         }
                                     });
+                                    if(!wasDomainDeletedWithSuccess){
+                                        return;
+                                    }
 
                                     // Quick fix for proper UI reaction to delete domain
                                     var $item = $('.name.selected').closest('li');

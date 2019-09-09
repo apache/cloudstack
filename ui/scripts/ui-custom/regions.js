@@ -96,7 +96,7 @@
             var $li = $target.closest('li');
             var region, url;
 
-            if ($li.size() && !$li.hasClass('active')) {
+            if ($li.length && !$li.hasClass('active')) {
                 region = $li.data('region-data');
                 url = region.endpoint;
                 id = region.id;

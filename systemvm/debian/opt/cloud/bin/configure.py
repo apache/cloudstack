@@ -21,6 +21,8 @@ import logging
 import os
 import re
 import sys
+import urllib
+import urllib2
 import time
 
 from collections import OrderedDict
@@ -62,10 +64,15 @@ class CsPassword(CsDataBag):
             server_ip = ip.split('/')[0]
             proc = CsProcess(['/opt/cloud/bin/passwd_server_ip.py', server_ip])
             if proc.find():
-                update_command = 'curl --header "DomU_Request: save_password" "http://{SERVER_IP}:8080/" -F "ip={VM_IP}" -F "password={PASSWORD}" ' \
-                                 '-F "token={TOKEN}" >/dev/null 2>/dev/null &'.format(SERVER_IP=server_ip, VM_IP=vm_ip, PASSWORD=password, TOKEN=token)
-                result = CsHelper.execute(update_command)
-                logging.debug("Update password server result ==> %s" % result)
+                url = "http://%s:8080/" % server_ip
+                payload = {"ip": vm_ip, "password": password, "token": token}
+                data = urllib.urlencode(payload)
+                request = urllib2.Request(url, data=data, headers={"DomU_Request": "save_password"})
+                try:
+                    resp = urllib2.urlopen(request, data)
+                    logging.debug("Update password server result: http:%s, content:%s" % (resp.code, resp.read()))
+                except Exception as e:
+                    logging.error("Failed to update password server due to: %s" % e)
 
 
 class CsAcl(CsDataBag):
@@ -124,10 +131,10 @@ class CsAcl(CsDataBag):
             rnge = ''
             if "first_port" in self.rule.keys() and \
                self.rule['first_port'] == self.rule['last_port']:
-                    rnge = " --dport %s " % self.rule['first_port']
+                rnge = " --dport %s " % self.rule['first_port']
             if "first_port" in self.rule.keys() and \
                self.rule['first_port'] != self.rule['last_port']:
-                    rnge = " --dport %s:%s" % (rule['first_port'], rule['last_port'])
+                rnge = " --dport %s:%s" % (rule['first_port'], rule['last_port'])
 
             logging.debug("Current ACL IP direction is ==> %s", self.direction)
 
@@ -858,7 +865,7 @@ class CsForwardingRules(CsDataBag):
                 rule['protocol'],
                 rule['protocol'],
                 public_fwports,
-                hex(int(public_fwinterface[3:]))
+                hex(100 + int(public_fwinterface[3:]))
               )
         fw6 = "-A PREROUTING -d %s/32 -i %s -p %s -m %s --dport %s -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" % \
               (
@@ -922,12 +929,12 @@ class CsForwardingRules(CsDataBag):
         if device is None:
             raise Exception("Ip address %s has no device in the ips databag" % rule["public_ip"])
 
-        self.fw.append(["mangle", "",
-                        "-I PREROUTING -s %s/32 -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" %
+        self.fw.append(["mangle", "front",
+                        "-A PREROUTING -s %s/32 -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" %
                         rule["internal_ip"]])
-        self.fw.append(["mangle", "",
-                        "-I PREROUTING -s %s/32 -m state --state NEW -j MARK --set-xmark %s/0xffffffff" %
-                        (rule["internal_ip"], hex(int(device[len("eth"):])))])
+        self.fw.append(["mangle", "front",
+                        "-A PREROUTING -s %s/32 -m state --state NEW -j MARK --set-xmark %s/0xffffffff" %
+                        (rule["internal_ip"], hex(100 + int(device[len("eth"):])))])
         self.fw.append(["nat", "front",
                         "-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
         self.fw.append(["nat", "front",

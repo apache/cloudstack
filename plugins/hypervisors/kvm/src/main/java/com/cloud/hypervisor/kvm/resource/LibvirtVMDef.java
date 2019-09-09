@@ -26,8 +26,6 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Maps;
-
 public class LibvirtVMDef {
     private static final Logger s_logger = Logger.getLogger(LibvirtVMDef.class);
 
@@ -581,9 +579,17 @@ public class LibvirtVMDef {
         private boolean _shareable = false;
         private boolean _deferAttach = false;
         private Long _bytesReadRate;
+        private Long _bytesReadRateMax;
+        private Long _bytesReadRateMaxLength;
         private Long _bytesWriteRate;
+        private Long _bytesWriteRateMax;
+        private Long _bytesWriteRateMaxLength;
         private Long _iopsReadRate;
+        private Long _iopsReadRateMax;
+        private Long _iopsReadRateMaxLength;
         private Long _iopsWriteRate;
+        private Long _iopsWriteRateMax;
+        private Long _iopsWriteRateMaxLength;
         private DiskCacheMode _diskCacheMode;
         private String _serial;
         private boolean qemuDriver = true;
@@ -784,16 +790,48 @@ public class LibvirtVMDef {
             _bytesReadRate = bytesReadRate;
         }
 
+        public void setBytesReadRateMax(Long bytesReadRateMax) {
+            _bytesReadRateMax = bytesReadRateMax;
+        }
+
+        public void  setBytesReadRateMaxLength(Long bytesReadRateLength) {
+            _bytesReadRateMaxLength = bytesReadRateLength;
+        }
+
         public void setBytesWriteRate(Long bytesWriteRate) {
             _bytesWriteRate = bytesWriteRate;
+        }
+
+        public void setBytesWriteRateMax(Long bytesWriteRateMax) {
+            _bytesWriteRateMax = bytesWriteRateMax;
+        }
+
+        public void setBytesWriteRateMaxLength(Long bytesWriteRateMaxLength) {
+            _bytesWriteRateMaxLength = bytesWriteRateMaxLength;
         }
 
         public void setIopsReadRate(Long iopsReadRate) {
             _iopsReadRate = iopsReadRate;
         }
 
+        public void setIopsReadRateMax(Long iopsReadRateMax) {
+            _iopsReadRateMax = iopsReadRateMax;
+        }
+
+        public void setIopsReadRateMaxLength(Long iopsReadRateMaxLength) {
+            _iopsReadRateMaxLength = iopsReadRateMaxLength;
+        }
+
         public void setIopsWriteRate(Long iopsWriteRate) {
             _iopsWriteRate = iopsWriteRate;
+        }
+
+        public void setIopsWriteRateMax(Long iopsWriteRateMax) {
+            _iopsWriteRateMax = iopsWriteRateMax;
+        }
+
+        public void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength) {
+            _iopsWriteRateMaxLength = iopsWriteRateMaxLength;
         }
 
         public void setCacheMode(DiskCacheMode cacheMode) {
@@ -891,6 +929,31 @@ public class LibvirtVMDef {
                     diskBuilder.append("<read_iops_sec>" + _iopsReadRate + "</read_iops_sec>\n");
                 if ((_iopsWriteRate != null) && (_iopsWriteRate > 0))
                     diskBuilder.append("<write_iops_sec>" + _iopsWriteRate + "</write_iops_sec>\n");
+                if (s_qemuVersion >= 2004000) {
+                    if (_bytesReadRateMax != null && _bytesReadRateMax > 0 ) {
+                        diskBuilder.append("<read_bytes_sec_max>" + _bytesReadRateMax + "</read_bytes_sec_max>\n");
+                    }
+                    if (_bytesWriteRateMax != null && _bytesWriteRateMax > 0) {
+                        diskBuilder.append("<write_bytes_sec_max>" + _bytesWriteRateMax + "</write_bytes_sec_max>\n");
+                    }
+                    if (_iopsReadRateMax != null && _iopsReadRateMax > 0)
+                        diskBuilder.append("<read_iops_sec_max>" + _iopsReadRateMax + "</read_iops_sec_max>\n");
+                    if (_iopsWriteRateMax != null && _iopsWriteRateMax > 0)
+                        diskBuilder.append("<write_iops_sec_max>" + _iopsWriteRateMax + "</write_iops_sec_max>\n");
+                }
+                if (s_qemuVersion >= 2006000) {
+                    if (_bytesReadRateMaxLength != null && _bytesReadRateMaxLength > 0) {
+                        diskBuilder.append("<read_bytes_sec_max_length>" + _bytesReadRateMaxLength + "</read_bytes_sec_max_length>\n");
+                    }
+                    if (_bytesWriteRateMaxLength != null && _bytesWriteRateMaxLength > 0) {
+                        diskBuilder.append("<write_bytes_sec_max_length>" + _bytesWriteRateMaxLength + "</write_bytes_sec_max_length>\n");
+                    }
+                    if (_iopsReadRateMaxLength != null && _iopsReadRateMaxLength > 0)
+                        diskBuilder.append("<read_iops_sec_max_length>" + _iopsReadRateMaxLength + "</read_iops_sec_max_length>\n");
+                    if (_iopsWriteRateMaxLength != null && _iopsWriteRateMaxLength > 0)
+                        diskBuilder.append("<write_iops_sec_max_length>" + _iopsWriteRateMaxLength + "</write_iops_sec_max_length>\n");
+                }
+
                 diskBuilder.append("</iotune>\n");
             }
 
@@ -900,7 +963,7 @@ public class LibvirtVMDef {
     }
 
     public static class InterfaceDef {
-        enum GuestNetType {
+        public enum GuestNetType {
             BRIDGE("bridge"), DIRECT("direct"), NETWORK("network"), USER("user"), ETHERNET("ethernet"), INTERNAL("internal"), VHOSTUSER("vhostuser");
             String _type;
 
@@ -954,6 +1017,7 @@ public class LibvirtVMDef {
         private String _dpdkSourcePath;
         private String _dpdkSourcePort;
         private String _dpdkExtraLines;
+        private String _interfaceMode;
 
         public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model) {
             defBridgeNet(brName, targetBrName, macAddr, model, 0);
@@ -968,7 +1032,8 @@ public class LibvirtVMDef {
             _networkRateKBps = networkRateKBps;
         }
 
-        public void defDpdkNet(String dpdkSourcePath, String dpdkPort, String macAddress, NicModel model, Integer networkRateKBps, String extra) {
+        public void defDpdkNet(String dpdkSourcePath, String dpdkPort, String macAddress, NicModel model,
+                               Integer networkRateKBps, String extra, String interfaceMode) {
             _netType = GuestNetType.VHOSTUSER;
             _dpdkSourcePath = dpdkSourcePath;
             _dpdkSourcePort = dpdkPort;
@@ -976,6 +1041,7 @@ public class LibvirtVMDef {
             _model = model;
             _networkRateKBps = networkRateKBps;
             _dpdkExtraLines = extra;
+            _interfaceMode = interfaceMode;
         }
 
         public void defDirectNet(String sourceName, String targetName, String macAddr, NicModel model, String sourceMode) {
@@ -1110,10 +1176,24 @@ public class LibvirtVMDef {
             _dpdkSourcePort = port;
         }
 
-        @Override
-        public String toString() {
+        public String getDpdkOvsPath() {
+            return _dpdkSourcePath;
+        }
+
+        public void setDpdkOvsPath(String path) {
+            _dpdkSourcePath = path;
+        }
+
+        public String getInterfaceMode() {
+            return _interfaceMode;
+        }
+
+        public void setInterfaceMode(String mode) {
+            _interfaceMode = mode;
+        }
+
+        public String getContent() {
             StringBuilder netBuilder = new StringBuilder();
-            netBuilder.append("<interface type='" + _netType + "'>\n");
             if (_netType == GuestNetType.BRIDGE) {
                 netBuilder.append("<source bridge='" + _sourceName + "'/>\n");
             } else if (_netType == GuestNetType.NETWORK) {
@@ -1121,7 +1201,8 @@ public class LibvirtVMDef {
             } else if (_netType == GuestNetType.DIRECT) {
                 netBuilder.append("<source dev='" + _sourceName + "' mode='" + _netSourceMode + "'/>\n");
             } else if (_netType == GuestNetType.VHOSTUSER) {
-                netBuilder.append("<source type='unix' path='"+ _dpdkSourcePath + _dpdkSourcePort + "' mode='client'/>\n");
+                netBuilder.append("<source type='unix' path='"+ _dpdkSourcePath + _dpdkSourcePort +
+                        "' mode='" + _interfaceMode + "'/>\n");
             }
             if (_networkName != null) {
                 netBuilder.append("<target dev='" + _networkName + "'/>\n");
@@ -1166,6 +1247,14 @@ public class LibvirtVMDef {
             if (_slot  != null) {
                 netBuilder.append(String.format("<address type='pci' domain='0x0000' bus='0x00' slot='0x%02x' function='0x0'/>\n", _slot));
             }
+            return netBuilder.toString();
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder netBuilder = new StringBuilder();
+            netBuilder.append("<interface type='" + _netType + "'>\n");
+            netBuilder.append(getContent());
             netBuilder.append("</interface>\n");
             return netBuilder.toString();
         }
@@ -1297,7 +1386,11 @@ public class LibvirtVMDef {
 
             if (_features != null) {
                 for (String feature : _features) {
-                    modeBuilder.append("<feature policy='require' name='" + feature + "'/>");
+                    if (feature.startsWith("-")) {
+                        modeBuilder.append("<feature policy='disable' name='" + feature.substring(1) + "'/>");
+                    } else {
+                        modeBuilder.append("<feature policy='require' name='" + feature + "'/>");
+                    }
                 }
             }
 
@@ -1501,13 +1594,15 @@ public class LibvirtVMDef {
         private int bus = 0;
         private int slot = 9;
         private int function = 0;
+        private int queues = 0;
 
-        public SCSIDef(short index, int domain, int bus, int slot, int function) {
+        public SCSIDef(short index, int domain, int bus, int slot, int function, int queues) {
             this.index = index;
             this.domain = domain;
             this.bus = bus;
             this.slot = slot;
             this.function = function;
+            this.queues = queues;
         }
 
         public SCSIDef() {
@@ -1518,9 +1613,12 @@ public class LibvirtVMDef {
         public String toString() {
             StringBuilder scsiBuilder = new StringBuilder();
 
-            scsiBuilder.append(String.format("<controller type='scsi' index='%d' model='virtio-scsi'>\n", this.index ));
+            scsiBuilder.append(String.format("<controller type='scsi' index='%d' model='virtio-scsi'>\n", this.index));
             scsiBuilder.append(String.format("<address type='pci' domain='0x%04X' bus='0x%02X' slot='0x%02X' function='0x%01X'/>\n",
                     this.domain, this.bus, this.slot, this.function ) );
+            if (this.queues > 0) {
+                scsiBuilder.append(String.format("<driver queues='%d'/>\n", this.queues));
+            }
             scsiBuilder.append("</controller>\n");
             return scsiBuilder.toString();
         }
@@ -1592,28 +1690,6 @@ public class LibvirtVMDef {
             }
             fsBuilder.append("</metadata>\n");
             return fsBuilder.toString();
-        }
-    }
-
-    public static class NuageExtensionDef {
-        private Map<String, String> addresses = Maps.newHashMap();
-
-        public void addNuageExtension(String macAddress, String vrIp) {
-            addresses.put(macAddress, vrIp);
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder fsBuilder = new StringBuilder();
-            fsBuilder.append("<nuage-extension xmlns='nuagenetworks.net/nuage/cna'>\n");
-            for (Map.Entry<String, String> address : addresses.entrySet()) {
-                fsBuilder.append("  <interface mac='")
-                         .append(address.getKey())
-                         .append("' vsp-vr-ip='")
-                         .append(address.getValue())
-                         .append("'></interface>\n");
-            }
-            return fsBuilder.append("</nuage-extension>\n").toString();
         }
     }
 

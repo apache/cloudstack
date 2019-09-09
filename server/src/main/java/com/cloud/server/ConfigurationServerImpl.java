@@ -16,13 +16,12 @@
 // under the License.
 package com.cloud.server;
 
-import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -226,11 +225,11 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance", ProvisioningType.THIN, false, false, null);
             createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance", ProvisioningType.THIN, false, false, null);
             // Save default disk offerings
-            createdefaultDiskOffering(null, "Small", "Small Disk, 5 GB", ProvisioningType.THIN, 5, null, false, false);
-            createdefaultDiskOffering(null, "Medium", "Medium Disk, 20 GB", ProvisioningType.THIN, 20, null, false, false);
-            createdefaultDiskOffering(null, "Large", "Large Disk, 100 GB", ProvisioningType.THIN, 100, null, false, false);
-            createdefaultDiskOffering(null, "Large", "Large Disk, 100 GB", ProvisioningType.THIN, 100, null, false, false);
-            createdefaultDiskOffering(null, "Custom", "Custom Disk", ProvisioningType.THIN, 0, null, true, false);
+            createDefaultDiskOffering("Small", "Small Disk, 5 GB", ProvisioningType.THIN, 5, null, false, false);
+            createDefaultDiskOffering("Medium", "Medium Disk, 20 GB", ProvisioningType.THIN, 20, null, false, false);
+            createDefaultDiskOffering("Large", "Large Disk, 100 GB", ProvisioningType.THIN, 100, null, false, false);
+            createDefaultDiskOffering("Large", "Large Disk, 100 GB", ProvisioningType.THIN, 100, null, false, false);
+            createDefaultDiskOffering("Custom", "Custom Disk", ProvisioningType.THIN, 0, null, true, false);
 
             // Save the mount parent to the configuration table
             String mountParent = getMountParent();
@@ -608,29 +607,23 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             // FIXME: take a global database lock here for safety.
             boolean onWindows = isOnWindows();
             if(!onWindows) {
-                Script.runSimpleBashScript("if [ -f " + privkeyfile + " ]; then rm -f " + privkeyfile + "; fi; ssh-keygen -t rsa -N '' -f " + privkeyfile + " -q");
+                Script.runSimpleBashScript("if [ -f " + privkeyfile + " ]; then rm -f " + privkeyfile + "; fi; ssh-keygen -t rsa -m PEM -N '' -f " + privkeyfile + " -q 2>/dev/null || ssh-keygen -t rsa -N '' -f " + privkeyfile + " -q");
             }
 
-            byte[] arr1 = new byte[4094]; // configuration table column value size
-            try (DataInputStream dis = new DataInputStream(new FileInputStream(privkeyfile))) {
-                dis.readFully(arr1);
-            } catch (EOFException e) {
-                s_logger.info("[ignored] eof reached");
-            } catch (Exception e) {
+            final String privateKey;
+            final String publicKey;
+            try {
+                privateKey = new String(Files.readAllBytes(privkeyfile.toPath()));
+            } catch (IOException e) {
                 s_logger.error("Cannot read the private key file", e);
                 throw new CloudRuntimeException("Cannot read the private key file");
             }
-            String privateKey = new String(arr1).trim();
-            byte[] arr2 = new byte[4094]; // configuration table column value size
-            try (DataInputStream dis = new DataInputStream(new FileInputStream(pubkeyfile))) {
-                dis.readFully(arr2);
-            } catch (EOFException e) {
-                s_logger.info("[ignored] eof reached");
-            } catch (Exception e) {
-                s_logger.warn("Cannot read the public key file", e);
+            try {
+                publicKey = new String(Files.readAllBytes(pubkeyfile.toPath()));
+            } catch (IOException e) {
+                s_logger.error("Cannot read the public key file", e);
                 throw new CloudRuntimeException("Cannot read the public key file");
             }
-            String publicKey = new String(arr2).trim();
 
             final String insertSql1 =
                     "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
@@ -730,7 +723,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
         if (!keyDir.isDirectory()) {
             s_logger.warn("Failed to create " + homeDir + "/.ssh for storing the SSH keypars");
-            keyDir.mkdir();
+            keyDir.mkdirs();
         }
         String pubKey = _configDao.getValue("ssh.publickey");
         String prvKey = _configDao.getValue("ssh.privatekey");
@@ -911,12 +904,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                         throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "is wrong, should be 1~16");
                     }
                     /* local link ip address starts from 169.254.0.2 - 169.254.(nums) */
-                    String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(nums);
-                    if (linkLocalIpRanges == null) {
-                        throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "may be wrong, should be 1~16");
-                    } else {
-                        _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
-                    }
+                    String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(Config.ControlCidr.key()));
+                    _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
                 }
             });
         } catch (Exception e) {
@@ -927,13 +916,13 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         return pod;
     }
 
-    private DiskOfferingVO createdefaultDiskOffering(Long domainId, String name, String description, ProvisioningType provisioningType,
-            int numGibibytes, String tags, boolean isCustomized, boolean isSystemUse) {
+    private DiskOfferingVO createDefaultDiskOffering(String name, String description, ProvisioningType provisioningType,
+                                                     int numGibibytes, String tags, boolean isCustomized, boolean isSystemUse) {
         long diskSize = numGibibytes;
         diskSize = diskSize * 1024 * 1024 * 1024;
         tags = cleanupTags(tags);
 
-        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, provisioningType, diskSize, tags, isCustomized, null, null, null);
+        DiskOfferingVO newDiskOffering = new DiskOfferingVO(name, description, provisioningType, diskSize, tags, isCustomized, null, null, null);
         newDiskOffering.setUniqueName("Cloud.Com-" + name);
         // leaving the above reference to cloud.com in as it is an identifyer and has no real world relevance
         newDiskOffering.setSystemUse(isSystemUse);

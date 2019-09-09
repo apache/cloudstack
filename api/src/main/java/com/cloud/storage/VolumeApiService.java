@@ -19,6 +19,7 @@
 package com.cloud.storage;
 
 import java.net.MalformedURLException;
+import java.util.Map;
 
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -29,11 +30,21 @@ import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 
 public interface VolumeApiService {
+
+    ConfigKey<Long> ConcurrentMigrationsThresholdPerDatastore = new ConfigKey<Long>("Advanced"
+            , Long.class
+            , "concurrent.migrations.per.target.datastore"
+            , "0"
+            , "Limits number of migrations that can be handled per datastore concurrently; default is 0 - unlimited"
+            , true // not sure if this is to be dynamic
+            , ConfigKey.Scope.Global);
+
     /**
      * Creates the database object for a volume based on the given criteria
      *
@@ -79,9 +90,11 @@ public interface VolumeApiService {
 
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
+    Volume detachVolumeViaDestroyVM(long vmId, long volumeId);
+
     Volume detachVolumeFromVM(DetachVolumeCmd cmd);
 
-    Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup)
+    Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup, Map<String, String> tags)
             throws ResourceAllocationException;
 
     Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType) throws ResourceAllocationException;

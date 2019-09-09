@@ -95,6 +95,9 @@ public class UpdateZoneCmd extends BaseCmd {
     @Parameter(name = ApiConstants.LOCAL_STORAGE_ENABLED, type = CommandType.BOOLEAN, description = "true if local storage offering enabled, false otherwise")
     private Boolean localStorageEnabled;
 
+    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the zone, integer")
+    private Integer sortKey;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -161,6 +164,10 @@ public class UpdateZoneCmd extends BaseCmd {
 
     public Boolean getLocalStorageEnabled() {
         return localStorageEnabled;
+    }
+
+    public Integer getSortKey() {
+        return sortKey;
     }
 
     /////////////////////////////////////////////////////

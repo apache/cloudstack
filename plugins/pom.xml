@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.12.0.0-SNAPSHOT</version>
+        <version>4.14.0.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -102,7 +102,6 @@
         <module>network-elements/palo-alto</module>
         <module>network-elements/stratosphere-ssp</module>
         <module>network-elements/brocade-vcs</module>
-        <module>network-elements/nuage-vsp</module>
         <module>network-elements/vxlan</module>
 
         <module>outofbandmanagement-drivers/ipmitool</module>
@@ -113,6 +112,7 @@
         <module>storage/image/sample</module>
         <module>storage/image/swift</module>
         <module>storage/volume/cloudbyte</module>
+        <module>storage/volume/datera</module>
         <module>storage/volume/default</module>
         <module>storage/volume/nexenta</module>
         <module>storage/volume/sample</module>

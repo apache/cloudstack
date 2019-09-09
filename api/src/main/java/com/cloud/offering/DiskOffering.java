@@ -34,13 +34,13 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
         Inactive, Active,
     }
 
-    public enum Type {
+    enum Type {
         Disk, Service
     };
 
     State getState();
 
-    public enum DiskCacheMode {
+    enum DiskCacheMode {
         NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough");
 
         private final String _diskCacheMode;
@@ -59,19 +59,17 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     boolean isUseLocalStorage();
 
-    Long getDomainId();
-
     String getName();
 
     boolean isSystemUse();
 
     String getDisplayText();
 
-    public ProvisioningType getProvisioningType();
+    ProvisioningType getProvisioningType();
 
-    public String getTags();
+    String getTags();
 
-    public String[] getTagsArray();
+    String[] getTagsArray();
 
     Date getCreated();
 
@@ -99,17 +97,52 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     Long getBytesReadRate();
 
+    void setBytesReadRateMax(Long bytesReadRateMax);
+
+    Long getBytesReadRateMax();
+
+    void setBytesReadRateMaxLength(Long bytesReadRateMaxLength);
+
+    Long getBytesReadRateMaxLength();
+
+
     void setBytesWriteRate(Long bytesWriteRate);
 
     Long getBytesWriteRate();
+
+    void setBytesWriteRateMax(Long bytesWriteMax);
+
+    Long getBytesWriteRateMax();
+
+    void setBytesWriteRateMaxLength(Long bytesWriteMaxLength);
+
+    Long getBytesWriteRateMaxLength();
+
 
     void setIopsReadRate(Long iopsReadRate);
 
     Long getIopsReadRate();
 
+    void setIopsReadRateMax(Long iopsReadRateMax);
+
+    Long getIopsReadRateMax();
+
+    void setIopsReadRateMaxLength(Long iopsReadRateMaxLength);
+
+    Long getIopsReadRateMaxLength();
+
     void setIopsWriteRate(Long iopsWriteRate);
 
     Long getIopsWriteRate();
+
+    void setIopsWriteRateMax(Long iopsWriteRateMax);
+
+    Long getIopsWriteRateMax();
+
+
+    void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength);
+
+    Long getIopsWriteRateMaxLength();
 
     void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve);
 

@@ -150,6 +150,17 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     @Override
+    public void markBackedUp() throws CloudRuntimeException{
+        try {
+            processEvent(Event.OperationNotPerformed);
+        } catch (NoTransitionException ex) {
+            s_logger.error("no transition error: ", ex);
+            throw new CloudRuntimeException("Error marking snapshot backed up: " +
+                    this.snapshot.getId() + " " + ex.getMessage());
+        }
+    }
+
+    @Override
     public VolumeInfo getBaseVolume() {
         return volFactory.getVolume(snapshot.getVolumeId());
     }

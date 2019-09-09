@@ -145,8 +145,8 @@
         resetTotal: function($popup) {
             var $total = $popup.data('notifications-attach-to').find('div.total span');
             var $items = $popup.find('ul li');
-            var total = $items.size();
-            var completed = $items.filter(':not(.pending)').size();
+            var total = $items.length;
+            var completed = $items.filter(':not(.pending)').length;
             var newTotal = total - completed;
 
             if (newTotal < 0) newTotal = completed;
@@ -331,7 +331,7 @@
         var $attachTo, $popup;
 
         // Notifications header area
-        if ($target.closest('.notifications').size()) {
+        if ($target.closest('.notifications').length) {
             $attachTo = $target.closest('.notifications');
             $popup = $attachTo.data('notifications-popup');
             notifications.popup.show($popup, $attachTo);
@@ -352,11 +352,11 @@
         }
 
         // Popup
-        if ($target.closest('div.notification-box').size()) {
+        if ($target.closest('div.notification-box').length) {
             $popup = $target.closest('div.notification-box');
 
             // Clear list
-            if ($target.closest('.button.clear-list').size()) {
+            if ($target.closest('.button.clear-list').length) {
                 notifications.clear($popup);
             }
 
@@ -379,7 +379,7 @@
     $(window).resize(function(event) {
         var $popup = $('div.notification-box:visible');
 
-        if ($popup.size())
+        if ($popup.length)
             notifications.popup.reposition($popup, $popup.data('notifications-attach-to'));
     });
 })(window.jQuery, window.cloudStack, window._l);

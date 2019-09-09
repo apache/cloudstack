@@ -34,6 +34,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.List;
+import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
@@ -88,6 +89,10 @@ public class NetUtils {
     private final static Random s_rand = new Random(System.currentTimeMillis());
     private final static long prefix = 0x1e;
 
+    // RFC4291 IPv6 EUI-64
+    public final static int IPV6_EUI64_11TH_BYTE = -1;
+    public final static int IPV6_EUI64_12TH_BYTE = -2;
+
     public static long createSequenceBasedMacAddress(final long macAddress, long globalConfig) {
         /*
             Logic for generating MAC address:
@@ -109,6 +114,18 @@ public class NetUtils {
             }
         } catch (final UnknownHostException e) {
             s_logger.warn("UnknownHostException when trying to get host name. ", e);
+        }
+        return "localhost";
+    }
+
+    public static String getCanonicalHostName() {
+        try {
+            InetAddress localAddr = InetAddress.getLocalHost();
+            if (localAddr != null) {
+                return localAddr.getCanonicalHostName();
+            }
+        } catch (UnknownHostException e) {
+            s_logger.warn("UnknownHostException when trying to get canonical host name. ", e);
         }
         return "localhost";
     }
@@ -394,10 +411,11 @@ public class NetUtils {
     }
 
     public static String[] getNetworkParams(final NetworkInterface nic) {
-        final List<InterfaceAddress> addrs = nic.getInterfaceAddresses();
+        List<InterfaceAddress> addrs = nic.getInterfaceAddresses();
         if (addrs == null || addrs.size() == 0) {
             return null;
         }
+        Collections.reverse(addrs); // reverse addresses because it has reverse order as "ip addr show"
         InterfaceAddress addr = null;
         for (final InterfaceAddress iaddr : addrs) {
             final InetAddress inet = iaddr.getAddress();
@@ -479,9 +497,23 @@ public class NetUtils {
         return validator.isValidInet4Address(ip);
     }
 
+    /**
+     * Returns true if the given IPv4 address is in the specific Ipv4 range
+     */
+    public static boolean isIpInRange(final String ipInRange, final String startIP, final String endIP) {
+        if (ipInRange == null || !validIpRange(startIP, endIP))
+            return false;
+
+        final long ipInRangeLong = NetUtils.ip2Long(ipInRange);
+        final long startIPLong = NetUtils.ip2Long(startIP);
+        final long endIPLong = NetUtils.ip2Long(endIP);
+
+        return startIPLong <= ipInRangeLong && ipInRangeLong <= endIPLong;
+    }
+
     public static boolean is31PrefixCidr(final String cidr) {
         final boolean isValidCird = isValidIp4Cidr(cidr);
-        if (isValidCird){
+        if (isValidCird) {
             final String[] cidrPair = cidr.split("\\/");
             final String cidrSize = cidrPair[1];
 
@@ -929,27 +961,34 @@ public class NetUtils {
         return "255.255.0.0";
     }
 
+    public static String getLinkLocalGateway(String cidr) {
+        return getLinkLocalFirstAddressFromCIDR(cidr);
+    }
+
     public static String getLinkLocalGateway() {
-        return "169.254.0.1";
+        return getLinkLocalGateway(getLinkLocalCIDR());
     }
 
     public static String getLinkLocalCIDR() {
         return "169.254.0.0/16";
     }
 
-    public static String[] getLinkLocalIPRange(final int size) {
-        if (size > 16 || size <= 0) {
-            return null;
-        }
-        /* reserve gateway */
-        final String[] range = getIpRangeFromCidr(getLinkLocalGateway(), MAX_CIDR - size);
+    public static String getLinkLocalFirstAddressFromCIDR(final String cidr) {
+        SubnetUtils subnetUtils = new SubnetUtils(cidr);
+        return subnetUtils.getInfo().getLowAddress();
+    }
 
-        if (range[0].equalsIgnoreCase(getLinkLocalGateway())) {
-            /* remove the gateway */
-            long ip = ip2Long(range[0]);
-            ip += 1;
-            range[0] = long2Ip(ip);
-        }
+    public static String getLinkLocalAddressFromCIDR(final String cidr) {
+        return getLinkLocalFirstAddressFromCIDR(cidr) + "/" + cidr2Netmask(cidr);
+    }
+
+    public static String[] getLinkLocalIPRange(final String cidr) {
+        final SubnetUtils subnetUtils = new SubnetUtils(cidr);
+        final String[] addresses = subnetUtils.getInfo().getAllAddresses();
+        final String[] range = new String[2];
+        range[0] = addresses[1];
+        range[1] = subnetUtils.getInfo().getHighAddress();
+
         return range;
     }
 
@@ -1183,9 +1222,9 @@ public class NetUtils {
 
     public static boolean validateIcmpCode(final long icmpCode) {
 
-        //Source - http://www.erg.abdn.ac.uk/~gorry/course/inet-pages/icmp-code.html
-        if (!(icmpCode >= 0 && icmpCode <= 15)) {
-            s_logger.warn("Icmp code should be within 0-15 range");
+        // Reference: https://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml#icmp-parameters-codes-9/#table-icmp-parameters-ext-classes
+        if (!(icmpCode >= 0 && icmpCode <= 16)) {
+            s_logger.warn("Icmp code should be within 0-16 range");
             return false;
         }
 
@@ -1566,6 +1605,29 @@ public class NetUtils {
 
     public static IPv6Address ipv6LinkLocal(final String macAddress) {
         return EUI64Address(IPv6Network.LINK_LOCAL_NETWORK, macAddress);
+    }
+
+    /**
+     * When using StateLess Address AutoConfiguration (SLAAC) for IPv6 the addresses
+     * choosen by hosts in a network are based on the 48-bit MAC address and this is expanded to 64-bits
+     * with EUI-64
+     * FFFE is inserted into the address and these can be identified
+     *
+     * By converting the IPv6 Address to a byte array we can check the 11th and 12th byte to see if the
+     * address is EUI064.
+     *
+     * See RFC4291 for more information
+     *
+     * @param address IPv6Address to be checked
+     * @return True if Address is EUI-64 IPv6
+     */
+    public static boolean isIPv6EUI64(final IPv6Address address) {
+        byte[] bytes = address.toByteArray();
+        return (bytes[11] == IPV6_EUI64_11TH_BYTE && bytes[12] == IPV6_EUI64_12TH_BYTE);
+    }
+
+    public static boolean isIPv6EUI64(final String address) {
+        return NetUtils.isIPv6EUI64(IPv6Address.fromString(address));
     }
 
     /**

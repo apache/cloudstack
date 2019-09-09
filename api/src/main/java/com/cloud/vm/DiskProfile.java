@@ -72,6 +72,7 @@ public class DiskProfile {
             offering.isCustomized(),
             null);
         this.hyperType = hyperType;
+        this.provisioningType = offering.getProvisioningType();
     }
 
     public DiskProfile(DiskProfile dp) {

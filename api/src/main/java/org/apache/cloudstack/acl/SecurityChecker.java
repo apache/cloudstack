@@ -19,7 +19,9 @@ package org.apache.cloudstack.acl;
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -136,7 +138,11 @@ public interface SecurityChecker extends Adapter {
 
     boolean checkAccess(Account account, DataCenter zone) throws PermissionDeniedException;
 
-    public boolean checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException;
+    boolean checkAccess(Account account, ServiceOffering so, DataCenter zone) throws PermissionDeniedException;
 
-    boolean checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException;
+    boolean checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException;
+
+    boolean checkAccess(Account account, NetworkOffering nof, DataCenter zone) throws PermissionDeniedException;
+
+    boolean checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException;
 }
