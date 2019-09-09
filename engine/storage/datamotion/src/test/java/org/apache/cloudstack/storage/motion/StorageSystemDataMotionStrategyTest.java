@@ -205,4 +205,64 @@ public class StorageSystemDataMotionStrategyTest {
         }
     }
 
+    @Test
+    public void isSourceAndDestinationPoolTypeOfNfsTestNfsNfs() {
+        configureAndVerifyIsSourceAndDestinationPoolTypeOfNfs(StoragePoolType.NetworkFilesystem, StoragePoolType.NetworkFilesystem, true);
+    }
+
+    @Test
+    public void isSourceAndDestinationPoolTypeOfNfsTestNfsAny() {
+        StoragePoolType[] storagePoolTypeArray = StoragePoolType.values();
+        for (int i = 0; i < storagePoolTypeArray.length - 1; i++) {
+            if (storagePoolTypeArray[i] != StoragePoolType.NetworkFilesystem) {
+                configureAndVerifyIsSourceAndDestinationPoolTypeOfNfs(StoragePoolType.NetworkFilesystem, storagePoolTypeArray[i], false);
+            }
+        }
+    }
+
+    @Test
+    public void isSourceAndDestinationPoolTypeOfNfsTestAnyNfs() {
+        StoragePoolType[] storagePoolTypeArray = StoragePoolType.values();
+        for (int i = 0; i < storagePoolTypeArray.length - 1; i++) {
+            if (storagePoolTypeArray[i] != StoragePoolType.NetworkFilesystem) {
+                configureAndVerifyIsSourceAndDestinationPoolTypeOfNfs(storagePoolTypeArray[i], StoragePoolType.NetworkFilesystem, false);
+            }
+        }
+    }
+
+    @Test
+    public void isSourceAndDestinationPoolTypeOfNfsTestAnyAny() {
+        StoragePoolType[] storagePoolTypeArray = StoragePoolType.values();
+        for (int i = 0; i < storagePoolTypeArray.length - 1; i++) {
+            for (int j = 0; j < storagePoolTypeArray.length - 1; j++) {
+                if (storagePoolTypeArray[i] != StoragePoolType.NetworkFilesystem || storagePoolTypeArray[j] != StoragePoolType.NetworkFilesystem) {
+                    configureAndVerifyIsSourceAndDestinationPoolTypeOfNfs(storagePoolTypeArray[i], storagePoolTypeArray[j], false);
+                }
+            }
+        }
+    }
+
+    private void configureAndVerifyIsSourceAndDestinationPoolTypeOfNfs(StoragePoolType destStoragePoolType, StoragePoolType sourceStoragePoolType, boolean expected) {
+        VolumeInfo srcVolumeInfo = Mockito.mock(VolumeObject.class);
+        Mockito.when(srcVolumeInfo.getId()).thenReturn(0l);
+
+        DataStore destDataStore = Mockito.mock(PrimaryDataStoreImpl.class);
+        Mockito.when(destDataStore.getId()).thenReturn(1l);
+
+        StoragePoolVO destStoragePool = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(destStoragePool.getPoolType()).thenReturn(destStoragePoolType);
+
+        StoragePoolVO sourceStoragePool = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(sourceStoragePool.getPoolType()).thenReturn(sourceStoragePoolType);
+
+        Map<VolumeInfo, DataStore> volumeDataStoreMap = new HashMap<>();
+        volumeDataStoreMap.put(srcVolumeInfo, destDataStore);
+
+        Mockito.doReturn(sourceStoragePool).when(primaryDataStoreDao).findById(0l);
+        Mockito.doReturn(destStoragePool).when(primaryDataStoreDao).findById(1l);
+
+        boolean result = strategy.isSourceAndDestinationPoolTypeOfNfs(volumeDataStoreMap);
+        Assert.assertEquals(expected, result);
+    }
+
 }

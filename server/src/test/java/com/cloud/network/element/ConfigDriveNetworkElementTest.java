@@ -156,7 +156,7 @@ public class ConfigDriveNetworkElementTest {
 
         _configDrivesNetworkElement._networkModel = _networkModel;
 
-        when(_dataStoreMgr.getImageStore(DATACENTERID)).thenReturn(dataStore);
+        when(_dataStoreMgr.getImageStoreWithFreeCapacity(DATACENTERID)).thenReturn(dataStore);
 
         when(_ep.select(dataStore)).thenReturn(endpoint);
         when(_vmDao.findById(VMID)).thenReturn(virtualMachine);

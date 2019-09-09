@@ -30,12 +30,14 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
@@ -311,7 +313,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         if (vmDetails != null) {
             Map<String, String> resourceDetails = new HashMap<String, String>();
             for (UserVmDetailVO userVmDetailVO : vmDetails) {
-                resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
+                if (!userVmDetailVO.getName().startsWith(ApiConstants.OVF_PROPERTIES) ||
+                        (UserVmManager.DisplayVMOVFProperties.value() && userVmDetailVO.getName().startsWith(ApiConstants.OVF_PROPERTIES))) {
+                    resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
+                }
             }
             // Remove blacklisted settings if user is not admin
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {

@@ -1439,8 +1439,8 @@ public class HypervisorHostHelper {
     }
 
     public static boolean createBlankVm(VmwareHypervisorHost host, String vmName, String vmInternalCSName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz,
-            boolean limitCpuUse, int memoryMB, int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent,
-            Pair<String, String> controllerInfo, Boolean systemVm) throws Exception {
+                                        boolean limitCpuUse, int memoryMB, int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent,
+                                        Pair<String, String> controllerInfo, Boolean systemVm) throws Exception {
 
         if (s_logger.isInfoEnabled())
             s_logger.info("Create blank VM. cpuCount: " + cpuCount + ", cpuSpeed(MHz): " + cpuSpeedMHz + ", mem(Mb): " + memoryMB);
@@ -1508,6 +1508,7 @@ public class HypervisorHostHelper {
         videoDeviceSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
         vmConfig.getDeviceChange().add(videoDeviceSpec);
+
         if (host.createVm(vmConfig)) {
             // Here, when attempting to find the VM, we need to use the name
             // with which we created it. This is the only such place where

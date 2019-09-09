@@ -1827,7 +1827,15 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         Date created = event.getCreateDate();
         Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
         Long domainId = acct.getDomainId();
+
+        UsageEventDetailsVO detailVO = _usageEventDetailsDao.findDetail(event.getId(), UsageEventVO.DynamicParameters.vmSnapshotId.name());
+        Long vmSnapshotId = null;
+        if (detailVO != null) {
+            String snapId = detailVO.getValue();
+             vmSnapshotId = Long.valueOf(snapId);
+        }
         UsageVMSnapshotVO vsVO = new UsageVMSnapshotVO(volumeId, zoneId, accountId, domainId, vmId, offeringId, size, created, null);
+        vsVO.setVmSnapshotId(vmSnapshotId);
         _usageVMSnapshotDao.persist(vsVO);
     }
 
@@ -1842,7 +1850,15 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             Date created = event.getCreateDate();
             Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
             Long domainId = acct.getDomainId();
+
+            UsageEventDetailsVO detailVO = _usageEventDetailsDao.findDetail(event.getId(), UsageEventVO.DynamicParameters.vmSnapshotId.name());
+            Long vmSnapshotId = null;
+            if (detailVO != null) {
+                String snapId = detailVO.getValue();
+                vmSnapshotId = Long.valueOf(snapId);
+            }
             UsageSnapshotOnPrimaryVO vsVO = new UsageSnapshotOnPrimaryVO(vmId, zoneId, accountId, domainId, vmId, name, 0, virtualsize, physicalsize, created, null);
+            vsVO.setVmSnapshotId(vmSnapshotId);
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("createSnapshotOnPrimaryEvent UsageSnapshotOnPrimaryVO " + vsVO);
             }

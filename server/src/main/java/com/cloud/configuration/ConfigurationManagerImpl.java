@@ -266,7 +266,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     DomainVlanMapDao _domainVlanMapDao;
     @Inject
-    PodVlanMapDao _podVlanMapDao;
+    PodVlanMapDao podVlanMapDao;
     @Inject
     DataCenterDao _zoneDao;
     @Inject
@@ -1613,7 +1613,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal, false, null);
                 }
 
-                final String[] linkLocalIpRanges = getLinkLocalIPRange();
+                final String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(Config.ControlCidr.key()));
                 if (linkLocalIpRanges != null) {
                     _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
                 }
@@ -3815,29 +3815,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     continue;
                 }
                 // from here, subnet overlaps
-                if (!UriUtils.checkVlanUriOverlap(
+                if (vlanId.toLowerCase().contains(Vlan.UNTAGGED) || UriUtils.checkVlanUriOverlap(
                         BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId)),
                         BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlan.getVlanTag())))) {
-                    boolean overlapped = false;
-                    if( network.getTrafficType() == TrafficType.Public ) {
-                        overlapped = true;
-                    } else {
-                        final Long nwId = vlan.getNetworkId();
-                        if ( nwId != null ) {
-                            final Network nw = _networkModel.getNetwork(nwId);
-                            if ( nw != null && nw.getTrafficType() == TrafficType.Public ) {
-                                overlapped = true;
-                            }
-                        }
-
-                    }
-                    if ( overlapped ) {
-                        throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
-                                + " in zone " + zone.getName()
-                                + " has overlapped with the subnet. Please specify a different gateway/netmask.");
-                    }
-                } else {
-
+                    // For untagged VLAN Id and overlapping URIs we need to expand and verify IP ranges
                     final String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
                     final String otherVlanStartIP = otherVlanIpRange[0];
                     String otherVlanEndIP = null;
@@ -3854,8 +3835,28 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (!NetUtils.is31PrefixCidr(newCidr)) {
                         if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
                             throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." +
-                                " Please specify a different start IP/end IP.");
+                                    " Please specify a different start IP/end IP.");
                         }
+                    }
+                } else {
+                    // For tagged or non-overlapping URIs we need to ensure there is no Public traffic type
+                    boolean overlapped = false;
+                    if (network.getTrafficType() == TrafficType.Public) {
+                        overlapped = true;
+                    } else {
+                        final Long nwId = vlan.getNetworkId();
+                        if (nwId != null) {
+                            final Network nw = _networkModel.getNetwork(nwId);
+                            if (nw != null && nw.getTrafficType() == TrafficType.Public) {
+                                overlapped = true;
+                            }
+                        }
+
+                    }
+                    if (overlapped) {
+                        throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
+                                + " in zone " + zone.getName()
+                                + " has overlapped with the subnet. Please specify a different gateway/netmask.");
                     }
                 }
             }
@@ -3949,7 +3950,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 } else if (podId != null) {
                     // This VLAN is pod-wide, so create a PodVlanMapVO entry
                     final PodVlanMapVO podVlanMapVO = new PodVlanMapVO(podId, vlan.getId());
-                    _podVlanMapDao.persist(podVlanMapVO);
+                    podVlanMapDao.persist(podVlanMapVO);
                 }
                 return vlan;
             }
@@ -4045,7 +4046,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
                 _publicIpAddressDao.deletePublicIPRange(vlanDbId);
+                s_logger.debug(String.format("Delete Public IP Range (from user_ip_address, where vlan_db_d=%s)", vlanDbId));
+
                 _vlanDao.remove(vlanDbId);
+                s_logger.debug(String.format("Mark vlan as Remove vlan (vlan_db_id=%s)", vlanDbId));
+
+                SearchBuilder<PodVlanMapVO> sb = podVlanMapDao.createSearchBuilder();
+                sb.and("vlan_db_id", sb.entity().getVlanDbId(), SearchCriteria.Op.EQ);
+                SearchCriteria<PodVlanMapVO> sc = sb.create();
+                sc.setParameters("vlan_db_id", vlanDbId);
+                podVlanMapDao.remove(sc);
+                s_logger.debug(String.format("Delete vlan_db_id=%s in pod_vlan_map", vlanDbId));
             }
         });
 
@@ -4486,20 +4497,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             return null;
         }
-    }
-
-    private String[] getLinkLocalIPRange() {
-        final String ipNums = _configDao.getValue("linkLocalIp.nums");
-        final int nums = Integer.parseInt(ipNums);
-        if (nums > 16 || nums <= 0) {
-            throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "is wrong, should be 1~16");
-        }
-        /* local link ip address starts from 169.254.0.2 - 169.254.(nums) */
-        final String[] ipRanges = NetUtils.getLinkLocalIPRange(nums);
-        if (ipRanges == null) {
-            throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "may be wrong, should be 1~16");
-        }
-        return ipRanges;
     }
 
     @Override

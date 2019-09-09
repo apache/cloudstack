@@ -3866,6 +3866,10 @@ table tr.selected td.actions .action.disabled .icon {
   background-position: -3px -368px;
 }
 
+.ui-dialog select {
+  overflow: scroll;
+}
+
 .ui-dialog.confirm .ui-button {
   margin-top: 0;
   margin-left: 11px;
@@ -5813,6 +5817,11 @@ textarea {
   min-height: 28px;
   margin: 21px 0 0;
   overflow: hidden;
+}
+
+.multi-wizard .select-container .select .ovf-property {
+  max-width: 352px;
+  padding-left: 21px;
 }
 
 .multi-wizard .select-container .select .select-desc .name {

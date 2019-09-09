@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.AbstractGetUploadParamsCmd;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,8 +36,10 @@ import org.apache.log4j.Logger;
 
 import com.cloud.exception.ResourceAllocationException;
 
-@APICommand(name = "getUploadParamsForTemplate", description = "upload an existing template into the CloudStack cloud. ", responseObject = GetUploadParamsResponse.class, since =
-    "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "getUploadParamsForTemplate", description = "upload an existing template into the CloudStack cloud. ",
+        responseObject = GetUploadParamsResponse.class, since = "4.6.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     public static final Logger s_logger = Logger.getLogger(GetUploadParamsForTemplateCmd.class.getName());
 

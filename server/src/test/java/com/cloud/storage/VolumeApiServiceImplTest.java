@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -149,6 +150,8 @@ public class VolumeApiServiceImplTest {
     private HostDao _hostDao;
     @Mock
     private StoragePoolTagsDao storagePoolTagsDao;
+    @Mock
+    private HypervisorCapabilitiesDao hypervisorCapabilitiesDao;
 
     private DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     private Class<?> _detachCmdClass = detachCmd.getClass();

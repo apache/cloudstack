@@ -23,6 +23,7 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.Networks;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
@@ -47,7 +48,7 @@ public class BridgeVifDriver extends VifDriverBase {
     private final Object _vnetBridgeMonitor = new Object();
     private String _modifyVlanPath;
     private String _modifyVxlanPath;
-    private String bridgeNameSchema;
+    private String _controlCidr = NetUtils.getLinkLocalCIDR();
     private Long libvirtVersion;
 
     @Override
@@ -65,7 +66,10 @@ public class BridgeVifDriver extends VifDriverBase {
             networkScriptsDir = "scripts/vm/network/vnet";
         }
 
-        bridgeNameSchema = (String)params.get("network.bridge.name.schema");
+        String controlCidr = (String)params.get("control.cidr");
+        if (StringUtils.isNotBlank(controlCidr)) {
+            _controlCidr = controlCidr;
+        }
 
         String value = (String)params.get("scripts.timeout");
         _timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
@@ -382,7 +386,7 @@ public class BridgeVifDriver extends VifDriverBase {
     private void deleteExistingLinkLocalRouteTable(String linkLocalBr) {
         Script command = new Script("/bin/bash", _timeout);
         command.add("-c");
-        command.add("ip route | grep " + NetUtils.getLinkLocalCIDR());
+        command.add("ip route | grep " + _controlCidr);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         boolean foundLinkLocalBr = false;
@@ -395,15 +399,16 @@ public class BridgeVifDriver extends VifDriverBase {
                 }
                 final String device = tokens[2];
                 if (!Strings.isNullOrEmpty(device) && !device.equalsIgnoreCase(linkLocalBr)) {
-                    Script.runSimpleBashScript("ip route del " + NetUtils.getLinkLocalCIDR() + " dev " + tokens[2]);
+                    Script.runSimpleBashScript("ip route del " + _controlCidr + " dev " + tokens[2]);
                 } else {
                     foundLinkLocalBr = true;
                 }
             }
         }
+
         if (!foundLinkLocalBr) {
-            Script.runSimpleBashScript("ip address add 169.254.0.1/16 dev " + linkLocalBr + ";" + "ip route add " + NetUtils.getLinkLocalCIDR() + " dev " + linkLocalBr + " src " +
-                    NetUtils.getLinkLocalGateway());
+            Script.runSimpleBashScript("ip address add " + NetUtils.getLinkLocalAddressFromCIDR(_controlCidr) + " dev " + linkLocalBr);
+            Script.runSimpleBashScript("ip route add " + _controlCidr + " dev " + linkLocalBr + " src " + NetUtils.getLinkLocalGateway(_controlCidr));
         }
     }
 
@@ -415,7 +420,9 @@ public class BridgeVifDriver extends VifDriverBase {
     public void createControlNetwork(String privBrName)  {
         deleteExistingLinkLocalRouteTable(privBrName);
         if (!isExistingBridge(privBrName)) {
-            Script.runSimpleBashScript("brctl addbr " + privBrName + "; ip link set " + privBrName + " up; ip address add 169.254.0.1/16 dev " + privBrName, _timeout);
+            Script.runSimpleBashScript("ip link add name " + privBrName + " type bridge");
+            Script.runSimpleBashScript("ip link set " + privBrName + " up");
+            Script.runSimpleBashScript("ip address add " + NetUtils.getLinkLocalAddressFromCIDR(_controlCidr) + " dev " + privBrName);
         }
     }
 

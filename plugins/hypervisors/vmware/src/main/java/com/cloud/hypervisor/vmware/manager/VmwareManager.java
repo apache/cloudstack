@@ -16,16 +16,17 @@
 // under the License.
 package com.cloud.hypervisor.vmware.manager;
 
+import java.io.File;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
 import com.vmware.vim25.ManagedObjectReference;
-import org.apache.cloudstack.framework.config.ConfigKey;
-
-import java.io.File;
-import java.util.List;
-import java.util.Map;
 
 public interface VmwareManager {
     public final String CONTEXT_STOCK_NAME = "vmwareMgr";
@@ -64,6 +65,8 @@ public interface VmwareManager {
     String getManagementPortGroupName();
 
     Pair<String, Long> getSecondaryStorageStoreUrlAndId(long dcId);
+
+    List<Pair<String, Long>> getSecondaryStorageStoresUrlAndIdList(long dcId);
 
     File getSystemVMKeyFile();
 
