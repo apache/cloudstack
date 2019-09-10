@@ -217,7 +217,8 @@ class serviceOpsRedhat7(serviceOps):
     def isServiceRunning(self, servicename):
         try:
             o = bash("systemctl is-active " + servicename)
-            return "inactive" not in o.getStdout()
+            textout = o.getStdout()
+            return "inactive" not in textout and "failed" not in textout
         except:
             return False
 
