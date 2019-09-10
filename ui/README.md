@@ -36,7 +36,7 @@ Fix issues and vulnerabilities:
 
 Override the default CloudStack API URL:
 
-    mv .env.local.example .env.local
+    cp .env.local.example .env.local
     Change the `API_URL` in the `.env.local` file
 
 ## History
