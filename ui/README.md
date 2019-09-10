@@ -34,6 +34,10 @@ Fix issues and vulnerabilities:
 
     npm audit
 
+Override the default CloudStack API URL:
+
+    Change the `API_URL` in the `.env.local` file
+
 ## History
 
 The project was created by Rohit Yadav over several weekends during late 2018.

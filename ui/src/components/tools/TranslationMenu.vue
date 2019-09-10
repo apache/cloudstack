@@ -45,6 +45,7 @@ import plPL from 'ant-design-vue/lib/locale-provider/pl_PL'
 import ptBR from 'ant-design-vue/lib/locale-provider/pt_BR'
 import ruRU from 'ant-design-vue/lib/locale-provider/ru_RU'
 import zhCN from 'ant-design-vue/lib/locale-provider/zh_CN'
+import hi from 'ant-design-vue/lib/locale-provider/he_IL'
 import moment from 'moment'
 import 'moment/locale/zh-cn'
 
@@ -76,7 +77,8 @@ export default {
       plPL,
       ptBR,
       ruRU,
-      zhCN
+      zhCN,
+      hi
     }
   },
   methods: {

@@ -87,7 +87,7 @@ module.exports = {
     port: 5050,
     proxy: {
       '/client/api': {
-        target: 'http://localhost:8080/client/api',
+        target: process.env.API_URL || 'http://localhost:8080/client/api',
         ws: false,
         changeOrigin: true
       }

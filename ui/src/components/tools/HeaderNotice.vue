@@ -34,7 +34,6 @@
 <script>
 import { api } from '@/api'
 import store from '@/store'
-import { constants } from 'crypto';
 
 export default {
   name: 'HeaderNotice',
@@ -60,7 +59,7 @@ export default {
       this.jobs = []
       this.$store.commit('SET_ASYNC_JOB_IDS', [])
     },
-    startPolling() {
+    startPolling () {
       this.poller = setInterval(() => {
         this.pollJobs()
       }, 2500)
@@ -69,7 +68,7 @@ export default {
       var hasUpdated = false
       for (var i in this.jobs) {
         if (this.jobs[i].status === 'progress') {
-          await api('queryAsyncJobResult', {'jobid': this.jobs[i].jobid}).then(json => {
+          await api('queryAsyncJobResult', { 'jobid': this.jobs[i].jobid }).then(json => {
             var result = json.queryasyncjobresultresponse
             if (result.jobstatus === 1 && this.jobs[i].status !== 'done') {
               hasUpdated = true
@@ -100,10 +99,10 @@ export default {
     }
   },
   beforeDestroy () {
-      clearInterval(this.poller)
+    clearInterval(this.poller)
   },
   created () {
-      this.startPolling()
+    this.startPolling()
   },
   mounted () {
     this.jobs = store.getters.asyncJobIds.reverse()
