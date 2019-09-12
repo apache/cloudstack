@@ -1,4 +1,5 @@
 import Vue from 'vue'
+import config from '@/config/settings'
 import store from '@/store/'
 import {
   ACCESS_TOKEN,
@@ -15,7 +16,6 @@ import {
   DEFAULT_MULTI_TAB,
   ASYNC_JOB_IDS
 } from '@/store/mutation-types'
-import config from '@/config/settings'
 
 export default function Initializer () {
   store.commit('SET_SIDEBAR_TYPE', Vue.ls.get(SIDEBAR_TYPE, true))
