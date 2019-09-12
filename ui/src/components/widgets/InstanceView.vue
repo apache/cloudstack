@@ -23,7 +23,7 @@
           </div>
           <div class="account-center-detail">
             <p>
-              <status :text="vm.state" style="padding-left: 8px; padding-right: 5px"/>{{ vm.state}}
+              <status :text="vm.state" style="padding-left: 8px; padding-right: 5px"/>{{ vm.state }}
             </p>
             <p>
               <font-awesome-icon :icon="['fab', osLogo]" size="lg"/> {{ guestOsName }} <br/>
@@ -146,7 +146,7 @@
           @tabChange="key => handleTabChange(key, 'noTitleKey')"
         >
           <span slot="customRender" slot-scope="item">
-            <a-icon type="home"/>{{item.tab}}
+            <a-icon type="home"/>{{ item.tab }}
           </span>
           <a-collapse v-model="activeKey">
             <a-collapse-panel :header="'ISO: ' + vm.isoname" v-if="vm.isoid" key="1">
@@ -222,7 +222,6 @@
             </a-collapse-panel>
           </a-collapse>
 
-
         </a-card>
       </a-col>
     </a-row>
@@ -252,11 +251,9 @@ export default {
       totalStorage: 0,
       guestOsName: '',
       osLogo: 'linux',
-      tags: [],
       inputVisible: false,
       inputValue: '',
       activeKey: ['1', '2', '3'],
-
       tags: ['os=centos', 'tag=value', 'demo=true'],
       tagInputVisible: false,
       tagInputValue: '',

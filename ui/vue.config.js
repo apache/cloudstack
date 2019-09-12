@@ -38,6 +38,11 @@ module.exports = {
       .set('@layout', resolve('src/layout'))
       .set('@static', resolve('src/static'))
 
+    // do not emit errors as a warning
+    config.module.rule('eslint').use('eslint-loader').tap(
+      opts => ({ ...opts, emitWarning: false })
+    )
+
     const svgRule = config.module.rule('svg')
     svgRule.uses.clear()
     svgRule

@@ -2,22 +2,22 @@
   <div>
     <a-breadcrumb class="breadcrumb" v-if="device !== 'desktop'" style="margin-left: -16px; margin-right: -16px; margin-top: -16px">
       <a-card :bordered="true">
-      <a-breadcrumb-item v-for="(item, index) in breadList" :key="index">
-        <router-link
-          v-if="item.name"
-          :to="{ path: item.path === '' ? '/' : item.path }"
-        >
-          <a-icon v-if="index == 0" :type="item.meta.icon" />
-          {{ $t(item.meta.title) }}
-        </router-link>
-        <span v-else-if="$route.params.id">
-          {{ $route.params.id }}
-          <a-button shape="circle" type="dashed" size="small" v-clipboard:copy="$route.params.id">
-            <a-icon type="copy" style="margin-left: 0px"/>
-          </a-button>
-        </span>
-        <span v-else>{{ $t(tem.meta.title) }}</span>
-      </a-breadcrumb-item>
+        <a-breadcrumb-item v-for="(item, index) in breadList" :key="index">
+          <router-link
+            v-if="item.name"
+            :to="{ path: item.path === '' ? '/' : item.path }"
+          >
+            <a-icon v-if="index == 0" :type="item.meta.icon" />
+            {{ $t(item.meta.title) }}
+          </router-link>
+          <span v-else-if="$route.params.id">
+            {{ $route.params.id }}
+            <a-button shape="circle" type="dashed" size="small" v-clipboard:copy="$route.params.id">
+              <a-icon type="copy" style="margin-left: 0px"/>
+            </a-button>
+          </span>
+          <span v-else>{{ $t(tem.meta.title) }}</span>
+        </a-breadcrumb-item>
       </a-card>
     </a-breadcrumb>
 
