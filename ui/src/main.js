@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import VueI18n from 'vue-i18n'
-import VueCookies from 'vue-cookies'
 import App from './App.vue'
 import router from './router'
 import store from './store'
@@ -23,7 +22,7 @@ library.add(fab, far, fas)
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 Vue.config.productionTip = false
 
-Vue.use(VueI18n, VueAxios, router, VueCookies)
+Vue.use(VueI18n, VueAxios, router)
 
 Spin.setDefaultIndicator({
   indicator: (h) => {

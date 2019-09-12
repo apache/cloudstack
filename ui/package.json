@@ -31,7 +31,6 @@
     "viser-vue": "^2.4.6",
     "vue": "^2.6.10",
     "vue-clipboard2": "^0.3.0",
-    "vue-cookies": "^1.5.13",
     "vue-cropper": "0.4.9",
     "vue-flag-icon": "^1.0.6",
     "vue-i18n": "^8.14.0",
