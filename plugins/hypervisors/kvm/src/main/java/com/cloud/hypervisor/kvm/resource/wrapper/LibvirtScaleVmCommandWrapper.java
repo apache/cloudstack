@@ -42,6 +42,7 @@ public class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand,
             Connect conn = libvirtUtilitiesHelper.getConnection();
             Domain dm = serverResource.getDomain(conn, vmName);
             dm.setVcpus(command.getCpus());
+            dm.setMemory(command.getMaxRam());
             return new ScaleVmAnswer(command, true, "OK");
         } catch (LibvirtException e) {
             s_logger.error(e.getMessage());
