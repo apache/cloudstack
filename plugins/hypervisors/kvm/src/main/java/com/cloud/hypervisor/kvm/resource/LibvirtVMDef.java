@@ -152,6 +152,7 @@ public class LibvirtVMDef {
         private String _memBacking;
         private int _vcpu = -1;
         private boolean _memBalloning = false;
+        private int maxVcpu = -1;
 
         public void setMemorySize(long mem) {
             _mem = mem;
@@ -173,6 +174,10 @@ public class LibvirtVMDef {
             _memBalloning = turnon;
         }
 
+        public void setMaxVcpu(int maxVcpu) {
+            this.maxVcpu = maxVcpu;
+        }
+
         @Override
         public String toString() {
             StringBuilder resBuidler = new StringBuilder();
@@ -188,8 +193,8 @@ public class LibvirtVMDef {
             } else {
                 resBuidler.append("<devices>\n" + "<memballoon model='none'/>\n" + "</devices>\n");
             }
-            if (_vcpu != -1) {
-                resBuidler.append("<vcpu>" + _vcpu + "</vcpu>\n");
+            if (_vcpu != -1 && maxVcpu != -1) {
+                resBuidler.append("<vcpu current='" +_vcpu + "'>" + maxVcpu + "</vcpu>\n");
             }
             return resBuidler.toString();
         }

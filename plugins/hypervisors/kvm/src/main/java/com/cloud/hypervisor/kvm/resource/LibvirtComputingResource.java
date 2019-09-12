@@ -2105,6 +2105,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         final int vcpus = vmTO.getCpus();
         grd.setVcpuNum(vcpus);
+        final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem);
+        grd.setMaxVcpu(info.getCpus());
         vm.addComp(grd);
 
         if (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA)) {
