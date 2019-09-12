@@ -29,7 +29,6 @@ router.beforeEach((to, from, next) => {
               router.addRoutes(store.getters.addRouters)
               const redirect = decodeURIComponent(from.query.redirect || to.path)
               if (to.path === redirect) {
-                // hack方法 确保addRoutes已完成 ,set the replace: true so the navigation will not leave a history record
                 next({ ...to, replace: true })
               } else {
                 next({ path: redirect })

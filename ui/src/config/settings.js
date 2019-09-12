@@ -14,7 +14,7 @@ export default {
   appTitle: 'CloudStack',
   // vue-ls options
   storageOptions: {
-    namespace: 'cs__', // key prefix
+    namespace: 'primate__', // key prefix
     name: 'ls', // name variable Vue.[ls] or this.[$ls],
     storage: 'local' // storage name session, local, memory
   }
