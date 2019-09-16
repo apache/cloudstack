@@ -36,17 +36,19 @@ public class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand,
     @Override
     public ScaleVmAnswer execute(ScaleVmCommand command, LibvirtComputingResource serverResource) {
         String vmName = command.getVmName();
-        s_logger.debug("Trying to scale VM " + vmName + " CPUs to " + command.getCpus());
+        long memory = command.getMaxRam();
+        int cpus = command.getCpus();
+        s_logger.debug("Trying to scale VM " + vmName + " to number CPUs: " + cpus + " and memory: " + memory);
         try {
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = serverResource.getLibvirtUtilitiesHelper();
             Connect conn = libvirtUtilitiesHelper.getConnection();
             Domain dm = serverResource.getDomain(conn, vmName);
             dm.setVcpus(command.getCpus());
-            dm.setMemory(command.getMaxRam());
-            return new ScaleVmAnswer(command, true, "OK");
+            dm.setMemory(command.getMaxRam() / 1024);
+            return new ScaleVmAnswer(command, true, "VM " + vmName + " scaled successfully");
         } catch (LibvirtException e) {
             s_logger.error(e.getMessage());
-            return new ScaleVmAnswer(command, false, e.getMessage());
+            return new ScaleVmAnswer(command, false, "VM " + vmName + " scale failed: " + e.getMessage());
         }
     }
 

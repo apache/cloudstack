@@ -286,6 +286,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
 
+    protected KVMHostInfo info;
+
     protected static final HashMap<DomainState, PowerState> s_powerStatesTable;
     static {
         s_powerStatesTable = new HashMap<DomainState, PowerState>();
@@ -2096,16 +2098,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final GuestResourceDef grd = new GuestResourceDef();
 
-        if (vmTO.getMinRam() != vmTO.getMaxRam() && !_noMemBalloon) {
+        if (/*vmTO.getMinRam() != vmTO.getMaxRam() && */!_noMemBalloon) {
             grd.setMemBalloning(true);
-            grd.setCurrentMem(vmTO.getMinRam() / 1024);
-            grd.setMemorySize(vmTO.getMaxRam() / 1024);
-        } else {
-            grd.setMemorySize(vmTO.getMaxRam() / 1024);
         }
+        grd.setCurrentMem(vmTO.getMaxRam() / 1024);
+        //grd.setMemorySize(info.getTotalMemory());
+        grd.setMemorySize(4 * 1024 * 1024);
         final int vcpus = vmTO.getCpus();
         grd.setVcpuNum(vcpus);
-        final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem);
         grd.setMaxVcpu(info.getCpus());
         vm.addComp(grd);
 
@@ -2710,7 +2710,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     @Override
     public StartupCommand[] initialize() {
 
-        final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem);
+        info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem);
 
         String capabilities = String.join(",", info.getCapabilities());
         if (dpdkSupport) {

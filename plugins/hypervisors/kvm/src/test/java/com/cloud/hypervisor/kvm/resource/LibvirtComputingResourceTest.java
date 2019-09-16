@@ -44,6 +44,7 @@ import javax.xml.xpath.XPathFactory;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuTuneDef;
+import org.apache.cloudstack.utils.linux.KVMHostInfo;
 import org.apache.commons.lang.SystemUtils;
 import org.joda.time.Duration;
 import org.junit.Assert;
@@ -199,6 +200,8 @@ public class LibvirtComputingResourceTest {
     VirtualMachineTO vmTO;
     @Mock
     LibvirtVMDef vmDef;
+    @Mock
+    KVMHostInfo info;
 
     String hyperVisorType = "kvm";
     Random random = new Random();
@@ -245,6 +248,9 @@ public class LibvirtComputingResourceTest {
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
 
+        lcr.info = info;
+        Mockito.when(info.getCpus()).thenReturn(cpus);
+
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(hyperVisorType);
 
@@ -277,6 +283,9 @@ public class LibvirtComputingResourceTest {
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
 
+        lcr.info = info;
+        Mockito.when(info.getCpus()).thenReturn(cpus);
+
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(hyperVisorType);
 
@@ -308,6 +317,9 @@ public class LibvirtComputingResourceTest {
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+
+        lcr.info = info;
+        Mockito.when(info.getCpus()).thenReturn(cpus);
 
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(hyperVisorType);
@@ -345,6 +357,9 @@ public class LibvirtComputingResourceTest {
                 new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+
+        lcr.info = info;
+        Mockito.when(info.getCpus()).thenReturn(cpus);
 
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(hyperVisorType);
