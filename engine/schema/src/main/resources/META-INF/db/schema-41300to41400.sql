@@ -19,3 +19,5 @@
 -- Schema upgrade from 4.13.0.0 to 4.14.0.0
 --;
 
+-- KVM: enable storage data motion on KVM hypervisor_capabilities
+UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported` = 1 WHERE `hypervisor_capabilities`.`hypervisor_type` = 'KVM';
