@@ -17,27 +17,27 @@ export default {
           icon: 'plus',
           label: 'Create Volume',
           type: 'main',
-          params: ['name', 'zoneid', 'diskofferingid'],
+          args: ['name', 'zoneid', 'diskofferingid'],
           listView: true
         }, {
           api: 'uploadVolume',
           icon: 'cloud-upload',
           label: 'Upload Volume From URL',
           type: 'main',
-          params: ['url', 'name', 'zoneid', 'format', 'diskofferingid', 'checksum'],
+          args: ['url', 'name', 'zoneid', 'format', 'diskofferingid', 'checksum'],
           listView: true
         }, {
           api: 'getUploadParamsForVolume',
           icon: 'upload',
           label: 'Upload Local Volume',
-          params: ['@file', 'name', 'zoneid', 'format', 'checksum'],
+          args: ['@file', 'name', 'zoneid', 'format', 'checksum'],
           listView: true
         },
         {
           api: 'attachVolume',
           icon: 'paper-clip',
           label: 'Attach Volume',
-          params: ['id', 'virtualmachineid'],
+          args: ['id', 'virtualmachineid'],
           dataView: true,
           hidden: (record) => { return record.virtualmachineid }
         },
@@ -45,7 +45,7 @@ export default {
           api: 'detachVolume',
           icon: 'link',
           label: 'Detach Volume',
-          params: ['id', 'virtualmachineid'],
+          args: ['id', 'virtualmachineid'],
           dataView: true,
           hidden: (record) => { return !record.virtualmachineid }
         },
@@ -53,7 +53,7 @@ export default {
           api: 'migrateVolume',
           icon: 'drag',
           label: 'Migrate Volume',
-          params: ['volumeid', 'storageid', 'livemigrate'],
+          args: ['volumeid', 'storageid', 'livemigrate'],
           dataView: true
         },
         {
@@ -61,14 +61,14 @@ export default {
           icon: 'fullscreen',
           label: 'Resize Volume',
           type: 'main',
-          params: ['id', 'virtualmachineid'],
+          args: ['id', 'virtualmachineid'],
           dataView: true
         },
         {
           api: 'extractVolume',
           icon: 'cloud-download',
           label: 'Download Volume',
-          params: ['id', 'zoneid', 'mode'],
+          args: ['id', 'zoneid', 'mode'],
           paramOptions: {
             'mode': {
               'value': 'HTTP_DOWNLOAD'
@@ -80,7 +80,7 @@ export default {
           api: 'deleteVolume',
           icon: 'delete',
           label: 'Delete Volume',
-          params: ['id'],
+          args: ['id'],
           dataView: true,
           groupAction: true
         }

@@ -381,8 +381,8 @@ export default {
     },
     execAction (action) {
       this.currentAction = action
-      this.currentAction['params'] = store.getters.apis[this.currentAction.api]['params']
-      this.currentAction['params'].sort(function (a, b) {
+      var params = store.getters.apis[this.currentAction.api]['params']
+      params.sort(function (a, b) {
         if (a.name === 'name' && b.name !== 'name') { return -1 }
         if (a.name !== 'name' && b.name === 'name') { return -1 }
         if (a.name === 'id') { return -1 }
@@ -390,12 +390,22 @@ export default {
         if (a.name > b.name) { return 1 }
         return 0
       })
+      if (action.args && action.args.length > 0) {
+        this.currentAction['params'] = action.args.map(function (arg) {
+          return params.filter(function (param) {
+            return param.name === arg
+          })[0]
+        })
+      } else {
+        this.currentAction['params'] = params
+      }
+
+      this.showAction = true
       for (const param of this.currentAction['params']) {
         if (param.type === 'uuid' || param.name === 'account') {
           this.listUuidOpts(param)
         }
       }
-      this.showAction = true
       this.currentAction.loading = false
     },
     listUuidOpts (param) {

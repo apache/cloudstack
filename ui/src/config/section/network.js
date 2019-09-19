@@ -15,7 +15,7 @@ export default {
           api: 'deleteNetwork',
           icon: 'delete',
           label: 'Delete Network',
-          params: ['id'],
+          args: ['id'],
           listView: true,
           dataView: true
         }
