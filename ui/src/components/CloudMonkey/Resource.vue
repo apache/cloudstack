@@ -175,118 +175,40 @@
       <data-view :resource="resource" v-else />
     </div>
     <div style="margin-top: 12px" v-else>
-      <a-row :gutter="12" v-show="!tableView">
-        <a-col v-for="item in items" :md="24" :lg="6" :key="item.id">
-          <a-card
-            hoverable
-            style="margin-bottom: 12px">
-            <template class="ant-card-actions" slot="actions">
-              <a-icon type="edit" />
-              <a-icon type="setting" />
-              <a-icon type="ellipsis" />
-            </template>
-            <a-card-meta>
-              <div slot="avatar">
-                <a-icon :type="$route.meta.icon" style="padding-right: 5px" />
-              </div>
-              <div slot="title">
-                <router-link :to="{ path: $route.path + '/' + item.id }" v-if="item.id">{{ item.name || item.displayname }}</router-link>
-                <span v-else>{{ item.name }}</span>
-              </div>
-              <div slot="description" style="height: 80px">
-                <status :text="item.state" displayText />
-                <div v-if="item.ipaddress">
-                  <a-icon type="wifi" style="padding-right: 5px" />
-                  <router-link :to="{ path: $route.path + '/' + item.id }">{{ item.ipaddress }}</router-link>
-                </div>
-                <div v-if="item.vmname">
-                  <a-icon type="desktop" style="padding-right: 5px" />
-                  <router-link :to="{ path: '/vm/' + item.virtualmachineid }">{{ item.vmname }}</router-link>
-                </div>
-                <div v-if="item.zonename">
-                  <a-icon type="table" style="padding-right: 5px" />
-                  <router-link :to="{ path: '/zone/' + item.zoneid }">{{ item.zonename }}</router-link>
-                </div>
-              </div>
-            </a-card-meta>
-          </a-card>
-        </a-col>
-      </a-row>
-
-      <a-table
-        :rowKey="record => record.id"
+      <list-view
         :loading="loading"
         :columns="columns"
-        :dataSource="items"
-        :scroll="{ x: '100%' }"
-        :pagination="{ position: 'bottom', size: 'small', showSizeChanger: true }"
-        :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
-        :rowClassName="getRowClassName"
-        v-show="tableView"
-      >
-        <template slot="footer">
-          <span v-if="hasSelected">
-            {{ `Selected ${selectedRowKeys.length} items` }}
-          </span>
-        </template>
-
-        <a slot="name" slot-scope="text, record" href="javascript:;">
-          <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
-          <span v-else>{{ text }}</span>
-        </a>
-        <a slot="displayname" slot-scope="text, record" href="javascript:;">
-          <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-        </a>
-        <a slot="username" slot-scope="text, record" href="javascript:;">
-          <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-        </a>
-        <a slot="ipaddress" slot-scope="text, record" href="javascript:;">
-          <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-        </a>
-        <a slot="vmname" slot-scope="text, record" href="javascript:;">
-          <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
-        </a>
-        <template slot="state" slot-scope="text">
-          <status :text="text" />
-        </template>
-
-        <a slot="account" slot-scope="text, record" href="javascript:;">
-          <router-link :to="{ path: '/account/' + record.accountid }" v-if="record.accountid">{{ text }}</router-link>
-          <router-link :to="{ path: '/account', query: { name: record.account } }" v-else>{{ text }}</router-link>
-        </a>
-        <a slot="domain" slot-scope="text, record" href="javascript:;">
-          <router-link :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
-        </a>
-        <a slot="zonename" slot-scope="text, record" href="javascript:;">
-          <router-link :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
-        </a>
-
-        <a slot="guestnetworkname" slot-scope="text, record" href="javascript:;">
-          <router-link :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
-        </a>
-
-      </a-table>
+        :items="items"
+        v-show="tableView" />
+      <card-view
+        :items="items"
+        :loading="loading"
+        v-show="!tableView" />
     </div>
-
   </div>
-
 </template>
 
 <script>
 import { api } from '@/api'
+import { mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
+import CardView from '@/components/widgets/CardView'
 import ChartCard from '@/components/chart/ChartCard'
 import DataView from '@/components/widgets/DataView'
+import FormView from '@/components/widgets/FormView'
 import InstanceView from '@/components/widgets/InstanceView'
+import ListView from '@/components/widgets/ListView'
 import Status from '@/components/widgets/Status'
-import { mixinDevice } from '@/utils/mixin.js'
 
 export default {
   name: 'Resource',
   components: {
+    CardView,
     ChartCard,
     DataView,
+    FormView,
     InstanceView,
+    ListView,
     Status
   },
   mixins: [mixinDevice],
@@ -581,44 +503,6 @@ export default {
         }
       })
     },
-    getRowClassName (record, index) {
-      if (index % 2 === 0) {
-        return 'light-row'
-      }
-      return 'dark-row'
-    },
-    getBadgeStatus (state) {
-      var status = 'default'
-      switch (state) {
-        case 'Running':
-        case 'Ready':
-        case 'Up':
-        case 'BackedUp':
-        case 'Allocated':
-        case 'Implemented':
-        case 'Enabled':
-        case 'enabled':
-        case 'Active':
-        case 'Completed':
-        case 'Started':
-          status = 'success'
-          break
-        case 'Stopped':
-        case 'Error':
-          status = 'error'
-          break
-        case 'Migrating':
-        case 'Starting':
-        case 'Scheduled':
-          status = 'processing'
-          break
-        case 'Alert':
-        case 'Created':
-          status = 'warning'
-          break
-      }
-      return status
-    },
     start () {
       this.loading = true
       this.fetchData()
@@ -626,32 +510,14 @@ export default {
         this.loading = false
         this.selectedRowKeys = []
       }, 1000)
-    },
-    onSelectChange (selectedRowKeys) {
-      console.log('selectedRowKeys changed: ', selectedRowKeys)
-      this.selectedRowKeys = selectedRowKeys
     }
   }
 }
 </script>
 
 <style>
-
-.ant-badge-status-dot {
-  width: 14px;
-  height: 14px;
-}
-
 .info-card {
   margin-top: 12px;
-}
-
-.light-row {
-  background-color: #fff;
-}
-
-.dark-row {
-  background-color: #f9f9f9;
 }
 
 .ant-breadcrumb {
