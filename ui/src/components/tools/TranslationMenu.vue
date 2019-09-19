@@ -11,7 +11,7 @@
       <a-menu-item key="ko_KR" :value="koKR"><flag iso="kr"/> 한국어</a-menu-item>
       <a-menu-item key="zh_CN" :value="zhCN"><flag iso="cn"/> 简体中文</a-menu-item>
       <a-menu-item key="ar" :value="arEG"><flag iso="ae"/> Arabic</a-menu-item>
-      <a-menu-item key="ca" :value="caES"><flag iso="ca"/> Catalan</a-menu-item>
+      <a-menu-item key="ca" :value="caES"><flag iso="es-ct"/> Catalan</a-menu-item>
       <a-menu-item key="de_DE" :value="deDE"><flag iso="de"/> Deutsch</a-menu-item>
       <a-menu-item key="es" :value="esES"><flag iso="es"/> Españo</a-menu-item>
       <a-menu-item key="fr_FR" :value="frFR"><flag iso="fr"/> Français</a-menu-item>
