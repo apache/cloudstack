@@ -10,7 +10,7 @@
       @change="changeProject"
       showSearch>
       <a-select-option v-for="(project, index) in projects" :key="index">
-        {{ project.name }}
+        {{ project.displaytext || project.name }}
       </a-select-option>
     </a-select>
   </span>
@@ -54,7 +54,7 @@ export default {
           const currentProject = Vue.ls.get(CURRENT_PROJECT)
           for (var project of this.projects) {
             if (project.id === currentProject.id) {
-              this.selectedProject = project.name
+              this.setSelectedProject(project)
               break
             }
           }
@@ -69,9 +69,12 @@ export default {
     isDisabled () {
       return !store.getters.apis.hasOwnProperty('listProjects')
     },
+    setSelectedProject (project) {
+      this.selectedProject = project.displaytext || project.name
+    },
     changeProject (index) {
       const project = this.projects[index]
-      this.selectedProject = project.name
+      this.setSelectedProject(project)
       this.$store.dispatch('SetProject', project)
       this.$store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
       this.$message.success(`Switched to "${project.name}"`)
