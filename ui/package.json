@@ -1,6 +1,6 @@
 {
   "name": "primate",
-  "version": "1.3.0",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "start": "vue-cli-service lint --no-fix && vue-cli-service serve",
