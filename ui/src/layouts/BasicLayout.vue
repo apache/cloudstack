@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import RouteView from '@/components/layouts/RouteView'
+import RouteView from '@/layouts/RouteView'
 import MultiTab from '@/components/MultiTab'
 import GlobalLayout from '@/components/page/GlobalLayout'
 
