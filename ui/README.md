@@ -30,6 +30,8 @@ Override the default `CS_URL` to a running CloudStack management server:
     cp .env.local.example .env.local
     Change the `CS_URL` in the `.env.local` file
 
+To configure https, you may use `.env.local.https.example`.
+
 Build and run:
 
     npm start

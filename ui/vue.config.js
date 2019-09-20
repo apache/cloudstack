@@ -17,6 +17,7 @@
 
 const path = require('path')
 const webpack = require('webpack')
+const fs = require('fs')
 
 function resolve (dir) {
   return path.join(__dirname, dir)
@@ -114,7 +115,15 @@ module.exports = {
         ws: false,
         changeOrigin: true
       }
-    }
+    },
+    https: process.env.HTTPS_KEY ? {
+      key: process.env.HTTPS_KEY ? fs.readFileSync(process.env.HTTPS_KEY) : undefined,
+      cert: process.env.HTTPS_CERT ? fs.readFileSync(process.env.HTTPS_CERT) : undefined,
+      ca: process.env.HTTPS_CA ? fs.readFileSync(process.env.HTTPS_CA) : undefined,
+      dhparam: process.env.HTTPS_DHPARAM ? fs.readFileSync(process.env.HTTPS_DHPARAM) : undefined
+    } : false,
+    public: process.env.PUBLIC_HOST || undefined,
+    allowedHosts: process.env.ALLOWED_HOSTS ? JSON.parse(process.env.ALLOWED_HOSTS) : undefined
   },
 
   lintOnSave: undefined,
