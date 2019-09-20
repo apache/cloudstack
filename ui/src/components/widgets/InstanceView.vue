@@ -339,7 +339,7 @@ export default {
         } else if (osname.includes('oracle')) {
           this.osLogo = 'java'
         } else {
-          this.osLogo = 'cloud'
+          this.osLogo = 'linux'
         }
       })
     }

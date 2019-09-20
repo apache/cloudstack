@@ -93,6 +93,7 @@ module.exports = {
     proxy: {
       '/client/api': {
         target: process.env.API_URL || 'http://localhost:8080/client/api',
+        secure: false,
         ws: false,
         changeOrigin: true
       }
