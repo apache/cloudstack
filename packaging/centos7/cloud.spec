@@ -55,6 +55,7 @@ intelligent IaaS cloud implementation.
 Summary:   CloudStack management server UI
 Requires: java-1.8.0-openjdk
 Requires: python
+Requires: python3
 Requires: bash
 Requires: bzip2
 Requires: gzip
@@ -82,6 +83,7 @@ management, and intelligence in CloudStack.
 %package common
 Summary: Apache CloudStack common files and scripts
 Requires: python
+Requires: python3
 Requires: python-argparse
 Requires: python-netaddr
 Group:   System Environment/Libraries
