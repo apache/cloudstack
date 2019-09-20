@@ -1,12 +1,12 @@
 <template>
   <a-modal
     :title="currentAction.label"
+    :visible="showForm"
     :closable="true"
-    :visible="showAction"
+    :confirmLoading="currentAction.loading"
     style="top: 20px;"
     @ok="handleSubmit"
     @cancel="close"
-    :confirmLoading="currentAction.loading"
     centered
   >
     <a-spin :spinning="currentAction.loading">
@@ -17,11 +17,10 @@
         <a-form-item
           v-for="(field, fieldIndex) in currentAction.params"
           :key="fieldIndex"
-          :label="field.name"
+          :label="$t(field.name)"
           :v-bind="field.name"
           v-if="field.name !== 'id'"
         >
-
           <span v-if="field.type==='boolean'">
             <a-switch
               v-decorator="[field.name, {
@@ -80,21 +79,23 @@ export default {
       type: Object,
       required: true
     },
-    showAction: {
+    showForm: {
       type: Boolean,
       default: false
     },
     handleSubmit: {
       type: Function,
       default: () => {}
-    },
-    close: {
-      type: Function,
-      default: () => {}
     }
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
+  },
+  methods: {
+    close () {
+      this.currentAction.loading = false
+      this.showForm = false
+    }
   }
 }
 </script>

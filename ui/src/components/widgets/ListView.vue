@@ -1,6 +1,6 @@
 <template>
   <a-table
-    :size="columns.length > 12 ? 'small' : 'medium'"
+    size="small"
     :loading="loading"
     :columns="columns"
     :dataSource="items"

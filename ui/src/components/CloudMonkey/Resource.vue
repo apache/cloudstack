@@ -1,26 +1,6 @@
 <template>
   <div>
-    <a-breadcrumb class="breadcrumb" v-if="device !== 'desktop'" style="margin-left: -16px; margin-right: -16px; margin-top: -16px">
-      <a-card :bordered="true">
-        <a-breadcrumb-item v-for="(item, index) in breadList" :key="index">
-          <router-link
-            v-if="item.name"
-            :to="{ path: item.path === '' ? '/' : item.path }"
-          >
-            <a-icon v-if="index == 0" :type="item.meta.icon" />
-            {{ $t(item.meta.title) }}
-          </router-link>
-          <span v-else-if="$route.params.id">
-            {{ $route.params.id }}
-            <a-button shape="circle" type="dashed" size="small" v-clipboard:copy="$route.params.id">
-              <a-icon type="copy" style="margin-left: 0px"/>
-            </a-button>
-          </span>
-          <span v-else>{{ $t(tem.meta.title) }}</span>
-        </a-breadcrumb-item>
-      </a-card>
-    </a-breadcrumb>
-
+    <breadcrumb v-if="device !== 'desktop'" style="margin-left: -16px; margin-right: -16px; margin-top: -16px" />
     <a-row>
       <a-col :span="17">
         <a-tooltip placement="bottom" v-for="(action, actionIndex) in actions" :key="actionIndex" v-if="(!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) || (dataView && action.dataView)">
@@ -103,72 +83,88 @@
       </a-col>
     </a-row>
 
-    <a-modal
-      :title="currentAction.label"
-      :visible="showAction"
-      :closable="true"
-      style="top: 20px;"
-      @ok="handleSubmit"
-      @cancel="closeAction"
-      :confirmLoading="currentAction.loading"
-      centered
-    >
-      <a-spin :spinning="currentAction.loading">
-        <a-form
-          :form="form"
-          @submit="handleSubmit"
-          layout="vertical" >
-          <a-form-item
-            v-for="(field, fieldIndex) in currentAction.params"
-            :key="fieldIndex"
-            :label="field.name"
-            :v-bind="field.name"
-            v-if="field.name !== 'id'"
-          >
+    <div v-show="showAction">
+      <keep-alive v-if="currentAction.component">
+        <a-modal
+          :title="currentAction.label"
+          :visible="showAction"
+          :closable="true"
+          style="top: 20px;"
+          @ok="handleSubmit"
+          @cancel="closeAction"
+          :confirmLoading="currentAction.loading"
+          centered
+        >
+          <component :is="currentAction.component"/></component>
+        </a-modal>
+      </keep-alive>
 
-            <span v-if="field.type==='boolean'">
-              <a-switch
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: 'Please provide input' }]
-                }]"
-                :placeholder="field.description"
-              />
-            </span>
-            <span v-else-if="field.type==='uuid' || field.name==='account'">
-              <a-select
-                :loading="field.loading"
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: 'Please select option' }]
-                }]"
-                :placeholder="field.description"
+      <a-modal
+        :title="currentAction.label"
+        :visible="showAction"
+        :closable="true"
+        style="top: 20px;"
+        @ok="handleSubmit"
+        @cancel="closeAction"
+        :confirmLoading="currentAction.loading"
+        centered
+      >
+        <a-spin :spinning="currentAction.loading">
+          <a-form
+            :form="form"
+            @submit="handleSubmit"
+            layout="vertical" >
+            <a-form-item
+              v-for="(field, fieldIndex) in currentAction.params"
+              :key="fieldIndex"
+              :label="$t(field.name)"
+              :v-bind="field.name"
+              v-if="field.name !== 'id'"
+            >
 
-              >
-                <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
-                  {{ opt.name }}
-                </a-select-option>
-              </a-select>
-            </span>
-            <span v-else-if="field.type==='long'">
-              <a-input-number
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: 'Please enter a number' }]
-                }]"
-                :placeholder="field.description"
-              />
-            </span>
-            <span v-else>
-              <a-input
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: 'Please enter input' }]
-                }]"
-                :placeholder="field.description"
-              />
-            </span>
-          </a-form-item>
+              <span v-if="field.type==='boolean'">
+                <a-switch
+                  v-decorator="[field.name, {
+                    rules: [{ required: field.required, message: 'Please provide input' }]
+                  }]"
+                  :placeholder="field.description"
+                />
+              </span>
+              <span v-else-if="field.type==='uuid' || field.name==='account'">
+                <a-select
+                  :loading="field.loading"
+                  v-decorator="[field.name, {
+                    rules: [{ required: field.required, message: 'Please select option' }]
+                  }]"
+                  :placeholder="field.description"
 
-        </a-form>
-      </a-spin>
-    </a-modal>
+                >
+                  <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
+                    {{ opt.name }}
+                  </a-select-option>
+                </a-select>
+              </span>
+              <span v-else-if="field.type==='long'">
+                <a-input-number
+                  v-decorator="[field.name, {
+                    rules: [{ required: field.required, message: 'Please enter a number' }]
+                  }]"
+                  :placeholder="field.description"
+                />
+              </span>
+              <span v-else>
+                <a-input
+                  v-decorator="[field.name, {
+                    rules: [{ required: field.required, message: 'Please enter input' }]
+                  }]"
+                  :placeholder="field.description"
+                />
+              </span>
+            </a-form-item>
+          </a-form>
+        </a-spin>
+      </a-modal>
+    </div>
 
     <div v-if="dataView">
       <instance-view :vm="resource" v-if="routeName == 'vm'" />
@@ -185,6 +181,7 @@
         :loading="loading"
         v-show="!tableView" />
     </div>
+
   </div>
 </template>
 
@@ -192,10 +189,10 @@
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
+import Breadcrumb from '@/components/widgets/Breadcrumb'
 import CardView from '@/components/widgets/CardView'
 import ChartCard from '@/components/chart/ChartCard'
 import DataView from '@/components/widgets/DataView'
-import FormView from '@/components/widgets/FormView'
 import InstanceView from '@/components/widgets/InstanceView'
 import ListView from '@/components/widgets/ListView'
 import Status from '@/components/widgets/Status'
@@ -203,10 +200,10 @@ import Status from '@/components/widgets/Status'
 export default {
   name: 'Resource',
   components: {
+    Breadcrumb,
     CardView,
     ChartCard,
     DataView,
-    FormView,
     InstanceView,
     ListView,
     Status
@@ -225,7 +222,6 @@ export default {
       showAction: false,
       dataView: false,
       actions: [],
-      breadList: [],
       tableView: true
     }
   },
@@ -253,15 +249,7 @@ export default {
     this.form = this.$form.createForm(this)
   },
   methods: {
-    getBreadcrumb () {
-      this.breadList = []
-      this.name = this.$route.name
-      this.$route.matched.forEach((item) => {
-        this.breadList.push(item)
-      })
-    },
     fetchData (search = '') {
-      this.getBreadcrumb()
       this.routeName = this.$route.name
       if (!this.routeName) {
         this.routeName = this.$route.matched[this.$route.matched.length - 1].parent.name

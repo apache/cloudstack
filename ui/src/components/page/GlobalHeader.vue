@@ -73,7 +73,6 @@
 import UserMenu from '../tools/UserMenu'
 import SMenu from '../menu/'
 import Logo from '../tools/Logo'
-import Breadcrumb from '@/components/tools/Breadcrumb'
 
 import { mixin } from '@/utils/mixin.js'
 
@@ -82,8 +81,7 @@ export default {
   components: {
     SMenu,
     Logo,
-    UserMenu,
-    Breadcrumb
+    UserMenu
   },
   mixins: [mixin],
   props: {

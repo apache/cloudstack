@@ -10,7 +10,16 @@ export default {
       icon: 'global',
       permission: [ 'listZones', 'listZonesMetrics' ],
       component: () => import('@/components/CloudMonkey/Resource.vue'),
-      columns: [ 'name', 'allocationstate', 'networktype', 'guestcidraddress' ]
+      columns: [ 'name', 'allocationstate', 'networktype', 'guestcidraddress' ],
+      actions: [
+        {
+          api: 'createZone',
+          icon: 'plus',
+          label: 'Add Zone',
+          listView: true,
+          component: () => import('@/views/infra/ZoneWizard.vue')
+        }
+      ]
     },
     {
       name: 'pod',

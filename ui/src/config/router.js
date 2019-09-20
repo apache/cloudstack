@@ -26,7 +26,7 @@ export function generateRouterMap (section) {
     map.meta.permission = section.children[0].permission
     map.children = []
     for (const child of section.children) {
-      map.children.push({
+      var route = {
         name: child.name,
         path: '/' + child.name,
         meta: {
@@ -54,7 +54,8 @@ export function generateRouterMap (section) {
             component: child.viewComponent ? child.viewComponent : child.component
           }
         ]
-      })
+      }
+      map.children.push(route)
     }
   } else {
     map.hideChildrenInMenu = true
