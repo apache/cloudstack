@@ -17,6 +17,8 @@
 package org.apache.cloudstack.engine.orchestration;
 
 
+import static java.util.Objects.nonNull;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -226,6 +228,10 @@ import javax.naming.ConfigurationException;
  */
 public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestrationService, Listener, Configurable {
     static final Logger s_logger = Logger.getLogger(NetworkOrchestrator.class);
+
+    private static final String KVM_OVS_MTU_KEY = "kvm.ovs.mtu.size";
+
+    private Integer _kvmOvsMtuSize = 0;
 
     @Inject
     EntityManager _entityMgr;
@@ -562,6 +568,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
 
                 _networkOfferingDao.persistDefaultL2NetworkOfferings();
+
+                final String mtu_size =_configDao.getValue(KVM_OVS_MTU_KEY);
+                if (nonNull(mtu_size)) {
+                    _kvmOvsMtuSize = Integer.valueOf(mtu_size);
+                }
             }
         });
 
@@ -858,6 +869,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         NicVO vo = new NicVO(guru.getName(), vm.getId(), network.getId(), vm.getType());
+        vo.setMtu(_kvmOvsMtuSize);
 
         DataCenterVO dcVo = _dcDao.findById(network.getDataCenterId());
         if (dcVo.getNetworkType() == NetworkType.Basic) {
