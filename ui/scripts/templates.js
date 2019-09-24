@@ -192,10 +192,6 @@
                                                     $form.find(".form-item[rel='format']").show();
                                                     $form.find(".form-item[rel='osTypeId']").show();
                                                 }
-                                                if ($(this).val() == "official"){
-                                                    $form.find("#label_os_type").val("df301873-cd84-11e9-954a-544810d74760").change()//  - debian 5 64bit
-                                                    $form.find(".form-item[rel='osTypeId']").hide();
-                                                } 
                                             });
                                             args.response.success({
                                                 data: [
@@ -260,27 +256,6 @@
                                         docID: 'helpRegisterTemplateActivate',
                                         isBoolean: true,
                                         isChecked: true
-                                    },
-                                    url: {
-                                        label: 'label.url',
-                                        docID: 'helpRegisterTemplateURL',
-                                        validation: {
-                                            required: true
-                                        }
-                                    },
-                                    name: {
-                                        label: 'label.name',
-                                        docID: 'helpRegisterTemplateName',
-                                        validation: {
-                                            required: true
-                                        }
-                                    },
-                                    description: {
-                                        label: 'label.description',
-                                        docID: 'helpRegisterTemplateDescription',
-                                        validation: {
-                                            required: true
-                                        }
                                     },
                                     zone: {
                                         label: 'label.zone',
@@ -394,8 +369,8 @@
                                                         success: function(json) {
                                                             url = json.getsystemvmtemplatedefaulturlresponse.url.url;
                                                             $form.find("input[name='url']").val(url);
-                                                            $form.find("input[name='name']").val("SystemVM Template (" + hypervisor + ")");
-                                                            $form.find("input[name='description']").val("SystemVM Template (" + hypervisor + ")");
+                                                            $form.find("input[name='name']").val("systemvm-" + hypervisor.toLowerCase() + "-" + cloudStackOptions.version);
+                                                            $form.find("input[name='description']").val("systemvm-" + hypervisor.toLowerCase() + "-" + cloudStackOptions.version);
                                                         }
                                                     });                                                    
                                                 }
@@ -453,7 +428,27 @@
                                             args.$select.trigger('change');
                                         }
                                     },
-
+                                    url: {
+                                        label: 'label.url',
+                                        docID: 'helpRegisterTemplateURL',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    name: {
+                                        label: 'label.name',
+                                        docID: 'helpRegisterTemplateName',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    description: {
+                                        label: 'label.description',
+                                        docID: 'helpRegisterTemplateDescription',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
                                     // fields for hypervisor == XenServer (starts here)
                                     xenserverToolsVersion61plus: {
                                         label: 'label.xenserver.tools.version.61.plus',
@@ -848,6 +843,12 @@
                                     data: data,
                                     success: function(json) {
                                         var items = json.registertemplateresponse.template; //items might have more than one array element if it's create templates for all zones.
+                                        if (items == null || items == undefined){
+                                            args.response.success({
+                                                data: {}
+                                            });    
+                                            return;
+                                        }
                                         args.response.success({
                                             data: items[0]
                                         });
@@ -960,7 +961,6 @@
                                             success: function(json) {
                                                 var uploadparams = json.postuploadtemplateresponse.getuploadparams;
                                                 var templateId = uploadparams.id;
-                                                console.log(json);
                                                 args.response.success({
                                                     url: uploadparams.postURL,
                                                     ajaxPost: true,
@@ -1002,6 +1002,7 @@
                                                     $form.find(".form-item[rel='isdynamicallyscalable']").show();
                                                     $form.find(".form-item[rel='isFeatured']").show();
                                                     $form.find(".form-item[rel='isrouting']").show();
+                                                    $form.find(".form-item[rel='zone']").show();
                                                 } else {
                                                     $form.find(".form-item[rel='templateSource']").show();
                                                     $form.find(".form-item[rel='activate']").show();
@@ -1012,7 +1013,16 @@
                                                     $form.find(".form-item[rel='isdynamicallyscalable']").hide();
                                                     $form.find(".form-item[rel='isFeatured']").hide();
                                                     $form.find(".form-item[rel='isrouting']").hide();
-                                                    $form.find("#label_os_type").val("df301873-cd84-11e9-954a-544810d74760").change();
+                                                    $form.find(".form-item[rel='zone']").hide();
+                                                    $.ajax({
+                                                        url: createURL("listOsTypes&description=Debian GNU/Linux 9 (64-bit)"),
+                                                        dataType: "json",
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var ostypeObjs = json.listostypesresponse.ostype;
+                                                            $form.find("#label_os_type").val(ostypeObjs[0].id).change();
+                                                        }
+                                                    });
                                                 }
                                             });
                                             args.response.success({
@@ -3160,11 +3170,15 @@
                                 fileUpload: {
                                     getURL: function(args) {
                                         args.data = args.formData;
+                                        zoneid = args.data.zone
+                                        if (!args.data.zone){
+                                            zoneid = -1;
+                                        } 
 
                                         var data = {
                                             name: args.data.name,
                                             displayText: args.data.description,
-                                            zoneid: args.data.zone,
+                                            zoneid: zoneid,
                                             format: "ISO",
                                             isextractable: (args.data.isExtractable == "on"),
                                             bootable: (args.data.isBootable == "on"),

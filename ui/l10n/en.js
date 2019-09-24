@@ -2135,7 +2135,7 @@ var dictionary = {
 "message.creating.primary.storage":"Creating primary storage",
 "message.creating.secondary.storage":"Creating secondary storage",
 "message.creating.systemVM":"Creating system VMs (this may take a while)",
-"message.registering.systemVM":"Registering system VM",
+"message.registering.systemVM":"Registering system vm template",
 "message.creating.zone":"Creating zone",
 "message.decline.invitation":"Are you sure you want to decline this project invitation?",
 "message.dedicate.zone":"Dedicating zone",

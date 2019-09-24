@@ -476,6 +476,7 @@ public class ApiConstants {
     public static final String SERVICE_NAME = "servicename";
     public static final String DHCP_RANGE = "dhcprange";
     public static final String UUID = "uuid";
+    public static final String FILE_UUID = "fileuuid";
     public static final String SECURITY_GROUP_EANBLED = "securitygroupenabled";
     public static final String LOCAL_STORAGE_ENABLED = "localstorageenabled";
     public static final String GUEST_IP_TYPE = "guestiptype";
@@ -636,6 +637,7 @@ public class ApiConstants {
     public static final String QUIETTIME = "quiettime";
     public static final String ACTION = "action";
     public static final String ACTIVATE = "activate";
+    public static final String TEMP_LOCAL = "templocal";
     public static final String CONDITION_ID = "conditionid";
     public static final String CONDITION_IDS = "conditionids";
     public static final String COUNTERPARAM_LIST = "counterparam";

@@ -46,6 +46,16 @@
     </servlet>
 
     <servlet>
+        <servlet-name>uploadServlet</servlet-name>
+        <servlet-class>com.cloud.api.UploadServlet</servlet-class>
+        <init-param>
+            <param-name>location</param-name>
+            <param-value>/tmp/upload</param-value>
+        </init-param>
+        <load-on-startup>7</load-on-startup>
+    </servlet>
+
+    <servlet>
         <servlet-name>consoleServlet</servlet-name>
         <servlet-class>com.cloud.servlet.ConsoleProxyServlet</servlet-class>
         <load-on-startup>6</load-on-startup>
@@ -54,6 +64,11 @@
     <servlet-mapping>
          <servlet-name>apiServlet</servlet-name>
          <url-pattern>/api/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>uploadServlet</servlet-name>
+        <url-pattern>/upload/*</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>

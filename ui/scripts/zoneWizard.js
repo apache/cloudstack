@@ -414,6 +414,9 @@
                                     $form.find(".field[rel='activate']").hide();
                                     $form.find(".field[rel='sourceZone']").hide();
                                     $form.find(".field[rel='templates']").hide();
+                                    $form.find(".field[rel='format']").hide();
+                                    $form.find(".field[rel='osTypeId']").hide();
+                                    $form.find(".field[rel='file']").hide();
                                 // URL
                                 } else {
                                     $form.find(".field[rel='url']").show();
@@ -424,6 +427,8 @@
                                     $form.find(".field[rel='activate']").show();
                                     $form.find(".field[rel='sourceZone']").show();
                                     $form.find(".field[rel='templates']").show();
+                                    $form.find(".field[rel='format']").show();
+                                    $form.find(".field[rel='osTypeId']").show();
                                 }
                                 // Copy from Zone
                                 if ($(this).val() == "copy"){
@@ -437,6 +442,15 @@
                                     $form.find(".field[rel='sourceZone']").hide();
                                     $form.find(".field[rel='templates']").hide();
                                 } 
+                                // Upload from local
+                                if ($(this).val() == "upload" ){
+                                    $form.find(".field[rel='sourceZone']").hide();
+                                    $form.find(".field[rel='templates']").hide();
+                                    $form.find(".field[rel='url']").hide();
+                                    $form.find(".field[rel='file']").show();
+                                }
+
+
                             });
                             // Check if we have other zones.
                             $.ajax({
@@ -458,6 +472,10 @@
                                             description: "Copy from Zone"
                                         })
                                     }
+                                    data.push({
+                                        id: "upload",
+                                        description: "Upload from local"
+                                    })
                                     args.response.success({
                                         data: data
                                     });
@@ -506,8 +524,8 @@
                                         success: function(json) {
                                             url = json.getsystemvmtemplatedefaulturlresponse.url.url;
                                             $form.find("#selectSystemVm_label_url").val(url);
-                                            $form.find("#selectSystemVm_label_name").val("SystemVM Template (" + hypervisor + ")");
-                                            $form.find("#selectSystemVm_label_description").val("SystemVM Template (" + hypervisor + ")");
+                                            $form.find("#selectSystemVm_label_name").val("systemvm-" + hypervisor + "-" + cloudStackOptions.version);
+                                            $form.find("#selectSystemVm_label_description").val("systemVM-" + hypervisor + "-" + cloudStackOptions.version);
                                         }
                                     });                                                    
                                 }
@@ -580,6 +598,13 @@
                     url: {
                         label: "label.url"
                     },
+                    file:{
+                        label: 'label.local.file',
+                        isFileUpload: true,
+                        validation: {
+                            required: true
+                        }
+                    },
                     activate: {
                         label: "label.action.create.template.activate",
                         isBoolean: true,
@@ -633,7 +658,24 @@
                                 }
                             });
                         }
-                    }
+                    },
+                    osTypeId: {
+                        label: 'label.os.type',
+                        docID: 'helpRegisterTemplateOSType',
+                        select: function(args) {
+                            $.ajax({
+                                url: createURL("listOsTypes"),
+                                dataType: "json",
+                                async: true,
+                                success: function(json) {
+                                    var ostypeObjs = json.listostypesresponse.ostype;
+                                    args.response.success({
+                                        data: ostypeObjs
+                                    });
+                                }
+                            });
+                        }
+                    },
                 }
             },
             zone: {
@@ -5016,7 +5058,6 @@
                 },
 
                 addSystemTemplate: function(args) {
-                    console.log(args);
                     var templateType = args.data.selectSystemVm.templateType;
                     if (templateType == '') {
                         complete({
@@ -5036,7 +5077,7 @@
                             isextractable: false,
                             passwordEnabled: false,
                             isdynamicallyscalable: false,
-                            osTypeId: 'df301873-cd84-11e9-954a-544810d74760', // debian 64bit
+                            osTypeId: args.data.osTypeId,
                             hypervisor: args.data.returnedCluster.hypervisortype,
                             system: true,
                             activate: true,
@@ -5061,12 +5102,93 @@
                         var data = {
                             id: args.data.selectSystemVm.templates,
                             destzoneids: args.data.returnedZone.id,
-                            sourcezoneid: args.selectSystemVm.sourceZone
+                            sourcezoneid: args.data.selectSystemVm.sourceZone
                        };
                         $.ajax({
                             url: createURL('copyTemplate'),
                             data: data,
                             success: function(json) {
+                                complete({
+                                    data: args.data
+                                });
+                            },
+                            error: function(XMLHttpResponse) {
+                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                error('addSystemTemplate', errorMsg, {
+                                    fn: 'addSystemTemplate',
+                                    args: args
+                                });
+                            }
+                        });
+                    } else if (templateType == 'upload'){
+                        var data = {
+                            name: args.data.selectSystemVm.name,
+                            displayText: args.data.selectSystemVm.description,
+                            zoneid: args.data.returnedZone.id,
+                            format: args.data.selectSystemVm.format,
+                            osTypeId: args.data.selectSystemVm.osTypeId,
+                            hypervisor: args.data.selectSystemVm.hypervisor,
+                            system: true,
+                            activate: (args.data.selectSystemVm.activate == "on")
+                        };
+
+                        var endpoint = "";
+
+                        $.ajax({
+                            url: createURL('listRegions'),
+                            async: false,
+                            success: function(json) {
+                                endpoint = json.listregionsresponse.region[0].endpoint;
+                            }
+                        })
+
+                        $.ajax({
+                            url: createURL('getUploadParamsForTemplate'),
+                            data: data,
+                            async: false,
+                            success: function(json) {
+                                var uploadparams = json.postuploadtemplateresponse.getuploadparams;
+                                var formData = new FormData();
+                                var fileData = $("form")[18][6].files[0];
+                                formData.append('file', fileData, uploadparams.id);
+                                formData.append("X-signature", uploadparams.signature);
+                                formData.append("X-metadata", uploadparams.metadata);
+                                $.ajax({
+                                    url: endpoint + "upload/" + uploadparams.id,
+                                    type: 'POST',
+                                    async: false,
+                                    data: formData,
+                                    contentType: false,
+                                    processData: false,
+                                    error: function(XMLHttpResponse){
+                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                        if (errorMsg){
+                                            error('addSystemTemplate', errorMsg, {
+                                                fn: 'addSystemTemplate',
+                                                args: args
+                                            });
+                                        }
+                                    }
+                                });
+                                var imagestore = "";
+                                $.ajax({
+                                    url: createURL('listImageStores'),
+                                    data: {zoneid: args.data.returnedZone.id},
+                                    async: false,
+                                    success: function(json){
+                                        imagestore = json.listimagestoresresponse.imagestore[0].id;
+                                    }
+                                });
+
+                                $.ajax({
+                                    url: createURL('seedSystemVMTemplate'),
+                                    data: {
+                                        hypervisor: args.data.selectSystemVm.hypervisor,
+                                        imagestoreuuid: imagestore,
+                                        fileuuid: uploadparams.id,
+                                    },
+                                    async: false,
+                                });
                                 complete({
                                     data: args.data
                                 });
