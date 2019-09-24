@@ -213,6 +213,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -869,11 +870,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         NicVO vo = new NicVO(guru.getName(), vm.getId(), network.getId(), vm.getType());
-        vo.setMtu(_kvmOvsMtuSize);
 
         DataCenterVO dcVo = _dcDao.findById(network.getDataCenterId());
         if (dcVo.getNetworkType() == NetworkType.Basic) {
             configureNicProfileBasedOnRequestedIp(requested, profile, network);
+        }
+
+        if(Objects.isNull(profile.getMtu())) {
+            profile.setMtu(_kvmOvsMtuSize);
         }
 
         deviceId = applyProfileToNic(vo, profile, deviceId);
