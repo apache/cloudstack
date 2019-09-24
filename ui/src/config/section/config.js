@@ -9,7 +9,6 @@ export default {
       title: 'Global Settings',
       icon: 'global',
       permission: [ 'listConfigurations' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [ 'name', 'description', 'category', 'value' ]
     },
     {
@@ -17,7 +16,6 @@ export default {
       title: 'LDAP Configuration',
       icon: 'team',
       permission: [ 'listLdapConfigurations' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [ 'hostname', 'port' ]
     },
     {
@@ -25,7 +23,6 @@ export default {
       title: 'Hypervisor Capabilities',
       icon: 'database',
       permission: [ 'listHypervisorCapabilities' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [ 'hypervisor', 'hypervisorversion', 'maxguestlimit', 'maxdatavolumeslimit', 'maxhostspercluster' ]
     }
   ]

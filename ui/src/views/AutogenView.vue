@@ -167,7 +167,7 @@
     </div>
 
     <div v-if="dataView">
-      <instance-view :vm="resource" v-if="routeName == 'vm'" />
+      <component :is="$route.meta.viewComponent" :resource="resource" v-if="$route.meta.viewComponent"/></component>
       <data-view :resource="resource" v-else />
     </div>
     <div style="margin-top: 12px" v-else>
@@ -193,7 +193,6 @@ import Breadcrumb from '@/components/widgets/Breadcrumb'
 import CardView from '@/components/widgets/CardView'
 import ChartCard from '@/components/chart/ChartCard'
 import DataView from '@/components/widgets/DataView'
-import InstanceView from '@/components/widgets/InstanceView'
 import ListView from '@/components/widgets/ListView'
 import Status from '@/components/widgets/Status'
 
@@ -204,7 +203,6 @@ export default {
     CardView,
     ChartCard,
     DataView,
-    InstanceView,
     ListView,
     Status
   },
@@ -235,7 +233,7 @@ export default {
   },
   watch: {
     '$route' (to, from) {
-      if (to.fullPath !== from.fullPath) {
+      if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/')) {
         this.fetchData()
       }
     },
@@ -264,14 +262,17 @@ export default {
       } else if (this.$route.meta.params) {
         Object.assign(params, this.$route.meta.params)
       }
+
       if (search !== '') {
         params['keyword'] = search
       }
+
       if (this.$route && this.$route.params && this.$route.params.id) {
         this.dataView = true
       } else {
         this.dataView = false
       }
+
       if (this.$route && this.$route.meta && this.$route.meta.permission) {
         this.apiName = this.$route.meta.permission[0]
         if (this.$route.meta.columns) {
@@ -281,9 +282,11 @@ export default {
           this.actions = this.$route.meta.actions
         }
       }
+
       if (this.apiName === '' || this.apiName === undefined) {
         return
       }
+
       if (!this.columnKeys || this.columnKeys.length === 0) {
         for (const field of store.getters.apis[this.apiName]['response']) {
           this.columnKeys.push(field.name)
@@ -297,7 +300,6 @@ export default {
         })
       }
 
-      var counter = 0
       for (var key of this.columnKeys) {
         if (typeof key === 'object') {
           key = Object.keys(key)[0]
@@ -305,7 +307,6 @@ export default {
         this.columns.push({
           title: this.$t(key),
           dataIndex: key,
-          key: counter++,
           scopedSlots: { customRender: key },
           sorter: (a, b) => String(a[key]).length - String(b[key]).length
         })
@@ -368,6 +369,10 @@ export default {
       this.currentAction = {}
     },
     execAction (action) {
+      if (action.component && action.api) {
+        this.$router.push({ name: action.api })
+        return
+      }
       this.currentAction = action
       var params = store.getters.apis[this.currentAction.api]['params']
       params.sort(function (a, b) {

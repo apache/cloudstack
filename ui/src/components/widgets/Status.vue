@@ -69,7 +69,7 @@ export default {
 </script>
 
 <style scoped>
-.ant-badge-status-dot {
+/deep/ .ant-badge-status-dot {
   width: 14px;
   height: 14px;
 }

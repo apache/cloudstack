@@ -8,7 +8,6 @@ export default {
       title: 'Volumes',
       icon: 'hdd',
       permission: [ 'listVolumesMetrics', 'listVolumes' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: ['name', 'state', 'type', 'vmname', 'size', 'physicalsize', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskiopstotal', 'storage', 'account', 'zonename'],
       hidden: ['storage', 'utilization'],
       actions: [
@@ -91,7 +90,6 @@ export default {
       title: 'Snapshots',
       icon: 'build',
       permission: [ 'listSnapshots' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: ['name', 'state', 'volumename', 'intervaltype', 'created', 'account']
     },
     {
@@ -99,7 +97,6 @@ export default {
       title: 'VM Snapshots',
       icon: 'camera',
       permission: [ 'listVMSnapshot' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: ['name', 'state', 'type', 'current', 'parent', 'created', 'account']
     }
   ]

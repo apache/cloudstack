@@ -23,7 +23,7 @@
           </div>
           <div class="account-center-detail">
             <p>
-              <status :text="vm.state" style="padding-left: 8px; padding-right: 5px"/>{{ vm.state }}
+              <status :text="vm.state ? vm.state : ''" style="padding-left: 8px; padding-right: 5px"/>{{ vm.state }}
             </p>
             <p>
               <font-awesome-icon :icon="['fab', osLogo]" size="lg"/> {{ guestOsName }} <br/>
@@ -44,7 +44,7 @@
             </p>
             <p>
               <font-awesome-icon :icon="['fas', 'ethernet']" />
-              {{ vm.nic.length }} NIC(s): <br/>
+              {{ vm && vm.nic ? vm.nic.length : 0 }} NIC(s): <br/>
               <span style="padding-left: 34px" v-for="eth in vm.nic" :key="eth.id">
                 {{ eth.ipaddress }} <router-link :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link> <br/>
               </span>
@@ -119,13 +119,11 @@
               />
               <div slot="content">
                 <a-form-item>
-                  <a-textarea :rows="4" @change="handleChange" :value="value" ></a-textarea>
+                  <a-textarea :rows="4" ></a-textarea>
                 </a-form-item>
                 <a-form-item>
                   <a-button
                     htmlType="submit"
-                    :loading="submitting"
-                    @click="handleSubmit"
                     type="primary"
                   >
                     Add Note
@@ -191,7 +189,7 @@
               </a-list>
 
             </a-collapse-panel>
-            <a-collapse-panel :header="'Network Adapter(s): ' + vm.nic.length" key="3" >
+            <a-collapse-panel :header="'Network Adapter(s): ' + (vm && vm.nic ? vm.nic.length : 0)" key="3" >
               <a-list
                 itemLayout="horizontal"
                 :dataSource="vm.nic"
@@ -240,13 +238,14 @@ export default {
     Status
   },
   props: {
-    vm: {
+    resource: {
       type: Object,
       required: true
     }
   },
   data () {
     return {
+      vm: {},
       volumes: [],
       totalStorage: 0,
       guestOsName: '',
@@ -277,8 +276,12 @@ export default {
 
     }
   },
+  created () {
+    this.vm = this.resource
+  },
   watch: {
-    vm: function (newVm, oldVm) {
+    resource: function (newItem, oldItem) {
+      this.vm = newItem
       this.fetchData()
     }
   },

@@ -1,5 +1,6 @@
 // eslint-disable-next-line
 import { UserLayout, BasicLayout, RouteView, BlankLayout, PageView } from '@/layouts'
+import AutogenView from '@/views/AutogenView.vue'
 
 import compute from '@/config/section/compute'
 import storage from '@/config/section/storage'
@@ -26,6 +27,7 @@ export function generateRouterMap (section) {
     map.meta.permission = section.children[0].permission
     map.children = []
     for (const child of section.children) {
+      var component = child.component ? child.component : AutogenView
       var route = {
         name: child.name,
         path: '/' + child.name,
@@ -38,7 +40,7 @@ export function generateRouterMap (section) {
           columns: child.columns,
           actions: child.actions
         },
-        component: child.component,
+        component: component,
         hideChildrenInMenu: true,
         children: [
           {
@@ -49,11 +51,31 @@ export function generateRouterMap (section) {
               icon: child.icon,
               permission: child.permission,
               params: child.params ? child.params : {},
-              actions: child.actions ? child.actions : []
+              actions: child.actions ? child.actions : [],
+              viewComponent: child.viewComponent
             },
-            component: child.viewComponent ? child.viewComponent : child.component
+            component: component
           }
         ]
+      }
+      if (child.actions) {
+        child.actions.forEach(function (action) {
+          if (!action.component || !action.api) {
+            return
+          }
+          map.children.push({
+            name: action.api,
+            icon: child.icon,
+            path: '/action/' + action.api,
+            meta: {
+              title: child.title,
+              keepAlive: true,
+              permission: [ action.api ]
+            },
+            component: action.component,
+            hidden: true
+          })
+        })
       }
       map.children.push(route)
     }

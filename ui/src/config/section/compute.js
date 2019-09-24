@@ -8,7 +8,7 @@ export default {
       title: 'Instances',
       icon: 'desktop',
       permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
+      viewComponent: () => import('@/views/compute/InstanceView.vue'),
       columns: [
         { 'name': (record) => { return record.displayname } }, 'state', 'instancename',
         { 'ipaddress': (record) => { return record.nic[0].ipaddress } }, 'account', 'zonename',
@@ -21,8 +21,8 @@ export default {
           api: 'deployVirtualMachine',
           icon: 'plus',
           label: 'Deploy VM',
-          args: ['name', 'zoneid', 'templateid', 'serviceofferingid', 'rootdisksize'],
-          listView: true
+          listView: true,
+          component: () => import('@/views/compute/DeployVM.vue')
         },
         {
           api: 'updateVirtualMachine',
@@ -140,7 +140,6 @@ export default {
       title: 'SSH Key Pairs',
       icon: 'key',
       permission: [ 'listSSHKeyPairs' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: ['name', 'fingerprint', 'account', 'domain'],
       actions: [
         {
@@ -162,7 +161,6 @@ export default {
       title: 'Affinity Groups',
       icon: 'swap',
       permission: [ 'listAffinityGroups' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: ['name', 'type', 'description', 'account', 'domain'],
       actions: [
         {

@@ -9,7 +9,6 @@ export default {
       title: 'Zones',
       icon: 'global',
       permission: [ 'listZones', 'listZonesMetrics' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [ 'name', 'allocationstate', 'networktype', 'guestcidraddress' ],
       actions: [
         {
@@ -26,7 +25,6 @@ export default {
       title: 'Pods',
       icon: 'appstore',
       permission: [ 'listPods' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [ 'name', 'allocationstate', 'gateway', 'netmask', 'zonename' ]
     },
     {
@@ -34,7 +32,6 @@ export default {
       title: 'Clusters',
       icon: 'cluster',
       permission: [ 'listClusters', 'listClustersMetrics' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [ 'name', 'allocationstate', 'clustertype', 'hypervisortype', 'podname', 'zonename' ]
     },
     {
@@ -43,7 +40,6 @@ export default {
       icon: 'desktop',
       permission: [ 'listHosts', 'listHostsMetrics' ],
       params: { 'type': 'routing' },
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [ 'name', 'state', 'resourcestate', 'ipaddress', 'hypervisor', 'hypervisorversion', 'clustername', 'zonename' ]
     },
     {
@@ -51,7 +47,6 @@ export default {
       title: 'Primary Storage',
       icon: 'database',
       permission: [ 'listStoragePools', 'listStoragePoolsMetrics' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [ 'name', 'state', 'ipaddress', 'type', 'path', 'scope', 'clustername', 'zonename' ]
     },
     {
@@ -59,7 +54,6 @@ export default {
       title: 'Secondary Storages',
       icon: 'picture',
       permission: [ 'listImageStores' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [ 'name', 'url', 'protocol', 'scope', 'zonename' ]
     },
     {
@@ -67,7 +61,6 @@ export default {
       title: 'System VMs',
       icon: 'thunderbolt',
       permission: [ 'listSystemVms' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [ 'name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'hostname', 'zonename' ]
     },
     {
@@ -75,7 +68,6 @@ export default {
       title: 'Virtual Routers',
       icon: 'fork',
       permission: [ 'listRouters' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [ 'name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'redundantstate', 'version', 'hostname', 'account', 'zonename', 'requiresupgrade' ]
     },
     {
@@ -84,7 +76,6 @@ export default {
       icon: 'api',
       permission: [ 'listHosts' ],
       params: { 'type': 'routing' },
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [ 'hypervisor', 'hosts', 'cpusockets' ]
     },
     {
@@ -92,7 +83,6 @@ export default {
       title: 'Management Servers',
       icon: 'rocket',
       permission: [ 'listManagementServers' ],
-      component: () => import('@/components/CloudMonkey/Resource.vue'),
       columns: [ 'name', 'state', 'version' ]
     }
   ]
