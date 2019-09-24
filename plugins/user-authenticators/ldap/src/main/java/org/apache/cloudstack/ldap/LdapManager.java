@@ -38,7 +38,6 @@ public interface LdapManager extends PluggableService {
 
     LdapConfigurationResponse addConfiguration(final LdapAddConfigurationCmd cmd) throws InvalidParameterValueException;
 
-    @Deprecated
     LdapConfigurationResponse addConfiguration(String hostname, int port, Long domainId) throws InvalidParameterValueException;
 
     boolean canAuthenticate(String principal, String password, final Long domainId);
@@ -61,6 +60,8 @@ public interface LdapManager extends PluggableService {
     List<LdapUser> getUsersInGroup(String groupName, Long domainId) throws NoLdapUserMatchingQueryException;
 
     boolean isLdapEnabled();
+
+    boolean isLdapEnabled(long domainId);
 
     Pair<List<? extends LdapConfigurationVO>, Integer> listConfigurations(LdapListConfigurationCmd cmd);
 

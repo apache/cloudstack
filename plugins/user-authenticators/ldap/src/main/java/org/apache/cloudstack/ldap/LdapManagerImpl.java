@@ -169,7 +169,10 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     public LdapConfigurationResponse createLdapConfigurationResponse(final LdapConfigurationVO configuration) {
         String domainUuid = null;
         if(configuration.getDomainId() != null) {
-            domainUuid = domainDao.findById(configuration.getDomainId()).getUuid();
+            DomainVO domain = domainDao.findById(configuration.getDomainId());
+            if (domain != null) {
+                domainUuid = domain.getUuid();
+            }
         }
         return new LdapConfigurationResponse(configuration.getHostname(), configuration.getPort(), domainUuid);
     }
@@ -293,6 +296,13 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     @Override
     public boolean isLdapEnabled() {
         return listConfigurations(new LdapListConfigurationCmd(this)).second() > 0;
+    }
+
+    @Override
+    public boolean isLdapEnabled(long domainId) {
+        LdapListConfigurationCmd cmd = new LdapListConfigurationCmd(this);
+        cmd.setDomainId(domainId);
+        return listConfigurations(cmd).second() > 0;
     }
 
     @Override

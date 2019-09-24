@@ -61,9 +61,13 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
     public Pair<Boolean, ActionOnFailedAuthentication> authenticate(final String username, final String password, final Long domainId, final Map<String, Object[]> requestParameters) {
         Pair<Boolean, ActionOnFailedAuthentication> rc = new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
 
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Retrieving ldap user: " + username);
+        }
+
         // TODO not allowing an empty password is a policy we shouldn't decide on. A private cloud may well want to allow this.
         if (!StringUtils.isEmpty(username) && !StringUtils.isEmpty(password)) {
-            if (_ldapManager.isLdapEnabled()) {
+            if (_ldapManager.isLdapEnabled(domainId) || _ldapManager.isLdapEnabled()) {
                 if (LOGGER.isTraceEnabled()) {
                     LOGGER.trace("LDAP is enabled in the ldapManager");
                 }
