@@ -40,8 +40,6 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.TemplateOVFPropertyVO;
-import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -101,7 +99,6 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -186,6 +183,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
@@ -243,6 +241,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.TemplateOVFPropertyVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -253,6 +252,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -4479,6 +4479,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public void finalizeExpunge(VirtualMachine vm) {
+        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        for (final NicVO nic : nics) {
+            final NetworkVO network = _networkDao.findById(nic.getNetworkId());
+            if (network != null && network.getTrafficType() == TrafficType.Guest) {
+                final String nicIp = Strings.isNullOrEmpty(nic.getIPv4Address()) ? nic.getIPv6Address() : nic.getIPv4Address();
+                if (!Strings.isNullOrEmpty(nicIp)) {
+                    NicProfile nicProfile = new NicProfile(nic.getIPv4Address(), nic.getIPv6Address(), nic.getMacAddress());
+                    nicProfile.setId(nic.getId());
+                    _networkMgr.cleanupNicDhcpDnsEntry(network, profile, nicProfile);
+                }
+            }
+        }
     }
 
     @Override
@@ -4542,12 +4555,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         for (final NicVO nic : nics) {
             final NetworkVO network = _networkDao.findById(nic.getNetworkId());
             if (network != null && network.getTrafficType() == TrafficType.Guest) {
-                final String nicIp = Strings.isNullOrEmpty(nic.getIPv4Address()) ? nic.getIPv6Address() : nic.getIPv4Address();
-                if (!Strings.isNullOrEmpty(nicIp)) {
-                    NicProfile nicProfile = new NicProfile(nic.getIPv4Address(), nic.getIPv6Address(), nic.getMacAddress());
-                    nicProfile.setId(nic.getId());
-                    _networkMgr.cleanupNicDhcpDnsEntry(network, profile, nicProfile);
-                }
                 if (nic.getBroadcastUri() != null && nic.getBroadcastUri().getScheme().equals("pvlan")) {
                     NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
                     setupVmForPvlan(false, vm.getHostId(), nicProfile);
