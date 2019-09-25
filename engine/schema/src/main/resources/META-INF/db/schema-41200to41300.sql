@@ -666,5 +666,5 @@ ALTER TABLE `cloud_usage`.`usage_vmsnapshot` ADD COLUMN `vm_snapshot_id` BIGINT(
 ALTER TABLE `cloud_usage`.`usage_snapshot_on_primary` ADD COLUMN `vm_snapshot_id` BIGINT(20) NULL DEFAULT NULL AFTER `deleted`;
 
 -- Add configuration to set the MTU for OVS and KVM
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'kvm.ovs.mtu.size', null,
- 'Set the MTU for OVS and KVM (if not set default MTU will be considered, Attention: the main bridge will be automatically adjusted to this value)', null, null, null, 0);
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'kvm.mtu.size', null,
+ 'Set the MTU for Libvirt and KVM (if not set the default MTU will be considered, Attention: If you use OVS the main bridge will automatically adjusted to the guest nic mtu)', null, null, null, 0);

@@ -230,9 +230,9 @@ import javax.naming.ConfigurationException;
 public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestrationService, Listener, Configurable {
     static final Logger s_logger = Logger.getLogger(NetworkOrchestrator.class);
 
-    private static final String KVM_OVS_MTU_KEY = "kvm.ovs.mtu.size";
+    private static final String KVM_MTU_SIZE = "kvm.mtu.size";
 
-    private Integer _kvmOvsMtuSize = 0;
+    private Integer _kvmMtuSize = 0;
 
     @Inject
     EntityManager _entityMgr;
@@ -570,9 +570,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                 _networkOfferingDao.persistDefaultL2NetworkOfferings();
 
-                final String mtu_size =_configDao.getValue(KVM_OVS_MTU_KEY);
+                final String mtu_size =_configDao.getValue(KVM_MTU_SIZE);
                 if (nonNull(mtu_size)) {
-                    _kvmOvsMtuSize = Integer.valueOf(mtu_size);
+                    _kvmMtuSize = Integer.valueOf(mtu_size);
                 }
             }
         });
@@ -877,7 +877,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         if(Objects.isNull(profile.getMtu())) {
-            profile.setMtu(_kvmOvsMtuSize);
+            profile.setMtu(_kvmMtuSize);
         }
 
         deviceId = applyProfileToNic(vo, profile, deviceId);

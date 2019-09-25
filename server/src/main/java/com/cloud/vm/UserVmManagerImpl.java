@@ -507,9 +507,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
     private static final int MAX_HTTP_POST_LENGTH = 16 * MAX_USER_DATA_LENGTH_BYTES;
-    private static final String KVM_OVS_MTU_KEY = "kvm.ovs.mtu.size";
+    private static final String KVM_MTU_KEY = "kvm.mtu.size";
 
-    private Integer _kvmOvsMtuSize = 0;
+    private Integer _kvmMtuSize = 0;
 
     @Inject
     private OrchestrationService _orchSrvc;
@@ -1204,7 +1204,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("A NIC with this MAC address exists for network: " + network.getUuid());
         }
 
-        NicProfile profile = new NicProfile(ipAddress, null, macAddress, _kvmOvsMtuSize);
+        NicProfile profile = new NicProfile(ipAddress, null, macAddress, _kvmMtuSize);
         if (ipAddress != null) {
             if (!(NetUtils.isValidIp4(ipAddress) || NetUtils.isValidIp6(ipAddress))) {
                 throw new InvalidParameterValueException("Invalid format for IP address parameter: " + ipAddress);
@@ -1505,7 +1505,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long nicId = cmd.getNicId();
         String ipaddr = cmd.getIpaddress();
 
-        final Integer mtu = _kvmOvsMtuSize;
+        final Integer mtu = _kvmMtuSize;
 
         Account caller = CallContext.current().getCallingAccount();
 
@@ -2086,10 +2086,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
-        final String mtu_size =_configDao.getValue(KVM_OVS_MTU_KEY);
+        final String mtu_size =_configDao.getValue(KVM_MTU_KEY);
 
         if (nonNull(mtu_size)) {
-            _kvmOvsMtuSize = Integer.valueOf(mtu_size);
+            _kvmMtuSize = Integer.valueOf(mtu_size);
         }
 
         _instance = configs.get("instance.name");
