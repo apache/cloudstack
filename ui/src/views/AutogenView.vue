@@ -90,16 +90,16 @@
           :visible="showAction"
           :closable="true"
           style="top: 20px;"
-          @ok="handleSubmit"
           @cancel="closeAction"
           :confirmLoading="currentAction.loading"
+          :footer="null"
           centered
         >
           <component :is="currentAction.component"/></component>
         </a-modal>
       </keep-alive>
-
       <a-modal
+        v-else
         :title="currentAction.label"
         :visible="showAction"
         :closable="true"
@@ -369,7 +369,7 @@ export default {
       this.currentAction = {}
     },
     execAction (action) {
-      if (action.component && action.api) {
+      if (action.component && action.api && !action.popup) {
         this.$router.push({ name: action.api })
         return
       }

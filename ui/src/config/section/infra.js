@@ -16,6 +16,7 @@ export default {
           icon: 'plus',
           label: 'Add Zone',
           listView: true,
+          popup: true,
           component: () => import('@/views/infra/ZoneWizard.vue')
         }
       ]
