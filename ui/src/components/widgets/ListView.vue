@@ -4,9 +4,9 @@
     :loading="loading"
     :columns="columns"
     :dataSource="items"
-    :rowKey="record => record.id"
+    :rowKey="record => record.id || record.name"
     :scroll="{ x: '100%' }"
-    :pagination="{ position: 'bottom', size: 'small', showSizeChanger: true }"
+    :pagination="false"
     :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
     :rowClassName="getRowClassName"
   >
@@ -33,7 +33,7 @@
       <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
     </a>
     <template slot="state" slot-scope="text">
-      <status :text="text" />
+      <status :text="text ? text : ''" />
     </template>
 
     <a slot="account" slot-scope="text, record" href="javascript:;">

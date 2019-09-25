@@ -1,6 +1,6 @@
 <template>
   <div>
-    <breadcrumb v-if="device !== 'desktop'" style="margin-left: -16px; margin-right: -16px; margin-top: -16px" />
+    <breadcrumb v-if="device !== 'desktop'" class="mobile-breadcrumb" />
     <a-row>
       <a-col :span="17">
         <a-tooltip placement="bottom" v-for="(action, actionIndex) in actions" :key="actionIndex" v-if="(!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) || (dataView && action.dataView)">
@@ -75,8 +75,9 @@
         <a-input-search
           size="default"
           placeholder="Search"
-          @search="onSearch"
+          v-model="searchQuery"
           v-if="!dataView"
+          @search="onSearch"
         >
           <a-icon slot="prefix" type="search" />
         </a-input-search>
@@ -170,7 +171,7 @@
       <component :is="$route.meta.viewComponent" :resource="resource" v-if="$route.meta.viewComponent"/></component>
       <data-view :resource="resource" v-else />
     </div>
-    <div style="margin-top: 12px" v-else>
+    <div class="row-element" v-else>
       <list-view
         :loading="loading"
         :columns="columns"
@@ -180,8 +181,18 @@
         :items="items"
         :loading="loading"
         v-show="!tableView" />
+      <a-pagination
+        class="row-element"
+        size="small"
+        :current="page"
+        :pageSize="pageSize"
+        :total="itemCount"
+        :showTotal="total => `Total ${total} items`"
+        :pageSizeOptions="['20', '40', '80', '100']"
+        @change="changePage"
+        @showSizeChange="changePageSize"
+        showSizeChanger />
     </div>
-
   </div>
 </template>
 
@@ -214,6 +225,10 @@ export default {
       autoRefresh: false,
       columns: [],
       items: [],
+      itemCount: 0,
+      page: 1,
+      pageSize: 20,
+      searchQuery: '',
       resource: {},
       selectedRowKeys: [],
       currentAction: {},
@@ -234,6 +249,7 @@ export default {
   watch: {
     '$route' (to, from) {
       if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/')) {
+        this.page = 1
         this.fetchData()
       }
     },
@@ -247,7 +263,7 @@ export default {
     this.form = this.$form.createForm(this)
   },
   methods: {
-    fetchData (search = '') {
+    fetchData () {
       this.routeName = this.$route.name
       if (!this.routeName) {
         this.routeName = this.$route.matched[this.$route.matched.length - 1].parent.name
@@ -263,8 +279,8 @@ export default {
         Object.assign(params, this.$route.meta.params)
       }
 
-      if (search !== '') {
-        params['keyword'] = search
+      if (this.searchQuery !== '') {
+        params['keyword'] = this.searchQuery
       }
 
       if (this.$route && this.$route.params && this.$route.params.id) {
@@ -316,6 +332,8 @@ export default {
       if (this.$route.params && this.$route.params.id) {
         params['id'] = this.$route.params.id
       }
+      params['page'] = this.page
+      params['pagesize'] = this.pageSize
       api(this.apiName, params).then(json => {
         this.loading = false
         var responseName
@@ -327,7 +345,10 @@ export default {
           }
         }
         for (const key in json[responseName]) {
-          if (key === 'count') continue
+          if (key === 'count') {
+            this.itemCount = json[responseName]['count']
+            continue
+          }
           objectName = key
           break
         }
@@ -346,7 +367,8 @@ export default {
       })
     },
     onSearch (value) {
-      this.fetchData(value)
+      this.searchQuery = value
+      this.fetchData()
     },
     toggleAutoRefresh () {
       this.autoRefresh = !this.autoRefresh
@@ -506,6 +528,16 @@ export default {
         }
       })
     },
+    changePage (page, pageSize) {
+      this.page = page
+      this.pageSize = pageSize
+      this.fetchData()
+    },
+    changePageSize (currentPage, pageSize) {
+      this.page = currentPage
+      this.pageSize = pageSize
+      this.fetchData()
+    },
     start () {
       this.loading = true
       this.fetchData()
@@ -518,18 +550,25 @@ export default {
 }
 </script>
 
-<style>
-.info-card {
-  margin-top: 12px;
+<style scoped>
+
+.mobile-breadcrumb {
+  margin-left: -16px;
+  margin-right: -16px;
+  margin-top: -16px;
+  padding-bottom: 16px;
+}
+
+.row-element {
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .ant-breadcrumb {
   vertical-align: text-bottom;
-  margin-bottom: 8px;
 }
 
 .ant-breadcrumb .anticon {
   margin-left: 8px;
 }
-
 </style>

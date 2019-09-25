@@ -18,7 +18,7 @@
             <span v-else>{{ item.name }}</span>
           </div>
           <div slot="description" style="height: 80px">
-            <status :text="item.state" displayText />
+            <status :text="item.state ? item.state : ''" displayText />
             <div v-if="item.ipaddress">
               <a-icon type="wifi" style="padding-right: 5px" />
               <router-link :to="{ path: $route.path + '/' + item.id }">{{ item.ipaddress }}</router-link>
