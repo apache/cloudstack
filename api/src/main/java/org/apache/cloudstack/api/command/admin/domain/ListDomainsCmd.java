@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
@@ -36,7 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 
 @APICommand(name = "listDomains", description = "Lists domains and provides detailed information for listed domains", responseObject = DomainResponse.class, responseView = ResponseView.Restricted, entityType = {Domain.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListDomainsCmd extends BaseListCmd {
+public class ListDomainsCmd extends BaseListCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ListDomainsCmd.class.getName());
 
     private static final String s_name = "listdomainsresponse";

@@ -16,23 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.affinitygroup;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.UpdateVMAffinityGroupCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
 
@@ -41,27 +32,6 @@ import com.cloud.vm.VirtualMachine;
         entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = true)
-public class UpdateVMAffinityGroupCmdByAdmin extends UpdateVMAffinityGroupCmd {
+public class UpdateVMAffinityGroupCmdByAdmin extends UpdateVMAffinityGroupCmd implements AdminCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVMAffinityGroupCmdByAdmin.class.getName());
-
-
-    @Override
-    public void execute() throws ResourceUnavailableException,
-            InsufficientCapacityException, ServerApiException {
-        CallContext.current().setEventDetails("Vm Id: "+getId());
-        UserVm result = _affinityGroupService.updateVMAffinityGroups(getId(), getAffinityGroupIdList());
-        ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
-        dc.add(VMDetails.valueOf("affgrp"));
-        EnumSet<VMDetails> details = EnumSet.copyOf(dc);
-
-        if (result != null){
-            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", details, result).get(0);
-            response.setResponseName(getCommandName());
-            setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update vm's affinity groups");
-        }
-    }
-
-
 }
