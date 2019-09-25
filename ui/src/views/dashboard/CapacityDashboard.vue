@@ -64,10 +64,15 @@
           :key="stat.type">
           <chart-card :loading="loading">
             <div class="capacity-dashboard-chart-card-inner">
-              <h4>{{ stat.name }}</h4>
-              <a-progress type="dashboard" :percent="Number(parseFloat(stat.percentused, 10).toFixed(2))" :width="100" />
+              <h4>{{ $t(stat.name) }}</h4>
+              <a-progress
+                type="dashboard"
+                :status="getStatus(parseFloat(stat.percentused))"
+                :percent="parseFloat(stat.percentused)"
+                :format="percent => `${parseFloat(stat.percentused, 10).toFixed(2)}%`"
+                :width="100" />
             </div>
-            <template slot="footer"><span>{{ stat.capacityused }} / {{ stat.capacitytotal }}</span></template>
+            <template slot="footer"><center>{{ displayData(stat.name, stat.capacityused) }} / {{ displayData(stat.name, stat.capacitytotal) }}</center></template>
           </chart-card>
         </a-col>
       </a-row>
@@ -134,6 +139,30 @@ export default {
     }, 1000)
   },
   methods: {
+    getStatus (value) {
+      if (value > 85) {
+        return 'exception'
+      }
+      if (value > 75) {
+        return 'active'
+      }
+      return 'normal'
+    },
+    displayData (dataType, value) {
+      switch (dataType) {
+        case 'CPU':
+          value = parseFloat(value / 1000.0, 10).toFixed(2) + ' GHz'
+          break
+        case 'MEMORY':
+        case 'STORAGE':
+        case 'STORAGE_ALLOCATED':
+        case 'SECONDARY_STORAGE':
+        case 'CAPACITY_TYPE_LOCAL_STORAGE':
+          value = parseFloat(value / (1024 * 1024 * 1024.0), 10).toFixed(2) + ' GB'
+          break
+      }
+      return value
+    },
     fetchData () {
       this.listZones()
       this.listEvents()
