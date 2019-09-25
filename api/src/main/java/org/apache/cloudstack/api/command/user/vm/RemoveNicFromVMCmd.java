@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -43,7 +44,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "removeNicFromVirtualMachine", description = "Removes VM from specified network by deleting a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class RemoveNicFromVMCmd extends BaseAsyncCmd {
+public class RemoveNicFromVMCmd extends BaseAsyncCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveNicFromVMCmd.class);
     private static final String s_name = "removenicfromvirtualmachineresponse";
 
@@ -110,7 +111,7 @@ public class RemoveNicFromVMCmd extends BaseAsyncCmd {
         dc.add(VMDetails.valueOf("nics"));
         EnumSet<VMDetails> details = EnumSet.copyOf(dc);
         if (result != null){
-            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", details, result).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", details, result).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

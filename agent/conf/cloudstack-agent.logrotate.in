@@ -15,12 +15,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-@AGENTLOG@
-/var/log/cloudstack/agent/security_group.log
-{
+/var/log/cloudstack/agent/security_group.log /var/log/cloudstack/agent/resizevolume.log {
     copytruncate
     daily
     rotate 5
     compress
     missingok
+    size 10M
 }

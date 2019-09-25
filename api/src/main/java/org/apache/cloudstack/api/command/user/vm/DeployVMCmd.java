@@ -24,7 +24,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.agent.api.LogLevel;
+import javax.annotation.Nonnull;
+
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
@@ -36,6 +39,7 @@ import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -48,8 +52,8 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.LogLevel;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -69,7 +73,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityGroupAction {
+public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityGroupAction, UserCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
 
     private static final String s_name = "deployvirtualmachineresponse";
@@ -360,37 +364,49 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             Iterator iter = ipsCollection.iterator();
             while (iter.hasNext()) {
                 HashMap<String, String> ips = (HashMap<String, String>)iter.next();
-                Long networkId;
-                Network network = _networkService.getNetwork(ips.get("networkid"));
-                if (network != null) {
-                    networkId = network.getId();
-                } else {
-                    try {
-                        networkId = Long.parseLong(ips.get("networkid"));
-                    } catch (NumberFormatException e) {
-                        throw new InvalidParameterValueException("Unable to translate and find entity with networkId: " + ips.get("networkid"));
-                    }
-                }
-                String requestedIp = ips.get("ip");
-                String requestedIpv6 = ips.get("ipv6");
-                String requestedMac = ips.get("mac");
-                if (requestedIpv6 != null) {
-                    requestedIpv6 = NetUtils.standardizeIp6Address(requestedIpv6);
-                }
-                if (requestedMac != null) {
-                    if(!NetUtils.isValidMac(requestedMac)) {
-                        throw new InvalidParameterValueException("Mac address is not valid: " + requestedMac);
-                    } else if(!NetUtils.isUnicastMac(requestedMac)) {
-                        throw new InvalidParameterValueException("Mac address is not unicast: " + requestedMac);
-                    }
-                    requestedMac = NetUtils.standardizeMacAddress(requestedMac);
-                }
-                IpAddresses addrs = new IpAddresses(requestedIp, requestedIpv6, requestedMac);
+                Long networkId = getNetworkIdFomIpMap(ips);
+                IpAddresses addrs = getIpAddressesFromIpMap(ips);
                 ipToNetworkMap.put(networkId, addrs);
             }
         }
 
         return ipToNetworkMap;
+    }
+
+    @Nonnull
+    private IpAddresses getIpAddressesFromIpMap(HashMap<String, String> ips) {
+        String requestedIp = ips.get("ip");
+        String requestedIpv6 = ips.get("ipv6");
+        String requestedMac = ips.get("mac");
+        if (requestedIpv6 != null) {
+            requestedIpv6 = NetUtils.standardizeIp6Address(requestedIpv6);
+        }
+        if (requestedMac != null) {
+            if(!NetUtils.isValidMac(requestedMac)) {
+                throw new InvalidParameterValueException("Mac address is not valid: " + requestedMac);
+            } else if(!NetUtils.isUnicastMac(requestedMac)) {
+                throw new InvalidParameterValueException("Mac address is not unicast: " + requestedMac);
+            }
+            requestedMac = NetUtils.standardizeMacAddress(requestedMac);
+        }
+        return new IpAddresses(requestedIp, requestedIpv6, requestedMac);
+    }
+
+    @Nonnull
+    private Long getNetworkIdFomIpMap(HashMap<String, String> ips) {
+        Long networkId;
+        final String networkid = ips.get("networkid");
+        Network network = _networkService.getNetwork(networkid);
+        if (network != null) {
+            networkId = network.getId();
+        } else {
+            try {
+                networkId = Long.parseLong(networkid);
+            } catch (NumberFormatException e) {
+                throw new InvalidParameterValueException("Unable to translate and find entity with networkId: " + networkid);
+            }
+        }
+        return networkId;
     }
 
     public String getIpAddress() {
@@ -592,7 +608,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         }
 
         if (result != null) {
-            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

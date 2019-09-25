@@ -1689,11 +1689,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<VolumeJoinVO>, Integer> result = searchForVolumesInternal(cmd);
         ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
 
-        ResponseView respView = ResponseView.Restricted;
-        Account account = CallContext.current().getCallingAccount();
-        if (_accountMgr.isAdmin(account.getAccountId())) {
-            respView = ResponseView.Full;
-        }
+        ResponseView respView = cmd.getResponseView();
 
         List<VolumeResponse> volumeResponses = ViewResponseHelper.createVolumeResponse(respView, result.first().toArray(new VolumeJoinVO[result.first().size()]));
 

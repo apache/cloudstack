@@ -26,7 +26,7 @@ be used in the final generated package like: cloudstack-management-x.y.z.a-NAME.
 note that you can override/provide "branding" string with "-b, --brand" flag as well.
 
 Mandatory arguments:
-   -d, --distribution string               Build package for specified distribution ("centos7"|"centos63")
+   -d, --distribution string               Build package for specified distribution ("centos7")
 
 Optional arguments:
    -p, --pack string                       Define which type of libraries to package ("oss"|"OSS"|"noredist"|"NOREDIST") (default "oss")

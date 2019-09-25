@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
 import com.cloud.template.VirtualMachineTemplate;
@@ -30,7 +31,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "updateTemplate", description = "Updates attributes of a template.", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd {
+public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateTemplateCmd.class.getName());
     private static final String s_name = "updatetemplateresponse";
 
@@ -70,7 +71,7 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd {
     public void execute() {
         VirtualMachineTemplate result = _templateService.updateTemplate(this);
         if (result != null) {
-            TemplateResponse response = _responseGenerator.createTemplateUpdateResponse(ResponseView.Restricted, result);
+            TemplateResponse response = _responseGenerator.createTemplateUpdateResponse(getResponseView(), result);
             response.setObjectName("template");
             response.setTemplateType(result.getTemplateType().toString());//Template can be either USER or ROUTING type
             response.setResponseName(getCommandName());
