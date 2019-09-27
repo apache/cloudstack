@@ -1,6 +1,6 @@
 # Documentation
 
-- Router [Configuration](docs/config.md)
+- Router [Configuration](config.md)
 - Custom Component
 - Styling
 - Testing
