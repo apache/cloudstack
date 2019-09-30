@@ -39,9 +39,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import software.apacheds.embedded.EmbeddedLdapServer;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -151,7 +149,8 @@ public class LdapDirectoryServerConnectionTest {
     public void testSchemaLoading() {
         try {
             assertTrue("standard not loaded", embeddedLdapServer.addSchemaFromClasspath("other"));
-            assertTrue("memberOf schema not loaded", embeddedLdapServer.addSchemaFromPath(new File("src/test/resources/memberOf"), "microsoft"));
+// we need member of in ACS nowadays (backwards comptability broken):
+// assertTrue("memberOf schema not loaded", embeddedLdapServer.addSchemaFromPath(new File("src/test/resources/memberOf"), "microsoft"));
         } catch (LdapException | IOException e) {
             fail(e.getLocalizedMessage());
         }
