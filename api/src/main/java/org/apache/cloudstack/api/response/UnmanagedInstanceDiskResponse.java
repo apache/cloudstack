@@ -34,7 +34,7 @@ public class UnmanagedInstanceDiskResponse extends BaseResponse {
     private String label;
 
     @SerializedName(ApiConstants.CAPACITY)
-    @Param(description = "the capacity in KB of the disk")
+    @Param(description = "the capacity of the disk in bytes")
     private Long capacity;
 
     @SerializedName(ApiConstants.IMAGE_PATH)

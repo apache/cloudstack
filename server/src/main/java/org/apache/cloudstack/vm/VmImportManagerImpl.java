@@ -26,6 +26,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
@@ -40,6 +41,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
@@ -51,6 +53,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetUnmanagedInstancesAnswer;
 import com.cloud.agent.api.GetUnmanagedInstancesCommand;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.ClusterDao;
@@ -62,6 +65,7 @@ import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -71,6 +75,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -169,6 +174,10 @@ public class VmImportManagerImpl implements VmImportService {
     private ManagementService managementService;
     @Inject
     private NicDao nicDao;
+    @Inject
+    private NetworkModel networkModel;
+    @Inject
+    private ConfigurationDao configurationDao;
 
     protected Gson gson;
 
@@ -215,6 +224,9 @@ public class VmImportManagerImpl implements VmImportService {
                 nicResponse.setId(nic.getNicId());
                 nicResponse.setNetworkName(nic.getNetwork());
                 nicResponse.setMacAddress(nic.getMacAddress());
+                if (!Strings.isNullOrEmpty(nic.getAdapterType())) {
+                    nicResponse.setAdapterType(nic.getAdapterType());
+                }
                 if (!Strings.isNullOrEmpty(nic.getIpAddress())) {
                     nicResponse.setIpaddress(nic.getIpAddress());
                 }
@@ -378,6 +390,27 @@ public class VmImportManagerImpl implements VmImportService {
         return serviceOffering;
     }
 
+    private Map<String, Network.IpAddresses> getNicIpAddresses(final List<UnmanagedInstance.Nic> nics, final Map<String, Network.IpAddresses> callerNicIpAddressMap) {
+        Map<String, Network.IpAddresses> nicIpAddresses = new HashMap<>();
+        for (UnmanagedInstance.Nic nic : nics) {
+            Network.IpAddresses ipAddresses = null;
+            if (MapUtils.isNotEmpty(callerNicIpAddressMap) && callerNicIpAddressMap.containsKey(nic.getNicId())) {
+                ipAddresses = callerNicIpAddressMap.get(nic.getNicId());
+            }
+            if (!Strings.isNullOrEmpty(nic.getIpAddress()) &&
+                    (ipAddresses == null || Strings.isNullOrEmpty(ipAddresses.getIp4Address()))) {
+                if (ipAddresses == null) {
+                    ipAddresses = new Network.IpAddresses(null, null);
+                }
+                ipAddresses.setIp4Address(nic.getIpAddress());
+            }
+            if (ipAddresses != null) {
+                nicIpAddresses.put(nic.getNicId(), ipAddresses);
+            }
+        }
+        return nicIpAddresses;
+    }
+
     private void checkUnmanagedDiskAndOfferingForImport(UnmanagedInstance.Disk disk, DiskOffering diskOffering, final Account owner, final DataCenter zone)
             throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
         if (diskOffering == null) {
@@ -385,8 +418,14 @@ public class VmImportManagerImpl implements VmImportService {
         }
         accountService.checkAccess(owner, diskOffering, zone);
         resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.volume);
+        if (disk.getCapacity() == null || disk.getCapacity() == 0) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Size of disk(ID: %s) is found invalid during VM import!", disk.getDiskId()));
+        }
+        if (!diskOffering.isCustomized() && diskOffering.getDiskSize() == 0) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Size of fixed disk offering(ID: %s) is found invalid during VM import!", diskOffering.getUuid()));
+        }
         if (!diskOffering.isCustomized() && diskOffering.getDiskSize() < disk.getCapacity()) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Size of disk offering(ID: %s) %dGB is found less than the size of disk(ID: %s) %dGB during VM import!", diskOffering.getUuid(), (diskOffering.getDiskSize() / (1024 * 1024 * 1024)), disk.getDiskId(), (disk.getCapacity() / (1024 * 1024))));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Size of disk offering(ID: %s) %dGB is found less than the size of disk(ID: %s) %dGB during VM import!", diskOffering.getUuid(), (diskOffering.getDiskSize() / Resource.ResourceType.bytesToGiB), disk.getDiskId(), (disk.getCapacity() / (Resource.ResourceType.bytesToGiB))));
         }
     }
 
@@ -400,31 +439,49 @@ public class VmImportManagerImpl implements VmImportService {
         }
     }
 
-    private void checkUnmanagedNicAndNetworkForImport(UnmanagedInstance.Nic nic, Network network, final DataCenter zone, final String hostName) throws ServerApiException {
+    private void checkUnmanagedNicAndNetworkForImport(UnmanagedInstance.Nic nic, Network network, final Network.IpAddresses ipAddresses, final DataCenter zone, final String hostName, final Account owner) throws ServerApiException {
         if (network == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network for nic ID: %s not found during VM import!", nic.getNicId()));
         }
         if (network.getDataCenterId() != zone.getId()) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network(ID: %s) for nic(ID: %s) belongs to a different zone than VM to be imported!", network.getUuid(), nic.getNicId()));
         }
+        networkModel.checkNetworkPermissions(owner, network);
         if (nic.getVlan() != null && (Strings.isNullOrEmpty(network.getBroadcastUri().toString()) || !network.getBroadcastUri().toString().equals(String.format("vlan://%d", nic.getVlan())))) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) vlan://%d during VM import!", network.getUuid(), network.getBroadcastUri().toString(), nic.getNicId(), nic.getVlan()));
         }
-        // * get all vms hostNames in the network
+        if (!network.getGuestType().equals(Network.GuestType.L2)) {
+            if (ipAddresses == null) { // No IP address was provided by API and NIC details don't have one
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("NIC(ID: %s) needs a valid IP address for it to be associated with network(ID: %s)! %s parameter of API can be used for this.", nic.getNicId(), network.getUuid(), ApiConstants.NIC_IP_ADDRESS_LIST));
+            }
+            if (Strings.isNullOrEmpty(ipAddresses.getIp4Address()) || Strings.isNullOrEmpty(ipAddresses.getIp6Address())) {
+                networkModel.checkRequestedIpAddresses(network.getId(), ipAddresses); // This only checks ipv6
+            }
+            if (Strings.isNullOrEmpty(ipAddresses.getIp4Address())) {
+                Set<Long> ips = networkModel.getAvailableIps(network, ipAddresses.getIp4Address());
+                if (CollectionUtils.isEmpty(ips)) {
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("IP address %s for NIC(ID: %s) is not available in network(ID: %s)!", nic.getNicId(), network.getUuid(), ApiConstants.NIC_IP_ADDRESS_LIST));
+                }
+            }
+        }
+        // Check for duplicate hostname in network, get all vms hostNames in the network
         List<String> hostNames = vmDao.listDistinctHostNames(network.getId());
-        // * verify that there are no duplicates
         if (CollectionUtils.isNotEmpty(hostNames) && hostNames.contains(hostName)) {
             throw new InvalidParameterValueException("The vm with hostName " + hostName + " already exists in the network domain: " + network.getNetworkDomain() + "; network="
                     + network);
         }
     }
 
-    private Map<String, Long> getUnmanagedNicNetworkMap(List<UnmanagedInstance.Nic> nics, final Map<String, Long> callerNicNetworkMap, final DataCenter zone, final String hostName) throws ServerApiException {
+    private Map<String, Long> getUnmanagedNicNetworkMap(List<UnmanagedInstance.Nic> nics, final Map<String, Long> callerNicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap, final DataCenter zone, final String hostName, final Account owner) throws ServerApiException {
         Map<String, Long> nicNetworkMap = new HashMap<>();
         for (UnmanagedInstance.Nic nic : nics) {
             Network network = null;
+            Network.IpAddresses ipAddresses = null;
+            if (MapUtils.isNotEmpty(callerNicIpAddressMap) && callerNicIpAddressMap.containsKey(nic.getNicId())) {
+                ipAddresses = callerNicIpAddressMap.get(nic.getNicId());
+            }
             if (!callerNicNetworkMap.containsKey(nic.getNicId())) {
-                if (nic.getVlan() != null) {
+                if (nic.getVlan() != null && nic.getVlan() != 0) {
                     // Find a suitable network
                     List<NetworkVO> networks = networkDao.listByZone(zone.getId());
                     for (NetworkVO networkVO : networks) {
@@ -432,7 +489,7 @@ public class VmImportManagerImpl implements VmImportService {
                             continue;
                         }
                         try {
-                            checkUnmanagedNicAndNetworkForImport(nic, networkVO, zone, hostName);
+                            checkUnmanagedNicAndNetworkForImport(nic, networkVO, ipAddresses, zone, hostName, owner);
                             network = networkVO;
                             break;
                         } catch (Exception e) {
@@ -441,7 +498,7 @@ public class VmImportManagerImpl implements VmImportService {
                 }
             } else {
                 network = networkDao.findById(callerNicNetworkMap.get(nic.getNicId()));
-                checkUnmanagedNicAndNetworkForImport(nic, network, zone, hostName);
+                checkUnmanagedNicAndNetworkForImport(nic, network, ipAddresses, zone, hostName, owner);
             }
             if (network == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Suitable network for nic(ID: %s) not found during VM import!", nic.getNicId()));
@@ -471,7 +528,7 @@ public class VmImportManagerImpl implements VmImportService {
                 storagePool = primaryDataStoreDao.findPoolByUUID(poolUuid);
             }
             if (storagePool == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to import disk ID: %s as storage pool not found!");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to import disk ID: %s as storage pool not found!", disk.getDiskId()));
             }
             if (!migrateAllowed && !storagePoolSupportsDiskOffering(storagePool, diskOffering)) {
                 throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with storage pool: %s of unmanaged disk: %s", diskOffering.getUuid(), storagePool.getUuid(), disk.getDiskId()));
@@ -489,10 +546,10 @@ public class VmImportManagerImpl implements VmImportService {
         return new Pair<DiskProfile, StoragePool>(profile, storagePool);
     }
 
-    private NicProfile importNic(UnmanagedInstance.Nic nic, VirtualMachine vm, Network network, String ipAddress, boolean isDefaultNic) {
-        Pair<NicProfile, Integer> result = networkOrchestrationService.importNic(nic.getMacAddress(), 0, network, isDefaultNic, vm, ipAddress);
+    private NicProfile importNic(UnmanagedInstance.Nic nic, VirtualMachine vm, Network network, Network.IpAddresses ipAddresses, boolean isDefaultNic) throws InsufficientVirtualNetworkCapacityException {
+        Pair<NicProfile, Integer> result = networkOrchestrationService.importNic(nic.getMacAddress(), 0, network, isDefaultNic, vm, ipAddresses);
         if (result == null) {
-            return null;
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("NIC ID: %s import failed!", nic.getNicId()));
         }
         return result.first();
     }
@@ -616,7 +673,7 @@ public class VmImportManagerImpl implements VmImportService {
     private UserVm importVirtualMachineInternal(final UnmanagedInstance unmanagedInstance, final String instanceName, final DataCenter zone, final Cluster cluster, final HostVO host,
                                                 final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
                                                 final ServiceOfferingVO serviceOffering, final DiskOffering diskOffering, final Map<String, Long> dataDiskOfferingMap,
-                                                final Map<String, Long> nicNetworkMap, final Map<String, String> nicIpAddressMap,
+                                                final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
                                                 final Map<String, String> details, final boolean migrateAllowed) {
         UserVm userVm = null;
 
@@ -660,7 +717,8 @@ public class VmImportManagerImpl implements VmImportService {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume resource allocation error for owner: %s! %s", owner.getUuid(), Strings.nullToEmpty(e.getMessage())));
         }
         // Check NICs and supplied networks
-        Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getNics(), nicNetworkMap, zone, hostName);
+        Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
+        Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner);
         VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
         if (unmanagedInstance.getPowerState().equals(UnmanagedInstance.PowerState.PowerOn)) {
             powerState = VirtualMachine.PowerState.PowerOn;
@@ -679,10 +737,16 @@ public class VmImportManagerImpl implements VmImportService {
         }
         List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
         try {
-            diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()), (rootDisk.getCapacity() / (1024 * 1024)), template, owner, null, migrateAllowed));
+            if (rootDisk.getCapacity() == null || rootDisk.getCapacity() == 0) {
+                throw new InvalidParameterValueException(String.format("Root disk ID: %s size is invalid", rootDisk.getDiskId()));
+            }
+            diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()), (rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB), template, owner, null, migrateAllowed));
             for (UnmanagedInstance.Disk disk : dataDisks) {
+                if (disk.getCapacity() == null || disk.getCapacity() == 0) {
+                    throw new InvalidParameterValueException(String.format("Disk ID: %s size is invalid", rootDisk.getDiskId()));
+                }
                 DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
-                diskProfileStoragePoolList.add(importDisk(disk, userVm, offering, Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()), (disk.getCapacity() / (1024 * 1024)), template, owner, null, migrateAllowed));
+                diskProfileStoragePoolList.add(importDisk(disk, userVm, offering, Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()), (disk.getCapacity() / Resource.ResourceType.bytesToGiB), template, owner, null, migrateAllowed));
             }
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);
@@ -693,11 +757,16 @@ public class VmImportManagerImpl implements VmImportService {
             boolean firstNic = true;
             for (UnmanagedInstance.Nic nic : unmanagedInstance.getNics()) {
                 Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
-                String ipAddress = nicIpAddressMap.get(nic.getNicId());
-                if (Strings.isNullOrEmpty(ipAddress)) {
-                    ipAddress = nic.getIpAddress();
+                Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
+                if (ipAddresses == null || (Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && Strings.isNullOrEmpty(ipAddresses.getIp6Address()))) {
+                    if (ipAddresses == null) {
+                        ipAddresses = new Network.IpAddresses(null, null);
+                    }
+                    if (!Strings.isNullOrEmpty(nic.getIpAddress())) {
+                        ipAddresses.setIp4Address(nic.getIpAddress());
+                    }
                 }
-                importNic(nic, userVm, network, ipAddress, firstNic);
+                importNic(nic, userVm, network, ipAddresses, firstNic);
                 firstNic = false;
             }
         } catch (Exception e) {
@@ -832,8 +901,17 @@ public class VmImportManagerImpl implements VmImportService {
             throw new InvalidParameterValueException("Invalid VM hostname. VM hostname can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
                     + "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit");
         }
+        if (cluster.getHypervisorType().equals(Hypervisor.HypervisorType.VMware) &&
+                Boolean.parseBoolean(configurationDao.getValue(Config.SetVmInternalNameUsingDisplayName.key()))) {
+            // If global config vm.instancename.flag is set to true, then CS will set guest VM's name as it appears on the hypervisor, to its hostname.
+            // In case of VMware since VM name must be unique within a DC, check if VM with the same hostname already exists in the zone.
+            VMInstanceVO vmByHostName = vmDao.findVMByHostNameInZone(hostName, zone.getId());
+            if (vmByHostName != null && vmByHostName.getState() != VirtualMachine.State.Expunging) {
+                throw new InvalidParameterValueException(String.format("Failed to import VM: %s! There already exists a VM by the hostname: %s in zone: %s", instanceName, hostName, zone.getUuid()));
+            }
+        }
         final Map<String, Long> nicNetworkMap = cmd.getNicNetworkList();
-        final Map<String, String> nicIpAddressMap = cmd.getNicIpAddressList();
+        final Map<String, Network.IpAddresses> nicIpAddressMap = cmd.getNicIpAddressList();
         final Map<String, Long> dataDiskOfferingMap = cmd.getDataDiskToDiskOfferingList();
         final Map<String, String> details = cmd.getDetails();
         List<HostVO> hosts = resourceManager.listHostsInClusterByStatus(clusterId, Status.Up);

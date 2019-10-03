@@ -20,6 +20,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.After;
@@ -52,6 +53,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.DiskOffering;
@@ -135,6 +137,10 @@ public class VmImportManagerImplTest {
     private PrimaryDataStoreDao primaryDataStoreDao;
     @Mock
     private VolumeApiService volumeApiService;
+    @Mock
+    private NetworkModel networkModel;
+    @Mock
+    private ConfigurationDao configurationDao;
 
     @Before
     public void setUp() throws Exception {
@@ -173,12 +179,11 @@ public class VmImportManagerImplTest {
         ClusterVO cluster = new ClusterVO(1, 1, "Cluster");
         cluster.setHypervisorType(Hypervisor.HypervisorType.VMware.toString());
         when(clusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
-
+        when(configurationDao.getValue(Mockito.anyString())).thenReturn(null);
+        doNothing().when(resourceLimitService).checkResourceLimit(any(Account.class), any(Resource.ResourceType.class), anyLong());
         List<HostVO> hosts = new ArrayList<>();
         HostVO hostVO = Mockito.mock(HostVO.class);
-        hosts.add(hostVO);
-
-        doNothing().when(resourceLimitService).checkResourceLimit(any(Account.class), any(Resource.ResourceType.class), anyLong());
+        hosts.add(hostVO);;
         when(resourceManager.listHostsInClusterByStatus(Mockito.anyLong(), Mockito.any(Status.class))).thenReturn(hosts);
         List<VMTemplateStoragePoolVO> templates = new ArrayList<>();
         when(templatePoolDao.listAll()).thenReturn(templates);
@@ -192,7 +197,6 @@ public class VmImportManagerImplTest {
         map.put(instance.getName(), instance);
         Answer answer = new GetUnmanagedInstancesAnswer(cmd, "", map);
         when(agentManager.easySend(Mockito.anyLong(), Mockito.any(GetUnmanagedInstancesCommand.class))).thenReturn(answer);
-
         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
         when(zone.getId()).thenReturn(1L);
         when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(zone);
@@ -233,16 +237,19 @@ public class VmImportManagerImplTest {
         when(primaryDataStoreDao.findPoolByUUID(Mockito.anyString())).thenReturn(poolVO);
         when(volumeApiService.doesTargetStorageSupportDiskOffering(Mockito.any(StoragePool.class), Mockito.anyString())).thenReturn(true);
         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        when(networkVO.getGuestType()).thenReturn(Network.GuestType.L2);
         when(networkVO.getBroadcastUri()).thenReturn(URI.create(String.format("vlan://%d", instanceNic.getVlan())));
         when(networkVO.getDataCenterId()).thenReturn(1L);
         when(networkDao.findById(Mockito.anyLong())).thenReturn(networkVO);
         List<NetworkVO> networks = new ArrayList<>();
         networks.add(networkVO);
         when(networkDao.listByZone(Mockito.anyLong())).thenReturn(networks);
+        doNothing().when(networkModel).checkNetworkPermissions(Mockito.any(Account.class), Mockito.any(Network.class));
+        doNothing().when(networkModel).checkRequestedIpAddresses(Mockito.anyLong(), Mockito.any(Network.IpAddresses.class));
         NicProfile profile = Mockito.mock(NicProfile.class);
         Integer deviceId = 100;
         Pair<NicProfile, Integer> pair = new Pair<NicProfile, Integer>(profile, deviceId);
-        when(networkOrchestrationService.importNic(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Network.class), Mockito.anyBoolean(), Mockito.any(VirtualMachine.class), Mockito.anyString())).thenReturn(pair);
+        when(networkOrchestrationService.importNic(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Network.class), Mockito.anyBoolean(), Mockito.any(VirtualMachine.class), Mockito.any(Network.IpAddresses.class))).thenReturn(pair);
         when(volumeManager.importVolume(Mockito.any(Volume.Type.class), Mockito.anyString(), Mockito.any(DiskOffering.class), Mockito.anyLong(),
                 Mockito.anyLong(), Mockito.anyLong(), Mockito.any(VirtualMachine.class), Mockito.any(VirtualMachineTemplate.class),
                 Mockito.any(Account.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString())).thenReturn(Mockito.mock(DiskProfile.class));

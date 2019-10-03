@@ -45,7 +45,6 @@ import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.vm.UnmanagedInstance;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
@@ -54,6 +53,7 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
+import org.apache.cloudstack.vm.UnmanagedInstance;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -328,6 +328,7 @@ import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualUSBController;
 import com.vmware.vim25.VmConfigInfo;
 import com.vmware.vim25.VmConfigSpec;
+import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
@@ -6805,7 +6806,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         instanceDisk.setDiskId(disk.getDiskObjectId());
                         instanceDisk.setLabel(disk.getDeviceInfo() != null ? disk.getDeviceInfo().getLabel() : "");
                         instanceDisk.setImagePath(getAbsoluteVmdkFile(disk));
-                        instanceDisk.setCapacity(disk.getCapacityInKB());
+                        instanceDisk.setCapacity(disk.getCapacityInBytes());
                         for (VirtualDevice device : vmMo.getAllDeviceList()) {
                             if (diskDevice.getControllerKey() == device.getKey()) {
                                 if (device instanceof VirtualIDEController) {
@@ -6904,10 +6905,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             // Find the port for this NIC by portkey
                             if (portKey.equals(dvPort.getKey())) {
                                 VMwareDVSPortSetting settings = (VMwareDVSPortSetting) dvPort.getConfig().getSetting();
-                                VmwareDistributedVirtualSwitchVlanIdSpec vlanId = (VmwareDistributedVirtualSwitchVlanIdSpec) settings.getVlan();
-                                s_logger.trace("Found port " + dvPort.getKey() + " with vlan " + vlanId.getVlanId());
-                                if (vlanId.getVlanId() > 0 && vlanId.getVlanId() < 4095) {
-                                    instanceNic.setVlan(vlanId.getVlanId());
+                                if (settings.getVlan() instanceof VmwareDistributedVirtualSwitchVlanIdSpec) {
+                                    VmwareDistributedVirtualSwitchVlanIdSpec vlanId = (VmwareDistributedVirtualSwitchVlanIdSpec) settings.getVlan();
+                                    s_logger.trace("Found port " + dvPort.getKey() + " with vlan " + vlanId.getVlanId());
+                                    if (vlanId.getVlanId() > 0 && vlanId.getVlanId() < 4095) {
+                                        instanceNic.setVlan(vlanId.getVlanId());
+                                    }
+                                } else if (settings.getVlan() instanceof VmwareDistributedVirtualSwitchPvlanSpec) {
+                                    VmwareDistributedVirtualSwitchPvlanSpec pvlanSpec = (VmwareDistributedVirtualSwitchPvlanSpec) settings.getVlan();
+                                    s_logger.trace("Found port " + dvPort.getKey() + " with pvlan " + pvlanSpec.getPvlanId());
+                                    if (pvlanSpec.getPvlanId() > 0 && pvlanSpec.getPvlanId() < 4095) {
+                                        instanceNic.setVlan(pvlanSpec.getPvlanId());
+                                    }
                                 }
                                 break;
                             }
@@ -6915,7 +6924,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     } else if (backing instanceof VirtualEthernetCardNetworkBackingInfo) {
                         VirtualEthernetCardNetworkBackingInfo backingInfo = (VirtualEthernetCardNetworkBackingInfo) backing;
                         instanceNic.setNetwork(backingInfo.getDeviceName());
-                        ManagedObjectReference mor = backingInfo.getNetwork();
                         if (hyperHost instanceof HostMO) {
                             HostMO hostMo = (HostMO) hyperHost;
                             HostPortGroupSpec portGroupSpec = hostMo.getHostPortGroupSpec(backingInfo.getDeviceName());

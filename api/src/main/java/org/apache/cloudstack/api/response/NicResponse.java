@@ -118,6 +118,10 @@ public class NicResponse extends BaseResponse {
     @Param(description = "ID of the VLAN/VNI if available", since="4.14.0")
     private Integer vlanId;
 
+    @SerializedName(ApiConstants.ADAPTER_TYPE)
+    @Param(description = "Type of adapter if available", since="4.14.0")
+    private String adapterType;
+
     public void setVmId(String vmId) {
         this.vmId = vmId;
     }
@@ -315,5 +319,13 @@ public class NicResponse extends BaseResponse {
 
     public void setVlanId(Integer vlanId) {
         this.vlanId = vlanId;
+    }
+
+    public String getAdapterType() {
+        return adapterType;
+    }
+
+    public void setAdapterType(String adapterType) {
+        this.adapterType = adapterType;
     }
 }

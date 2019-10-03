@@ -59,6 +59,7 @@ public interface VmDetailConstants {
     String NIC = "nic";
     String NETWORK = "network";
     String IP_ADDRESS = "ipAddress";
+    String IP6_ADDRESS = "ip6Address";
     String DISK = "disk";
     String DISK_OFFERING = "diskOffering";
 }
