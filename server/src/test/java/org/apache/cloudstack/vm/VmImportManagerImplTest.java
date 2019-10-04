@@ -164,6 +164,10 @@ public class VmImportManagerImplTest {
         instanceDisk.setController("scsi");
         instanceDisk.setImagePath("[b6ccf44a1fa13e29b3667b4954fa10ee] TestInstance/ROOT-1.vmdk");
         instanceDisk.setCapacity(5242880L);
+        instanceDisk.setDatastoreName("Test");
+        instanceDisk.setDatastoreHost("Test");
+        instanceDisk.setDatastorePath("Test");
+        instanceDisk.setDatastoreType("Test");
         instanceDisks.add(instanceDisk);
         instance.setDisks(instanceDisks);
         List<UnmanagedInstance.Nic> instanceNics = new ArrayList<>();
@@ -176,9 +180,9 @@ public class VmImportManagerImplTest {
         instance.setNics(instanceNics);
         instance.setPowerState(UnmanagedInstance.PowerState.PowerOn);
 
-        ClusterVO cluster = new ClusterVO(1, 1, "Cluster");
-        cluster.setHypervisorType(Hypervisor.HypervisorType.VMware.toString());
-        when(clusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
+        ClusterVO clusterVO = new ClusterVO(1L, 1L, "Cluster");
+        clusterVO.setHypervisorType(Hypervisor.HypervisorType.VMware.toString());
+        when(clusterDao.findById(Mockito.anyLong())).thenReturn(clusterVO);
         when(configurationDao.getValue(Mockito.anyString())).thenReturn(null);
         doNothing().when(resourceLimitService).checkResourceLimit(any(Account.class), any(Resource.ResourceType.class), anyLong());
         List<HostVO> hosts = new ArrayList<>();
@@ -229,12 +233,19 @@ public class VmImportManagerImplTest {
         when(userVm.getType()).thenReturn(VirtualMachine.Type.Instance);
         userVm.setInstanceName(instance.getName());
         userVm.setHostName(instance.getName());
+        StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
+        when(poolVO.getDataCenterId()).thenReturn(1L);
+        when(poolVO.getClusterId()).thenReturn(1L);
+        List<StoragePoolVO> pools = new ArrayList<>();
+        pools.add(poolVO);
+        StoragePoolVO poolVO1 = Mockito.mock(StoragePoolVO.class);
+        when(poolVO.getDataCenterId()).thenReturn(1L);
+        when(poolVO.getClusterId()).thenReturn(0L);
+        when(primaryDataStoreDao.listPoolByHostPath(Mockito.anyString(), Mockito.anyString())).thenReturn(pools);
         when(userVmManager.importVM(Mockito.any(DataCenter.class), Mockito.any(Host.class), Mockito.any(VirtualMachineTemplate.class), Mockito.anyString(), Mockito.anyString(),
                 Mockito.any(Account.class), Mockito.anyString(), Mockito.any(Account.class), Mockito.anyBoolean(), Mockito.anyString(),
                 Mockito.anyLong(), Mockito.anyLong(), Mockito.any(ServiceOffering.class), Mockito.any(DiskOffering.class), Mockito.anyString(),
                 Mockito.anyString(), Mockito.any(Hypervisor.HypervisorType.class), Mockito.anyMap(), Mockito.any(VirtualMachine.PowerState.class))).thenReturn(userVm);
-        StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
-        when(primaryDataStoreDao.findPoolByUUID(Mockito.anyString())).thenReturn(poolVO);
         when(volumeApiService.doesTargetStorageSupportDiskOffering(Mockito.any(StoragePool.class), Mockito.anyString())).thenReturn(true);
         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
         when(networkVO.getGuestType()).thenReturn(Network.GuestType.L2);

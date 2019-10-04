@@ -454,7 +454,7 @@ public class VmImportManagerImpl implements VmImportService {
             }
         }
         if (storagePool == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool for disk ID: %s with host: %s, path: %s, type: %s not found!", disk.getDiskId(), dsHost, dsPath, dsType));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool for disk ID: %s with host: %s, path: %s, type: %s not found in zone ID: %s, cluster ID: %s!", disk.getDiskId(), dsHost, dsPath, dsType, zone.getUuid(), cluster.getUuid()));
         }
         if (!migrateAllowed && !storagePoolSupportsDiskOffering(storagePool, diskOffering)) {
             throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with storage pool: %s of unmanaged disk: %s", diskOffering.getUuid(), storagePool.getUuid(), disk.getDiskId()));
@@ -560,7 +560,7 @@ public class VmImportManagerImpl implements VmImportService {
             }
         }
         if (storagePool == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool for disk ID: %s with host: %s, path: %s, type: %s not found!", disk.getDiskId(), dsHost, dsPath, dsType));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool for disk ID: %s with host: %s, path: %s, type: %s not found in cluster ID: %s!", disk.getDiskId(), dsHost, dsPath, dsType, cluster.getUuid()));
         }
         DiskProfile profile = volumeManager.importVolume(type, name, diskOffering, diskSize,
                 diskOffering.getMinIops(), diskOffering.getMaxIops(), vm, template, owner, deviceId, storagePool.getId(), imagePath, gson.toJson(diskInfo));
