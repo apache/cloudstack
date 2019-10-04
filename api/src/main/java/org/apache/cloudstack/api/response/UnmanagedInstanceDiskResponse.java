@@ -53,6 +53,22 @@ public class UnmanagedInstanceDiskResponse extends BaseResponse {
     @Param(description = "the position of the disk")
     private Integer position;
 
+    @SerializedName(ApiConstants.DATASTORE_NAME)
+    @Param(description = "the controller of the disk")
+    private String datastoreName;
+
+    @SerializedName(ApiConstants.DATASTORE_HOST)
+    @Param(description = "the controller of the disk")
+    private String datastoreHost;
+
+    @SerializedName(ApiConstants.DATASTORE_PATH)
+    @Param(description = "the controller of the disk")
+    private String datastorePath;
+
+    @SerializedName(ApiConstants.DATASTORE_TYPE)
+    @Param(description = "the controller of the disk")
+    private String datastoreType;
+
     public String getDiskId() {
         return diskId;
     }
@@ -107,5 +123,37 @@ public class UnmanagedInstanceDiskResponse extends BaseResponse {
 
     public void setPosition(Integer position) {
         this.position = position;
+    }
+
+    public String getDatastoreName() {
+        return datastoreName;
+    }
+
+    public void setDatastoreName(String datastoreName) {
+        this.datastoreName = datastoreName;
+    }
+
+    public String getDatastoreHost() {
+        return datastoreHost;
+    }
+
+    public void setDatastoreHost(String datastoreHost) {
+        this.datastoreHost = datastoreHost;
+    }
+
+    public String getDatastorePath() {
+        return datastorePath;
+    }
+
+    public void setDatastorePath(String datastorePath) {
+        this.datastorePath = datastorePath;
+    }
+
+    public String getDatastoreType() {
+        return datastoreType;
+    }
+
+    public void setDatastoreType(String datastoreType) {
+        this.datastoreType = datastoreType;
     }
 }

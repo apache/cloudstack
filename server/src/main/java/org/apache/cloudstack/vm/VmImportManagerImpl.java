@@ -18,7 +18,6 @@
 package org.apache.cloudstack.vm;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +42,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -214,6 +214,10 @@ public class VmImportManagerImpl implements VmImportService {
                 diskResponse.setControllerUnit(disk.getControllerUnit());
                 diskResponse.setPosition(disk.getPosition());
                 diskResponse.setImagePath(disk.getImagePath());
+                diskResponse.setDatastoreName(disk.getDatastoreName());
+                diskResponse.setDatastoreHost(disk.getDatastoreHost());
+                diskResponse.setDatastorePath(disk.getDatastorePath());
+                diskResponse.setDatastoreType(disk.getDatastoreType());
                 response.addDisk(diskResponse);
             }
         }
@@ -339,6 +343,16 @@ public class VmImportManagerImpl implements VmImportService {
         return volumeApiService.doesTargetStorageSupportDiskOffering(pool, diskOffering.getTags());
     }
 
+    private boolean storagePoolSupportsServiceOffering(StoragePool pool, ServiceOffering serviceOffering) {
+        if (pool == null) {
+            return false;
+        }
+        if (serviceOffering == null) {
+            return false;
+        }
+        return volumeApiService.doesTargetStorageSupportDiskOffering(pool, serviceOffering.getTags());
+    }
+
     private ServiceOfferingVO getUnmanagedInstanceServiceOffering(final UnmanagedInstance instance, ServiceOfferingVO serviceOffering, final Account owner, final DataCenter zone, final Map<String, String> details)
             throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
         if (instance == null) {
@@ -411,7 +425,7 @@ public class VmImportManagerImpl implements VmImportService {
         return nicIpAddresses;
     }
 
-    private void checkUnmanagedDiskAndOfferingForImport(UnmanagedInstance.Disk disk, DiskOffering diskOffering, final Account owner, final DataCenter zone)
+    private void checkUnmanagedDiskAndOfferingForImport(UnmanagedInstance.Disk disk, DiskOffering diskOffering, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
             throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
         if (diskOffering == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Disk offering for disk ID: %s not found during VM import!", disk.getDiskId()));
@@ -427,15 +441,33 @@ public class VmImportManagerImpl implements VmImportService {
         if (!diskOffering.isCustomized() && diskOffering.getDiskSize() < disk.getCapacity()) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Size of disk offering(ID: %s) %dGB is found less than the size of disk(ID: %s) %dGB during VM import!", diskOffering.getUuid(), (diskOffering.getDiskSize() / Resource.ResourceType.bytesToGiB), disk.getDiskId(), (disk.getCapacity() / (Resource.ResourceType.bytesToGiB))));
         }
+        final String dsHost = disk.getDatastoreHost();
+        final String dsPath = disk.getDatastorePath();
+        final String dsType = disk.getDatastoreType();
+        StoragePool storagePool = null;
+        List<StoragePoolVO> pools = primaryDataStoreDao.listPoolByHostPath(dsHost, dsPath);
+        for (StoragePool pool : pools) {
+            if (pool.getDataCenterId() == zone.getId() &&
+                    pool.getClusterId() == cluster.getId()) {
+                storagePool = pool;
+                break;
+            }
+        }
+        if (storagePool == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool for disk ID: %s with host: %s, path: %s, type: %s not found!", disk.getDiskId(), dsHost, dsPath, dsType));
+        }
+        if (!migrateAllowed && !storagePoolSupportsDiskOffering(storagePool, diskOffering)) {
+            throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with storage pool: %s of unmanaged disk: %s", diskOffering.getUuid(), storagePool.getUuid(), disk.getDiskId()));
+        }
     }
 
-    private void checkUnmanagedDiskAndOfferingForImport(List<UnmanagedInstance.Disk> disks, final Map<String, Long> diskOfferingMap, final Account owner, final DataCenter zone)
+    private void checkUnmanagedDiskAndOfferingForImport(List<UnmanagedInstance.Disk> disks, final Map<String, Long> diskOfferingMap, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
             throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
         for (UnmanagedInstance.Disk disk : disks) {
             if (!diskOfferingMap.containsKey(disk.getDiskId())) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Disk offering for disk ID: %s not found during VM import!", disk.getDiskId()));
             }
-            checkUnmanagedDiskAndOfferingForImport(disk, diskOfferingDao.findById(diskOfferingMap.get(disk.getDiskId())), owner, zone);
+            checkUnmanagedDiskAndOfferingForImport(disk, diskOfferingDao.findById(diskOfferingMap.get(disk.getDiskId())), owner, zone, cluster, migrateAllowed);
         }
     }
 
@@ -508,40 +540,30 @@ public class VmImportManagerImpl implements VmImportService {
         return nicNetworkMap;
     }
 
-    private Pair<DiskProfile, StoragePool> importDisk(UnmanagedInstance.Disk disk, VirtualMachine vm, DiskOffering diskOffering,
+    private Pair<DiskProfile, StoragePool> importDisk(UnmanagedInstance.Disk disk, VirtualMachine vm, Cluster cluster, DiskOffering diskOffering,
                                                       Volume.Type type, String name, Long diskSize, VirtualMachineTemplate template,
                                                       Account owner, Long deviceId, boolean migrateAllowed) {
         VirtualMachineDiskInfo diskInfo = new VirtualMachineDiskInfo();
         diskInfo.setDiskDeviceBusName(String.format("%s%d:%d", disk.getController(), disk.getControllerUnit(), disk.getPosition()));
         diskInfo.setDiskChain(new String[]{disk.getImagePath()});
-        String path = disk.getImagePath();
-        long poolId = 0;
+        final String imagePath = disk.getImagePath();
+        final String dsHost = disk.getDatastoreHost();
+        final String dsPath = disk.getDatastorePath();
+        final String dsType = disk.getDatastoreType();
         StoragePool storagePool = null;
-        if (vm.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
-            String[] splits = path.split(" ");
-            String poolUuid = splits[0];
-            poolUuid = poolUuid.replace("[", "").replace("]", "");
-            if (poolUuid.length() == 32) {
-                poolUuid = String.format("%s-%s-%s-%s-%s", poolUuid.substring(0, 8),
-                        poolUuid.substring(8, 12), poolUuid.substring(12, 16),
-                        poolUuid.substring(16, 20), poolUuid.substring(20, 32));
-                storagePool = primaryDataStoreDao.findPoolByUUID(poolUuid);
+        List<StoragePoolVO> pools = primaryDataStoreDao.listPoolByHostPath(dsHost, dsPath);
+        for (StoragePool pool : pools) {
+            if (pool.getDataCenterId() == vm.getDataCenterId() &&
+                    pool.getClusterId() == cluster.getId()) {
+                storagePool = pool;
+                break;
             }
-            if (storagePool == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to import disk ID: %s as storage pool not found!", disk.getDiskId()));
-            }
-            if (!migrateAllowed && !storagePoolSupportsDiskOffering(storagePool, diskOffering)) {
-                throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with storage pool: %s of unmanaged disk: %s", diskOffering.getUuid(), storagePool.getUuid(), disk.getDiskId()));
-            }
-            poolId = storagePool.getId();
-            path = String.join(" ", Arrays.copyOfRange(splits, 1, splits.length));
-            splits = path.split("/");
-            path = splits[splits.length - 1];
-            splits = path.split("\\.");
-            path = splits[0];
+        }
+        if (storagePool == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool for disk ID: %s with host: %s, path: %s, type: %s not found!", disk.getDiskId(), dsHost, dsPath, dsType));
         }
         DiskProfile profile = volumeManager.importVolume(type, name, diskOffering, diskSize,
-                diskOffering.getMinIops(), diskOffering.getMaxIops(), vm, template, owner, deviceId, poolId, path, gson.toJson(diskInfo));
+                diskOffering.getMinIops(), diskOffering.getMaxIops(), vm, template, owner, deviceId, storagePool.getId(), imagePath, gson.toJson(diskInfo));
 
         return new Pair<DiskProfile, StoragePool>(profile, storagePool);
     }
@@ -623,7 +645,11 @@ public class VmImportManagerImpl implements VmImportService {
             if (volumeVO == null) {
                 continue;
             }
-            if (storagePoolSupportsDiskOffering(diskProfileStoragePool.second(), dOffering)) {
+            boolean poolSupportsOfferings = storagePoolSupportsDiskOffering(diskProfileStoragePool.second(), dOffering);
+            if (poolSupportsOfferings && profile.getType() == Volume.Type.ROOT) {
+                poolSupportsOfferings = storagePoolSupportsServiceOffering(diskProfileStoragePool.second(), serviceOffering);
+            }
+            if (poolSupportsOfferings) {
                 continue;
             }
             Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolume(profile.getVolumeId());
@@ -705,11 +731,11 @@ public class VmImportManagerImpl implements VmImportService {
         final UnmanagedInstance.Disk rootDisk = unmanagedInstance.getDisks().get(0);
         List<UnmanagedInstance.Disk> dataDisks = new ArrayList<>();
         try {
-            checkUnmanagedDiskAndOfferingForImport(rootDisk, diskOffering, owner, zone);
+            checkUnmanagedDiskAndOfferingForImport(rootDisk, diskOffering, owner, zone, cluster, migrateAllowed);
             if (unmanagedInstanceDisks.size() > 1) { // Data disk(s) present
                 dataDisks.addAll(unmanagedInstanceDisks);
                 dataDisks.remove(0);
-                checkUnmanagedDiskAndOfferingForImport(dataDisks, dataDiskOfferingMap, owner, zone);
+                checkUnmanagedDiskAndOfferingForImport(dataDisks, dataDiskOfferingMap, owner, zone, cluster, migrateAllowed);
             }
             resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.volume, unmanagedInstanceDisks.size());
         } catch (ResourceAllocationException e) {
@@ -740,13 +766,13 @@ public class VmImportManagerImpl implements VmImportService {
             if (rootDisk.getCapacity() == null || rootDisk.getCapacity() == 0) {
                 throw new InvalidParameterValueException(String.format("Root disk ID: %s size is invalid", rootDisk.getDiskId()));
             }
-            diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()), (rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB), template, owner, null, migrateAllowed));
+            diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, cluster, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()), (rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB), template, owner, null, migrateAllowed));
             for (UnmanagedInstance.Disk disk : dataDisks) {
                 if (disk.getCapacity() == null || disk.getCapacity() == 0) {
                     throw new InvalidParameterValueException(String.format("Disk ID: %s size is invalid", rootDisk.getDiskId()));
                 }
                 DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
-                diskProfileStoragePoolList.add(importDisk(disk, userVm, offering, Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()), (disk.getCapacity() / Resource.ResourceType.bytesToGiB), template, owner, null, migrateAllowed));
+                diskProfileStoragePoolList.add(importDisk(disk, userVm, cluster, offering, Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()), (disk.getCapacity() / Resource.ResourceType.bytesToGiB), template, owner, null, migrateAllowed));
             }
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);

@@ -271,6 +271,7 @@ import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DVPortConfigInfo;
 import com.vmware.vim25.DVPortConfigSpec;
 import com.vmware.vim25.DasVmPriority;
+import com.vmware.vim25.DatastoreInfo;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.DistributedVirtualPort;
 import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
@@ -283,6 +284,7 @@ import com.vmware.vim25.HostHostBusAdapter;
 import com.vmware.vim25.HostInternetScsiHba;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.NasDatastoreInfo;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.PerfCounterInfo;
@@ -306,6 +308,7 @@ import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceBackingInfo;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
+import com.vmware.vim25.VirtualDeviceFileBackingInfo;
 import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
 import com.vmware.vim25.VirtualEthernetCard;
@@ -6820,6 +6823,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                 }
                                 instanceDisk.setPosition(diskDevice.getUnitNumber());
                                 break;
+                            }
+                        }
+                        if (disk.getBacking() instanceof VirtualDeviceFileBackingInfo) {
+                            VirtualDeviceFileBackingInfo diskBacking = (VirtualDeviceFileBackingInfo) disk.getBacking();
+                            ManagedObjectReference morDs = diskBacking.getDatastore();
+                            DatastoreInfo info = (DatastoreInfo)vmMo.getContext().getVimClient().getDynamicProperty(diskBacking.getDatastore(), "info");
+                            if (info instanceof NasDatastoreInfo) {
+                                NasDatastoreInfo nasInfo = (NasDatastoreInfo) info;
+                                instanceDisk.setDatastoreName(nasInfo.getName());
+                                if (nasInfo.getNas() != null) {
+                                    instanceDisk.setDatastoreHost(nasInfo.getNas().getRemoteHost());
+                                    instanceDisk.setDatastorePath(nasInfo.getNas().getRemotePath());
+                                    instanceDisk.setDatastoreType(nasInfo.getNas().getType());
+                                }
                             }
                         }
                         s_logger.info(vmMo.getName() + " " + disk.getDeviceInfo().getLabel() + " " + disk.getDeviceInfo().getSummary() + " " + disk.getDiskObjectId() + " " + disk.getCapacityInKB() + " " + instanceDisk.getController());
