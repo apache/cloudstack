@@ -235,12 +235,9 @@ public class VmImportManagerImplTest {
         userVm.setHostName(instance.getName());
         StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
         when(poolVO.getDataCenterId()).thenReturn(1L);
-        when(poolVO.getClusterId()).thenReturn(1L);
+        when(poolVO.getClusterId()).thenReturn(clusterVO.getId());
         List<StoragePoolVO> pools = new ArrayList<>();
         pools.add(poolVO);
-        StoragePoolVO poolVO1 = Mockito.mock(StoragePoolVO.class);
-        when(poolVO.getDataCenterId()).thenReturn(1L);
-        when(poolVO.getClusterId()).thenReturn(0L);
         when(primaryDataStoreDao.listPoolByHostPath(Mockito.anyString(), Mockito.anyString())).thenReturn(pools);
         when(userVmManager.importVM(Mockito.any(DataCenter.class), Mockito.any(Host.class), Mockito.any(VirtualMachineTemplate.class), Mockito.anyString(), Mockito.anyString(),
                 Mockito.any(Account.class), Mockito.anyString(), Mockito.any(Account.class), Mockito.anyBoolean(), Mockito.anyString(),
