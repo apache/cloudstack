@@ -3989,6 +3989,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 return vo;
             }
         });
+        updateNic(vo, network.getId(), 1);
 
         final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
         final NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),

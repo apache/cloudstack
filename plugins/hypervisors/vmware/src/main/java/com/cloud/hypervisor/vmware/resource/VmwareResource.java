@@ -6843,7 +6843,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                 instanceDisk.setDatastoreName(dsInfo.getVmfs().getName());
                                 instanceDisk.setDatastoreType(dsInfo.getVmfs().getType());
                             } else {
-                                String msg = String.format(String.format("Unmanaged instance disk: %s is on unsupported datastore %s", instanceDisk.getDiskId(), info.getClass().getSimpleName()));
+                                String msg = String.format("Unmanaged instance disk: %s is on unsupported datastore %s", instanceDisk.getDiskId(), info.getClass().getSimpleName());
                                 s_logger.error(msg);
                                 throw new Exception(msg);
                             }

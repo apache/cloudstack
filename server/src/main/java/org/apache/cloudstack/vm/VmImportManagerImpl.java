@@ -87,6 +87,7 @@ import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.Volume;
@@ -425,6 +426,39 @@ public class VmImportManagerImpl implements VmImportService {
         return nicIpAddresses;
     }
 
+    private StoragePool getStoragePool(final UnmanagedInstance.Disk disk, final DataCenter zone, final Cluster cluster) {
+        StoragePool storagePool = null;
+        if (disk==null) {
+            return null;
+        }
+        final String dsHost = disk.getDatastoreHost();
+        final String dsPath = disk.getDatastorePath();
+        final String dsType = disk.getDatastoreType();
+        final String dsName = disk.getDatastoreName();
+        if (dsType.equals("VMFS")) {
+            List<StoragePoolVO> pools = primaryDataStoreDao.listPoolsByCluster(cluster.getId());
+            for (StoragePool pool : pools) {
+                if (pool.getPoolType() != Storage.StoragePoolType.VMFS) {
+                    continue;
+                }
+                if (pool.getPath().endsWith(dsName)) {
+                    storagePool = pool;
+                    break;
+                }
+            }
+        } else {
+            List<StoragePoolVO> pools = primaryDataStoreDao.listPoolByHostPath(dsHost, dsPath);
+            for (StoragePool pool : pools) {
+                if (pool.getDataCenterId() == zone.getId() &&
+                        pool.getClusterId() == cluster.getId()) {
+                    storagePool = pool;
+                    break;
+                }
+            }
+        }
+        return storagePool;
+    }
+
     private void checkUnmanagedDiskAndOfferingForImport(UnmanagedInstance.Disk disk, DiskOffering diskOffering, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
             throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
         if (diskOffering == null) {
@@ -441,20 +475,9 @@ public class VmImportManagerImpl implements VmImportService {
         if (!diskOffering.isCustomized() && diskOffering.getDiskSize() < disk.getCapacity()) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Size of disk offering(ID: %s) %dGB is found less than the size of disk(ID: %s) %dGB during VM import!", diskOffering.getUuid(), (diskOffering.getDiskSize() / Resource.ResourceType.bytesToGiB), disk.getDiskId(), (disk.getCapacity() / (Resource.ResourceType.bytesToGiB))));
         }
-        final String dsHost = disk.getDatastoreHost();
-        final String dsPath = disk.getDatastorePath();
-        final String dsType = disk.getDatastoreType();
-        StoragePool storagePool = null;
-        List<StoragePoolVO> pools = primaryDataStoreDao.listPoolByHostPath(dsHost, dsPath);
-        for (StoragePool pool : pools) {
-            if (pool.getDataCenterId() == zone.getId() &&
-                    pool.getClusterId() == cluster.getId()) {
-                storagePool = pool;
-                break;
-            }
-        }
+        StoragePool storagePool = getStoragePool(disk, zone, cluster);
         if (storagePool == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool for disk ID: %s with host: %s, path: %s, type: %s not found in zone ID: %s, cluster ID: %s!", disk.getDiskId(), dsHost, dsPath, dsType, zone.getUuid(), cluster.getUuid()));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool for disk ID: %s with datastore: %s not found in zone ID: %s, cluster ID: %s!", disk.getDiskId(), disk.getDatastoreName(), zone.getUuid(), cluster.getUuid()));
         }
         if (!migrateAllowed && !storagePoolSupportsDiskOffering(storagePool, diskOffering)) {
             throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with storage pool: %s of unmanaged disk: %s", diskOffering.getUuid(), storagePool.getUuid(), disk.getDiskId()));
@@ -547,31 +570,10 @@ public class VmImportManagerImpl implements VmImportService {
         diskInfo.setDiskDeviceBusName(String.format("%s%d:%d", disk.getController(), disk.getControllerUnit(), disk.getPosition()));
         diskInfo.setDiskChain(new String[]{disk.getImagePath()});
         final String imagePath = disk.getImagePath();
-        final String dsName = disk.getDatastoreName();
-        final String dsHost = disk.getDatastoreHost();
-        final String dsPath = disk.getDatastorePath();
-        final String dsType = disk.getDatastoreType();
-        StoragePool storagePool = null;
-        if (dsType == "VMFS") {
-            List<StoragePoolVO> pools = primaryDataStoreDao.listPoolsByCluster(cluster.getId());
-            for (StoragePool pool : pools) {
-                if (pool.getPath().endsWith(dsName)) {
-                    storagePool = pool;
-                    break;
-                }
-            }
-        } else {
-            List<StoragePoolVO> pools = primaryDataStoreDao.listPoolByHostPath(dsHost, dsPath);
-            for (StoragePool pool : pools) {
-                if (pool.getDataCenterId() == vm.getDataCenterId() &&
-                        pool.getClusterId() == cluster.getId()) {
-                    storagePool = pool;
-                    break;
-                }
-            }
-        }
+        final DataCenter zone = dataCenterDao.findById(vm.getDataCenterId());
+        StoragePool storagePool = getStoragePool(disk, zone, cluster);
         if (storagePool == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool for disk ID: %s with host: %s, path: %s, type: %s not found in cluster ID: %s!", disk.getDiskId(), dsHost, dsPath, dsType, cluster.getUuid()));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool for disk ID: %s with datastore: %s not found in zone ID: %s, cluster ID: %s!", disk.getDiskId(), disk.getDatastoreName(), zone.getUuid(), cluster.getUuid()));
         }
         DiskProfile profile = volumeManager.importVolume(type, name, diskOffering, diskSize,
                 diskOffering.getMinIops(), diskOffering.getMaxIops(), vm, template, owner, deviceId, storagePool.getId(), imagePath, gson.toJson(diskInfo));
