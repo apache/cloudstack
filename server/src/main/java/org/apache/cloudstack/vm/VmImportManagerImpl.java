@@ -547,16 +547,27 @@ public class VmImportManagerImpl implements VmImportService {
         diskInfo.setDiskDeviceBusName(String.format("%s%d:%d", disk.getController(), disk.getControllerUnit(), disk.getPosition()));
         diskInfo.setDiskChain(new String[]{disk.getImagePath()});
         final String imagePath = disk.getImagePath();
+        final String dsName = disk.getDatastoreName();
         final String dsHost = disk.getDatastoreHost();
         final String dsPath = disk.getDatastorePath();
         final String dsType = disk.getDatastoreType();
         StoragePool storagePool = null;
-        List<StoragePoolVO> pools = primaryDataStoreDao.listPoolByHostPath(dsHost, dsPath);
-        for (StoragePool pool : pools) {
-            if (pool.getDataCenterId() == vm.getDataCenterId() &&
-                    pool.getClusterId() == cluster.getId()) {
-                storagePool = pool;
-                break;
+        if (dsType == "VMFS") {
+            List<StoragePoolVO> pools = primaryDataStoreDao.listPoolsByCluster(cluster.getId());
+            for (StoragePool pool : pools) {
+                if (pool.getPath().endsWith(dsName)) {
+                    storagePool = pool;
+                    break;
+                }
+            }
+        } else {
+            List<StoragePoolVO> pools = primaryDataStoreDao.listPoolByHostPath(dsHost, dsPath);
+            for (StoragePool pool : pools) {
+                if (pool.getDataCenterId() == vm.getDataCenterId() &&
+                        pool.getClusterId() == cluster.getId()) {
+                    storagePool = pool;
+                    break;
+                }
             }
         }
         if (storagePool == null) {

@@ -167,7 +167,7 @@ public class VmImportManagerImplTest {
         instanceDisk.setDatastoreName("Test");
         instanceDisk.setDatastoreHost("Test");
         instanceDisk.setDatastorePath("Test");
-        instanceDisk.setDatastoreType("Test");
+        instanceDisk.setDatastoreType("NFS");
         instanceDisks.add(instanceDisk);
         instance.setDisks(instanceDisks);
         List<UnmanagedInstance.Nic> instanceNics = new ArrayList<>();

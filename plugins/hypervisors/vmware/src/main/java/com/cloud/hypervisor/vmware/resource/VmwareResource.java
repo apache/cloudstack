@@ -331,6 +331,7 @@ import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualUSBController;
 import com.vmware.vim25.VmConfigInfo;
 import com.vmware.vim25.VmConfigSpec;
+import com.vmware.vim25.VmfsDatastoreInfo;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
@@ -6830,13 +6831,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             ManagedObjectReference morDs = diskBacking.getDatastore();
                             DatastoreInfo info = (DatastoreInfo)vmMo.getContext().getVimClient().getDynamicProperty(diskBacking.getDatastore(), "info");
                             if (info instanceof NasDatastoreInfo) {
-                                NasDatastoreInfo nasInfo = (NasDatastoreInfo) info;
-                                instanceDisk.setDatastoreName(nasInfo.getName());
-                                if (nasInfo.getNas() != null) {
-                                    instanceDisk.setDatastoreHost(nasInfo.getNas().getRemoteHost());
-                                    instanceDisk.setDatastorePath(nasInfo.getNas().getRemotePath());
-                                    instanceDisk.setDatastoreType(nasInfo.getNas().getType());
+                                NasDatastoreInfo dsInfo = (NasDatastoreInfo) info;
+                                instanceDisk.setDatastoreName(dsInfo.getName());
+                                if (dsInfo.getNas() != null) {
+                                    instanceDisk.setDatastoreHost(dsInfo.getNas().getRemoteHost());
+                                    instanceDisk.setDatastorePath(dsInfo.getNas().getRemotePath());
+                                    instanceDisk.setDatastoreType(dsInfo.getNas().getType());
                                 }
+                            } else if (info instanceof VmfsDatastoreInfo) {
+                                VmfsDatastoreInfo dsInfo = (VmfsDatastoreInfo) info;
+                                instanceDisk.setDatastoreName(dsInfo.getVmfs().getName());
+                                instanceDisk.setDatastoreType(dsInfo.getVmfs().getType());
+                            } else {
+                                String msg = String.format(String.format("Unmanaged instance disk: %s is on unsupported datastore %s", instanceDisk.getDiskId(), info.getClass().getSimpleName()));
+                                s_logger.error(msg);
+                                throw new Exception(msg);
                             }
                         }
                         s_logger.info(vmMo.getName() + " " + disk.getDeviceInfo().getLabel() + " " + disk.getDeviceInfo().getSummary() + " " + disk.getDiskObjectId() + " " + disk.getCapacityInKB() + " " + instanceDisk.getController());
