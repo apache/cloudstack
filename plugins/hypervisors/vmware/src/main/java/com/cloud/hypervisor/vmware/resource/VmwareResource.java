@@ -327,8 +327,11 @@ import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualMachineToolsStatus;
 import com.vmware.vim25.VirtualMachineVideoCard;
+import com.vmware.vim25.VirtualPCNet32;
 import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualUSBController;
+import com.vmware.vim25.VirtualVmxnet2;
+import com.vmware.vim25.VirtualVmxnet3;
 import com.vmware.vim25.VmConfigInfo;
 import com.vmware.vim25.VmConfigSpec;
 import com.vmware.vim25.VmfsDatastoreInfo;
@@ -6902,7 +6905,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     s_logger.error(nic.getClass().getCanonicalName() + " " + nic.getBacking().getClass().getCanonicalName() + " " + ethCardDevice.getMacAddress());
                     UnmanagedInstance.Nic instanceNic = new UnmanagedInstance.Nic();
                     instanceNic.setNicId(ethCardDevice.getDeviceInfo().getLabel());
-                    instanceNic.setAdapterType(nic.getClass().getSimpleName());
+                    if (ethCardDevice instanceof VirtualPCNet32) {
+                        instanceNic.setAdapterType(VirtualEthernetCardType.PCNet32.toString());
+                    } else if (ethCardDevice instanceof VirtualVmxnet2) {
+                        instanceNic.setAdapterType(VirtualEthernetCardType.Vmxnet2.toString());
+                    } else if (ethCardDevice instanceof VirtualVmxnet3) {
+                        instanceNic.setAdapterType(VirtualEthernetCardType.Vmxnet3.toString());
+                    } else {
+                        instanceNic.setAdapterType(VirtualEthernetCardType.E1000.toString());
+                    }
                     instanceNic.setMacAddress(ethCardDevice.getMacAddress());
                     instanceNic.setIpAddress(guestNicMacIPAddressMap.get(instanceNic.getMacAddress()));
                     if (ethCardDevice.getSlotInfo() != null) {

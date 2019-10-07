@@ -428,15 +428,13 @@ public class VmImportManagerImpl implements VmImportService {
 
     private StoragePool getStoragePool(final UnmanagedInstance.Disk disk, final DataCenter zone, final Cluster cluster) {
         StoragePool storagePool = null;
-        if (disk==null) {
-            return null;
-        }
         final String dsHost = disk.getDatastoreHost();
         final String dsPath = disk.getDatastorePath();
         final String dsType = disk.getDatastoreType();
         final String dsName = disk.getDatastoreName();
         if (dsType.equals("VMFS")) {
             List<StoragePoolVO> pools = primaryDataStoreDao.listPoolsByCluster(cluster.getId());
+            pools.addAll(primaryDataStoreDao.listByDataCenterId(zone.getId()));
             for (StoragePool pool : pools) {
                 if (pool.getPoolType() != Storage.StoragePoolType.VMFS) {
                     continue;
@@ -450,11 +448,14 @@ public class VmImportManagerImpl implements VmImportService {
             List<StoragePoolVO> pools = primaryDataStoreDao.listPoolByHostPath(dsHost, dsPath);
             for (StoragePool pool : pools) {
                 if (pool.getDataCenterId() == zone.getId() &&
-                        pool.getClusterId() == cluster.getId()) {
+                        (pool.getClusterId()==null || pool.getClusterId().equals(cluster.getId()))) {
                     storagePool = pool;
                     break;
                 }
             }
+        }
+        if (storagePool == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool for disk %s(%s) with datastore: %s not found in zone ID: %s!", disk.getLabel(), disk.getDiskId(), disk.getDatastoreName(), zone.getUuid()));
         }
         return storagePool;
     }
@@ -486,9 +487,17 @@ public class VmImportManagerImpl implements VmImportService {
 
     private void checkUnmanagedDiskAndOfferingForImport(List<UnmanagedInstance.Disk> disks, final Map<String, Long> diskOfferingMap, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
             throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
+        String diskController = null;
         for (UnmanagedInstance.Disk disk : disks) {
             if (!diskOfferingMap.containsKey(disk.getDiskId())) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Disk offering for disk ID: %s not found during VM import!", disk.getDiskId()));
+            }
+            if (Strings.isNullOrEmpty(diskController)) {
+                diskController = disk.getController();
+            } else {
+                if (!diskController.equals(disk.getController())) {
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple disk controllers (%s, %s) found during VM import!", diskController, disk.getController()));
+                }
             }
             checkUnmanagedDiskAndOfferingForImport(disk, diskOfferingDao.findById(diskOfferingMap.get(disk.getDiskId())), owner, zone, cluster, migrateAllowed);
         }
@@ -529,7 +538,15 @@ public class VmImportManagerImpl implements VmImportService {
 
     private Map<String, Long> getUnmanagedNicNetworkMap(List<UnmanagedInstance.Nic> nics, final Map<String, Long> callerNicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap, final DataCenter zone, final String hostName, final Account owner) throws ServerApiException {
         Map<String, Long> nicNetworkMap = new HashMap<>();
+        String nicAdapter = null;
         for (UnmanagedInstance.Nic nic : nics) {
+            if (Strings.isNullOrEmpty(nicAdapter)) {
+                nicAdapter = nic.getAdapterType();
+            } else {
+                if (!nicAdapter.equals(nic.getAdapterType())) {
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple network adapter types (%s, %s) are not supported for import!", nicAdapter, nic.getAdapterType()));
+                }
+            }
             Network network = null;
             Network.IpAddresses ipAddresses = null;
             if (MapUtils.isNotEmpty(callerNicIpAddressMap) && callerNicIpAddressMap.containsKey(nic.getNicId())) {
@@ -742,12 +759,20 @@ public class VmImportManagerImpl implements VmImportService {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("No attached disks found for the unmanaged VM: %s", instanceName));
         }
         final UnmanagedInstance.Disk rootDisk = unmanagedInstance.getDisks().get(0);
+        if (rootDisk == null || Strings.isNullOrEmpty(rootDisk.getController())) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed! Unable to retrieve root disk details for VM: %s ", instanceName));
+        }
+        allDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDisk.getController());
         List<UnmanagedInstance.Disk> dataDisks = new ArrayList<>();
         try {
             checkUnmanagedDiskAndOfferingForImport(rootDisk, diskOffering, owner, zone, cluster, migrateAllowed);
             if (unmanagedInstanceDisks.size() > 1) { // Data disk(s) present
                 dataDisks.addAll(unmanagedInstanceDisks);
                 dataDisks.remove(0);
+                if (dataDisks.get(0) == null || Strings.isNullOrEmpty(dataDisks.get(0).getController())) {
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed! Unable to retrieve data disk details for VM: %s ", instanceName));
+                }
+                allDetails.put(VmDetailConstants.DATA_DISK_CONTROLLER, dataDisks.get(0).getController());
                 checkUnmanagedDiskAndOfferingForImport(dataDisks, dataDiskOfferingMap, owner, zone, cluster, migrateAllowed);
             }
             resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.volume, unmanagedInstanceDisks.size());
@@ -758,6 +783,9 @@ public class VmImportManagerImpl implements VmImportService {
         // Check NICs and supplied networks
         Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
         Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner);
+        if (CollectionUtils.isEmpty(unmanagedInstance.getNics())) {
+            allDetails.put(VmDetailConstants.NIC_ADAPTER, unmanagedInstance.getNics().get(0).getAdapterType());
+        }
         VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
         if (unmanagedInstance.getPowerState().equals(UnmanagedInstance.PowerState.PowerOn)) {
             powerState = VirtualMachine.PowerState.PowerOn;
