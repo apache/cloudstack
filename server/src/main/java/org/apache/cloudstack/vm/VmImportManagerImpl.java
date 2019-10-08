@@ -360,25 +360,23 @@ public class VmImportManagerImpl implements VmImportService {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM is not valid!"));
         }
         if (serviceOffering == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Service offering is not valid!", instance.getName()));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Service offering is not valid!"));
         }
         accountService.checkAccess(owner, serviceOffering, zone);
         final Integer cpu = instance.getCpuCores();
         final Integer memory = instance.getMemory();
-        Integer cpuSpeed = instance.getCpuSpeed();
+        Integer cpuSpeed = instance.getCpuSpeed() == null ? 0 : instance.getCpuSpeed();
         if (cpu == null || cpu == 0) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("CPU cores for VM not valid!", instance.getName()));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("CPU cores for VM not valid!"));
         }
         if (memory == null || memory == 0) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Memory for VM not valid!", instance.getName()));
         }
         if (serviceOffering.isDynamic()) {
-            if (cpuSpeed == null || cpuSpeed == 0) {
+            if (details.containsKey(VmDetailConstants.CPU_SPEED)) {
                 try {
                     cpuSpeed = Integer.parseInt(details.get(VmDetailConstants.CPU_SPEED));
-                } catch (Exception e) {
-                    cpuSpeed = 0;
-                }
+                } catch (Exception e) {}
             }
             Map<String, String> parameters = new HashMap<>();
             parameters.put(VmDetailConstants.CPU_NUMBER, String.valueOf(cpu));
@@ -783,7 +781,7 @@ public class VmImportManagerImpl implements VmImportService {
         // Check NICs and supplied networks
         Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
         Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner);
-        if (CollectionUtils.isEmpty(unmanagedInstance.getNics())) {
+        if (!CollectionUtils.isEmpty(unmanagedInstance.getNics())) {
             allDetails.put(VmDetailConstants.NIC_ADAPTER, unmanagedInstance.getNics().get(0).getAdapterType());
         }
         VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
