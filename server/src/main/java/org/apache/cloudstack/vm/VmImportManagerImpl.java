@@ -376,7 +376,8 @@ public class VmImportManagerImpl implements VmImportService {
             if (details.containsKey(VmDetailConstants.CPU_SPEED)) {
                 try {
                     cpuSpeed = Integer.parseInt(details.get(VmDetailConstants.CPU_SPEED));
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                }
             }
             Map<String, String> parameters = new HashMap<>();
             parameters.put(VmDetailConstants.CPU_NUMBER, String.valueOf(cpu));
@@ -446,7 +447,7 @@ public class VmImportManagerImpl implements VmImportService {
             List<StoragePoolVO> pools = primaryDataStoreDao.listPoolByHostPath(dsHost, dsPath);
             for (StoragePool pool : pools) {
                 if (pool.getDataCenterId() == zone.getId() &&
-                        (pool.getClusterId()==null || pool.getClusterId().equals(cluster.getId()))) {
+                        (pool.getClusterId() == null || pool.getClusterId().equals(cluster.getId()))) {
                     storagePool = pool;
                     break;
                 }
@@ -494,7 +495,7 @@ public class VmImportManagerImpl implements VmImportService {
                 diskController = disk.getController();
             } else {
                 if (!diskController.equals(disk.getController())) {
-                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple disk controllers (%s, %s) found during VM import!", diskController, disk.getController()));
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple disk controllers of different type (%s, %s) are not supported for import. Please make sure that all disk controllers are of the same type!", diskController, disk.getController()));
                 }
             }
             checkUnmanagedDiskAndOfferingForImport(disk, diskOfferingDao.findById(diskOfferingMap.get(disk.getDiskId())), owner, zone, cluster, migrateAllowed);
@@ -542,7 +543,7 @@ public class VmImportManagerImpl implements VmImportService {
                 nicAdapter = nic.getAdapterType();
             } else {
                 if (!nicAdapter.equals(nic.getAdapterType())) {
-                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple network adapter types (%s, %s) are not supported for import!", nicAdapter, nic.getAdapterType()));
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple network adapter of different type (%s, %s) are not supported for import. Please make sure that all network adapters are of the same type!", nicAdapter, nic.getAdapterType()));
                 }
             }
             Network network = null;
