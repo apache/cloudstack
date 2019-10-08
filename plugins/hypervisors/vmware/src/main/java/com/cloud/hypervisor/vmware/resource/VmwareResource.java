@@ -6820,7 +6820,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                     instanceDisk.setController(DiskControllerType.getType(device.getClass().getSimpleName()).toString());
                                     instanceDisk.setControllerUnit(((VirtualIDEController) device).getBusNumber());
                                 } else if (device instanceof VirtualSCSIController) {
-                                    instanceDisk.setController("scsi");
+                                    instanceDisk.setController(DiskControllerType.getType(device.getClass().getSimpleName()).toString());
                                     instanceDisk.setControllerUnit(((VirtualSCSIController) device).getBusNumber());
                                 } else {
                                     instanceDisk.setController(DiskControllerType.none.toString());

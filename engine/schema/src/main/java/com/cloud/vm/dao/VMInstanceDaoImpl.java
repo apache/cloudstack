@@ -561,6 +561,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
+    public List<VMInstanceVO> listByLastHostIdAndStates(Long hostId, State... states) {
+        SearchCriteria<VMInstanceVO> sc = AllFieldsSearch.create();
+        sc.setParameters("lastHost", hostId);
+        sc.setParameters("state", (Object[])states);
+        return listBy(sc);
+    }
+
+    @Override
     public List<Long> findIdsOfAllocatedVirtualRoutersForAccount(long accountId) {
         SearchCriteria<Long> sc = FindIdsOfVirtualRoutersByAccount.create();
         sc.setParameters("account", accountId);

@@ -313,7 +313,10 @@ public class VmImportManagerImpl implements VmImportService {
         for (VMInstanceVO instance : instances) {
             managedVms.add(instance.getInstanceName());
         }
-        instances = vmDao.listByLastHostId(host.getId());
+        instances = vmDao.listByLastHostIdAndStates(host.getId(),
+                VirtualMachine.State.Stopped, VirtualMachine.State.Destroyed,
+                VirtualMachine.State.Expunging, VirtualMachine.State.Error,
+                VirtualMachine.State.Unknown, VirtualMachine.State.Shutdowned);
         for (VMInstanceVO instance : instances) {
             managedVms.add(instance.getInstanceName());
         }
@@ -484,19 +487,14 @@ public class VmImportManagerImpl implements VmImportService {
         }
     }
 
-    private void checkUnmanagedDiskAndOfferingForImport(List<UnmanagedInstance.Disk> disks, final Map<String, Long> diskOfferingMap, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
+    private void checkUnmanagedDiskAndOfferingForImport(List<UnmanagedInstance.Disk> disks, final Map<String, Long> diskOfferingMap, final String diskController, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
             throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
-        String diskController = null;
         for (UnmanagedInstance.Disk disk : disks) {
             if (!diskOfferingMap.containsKey(disk.getDiskId())) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Disk offering for disk ID: %s not found during VM import!", disk.getDiskId()));
             }
-            if (Strings.isNullOrEmpty(diskController)) {
-                diskController = disk.getController();
-            } else {
-                if (!diskController.equals(disk.getController())) {
-                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple disk controllers of different type (%s, %s) are not supported for import. Please make sure that all disk controllers are of the same type!", diskController, disk.getController()));
-                }
+            if (!Strings.isNullOrEmpty(diskController) && !diskController.equals(disk.getController())) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple disk controllers of different type (%s, %s) are not supported for import. Please make sure that all disk controllers are of the same type!", diskController, disk.getController()));
             }
             checkUnmanagedDiskAndOfferingForImport(disk, diskOfferingDao.findById(diskOfferingMap.get(disk.getDiskId())), owner, zone, cluster, migrateAllowed);
         }
@@ -768,11 +766,8 @@ public class VmImportManagerImpl implements VmImportService {
             if (unmanagedInstanceDisks.size() > 1) { // Data disk(s) present
                 dataDisks.addAll(unmanagedInstanceDisks);
                 dataDisks.remove(0);
-                if (dataDisks.get(0) == null || Strings.isNullOrEmpty(dataDisks.get(0).getController())) {
-                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed! Unable to retrieve data disk details for VM: %s ", instanceName));
-                }
+                checkUnmanagedDiskAndOfferingForImport(dataDisks, dataDiskOfferingMap, rootDisk.getController(), owner, zone, cluster, migrateAllowed);
                 allDetails.put(VmDetailConstants.DATA_DISK_CONTROLLER, dataDisks.get(0).getController());
-                checkUnmanagedDiskAndOfferingForImport(dataDisks, dataDiskOfferingMap, owner, zone, cluster, migrateAllowed);
             }
             resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.volume, unmanagedInstanceDisks.size());
         } catch (ResourceAllocationException e) {

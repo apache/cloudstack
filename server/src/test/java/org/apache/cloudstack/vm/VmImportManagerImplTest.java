@@ -195,7 +195,7 @@ public class VmImportManagerImplTest {
         when(volumeDao.findIncludingRemovedByZone(Mockito.anyLong())).thenReturn(volumes);
         List<VMInstanceVO> vms = new ArrayList<>();
         when(vmDao.listByHostId(Mockito.anyLong())).thenReturn(vms);
-        when(vmDao.listByLastHostId(Mockito.anyLong())).thenReturn(vms);
+        when(vmDao.listByLastHostIdAndStates(Mockito.anyLong())).thenReturn(vms);
         GetUnmanagedInstancesCommand cmd = Mockito.mock(GetUnmanagedInstancesCommand.class);
         HashMap<String, UnmanagedInstance> map = new HashMap<>();
         map.put(instance.getName(), instance);
