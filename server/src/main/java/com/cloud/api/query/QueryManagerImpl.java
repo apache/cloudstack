@@ -55,6 +55,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
+import org.apache.cloudstack.api.command.admin.storage.SeedOfficialSystemVMTemplateCmd;
 import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
@@ -3442,7 +3443,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.addAnd("bootable", SearchCriteria.Op.EQ, bootable);
             }
 
-            if (onlyReady) {
+            if (onlyReady && templateFilter != TemplateFilter.inactive) {
                 SearchCriteria<TemplateJoinVO> readySc = _templateJoinDao.createSearchCriteria();
                 readySc.addOr("state", SearchCriteria.Op.EQ, TemplateState.Ready);
                 readySc.addOr("format", SearchCriteria.Op.EQ, ImageFormat.BAREMETAL);
@@ -3485,7 +3486,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (showRemovedTmpl) {
             uniqueTmplPair = _templateJoinDao.searchIncludingRemovedAndCount(sc, searchFilter);
         } else {
-            sc.addAnd("templateState", SearchCriteria.Op.IN, new State[] {State.Active, State.UploadAbandoned, State.UploadError, State.NotUploaded, State.UploadInProgress});
+            if (templateFilter != TemplateFilter.self){
+                if (templateFilter == TemplateFilter.inactive){
+                    sc.addAnd("templateState", SearchCriteria.Op.IN, new State[] {State.Inactive, State.UploadAbandoned, State.UploadError, State.NotUploaded, State.UploadInProgress});
+                } else {
+                    sc.addAnd("templateState", SearchCriteria.Op.IN, new State[] {State.Active, State.UploadAbandoned, State.UploadError, State.NotUploaded, State.UploadInProgress});
+                }
+            }
+
             final String[] distinctColumns = {"temp_zone_pair"};
             uniqueTmplPair = _templateJoinDao.searchAndDistinctCount(sc, searchFilter, distinctColumns);
         }
@@ -3501,7 +3509,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         for (TemplateJoinVO v : uniqueTmpls) {
             tzIds[i++] = v.getTempZonePair();
         }
-        List<TemplateJoinVO> vrs = _templateJoinDao.searchByTemplateZonePair(showRemovedTmpl, tzIds);
+
+        boolean ignoreState = false;
+        if (templateFilter == TemplateFilter.inactive || templateFilter == TemplateFilter.self){
+            ignoreState = true;
+        }
+
+        List<TemplateJoinVO> vrs = _templateJoinDao.searchByTemplateZonePair(ignoreState, showRemovedTmpl, tzIds);
         return new Pair<List<TemplateJoinVO>, Integer>(vrs, count);
 
         // TODO: revisit the special logic for iso search in
@@ -3966,6 +3980,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     @Override
+
     public List<RouterHealthCheckResultResponse> listRouterHealthChecks(GetRouterHealthCheckResultsCmd cmd) {
         s_logger.info("Executing health check command " + cmd);
         long routerId = cmd.getRouterId();
@@ -3984,6 +3999,52 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return responseGenerator.createHealthCheckResponse(_routerDao.findById(routerId), result);
+    }
+
+    public HashSet<String> searchForImageStores(SeedOfficialSystemVMTemplateCmd cmd) {
+
+        Long zoneId = cmd.getId();
+
+        Filter searchFilter = new Filter(ImageStoreJoinVO.class, "id", Boolean.TRUE, 0L, 1000L);
+
+        SearchBuilder<ImageStoreJoinVO> sb = _imageStoreJoinDao.createSearchBuilder();
+        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
+        // ids
+        sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<ImageStoreJoinVO> sc = sb.create();
+        sc.setParameters("role", DataStoreRole.Image);
+
+        sc.setParameters("dataCenterId", zoneId);
+        // only doing nfs for now.
+        sc.setParameters("protocol", "nfs");
+
+        // search Store details by ids
+        Pair<List<ImageStoreJoinVO>, Integer> uniqueStorePair = _imageStoreJoinDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueStorePair.second();
+        if (count.intValue() == 0) {
+            // empty result
+            return null;
+        }
+        List<ImageStoreJoinVO> uniqueStores = uniqueStorePair.first();
+        Long[] vrIds = new Long[uniqueStores.size()];
+        int i = 0;
+        for (ImageStoreJoinVO v : uniqueStores) {
+            vrIds[i++] = v.getId();
+        }
+        List<ImageStoreJoinVO> vrs = _imageStoreJoinDao.searchByIds(vrIds);
+        HashSet<String> imageStores = new HashSet<>();
+        for (ImageStoreJoinVO store : vrs){
+            imageStores.add(store.getUrl());
+        }
+
+        return imageStores;
+    }
+
+    @Override
+    public Long getSystemVMTemplateId(SeedOfficialSystemVMTemplateCmd cmd) {
+        VMTemplateVO template = _templateDao.findSystemVMTemplate(cmd.getId());
+        return template.getId();
     }
 
     @Override

@@ -74,6 +74,7 @@ public interface VirtualMachineTemplate extends ControlledEntity, Identity, Inte
         executable, // templates that are owned by the calling user, or public templates, that can be used to deploy a
         community, // returns templates that have been marked as public but not featured
         system, // system vm templates
+        inactive, // inactive system vm templates
         all // all templates (only usable by admins)
     }
 

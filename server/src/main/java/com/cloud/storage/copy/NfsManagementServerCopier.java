@@ -57,8 +57,9 @@ public class NfsManagementServerCopier implements ManagementServerCopier {
         String sourceMountPoint = mountManager.getMountPoint(srcTemplate.getDataStore().getUri(), nfsVersion);
         String destMountPoint = mountManager.getMountPoint(destStore.getUri(), nfsVersion);
         String installPath  = getTemplateDataStore(srcTemplate).getInstallPath();
-        String sourcePath = Paths.get(sourceMountPoint, installPath).toString();
+        installPath = installPath.substring(0, installPath.lastIndexOf("/"));
         String destinationPath = Paths.get(destMountPoint, installPath).toString();
+        String sourcePath = Paths.get(sourceMountPoint, installPath).toString();
         createFolder(Paths.get(destMountPoint, installPath));
         if (copyFolderContent(sourcePath, destinationPath)) {
             persistTemplateStoreRef(srcTemplate, destStore, destinationPath);

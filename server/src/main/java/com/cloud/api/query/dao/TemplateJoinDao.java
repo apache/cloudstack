@@ -42,7 +42,7 @@ public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
 
     List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate tmpl, long zoneId, boolean readyOnly);
 
-    List<TemplateJoinVO> searchByTemplateZonePair( Boolean showRemoved, String... pairs);
+    List<TemplateJoinVO> searchByTemplateZonePair(Boolean showInactive, Boolean showRemoved, String... pairs);
 
     List<TemplateJoinVO> listActiveTemplates(long storeId);
 

@@ -85,4 +85,6 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
     void saveDetails(VMTemplateVO tmpl);
 
     List<VMTemplateVO> listByParentTemplatetId(long parentTemplatetId);
+
+    List<VMTemplateVO> listAllSystemVMTemplatesByHypervisorType(String hypervisorType);
 }

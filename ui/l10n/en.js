@@ -891,6 +891,7 @@ var dictionary = {
 "label.hypervisor.type":"Hypervisor Type",
 "label.hypervisor.version":"Hypervisor version",
 "label.hypervisors":"Hypervisors",
+"label.inactive": "Inactive",
 "label.id":"ID",
 "label.info":"Info",
 "label.info.upper":"INFO",

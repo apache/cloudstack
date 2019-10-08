@@ -146,6 +146,16 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
+    public List<VMTemplateVO> listAllSystemVMTemplatesByHypervisorType(String hypervisorType) {
+        SearchCriteria<VMTemplateVO> sc = tmpltTypeSearch.create();
+        sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
+        sc.setParameters("hypervisorType", hypervisorType);
+
+        Filter filter = new Filter(VMTemplateVO.class, "id", false, null, null);
+        return listBy(sc, filter);
+    }
+
+    @Override
     public List<VMTemplateVO> publicIsoSearch(Boolean bootable, boolean listRemoved, Map<String, String> tags) {
 
         SearchBuilder<VMTemplateVO> sb = null;

@@ -53,6 +53,9 @@
                         },
                         community: {
                             label: 'label.community'
+                        },
+                        inactive: {
+                            label: 'label.inactive'
                         }
                     },
                     preFilter: function() {
@@ -182,6 +185,7 @@
                                                     $form.find(".form-item[rel='hypervisor']").hide();
                                                     $form.find(".form-item[rel='format']").hide();
                                                     $form.find(".form-item[rel='osTypeId']").hide();
+                                                    $("select[name='zone'] option[value='-1']").remove()
                                                 } else {
                                                     $form.find(".form-item[rel='sourceZone']").hide();
                                                     $form.find(".form-item[rel='sourceTemplate']").hide();
@@ -191,13 +195,17 @@
                                                     $form.find(".form-item[rel='hypervisor']").show();
                                                     $form.find(".form-item[rel='format']").show();
                                                     $form.find(".form-item[rel='osTypeId']").show();
+                                                    if (!$("select[name='zone'] option[value='-1']").length){
+                                                        $("select[name='zone']").prepend(new Option("All Zones", "-1"));
+                                                    }
+                                                    
                                                 }
                                             });
                                             args.response.success({
                                                 data: [
                                                     { id: "url", description: "URL" },
                                                     { id: "copy", description: "Copy from Zone" },
-                                                    { id: "official", description: "Official Cloudstack Sytem VM" }
+                                                    { id: "official", description: "Official Cloudstack Template" }
                                                 ]
                                             });
                                         }
@@ -231,6 +239,9 @@
                                         label: "label.action.create.template.source.template",
                                         dependsOn: 'sourceZone',
                                         select: function(args){
+                                            if (args.sourceZone == ""){
+                                                return;
+                                            }
                                             $.ajax({
                                                 url: createURL("listTemplates&templateFilter=system&zoneId=" + args.sourceZone),
                                                 dataType: "json",
@@ -260,6 +271,7 @@
                                     zone: {
                                         label: 'label.zone',
                                         docID: 'helpRegisterTemplateZone',
+                                        dependsOn: ['templatetype','templateSource','sourceZone'],
                                         isMultiple: true,
                                         validation: {
                                             allzonesonly: true
@@ -278,21 +290,31 @@
                                                     dataType: "json",
                                                     async: true,
                                                     success: function(json) {
+                                                        $("select[name='zone'] option").each(function(){
+                                                            $(this).remove();
+                                                        })
                                                         var zoneObjs = [];
                                                         var items = json.listzonesresponse.zone;
                                                         if (items != null) {
                                                             for (var i = 0; i < items.length; i++) {
-                                                                zoneObjs.push({
-                                                                    id: items[i].id,
-                                                                    description: items[i].name
-                                                                });
+                                                                if (args.templateSource == "copy" && items[i].id == args.sourceZone){
+                                                                    // Do Nothing
+                                                                } else {
+                                                                    zoneObjs.push({
+                                                                        id: items[i].id,
+                                                                        description: items[i].name
+                                                                    });
+                                                                }
+                                                                
                                                             }
                                                         }
                                                         if (isAdmin() && !(cloudStack.context.projects && cloudStack.context.projects[0])) {
-                                                            zoneObjs.unshift({
-                                                                id: -1,
-                                                                description: "All Zones"
-                                                            });
+                                                            if (args.templateSource != "copy"){
+                                                                zoneObjs.unshift({
+                                                                    id: -1,
+                                                                    description: "All Zones"
+                                                                });
+                                                            }
                                                         }
                                                         args.response.success({
                                                             data: zoneObjs
@@ -753,6 +775,22 @@
                             },
 
                             action: function(args) {
+                                if (args.data.templateSource == 'copy'){
+                                    data = {
+                                        sourcezoneid: args.data.sourceZone,
+                                        destzoneid: args.data.zone,
+                                        id: args.data.sourceTemplate,
+                                    };
+                                    $.ajax({
+                                        url: createURL('copyTemplate'),
+                                        data: data,
+                                        success: function(json) {
+                                            args.response.success({data: {}});
+                                        }
+                                    });
+                                    return;
+                                }
+
                                 var zones = "";
                                 if (Object.prototype.toString.call( args.data.zone ) === '[object Array]'){
                                     zones = args.data.zone.join(",");
@@ -838,24 +876,82 @@
                                     });
                                 }
                                 // for hypervisor == VMware (ends here)
+
+                                var registerTemplateResponse;
+                                var items;
                                 $.ajax({
                                     url: createURL('registerTemplate'),
                                     data: data,
+                                    async: false,
                                     success: function(json) {
-                                        var items = json.registertemplateresponse.template; //items might have more than one array element if it's create templates for all zones.
-                                        if (items == null || items == undefined){
-                                            args.response.success({
-                                                data: {}
-                                            });    
-                                            return;
-                                        }
-                                        args.response.success({
-                                            data: items[0]
-                                        });
+                                        items = json.registertemplateresponse.template; //items might have more than one array element if it's create templates for all zones.
+                                        registerTemplateResponse = items;
                                     },
                                     error: function(XMLHttpResponse) {
                                         var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                         args.response.error(errorMsg);
+                                    }
+                                });
+                                // user templates end here.
+                                if (!data.system){
+                                    if (items == null || items == undefined){
+                                        args.response.success({
+                                            data: {}
+                                        });    
+                                        return;
+                                    }
+                                    args.response.success({
+                                        data: items[0]
+                                    });
+                                    return 
+                                }
+                                // checking if there are any system vms to download the registered template.
+                                var systemVMS = false;
+                                if (Array.isArray(data.zoneids)){
+                                    for (var i = 0; i < data.zoneids.length; i++){
+                                        $.ajax({
+                                            url: createURL('listSystemVms'),
+                                            data: {'zoneid': data.zoneids[i]},
+                                            async: false,
+                                            success: function(json){
+                                                if(!$.isEmptyObject(json.listsystemvmsresponse)){
+                                                    systemVMS = true;
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                                listSystemVMURL = "listSystemVms";
+                                if (data.zoneids != '-1'){
+                                    listSystemVMURL += "&zoneid=" + data.zoneids
+                                }
+                                // all zones
+                                $.ajax({
+                                    url: createURL(listSystemVMURL),
+                                    async: false,
+                                    success: function(json){
+                                        if(!$.isEmptyObject(json.listsystemvmsresponse)){
+                                            systemVMS = true;
+                                        }
+                                    }
+                                });
+                                
+                                // if we have system vms in this zone, execution can stop here
+                                if (systemVMS){
+                                    return;
+                                }
+                                // hide the window
+                                args.response.success({
+                                    data: {}
+                                });
+                                // Seed the template via api call
+                                $.ajax({
+                                    url: createURL('seedOfficialSystemVMTemplate&id=' + data.zoneids + '&hypervisor=' + data.hypervisor + '&url=' + data.url),
+                                    data: data,
+                                    success: function(json){
+                                        args.response.success({
+                                            data: {}
+                                        });
                                     }
                                 });
                             },
@@ -1493,6 +1589,12 @@
                                         ignoreProject = true;
                                         $.extend(data, {
                                             templatefilter: 'community'
+                                        });
+                                        break;
+                                    case "inactive":
+                                        ignoreProject = true;
+                                        $.extend(data, {
+                                            templatefilter: 'inactive'
                                         });
                                         break;
                                 }
@@ -4035,7 +4137,8 @@
                         }
                     }
                 }
-            }
+            },
+            
         }
     };
 

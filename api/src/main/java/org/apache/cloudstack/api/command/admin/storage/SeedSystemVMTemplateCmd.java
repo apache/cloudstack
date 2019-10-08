@@ -36,7 +36,7 @@ import com.cloud.utils.script.Script;
 
 @APICommand(name = "seedSystemVMTemplate", description = "Copies a system vm template into secondary storage",
         responseObject = SeedSystemVMTemplateResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.13",
-authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
+authorized = {RoleType.Admin})
 public class SeedSystemVMTemplateCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "The target hypervisor for the template.")
@@ -66,6 +66,8 @@ public class SeedSystemVMTemplateCmd extends BaseCmd {
             }
         } else if (imageStoreResponses.getCount() == 1) {
             imageStoreResponse = imageStoreResponses.getResponses().get(0);
+        } else if (imageStoreResponses.getCount() == 0) {
+            throw new CloudRuntimeException("Unable to find imagestore.");
         }
 
         hypervisor = hypervisor.toLowerCase();
@@ -109,5 +111,5 @@ public class SeedSystemVMTemplateCmd extends BaseCmd {
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
 }

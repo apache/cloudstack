@@ -193,6 +193,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             Long templateSize = performDirectDownloadUrlValidation(url);
             profile.setSize(templateSize);
         }
+
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
@@ -218,6 +219,9 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
     @Override
     public VMTemplateVO create(TemplateProfile profile) {
+        if (profile.getTemplateType() == TemplateType.SYSTEM){
+            profile.setAccountId(1L); // System account
+        }
         // persist entry in vm_template, vm_template_details and template_zone_ref tables, not that entry at template_store_ref is not created here, and created in createTemplateAsync.
         VMTemplateVO template = persistTemplate(profile, State.Active);
 
@@ -338,8 +342,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                         // Check if zone is disabled
                         if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
                             s_logger.info("Zone " + zoneId_is +
-                                    " is disabled, so skip downloading template to its image store " + imageStore.getId());
-                            continue;
+                                    " is disabled, so uploading template to management server" + imageStore.getId());
+                            //continue;
                         }
 
                         // We want to download private template to one of the image store in a zone

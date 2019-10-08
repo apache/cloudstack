@@ -413,7 +413,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     }
 
     @Override
-    public List<TemplateJoinVO> searchByTemplateZonePair(Boolean showRemoved, String... idPairs) {
+    public List<TemplateJoinVO> searchByTemplateZonePair(Boolean showInactive, Boolean showRemoved, String... idPairs) {
         // set detail batch query size
         int DETAILS_BATCH_SIZE = 2000;
         String batchCfg = _configDao.getValue("detail.batch.query.size");
@@ -435,7 +435,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                     labels[k] = idPairs[j];
                 }
                 SearchCriteria<TemplateJoinVO> sc = tmpltIdPairSearch.create();
-                if (!showRemoved) {
+                if (!showRemoved && !showInactive) {
                     sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
                 }
                 sc.setParameters("tempZonePairIN", labels);
@@ -453,7 +453,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 labels[k] = idPairs[j];
             }
             SearchCriteria<TemplateJoinVO> sc = tmpltIdPairSearch.create();
-            if (!showRemoved) {
+            if (!showRemoved && !showInactive) {
                 sc.setParameters("templateState", VirtualMachineTemplate.State.Active, VirtualMachineTemplate.State.UploadAbandoned, VirtualMachineTemplate.State.UploadError ,VirtualMachineTemplate.State.NotUploaded, VirtualMachineTemplate.State.UploadInProgress);
             }
             sc.setParameters("tempZonePairIN", labels);

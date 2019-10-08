@@ -45,6 +45,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
+import org.apache.cloudstack.api.command.admin.storage.SeedOfficialSystemVMTemplateCmd;
 import org.apache.cloudstack.api.command.admin.template.GetSystemVMTemplateDefaultURLCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
@@ -71,6 +72,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -123,6 +125,7 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.configuration.Config;
@@ -394,6 +397,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private VMTemplateDetailsDao _tmpltDetailsDao;
     @Inject
     private VersionDao versionDao;
+    @Inject
+    TemplateJoinDao _templateJoinVO;
 
     private boolean _disableExtraction = false;
     private List<TemplateAdapter> _adapters;
@@ -487,7 +492,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, firstCommand.getRemoteEndPoint(), firstCommand.getEntityUUID());
             response.setPostURL(new URL(url));
-
             // set the post url, this is used in the monitoring thread to determine the SSVM
             TemplateDataStoreVO templateStore = _tmplStoreDao.findByTemplate(firstCommand.getEntityId(), DataStoreRole.getRole(firstCommand.getDataToRole()));
             if (templateStore != null) {
@@ -548,10 +552,21 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 updateVMInstances(template);
                 updateRouterTemplateConfig(template);
                 updateMinRequiredSystemVMVersionConfig();
+                deactivateOtherSystemTemplates(template.getId(), template.getHypervisorType().toString());
             }
         });
 
         return template;
+    }
+
+    private void deactivateOtherSystemTemplates(long id, String hypervisorType) {
+        List<VMTemplateVO> templates = _tmpltDao.listAllSystemVMTemplatesByHypervisorType(hypervisorType);
+        for (VMTemplateVO template : templates){
+            if (template.getId() != id){
+                template.setState(VirtualMachineTemplate.State.Inactive);
+                _tmpltDao.persist(template);
+            }
+        }
     }
 
     private void updateTemplate(VMTemplateVO template) {
@@ -981,7 +996,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // for that zone
         for (DataStore dstSecStore : dstSecStores) {
             TemplateDataStoreVO dstTmpltStore = _tmplStoreDao.findByStoreTemplate(dstSecStore.getId(), tmpltId);
-            if (dstTmpltStore != null && dstTmpltStore.getDownloadState() == Status.DOWNLOADED) {
+            if (dstTmpltStore != null && dstTmpltStore.getDownloadState() == Status.DOWNLOADED && srcTemplate.getTemplateType() != TemplateType.SYSTEM) {
                 return true; // already downloaded on this image store
             }
             if (dstTmpltStore != null && dstTmpltStore.getDownloadState() != Status.DOWNLOAD_IN_PROGRESS) {
@@ -1103,7 +1118,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new InvalidParameterValueException("There is no template " + templateId + " ready on image store.");
             }
 
-            if (template.isCrossZones()) {
+            if (template.isCrossZones() && template.getTemplateType() != TemplateType.SYSTEM) {
                 // sync template from cache store to region store if it is not there, for cases where we are going to migrate existing NFS to S3.
                 _tmpltSvr.syncTemplateToRegionStore(templateId, srcSecStore);
                 s_logger.debug("Template " + templateId + " is cross-zone, don't need to copy");
@@ -1111,7 +1126,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
             for (Long destZoneId : destZoneIds) {
                 DataStore dstSecStore = getImageStore(destZoneId, templateId);
-                if (dstSecStore != null) {
+                if (dstSecStore != null && template.getSize() == 0 && template.getTemplateType() != TemplateType.SYSTEM) {
                     s_logger.debug("There is template " + templateId + " in secondary storage " + dstSecStore.getName() +
                             " in zone " + destZoneId + " , don't need to copy");
                     continue;
@@ -2239,6 +2254,31 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     public VMTemplateVO updateTemplate(UpdateTemplateCmd cmd) {
         return updateTemplateOrIso(cmd);
+    }
+
+    @Override
+    public String getSystemVMTemplateDefaultURL(String hypervisor) {
+        GetSystemVMTemplateDefaultURLResponse urlResponse = new GetSystemVMTemplateDefaultURLResponse();
+        if (hypervisor != null && HypervisorType.getType(hypervisor) != null) {
+            return OfficialSystemVMTemplate.getNewTemplateUrl().get(HypervisorType.getType(hypervisor));
+        }
+        return "";
+    }
+
+    @Override
+    public void updateTemplate(SeedOfficialSystemVMTemplateCmd cmd) {
+        // this method will put the template into a usable state
+        List<TemplateDataStoreVO> templates = _tmplStoreDao.listByTemplate(cmd.getTemplateId());
+        VMTemplateVO template = _tmpltDao.findSystemVMTemplate(cmd.getId());
+
+        for(TemplateDataStoreVO templateDataStoreVO : templates){
+            templateDataStoreVO.setDownloadState(Status.DOWNLOADED);
+            templateDataStoreVO.setDownloadPercent(100);
+            templateDataStoreVO.setState(ObjectInDataStoreStateMachine.State.Ready);
+            templateDataStoreVO.setInstallPath("template/tmpl/1/" + cmd.getTemplateId() + "/" + template.getUuid() + "." + cmd.getFileExtension());
+            templateDataStoreVO.setErrorString(null);
+            _tmplStoreDao.update(templateDataStoreVO.getId(), templateDataStoreVO);
+        }
     }
 
     private VMTemplateVO updateTemplateOrIso(BaseUpdateTemplateOrIsoCmd cmd) {

@@ -463,10 +463,10 @@
                                         description: "URL"
                                     },{
                                         id: "official",
-                                        description: "Official Cloudstack System VM"
+                                        description: "Official Cloudstack Template"
                                     }]
                                     var items = json.listzonesresponse.zone;
-                                    if (items.length > 0) {
+                                    if (items != undefined && items.length > 0) {
                                         data.push({
                                             id: "copy",
                                             description: "Copy from Zone"
@@ -639,6 +639,9 @@
                         label: "label.action.create.template.source",
                         dependsOn: "sourceZone",
                         select: function(args){
+                            if (args.sourceZone == ""){
+                                return;
+                            }
                             $.ajax({
                                 url: createURL("listTemplates&templateFilter=system&zoneId=" + args.sourceZone),
                                 dataType: "json",

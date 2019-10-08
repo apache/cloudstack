@@ -233,6 +233,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type, String url, Date created,
             boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable,
             HypervisorType hyperType) {
+        if (type == TemplateType.SYSTEM){
+            uniqueName = "routing-" + id;
+        }
         this.id = id;
         this.name = name;
         publicTemplate = isPublic;
