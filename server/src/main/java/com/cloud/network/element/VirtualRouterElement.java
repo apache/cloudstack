@@ -896,7 +896,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     @Override
     public boolean release(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final ReservationContext context) throws ConcurrentOperationException,
     ResourceUnavailableException {
-        removeDhcpEntry(network, nic, vm);
         return true;
     }
 
