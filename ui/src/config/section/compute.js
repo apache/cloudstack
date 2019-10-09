@@ -28,7 +28,8 @@ export default {
           api: 'updateVirtualMachine',
           icon: 'edit',
           label: 'Update VM',
-          dataView: true
+          dataView: true,
+          args: ['name', 'displayname', 'ostypeid', 'isdynamicallyscalable', 'haenable', 'group']
         },
         {
           api: 'startVirtualMachine',
@@ -37,7 +38,7 @@ export default {
           dataView: true,
           groupAction: true,
           hidden: (record) => { return record.state !== 'Stopped' },
-          options: ['podid', 'clusterid', 'hostid']
+          args: ['podid', 'clusterid', 'hostid']
         },
         {
           api: 'stopVirtualMachine',

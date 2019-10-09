@@ -138,10 +138,9 @@
                     rules: [{ required: field.required, message: 'Please select option' }]
                   }]"
                   :placeholder="field.description"
-
                 >
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
-                    {{ opt.name }}
+                    {{ opt.name || opt.description }}
                   </a-select-option>
                 </a-select>
               </span>

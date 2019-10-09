@@ -621,7 +621,7 @@
     "vSwitchGuestType": "Guest Traffic vSwitch Type",
     "vSwitchPublicName": "Public Traffic vSwitch Name",
     "vSwitchPublicType": "Public Traffic vSwitch Type",
-    "value": "Credits",
+    "value": "Value",
     "vcenter": "VMware datacenter vcenter",
     "vcenterHost": "ESX/ESXi Host",
     "vcsdeviceid": "ID",

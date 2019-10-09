@@ -32,19 +32,34 @@
               <font-awesome-icon :icon="['fas', 'microchip']" />
               {{ vm.cpunumber }} CPU x {{ vm.cpuspeed }} Mhz
               (<router-link :to="{ path: '/computeoffering/' + vm.serviceofferingid }">{{ vm.serviceofferingname }}</router-link>)
+              <a-progress style="padding-left: 32px" size="small" :percent="parseFloat(vm.cpuused)" />
             </p>
             <p>
               <font-awesome-icon :icon="['fas', 'memory']" />
               {{ vm.memory }} MB Memory
+              <a-progress style="padding-left: 32px" size="small" :percent="parseFloat(100.0 * (vm.memorykbs - vm.memoryintfreekbs) / vm.memorykbs).toFixed(2)" />
             </p>
             <p>
               <font-awesome-icon :icon="['fas', 'database']" />
               {{ (totalStorage / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage
-              (<router-link :to="{ path: '/template/' + vm.templateid }">{{ vm.templatename }}</router-link>)
+              (<router-link :to="{ path: '/template/' + vm.templateid }">{{ vm.templatename }}</router-link>)<br/>
+              <span style="padding-left: 32px">
+                <a-tag color="green">Disk Read {{ vm.diskkbsread }} KB</a-tag>
+                <a-tag color="blue">Disk Write {{ vm.diskkbswrite }} KB</a-tag>
+              </span><br/>
+              <span style="padding-left: 32px">
+                <a-tag color="green">Disk Read (IO) {{ vm.diskioread }}</a-tag>
+                <a-tag color="blue">Disk Write (IO) {{ vm.diskiowrite }}</a-tag>
+              </span>
             </p>
             <p>
               <font-awesome-icon :icon="['fas', 'ethernet']" />
-              {{ vm && vm.nic ? vm.nic.length : 0 }} NIC(s): <br/>
+              <span>
+                {{ vm && vm.nic ? vm.nic.length : 0 }} NIC(s):
+                <a-tag color="green"><a-icon type="arrow-down" /> RX {{ vm.networkkbsread }} KB</a-tag>
+                <a-tag color="blue"><a-icon type="arrow-up" /> TX {{ vm.networkkbswrite }} KB</a-tag>
+              </span>
+              <br/>
               <span style="padding-left: 34px" v-for="eth in vm.nic" :key="eth.id">
                 {{ eth.ipaddress }} <router-link :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link> <br/>
               </span>
@@ -72,6 +87,9 @@
             </p>
             <p>
               <a-icon type="calendar" style="margin-left: 6px; margin-right: 8px" /> {{ vm.created }}
+            </p>
+            <p>
+              <a-icon type="barcode" style="margin-left: 6px; margin-right: 8px" /> {{ vm.id }}
             </p>
           </div>
           <a-divider/>
@@ -138,14 +156,9 @@
       <a-col :md="24" :lg="17">
         <a-card
           style="width:100%"
+          title="Hardware"
           :bordered="true"
-          :tabList="tabListNoTitle"
-          :activeTabKey="noTitleKey"
-          @tabChange="key => handleTabChange(key, 'noTitleKey')"
         >
-          <span slot="customRender" slot-scope="item">
-            <a-icon type="home"/>{{ item.tab }}
-          </span>
           <a-collapse v-model="activeKey">
             <a-collapse-panel :header="'ISO: ' + vm.isoname" v-if="vm.isoid" key="1">
               <a-list
@@ -165,21 +178,24 @@
 
             <a-collapse-panel :header="'Disks: ' + volumes.length" key="2">
               <a-list
+                size="small"
                 itemLayout="horizontal"
                 :dataSource="volumes"
               >
                 <a-list-item slot="renderItem" slot-scope="item">
-                  <a-list-item-meta :description="item.id">
-                    <a slot="title" href="">
-                      <router-link :to="{ path: '/volume/' + item.id }">{{ item.name }}</router-link>
-                    </a> ({{ item.type }})
+                  <a-list-item-meta>
+                    <div slot="title">
+                      <router-link :to="{ path: '/volume/' + item.id }">{{ item.name }}</router-link> ({{ item.type }}) <br/>
+                      <status :text="item.state" displayText /><br/>
+                    </div>
+                    <div slot="description">
+                      <a-icon type="barcode"/> <router-link :to="{ path: '/volume/' + item.id }"> {{ item.id }}</router-link>
+                    </div>
                     <a-avatar slot="avatar">
                       <font-awesome-icon :icon="['fas', 'database']" />
                     </a-avatar>
                   </a-list-item-meta>
                   <p>
-                    State: {{ item.state }}<br/>
-                    Type: {{ item.type }}<br/>
                     Size: {{ (item.size / (1024 * 1024 * 1024.0)).toFixed(4) }} GB<br/>
                     Physical Size: {{ (item.physicalsize / (1024 * 1024 * 1024.0)).toFixed(4) }} GB<br/>
                     Provisioning: {{ item.provisioningtype }}<br/>
@@ -191,27 +207,29 @@
             </a-collapse-panel>
             <a-collapse-panel :header="'Network Adapter(s): ' + (vm && vm.nic ? vm.nic.length : 0)" key="3" >
               <a-list
+                size="small"
                 itemLayout="horizontal"
                 :dataSource="vm.nic"
               >
                 <a-list-item slot="renderItem" slot-scope="item">
-                  <a-list-item-meta :description="item.id">
-                    <span slot="title" href="">
+                  <a-list-item-meta>
+                    <div slot="title">
                       <span v-show="item.isdefault">(Default) </span>
-                      <router-link :to="{ path: '/guestnetwork/' + item.networkid }">{{ item.networkname }} </router-link>
-                      {{ item.ipaddress }}
-                    </span>
+                      <router-link :to="{ path: '/guestnetwork/' + item.networkid }">{{ item.networkname }} </router-link><br/>
+                      Mac Address: {{ item.macaddress }}<br/>
+                      <span v-if="item.ipaddress">Address: {{ item.ipaddress }} <br/></span>
+                      Netmask: {{ item.netmask }}<br/>
+                      Gateway: {{ item.gateway }}<br/>
+                    </div>
+                    <div slot="description">
+                      <a-icon type="barcode"/> {{ item.id}}
+                    </div>
                     <a-avatar slot="avatar">
                       <font-awesome-icon :icon="['fas', 'ethernet']" />
                     </a-avatar>
                   </a-list-item-meta>
                   <p>
-                    <span v-if="item.ipaddress">Address: {{ item.ipaddress }} <br/></span>
-                    Network: <router-link :to="{ path: '/guestnetwork/' + item.networkid }">{{ item.networkname }}</router-link> <br/>
                     Type: {{ item.type }}<br/>
-                    Mac Address: {{ item.macaddress }}<br/>
-                    Netmask: {{ item.netmask }}<br/>
-                    Gateway: {{ item.gateway }}<br/>
                     Broadcast URI: {{ item.broadcasturi }}<br/>
                     Isolation URI: {{ item.isolationuri }}<br/>
                   </p>
@@ -219,7 +237,15 @@
               </a-list>
             </a-collapse-panel>
           </a-collapse>
-
+        </a-card>
+        <a-card
+          style="width:100%; margin-top: 12px"
+          title="Settings"
+          :bordered="true"
+        >
+          <list-view
+            :columns="settingsColumns"
+            :items="settings " />
         </a-card>
       </a-col>
     </a-row>
@@ -230,11 +256,13 @@
 <script>
 
 import { api } from '@/api'
+import ListView from '@/components/widgets/ListView'
 import Status from '@/components/widgets/Status'
 
 export default {
   name: 'InstanceView',
   components: {
+    ListView,
     Status
   },
   props: {
@@ -258,22 +286,20 @@ export default {
       tagInputValue: '',
       teams: [],
       teamSpinning: true,
-      tabListNoTitle: [
+      settingsColumns: [
         {
-          key: 'summary',
-          tab: 'Hardware'
-        },
-        {
-          key: 'stats',
-          tab: 'Statistics'
-        },
-        {
-          key: 'settings',
-          tab: 'Settings'
+          title: this.$t('name'),
+          dataIndex: 'name',
+          sorter: true
+        }, {
+          title: this.$t('value'),
+          dataIndex: 'value'
+        }, {
+          title: this.$t('action'),
+          dataIndex: 'actions'
         }
       ],
-      noTitleKey: 'summary'
-
+      settings: []
     }
   },
   created () {
