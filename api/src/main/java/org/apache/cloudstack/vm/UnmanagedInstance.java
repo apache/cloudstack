@@ -240,7 +240,7 @@ public class UnmanagedInstance {
 
         private Integer vlan;
 
-        private String ipAddress;
+        private List<String> ipAddress;
 
         private String pciSlot;
 
@@ -284,11 +284,11 @@ public class UnmanagedInstance {
             this.vlan = vlan;
         }
 
-        public String getIpAddress() {
+        public List<String> getIpAddress() {
             return ipAddress;
         }
 
-        public void setIpAddress(String ipAddress) {
+        public void setIpAddress(List<String> ipAddress) {
             this.ipAddress = ipAddress;
         }
 

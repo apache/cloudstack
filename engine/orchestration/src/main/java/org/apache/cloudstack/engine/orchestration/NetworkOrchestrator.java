@@ -97,6 +97,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Ipv6AddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Event;
@@ -286,6 +287,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     RemoteAccessVpnDao _remoteAccessVpnDao;
     @Inject
     VpcVirtualNetworkApplianceService _routerService;
+    @Inject
+    protected Ipv6AddressManager ipv6AddressManager;
 
     List<NetworkGuru> networkGurus;
 
@@ -3944,37 +3947,48 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @DB
     @Override
     public Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses)
-            throws ConcurrentOperationException, InsufficientVirtualNetworkCapacityException {
+            throws ConcurrentOperationException, InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         s_logger.debug("Allocating nic for vm " + vm.getUuid() + " in network " + network + " during import");
+        String guestIp = null;
         if (ipAddresses != null) {
-            // Auto assign ip4
-            String guestIp = _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
-            if (guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
-                throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP" + " address for network " + network, DataCenter.class,
-                        network.getDataCenterId());
+            // Assign ip
+            if (!Strings.isNullOrEmpty(ipAddresses.getIp4Address())) {
+                if (ipAddresses.getIp4Address().equals("auto")) {
+                    ipAddresses.setIp4Address(null);
+                }
+                guestIp = _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
+                if (guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
+                    throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP  address for network " + network, DataCenter.class,
+                            network.getDataCenterId());
+                }
+            } else if (!Strings.isNullOrEmpty(ipAddresses.getIp6Address())) {
+                guestIp = ipv6AddressManager.acquireGuestIpv6Address(network, ipAddresses.getIp6Address());
+                if (guestIp == null && network.getGuestType() != GuestType.Shared && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
+                    throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP v6 address for network " + network, DataCenter.class,
+                            network.getDataCenterId());
+                }
             }
         }
+        final String finalGuestIp = guestIp;
         NicVO vo = Transaction.execute(new TransactionCallback<NicVO>() {
             @Override
             public NicVO doInTransaction(TransactionStatus status) {
                 NicVO vo = new NicVO(network.getGuruName(), vm.getId(), network.getId(), vm.getType());
                 vo.setMacAddress(macAddress);
                 vo.setAddressFormat(Networks.AddressFormat.Ip4);
-                if (ipAddresses != null) {
-                    if (!Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && !Strings.isNullOrEmpty(network.getGateway())) {
-                        vo.setIPv4Address(ipAddresses.getIp4Address());
-                        vo.setIPv4Gateway(network.getGateway());
-                        if (!Strings.isNullOrEmpty(network.getCidr())) {
-                            vo.setIPv4Netmask(NetUtils.cidr2Netmask(network.getCidr()));
-                        }
+                if (NetUtils.isValidIp4(finalGuestIp) && !Strings.isNullOrEmpty(network.getGateway())) {
+                    vo.setIPv4Address(finalGuestIp);
+                    vo.setIPv4Gateway(network.getGateway());
+                    if (!Strings.isNullOrEmpty(network.getCidr())) {
+                        vo.setIPv4Netmask(NetUtils.cidr2Netmask(network.getCidr()));
                     }
-                    if (!Strings.isNullOrEmpty(ipAddresses.getIp6Address()) && !Strings.isNullOrEmpty(network.getIp6Gateway())) {
-                        vo.setAddressFormat(Networks.AddressFormat.Ip6);
-                        vo.setIPv6Address(ipAddresses.getIp6Address());
-                        vo.setIPv6Gateway(network.getIp6Gateway());
-                        if (!Strings.isNullOrEmpty(network.getIp6Cidr())) {
-                            vo.setIPv6Cidr(NetUtils.cidr2Netmask(network.getCidr()));
-                        }
+                }
+                if (NetUtils.isValidIp6(finalGuestIp) && !Strings.isNullOrEmpty(network.getIp6Gateway())) {
+                    vo.setAddressFormat(Networks.AddressFormat.Ip6);
+                    vo.setIPv6Address(finalGuestIp);
+                    vo.setIPv6Gateway(network.getIp6Gateway());
+                    if (!Strings.isNullOrEmpty(network.getIp6Cidr())) {
+                        vo.setIPv6Cidr(NetUtils.cidr2Netmask(network.getCidr()));
                     }
                 }
                 vo.setBroadcastUri(network.getBroadcastUri());

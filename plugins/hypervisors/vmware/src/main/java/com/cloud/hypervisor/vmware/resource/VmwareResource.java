@@ -6877,13 +6877,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private List<UnmanagedInstance.Nic> getUnmanageInstanceNics(VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo) {
         List<UnmanagedInstance.Nic> instanceNics = new ArrayList<>();
 
-        HashMap<String, String> guestNicMacIPAddressMap = new HashMap<>();
+        HashMap<String, List<String>> guestNicMacIPAddressMap = new HashMap<>();
         try {
             GuestInfo guestInfo = vmMo.getGuestInfo();
             if (guestInfo.getToolsStatus() == VirtualMachineToolsStatus.TOOLS_OK) {
                 for (GuestNicInfo nicInfo: guestInfo.getNet()) {
                     if (!nicInfo.getIpAddress().isEmpty()) {
-                        guestNicMacIPAddressMap.put(nicInfo.getMacAddress(), nicInfo.getIpAddress().get(0));
+                        guestNicMacIPAddressMap.put(nicInfo.getMacAddress(), nicInfo.getIpAddress());
                     }
                 }
             } else {
@@ -6915,7 +6915,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         instanceNic.setAdapterType(VirtualEthernetCardType.E1000.toString());
                     }
                     instanceNic.setMacAddress(ethCardDevice.getMacAddress());
-                    instanceNic.setIpAddress(guestNicMacIPAddressMap.get(instanceNic.getMacAddress()));
+                    if (guestNicMacIPAddressMap.containsKey(instanceNic.getMacAddress())) {
+                        instanceNic.setIpAddress(guestNicMacIPAddressMap.get(instanceNic.getMacAddress()));
+                    }
                     if (ethCardDevice.getSlotInfo() != null) {
                         instanceNic.setPciSlot(ethCardDevice.getSlotInfo().toString());
                     }

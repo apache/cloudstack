@@ -64,6 +64,7 @@ import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -232,8 +233,15 @@ public class VmImportManagerImpl implements VmImportService {
                 if (!Strings.isNullOrEmpty(nic.getAdapterType())) {
                     nicResponse.setAdapterType(nic.getAdapterType());
                 }
-                if (!Strings.isNullOrEmpty(nic.getIpAddress())) {
-                    nicResponse.setIpaddress(nic.getIpAddress());
+                if (!CollectionUtils.isEmpty(nic.getIpAddress())) {
+                    for (String address : nic.getIpAddress()) {
+                        if (Strings.isNullOrEmpty(nicResponse.getIpaddress()) && NetUtils.isValidIp4(address)) {
+                            nicResponse.setIpaddress(address);
+                        }
+                        if (Strings.isNullOrEmpty(nicResponse.getIp6Address()) && NetUtils.isValidIp6(address)) {
+                            nicResponse.setIp6Address(address);
+                        }
+                    }
                 }
                 nicResponse.setVlanId(nic.getVlan());
                 response.addNic(nicResponse);
@@ -414,12 +422,22 @@ public class VmImportManagerImpl implements VmImportService {
             if (MapUtils.isNotEmpty(callerNicIpAddressMap) && callerNicIpAddressMap.containsKey(nic.getNicId())) {
                 ipAddresses = callerNicIpAddressMap.get(nic.getNicId());
             }
-            if (!Strings.isNullOrEmpty(nic.getIpAddress()) &&
-                    (ipAddresses == null || Strings.isNullOrEmpty(ipAddresses.getIp4Address()))) {
-                if (ipAddresses == null) {
-                    ipAddresses = new Network.IpAddresses(null, null);
+            if (!CollectionUtils.isEmpty(nic.getIpAddress())) {
+                if (nic.getIpAddress().size() > 1) {
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple IP addresses (%s, %s) present for nic ID: %s cannot be imported automatically!", nic.getIpAddress().get(0), nic.getIpAddress().get(1), nic.getNicId()));
                 }
-                ipAddresses.setIp4Address(nic.getIpAddress());
+                if (ipAddresses == null || (Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && Strings.isNullOrEmpty(ipAddresses.getIp4Address()))) {
+                    if (ipAddresses == null) {
+                        ipAddresses = new Network.IpAddresses(null, null);
+                    }
+                    String address = nic.getIpAddress().get(0);
+                    if (NetUtils.isValidIp4(address)) {
+                        ipAddresses.setIp4Address(address);
+                    }
+                    if (NetUtils.isValidIp6(address)) {
+                        ipAddresses.setIp6Address(address);
+                    }
+                }
             }
             if (ipAddresses != null) {
                 nicIpAddresses.put(nic.getNicId(), ipAddresses);
@@ -511,18 +529,31 @@ public class VmImportManagerImpl implements VmImportService {
         if (nic.getVlan() != null && (Strings.isNullOrEmpty(network.getBroadcastUri().toString()) || !network.getBroadcastUri().toString().equals(String.format("vlan://%d", nic.getVlan())))) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) vlan://%d during VM import!", network.getUuid(), network.getBroadcastUri().toString(), nic.getNicId(), nic.getVlan()));
         }
-        if (!network.getGuestType().equals(Network.GuestType.L2)) {
-            if (ipAddresses == null) { // No IP address was provided by API and NIC details don't have one
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("NIC(ID: %s) needs a valid IP address for it to be associated with network(ID: %s)! %s parameter of API can be used for this.", nic.getNicId(), network.getUuid(), ApiConstants.NIC_IP_ADDRESS_LIST));
+        // Check IP is assigned for non L2 networks
+        if (!network.getGuestType().equals(Network.GuestType.L2) && (ipAddresses == null || (Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && Strings.isNullOrEmpty(ipAddresses.getIp6Address())))) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("NIC(ID: %s) needs a valid IP address for it to be associated with network(ID: %s)! %s parameter of API can be used for this.", nic.getNicId(), network.getUuid(), ApiConstants.NIC_IP_ADDRESS_LIST));
+        }
+        // Check both IP v4 and v6 are not assigned at the same time
+        if (ipAddresses != null && !Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && !Strings.isNullOrEmpty(ipAddresses.getIp6Address())) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple IP addresses(%s, %s) for NIC ID: %s cannot be assigned automatically", ipAddresses.getIp4Address(), ipAddresses.getIp6Address(), nic.getNicId()));
+        }
+        // If IP v4 is assigned and not set to auto check it is available for network
+        if (ipAddresses != null && !Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && !ipAddresses.getIp4Address().equals("auto")) {
+            Set<Long> ips = networkModel.getAvailableIps(network, ipAddresses.getIp4Address());
+            if (CollectionUtils.isEmpty(ips) || !ips.contains(NetUtils.ip2Long(ipAddresses.getIp4Address()))) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("IP address %s for NIC(ID: %s) is not available in network(ID: %s)!", nic.getNicId(), network.getUuid(), ApiConstants.NIC_IP_ADDRESS_LIST));
             }
-            if (Strings.isNullOrEmpty(ipAddresses.getIp4Address()) || Strings.isNullOrEmpty(ipAddresses.getIp6Address())) {
-                networkModel.checkRequestedIpAddresses(network.getId(), ipAddresses); // This only checks ipv6
+        }
+        // If IP v6 is assigned check network is Shared, supports IPv6 and if IP not set to auto check if available
+        if (ipAddresses != null && !Strings.isNullOrEmpty(ipAddresses.getIp6Address())) {
+            if (!network.getGuestType().equals(Network.GuestType.Shared)) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("IP v6 addressing %s for NIC(ID: %s) is not supported for in network(ID: %s), type: %s!", ipAddresses.getIp6Address(), nic.getNicId(), network.getUuid(), network.getGuestType()));
             }
-            if (Strings.isNullOrEmpty(ipAddresses.getIp4Address())) {
-                Set<Long> ips = networkModel.getAvailableIps(network, ipAddresses.getIp4Address());
-                if (CollectionUtils.isEmpty(ips)) {
-                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("IP address %s for NIC(ID: %s) is not available in network(ID: %s)!", nic.getNicId(), network.getUuid(), ApiConstants.NIC_IP_ADDRESS_LIST));
-                }
+            if (Strings.isNullOrEmpty(network.getIp6Gateway())) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network(ID: %s) assigned to NIC(ID: %s) is not configured for IP v6 addressing!", network.getUuid(), nic.getNicId()));
+            }
+            if (!ipAddresses.getIp6Address().equals("auto")) {
+                networkModel.checkRequestedIpAddresses(network.getId(), ipAddresses);
             }
         }
         // Check for duplicate hostname in network, get all vms hostNames in the network
@@ -595,7 +626,7 @@ public class VmImportManagerImpl implements VmImportService {
         return new Pair<DiskProfile, StoragePool>(profile, storagePool);
     }
 
-    private NicProfile importNic(UnmanagedInstance.Nic nic, VirtualMachine vm, Network network, Network.IpAddresses ipAddresses, boolean isDefaultNic) throws InsufficientVirtualNetworkCapacityException {
+    private NicProfile importNic(UnmanagedInstance.Nic nic, VirtualMachine vm, Network network, Network.IpAddresses ipAddresses, boolean isDefaultNic) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         Pair<NicProfile, Integer> result = networkOrchestrationService.importNic(nic.getMacAddress(), 0, network, isDefaultNic, vm, ipAddresses);
         if (result == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("NIC ID: %s import failed!", nic.getNicId()));
@@ -819,14 +850,6 @@ public class VmImportManagerImpl implements VmImportService {
             for (UnmanagedInstance.Nic nic : unmanagedInstance.getNics()) {
                 Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
                 Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
-                if (ipAddresses == null || (Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && Strings.isNullOrEmpty(ipAddresses.getIp6Address()))) {
-                    if (ipAddresses == null) {
-                        ipAddresses = new Network.IpAddresses(null, null);
-                    }
-                    if (!Strings.isNullOrEmpty(nic.getIpAddress())) {
-                        ipAddresses.setIp4Address(nic.getIpAddress());
-                    }
-                }
                 importNic(nic, userVm, network, ipAddresses, firstNic);
                 firstNic = false;
             }

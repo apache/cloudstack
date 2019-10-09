@@ -231,18 +231,20 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
                     throw new InvalidParameterValueException(String.format("NIC ID: '%s' is invalid for IP address mapping", nic));
                 }
                 if (Strings.isNullOrEmpty(ipAddress) && Strings.isNullOrEmpty(ip6Address)) {
-                    throw new InvalidParameterValueException(String.format("IP addresses for NIC ID: %s is invalid", ipAddress, nic));
+                    throw new InvalidParameterValueException(String.format("IP addresses for NIC ID: %s is invalid", nic));
+                }
+                if (!Strings.isNullOrEmpty(ipAddress) && !Strings.isNullOrEmpty(ip6Address)) {
+                    throw new InvalidParameterValueException(String.format("Multiple IP addresses(%s, %s) for NIC ID: %s cannot be assigned automatically", ipAddress, ip6Address, nic));
                 }
                 if (!Strings.isNullOrEmpty(ipAddress)) {
                     if (!ipAddress.equals("auto") && !NetUtils.isValidIp4(ipAddress)) {
                         throw new InvalidParameterValueException(String.format("IP v4 address '%s' for NIC ID: %s is invalid", ipAddress, nic));
                     }
-                    if (ipAddress.equals("auto")) {
-                        ipAddress = null;
-                    }
                 }
-                if (!Strings.isNullOrEmpty(ip6Address) && !NetUtils.isValidIp6(ip6Address)) {
-                    throw new InvalidParameterValueException(String.format("IP v6 address '%s' for NIC ID: %s is invalid", ip6Address, nic));
+                if (!Strings.isNullOrEmpty(ip6Address)) {
+                    if (!ip6Address.equals("auto") && !NetUtils.isValidIp6(ip6Address)) {
+                        throw new InvalidParameterValueException(String.format("IP v6 address '%s' for NIC ID: %s is invalid", ip6Address, nic));
+                    }
                 }
                 Network.IpAddresses ipAddresses = new Network.IpAddresses(ipAddress, ip6Address);
                 nicIpAddressMap.put(nic, ipAddresses);
