@@ -568,6 +568,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     private void updateTemplate(VMTemplateVO template) {
         template.setTemplateType(TemplateType.SYSTEM);
+        template.setState(VirtualMachineTemplate.State.Active);
         _tmpltDao.update(template.getId(), template);
     }
 
