@@ -541,7 +541,7 @@ public class VmImportManagerImpl implements VmImportService {
         if (ipAddresses != null && !Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && !ipAddresses.getIp4Address().equals("auto")) {
             Set<Long> ips = networkModel.getAvailableIps(network, ipAddresses.getIp4Address());
             if (CollectionUtils.isEmpty(ips) || !ips.contains(NetUtils.ip2Long(ipAddresses.getIp4Address()))) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("IP address %s for NIC(ID: %s) is not available in network(ID: %s)!", nic.getNicId(), network.getUuid(), ApiConstants.NIC_IP_ADDRESS_LIST));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("IP address %s for NIC(ID: %s) is not available in network(ID: %s)!", ipAddresses.getIp4Address(), nic.getNicId(), network.getUuid()));
             }
         }
         // If IP v6 is assigned check network is Shared, supports IPv6 and if IP not set to auto check if available

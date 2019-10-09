@@ -143,7 +143,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.NIC_IP_ADDRESS_LIST,
             type = CommandType.MAP,
-            description = "VM nic to ip address mapping using keys nic and ipAddress")
+            description = "VM nic to ip address mapping using keys nic, ipAddress, ip6Address")
     private Map nicIpAddressList;
 
     @Parameter(name = ApiConstants.DATADISK_OFFERING_LIST,

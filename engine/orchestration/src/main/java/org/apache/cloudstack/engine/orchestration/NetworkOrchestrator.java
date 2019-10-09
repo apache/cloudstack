@@ -3956,13 +3956,24 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (ipAddresses.getIp4Address().equals("auto")) {
                     ipAddresses.setIp4Address(null);
                 }
-                guestIp = _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
+                if (network.getGuestType() != GuestType.L2) {
+                    guestIp = _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
+                } else {
+                    guestIp = ipAddresses.getIp4Address();
+                }
                 if (guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
                     throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP  address for network " + network, DataCenter.class,
                             network.getDataCenterId());
                 }
             } else if (!Strings.isNullOrEmpty(ipAddresses.getIp6Address())) {
-                guestIp = ipv6AddressManager.acquireGuestIpv6Address(network, ipAddresses.getIp6Address());
+                if (ipAddresses.getIp6Address().equals("auto")) {
+                    ipAddresses.setIp6Address(null);
+                }
+                if (network.getGuestType() != GuestType.L2) {
+                    guestIp = ipv6AddressManager.acquireGuestIpv6Address(network, ipAddresses.getIp6Address());
+                } else {
+                    guestIp = ipAddresses.getIp6Address();
+                }
                 if (guestIp == null && network.getGuestType() != GuestType.Shared && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
                     throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP v6 address for network " + network, DataCenter.class,
                             network.getDataCenterId());
