@@ -187,7 +187,8 @@ public class VmImportManagerImplTest {
         doNothing().when(resourceLimitService).checkResourceLimit(any(Account.class), any(Resource.ResourceType.class), anyLong());
         List<HostVO> hosts = new ArrayList<>();
         HostVO hostVO = Mockito.mock(HostVO.class);
-        hosts.add(hostVO);;
+        when(hostVO.isInMaintenanceStates()).thenReturn(false);
+        hosts.add(hostVO);
         when(resourceManager.listHostsInClusterByStatus(Mockito.anyLong(), Mockito.any(Status.class))).thenReturn(hosts);
         List<VMTemplateStoragePoolVO> templates = new ArrayList<>();
         when(templatePoolDao.listAll()).thenReturn(templates);

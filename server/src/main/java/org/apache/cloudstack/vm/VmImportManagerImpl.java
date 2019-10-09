@@ -863,6 +863,9 @@ public class VmImportManagerImpl implements VmImportService {
         List<String> additionalNameFilters = getAdditionalNameFilters(cluster);
         List<UnmanagedInstanceResponse> responses = new ArrayList<>();
         for (HostVO host : hosts) {
+            if (host.isInMaintenanceStates()) {
+                continue;
+            }
             List<String> managedVms = new ArrayList<>();
             managedVms.addAll(additionalNameFilters);
             managedVms.addAll(getHostManagedVms(host));
