@@ -2,26 +2,29 @@
 
   <a-dropdown>
     <span class="action ant-dropdown-link translation-menu">
-      <flag :iso="flag" />
+      <font-awesome-icon :icon="['fas', 'language']" size="lg" />
     </span>
-    <a-menu slot="overlay" @click="onClick">
-      <a-menu-item key="en" :value="enUS"><flag iso="gb"/> English</a-menu-item>
-      <a-menu-item key="hi" :value="hi"><flag iso="in"/> हिन्दी</a-menu-item>
-      <a-menu-item key="ja_JP" :value="jpJP"><flag iso="jp"/> 日本語</a-menu-item>
-      <a-menu-item key="ko_KR" :value="koKR"><flag iso="kr"/> 한국어</a-menu-item>
-      <a-menu-item key="zh_CN" :value="zhCN"><flag iso="cn"/> 简体中文</a-menu-item>
-      <a-menu-item key="ar" :value="arEG"><flag iso="ae"/> Arabic</a-menu-item>
-      <a-menu-item key="ca" :value="caES"><flag iso="es-ct"/> Catalan</a-menu-item>
-      <a-menu-item key="de_DE" :value="deDE"><flag iso="de"/> Deutsch</a-menu-item>
-      <a-menu-item key="es" :value="esES"><flag iso="es"/> Españo</a-menu-item>
-      <a-menu-item key="fr_FR" :value="frFR"><flag iso="fr"/> Français</a-menu-item>
-      <a-menu-item key="it_IT" :value="itIT"><flag iso="it"/> Italiano</a-menu-item>
-      <a-menu-item key="hu" :value="huHU"><flag iso="hu"/> Magyar</a-menu-item>
-      <a-menu-item key="nl_NL" :value="nlNL"><flag iso="nl"/> Nederlands</a-menu-item>
-      <a-menu-item key="nb_NO" :value="nbNO"><flag iso="no"/> Norsk</a-menu-item>
-      <a-menu-item key="pl" :value="plPL"><flag iso="pl"/> Polish</a-menu-item>
-      <a-menu-item key="pt_BR" :value="ptBR"><flag iso="pt"/> Português brasileiro</a-menu-item>
-      <a-menu-item key="ru_RU" :value="ruRU"><flag iso="ru"/> Русский</a-menu-item>
+    <a-menu
+      slot="overlay"
+      :selectedKeys="[language]"
+      @click="onClick">
+      <a-menu-item key="en" :value="enUS">English</a-menu-item>
+      <a-menu-item key="hi" :value="hi">हिन्दी</a-menu-item>
+      <a-menu-item key="ja_JP" :value="jpJP">日本語</a-menu-item>
+      <a-menu-item key="ko_KR" :value="koKR">한국어</a-menu-item>
+      <a-menu-item key="zh_CN" :value="zhCN">简体中文</a-menu-item>
+      <a-menu-item key="ar" :value="arEG">Arabic</a-menu-item>
+      <a-menu-item key="ca" :value="caES">Catalan</a-menu-item>
+      <a-menu-item key="de_DE" :value="deDE">Deutsch</a-menu-item>
+      <a-menu-item key="es" :value="esES">Españo</a-menu-item>
+      <a-menu-item key="fr_FR" :value="frFR">Français</a-menu-item>
+      <a-menu-item key="it_IT" :value="itIT">Italiano</a-menu-item>
+      <a-menu-item key="hu" :value="huHU">Magyar</a-menu-item>
+      <a-menu-item key="nl_NL" :value="nlNL">Nederlands</a-menu-item>
+      <a-menu-item key="nb_NO" :value="nbNO">Norsk</a-menu-item>
+      <a-menu-item key="pl" :value="plPL">Polish</a-menu-item>
+      <a-menu-item key="pt_BR" :value="ptBR">Português brasileiro</a-menu-item>
+      <a-menu-item key="ru_RU" :value="ruRU">Русский</a-menu-item>
     </a-menu>
   </a-dropdown>
 
@@ -49,19 +52,13 @@ import hi from 'ant-design-vue/lib/locale-provider/he_IL'
 import moment from 'moment'
 import 'moment/locale/zh-cn'
 
-import FlagIcon from 'vue-flag-icon'
-Vue.use(FlagIcon)
-
 moment.locale('en')
 
 export default {
   name: 'TranslationMenu',
-  components: {
-    FlagIcon
-  },
   data () {
     return {
-      flag: 'gb',
+      language: 'en',
       enUS,
       arEG,
       caES,
@@ -88,11 +85,14 @@ export default {
       if (!localeValue) {
         localeValue = 'en'
       }
+      this.setLocale(localeValue)
+    },
+    setLocale (localeValue) {
       this.$locale = localeValue
-      moment.locale(localeValue)
       this.$i18n.locale = localeValue
+      this.language = localeValue
+      moment.locale(localeValue)
       Vue.ls.set('current_locale', localeValue)
-      this.flag = e.item.$children[0].iso
     }
   }
 }

@@ -53,7 +53,6 @@
     "vue": "^2.6.10",
     "vue-clipboard2": "^0.3.1",
     "vue-cropper": "0.4.9",
-    "vue-flag-icon": "^1.0.6",
     "vue-i18n": "^8.14.1",
     "vue-ls": "^3.2.1",
     "vue-router": "^3.1.3",
