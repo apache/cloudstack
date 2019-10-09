@@ -222,7 +222,7 @@
                       Gateway: {{ item.gateway }}<br/>
                     </div>
                     <div slot="description">
-                      <a-icon type="barcode"/> {{ item.id}}
+                      <a-icon type="barcode"/> {{ item.id }}
                     </div>
                     <a-avatar slot="avatar">
                       <font-awesome-icon :icon="['fas', 'ethernet']" />
