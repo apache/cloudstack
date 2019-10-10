@@ -16,8 +16,12 @@
 // under the License.
 package com.cloud.hypervisor.vmware.util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.collections.CollectionUtils;
 
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 
@@ -120,8 +124,11 @@ public class VmwareGuestOsMapper {
         s_mapper.put("CentOS 5.5 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_64_GUEST);
         s_mapper.put("CentOS 5.6 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_GUEST);
         s_mapper.put("CentOS 5.6 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_64_GUEST);
-        s_mapper.put("CentOS 6.0 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_GUEST);
-        s_mapper.put("CentOS 6.0 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_64_GUEST);
+        s_mapper.put("CentOS 6.0 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_6_GUEST);
+        s_mapper.put("CentOS 6.0 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_6_64_GUEST);
+        s_mapper.put("CentOS 7.0 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_7_GUEST);
+        s_mapper.put("CentOS 7.0 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_7_64_GUEST);
+        s_mapper.put("CentOS 8.0 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_8_64_GUEST);
         s_mapper.put("Other CentOS (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_GUEST);
         s_mapper.put("Other CentOS (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_64_GUEST);
 
@@ -200,4 +207,17 @@ public class VmwareGuestOsMapper {
         return s_mapper.get(guestOsName);
     }
 
+    public static String getGuestOsName(VirtualMachineGuestOsIdentifier identifier) {
+        String guestOsName = null;
+        List<String> keys = new ArrayList<>();
+        for (Map.Entry<String, VirtualMachineGuestOsIdentifier> entry : s_mapper.entrySet()) {
+            if (entry.getValue().equals(identifier)) {
+                keys.add(entry.getKey());
+            }
+        }
+        if (CollectionUtils.isNotEmpty(keys)) {
+            guestOsName = keys.get(keys.size()-1);
+        }
+        return guestOsName;
+    }
 }

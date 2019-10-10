@@ -209,7 +209,11 @@ public class VmImportManagerImplTest {
         List<UserVO> users = new ArrayList<>();
         users.add(Mockito.mock(UserVO.class));
         when(userDao.listByAccount(Mockito.anyLong())).thenReturn(users);
-        when(templateDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(VMTemplateVO.class));
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(template.getId()).thenReturn(1L);
+        when(template.getName()).thenReturn("Template");
+        when(templateDao.findById(Mockito.anyLong())).thenReturn(template);
+        when(templateDao.findByName(Mockito.anyString())).thenReturn(template);
         ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
         when(serviceOffering.getId()).thenReturn(1L);
         when(serviceOffering.getTags()).thenReturn("");

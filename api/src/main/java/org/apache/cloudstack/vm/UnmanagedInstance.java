@@ -39,6 +39,8 @@ public class UnmanagedInstance {
 
     private Integer cpuSpeed;
 
+    private String operatingSystemId;
+
     private String operatingSystem;
 
     private List<Disk> disks;
@@ -91,6 +93,14 @@ public class UnmanagedInstance {
 
     public void setCpuSpeed(Integer cpuSpeed) {
         this.cpuSpeed = cpuSpeed;
+    }
+
+    public String getOperatingSystemId() {
+        return operatingSystemId;
+    }
+
+    public void setOperatingSystemId(String operatingSystemId) {
+        this.operatingSystemId = operatingSystemId;
     }
 
     public String getOperatingSystem() {

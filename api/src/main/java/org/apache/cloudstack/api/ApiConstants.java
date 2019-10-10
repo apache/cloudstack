@@ -244,6 +244,7 @@ public class ApiConstants {
     public static final String OLD_FORMAT = "oldformat";
     public static final String OP = "op";
     public static final String OS_CATEGORY_ID = "oscategoryid";
+    public static final String OS_ID = "osid";
     public static final String OS_TYPE_ID = "ostypeid";
     public static final String OS_DISPLAY_NAME = "osdisplayname";
     public static final String OS_NAME_FOR_HYPERVISOR = "osnameforhypervisor";

@@ -118,7 +118,6 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.TEMPLATE_ID,
             type = CommandType.UUID,
             entityType = TemplateResponse.class,
-            required = true,
             description = "the ID of the template for the virtual machine")
     private Long templateId;
 

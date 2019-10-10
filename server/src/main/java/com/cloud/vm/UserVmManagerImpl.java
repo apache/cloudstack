@@ -6898,7 +6898,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final Host lastHost = powerState != VirtualMachine.PowerState.PowerOn ? host : null;
         UserVmVO userVmVO = commitUserVm(true, zone, host, lastHost, template, hostName, displayName, owner,
                 rootDiskOffering.getId(), null, userData, caller, isDisplayVm, keyboard,
-                accountId, userId, serviceOffering, false, sshPublicKey, null,
+                accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), sshPublicKey, null,
                 id, instanceName, uuidName, hypervisorType, customParameters,
                 null, null, null, powerState);
         return userVmVO;

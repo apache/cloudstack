@@ -225,6 +225,7 @@ import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostResourceSummary;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareContextPool;
+import com.cloud.hypervisor.vmware.util.VmwareGuestOsMapper;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -7005,10 +7006,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             instance.setCpuCoresPerSocket(vmMo.getCoresPerSocket());
             instance.setCpuSpeed(vmMo.getConfigSummary().getCpuReservation());
             instance.setMemory(vmMo.getConfigSummary().getMemorySizeMB());
-            instance.setOperatingSystem(vmMo.getVmGuestInfo().getGuestFullName());
+            instance.setOperatingSystemId(vmMo.getVmGuestInfo().getGuestId());
+            if (Strings.isNullOrEmpty(instance.getOperatingSystemId())) {
+                instance.setOperatingSystemId(vmMo.getConfigSummary().getGuestId());
+            }
+            VirtualMachineGuestOsIdentifier osIdentifier = VirtualMachineGuestOsIdentifier.OTHER_GUEST;
+            try {
+                osIdentifier = VirtualMachineGuestOsIdentifier.fromValue(instance.getOperatingSystemId());
+            } catch (IllegalArgumentException iae) {
+                if (!Strings.isNullOrEmpty(instance.getOperatingSystemId()) && instance.getOperatingSystemId().contains("64")) {
+                    osIdentifier = VirtualMachineGuestOsIdentifier.OTHER_GUEST_64;
+                }
+            }
+            instance.setOperatingSystem(VmwareGuestOsMapper.getGuestOsName(osIdentifier));
+            /*instance.setOperatingSystem(vmMo.getGuestInfo().getGuestFullName());
             if (Strings.isNullOrEmpty(instance.getOperatingSystem())) {
                 instance.setOperatingSystem(vmMo.getConfigSummary().getGuestFullName());
-            }
+            }*/
             UnmanagedInstance.PowerState powerState = UnmanagedInstance.PowerState.PowerUnknown;
             if (vmMo.getPowerState().toString().equalsIgnoreCase("POWERED_ON")) {
                 powerState = UnmanagedInstance.PowerState.PowerOn;

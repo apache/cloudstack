@@ -63,6 +63,10 @@ public class UnmanagedInstanceResponse extends BaseResponse {
     @Param(description = "the memory of the virtual machine in MB")
     private Integer memory;
 
+    @SerializedName(ApiConstants.OS_ID)
+    @Param(description = "the operating system ID of the virtual machine")
+    private String operatingSystemId;
+
     @SerializedName(ApiConstants.OS_DISPLAY_NAME)
     @Param(description = "the operating system of the virtual machine")
     private String operatingSystem;
@@ -142,6 +146,14 @@ public class UnmanagedInstanceResponse extends BaseResponse {
 
     public void setMemory(Integer memory) {
         this.memory = memory;
+    }
+
+    public String getOperatingSystemId() {
+        return operatingSystemId;
+    }
+
+    public void setOperatingSystemId(String operatingSystemId) {
+        this.operatingSystemId = operatingSystemId;
     }
 
     public String getOperatingSystem() {

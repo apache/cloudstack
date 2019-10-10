@@ -88,13 +88,18 @@ import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.GuestOS;
+import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -122,6 +127,7 @@ import com.google.common.base.Strings;
 import com.google.gson.Gson;
 
 public class VmImportManagerImpl implements VmImportService {
+    public static final String VMWARE_IMPORT_DEFAULT_TEMPLATE_NAME = "vmware-import-default.ova";
     private static final Logger LOGGER = Logger.getLogger(VmImportManagerImpl.class);
 
     @Inject
@@ -180,6 +186,10 @@ public class VmImportManagerImpl implements VmImportService {
     private NetworkModel networkModel;
     @Inject
     private ConfigurationDao configurationDao;
+    @Inject
+    private GuestOSDao guestOSDao;
+    @Inject
+    private GuestOSHypervisorDao guestOSHypervisorDao;
 
     protected Gson gson;
 
@@ -201,6 +211,7 @@ public class VmImportManagerImpl implements VmImportService {
         response.setCpuSpeed(instance.getCpuSpeed());
         response.setCpuCoresPerSocket(instance.getCpuCoresPerSocket());
         response.setMemory(instance.getMemory());
+        response.setOperatingSystemId(instance.getOperatingSystemId());
         response.setOperatingSystem(instance.getOperatingSystem());
         response.setObjectName(UnmanagedInstance.class.getSimpleName().toLowerCase());
 
@@ -951,11 +962,16 @@ public class VmImportManagerImpl implements VmImportService {
         if (CollectionUtils.isNotEmpty(userVOs)) {
             userId = userVOs.get(0).getId();
         }
+        VMTemplateVO template = null;
         final Long templateId = cmd.getTemplateId();
         if (templateId == null) {
-            throw new InvalidParameterValueException(String.format("Template ID cannot be null!"));
+            template = templateDao.findByName(VMWARE_IMPORT_DEFAULT_TEMPLATE_NAME);
+            if (template == null) {
+                throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be found! Please use templateid paramter for import.", VMWARE_IMPORT_DEFAULT_TEMPLATE_NAME, cluster.getHypervisorType().toString()));
+            }
+        } else {
+            template = templateDao.findById(templateId);
         }
-        final VirtualMachineTemplate template = templateDao.findById(templateId);
         if (template == null) {
             throw new InvalidParameterValueException(String.format("Template ID: %d cannot be found!", templateId));
         }
@@ -1037,6 +1053,21 @@ public class VmImportManagerImpl implements VmImportService {
                     UnmanagedInstance unmanagedInstance = unmanagedInstances.get(name);
                     if (unmanagedInstance == null) {
                         throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve details for unmanaged VM: %s", name));
+                    }
+                    if (template.getName().equals(VMWARE_IMPORT_DEFAULT_TEMPLATE_NAME)) {
+                        String osName = unmanagedInstance.getOperatingSystem();
+                        if (Strings.isNullOrEmpty(osName)) {
+                            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve guest OS details for unmanaged VM: %s. templateid parameter can be used to assign template for VM", name));
+                        }
+                        GuestOS guestOS = guestOSDao.listByDisplayName(osName);
+                        if (guestOS == null) {
+                            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve guest OS details for unmanaged VM: %s. templateid parameter can be used to assign template for VM", name));
+                        }
+                        GuestOSHypervisor guestOSHypervisor = guestOSHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
+                        if (guestOSHypervisor == null) {
+                            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve guest OS details for unmanaged VM: %s for hypervisor: %s version: %s. templateid parameter can be used to assign template for VM", name, host.getHypervisorType().toString(), host.getHypervisorVersion()));
+                        }
+                        template.setGuestOSId(guestOS.getId());
                     }
                     userVm = importVirtualMachineInternal(unmanagedInstance, instanceName, zone, cluster, host,
                             template, displayName, hostName, caller, owner, userId,
