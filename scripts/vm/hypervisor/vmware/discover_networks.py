@@ -123,7 +123,10 @@ def get_vm_nics(vm, hostPgDict):
                     else:
                         pgObj = dvs.LookupDvPortGroup(portGroupKey)
                         portGroup = pgObj.config.name
-                        vlanId = str(pgObj.config.defaultPortConfig.vlan.vlanId)
+                        try:
+                            vlanId = str(pgObj.config.defaultPortConfig.vlan.vlanId)
+                        except AttributeError:
+                            vlanId = '0'
                         vSwitch = str(dvs.name)
                 else:
                     portGroup = dev.backing.network.name
