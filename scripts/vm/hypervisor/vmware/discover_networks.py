@@ -143,14 +143,24 @@ def get_vm_nics(vm, hostPgDict):
                     vlanId = 'NA'
                 if vSwitch is None:
                     vSwitch = 'NA'
-                add_network(portGroup, vlanId, vSwitch, vm.name, dev.deviceInfo.label, dev.macAddress)
+                vmHostName = None
+                vmClusterName = None
+                try:
+                    vmHostName = vm.runtime.host.name
+                except AttributeError:
+                    vmHostName = ''
+                try:
+                    vmClusterName = vm.runtime.host.parent.name
+                except AttributeError:
+                    vmClusterName = ''
+                add_network(portGroup, vlanId, vSwitch, vm.name, dev.deviceInfo.label, dev.macAddress, vmClusterName, vmHostName)
                 log_message('\t\t' + dev.deviceInfo.label + '->' + dev.macAddress +
                       ' @ ' + vSwitch + '->' + portGroup +
                       ' (VLAN ' + vlanId + ')')
     except AttributeError:
         log_message('\tError: Unable retrieve details for ' + vm.name)
 
-def add_network(portGroup, vlanId, vSwitch, vmName, vmDeviceLabel, vmMacAddress):
+def add_network(portGroup, vlanId, vSwitch, vmName, vmDeviceLabel, vmMacAddress, vmClusterName, vmHostName):
     key = vSwitch + '->' + portGroup + ' (VLAN ' + vlanId + ')'
     device = {"label": vmDeviceLabel, "macaddress": vmMacAddress}
     vm = {"name":vmName, "device": device}
@@ -163,11 +173,11 @@ def add_network(portGroup, vlanId, vSwitch, vmName, vmDeviceLabel, vmMacAddress)
         try:
             host = pgHostNameDict[portGroup]
         except KeyError:
-            host = ''
+            host = vmHostName
         try:
             cluster = hostClusterNameDict[host]
         except KeyError:
-            cluster = ''
+            cluster = vmClusterName
         
         network = {"portgroup": portGroup, "cluster": cluster, "host": host, "vlanid": vlanId, "switch": vSwitch, "virtualmachines": vms}
         networksDict[key] = network
