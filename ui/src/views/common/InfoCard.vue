@@ -88,7 +88,7 @@
       </div>
     </div>
 
-    <div class="account-center-tags" v-if="resourceType">
+    <div class="account-center-tags">
       <a-divider/>
       <div class="tagsTitle">Tags</div>
       <div>
@@ -210,6 +210,9 @@ export default {
       this.resource = newItem
       this.getTags()
       this.getNotes()
+      if ('tags' in this.resource) {
+        this.tags = this.resource.tags
+      }
     }
   },
   methods: {

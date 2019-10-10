@@ -12,6 +12,13 @@
           title="Details"
           :bordered="true"
         >
+          <a-card-grid
+            style="width:33.33%; textAlign:'center'"
+            :key="key"
+            v-for="(value, key) in resource"
+            v-if="key !== 'key' && key !== 'tags'">
+            <strong>{{ key }}</strong><br/>{{ value }}
+          </a-card-grid>
         </a-card>
         <a-card
           style="width:100%; margin-top: 12px"
