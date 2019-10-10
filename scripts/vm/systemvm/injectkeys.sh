@@ -30,10 +30,6 @@ TMPDIR=${TMP}/cloud/systemvm
 umask 022
 
 clean_up() {
-  $SUDO umount $MOUNTPATH
-}
-
-clean_up_bsdtar() {
   rm -rf --preserve-root $MOUNTPATH
 }
 
@@ -47,42 +43,18 @@ inject_into_iso() {
   local tmpiso=${TMP}/$1
   mkdir -p $MOUNTPATH
   [ ! -f $isofile ] && echo "$(basename $0): Could not find systemvm iso patch file $isofile" && return 1
-  if [ -x "$(command -v bsdtar)" ]; then
-    bsdtar -C $MOUNTPATH -xf $isofile
-    [ $? -ne 0 ] && echo "$(basename $0): Failed to extract original iso $isofile" && clean_up_bsdtar && return 1
-    diff -q $MOUNTPATH/authorized_keys $newpubkey &> /dev/null && clean_up_bsdtar && return 0
-    backup_iso
-    [ $? -ne 0 ] && echo "$(basename $0): Failed to backup original iso $isofile" && clean_up_bsdtar && return 1
-    $SUDO cp $newpubkey $MOUNTPATH/authorized_keys
-    [ $? -ne 0 ] && echo "$(basename $0): Failed to copy key $newpubkey from original iso to new iso " && clean_up_bsdtar && return 1
-    mkisofs -quiet -r -o $tmpiso $MOUNTPATH
-    [ $? -ne 0 ] && echo "$(basename $0): Failed to create new iso $tmpiso from $MOUNTPATH" && clean_up_bsdtar && return 1
-    $SUDO cp -f $tmpiso $isofile
-    [ $? -ne 0 ] && echo "$(basename $0): Failed to overwrite old iso $isofile with $tmpiso" && return 1
-    clean_up_bsdtar
-  else
-    $SUDO mount -o loop $isofile $MOUNTPATH
-    [ $? -ne 0 ] && echo "$(basename $0): Failed to mount original iso $isofile" && clean_up && return 1
-    diff -q $MOUNTPATH/authorized_keys $newpubkey &> /dev/null && clean_up && return 0
-    backup_iso
-    [ $? -ne 0 ] && echo "$(basename $0): Failed to backup original iso $isofile" && clean_up && return 1
-    #
-    rm -rf $TMPDIR
-    mkdir -p $TMPDIR
-    [ ! -d $TMPDIR  ] && echo "$(basename $0): Could not find/create temporary dir $TMPDIR" && clean_up && return 1
-    $SUDO cp -fr $MOUNTPATH/* $TMPDIR/
-    [ $? -ne 0 ] && echo "$(basename $0): Failed to copy from original iso $isofile" && clean_up && return 1
-    #
-    $SUDO cp $newpubkey $TMPDIR/authorized_keys
-    [ $? -ne 0 ] && echo "$(basename $0): Failed to copy key $newpubkey from original iso to new iso " && clean_up && return 1
-    mkisofs -quiet -r -o $tmpiso $TMPDIR
-    [ $? -ne 0 ] && echo "$(basename $0): Failed to create new iso $tmpiso from $TMPDIR" && clean_up && return 1
-    $SUDO umount $MOUNTPATH
-    [ $? -ne 0 ] && echo "$(basename $0): Failed to unmount old iso from $MOUNTPATH" && return 1
-    $SUDO cp -f $tmpiso $isofile
-    [ $? -ne 0 ] && echo "$(basename $0): Failed to overwrite old iso $isofile with $tmpiso" && return 1
-    rm -rf $TMPDIR
-  fi
+  bsdtar -C $MOUNTPATH -xf $isofile
+  [ $? -ne 0 ] && echo "$(basename $0): Failed to extract original iso $isofile" && clean_up && return 1
+  diff -q $MOUNTPATH/authorized_keys $newpubkey &> /dev/null && clean_up && return 0
+  backup_iso
+  [ $? -ne 0 ] && echo "$(basename $0): Failed to backup original iso $isofile" && clean_up && return 1
+  $SUDO cp $newpubkey $MOUNTPATH/authorized_keys
+  [ $? -ne 0 ] && echo "$(basename $0): Failed to copy key $newpubkey from original iso to new iso " && clean_up && return 1
+  mkisofs -quiet -r -o $tmpiso $MOUNTPATH
+  [ $? -ne 0 ] && echo "$(basename $0): Failed to create new iso $tmpiso from $MOUNTPATH" && clean_up && return 1
+  $SUDO cp -f $tmpiso $isofile
+  [ $? -ne 0 ] && echo "$(basename $0): Failed to overwrite old iso $isofile with $tmpiso" && return 1
+  clean_up
 }
 
 copy_priv_key() {
@@ -109,8 +81,8 @@ systemvmpath=$3
 
 command -v mkisofs > /dev/null   || (echo "$(basename $0): mkisofs not found, please install or ensure PATH is accurate" ; exit 4)
 
-if [ ! -e /dev/loop0 ] && [ ! -x "$(command -v bsdtar)" ]; then
-  echo "Loop device is missing and bsdtar is unavailable. Skipping ssh key insertion in systemvm.iso"
+if [ ! -x "$(command -v bsdtar)" ]; then
+  echo "bsdtar is unavailable. Skipping ssh key insertion in systemvm.iso"
 else
   inject_into_iso systemvm.iso $newpubkey
   [ $? -ne 0 ] && exit 5
