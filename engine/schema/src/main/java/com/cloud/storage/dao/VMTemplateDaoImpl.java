@@ -106,6 +106,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     // private SearchBuilder<VMTemplateVO> updateStateSearch;
     private SearchBuilder<VMTemplateVO> AllFieldsSearch;
     protected SearchBuilder<VMTemplateVO> ParentTemplateIdSearch;
+    private SearchBuilder<VMTemplateVO> typeAndHypervisorSearch;
 
     @Inject
     ResourceTagDao _tagsDao;
@@ -147,12 +148,10 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
     @Override
     public List<VMTemplateVO> listAllSystemVMTemplatesByHypervisorType(String hypervisorType) {
-        SearchCriteria<VMTemplateVO> sc = tmpltTypeSearch.create();
-        sc.setParameters("templateType", Storage.TemplateType.SYSTEM, SearchCriteria.Op.EQ);
-        sc.setParameters("hypervisorType", hypervisorType, SearchCriteria.Op.EQ);
-
-        Filter filter = new Filter(VMTemplateVO.class, "id", false, null, null);
-        return listBy(sc, filter);
+        SearchCriteria<VMTemplateVO> sc = typeAndHypervisorSearch.create();
+        sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
+        sc.setParameters("hypervisorType", hypervisorType);
+        return listBy(sc);
     }
 
     @Override
@@ -442,6 +441,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         urlLikeSearch.and("hypervisorType", urlLikeSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         urlLikeSearch.and("url", urlLikeSearch.entity().getUrl(), SearchCriteria.Op.LIKE);
         urlLikeSearch.done();
+
+        typeAndHypervisorSearch = createSearchBuilder();
+        typeAndHypervisorSearch.and("templateType", typeAndHypervisorSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
+        typeAndHypervisorSearch.and("hypervisorType", typeAndHypervisorSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        typeAndHypervisorSearch.done();
 
         return result;
     }
