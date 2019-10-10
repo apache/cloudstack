@@ -80,11 +80,21 @@ export function generateRouterMap (section) {
       map.children.push(route)
     }
   } else {
+    map.component = section.component ? section.component : AutogenView
     map.hideChildrenInMenu = true
     map.children = [{
       path: '/' + section.name + '/:id',
       actions: section.actions ? section.actions : [],
-      component: section.viewComponent ? section.viewComponent : section.component
+      meta: {
+        title: section.title,
+        keepAlive: true,
+        icon: section.icon,
+        permission: section.permission,
+        params: section.params ? section.params : {},
+        actions: section.actions ? section.actions : [],
+        viewComponent: section.viewComponent
+      },
+      component: section.viewComponent ? section.viewComponent : AutogenView
     }]
   }
 

@@ -335,7 +335,6 @@ export default {
       params['page'] = this.page
       params['pagesize'] = this.pageSize
       api(this.apiName, params).then(json => {
-        this.loading = false
         var responseName
         var objectName
         for (const key in json) {
@@ -364,6 +363,17 @@ export default {
         } else {
           this.resource = {}
         }
+      }).catch(error => {
+        // handle error
+        this.$notification['error']({
+          message: 'Request Failed',
+          description: error.response.headers['x-description']
+        })
+        if (error.response.status === 431) {
+          this.$router.push({ path: '/exception/404' })
+        }
+      }).finally(f => {
+        this.loading = false
       })
     },
     onSearch (value) {

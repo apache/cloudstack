@@ -30,6 +30,10 @@ const err = (error) => {
         })
       }
     }
+    if (error.response.status === 404) {
+      notification.error({ message: 'Not Found', description: 'Resource not found' })
+      this.$router.push({ path: '/exception/404' })
+    }
   }
   return Promise.reject(error)
 }
