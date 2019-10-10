@@ -47,8 +47,10 @@ export default {
         case 'Started':
           status = 'success'
           break
-        case 'Stopped':
+        case 'Disabled':
+        case 'Down':
         case 'Error':
+        case 'Stopped':
           status = 'error'
           break
         case 'Migrating':

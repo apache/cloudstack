@@ -33,7 +33,7 @@
       <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
     </a>
     <template slot="state" slot-scope="text">
-      <status :text="text ? text : ''" />
+      <status :text="text ? text : ''" displayText />
     </template>
 
     <a slot="account" slot-scope="text, record" href="javascript:;">

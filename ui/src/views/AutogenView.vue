@@ -3,7 +3,7 @@
     <breadcrumb v-if="device !== 'desktop'" class="mobile-breadcrumb" />
     <a-row>
       <a-col :span="17">
-        <a-tooltip placement="bottom" v-for="(action, actionIndex) in actions" :key="actionIndex" v-if="(!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) || (dataView && action.dataView)">
+        <a-tooltip placement="bottom" v-for="(action, actionIndex) in actions" :key="actionIndex" v-if="action.api in $store.getters.apis && ((!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) || (dataView && action.dataView))">
           <template slot="title">
             {{ action.label }}
           </template>
@@ -322,6 +322,7 @@ export default {
         this.columns.push({
           title: this.$t(key),
           dataIndex: key,
+          width: key === 'state' ? '8%' : '',
           scopedSlots: { customRender: key },
           sorter: (a, b) => String(a[key]).length - String(b[key]).length
         })

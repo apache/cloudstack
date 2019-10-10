@@ -3,7 +3,7 @@
     <a-row :gutter="12">
       <a-col :md="24" :lg="7" style="margin-bottom: 12px">
         <a-card :bordered="true">
-          <div class="account-center-avatarHolder">
+          <div class="resource-details">
             <div class="avatar">
               <font-awesome-icon :icon="['fab', osLogo]" size="4x" style="color: #666;" />
             </div>
@@ -21,7 +21,7 @@
               <a-tag :color="vm.isdynamicallyscalable ? 'green': 'red'">Dynamic Scalable</a-tag>
             </div>
           </div>
-          <div class="account-center-detail">
+          <div class="resource-center-detail">
             <p>
               <status :text="vm.state ? vm.state : ''" style="padding-left: 8px; padding-right: 5px"/>{{ vm.state }}
             </p>
@@ -43,26 +43,23 @@
               <font-awesome-icon :icon="['fas', 'database']" />
               {{ (totalStorage / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage
               (<router-link :to="{ path: '/template/' + vm.templateid }">{{ vm.templatename }}</router-link>)<br/>
-              <span style="padding-left: 32px">
-                <a-tag color="green">Disk Read {{ vm.diskkbsread }} KB</a-tag>
-                <a-tag color="blue">Disk Write {{ vm.diskkbswrite }} KB</a-tag>
-              </span><br/>
-              <span style="padding-left: 32px">
-                <a-tag color="green">Disk Read (IO) {{ vm.diskioread }}</a-tag>
-                <a-tag color="blue">Disk Write (IO) {{ vm.diskiowrite }}</a-tag>
-              </span>
+              <div style="margin-left: 45px">
+                <a-tag><a-icon type="download" /> Read {{ vm.diskkbsread }} KB</a-tag>
+                <a-tag><a-icon type="upload" /> Write {{ vm.diskkbswrite }} KB</a-tag><br/>
+                <a-tag><a-icon type="download" /> Read (IO) {{ vm.diskioread }}</a-tag>
+                <a-tag><a-icon type="upload" /> Write (IO) {{ vm.diskiowrite }}</a-tag>
+              </div>
             </p>
             <p>
               <font-awesome-icon :icon="['fas', 'ethernet']" />
-              <span>
-                {{ vm && vm.nic ? vm.nic.length : 0 }} NIC(s):
-                <a-tag color="green"><a-icon type="arrow-down" /> RX {{ vm.networkkbsread }} KB</a-tag>
-                <a-tag color="blue"><a-icon type="arrow-up" /> TX {{ vm.networkkbswrite }} KB</a-tag>
+              <span style="margin-left: 5px">
+                <a-tag><a-icon type="arrow-down" /> RX {{ vm.networkkbsread }} KB</a-tag>
+                <a-tag><a-icon type="arrow-up" /> TX {{ vm.networkkbswrite }} KB</a-tag>
               </span>
               <br/>
-              <span style="padding-left: 34px" v-for="eth in vm.nic" :key="eth.id">
-                {{ eth.ipaddress }} <router-link :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link> <br/>
-              </span>
+              <div style="margin-left: 45px" v-for="(eth, index) in vm.nic" :key="eth.id">
+                <a-icon type="api"/> eth{{ index }} {{ eth.ipaddress}} (<router-link :to="{ path: '/guestnetwork/' + eth.networkid }">{{ eth.networkname }}</router-link>)
+              </div>
             </p>
             <p v-if="vm.group">
               <a-icon type="team" style="margin-left: 6px; margin-right: 10px" />
@@ -189,7 +186,7 @@
                       <status :text="item.state" displayText /><br/>
                     </div>
                     <div slot="description">
-                      <a-icon type="barcode"/> <router-link :to="{ path: '/volume/' + item.id }"> {{ item.id }}</router-link>
+                      <a-icon type="barcode"/> {{ item.id }}
                     </div>
                     <a-avatar slot="avatar">
                       <font-awesome-icon :icon="['fas', 'database']" />
@@ -382,7 +379,7 @@ export default {
   height: 100%;
   min-height: 100%;
   transition: 0.3s;
-  .account-center-avatarHolder {
+  .resource-details {
     text-align: center;
     margin-bottom: 24px;
     & > .avatar {
@@ -406,10 +403,11 @@ export default {
       margin-bottom: 4px;
     }
   }
-  .account-center-detail {
+  .resource-center-detail {
     p {
       margin-bottom: 8px;
       padding-left: 12px;
+      padding-right: 12px;
       position: relative;
 
       font-awesome-icon, .svg-inline--fa {

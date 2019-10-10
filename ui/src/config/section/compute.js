@@ -118,6 +118,12 @@ export default {
           dataView: true
         },
         {
+          api: 'assignVirtualMachine',
+          icon: 'user-add',
+          label: 'Assign Instance to Another Account',
+          dataView: true
+        },
+        {
           api: 'destroyVirtualMachine',
           icon: 'delete',
           label: 'Destroy VM',
