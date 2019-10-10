@@ -157,8 +157,15 @@ def add_network(portGroup, vlanId, vSwitch, vmName, vmDeviceLabel, vmMacAddress)
         networksDict[key] = network
     else:
         vms = [vm]
-        host = pgHostNameDict[portGroup]
-        cluster = hostClusterNameDict[host]
+        try:
+            host = pgHostNameDict[portGroup]
+        except KeyError:
+            host = ''
+        try:
+            cluster = hostClusterNameDict[host]
+        except KeyError:
+            cluster = ''
+        
         network = {"portgroup": portGroup, "cluster": cluster, "host": host, "vlanid": vlanId, "switch": vSwitch, "virtualmachines": vms}
         networksDict[key] = network
 
