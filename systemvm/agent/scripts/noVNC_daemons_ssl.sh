@@ -22,7 +22,7 @@ if [ "$isNumpyInstalled" == "" ]; then
     apt-get install -y python-numpy --force-yes
 fi
 
-python /root/noVNC/utils/websockify/websockify/websocketproxy.py --web=/root/noVNC --daemon 8080
+python /root/noVNC/utils/websockify/websockify/websocketproxy.py --ssl-only --web=/root/noVNC --daemon --cert=/usr/local/cloud/systemvm/certs/customssl.crt --key=/usr/local/cloud/systemvm/certs/customssl.key 8080
 
 DATA="echo \'<cross-domain-policy><allow-access-from domain=\\\"*\\\" to-ports=\\\"*\\\" /></cross-domain-policy>\'"
 /usr/bin/nohup /usr/bin/socat -T 1 TCP-L:843,reuseaddr,fork,crlf SYSTEM:"$DATA" 2> /var/log/socat.err &

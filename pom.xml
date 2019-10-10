@@ -65,6 +65,7 @@
         <cs.failsafe-plugin.version>2.22.2</cs.failsafe-plugin.version>
         <cs.findbugs-plugin.version>3.0.5</cs.findbugs-plugin.version>
         <cs.jar-plugin.version>3.2.0</cs.jar-plugin.version>
+        <cs.lombok.version>1.18.12</cs.lombok.version>
         <cs.pmd-plugin.version>3.12.0</cs.pmd-plugin.version>
         <cs.project-info-plugin.version>3.0.0</cs.project-info-plugin.version>
         <cs.release-plugin.version>2.5.3</cs.release-plugin.version>
@@ -704,6 +705,11 @@
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
             <version>1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${cs.lombok.version}</version>
         </dependency>
     </dependencies>
 
