@@ -22,72 +22,74 @@
             </div>
           </div>
           <div class="resource-center-detail">
-            <p>
+            <div class="resource-center-detail__item">
               <status :text="vm.state ? vm.state : ''" style="padding-left: 8px; padding-right: 5px"/>{{ vm.state }}
-            </p>
-            <p>
+            </div>
+            <div class="resource-center-detail__item">
               <font-awesome-icon :icon="['fab', osLogo]" size="lg"/> {{ guestOsName }} <br/>
-            </p>
-            <p>
+            </div>
+            <div class="resource-center-detail__item">
               <font-awesome-icon :icon="['fas', 'microchip']" />
               {{ vm.cpunumber }} CPU x {{ vm.cpuspeed }} Mhz
               (<router-link :to="{ path: '/computeoffering/' + vm.serviceofferingid }">{{ vm.serviceofferingname }}</router-link>)
               <a-progress style="padding-left: 32px" size="small" :percent="parseFloat(vm.cpuused)" />
-            </p>
-            <p>
+            </div>
+            <div class="resource-center-detail__item">
               <font-awesome-icon :icon="['fas', 'memory']" />
               {{ vm.memory }} MB Memory
               <a-progress style="padding-left: 32px" size="small" :percent="parseFloat(100.0 * (vm.memorykbs - vm.memoryintfreekbs) / vm.memorykbs).toFixed(2)" />
-            </p>
-            <p>
+            </div>
+            <div class="resource-center-detail__item">
               <font-awesome-icon :icon="['fas', 'database']" />
               {{ (totalStorage / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage
               (<router-link :to="{ path: '/template/' + vm.templateid }">{{ vm.templatename }}</router-link>)<br/>
-            </p><div style="margin-left: 45px">
-              <a-tag><a-icon type="download" /> Read {{ vm.diskkbsread }} KB</a-tag>
-              <a-tag><a-icon type="upload" /> Write {{ vm.diskkbswrite }} KB</a-tag><br/>
-              <a-tag><a-icon type="download" /> Read (IO) {{ vm.diskioread }}</a-tag>
-              <a-tag><a-icon type="upload" /> Write (IO) {{ vm.diskiowrite }}</a-tag>
+              <div style="margin: 5px 0 0 35px;">
+                <a-tag><a-icon type="download" /> Read {{ vm.diskkbsread }} KB</a-tag>
+                <a-tag><a-icon type="upload" /> Write {{ vm.diskkbswrite }} KB</a-tag><br/>
+                <a-tag><a-icon type="download" /> Read (IO) {{ vm.diskioread }}</a-tag>
+                <a-tag><a-icon type="upload" /> Write (IO) {{ vm.diskiowrite }}</a-tag>
+              </div>
             </div>
-            </p>
-            <p>
+            <div class="resource-center-detail__item">
               <font-awesome-icon :icon="['fas', 'ethernet']" />
               <span style="margin-left: 5px">
                 <a-tag><a-icon type="arrow-down" /> RX {{ vm.networkkbsread }} KB</a-tag>
                 <a-tag><a-icon type="arrow-up" /> TX {{ vm.networkkbswrite }} KB</a-tag>
               </span>
               <br/>
-            </p><div style="margin-left: 45px" v-for="(eth, index) in vm.nic" :key="eth.id">
-              <a-icon type="api"/> eth{{ index }} {{ eth.ipaddress }} (<router-link :to="{ path: '/guestnetwork/' + eth.networkid }">{{ eth.networkname }}</router-link>)
+              <div style="margin: 5px 0 0 35px;">
+                <div v-for="(eth, index) in vm.nic" :key="eth.id">
+                  <a-icon type="api"/> eth{{ index }} {{ eth.ipaddress }} (<router-link :to="{ path: '/guestnetwork/' + eth.networkid }">{{ eth.networkname }}</router-link>)
+                </div>
+              </div>
             </div>
-            </p>
-            <p v-if="vm.group">
+            <div v-if="vm.group" class="resource-center-detail__item">
               <a-icon type="team" style="margin-left: 6px; margin-right: 10px" />
               {{ vm.group }}
-            </p>
+            </div>
 
-            <p v-if="vm.hostid">
+            <div v-if="vm.hostid" class="resource-center-detail__item">
               <a-icon type="desktop" style="margin-left: 6px; margin-right: 12px" />
               <router-link :to="{ path: '/host/' + vm.hostid }">{{ vm.hostname }}</router-link> ({{ vm.hypervisor }})
-            </p>
-            <p>
+            </div>
+            <div class="resource-center-detail__item">
               <a-icon type="global" style="margin-left: 6px; margin-right: 12px" />
               <router-link :to="{ path: '/zone/' + vm.zoneid }">{{ vm.zonename }}</router-link>
-            </p>
-            <p>
+            </div>
+            <div class="resource-center-detail__item">
               <a-icon type="user" style="margin-left: 6px; margin-right: 12px" />
               <router-link :to="{ path: '/account?name=' + vm.account }">{{ vm.account }}</router-link>
-            </p>
-            <p>
+            </div>
+            <div class="resource-center-detail__item">
               <a-icon type="block" style="margin-left: 6px; margin-right: 12px" />
               <router-link :to="{ path: '/domain/' + vm.domainid }">{{ vm.domain }}</router-link>
-            </p>
-            <p>
+            </div>
+            <div class="resource-center-detail__item">
               <a-icon type="calendar" style="margin-left: 6px; margin-right: 8px" /> {{ vm.created }}
-            </p>
-            <p>
+            </div>
+            <div class="resource-center-detail__item">
               <a-icon type="barcode" style="margin-left: 6px; margin-right: 8px" /> {{ vm.id }}
-            </p>
+            </div>
           </div>
           <a-divider/>
 
@@ -404,7 +406,7 @@ export default {
     }
   }
   .resource-center-detail {
-    p {
+    &__item {
       margin-bottom: 8px;
       padding-left: 12px;
       padding-right: 12px;
