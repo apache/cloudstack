@@ -168,7 +168,7 @@
 
     <div v-if="dataView">
       <component :is="$route.meta.viewComponent" :resource="resource" v-if="$route.meta.viewComponent"/></component>
-      <data-view :resource="resource" v-else />
+      <detail-view :resource="resource" v-else />
     </div>
     <div class="row-element" v-else>
       <list-view
@@ -205,6 +205,7 @@ import ChartCard from '@/components/chart/ChartCard'
 import DataView from '@/components/widgets/DataView'
 import ListView from '@/components/widgets/ListView'
 import Status from '@/components/widgets/Status'
+import DetailView from '@/views/common/DetailView'
 
 export default {
   name: 'Resource',
@@ -213,6 +214,7 @@ export default {
     CardView,
     ChartCard,
     DataView,
+    DetailView,
     ListView,
     Status
   },

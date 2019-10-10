@@ -3,7 +3,7 @@
     <a-row :gutter="12">
       <a-col :md="24" :lg="8" style="margin-bottom: 12px">
         <slot name="info-card">
-          <info-card :resource="resource" resourceType="Volume" />
+          <info-card :resource="resource" />
         </slot>
       </a-col>
       <a-col :md="24" :lg="16">

@@ -88,9 +88,8 @@
       </div>
     </div>
 
-    <a-divider/>
-
-    <div class="account-center-tags" v-if="showTags">
+    <div class="account-center-tags" v-if="resourceType">
+      <a-divider/>
       <div class="tagsTitle">Tags</div>
       <div>
         <template v-for="(tag, index) in tags">
@@ -123,9 +122,8 @@
       </div>
     </div>
 
-    <a-divider :dashed="true"/>
-
     <div class="account-center-team" v-if="showNotes">
+      <a-divider :dashed="true"/>
       <div class="teamTitle">
         Comments ({{ notes.length }})
       </div>
@@ -190,10 +188,6 @@ export default {
     resourceType: {
       type: String,
       required: true
-    },
-    showTags: {
-      type: Boolean,
-      default: true
     },
     showNotes: {
       type: Boolean,
