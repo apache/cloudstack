@@ -526,7 +526,10 @@ public class VmImportManagerImpl implements VmImportService {
         }
     }
 
-    private void checkUnmanagedNicAndNetworkForImport(UnmanagedInstance.Nic nic, Network network, final Network.IpAddresses ipAddresses, final DataCenter zone, final String hostName, final Account owner) throws ServerApiException {
+    private void checkUnmanagedNicAndNetworkForImport(UnmanagedInstance.Nic nic, Network network, final DataCenter zone, final String hostName, final Account owner) throws ServerApiException {
+        if (nic == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve NIC details during VM import!", nic.getNicId()));
+        }
         if (network == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network for nic ID: %s not found during VM import!", nic.getNicId()));
         }
@@ -536,6 +539,21 @@ public class VmImportManagerImpl implements VmImportService {
         networkModel.checkNetworkPermissions(owner, network);
         if (nic.getVlan() != null && (Strings.isNullOrEmpty(network.getBroadcastUri().toString()) || !network.getBroadcastUri().toString().equals(String.format("vlan://%d", nic.getVlan())))) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) vlan://%d during VM import!", network.getUuid(), network.getBroadcastUri().toString(), nic.getNicId(), nic.getVlan()));
+        }
+        // Check for duplicate hostname in network, get all vms hostNames in the network
+        List<String> hostNames = vmDao.listDistinctHostNames(network.getId());
+        if (CollectionUtils.isNotEmpty(hostNames) && hostNames.contains(hostName)) {
+            throw new InvalidParameterValueException("The vm with hostName " + hostName + " already exists in the network domain: " + network.getNetworkDomain() + "; network="
+                    + network);
+        }
+    }
+
+    private void checkUnmanagedNicIpAndNetworkForImport(UnmanagedInstance.Nic nic, Network network, final Network.IpAddresses ipAddresses) throws ServerApiException {
+        if (nic == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve NIC details during VM import!", nic.getNicId()));
+        }
+        if (network == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network for nic ID: %s not found during VM import!", nic.getNicId()));
         }
         // Check IP is assigned for non L2 networks
         if (!network.getGuestType().equals(Network.GuestType.L2) && (ipAddresses == null || (Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && Strings.isNullOrEmpty(ipAddresses.getIp6Address())))) {
@@ -564,12 +582,6 @@ public class VmImportManagerImpl implements VmImportService {
                 networkModel.checkRequestedIpAddresses(network.getId(), ipAddresses);
             }
         }
-        // Check for duplicate hostname in network, get all vms hostNames in the network
-        List<String> hostNames = vmDao.listDistinctHostNames(network.getId());
-        if (CollectionUtils.isNotEmpty(hostNames) && hostNames.contains(hostName)) {
-            throw new InvalidParameterValueException("The vm with hostName " + hostName + " already exists in the network domain: " + network.getNetworkDomain() + "; network="
-                    + network);
-        }
     }
 
     private Map<String, Long> getUnmanagedNicNetworkMap(List<UnmanagedInstance.Nic> nics, final Map<String, Long> callerNicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap, final DataCenter zone, final String hostName, final Account owner) throws ServerApiException {
@@ -597,16 +609,20 @@ public class VmImportManagerImpl implements VmImportService {
                             continue;
                         }
                         try {
-                            checkUnmanagedNicAndNetworkForImport(nic, networkVO, ipAddresses, zone, hostName, owner);
+                            checkUnmanagedNicAndNetworkForImport(nic, networkVO, zone, hostName, owner);
                             network = networkVO;
-                            break;
                         } catch (Exception e) {
+                        }
+                        if (network != null) {
+                            checkUnmanagedNicIpAndNetworkForImport(nic, network, ipAddresses);
+                            break;
                         }
                     }
                 }
             } else {
                 network = networkDao.findById(callerNicNetworkMap.get(nic.getNicId()));
-                checkUnmanagedNicAndNetworkForImport(nic, network, ipAddresses, zone, hostName, owner);
+                checkUnmanagedNicAndNetworkForImport(nic, network, zone, hostName, owner);
+                checkUnmanagedNicIpAndNetworkForImport(nic, network, ipAddresses);
             }
             if (network == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Suitable network for nic(ID: %s) not found during VM import!", nic.getNicId()));
