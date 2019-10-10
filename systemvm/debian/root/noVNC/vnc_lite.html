@@ -32,27 +32,105 @@
         }
 
         #top_bar {
-            background-color: #6e84a3;
-            color: white;
+            background-color: white;
+            color: #000;
             font: bold 12px Helvetica;
             padding: 6px 5px 4px 5px;
             border-bottom: 1px outset;
+            height: 32px;
         }
-        #status {
+        #status_container {
             text-align: center;
         }
-        #sendCtrlAltDelButton {
+        #status {
+            background-position: 6px;
+            text-align: center;
+            display: inline-block;
+            height: auto;
+            position: relative;
+            border: 1px solid #64B125;
+            padding: 6px 25px 6px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        #status span {
+            display: inline-block;
+            padding: 0px 7px 0 0;
+            width: 16px;
+            height: 16px;
+            position: relative;
+            top: 2px;
+        }
+        .status_normal {
+            border: 1px solid #64B125;
+            background-color: #A1DF8A;
+            color: #575757;
+        }
+        .status_normal span {
+            background: url('../images/lock.png') no-repeat left;
+        }
+        .status_error {
+            border: 1px solid #EEB4B4;
+            background-color: lightPink;
+            color: #C24B36;
+        }
+        .status_error span {
+            background: url('../images/exclamation.png') no-repeat left;
+        }
+        .status_warn {
+            border: 1px solid  #FCD116;
+            background-color: #FEF1B5;
+            color:#D98719;
+        }
+        .status_warn span {
+            background: url('../images/error.png') no-repeat left;
+        }
+        #noVNC_logo {
+            background: url('../images/logo.png') no-repeat 4px 3px;
+            background-size: contain;
+            margin-left: 10px;
+            text-align: left;
+            line-height: 90%;
+            display: inline-block;
+            width: 200px;
+            height: 32px;
+            float: left;
+        }
+        #noVNC_buttons {
+            display: inline-block;
+            width: 200px;
+            float: right;
+            padding: 8px;
+        }
+        #noVNC_buttons div {
             position: fixed;
-            top: 0px;
-            right: 0px;
+            top: 9px;
             border: 1px outset;
             padding: 5px 5px 4px 5px;
             cursor: pointer;
+            border: 1px solid #9d9d9d;
+            border-radius: 3px;
+            box-shadow: #cacaca 0px 1px 0px 0px;
+            background-color: buttonface;
+        }
+        #noVNC_buttons div:hover{
+            background: #E8E8E8;
+            -moz-box-shadow: inset 0px 0px 6px #636363;
+            -webkit-box-shadow: inset 0px 0px 6px #636363;
+            -o-box-shadow: inset 0px 0px 6px #636363;
+            box-shadow: inset 0px 0px 6px #636363;
+        }
+        #sendCtrlAltDelButton {
+            right: 5px;
+        }
+        #clipboardButton {
+            right: 110px;
         }
 
         #screen {
             flex: 1; /* fill remaining space */
             overflow: hidden;
+            background: rgb(40,40,40);
         }
 
     </style>
@@ -74,6 +152,8 @@
         });
     </script>
 
+    <script src="core/keymap.js"></script>
+
     <!-- actual script modules -->
     <script type="module" crossorigin="anonymous">
         // RFB holds the API to connect and communicate with a VNC server
@@ -85,15 +165,15 @@
         // When this function is called we have
         // successfully connected to a server
         function connectedToServer(e) {
-            status("Connected to " + displayName);
+            status("Connected to " + displayName, "normal");
         }
 
         // This function is called when we are disconnected
         function disconnectedFromServer(e) {
             if (e.detail.clean) {
-                status("Disconnected");
+                status("Disconnected", "warn");
             } else {
-                status("Something went wrong, connection is closed");
+                status("Something went wrong, connection is closed", "error");
             }
         }
 
@@ -114,13 +194,18 @@
         // before they get a chance to be intercepted by the browser,
         // we provide a way to emulate this key sequence.
         function sendCtrlAltDel() {
-            rfb.sendCtrlAltDel();
+            if (confirm("Are you sure?"))
+                rfb.sendCtrlAltDel();
+            if (window._canvas != undefined) {
+                window._canvas.focus();
+            }
             return false;
         }
 
         // Show a status text in the top bar
-        function status(text) {
-            document.getElementById('status').textContent = text;
+        function status(text, css) {
+            document.getElementById('status').innerHTML ='<span></span>' + text;
+            document.getElementById('status').setAttribute("class", "status_" + css)
         }
 
         // This function extracts the value of one variable from the
@@ -147,6 +232,18 @@
         document.getElementById('sendCtrlAltDelButton')
             .onclick = sendCtrlAltDel;
 
+        document.getElementById('clipboardButton')
+            .onclick = function() {
+            let text = prompt("Enter text to paste:", "");
+            if (text) {
+                rfb.sendString(text);
+            }
+            if (window._canvas != undefined) {
+                window._canvas.focus();
+            }
+            return false;
+        };
+
         // Read parameters specified in the URL query string
         // By default, use the host and port of server that served this file
         const host = readQueryVariable('host', window.location.hostname);
@@ -159,7 +256,7 @@
         // | | | Connect | | |
         // v v v         v v v
 
-        status("Connecting");
+        status("Connecting", "normal");
 
         // Build the websocket URL used to connect
         let url;
@@ -187,13 +284,29 @@
         // Set parameters that can be changed on an active connection
         rfb.viewOnly = readQueryVariable('view_only', false);
         rfb.scaleViewport = readQueryVariable('scale', false);
+
+        window.addEventListener("load", function() {
+            var screen_div = document.getElementById('screen').getElementsByTagName('div')[0];
+            if (screen_div != undefined) {
+                window._canvas = screen_div.getElementsByTagName('canvas')[0];
+                if (window._canvas != undefined) {
+                    window._canvas.focus();
+                }
+            }
+        });
     </script>
 </head>
 
 <body>
     <div id="top_bar">
-        <div id="status">Loading</div>
-        <div id="sendCtrlAltDelButton">Send CtrlAltDel</div>
+        <div id="noVNC_logo"></div>
+        <div id="noVNC_buttons">
+            <div id="sendCtrlAltDelButton">Send CtrlAltDel</div>
+            <div id="clipboardButton">Clipboard</div>
+        </div>
+        <div id="status_container">
+            <div id="status">Loading</div>
+        </div>
     </div>
     <div id="screen">
         <!-- This is where the remote screen will appear -->
