@@ -18,6 +18,7 @@
 package com.cloud.servlet;
 
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,6 +33,12 @@ import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.paddings.ZeroBytePadding;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+
+import java.security.spec.KeySpec;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.DESKeySpec;
 
 public class NoVncConsoleProxyEncryptorTest {
 
@@ -160,4 +167,56 @@ public class NoVncConsoleProxyEncryptorTest {
         System.out.println("url is " + NoVncConsoleProxyEncryptor.httpBuildQuery(input));
 
     }
+
+    @Test
+    public void testDESencryption() throws Exception {
+        String password = "6YywcQKBEolQ4irUL_izbA";
+        byte[] challenge = {(byte)222,118,(byte)180,(byte)183,(byte)234,(byte)141,48,(byte)249,(byte)182,80,(byte)234,(byte)248,(byte)218,105,(byte)234,(byte)137};
+        byte[] response;
+        try {
+            System.out.println("challenge is " + Arrays.toString(challenge));
+            response = encodePassword(challenge, password);
+            System.out.println("response is " + Arrays.toString(response));
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    private byte[] encodePassword(byte[] challenge, String password) throws Exception {
+        // VNC password consist of up to eight ASCII characters.
+        byte[] key = {0, 0, 0, 0, 0, 0, 0, 0}; // Padding
+        System.out.println("key is " + Arrays.toString(key));
+
+        byte[] passwordAsciiBytes = password.getBytes(Charset.forName("ASCII"));
+        System.arraycopy(passwordAsciiBytes, 0, key, 0, Math.min(password.length(), 8));
+        System.out.println("key is " + Arrays.toString(key));
+
+        // Flip bytes (reverse bits) in key
+        for (int i = 0; i < key.length; i++) {
+            key[i] = flipByte(key[i]);
+        }
+        System.out.println("key is " + Arrays.toString(key));
+
+        KeySpec desKeySpec = new DESKeySpec(key);
+        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("DES");
+        SecretKey secretKey = secretKeyFactory.generateSecret(desKeySpec);
+        Cipher cipher = Cipher.getInstance("DES/ECB/NoPadding");
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+
+        byte[] response = cipher.doFinal(challenge);
+        return response;
+    }
+    private static byte flipByte(byte b) {
+        int b1_8 = (b & 0x1) << 7;
+        int b2_7 = (b & 0x2) << 5;
+        int b3_6 = (b & 0x4) << 3;
+        int b4_5 = (b & 0x8) << 1;
+        int b5_4 = (b & 0x10) >>> 1;
+        int b6_3 = (b & 0x20) >>> 3;
+        int b7_2 = (b & 0x40) >>> 5;
+        int b8_1 = (b & 0x80) >>> 7;
+        byte c = (byte)(b1_8 | b2_7 | b3_6 | b4_5 | b5_4 | b6_3 | b7_2 | b8_1);
+        return c;
+    }
+
 }

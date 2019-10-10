@@ -805,6 +805,13 @@ export default class RFB extends EventTargetMixin {
             return false;
         }
 
+        const header = String.fromCharCode.apply(null, this._sock.rQslice(0)).substr(0, 3);
+        if (header !== 'RFB') {
+            this._rfb_init_state = 'ServerInitialisation';
+            Log.Debug("Starting Server Initialisation");
+            return this._negotiate_server_init();
+        }
+
         const sversion = this._sock.rQshiftStr(12).substr(4, 7);
         Log.Info("Server ProtocolVersion: " + sversion);
         let is_repeater = 0;
