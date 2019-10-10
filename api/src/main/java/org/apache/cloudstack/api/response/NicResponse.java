@@ -122,6 +122,10 @@ public class NicResponse extends BaseResponse {
     @Param(description = "Type of adapter if available", since="4.14.0")
     private String adapterType;
 
+    @SerializedName(ApiConstants.IP_ADDRESSES)
+    @Param(description = "IP addresses associated with NIC found for unmanaged VM", since="4.14.0")
+    private List<String> ipAddresses;
+
     public void setVmId(String vmId) {
         this.vmId = vmId;
     }
@@ -327,5 +331,13 @@ public class NicResponse extends BaseResponse {
 
     public void setAdapterType(String adapterType) {
         this.adapterType = adapterType;
+    }
+
+    public List<String> getIpAddresses() {
+        return ipAddresses;
+    }
+
+    public void setIpAddresses(List<String> ipAddresses) {
+        this.ipAddresses = ipAddresses;
     }
 }

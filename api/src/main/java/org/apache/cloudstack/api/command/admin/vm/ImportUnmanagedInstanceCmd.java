@@ -143,7 +143,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.NIC_IP_ADDRESS_LIST,
             type = CommandType.MAP,
-            description = "VM nic to ip address mapping using keys nic, ipAddress, ip6Address")
+            description = "VM nic to ip address mapping using keys nic, ipAddress")
     private Map nicIpAddressList;
 
     @Parameter(name = ApiConstants.DATADISK_OFFERING_LIST,
@@ -226,27 +226,16 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)nicIpAddressList.values()) {
                 String nic = entry.get(VmDetailConstants.NIC);
                 String ipAddress = Strings.emptyToNull(entry.get(VmDetailConstants.IP_ADDRESS));
-                String ip6Address = Strings.emptyToNull(entry.get(VmDetailConstants.IP6_ADDRESS));
                 if (Strings.isNullOrEmpty(nic)) {
                     throw new InvalidParameterValueException(String.format("NIC ID: '%s' is invalid for IP address mapping", nic));
                 }
-                if (Strings.isNullOrEmpty(ipAddress) && Strings.isNullOrEmpty(ip6Address)) {
-                    throw new InvalidParameterValueException(String.format("IP addresses for NIC ID: %s is invalid", nic));
+                if (Strings.isNullOrEmpty(ipAddress)) {
+                    throw new InvalidParameterValueException(String.format("IP address '%s' for NIC ID: %s is invalid", ipAddress, nic));
                 }
-                if (!Strings.isNullOrEmpty(ipAddress) && !Strings.isNullOrEmpty(ip6Address)) {
-                    throw new InvalidParameterValueException(String.format("Multiple IP addresses(%s, %s) for NIC ID: %s cannot be assigned automatically", ipAddress, ip6Address, nic));
+                if (!Strings.isNullOrEmpty(ipAddress) && !ipAddress.equals("auto") && !NetUtils.isValidIp4(ipAddress)) {
+                    throw new InvalidParameterValueException(String.format("IP address '%s' for NIC ID: %s is invalid", ipAddress, nic));
                 }
-                if (!Strings.isNullOrEmpty(ipAddress)) {
-                    if (!ipAddress.equals("auto") && !NetUtils.isValidIp4(ipAddress)) {
-                        throw new InvalidParameterValueException(String.format("IP v4 address '%s' for NIC ID: %s is invalid", ipAddress, nic));
-                    }
-                }
-                if (!Strings.isNullOrEmpty(ip6Address)) {
-                    if (!ip6Address.equals("auto") && !NetUtils.isValidIp6(ip6Address)) {
-                        throw new InvalidParameterValueException(String.format("IP v6 address '%s' for NIC ID: %s is invalid", ip6Address, nic));
-                    }
-                }
-                Network.IpAddresses ipAddresses = new Network.IpAddresses(ipAddress, ip6Address);
+                Network.IpAddresses ipAddresses = new Network.IpAddresses(ipAddress, null);
                 nicIpAddressMap.put(nic, ipAddresses);
             }
         }

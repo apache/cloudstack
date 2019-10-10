@@ -234,14 +234,7 @@ public class VmImportManagerImpl implements VmImportService {
                     nicResponse.setAdapterType(nic.getAdapterType());
                 }
                 if (!CollectionUtils.isEmpty(nic.getIpAddress())) {
-                    for (String address : nic.getIpAddress()) {
-                        if (Strings.isNullOrEmpty(nicResponse.getIpaddress()) && NetUtils.isValidIp4(address)) {
-                            nicResponse.setIpaddress(address);
-                        }
-                        if (Strings.isNullOrEmpty(nicResponse.getIp6Address()) && NetUtils.isValidIp6(address)) {
-                            nicResponse.setIp6Address(address);
-                        }
-                    }
+                    nicResponse.setIpAddresses(nic.getIpAddress());
                 }
                 nicResponse.setVlanId(nic.getVlan());
                 response.addNic(nicResponse);
@@ -422,21 +415,14 @@ public class VmImportManagerImpl implements VmImportService {
             if (MapUtils.isNotEmpty(callerNicIpAddressMap) && callerNicIpAddressMap.containsKey(nic.getNicId())) {
                 ipAddresses = callerNicIpAddressMap.get(nic.getNicId());
             }
-            if (!CollectionUtils.isEmpty(nic.getIpAddress())) {
+            // If IP is set to auto-assign, check NIC doesn't have more that one IP from SDK
+            if (ipAddresses != null && ipAddresses.getIp4Address() != null && ipAddresses.getIp4Address().equals("auto") && !CollectionUtils.isEmpty(nic.getIpAddress())) {
                 if (nic.getIpAddress().size() > 1) {
-                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple IP addresses (%s, %s) present for nic ID: %s cannot be imported automatically!", nic.getIpAddress().get(0), nic.getIpAddress().get(1), nic.getNicId()));
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple IP addresses (%s, %s) present for nic ID: %s. IP address cannot be assigned automatically, only single IP address auto-assigning supported!", nic.getIpAddress().get(0), nic.getIpAddress().get(1), nic.getNicId()));
                 }
-                if (ipAddresses == null || (Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && Strings.isNullOrEmpty(ipAddresses.getIp4Address()))) {
-                    if (ipAddresses == null) {
-                        ipAddresses = new Network.IpAddresses(null, null);
-                    }
-                    String address = nic.getIpAddress().get(0);
-                    if (NetUtils.isValidIp4(address)) {
-                        ipAddresses.setIp4Address(address);
-                    }
-                    if (NetUtils.isValidIp6(address)) {
-                        ipAddresses.setIp6Address(address);
-                    }
+                String address = nic.getIpAddress().get(0);
+                if (NetUtils.isValidIp4(address)) {
+                    ipAddresses.setIp4Address(address);
                 }
             }
             if (ipAddresses != null) {
@@ -556,30 +542,14 @@ public class VmImportManagerImpl implements VmImportService {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network for nic ID: %s not found during VM import!", nic.getNicId()));
         }
         // Check IP is assigned for non L2 networks
-        if (!network.getGuestType().equals(Network.GuestType.L2) && (ipAddresses == null || (Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && Strings.isNullOrEmpty(ipAddresses.getIp6Address())))) {
+        if (!network.getGuestType().equals(Network.GuestType.L2) && (ipAddresses == null || Strings.isNullOrEmpty(ipAddresses.getIp4Address()))) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("NIC(ID: %s) needs a valid IP address for it to be associated with network(ID: %s)! %s parameter of API can be used for this.", nic.getNicId(), network.getUuid(), ApiConstants.NIC_IP_ADDRESS_LIST));
         }
-        // Check both IP v4 and v6 are not assigned at the same time
-        if (ipAddresses != null && !Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && !Strings.isNullOrEmpty(ipAddresses.getIp6Address())) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple IP addresses(%s, %s) for NIC ID: %s cannot be assigned automatically", ipAddresses.getIp4Address(), ipAddresses.getIp6Address(), nic.getNicId()));
-        }
-        // If IP v4 is assigned and not set to auto check it is available for network
+        // If IP v4 is assigned and not set to auto-assign check it is available for network
         if (ipAddresses != null && !Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && !ipAddresses.getIp4Address().equals("auto")) {
             Set<Long> ips = networkModel.getAvailableIps(network, ipAddresses.getIp4Address());
             if (CollectionUtils.isEmpty(ips) || !ips.contains(NetUtils.ip2Long(ipAddresses.getIp4Address()))) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("IP address %s for NIC(ID: %s) is not available in network(ID: %s)!", ipAddresses.getIp4Address(), nic.getNicId(), network.getUuid()));
-            }
-        }
-        // If IP v6 is assigned check network is Shared, supports IPv6 and if IP not set to auto check if available
-        if (ipAddresses != null && !Strings.isNullOrEmpty(ipAddresses.getIp6Address())) {
-            if (!network.getGuestType().equals(Network.GuestType.Shared)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("IP v6 addressing %s for NIC(ID: %s) is not supported for in network(ID: %s), type: %s!", ipAddresses.getIp6Address(), nic.getNicId(), network.getUuid(), network.getGuestType()));
-            }
-            if (Strings.isNullOrEmpty(network.getIp6Gateway())) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network(ID: %s) assigned to NIC(ID: %s) is not configured for IP v6 addressing!", network.getUuid(), nic.getNicId()));
-            }
-            if (!ipAddresses.getIp6Address().equals("auto")) {
-                networkModel.checkRequestedIpAddresses(network.getId(), ipAddresses);
             }
         }
     }
@@ -662,10 +632,15 @@ public class VmImportManagerImpl implements VmImportService {
         if (userVm == null) {
             return;
         }
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVm);
         // Remove all volumes
         volumeDao.deleteVolumesByInstance(userVm.getId());
         // Remove all nics
-        nicDao.removeNicsForInstance(userVm.getId());
+        try {
+            networkOrchestrationService.release(profile, true);
+        } catch (Exception e) {
+            nicDao.removeNicsForInstance(userVm.getId());
+        }
         // Remove vm
         vmDao.remove(userVm.getId());
     }
@@ -755,14 +730,21 @@ public class VmImportManagerImpl implements VmImportService {
     private void publishVMUsageUpdateResourceCount(final UserVm userVm, ServiceOfferingVO serviceOfferingVO) {
         if (userVm == null || serviceOfferingVO == null) {
             LOGGER.error("Failed to publish usage records during VM import!");
-            return;
+            cleanupFailedImportVM(userVm);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm during publishing usage records"));
         }
-        if (!serviceOfferingVO.isDynamic()) {
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_IMPORT, userVm.getAccountId(), userVm.getDataCenterId(), userVm.getId(), userVm.getHostName(), serviceOfferingVO.getId(), userVm.getTemplateId(),
-                    userVm.getHypervisorType().toString(), VirtualMachine.class.getName(), userVm.getUuid(), userVm.isDisplayVm());
-        } else {
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_IMPORT, userVm.getAccountId(), userVm.getAccountId(), userVm.getDataCenterId(), userVm.getHostName(), serviceOfferingVO.getId(), userVm.getTemplateId(),
-                    userVm.getHypervisorType().toString(), VirtualMachine.class.getName(), userVm.getUuid(), userVm.getDetails(), userVm.isDisplayVm());
+        try {
+            if (!serviceOfferingVO.isDynamic()) {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_IMPORT, userVm.getAccountId(), userVm.getDataCenterId(), userVm.getId(), userVm.getHostName(), serviceOfferingVO.getId(), userVm.getTemplateId(),
+                        userVm.getHypervisorType().toString(), VirtualMachine.class.getName(), userVm.getUuid(), userVm.isDisplayVm());
+            } else {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_IMPORT, userVm.getAccountId(), userVm.getAccountId(), userVm.getDataCenterId(), userVm.getHostName(), serviceOfferingVO.getId(), userVm.getTemplateId(),
+                        userVm.getHypervisorType().toString(), VirtualMachine.class.getName(), userVm.getUuid(), userVm.getDetails(), userVm.isDisplayVm());
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to publish usage records during VM import!");
+            cleanupFailedImportVM(userVm);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm %s during publishing usage records", userVm.getInstanceName()));
         }
         resourceLimitService.incrementResourceCount(userVm.getAccountId(), Resource.ResourceType.user_vm, userVm.isDisplayVm());
         resourceLimitService.incrementResourceCount(userVm.getAccountId(), Resource.ResourceType.cpu, userVm.isDisplayVm(), new Long(serviceOfferingVO.getCpu()));
@@ -770,9 +752,12 @@ public class VmImportManagerImpl implements VmImportService {
         // Save usage event and update resource count for user vm volumes
         List<VolumeVO> volumes = volumeDao.findByInstance(userVm.getId());
         for (VolumeVO volume : volumes) {
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(), null, volume.getSize(),
-                    Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
-
+            try {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(), null, volume.getSize(),
+                        Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
+            } catch (Exception e) {
+                LOGGER.error(String.format("Failed to publish volume usage records during VM import! %s", Strings.nullToEmpty(e.getMessage())));
+            }
             resourceLimitService.incrementResourceCount(userVm.getAccountId(), Resource.ResourceType.volume, volume.isDisplayVolume());
             resourceLimitService.incrementResourceCount(userVm.getAccountId(), Resource.ResourceType.primary_storage, volume.isDisplayVolume(), volume.getSize());
         }

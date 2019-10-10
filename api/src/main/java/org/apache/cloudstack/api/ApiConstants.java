@@ -191,6 +191,7 @@ public class ApiConstants {
     public static final String IOPS_WRITE_RATE_MAX = "iopswriteratemax";
     public static final String IOPS_WRITE_RATE_MAX_LENGTH = "iopswriteratemaxlength";
     public static final String IP_ADDRESS = "ipaddress";
+    public static final String IP_ADDRESSES = "ipaddresses";
     public static final String IP6_ADDRESS = "ip6address";
     public static final String IP_ADDRESS_ID = "ipaddressid";
     public static final String IS_ASYNC = "isasync";

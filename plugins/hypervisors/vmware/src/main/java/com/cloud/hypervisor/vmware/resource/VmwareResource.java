@@ -6882,8 +6882,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             GuestInfo guestInfo = vmMo.getGuestInfo();
             if (guestInfo.getToolsStatus() == VirtualMachineToolsStatus.TOOLS_OK) {
                 for (GuestNicInfo nicInfo: guestInfo.getNet()) {
-                    if (!nicInfo.getIpAddress().isEmpty()) {
-                        guestNicMacIPAddressMap.put(nicInfo.getMacAddress(), nicInfo.getIpAddress());
+                    if (CollectionUtils.isNotEmpty(nicInfo.getIpAddress())) {
+                        List<String> ipAddresses = new ArrayList<>();
+                        for (String ipAddress : nicInfo.getIpAddress()) {
+                            if (NetUtils.isValidIp4(ipAddress)) {
+                                ipAddresses.add(ipAddress);
+                            }
+                        }
+                        guestNicMacIPAddressMap.put(nicInfo.getMacAddress(), ipAddresses);
                     }
                 }
             } else {
