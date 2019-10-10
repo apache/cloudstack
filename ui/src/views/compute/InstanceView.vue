@@ -1,158 +1,68 @@
 <template>
   <div style="padding-top: 12px" class="page-header-index-wide page-header-wrapper-grid-content-main">
     <a-row :gutter="12">
-      <a-col :md="24" :lg="7" style="margin-bottom: 12px">
-        <a-card :bordered="true">
-          <div class="resource-details">
-            <div class="avatar">
-              <font-awesome-icon :icon="['fab', osLogo]" size="4x" style="color: #666;" />
-            </div>
-            <div class="username">{{ vm.name }}
+      <a-col :md="24" :lg="8" style="margin-bottom: 12px">
+        <info-card :resource="resource" resourceType="UserVm" showNotes>
+          <div slot="avatar">
+            <font-awesome-icon :icon="['fab', osLogo]" size="4x" style="color: #666;" />
+          </div>
+          <div slot="name">
+            <h4>{{ vm.name }}
               <a :href="'/client/console?cmd=access&vm=' + vm.id" target="_blank">
                 <a-button shape="circle" >
                   <a-icon type="right-square" />
                 </a-button>
               </a>
-
-            </div>
-            <div class="bio">
+            </h4>
+            <div>
               <a-tag>{{ vm.instancename }}</a-tag>
               <a-tag :color="vm.haenable ? 'green': 'red'">HA</a-tag>
               <a-tag :color="vm.isdynamicallyscalable ? 'green': 'red'">Dynamic Scalable</a-tag>
             </div>
           </div>
-          <div class="resource-center-detail">
-            <div class="resource-center-detail__item">
-              <status :text="vm.state ? vm.state : ''" style="padding-left: 8px; padding-right: 5px"/>{{ vm.state }}
+          <div slot="details">
+            <div class="vm-detail">
+              <font-awesome-icon :icon="['fab', osLogo]" size="lg"/>
+              <span style="margin-left: 8px">{{ guestOsName }}</span>
             </div>
-            <div class="resource-center-detail__item">
-              <font-awesome-icon :icon="['fab', osLogo]" size="lg"/> {{ guestOsName }} <br/>
-            </div>
-            <div class="resource-center-detail__item">
+            <div class="vm-detail">
               <font-awesome-icon :icon="['fas', 'microchip']" />
-              {{ vm.cpunumber }} CPU x {{ vm.cpuspeed }} Mhz
-              (<router-link :to="{ path: '/computeoffering/' + vm.serviceofferingid }">{{ vm.serviceofferingname }}</router-link>)
-              <a-progress style="padding-left: 32px" size="small" :percent="parseFloat(vm.cpuused)" />
+              <span class="vm-detail">{{ vm.cpunumber }} CPU x {{ vm.cpuspeed }} Mhz
+              </span>
+              <a-progress style="padding-left: 25px" size="small" :percent="parseFloat(vm.cpuused)" />
             </div>
-            <div class="resource-center-detail__item">
-              <font-awesome-icon :icon="['fas', 'memory']" />
-              {{ vm.memory }} MB Memory
-              <a-progress style="padding-left: 32px" size="small" :percent="parseFloat(100.0 * (vm.memorykbs - vm.memoryintfreekbs) / vm.memorykbs).toFixed(2)" />
+            <div class="vm-detail">
+              <font-awesome-icon :icon="['fas', 'memory']" style="margin-left: -2px"/>
+              <span class="vm-detail">{{ vm.memory }} MB Memory
+              </span>
+              <a-progress style="padding-left: 25px" size="small" :percent="parseFloat(100.0 * (vm.memorykbs - vm.memoryintfreekbs) / vm.memorykbs).toFixed(2)" />
             </div>
-            <div class="resource-center-detail__item">
+            <div class="vm-detail">
               <font-awesome-icon :icon="['fas', 'database']" />
-              {{ (totalStorage / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage
-              (<router-link :to="{ path: '/template/' + vm.templateid }">{{ vm.templatename }}</router-link>)<br/>
-              <div style="margin: 5px 0 0 35px;">
+              <span class="vm-detail" style="margin-left: 12px">{{ (totalStorage / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage
+              </span>
+              <div style="margin-left: 25px">
                 <a-tag><a-icon type="download" /> Read {{ vm.diskkbsread }} KB</a-tag>
                 <a-tag><a-icon type="upload" /> Write {{ vm.diskkbswrite }} KB</a-tag><br/>
                 <a-tag><a-icon type="download" /> Read (IO) {{ vm.diskioread }}</a-tag>
                 <a-tag><a-icon type="upload" /> Write (IO) {{ vm.diskiowrite }}</a-tag>
               </div>
             </div>
-            <div class="resource-center-detail__item">
+            <div class="vm-detail">
               <font-awesome-icon :icon="['fas', 'ethernet']" />
-              <span style="margin-left: 5px">
+              <span class="vm-detail">{{ vm.nic.length }} NIC(s)
                 <a-tag><a-icon type="arrow-down" /> RX {{ vm.networkkbsread }} KB</a-tag>
                 <a-tag><a-icon type="arrow-up" /> TX {{ vm.networkkbswrite }} KB</a-tag>
               </span>
-              <br/>
-              <div style="margin: 5px 0 0 35px;">
-                <div v-for="(eth, index) in vm.nic" :key="eth.id">
-                  <a-icon type="api"/> eth{{ index }} {{ eth.ipaddress }} (<router-link :to="{ path: '/guestnetwork/' + eth.networkid }">{{ eth.networkname }}</router-link>)
-                </div>
+              <div style="margin-left: 25px" v-for="(eth, index) in vm.nic" :key="eth.id">
+                <a-icon type="api"/> eth{{ index }} {{ eth.ipaddress }}
+                (<router-link :to="{ path: '/guestnetwork/' + eth.networkid }">{{ eth.networkname }}</router-link>)
               </div>
             </div>
-            <div v-if="vm.group" class="resource-center-detail__item">
-              <a-icon type="team" style="margin-left: 6px; margin-right: 10px" />
-              {{ vm.group }}
-            </div>
-
-            <div v-if="vm.hostid" class="resource-center-detail__item">
-              <a-icon type="desktop" style="margin-left: 6px; margin-right: 12px" />
-              <router-link :to="{ path: '/host/' + vm.hostid }">{{ vm.hostname }}</router-link> ({{ vm.hypervisor }})
-            </div>
-            <div class="resource-center-detail__item">
-              <a-icon type="global" style="margin-left: 6px; margin-right: 12px" />
-              <router-link :to="{ path: '/zone/' + vm.zoneid }">{{ vm.zonename }}</router-link>
-            </div>
-            <div class="resource-center-detail__item">
-              <a-icon type="user" style="margin-left: 6px; margin-right: 12px" />
-              <router-link :to="{ path: '/account?name=' + vm.account }">{{ vm.account }}</router-link>
-            </div>
-            <div class="resource-center-detail__item">
-              <a-icon type="block" style="margin-left: 6px; margin-right: 12px" />
-              <router-link :to="{ path: '/domain/' + vm.domainid }">{{ vm.domain }}</router-link>
-            </div>
-            <div class="resource-center-detail__item">
-              <a-icon type="calendar" style="margin-left: 6px; margin-right: 8px" /> {{ vm.created }}
-            </div>
-            <div class="resource-center-detail__item">
-              <a-icon type="barcode" style="margin-left: 6px; margin-right: 8px" /> {{ vm.id }}
-            </div>
           </div>
-          <a-divider/>
-
-          <div class="account-center-tags">
-            <div class="tagsTitle">Tags</div>
-            <div>
-              <a-tag closable>key=value</a-tag>
-
-              <template v-for="(tag, index) in tags">
-                <a-tooltip v-if="tag.length > 20" :key="tag" :title="tag">
-                  <a-tag :key="tag" :closable="index !== 0" :afterClose="() => handleClose(tag)">
-                    {{ `${tag.slice(0, 20)}...` }}
-                  </a-tag>
-                </a-tooltip>
-                <a-tag v-else :key="tag" :closable="index !== 0" :afterClose="() => handleClose(tag)">
-                  {{ tag }}
-                </a-tag>
-              </template>
-
-              <a-input
-                v-if="inputVisible"
-                ref="input"
-                type="text"
-                size="small"
-                :style="{ width: '78px' }"
-                :value="inputValue"
-                @change="handleInputChange"
-                @blur="handleInputConfirm"
-                @keyup.enter="handleInputConfirm"
-              />
-              <a-tag v-else @click="showInput" style="background: #fff; borderStyle: dashed;">
-                <a-icon type="plus" /> New Tag
-              </a-tag>
-            </div>
-          </div>
-          <a-divider :dashed="true"/>
-
-          <div class="account-center-team">
-            <div class="teamTitle">Notes</div>
-            <a-comment>
-              <a-avatar
-                slot="avatar"
-                icon="edit"
-              />
-              <div slot="content">
-                <a-form-item>
-                  <a-textarea :rows="4" ></a-textarea>
-                </a-form-item>
-                <a-form-item>
-                  <a-button
-                    htmlType="submit"
-                    type="primary"
-                  >
-                    Add Note
-                  </a-button>
-                </a-form-item>
-              </div>
-            </a-comment>
-
-          </div>
-        </a-card>
+        </info-card>
       </a-col>
-      <a-col :md="24" :lg="17">
+      <a-col :md="24" :lg="16">
         <a-card
           style="width:100%"
           title="Hardware"
@@ -255,12 +165,14 @@
 <script>
 
 import { api } from '@/api'
+import InfoCard from '@/views/common/InfoCard'
 import ListView from '@/components/widgets/ListView'
 import Status from '@/components/widgets/Status'
 
 export default {
   name: 'InstanceView',
   components: {
+    InfoCard,
     ListView,
     Status
   },
@@ -277,14 +189,7 @@ export default {
       totalStorage: 0,
       guestOsName: '',
       osLogo: 'linux',
-      inputVisible: false,
-      inputValue: '',
       activeKey: ['1', '2', '3'],
-      tags: ['os=centos', 'tag=value', 'demo=true'],
-      tagInputVisible: false,
-      tagInputValue: '',
-      teams: [],
-      teamSpinning: true,
       settingsColumns: [
         {
           title: this.$t('name'),
@@ -311,30 +216,6 @@ export default {
     }
   },
   methods: {
-    showInput () {
-      this.inputVisible = true
-      this.$nextTick(function () {
-        this.$refs.input.focus()
-      })
-    },
-
-    handleInputChange (e) {
-      this.inputValue = e.target.value
-    },
-    handleInputConfirm () {
-      const inputValue = this.inputValue
-      let tags = this.tags
-      if (inputValue && tags.indexOf(inputValue) === -1) {
-        tags = [...tags, inputValue]
-      }
-      console.log(tags)
-      Object.assign(this, {
-        tags,
-        inputVisible: false,
-        inputValue: ''
-      })
-    },
-
     fetchData () {
       api('listVolumes', { 'listall': true, 'virtualmachineid': this.vm.id }).then(json => {
         this.volumes = json.listvolumesresponse.volume
@@ -381,86 +262,10 @@ export default {
   height: 100%;
   min-height: 100%;
   transition: 0.3s;
-  .resource-details {
-    text-align: center;
-    margin-bottom: 24px;
-    & > .avatar {
-      margin: 0 auto;
-      padding-top: 20px;
-      width: 104px;
-      //height: 104px;
-      margin-bottom: 20px;
-      border-radius: 50%;
-      overflow: hidden;
-      img {
-        height: 100%;
-        width: 100%;
-      }
-    }
-    .username {
-      color: rgba(0, 0, 0, 0.85);
-      font-size: 20px;
-      line-height: 28px;
-      font-weight: 500;
-      margin-bottom: 4px;
-    }
-  }
-  .resource-center-detail {
-    &__item {
-      margin-bottom: 8px;
-      padding-left: 12px;
-      padding-right: 12px;
-      position: relative;
-
-      font-awesome-icon, .svg-inline--fa {
-        width: 30px;
-      }
-    }
-    .title {
-      background-position: 0 0;
-    }
-    .group {
-      background-position: 0 -22px;
-    }
-    .address {
-      background-position: 0 -44px;
-    }
-  }
-  .account-center-tags {
-    .ant-tag {
-      margin-bottom: 8px;
-    }
-  }
-  .account-center-team {
-    .members {
-      a {
-        display: block;
-        margin: 12px 0;
-        line-height: 24px;
-        height: 24px;
-        .member {
-          font-size: 14px;
-          color: rgba(0, 0, 0, 0.65);
-          line-height: 24px;
-          max-width: 100px;
-          vertical-align: top;
-          margin-left: 12px;
-          transition: all 0.3s;
-          display: inline-block;
-        }
-        &:hover {
-          span {
-            color: #1890ff;
-          }
-        }
-      }
-    }
-  }
-  .tagsTitle,
-  .teamTitle {
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.85);
-    margin-bottom: 12px;
+  .vm-detail {
+    margin-bottom: 8px;
+    margin-left: 10px;
+    margin-right: 10px;
   }
 }
 </style>

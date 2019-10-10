@@ -101,11 +101,6 @@ export default {
 </script>
 
 <style scoped>
-/deep/ .ant-badge-status-dot {
-  width: 14px;
-  height: 14px;
-}
-
 /deep/ .light-row {
   background-color: #fff;
 }

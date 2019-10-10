@@ -8,6 +8,7 @@ export default {
       title: 'Volumes',
       icon: 'hdd',
       permission: [ 'listVolumesMetrics', 'listVolumes' ],
+      viewComponent: () => import('@/views/common/DetailView.vue'),
       columns: ['name', 'state', 'type', 'vmname', 'size', 'physicalsize', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskiopstotal', 'storage', 'account', 'zonename'],
       hidden: ['storage', 'utilization'],
       actions: [

@@ -72,7 +72,8 @@ export default {
 
 <style scoped>
 /deep/ .ant-badge-status-dot {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
+  margin-top: -3px;
 }
 </style>
