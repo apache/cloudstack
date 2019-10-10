@@ -91,8 +91,8 @@ module.exports = {
   devServer: {
     port: 5050,
     proxy: {
-      '/client/api': {
-        target: process.env.API_URL || 'http://localhost:8080/client/api',
+      '/client': {
+        target: process.env.CS_URL || 'http://localhost:8080',
         secure: false,
         ws: false,
         changeOrigin: true

@@ -4,22 +4,26 @@ A modern role-based progressive CloudStack UI based on VueJS and Ant Design.
 
 ![Primate Screenshot](docs/screenshot-dashboard.png)
 
-## Env and dependencies
+## Getting Started
 
-- node
-- webpack
-- eslint
-- @vue/cli ~3
+Install node: (Debian/Ubuntu)
+
+    sudo apt-get install npm nodejs
+
+Install node: (CentOS/Fedora)
+
+    curl -sL https://rpm.nodesource.com/setup_10.x | sudo bash -
+    sudo yum install nodejs
 
 Install tools and dependencies:
 
-    sudo apt-get install npm
-    sudo npm i -g npm@next
-    sudo npm i -g npm-check-updates
+    sudo npm install -g @vue/cli webpack eslint
+    sudo npm install -g npm@next
+    sudo npm install -g npm-check-updates
     ncu -u # optional: upgrade dependencies
     npm install
 
-## Developing against CloudStack Env
+## Development
 
 Override the default `API_URL` to a running CloudStack management server:
 
@@ -72,6 +76,8 @@ eg:
 ```
 
 ### Attributions
+
+Primate uses the following:
 
 - [VueJS](https://vuejs.org/)
 - [Ant Design Spec](https://ant.design/docs/spec/introduce)
