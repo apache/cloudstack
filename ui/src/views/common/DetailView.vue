@@ -17,7 +17,7 @@
             :key="key"
             v-for="(value, key) in resource"
             v-if="key !== 'key' && key !== 'tags'">
-            <strong>{{ key }}</strong><br/>{{ value }}
+            <strong>{{ $t(key) }}</strong><br/>{{ value }}
           </a-card-grid>
         </a-card>
         <a-card
