@@ -43,12 +43,12 @@
               <font-awesome-icon :icon="['fas', 'database']" />
               {{ (totalStorage / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage
               (<router-link :to="{ path: '/template/' + vm.templateid }">{{ vm.templatename }}</router-link>)<br/>
-              <div style="margin-left: 45px">
-                <a-tag><a-icon type="download" /> Read {{ vm.diskkbsread }} KB</a-tag>
-                <a-tag><a-icon type="upload" /> Write {{ vm.diskkbswrite }} KB</a-tag><br/>
-                <a-tag><a-icon type="download" /> Read (IO) {{ vm.diskioread }}</a-tag>
-                <a-tag><a-icon type="upload" /> Write (IO) {{ vm.diskiowrite }}</a-tag>
-              </div>
+            </p><div style="margin-left: 45px">
+              <a-tag><a-icon type="download" /> Read {{ vm.diskkbsread }} KB</a-tag>
+              <a-tag><a-icon type="upload" /> Write {{ vm.diskkbswrite }} KB</a-tag><br/>
+              <a-tag><a-icon type="download" /> Read (IO) {{ vm.diskioread }}</a-tag>
+              <a-tag><a-icon type="upload" /> Write (IO) {{ vm.diskiowrite }}</a-tag>
+            </div>
             </p>
             <p>
               <font-awesome-icon :icon="['fas', 'ethernet']" />
@@ -57,9 +57,9 @@
                 <a-tag><a-icon type="arrow-up" /> TX {{ vm.networkkbswrite }} KB</a-tag>
               </span>
               <br/>
-              <div style="margin-left: 45px" v-for="(eth, index) in vm.nic" :key="eth.id">
-                <a-icon type="api"/> eth{{ index }} {{ eth.ipaddress}} (<router-link :to="{ path: '/guestnetwork/' + eth.networkid }">{{ eth.networkname }}</router-link>)
-              </div>
+            </p><div style="margin-left: 45px" v-for="(eth, index) in vm.nic" :key="eth.id">
+              <a-icon type="api"/> eth{{ index }} {{ eth.ipaddress }} (<router-link :to="{ path: '/guestnetwork/' + eth.networkid }">{{ eth.networkname }}</router-link>)
+            </div>
             </p>
             <p v-if="vm.group">
               <a-icon type="team" style="margin-left: 6px; margin-right: 10px" />
