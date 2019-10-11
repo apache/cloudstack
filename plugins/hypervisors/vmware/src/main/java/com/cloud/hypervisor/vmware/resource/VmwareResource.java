@@ -6803,7 +6803,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             disks = vmMo.getAllDiskDevice();
         } catch (Exception e) {
-            s_logger.info("Unable to retrieve unmanaged instance disks! " + e.getMessage());
+            s_logger.info("Unable to retrieve unmanaged instance disks. " + e.getMessage());
         }
         if (disks != null) {
             for (VirtualDevice diskDevice : disks) {
@@ -6856,7 +6856,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         instanceDisks.add(instanceDisk);
                     }
                 } catch (Exception e) {
-                    s_logger.info("Unable to retrieve unmanaged instance disk info! " + e.getMessage());
+                    s_logger.info("Unable to retrieve unmanaged instance disk info. " + e.getMessage());
                 }
             }
             Collections.sort(instanceDisks, new Comparator<UnmanagedInstance.Disk>() {
@@ -6894,16 +6894,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
                 }
             } else {
-                s_logger.info(String.format("Unable to retrieve guest nics for instance: %s from VMware tools as tools status: %s! ", vmMo.getName(), guestInfo.getToolsStatus().toString()));
+                s_logger.info(String.format("Unable to retrieve guest nics for instance: %s from VMware tools as tools status: %s", vmMo.getName(), guestInfo.getToolsStatus().toString()));
             }
         } catch (Exception e) {
-            s_logger.info("Unable to retrieve guest nics for instance from VMware tools! " + e.getMessage());
+            s_logger.info("Unable to retrieve guest nics for instance from VMware tools. " + e.getMessage());
         }
         VirtualDevice[] nics = null;
         try {
             nics = vmMo.getNicDevices();
         } catch (Exception e) {
-            s_logger.info("Unable to retrieve unmanaged instance nics! " + e.getMessage());
+            s_logger.info("Unable to retrieve unmanaged instance nics. " + e.getMessage());
         }
         if (nics != null) {
             for (VirtualDevice nic : nics) {
@@ -6978,7 +6978,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
                     instanceNics.add(instanceNic);
                 } catch (Exception e) {
-                    s_logger.info("Unable to retrieve unmanaged instance nic info! " + e.getMessage());
+                    s_logger.info("Unable to retrieve unmanaged instance nic info. " + e.getMessage());
                 }
             }
             Collections.sort(instanceNics, new Comparator<UnmanagedInstance.Nic>() {
@@ -7034,7 +7034,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             instance.setDisks(getUnmanageInstanceDisks(vmMo));
             instance.setNics(getUnmanageInstanceNics(hyperHost, vmMo));
         } catch (Exception e) {
-            s_logger.info("Unable to retrieve unmanaged instance info! " + e.getMessage());
+            s_logger.info("Unable to retrieve unmanaged instance info. " + e.getMessage());
         }
 
         return  instance;
