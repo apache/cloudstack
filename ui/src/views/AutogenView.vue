@@ -2,7 +2,7 @@
   <div>
     <breadcrumb v-if="device !== 'desktop'" class="mobile-breadcrumb" />
     <a-row>
-      <a-col :span="17">
+      <a-col :span="18">
         <a-tooltip placement="bottom" v-for="(action, actionIndex) in actions" :key="actionIndex" v-if="action.api in $store.getters.apis && ((!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) || (dataView && action.dataView))">
           <template slot="title">
             {{ $t(action.label) }}
@@ -46,7 +46,7 @@
           </a-button-group>
         </span>
       </a-col>
-      <a-col :span="7">
+      <a-col :span="6">
         <a-tooltip placement="bottom" v-if="dataView">
           <template slot="title">
             {{ "Refresh" }}
