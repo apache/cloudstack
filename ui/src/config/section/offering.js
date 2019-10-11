@@ -30,6 +30,7 @@ export default {
       title: 'VPC Offerings',
       icon: 'deployment-unit',
       permission: [ 'listVPCOfferings' ],
+      resourceType: 'VpcOffering',
       columns: [ 'name', 'state', 'displaytext', 'domain', 'zone' ]
     },
     {
