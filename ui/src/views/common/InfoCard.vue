@@ -1,6 +1,7 @@
 <template>
   <a-card :bordered="true">
-    <div class="resource-details">
+    <a-skeleton active v-if="loading" />
+    <div v-else class="resource-details">
       <div class="avatar">
         <slot name="avatar">
           <a-icon style="font-size: 36px" :type="$route.meta.icon" />
@@ -185,6 +186,10 @@ export default {
     resource: {
       type: Object,
       required: true
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   data () {

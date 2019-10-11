@@ -3,7 +3,7 @@
     <a-row :gutter="12">
       <a-col :md="24" :lg="8" style="margin-bottom: 12px">
         <slot name="info-card">
-          <info-card :resource="resource" />
+          <info-card :resource="resource" :loading="loading" />
         </slot>
       </a-col>
       <a-col :md="24" :lg="16">
@@ -12,11 +12,12 @@
           title="Details"
           :bordered="true"
         >
+          <a-skeleton active v-if="loading" />
           <a-card-grid
-            style="width:33.33%; textAlign:'center'"
+            style="width:50%; textAlign:'center'"
             :key="key"
             v-for="(value, key) in resource"
-            v-if="key !== 'key' && key !== 'tags'">
+            v-if="!loading && key !== 'key' && key !== 'tags'">
             <strong>{{ $t(key) }}</strong><br/>{{ value }}
           </a-card-grid>
         </a-card>
@@ -52,6 +53,10 @@ export default {
     resource: {
       type: Object,
       required: true
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   data () {

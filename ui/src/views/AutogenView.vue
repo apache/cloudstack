@@ -167,8 +167,8 @@
     </div>
 
     <div v-if="dataView">
-      <component :is="$route.meta.viewComponent" :resource="resource" v-if="$route.meta.viewComponent"/></component>
-      <detail-view :resource="resource" v-else />
+      <component :is="$route.meta.viewComponent" :resource="resource" :loading="loading" v-if="$route.meta.viewComponent"/></component>
+      <detail-view :resource="resource" :loading="loading" v-else />
     </div>
     <div class="row-element" v-else>
       <list-view
@@ -202,10 +202,9 @@ import store from '@/store'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import CardView from '@/components/widgets/CardView'
 import ChartCard from '@/components/chart/ChartCard'
-import DataView from '@/components/widgets/DataView'
+import DetailView from '@/views/common/DetailView'
 import ListView from '@/components/widgets/ListView'
 import Status from '@/components/widgets/Status'
-import DetailView from '@/views/common/DetailView'
 
 export default {
   name: 'Resource',
@@ -213,7 +212,6 @@ export default {
     Breadcrumb,
     CardView,
     ChartCard,
-    DataView,
     DetailView,
     ListView,
     Status
@@ -285,6 +283,7 @@ export default {
       }
 
       if (this.$route && this.$route.params && this.$route.params.id) {
+        this.resource = {}
         this.dataView = true
       } else {
         this.dataView = false
