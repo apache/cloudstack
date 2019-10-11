@@ -1,27 +1,27 @@
 <template>
   <a-card :bordered="true">
     <a-skeleton active v-if="loading" />
-    <div v-else class="resource-details">
-      <div class="avatar">
-        <slot name="avatar">
-          <a-icon style="font-size: 36px" :type="$route.meta.icon" />
-        </slot>
+    <div v-else>
+      <div class="resource-details">
+        <div class="avatar">
+          <slot name="avatar">
+            <a-icon style="font-size: 36px" :type="$route.meta.icon" />
+          </slot>
+        </div>
+        <div class="name">
+          <slot name="name">
+            <h4>
+              {{ resource.name }}
+            </h4>
+            <a-tag v-if="resource.type">
+              {{ resource.type }}
+            </a-tag>
+            <a-tag v-if="resource.hypervisor">
+              {{ resource.hypervisor }}
+            </a-tag>
+          </slot>
+        </div>
       </div>
-      <div class="name">
-        <slot name="name">
-          <h4>
-            {{ resource.name }}
-          </h4>
-          <a-tag v-if="resource.type">
-            {{ resource.type }}
-          </a-tag>
-          <a-tag v-if="resource.hypervisor">
-            {{ resource.hypervisor }}
-          </a-tag>
-        </slot>
-      </div>
-    </div>
-    <div class="resource-center-detail">
       <div class="resource-detail-item" v-if="resource.state || resource.status">
         <status :text="resource.state || resource.status" class="resource-detail-item" />
         <span style="margin-left: -5px">{{ resource.state || resource.status }}</span>
@@ -41,45 +41,78 @@
         <slot name="details">
         </slot>
       </div>
-      <div class="resource-detail-item" v-if="resource.vmname && resource.virtualmachineid">
+      <div class="resource-detail-item" v-if="resource.ipaddress">
+        <a-icon type="environment" class="resource-detail-item"/>{{ resource.ipaddress }}
+      </div>
+      <div class="resource-detail-item" v-if="resource.virtualmachineid">
         <a-icon type="desktop" class="resource-detail-item"/>
-        <router-link :to="{ path: '/vm/' + resource.virtualmachineid }">{{ resource.vmname }} </router-link>
+        <router-link :to="{ path: '/vm/' + resource.virtualmachineid }">{{ resource.vmname || resource.vm || resource.virtualmachineid }} </router-link>
+        <status :text="resource.vmstate" v-if="resource.vmstate"/>
+      </div>
+      <div class="resource-detail-item" v-if="resource.volumeid">
+        <a-icon type="hdd" class="resource-detail-item"/>
+        <router-link :to="{ path: '/volume/' + resource.volumeid }">{{ resource.volumename || resource.volume || resource.volumeid }} </router-link>
         <status :text="resource.vmstate" v-if="resource.vmstate"/>
       </div>
       <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
         <a-icon type="cloud" class="resource-detail-item"/>
-        <router-link :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname }} </router-link>
+        <router-link :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
       </div>
-      <div class="resource-detail-item" v-if="resource.templatename && resource.templateid">
+      <div class="resource-detail-item" v-if="resource.templateid">
         <a-icon type="picture" class="resource-detail-item"/>
-        <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename }} </router-link>
+        <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename || resource.templateid }} </router-link>
       </div>
-      <div class="resource-detail-item" v-if="resource.storage && resource.storageid">
+      <div class="resource-detail-item" v-if="resource.networkofferingid">
+        <a-icon type="wifi" class="resource-detail-item"/>
+        <router-link :to="{ path: '/networkoffering/' + resource.networkofferingid }">{{ resource.networkofferingname || resource.networkofferingid }} </router-link>
+      </div>
+      <div class="resource-detail-item" v-if="resource.vpcofferingid">
+        <a-icon type="deployment-unit" class="resource-detail-item"/>
+        <router-link :to="{ path: '/vpcoffering/' + resource.vpcofferingid }">{{ resource.vpcofferingname || resource.vpcofferingid }} </router-link>
+      </div>
+      <div class="resource-detail-item" v-if="resource.storageid">
         <a-icon type="database" class="resource-detail-item"/>
-        <router-link :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage }} </router-link>
+        <router-link :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
         <a-tag v-if="resource.storagetype">
           {{ resource.storagetype }}
         </a-tag>
       </div>
-      <div class="resource-detail-item" v-if="resource.hostname && resource.hostid">
+      <div class="resource-detail-item" v-if="resource.hostid">
         <a-icon type="desktop" class="resource-detail-item"/>
-        <router-link :to="{ path: '/host/' + resource.hostid }">{{ resource.hostname }} </router-link>
+        <router-link :to="{ path: '/host/' + resource.hostid }">{{ resource.hostname || resource.hostid }} </router-link>
         <a-tag v-if="resource.hypervisor">
           {{ resource.hypervisor }}
         </a-tag>
       </div>
-      <div class="resource-detail-item" v-if="resource.zonename && resource.zoneid">
+      <div class="resource-detail-item" v-if="resource.clusterid">
+        <a-icon type="cluster" class="resource-detail-item"/>
+        <router-link :to="{ path: '/cluster/' + resource.clusterid }">{{ resource.clustername || resource.cluster || resource.clusterid }}</router-link>
+      </div>
+      <div class="resource-detail-item" v-if="resource.podid">
+        <a-icon type="appstore" class="resource-detail-item"/>
+        <router-link :to="{ path: '/pod/' + resource.podid }">{{ resource.podname || resource.pod || resource.podid }}</router-link>
+      </div>
+      <div class="resource-detail-item" v-if="resource.zoneid">
         <a-icon type="global" class="resource-detail-item"/>
-        <router-link :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zonename }}</router-link>
+        <router-link :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zonename || resource.zoneid }}</router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.account">
         <a-icon type="user" class="resource-detail-item"/>
         <router-link :to="{ path: '/account?name=' + resource.account }">{{ resource.account }}</router-link>
       </div>
-      <div class="resource-detail-item" v-if="resource.domain && resource.domainid">
-        <a-icon type="block" class="resource-detail-item"/>
-        <router-link :to="{ path: '/domain/' + resource.domainid }">{{ resource.domain }}</router-link>
+      <div class="resource-detail-item" v-if="resource.roleid">
+        <a-icon type="idcard" class="resource-detail-item"/>
+        <router-link :to="{ path: '/role/' + resource.roleid }">{{ resource.rolename || resource.role || resource.roleid }}</router-link>
       </div>
+      <div class="resource-detail-item" v-if="resource.domainid">
+        <a-icon type="block" class="resource-detail-item"/>
+        <router-link :to="{ path: '/domain/' + resource.domainid }">{{ resource.domain || resource.domainid }}</router-link>
+      </div>
+      <div class="resource-detail-item" v-if="resource.managementserverid">
+        <a-icon type="rocket" class="resource-detail-item"/>
+        <router-link :to="{ path: '/managementserver/' + resource.managementserverid }">{{ resource.managementserver || resource.managementserverid }}</router-link>
+      </div>
+
       <div class="resource-detail-item" v-if="resource.created">
         <a-icon type="calendar" class="resource-detail-item"/>{{ resource.created }}
       </div>
@@ -209,6 +242,7 @@ export default {
     resource: function (newItem, oldItem) {
       this.resource = newItem
       this.resourceType = this.$route.meta.resourceType
+      this.annotationType = ''
 
       switch (this.resourceType) {
         case 'UserVm':
@@ -226,15 +260,18 @@ export default {
           break
       }
 
-      this.getTags()
-      this.getNotes()
       if ('tags' in this.resource) {
         this.tags = this.resource.tags
       }
+      this.getTags()
+      this.getNotes()
     }
   },
   methods: {
     getTags () {
+      if (!('listTags' in this.$store.getters.apis)) {
+        return
+      }
       this.tags = []
       api('listTags', { 'listall': true, 'resourceid': this.resource.id, 'resourcetype': this.resourceType }).then(json => {
         if (json.listtagsresponse && json.listtagsresponse.tag) {
@@ -243,6 +280,9 @@ export default {
       })
     },
     getNotes () {
+      if (!('listAnnotations' in this.$store.getters.apis)) {
+        return
+      }
       this.notes = []
       api('listAnnotations', { 'entityid': this.resource.id, 'entitytype': this.annotationType }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
@@ -343,27 +383,6 @@ export default {
     font-weight: 500;
     margin-bottom: 4px;
     word-wrap: break-word;
-  }
-}
-.resource-center-detail {
-  p {
-    margin-bottom: 8px;
-    padding-left: 12px;
-    padding-right: 12px;
-    position: relative;
-
-    font-awesome-icon, .svg-inline--fa {
-      width: 30px;
-    }
-  }
-  .title {
-    background-position: 0 0;
-  }
-  .group {
-    background-position: 0 -22px;
-  }
-  .address {
-    background-position: 0 -44px;
   }
 }
 .resource-detail-item {

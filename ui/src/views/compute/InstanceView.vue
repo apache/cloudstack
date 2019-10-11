@@ -27,15 +27,22 @@
             </div>
             <div class="vm-detail">
               <font-awesome-icon :icon="['fas', 'microchip']" />
-              <span class="vm-detail">{{ vm.cpunumber }} CPU x {{ vm.cpuspeed }} Mhz
+              <span class="vm-detail">{{ vm.cputotal }} ({{ vm.cpunumber }} CPU x {{ vm.cpuspeed }} Mhz)
               </span>
-              <a-progress style="padding-left: 25px" size="small" :percent="parseFloat(vm.cpuused)" />
+              <a-progress
+                style="padding-left: 25px"
+                size="small"
+                :percent="vm && vm.cpuused ? parseFloat(vm.cpuused) : 0.0" />
             </div>
             <div class="vm-detail">
               <font-awesome-icon :icon="['fas', 'memory']" style="margin-left: -2px"/>
               <span class="vm-detail">{{ vm.memory }} MB Memory
               </span>
-              <a-progress style="padding-left: 25px" size="small" :percent="parseFloat(100.0 * (vm.memorykbs - vm.memoryintfreekbs) / vm.memorykbs).toFixed(2)" />
+              <a-progress
+                style="padding-left: 25px"
+                size="small"
+                :percent="vm && vm.memorykbs && vm.memoryintfreekbs && vm.memorykbs > vm.memoryintfreekbs ?
+                  Number(parseFloat(100.0 * (vm.memorykbs - vm.memoryintfreekbs) / vm.memorykbs).toFixed(2)) : 0.0" />
             </div>
             <div class="vm-detail">
               <font-awesome-icon :icon="['fas', 'database']" />
@@ -50,7 +57,7 @@
             </div>
             <div class="vm-detail">
               <font-awesome-icon :icon="['fas', 'ethernet']" />
-              <span class="vm-detail">{{ vm.nic.length }} NIC(s)
+              <span class="vm-detail">{{ vm && vm.nic ? vm.nic.length : 0 }} NIC(s)
                 <a-tag><a-icon type="arrow-down" /> RX {{ vm.networkkbsread }} KB</a-tag>
                 <a-tag><a-icon type="arrow-up" /> TX {{ vm.networkkbswrite }} KB</a-tag>
               </span>
