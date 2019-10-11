@@ -5,7 +5,7 @@ export default {
   permission: [ 'listAccounts', 'listUsers', 'listDomains', 'listRoles' ],
   children: [
     {
-      name: 'user',
+      name: 'accountuser',
       title: 'Users',
       icon: 'user',
       permission: [ 'listUsers' ],
