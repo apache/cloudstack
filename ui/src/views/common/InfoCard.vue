@@ -122,6 +122,40 @@
       </div>
     </div>
 
+    <div class="account-center-tags" v-if="showKeys">
+      <a-divider/>
+      <div class="user-keys">
+        <a-icon type="key" />
+        <strong>
+          {{ $t('apikey') }}
+          <a-tooltip placement="right" >
+            <template slot="title">
+              <span>Copy {{ $t('apikey') }}</span>
+            </template>
+            <a-button shape="circle" type="dashed" size="small" v-clipboard:copy="resource.apikey">
+              <a-icon type="copy"/>
+            </a-button>
+          </a-tooltip>
+        </strong>
+        {{ resource.apikey }}
+      </div> <br/>
+      <div class="user-keys">
+        <a-icon type="lock" />
+        <strong>
+          {{ $t('secretkey') }}
+          <a-tooltip placement="right" >
+            <template slot="title">
+              <span>Copy {{ $t('secretkey') }}</span>
+            </template>
+            <a-button shape="circle" type="dashed" size="small" v-clipboard:copy="resource.apikey">
+              <a-icon type="copy"/>
+            </a-button>
+          </a-tooltip>
+        </strong>
+        {{ resource.secretkey }}
+      </div>
+    </div>
+
     <div class="account-center-tags" v-if="resourceType && 'listTags' in $store.getters.apis">
       <a-divider/>
       <div class="tagsTitle">Tags</div>
@@ -239,6 +273,7 @@ export default {
       tags: [],
       notes: [],
       annotation: '',
+      showKeys: false,
       showNotesInput: false
     }
   },
@@ -247,6 +282,7 @@ export default {
       this.resource = newItem
       this.resourceType = this.$route.meta.resourceType
       this.annotationType = ''
+      this.showKeys = false
 
       switch (this.resourceType) {
         case 'UserVm':
@@ -273,9 +309,21 @@ export default {
       if (this.annotationType) {
         this.getNotes()
       }
+      if ('apikey' in this.resource) {
+        this.getUserKeys()
+      }
     }
   },
   methods: {
+    getUserKeys () {
+      if (!('getUserKeys' in this.$store.getters.apis)) {
+        return
+      }
+      api('getUserKeys', { id: this.resource.id }).then(json => {
+        this.showKeys = true
+        this.resource.secretkey = json.getuserkeysresponse.userkeys.secretkey
+      })
+    },
     getTags () {
       if (!('listTags' in this.$store.getters.apis)) {
         return
@@ -397,6 +445,9 @@ export default {
   margin-bottom: 8px;
   margin-left: 10px;
   margin-right: 10px;
+}
+.user-keys {
+  word-wrap: break-word;
 }
 .account-center-tags {
   .ant-tag {
