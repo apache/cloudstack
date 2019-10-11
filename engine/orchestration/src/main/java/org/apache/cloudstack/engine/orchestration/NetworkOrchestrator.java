@@ -3953,6 +3953,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
             if (network.getGuestType() != GuestType.L2) {
                 guestIp = _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
+            } else {
+                guestIp = null;
             }
             if (guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
                 throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP  address for network " + network, DataCenter.class,

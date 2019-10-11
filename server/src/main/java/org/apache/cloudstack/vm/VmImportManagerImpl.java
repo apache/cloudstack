@@ -565,8 +565,8 @@ public class VmImportManagerImpl implements VmImportService {
         if (!network.getGuestType().equals(Network.GuestType.L2) && (ipAddresses == null || Strings.isNullOrEmpty(ipAddresses.getIp4Address()))) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("NIC(ID: %s) needs a valid IP address for it to be associated with network(ID: %s). %s parameter of API can be used for this", nic.getNicId(), network.getUuid(), ApiConstants.NIC_IP_ADDRESS_LIST));
         }
-        // If IP v4 is assigned and not set to auto-assign check it is available for network
-        if (ipAddresses != null && !Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && !ipAddresses.getIp4Address().equals("auto")) {
+        // If network is non L2, IP v4 is assigned and not set to auto-assign, check it is available for network
+        if (!network.getGuestType().equals(Network.GuestType.L2) && ipAddresses != null && !Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && !ipAddresses.getIp4Address().equals("auto")) {
             Set<Long> ips = networkModel.getAvailableIps(network, ipAddresses.getIp4Address());
             if (CollectionUtils.isEmpty(ips) || !ips.contains(NetUtils.ip2Long(ipAddresses.getIp4Address()))) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("IP address %s for NIC(ID: %s) is not available in network(ID: %s)", ipAddresses.getIp4Address(), nic.getNicId(), network.getUuid()));
