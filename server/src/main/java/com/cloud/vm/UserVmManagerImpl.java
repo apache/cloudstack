@@ -3852,7 +3852,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     vm.setDetail(VmDetailConstants.KEYBOARD, keyboard);
                 }
 
-                if (isIso) {
+                if (!isImport && isIso) {
                     vm.setIsoId(template.getId());
                 }
                 Long rootDiskSize = null;

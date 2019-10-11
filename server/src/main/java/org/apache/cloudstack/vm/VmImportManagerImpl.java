@@ -127,7 +127,7 @@ import com.google.common.base.Strings;
 import com.google.gson.Gson;
 
 public class VmImportManagerImpl implements VmImportService {
-    public static final String VMWARE_IMPORT_DEFAULT_TEMPLATE_NAME = "vmware-import-default.ova";
+    public static final String VM_IMPORT_DEFAULT_TEMPLATE_NAME = "system-default-vm-import-dummy-template.iso";
     private static final Logger LOGGER = Logger.getLogger(VmImportManagerImpl.class);
 
     @Inject
@@ -965,9 +965,9 @@ public class VmImportManagerImpl implements VmImportService {
         VMTemplateVO template = null;
         final Long templateId = cmd.getTemplateId();
         if (templateId == null) {
-            template = templateDao.findByName(VMWARE_IMPORT_DEFAULT_TEMPLATE_NAME);
+            template = templateDao.findByName(VM_IMPORT_DEFAULT_TEMPLATE_NAME);
             if (template == null) {
-                throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be found! Please use templateid paramter for import.", VMWARE_IMPORT_DEFAULT_TEMPLATE_NAME, cluster.getHypervisorType().toString()));
+                throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be found! Please use templateid paramter for import.", VM_IMPORT_DEFAULT_TEMPLATE_NAME, cluster.getHypervisorType().toString()));
             }
         } else {
             template = templateDao.findById(templateId);
@@ -1054,7 +1054,7 @@ public class VmImportManagerImpl implements VmImportService {
                     if (unmanagedInstance == null) {
                         throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve details for unmanaged VM: %s", name));
                     }
-                    if (template.getName().equals(VMWARE_IMPORT_DEFAULT_TEMPLATE_NAME)) {
+                    if (template.getName().equals(VM_IMPORT_DEFAULT_TEMPLATE_NAME)) {
                         String osName = unmanagedInstance.getOperatingSystem();
                         if (Strings.isNullOrEmpty(osName)) {
                             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve guest OS details for unmanaged VM: %s. templateid parameter can be used to assign template for VM", name));
