@@ -21,7 +21,7 @@ export default {
         {
           api: 'deployVirtualMachine',
           icon: 'plus',
-          label: 'Deploy VM',
+          label: 'label.vm.add',
           listView: true,
           component: () => import('@/views/compute/DeployVM.vue')
         },
@@ -44,7 +44,7 @@ export default {
         {
           api: 'stopVirtualMachine',
           icon: 'stop',
-          label: 'Stop VM',
+          label: 'label.action.stop.instance',
           dataView: true,
           groupAction: true,
           options: ['podid', 'clusterid', 'hostid'],
@@ -53,21 +53,21 @@ export default {
         {
           api: 'rebootVirtualMachine',
           icon: 'sync',
-          label: 'Reboot VM',
+          label: 'label.action.reboot.instance',
           dataView: true,
           hidden: (record) => { return record.state !== 'Running' }
         },
         {
           api: 'restoreVirtualMachine',
           icon: 'usb',
-          label: 'Reinstall Instance',
+          label: 'label.reinstall.vm',
           dataView: true,
           args: ['virtualmachineid']
         },
         {
           api: 'updateVMAffinityGroup',
           icon: 'swap',
-          label: 'Update Affinity Group',
+          label: 'label.change.affinity',
           dataView: true,
           args: ['id', 'serviceofferingid']
         },
@@ -87,21 +87,21 @@ export default {
         {
           api: 'attachIso',
           icon: 'paper-clip',
-          label: 'Attach ISO',
+          label: 'label.action.attach.iso',
           dataView: true,
           args: ['id', 'virtualmachineid']
         },
         {
           api: 'detachIso',
           icon: 'link',
-          label: 'Detach ISO',
+          label: 'label.action.detach.iso',
           dataView: true,
           args: ['id', 'virtualmachineid']
         },
         {
           api: 'migrateVirtualMachine',
           icon: 'drag',
-          label: 'Migrate VM',
+          label: 'label.migrate.instance.to.host',
           dataView: true,
           hidden: (record) => { return record.state !== 'Running' }
         },
@@ -127,7 +127,7 @@ export default {
         {
           api: 'destroyVirtualMachine',
           icon: 'delete',
-          label: 'Destroy VM',
+          label: 'label.action.destroy.instance',
           args: ['id'],
           dataView: true,
           groupAction: true
@@ -154,12 +154,14 @@ export default {
           api: 'createSSHKeyPair',
           icon: 'plus',
           label: 'Create SSH key pair',
+          listView: true,
           args: ['name', 'publickey', 'domainid']
         },
         {
           api: 'deleteSSHKeyPair',
           icon: 'delete',
           label: 'Delete SSH key pair',
+          dataView: true,
           args: ['name', 'domainid', 'account']
         }
       ]
@@ -175,12 +177,14 @@ export default {
           api: 'createAffinityGroup',
           icon: 'plus',
           label: 'New Affinity Group',
+          listView: true,
           args: ['name', 'description', 'type']
         },
         {
           api: 'deleteAffinityGroup',
           icon: 'delete',
           label: 'Delete Affinity Group',
+          dataView: true,
           args: ['id']
         }
       ]

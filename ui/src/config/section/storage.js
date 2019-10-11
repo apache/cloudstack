@@ -92,7 +92,36 @@ export default {
       icon: 'build',
       permission: [ 'listSnapshots' ],
       resourceType: 'Snapshot',
-      columns: ['name', 'state', 'volumename', 'intervaltype', 'created', 'account']
+      columns: ['name', 'state', 'volumename', 'intervaltype', 'created', 'account'],
+      actions: [
+        {
+          api: 'createVolume',
+          icon: 'plus',
+          label: 'Create volume',
+          dataView: true,
+          args: [
+            'name', 'snapshotid', 'diskofferingid', 'size'
+          ]
+        },
+        {
+          api: 'revertSnapshot',
+          icon: 'revert',
+          label: 'Revert snapshot',
+          dataView: true,
+          args: [
+            'id'
+          ]
+        },
+        {
+          api: 'deleteSnapshot',
+          icon: 'delete',
+          label: 'Delete snapshot',
+          dataView: true,
+          args: [
+            'id'
+          ]
+        }
+      ]
     },
     {
       name: 'vmsnapshot',
@@ -100,7 +129,27 @@ export default {
       icon: 'camera',
       permission: [ 'listVMSnapshot' ],
       resourceType: 'VMSnapshot',
-      columns: ['name', 'state', 'type', 'current', 'parent', 'created', 'account']
+      columns: ['name', 'state', 'type', 'current', 'parent', 'created', 'account'],
+      actions: [
+        {
+          api: 'revertToVMSnapshot',
+          icon: 'revert',
+          label: 'Revert VM snapshot',
+          dataView: true,
+          args: [
+            'vmsnapshotid'
+          ]
+        },
+        {
+          api: 'deleteVMSnapshot',
+          icon: 'delete',
+          label: 'Delete VM Snapshot',
+          dataView: true,
+          args: [
+            'vmsnapshotid'
+          ]
+        }
+      ]
     }
   ]
 }

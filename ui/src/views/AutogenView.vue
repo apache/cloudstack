@@ -5,7 +5,7 @@
       <a-col :span="17">
         <a-tooltip placement="bottom" v-for="(action, actionIndex) in actions" :key="actionIndex" v-if="action.api in $store.getters.apis && ((!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) || (dataView && action.dataView))">
           <template slot="title">
-            {{ action.label }}
+            {{ $t(action.label) }}
           </template>
           <a-button
             :icon="action.icon"
@@ -87,7 +87,7 @@
     <div v-show="showAction">
       <keep-alive v-if="currentAction.component">
         <a-modal
-          :title="currentAction.label"
+          :title="$t(currentAction.label)"
           :visible="showAction"
           :closable="true"
           style="top: 20px;"
@@ -101,7 +101,7 @@
       </keep-alive>
       <a-modal
         v-else
-        :title="currentAction.label"
+        :title="$t(currentAction.label)"
         :visible="showAction"
         :closable="true"
         style="top: 20px;"
@@ -419,7 +419,7 @@ export default {
       if (action.args && action.args.length > 0) {
         this.currentAction['params'] = action.args.map(function (arg) {
           return params.filter(function (param) {
-            return param.name === arg
+            return param.name.toLowerCase() === arg.toLowerCase()
           })[0]
         })
       } else {
@@ -504,6 +504,12 @@ export default {
             }
           }
 
+          for (const key in this.currentAction.defaultArgs) {
+            if (!params[key]) {
+              params[key] = this.currentAction.defaultArgs[key]
+            }
+          }
+
           if ('id' in this.resource) {
             params['id'] = this.resource['id']
           }
@@ -515,7 +521,7 @@ export default {
               if (obj.includes('response')) {
                 for (const res in json[obj]) {
                   if (res === 'jobid') {
-                    this.$store.dispatch('AddAsyncJob', { 'title': this.currentAction.label, 'jobid': json[obj][res], 'description': this.resource.name, 'status': 'progress' })
+                    this.$store.dispatch('AddAsyncJob', { 'title': this.$t(this.currentAction.label), 'jobid': json[obj][res], 'description': this.resource.name, 'status': 'progress' })
                     break
                   }
                 }

@@ -1,6 +1,6 @@
 <template>
   <a-modal
-    :title="currentAction.label"
+    :title="$t(currentAction.label)"
     :visible="showForm"
     :closable="true"
     :confirmLoading="currentAction.loading"

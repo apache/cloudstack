@@ -16,14 +16,36 @@ export default {
       title: 'LDAP Configuration',
       icon: 'team',
       permission: [ 'listLdapConfigurations' ],
-      columns: [ 'hostname', 'port' ]
+      columns: [ 'hostname', 'port' ],
+      actions: [
+        {
+          api: 'addLdapConfiguration',
+          icon: 'plus',
+          label: 'label.configure.ldap',
+          listView: true,
+          args: [
+            'hostname', 'port'
+          ]
+        }
+      ]
     },
     {
       name: 'hypervisorcapability',
       title: 'Hypervisor Capabilities',
       icon: 'database',
       permission: [ 'listHypervisorCapabilities' ],
-      columns: [ 'hypervisor', 'hypervisorversion', 'maxguestlimit', 'maxdatavolumeslimit', 'maxhostspercluster' ]
+      columns: [ 'hypervisor', 'hypervisorversion', 'maxguestlimit', 'maxdatavolumeslimit', 'maxhostspercluster' ],
+      actions: [
+        {
+          api: 'updateHypervisorCapabilities',
+          icon: 'edit',
+          label: 'label.edit',
+          dataView: true,
+          args: [
+            'id', 'maxguestslimit'
+          ]
+        }
+      ]
     }
   ]
 }
