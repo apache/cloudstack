@@ -56,7 +56,7 @@ export default {
       permission: [ 'listIsos' ],
       resourceType: 'ISO',
       columns: ['name', 'ostypename', 'account', 'domain'],
-      details: ['name', 'id', 'displaytext', 'ostypename', 'bootable', 'directdownload', 'size', 'account', 'domain', 'created'],
+      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created'],
       actions: [
         {
           api: 'registerIso',

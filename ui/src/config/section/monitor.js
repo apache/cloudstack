@@ -9,14 +9,16 @@ export default {
       title: 'Events',
       icon: 'schedule',
       permission: [ 'listEvents' ],
-      columns: ['description', 'state', 'level', 'type', 'account', 'domain', 'created']
+      columns: ['username', 'description', 'state', 'level', 'type', 'account', 'domain', 'created'],
+      details: ['username', 'id', 'description', 'state', 'level', 'type', 'account', 'domain', 'created']
     },
     {
       name: 'alert',
       title: 'Alerts',
       icon: 'flag',
       permission: [ 'listAlerts' ],
-      columns: ['description', 'type', 'sent']
+      columns: ['name', 'description', 'type', 'sent'],
+      details: ['name', 'id', 'type', 'sent', 'description']
     }
   ]
 }

@@ -4,6 +4,7 @@ export default {
   icon: 'global',
   permission: [ 'listZones', 'listZonesMetrics' ],
   columns: [ 'name', 'allocationstate', 'networktype', 'guestcidraddress' ],
+  details: [ 'name', 'id', 'allocationstate', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2' ],
   actions: [
     {
       api: 'createZone',

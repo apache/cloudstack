@@ -4,6 +4,7 @@ export default {
   icon: 'database',
   permission: [ 'listStoragePools', 'listStoragePoolsMetrics' ],
   columns: [ 'name', 'state', 'ipaddress', 'type', 'path', 'scope', 'clustername', 'zonename' ],
+  details: [ 'name', 'id', 'ipaddress', 'type', 'scope', 'path', 'provider', 'hypervisor', 'overprovisionfactor', 'disksizetotal', 'disksizeallocated', 'disksizeused', 'clustername', 'podname', 'zonename', 'created' ],
   actions: [
     {
       api: 'createStoragePool',

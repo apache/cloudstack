@@ -4,6 +4,7 @@ export default {
   icon: 'appstore',
   permission: [ 'listPods' ],
   columns: [ 'name', 'allocationstate', 'gateway', 'netmask', 'zonename' ],
+  details: [ 'name', 'id', 'allocationstate', 'netmask', 'gateway', 'zonename' ],
   actions: [
     {
       api: 'createPod',

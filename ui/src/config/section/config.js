@@ -7,9 +7,10 @@ export default {
     {
       name: 'globalsetting',
       title: 'Global Settings',
-      icon: 'global',
+      icon: 'setting',
       permission: [ 'listConfigurations' ],
-      columns: [ 'name', 'description', 'category', 'value' ]
+      columns: [ 'name', 'description', 'category', 'value' ],
+      details: [ 'name', 'category', 'description', 'value' ]
     },
     {
       name: 'ldapsetting',

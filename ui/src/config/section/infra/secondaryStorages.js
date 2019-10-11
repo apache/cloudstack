@@ -4,6 +4,7 @@ export default {
   icon: 'picture',
   permission: [ 'listImageStores' ],
   columns: [ 'name', 'url', 'protocol', 'scope', 'zonename' ],
+  details: [ 'name', 'id', 'url', 'protocol', 'provider', 'scope', 'zonename' ],
   actions: [
     {
       api: 'addImageStore',

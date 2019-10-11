@@ -3,7 +3,8 @@ export default {
   title: 'System VMs',
   icon: 'thunderbolt',
   permission: [ 'listSystemVms' ],
-  columns: [ 'name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'hostname', 'zonename' ],
+  columns: [ 'name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'hostname', 'zonename' ],
+  details: [ 'name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'zonename', 'created', 'activeviewersessions' ],
   actions: [
     {
       api: 'startSystemVm',

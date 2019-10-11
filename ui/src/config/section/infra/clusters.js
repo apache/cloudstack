@@ -4,6 +4,7 @@ export default {
   icon: 'cluster',
   permission: [ 'listClusters', 'listClustersMetrics' ],
   columns: [ 'name', 'allocationstate', 'clustertype', 'hypervisortype', 'podname', 'zonename' ],
+  details: [ 'name', 'id', 'allocationstate', 'clustertype', 'hypervisortype', 'podname', 'zonename' ],
   actions: [
     {
       api: 'addCluster',

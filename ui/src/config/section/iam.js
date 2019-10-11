@@ -10,6 +10,7 @@ export default {
       icon: 'user',
       permission: [ 'listUsers' ],
       columns: ['username', 'state', 'firstname', 'lastname', 'email', 'account', 'domain'],
+      details: ['username', 'id', 'firstname', 'lastname', 'email', 'usersource', 'timezone', 'rolename', 'roletype', 'account', 'domain', 'created'],
       actions: [
         {
           api: 'createUser',
@@ -84,6 +85,7 @@ export default {
       icon: 'team',
       permission: [ 'listAccounts' ],
       columns: ['name', 'state', 'firstname', 'lastname', 'rolename', 'roletype', 'domain'],
+      details: ['name', 'id', 'rolename', 'roletype', 'domain', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
       actions: [
         {
           api: 'createAccount',
@@ -161,6 +163,7 @@ export default {
       permission: [ 'listDomains' ],
       resourceType: 'Domain',
       columns: ['name', 'state', 'path', 'parentdomainname', 'level'],
+      details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
       actions: [
         {
           api: 'createDomain',
@@ -209,6 +212,7 @@ export default {
       icon: 'idcard',
       permission: [ 'listRoles' ],
       columns: ['name', 'type', 'description'],
+      details: ['name', 'id', 'type', 'description'],
       actions: [
         {
           api: 'createRole',

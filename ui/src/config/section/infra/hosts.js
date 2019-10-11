@@ -3,8 +3,10 @@ export default {
   title: 'Hosts',
   icon: 'desktop',
   permission: [ 'listHosts', 'listHostsMetrics' ],
+  resourceType: 'Host',
   params: { 'type': 'routing' },
   columns: [ 'name', 'state', 'resourcestate', 'ipaddress', 'hypervisor', 'hypervisorversion', 'clustername', 'zonename' ],
+  details: [ 'name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'hypervisorversion', 'version', 'type', 'oscategoryname', 'hosttags', 'clustername', 'podname', 'zonename', 'created' ],
   actions: [
     {
       api: 'addHost',
@@ -116,7 +118,7 @@ export default {
       icon: 'enableha',
       label: 'label.ha.enable',
       dataView: true,
-      hidden: (record) => { return !(record.hostha !== null && record.hostha.haenable) },
+      hidden: (record) => { return !(record.hostha && record.hostha.haenable) },
       args: [
         'hostid'
       ]
@@ -126,7 +128,7 @@ export default {
       icon: 'disableha',
       label: 'label.ha.disable',
       dataView: true,
-      hidden: (record) => { return record.hostha !== null && record.hostha.haenable },
+      hidden: (record) => { return record.hostha && record.hostha.haenable },
       args: [
         'hostid'
       ]
@@ -145,7 +147,6 @@ export default {
       icon: 'enableband',
       label: 'label.outofbandmanagement.enable',
       dataView: true,
-      hidden: (record) => { return record.outofbandmanagement === null || !record.outofbandmanagement.enabled },
       args: [
         'hostid'
       ]
@@ -155,7 +156,6 @@ export default {
       icon: 'disableband',
       label: 'label.outofbandmanagement.disable',
       dataView: true,
-      hidden: (record) => { return !(record.outofbandmanagement !== null && record.outofbandmanagement.enabled) },
       args: [
         'hostid'
       ]
@@ -165,7 +165,6 @@ export default {
       icon: 'issuepowerband',
       label: 'label.outofbandmanagement.action.issue',
       dataView: true,
-      hidden: (record) => { return !(record.outofbandmanagement !== null && record.outofbandmanagement.enabled) },
       args: [
         'action', 'tags', 'hostid'
       ]
@@ -175,7 +174,6 @@ export default {
       icon: 'changebandpassword',
       label: 'label.outofbandmanagement.changepassword',
       dataView: true,
-      hidden: (record) => { return !(record.outofbandmanagement !== null && record.outofbandmanagement.enabled) },
       args: [
         'password', 'reenterpassword', 'tags', 'hostid'
       ]
