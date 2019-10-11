@@ -22,9 +22,9 @@
                 <a-skeleton active v-if="loading" />
                 <a-card-grid
                   style="width:50%; textAlign:'center'"
-                  :key="index"
-                  v-for="(key, index) in $route.meta.details"
-                  v-if="!loading && key in resource">
+                  v-for="key in $route.meta.details"
+                  v-if="!loading && key in resource"
+                  :key="key" >
                   <strong>{{ $t(key) }}</strong><br/>{{ resource[key] }}
                 </a-card-grid>
               </a-card>
