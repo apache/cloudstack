@@ -18,7 +18,7 @@
 
     <a slot="name" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
-      <span v-else>{{ text }}</span>
+      <router-link :to="{ path: $route.path + '/?name=' + record.name }" v-else>{{ text }}</router-link>
     </a>
     <a slot="displayname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -38,7 +38,7 @@
 
     <a slot="account" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/account/' + record.accountid }" v-if="record.accountid">{{ text }}</router-link>
-      <router-link :to="{ path: '/account', query: { name: record.account } }" v-else>{{ text }}</router-link>
+      <router-link :to="{ path: '/account', query: { name: record.account, domainid: record.domainid } }" v-else>{{ text }}</router-link>
     </a>
     <a slot="domain" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>

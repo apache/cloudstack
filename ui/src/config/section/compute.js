@@ -149,6 +149,7 @@ export default {
       icon: 'key',
       permission: [ 'listSSHKeyPairs' ],
       columns: ['name', 'fingerprint', 'account', 'domain'],
+      details: ['name', 'fingerprint', 'account', 'domain'],
       actions: [
         {
           api: 'createSSHKeyPair',
@@ -172,6 +173,7 @@ export default {
       icon: 'swap',
       permission: [ 'listAffinityGroups' ],
       columns: ['name', 'type', 'description', 'account', 'domain'],
+      details: ['name', 'id', 'description', 'type', 'account', 'domain'],
       actions: [
         {
           api: 'createAffinityGroup',

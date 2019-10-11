@@ -8,27 +8,33 @@
       </a-col>
       <a-col :md="24" :lg="16">
         <a-card
-          style="width:100%"
-          title="Details"
           :bordered="true"
-        >
-          <a-skeleton active v-if="loading" />
-          <a-card-grid
-            style="width:50%; textAlign:'center'"
-            :key="key"
-            v-for="(value, key) in resource"
-            v-if="!loading && key !== 'key' && key !== 'tags'">
-            <strong>{{ $t(key) }}</strong><br/>{{ value }}
-          </a-card-grid>
-        </a-card>
-        <a-card
-          style="width:100%; margin-top: 12px"
-          title="Settings"
-          :bordered="true"
-        >
-          <list-view
-            :columns="settingsColumns"
-            :items="settings " />
+          style="width:100%">
+          <a-tabs defaultActiveKey="1" @change="onTabChange" style="width:100%">
+            <a-tab-pane
+              v-for="(tab, index) in tabs"
+              :tab="$t(tab.name)"
+              :key="index">
+              <a-card
+                style="width:100%"
+                v-if="tab.name === 'details'"
+              >
+                <a-skeleton active v-if="loading" />
+                <a-card-grid
+                  style="width:50%; textAlign:'center'"
+                  :key="index"
+                  v-for="(key, index) in $route.meta.details"
+                  v-if="!loading && key in resource">
+                  <strong>{{ $t(key) }}</strong><br/>{{ resource[key] }}
+                </a-card-grid>
+              </a-card>
+
+              <list-view
+                v-if="tab.name === 'settings'"
+                :columns="settingsColumns"
+                :items="settings " />
+            </a-tab-pane>
+          </a-tabs>
         </a-card>
       </a-col>
     </a-row>
@@ -61,6 +67,9 @@ export default {
   },
   data () {
     return {
+      tabs: [{
+        name: 'details'
+      }],
       settingsColumns: [
         {
           title: this.$t('name'),
@@ -78,11 +87,17 @@ export default {
     }
   },
   watch: {
+    '$route' (to, from) {
+      console.log(this.resource)
+    },
     resource: function (newItem, oldItem) {
       this.resource = newItem
     }
   },
   methods: {
+    onTabChange (key) {
+      this.activeTab = key
+    }
   }
 }
 </script>

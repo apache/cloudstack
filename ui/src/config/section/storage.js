@@ -11,6 +11,7 @@ export default {
       resourceType: 'Volume',
       columns: ['name', 'state', 'type', 'vmname', 'size', 'physicalsize', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskiopstotal', 'storage', 'account', 'zonename'],
       hidden: ['storage', 'utilization'],
+      details: ['name', 'id', 'type', 'deviceid', 'sizegb', 'physicalsize', 'provisioningtype', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'diskiopstotal', 'path'],
       actions: [
         {
           api: 'createVolume',
@@ -93,6 +94,7 @@ export default {
       permission: [ 'listSnapshots' ],
       resourceType: 'Snapshot',
       columns: ['name', 'state', 'volumename', 'intervaltype', 'created', 'account'],
+      details: ['name', 'id', 'volumename', 'intervaltype', 'account', 'domain', 'created'],
       actions: [
         {
           api: 'createVolume',
@@ -130,6 +132,7 @@ export default {
       permission: [ 'listVMSnapshot' ],
       resourceType: 'VMSnapshot',
       columns: ['name', 'state', 'type', 'current', 'parent', 'created', 'account'],
+      details: ['name', 'id', 'displayname', 'description', 'type', 'current', 'parent', 'virtualmachineid', 'account', 'domain', 'created'],
       actions: [
         {
           api: 'revertToVMSnapshot',

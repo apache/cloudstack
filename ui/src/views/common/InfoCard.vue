@@ -46,7 +46,7 @@
       </div>
       <div class="resource-detail-item" v-if="resource.virtualmachineid">
         <a-icon type="desktop" class="resource-detail-item"/>
-        <router-link :to="{ path: '/vm/' + resource.virtualmachineid }">{{ resource.vmname || resource.vm || resource.virtualmachineid }} </router-link>
+        <router-link :to="{ path: '/vm/' + resource.virtualmachineid }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
         <status :text="resource.vmstate" v-if="resource.vmstate"/>
       </div>
       <div class="resource-detail-item" v-if="resource.volumeid">
@@ -65,6 +65,10 @@
       <div class="resource-detail-item" v-if="resource.networkofferingid">
         <a-icon type="wifi" class="resource-detail-item"/>
         <router-link :to="{ path: '/networkoffering/' + resource.networkofferingid }">{{ resource.networkofferingname || resource.networkofferingid }} </router-link>
+      </div>
+      <div class="resource-detail-item" v-if="resource.associatednetworkid">
+        <a-icon type="wifi" class="resource-detail-item"/>
+        <router-link :to="{ path: '/guestnetwork/' + resource.associatednetworkid }">{{ resource.associatednetworkname || resource.associatednetworkid }} </router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.vpcofferingid">
         <a-icon type="deployment-unit" class="resource-detail-item"/>
@@ -98,7 +102,7 @@
       </div>
       <div class="resource-detail-item" v-if="resource.account">
         <a-icon type="user" class="resource-detail-item"/>
-        <router-link :to="{ path: '/account?name=' + resource.account }">{{ resource.account }}</router-link>
+        <router-link :to="{ path: '/account', query: { name: resource.account, domainid: resource.domainid } }">{{ resource.account }}</router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.roleid">
         <a-icon type="idcard" class="resource-detail-item"/>
@@ -263,8 +267,12 @@ export default {
       if ('tags' in this.resource) {
         this.tags = this.resource.tags
       }
-      this.getTags()
-      this.getNotes()
+      if (this.resourceType) {
+        this.getTags()
+      }
+      if (this.annotationType) {
+        this.getNotes()
+      }
     }
   },
   methods: {

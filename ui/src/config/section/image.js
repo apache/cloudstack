@@ -11,6 +11,7 @@ export default {
       resourceType: 'Template',
       params: { 'templatefilter': 'executable' },
       columns: ['name', 'ostypename', 'status', 'hypervisor', 'account', 'domain'],
+      details: ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled', 'directdownload', 'isextractable', 'isdynamicallyscalable', 'ispublic', 'isfeatured', 'crosszones', 'type', 'account', 'domain', 'created'],
       actions: [
         {
           api: 'registerTemplate',
@@ -55,6 +56,7 @@ export default {
       permission: [ 'listIsos' ],
       resourceType: 'ISO',
       columns: ['name', 'ostypename', 'account', 'domain'],
+      details: ['name', 'id', 'displaytext', 'ostypename', 'bootable', 'directdownload', 'size', 'account', 'domain', 'created'],
       actions: [
         {
           api: 'registerIso',

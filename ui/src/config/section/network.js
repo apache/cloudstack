@@ -10,6 +10,7 @@ export default {
       permission: [ 'listNetworks' ],
       resourceType: 'Network',
       columns: ['name', 'state', 'type', 'cidr', 'ip6cidr', 'broadcasturi', 'account', 'zonename'],
+      details: ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'zonename', 'account', 'domain'],
       actions: [
         {
           api: 'deleteNetwork',
@@ -27,7 +28,8 @@ export default {
       icon: 'deployment-unit',
       permission: [ 'listVPCs' ],
       resourceType: 'Vpc',
-      columns: ['name', 'state', 'displaytext', 'cidr', 'account', 'zonename']
+      columns: ['name', 'state', 'displaytext', 'cidr', 'account', 'zonename'],
+      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain']
     },
     {
       name: 'securitygroups',
@@ -35,7 +37,8 @@ export default {
       icon: 'fire',
       permission: [ 'listSecurityGroups' ],
       resourceType: 'SecurityGroup',
-      columns: ['name', 'description', 'account', 'domain']
+      columns: ['name', 'description', 'account', 'domain'],
+      details: ['name', 'id', 'description', 'account', 'domain']
     },
     {
       name: 'publicip',
@@ -43,7 +46,8 @@ export default {
       icon: 'environment',
       permission: [ 'listPublicIpAddresses' ],
       resourceType: 'PublicIpAddress',
-      columns: ['ipaddress', 'state', 'associatednetworkname', 'virtualmachinename', 'allocated', 'account', 'zonename']
+      columns: ['ipaddress', 'state', 'associatednetworkname', 'virtualmachinename', 'allocated', 'account', 'zonename'],
+      details: ['ipaddress', 'id', 'associatednetworkname', 'virtualmachinename', 'networkid', 'issourcenat', 'isstaticnat', 'virtualmachinename', 'vmipaddress', 'vlan', 'allocated', 'account', 'zonename']
     },
     {
       name: 'vpngateway',
@@ -51,7 +55,8 @@ export default {
       icon: 'lock',
       permission: [ 'listVpnCustomerGateways' ],
       resourceType: 'VpnGateway',
-      columns: ['name', 'ipaddress', 'gateway', 'cidrlist', 'ipsecpsk', 'account', 'domain']
+      columns: ['name', 'ipaddress', 'gateway', 'cidrlist', 'ipsecpsk', 'account', 'domain'],
+      details: ['name', 'id', 'ipaddress', 'gateway', 'cidrlist', 'ipsecpsk', 'account', 'domain']
     }
   ]
 }

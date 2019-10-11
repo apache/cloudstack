@@ -39,6 +39,7 @@ export function generateRouterMap (section) {
           resourceType: child.resourceType,
           params: child.params ? child.params : {},
           columns: child.columns,
+          details: child.details,
           actions: child.actions
         },
         component: component,
@@ -53,6 +54,7 @@ export function generateRouterMap (section) {
               permission: child.permission,
               resourceType: child.resourceType,
               params: child.params ? child.params : {},
+              details: child.details,
               actions: child.actions ? child.actions : [],
               viewComponent: child.viewComponent
             },
@@ -94,6 +96,7 @@ export function generateRouterMap (section) {
         permission: section.permission,
         resourceType: section.resourceType,
         params: section.params ? section.params : {},
+        details: section.details,
         actions: section.actions ? section.actions : [],
         viewComponent: section.viewComponent
       },
