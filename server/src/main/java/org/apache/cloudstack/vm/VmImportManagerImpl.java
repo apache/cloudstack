@@ -516,7 +516,7 @@ public class VmImportManagerImpl implements VmImportService {
                 diskController = disk.getController();
             } else {
                 if(!diskController.equals(disk.getController())) {
-                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple disk controllers of different type (%s, %s) are not supported for import. Please make sure that all disk controllers are of the same type!", diskController, disk.getController()));
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple data disk controllers of different type (%s, %s) are not supported for import. Please make sure that all disk controllers are of the same type!", diskController, disk.getController()));
                 }
             }
             checkUnmanagedDiskAndOfferingForImport(disk, diskOfferingDao.findById(diskOfferingMap.get(disk.getDiskId())), owner, zone, cluster, migrateAllowed);
