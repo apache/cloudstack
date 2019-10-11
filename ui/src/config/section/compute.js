@@ -8,6 +8,7 @@ export default {
       title: 'Instances',
       icon: 'desktop',
       permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ],
+      resourceType: 'UserVm',
       viewComponent: () => import('@/views/compute/InstanceView.vue'),
       columns: [
         { 'name': (record) => { return record.displayname } }, 'state', 'instancename',

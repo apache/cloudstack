@@ -23,6 +23,7 @@ export default {
       title: 'Domains',
       icon: 'block',
       permission: [ 'listDomains' ],
+      resourceType: 'Domain',
       columns: ['name', 'state', 'path', 'parentdomainname', 'level']
     },
     {

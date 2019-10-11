@@ -40,6 +40,7 @@ export default {
       title: 'Hosts',
       icon: 'desktop',
       permission: [ 'listHosts', 'listHostsMetrics' ],
+      resourceType: 'Host',
       params: { 'type': 'routing' },
       columns: [ 'name', 'state', 'resourcestate', 'ipaddress', 'hypervisor', 'hypervisorversion', 'clustername', 'zonename' ]
     },

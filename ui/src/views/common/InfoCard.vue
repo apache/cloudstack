@@ -9,12 +9,8 @@
       <div class="name">
         <slot name="name">
           <h4>
-            <status :text="resource.state" v-if="resource.state"/>
             {{ resource.name }}
           </h4>
-          <a-tag v-if="resource.state || resource.status">
-            {{ resource.state || resource.status }}
-          </a-tag>
           <a-tag v-if="resource.type">
             {{ resource.type }}
           </a-tag>
@@ -88,7 +84,7 @@
       </div>
     </div>
 
-    <div class="account-center-tags">
+    <div class="account-center-tags" v-if="resourceType && 'listTags' in $store.getters.apis">
       <a-divider/>
       <div class="tagsTitle">Tags</div>
       <div>
@@ -122,12 +118,11 @@
       </div>
     </div>
 
-    <div class="account-center-team" v-if="showNotes">
+    <div class="account-center-team" v-if="annotationType && 'listAnnotations' in $store.getters.apis">
       <a-divider :dashed="true"/>
       <div class="teamTitle">
         Comments ({{ notes.length }})
       </div>
-
       <a-list
         v-if="notes.length"
         :dataSource="notes"
@@ -139,14 +134,20 @@
             :content="item.annotation"
             :datetime="item.created"
           >
-            <a-button slot="avatar" shape="circle" size="small" @click="deleteNote(item)">
-              <a-icon type="close"/>
+            <a-button
+              v-if="'removeAnnotation' in $store.getters.apis"
+              slot="avatar"
+              type="danger"
+              shape="circle"
+              size="small"
+              @click="deleteNote(item)">
+              <a-icon type="delete"/>
             </a-button>
           </a-comment>
         </a-list-item>
       </a-list>
 
-      <a-comment>
+      <a-comment v-if="'addAnnotation' in $store.getters.apis">
         <a-avatar
           slot="avatar"
           icon="edit"
@@ -184,18 +185,12 @@ export default {
     resource: {
       type: Object,
       required: true
-    },
-    resourceType: {
-      type: String,
-      required: true
-    },
-    showNotes: {
-      type: Boolean,
-      default: false
     }
   },
   data () {
     return {
+      resourceType: '',
+      annotationType: '',
       inputVisible: false,
       inputKey: '',
       inputValue: '',
@@ -208,6 +203,24 @@ export default {
   watch: {
     resource: function (newItem, oldItem) {
       this.resource = newItem
+      this.resourceType = this.$route.meta.resourceType
+
+      switch (this.resourceType) {
+        case 'UserVm':
+          this.annotationType = 'VM'
+          break
+        case 'Domain':
+          this.annotationType = 'DOMAIN'
+          // Domain resource type is not supported for tags
+          this.resourceType = ''
+          break
+        case 'Host':
+          this.annotationType = 'HOST'
+          // Host resource type is not supported for tags
+          this.resourceType = ''
+          break
+      }
+
       this.getTags()
       this.getNotes()
       if ('tags' in this.resource) {
@@ -225,9 +238,8 @@ export default {
       })
     },
     getNotes () {
-      // TODO: support for HOST, DOMAIN and VM entities
       this.notes = []
-      api('listAnnotations', { 'entityid': this.resource.id, 'entitytype': 'VM' }).then(json => {
+      api('listAnnotations', { 'entityid': this.resource.id, 'entitytype': this.annotationType }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
           this.notes = json.listannotationsresponse.annotation
         }
@@ -279,12 +291,10 @@ export default {
         return
       }
       this.showNotesInput = false
-      const entityType = 'VM' // TODO: support HOST and DOMAIN
-
       const args = {}
-      args['annotation'] = this.annotation
       args['entityid'] = this.resource.id
-      args['entitytype'] = entityType
+      args['entitytype'] = this.annotationType
+      args['annotation'] = this.annotation
       api('addAnnotation', args).then(json => {
       }).finally(e => {
         this.getNotes()
@@ -327,6 +337,7 @@ export default {
     line-height: 28px;
     font-weight: 500;
     margin-bottom: 4px;
+    word-wrap: break-word;
   }
 }
 .resource-center-detail {

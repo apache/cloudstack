@@ -8,6 +8,7 @@ export default {
       title: 'Volumes',
       icon: 'hdd',
       permission: [ 'listVolumesMetrics', 'listVolumes' ],
+      resourceType: 'Volume',
       columns: ['name', 'state', 'type', 'vmname', 'size', 'physicalsize', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskiopstotal', 'storage', 'account', 'zonename'],
       hidden: ['storage', 'utilization'],
       actions: [
@@ -90,6 +91,7 @@ export default {
       title: 'Snapshots',
       icon: 'build',
       permission: [ 'listSnapshots' ],
+      resourceType: 'Snapshot',
       columns: ['name', 'state', 'volumename', 'intervaltype', 'created', 'account']
     },
     {
@@ -97,6 +99,7 @@ export default {
       title: 'VM Snapshots',
       icon: 'camera',
       permission: [ 'listVMSnapshot' ],
+      resourceType: 'VMSnapshot',
       columns: ['name', 'state', 'type', 'current', 'parent', 'created', 'account']
     }
   ]

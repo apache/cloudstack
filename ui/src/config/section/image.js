@@ -8,6 +8,7 @@ export default {
       title: 'Templates',
       icon: 'save',
       permission: [ 'listTemplates' ],
+      resourceType: 'Template',
       params: { 'templatefilter': 'executable' },
       columns: ['name', 'ostypename', 'status', 'hypervisor', 'account', 'domain'],
       actions: [
@@ -25,6 +26,7 @@ export default {
       title: 'ISOs',
       icon: 'usb',
       permission: [ 'listIsos' ],
+      resourceType: 'ISO',
       columns: ['name', 'ostypename', 'account', 'domain']
     }
   ]
