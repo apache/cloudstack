@@ -1068,15 +1068,15 @@ public class VmImportManagerImpl implements VmImportService {
                     if (template.getName().equals(VM_IMPORT_DEFAULT_TEMPLATE_NAME)) {
                         String osName = unmanagedInstance.getOperatingSystem();
                         if (Strings.isNullOrEmpty(osName)) {
-                            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve guest OS details for unmanaged VM: %s. templateid parameter can be used to assign template for VM", name));
+                            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve guest OS details for unmanaged VM: %s with OS name: %s. templateid parameter can be used to assign template for VM", name, unmanagedInstance.getOperatingSystem()));
                         }
                         GuestOS guestOS = guestOSDao.listByDisplayName(osName);
                         if (guestOS == null) {
-                            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve guest OS details for unmanaged VM: %s. templateid parameter can be used to assign template for VM", name));
+                            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve guest OS details for unmanaged VM: %s with OS ID: %s, OS name: %s. templateid parameter can be used to assign template for VM", name, unmanagedInstance.getOperatingSystemId(), unmanagedInstance.getOperatingSystem()));
                         }
                         GuestOSHypervisor guestOSHypervisor = guestOSHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
                         if (guestOSHypervisor == null) {
-                            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve guest OS details for unmanaged VM: %s for hypervisor: %s version: %s. templateid parameter can be used to assign template for VM", name, host.getHypervisorType().toString(), host.getHypervisorVersion()));
+                            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to find hypervisor guest OS ID: %s details for unmanaged VM:%s for hypervisor: %s version: %s. templateid parameter can be used to assign template for VM", guestOS.getUuid(), name, host.getHypervisorType().toString(), host.getHypervisorVersion()));
                         }
                         template.setGuestOSId(guestOS.getId());
                     }
