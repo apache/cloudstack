@@ -28,7 +28,7 @@
         <a-button
           style="margin-right: 20px"
           icon="safety-certificate">
-          {{ $t('SSL Certificate')}}
+          {{ $t('SSL Certificate') }}
         </a-button>
         <a-button
           @click="fetchData()"
