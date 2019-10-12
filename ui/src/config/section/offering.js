@@ -41,7 +41,7 @@ export default {
       name: 'systemoffering',
       title: 'System Offerings',
       icon: 'setting',
-      permission: [ 'listInfrastructure' ],
+      permission: [ 'listServiceOfferings', 'listInfrastructure' ],
       params: { 'issystem': 'true' },
       columns: [ 'name', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'tags' ],
       details: [ 'name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'tags', 'domain', 'zone', 'created' ]

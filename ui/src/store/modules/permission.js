@@ -2,12 +2,11 @@ import { asyncRouterMap, constantRouterMap } from '@/config/router'
 
 function hasApi (apis, route) {
   if (route.meta && route.meta.permission) {
-    for (const api of apis) {
-      if (route.meta.permission.includes(api)) {
-        return true
+    for (const permission of route.meta.permission) {
+      if (!apis.includes(permission)) {
+        return false
       }
     }
-    return false
   }
   return true
 }
