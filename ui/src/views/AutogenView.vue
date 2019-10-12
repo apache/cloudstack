@@ -1,6 +1,8 @@
 <template>
   <div>
-    <breadcrumb v-if="device !== 'desktop'" class="mobile-breadcrumb" />
+    <a-card class="mobile-breadcrumb" v-if="device === 'mobile'">
+      <breadcrumb />
+    </a-card>
     <a-row>
       <a-col :span="18">
         <a-tooltip placement="bottom" v-for="(action, actionIndex) in actions" :key="actionIndex" v-if="action.api in $store.getters.apis && ((!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) || (dataView && action.dataView))">
@@ -576,7 +578,7 @@ export default {
   margin-left: -16px;
   margin-right: -16px;
   margin-top: -16px;
-  padding-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .row-element {
