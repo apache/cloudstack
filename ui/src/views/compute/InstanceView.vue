@@ -7,7 +7,7 @@
             <font-awesome-icon :icon="['fab', osLogo]" size="4x" style="color: #666;" />
           </div>
           <div slot="name">
-            <h4>{{ vm.name }}
+            <h4>{{ vm.displayname || vm.name }}
               <a :href="'/client/console?cmd=access&vm=' + vm.id" target="_blank">
                 <a-button shape="circle" >
                   <a-icon type="right-square" />
@@ -16,18 +16,24 @@
             </h4>
             <div>
               <a-tag>{{ vm.instancename }}</a-tag>
-              <a-tag :color="vm.haenable ? 'green': 'red'">HA</a-tag>
-              <a-tag :color="vm.isdynamicallyscalable ? 'green': 'red'">Dynamic Scalable</a-tag>
+              <a-tag>{{ vm.hypervisor }}</a-tag> <br/>
+              <a-tag :color="vm.haenable ? 'green': 'red'">{{ $t('haenable') }}</a-tag>
+              <a-tag :color="vm.isdynamicallyscalable ? 'green': 'red'">{{ $t('isdynamicallyscalable') }}</a-tag>
             </div>
           </div>
           <div slot="details">
             <div class="vm-detail">
-              <font-awesome-icon :icon="['fab', osLogo]" size="lg"/>
-              <span style="margin-left: 8px">{{ guestOsName }}</span>
+              <font-awesome-icon :icon="['fab', osLogo]" size="lg"/>{{ guestOsName }}
+            </div>
+            <div class="vm-detail" v-if="vm.keypair">
+              <a-icon type="key" />
+              <router-link :to="{ path: '/ssh/?name=' + vm.keypair }">
+                <span style="margin-left: 10px">{{ vm.keypair }}</span>
+              </router-link>
             </div>
             <div class="vm-detail">
               <font-awesome-icon :icon="['fas', 'microchip']" />
-              <span class="vm-detail">{{ vm.cputotal }} ({{ vm.cpunumber }} CPU x {{ vm.cpuspeed }} Mhz)
+              <span class="vm-detail"> {{ vm.cputotal }} ({{ vm.cpunumber }} CPU x {{ vm.cpuspeed }} Mhz)
               </span>
               <a-progress
                 style="padding-left: 25px"
@@ -46,25 +52,29 @@
             </div>
             <div class="vm-detail">
               <font-awesome-icon :icon="['fas', 'database']" />
-              <span class="vm-detail" style="margin-left: 12px">{{ (totalStorage / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage
+              <span class="vm-detail" style="margin-left: 5px">{{ (totalStorage / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage
               </span>
               <div style="margin-left: 25px">
-                <a-tag><a-icon type="download" /> Read {{ vm.diskkbsread }} KB</a-tag>
-                <a-tag><a-icon type="upload" /> Write {{ vm.diskkbswrite }} KB</a-tag><br/>
+                <a-tag><a-icon type="download" /> Read {{ toSize(vm.diskkbsread) }}</a-tag>
+                <a-tag><a-icon type="upload" /> Write {{ toSize(vm.diskkbswrite) }}</a-tag><br/>
                 <a-tag><a-icon type="download" /> Read (IO) {{ vm.diskioread }}</a-tag>
                 <a-tag><a-icon type="upload" /> Write (IO) {{ vm.diskiowrite }}</a-tag>
               </div>
             </div>
             <div class="vm-detail">
               <font-awesome-icon :icon="['fas', 'ethernet']" />
-              <span class="vm-detail">{{ vm && vm.nic ? vm.nic.length : 0 }} NIC(s)
-                <a-tag><a-icon type="arrow-down" /> RX {{ vm.networkkbsread }} KB</a-tag>
-                <a-tag><a-icon type="arrow-up" /> TX {{ vm.networkkbswrite }} KB</a-tag>
+              <span class="vm-detail"> {{ vm && vm.nic ? vm.nic.length : 0 }} NIC(s)
+                <a-tag><a-icon type="arrow-down" /> RX {{ toSize(vm.networkkbsread) }}</a-tag>
+                <a-tag><a-icon type="arrow-up" /> TX {{ toSize(vm.networkkbswrite) }}</a-tag>
               </span>
               <div style="margin-left: 25px" v-for="(eth, index) in vm.nic" :key="eth.id">
                 <a-icon type="api"/> eth{{ index }} {{ eth.ipaddress }}
                 (<router-link :to="{ path: '/guestnetwork/' + eth.networkid }">{{ eth.networkname }}</router-link>)
               </div>
+            </div>
+            <div class="vm-detail" v-if="vm.group">
+              <a-icon type="gold" />
+              <span style="margin-left: 8px">{{ vm.group }}</span>
             </div>
           </div>
         </info-card>
@@ -223,6 +233,18 @@ export default {
     }
   },
   methods: {
+    toSize (kb) {
+      if (!kb) {
+        return '0 KB'
+      }
+      if (kb < 1024) {
+        return kb + ' KB'
+      }
+      if (kb < 1024 * 1024) {
+        return parseFloat(kb / 1024.0).toFixed(2) + ' MB'
+      }
+      return parseFloat(kb / (1024.0 * 1024.0)).toFixed(2) + ' GB'
+    },
     fetchData () {
       api('listVolumes', { 'listall': true, 'virtualmachineid': this.vm.id }).then(json => {
         this.volumes = json.listvolumesresponse.volume
@@ -270,9 +292,11 @@ export default {
   min-height: 100%;
   transition: 0.3s;
   .vm-detail {
+    .svg-inline--fa {
+      margin-left: -2px;
+      margin-right: 8px;
+    }
     margin-bottom: 8px;
-    margin-left: 10px;
-    margin-right: 10px;
   }
 }
 </style>

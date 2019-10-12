@@ -21,7 +21,7 @@
               >
                 <a-skeleton active v-if="loading" />
                 <a-card-grid
-                  style="width:50%; textAlign:'center'"
+                  style="width:50%; min-height: 115px; word-break: break-all; text-align: 'center'"
                   v-for="key in $route.meta.details"
                   v-if="!loading && key in resource"
                   :key="key" >

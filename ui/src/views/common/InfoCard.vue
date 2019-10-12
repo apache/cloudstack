@@ -24,7 +24,7 @@
       </div>
       <div class="resource-detail-item" v-if="resource.state || resource.status">
         <status :text="resource.state || resource.status" class="resource-detail-item" />
-        <span style="margin-left: -5px">{{ resource.state || resource.status }}</span>
+        <span style="margin-left: 5px">{{ resource.state || resource.status }}</span>
       </div>
       <div class="resource-detail-item" v-if="resource.id">
         <a-icon type="barcode" class="resource-detail-item"/>{{ resource.id }}
@@ -84,9 +84,6 @@
       <div class="resource-detail-item" v-if="resource.hostid">
         <a-icon type="desktop" class="resource-detail-item"/>
         <router-link :to="{ path: '/host/' + resource.hostid }">{{ resource.hostname || resource.hostid }} </router-link>
-        <a-tag v-if="resource.hypervisor">
-          {{ resource.hypervisor }}
-        </a-tag>
       </div>
       <div class="resource-detail-item" v-if="resource.clusterid">
         <a-icon type="cluster" class="resource-detail-item"/>
@@ -442,9 +439,10 @@ export default {
   }
 }
 .resource-detail-item {
+  .anticon {
+    margin-right: 10px;
+  }
   margin-bottom: 8px;
-  margin-left: 10px;
-  margin-right: 10px;
 }
 .user-keys {
   word-wrap: break-word;
