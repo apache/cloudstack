@@ -13,6 +13,13 @@ export default {
   icon: 'bank',
   permission: [ 'listInfrastructure' ],
   children: [
+    {
+      name: 'infrasummary',
+      title: 'Summary',
+      icon: 'read',
+      permission: [ 'listInfrastructure' ],
+      component: () => import('@/views/infra/InfraSummary.vue')
+    },
     zones,
     pods,
     clusters,
