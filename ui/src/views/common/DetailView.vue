@@ -1,51 +1,57 @@
 <template>
-  <div style="padding-top: 12px" class="page-header-index-wide page-header-wrapper-grid-content-main">
-    <a-row :gutter="12">
-      <a-col :md="24" :lg="8" style="margin-bottom: 12px">
-        <slot name="info-card">
-          <info-card :resource="resource" :loading="loading" />
-        </slot>
-      </a-col>
-      <a-col :md="24" :lg="16">
-        <a-card
-          :bordered="true"
-          style="width:100%">
-          <a-tabs defaultActiveKey="1" @change="onTabChange" style="width:100%">
-            <a-tab-pane
-              v-for="(tab, index) in tabs"
-              :tab="$t(tab.name)"
-              :key="index">
-              <a-card
-                style="width:100%"
-                v-if="tab.name === 'details'"
+  <resource-layout>
+    <div slot="left">
+      <slot name="info-card">
+        <info-card :resource="resource" :loading="loading" />
+      </slot>
+    </div>
+    <div slot="right">
+      <a-card
+        :bordered="true"
+        style="width:100%">
+        <a-tabs defaultActiveKey="1" @change="onTabChange" style="width:100%">
+          <a-tab-pane
+            v-for="tab in tabs"
+            :tab="$t(tab.name)"
+            :key="tab.name">
+            <div
+              :bordered="false"
+              style="width:100%"
+              v-if="tab.name === 'details'" >
+              <a-skeleton active v-if="loading" />
+              <a-list
+                v-else
+                size="small"
+                :dataSource="$route.meta.details"
               >
-                <a-skeleton active v-if="loading" />
-                <a-card-grid
-                  style="width:50%; min-height: 115px; word-break: break-all; text-align: 'center'"
-                  v-for="key in $route.meta.details"
-                  v-if="!loading && key in resource"
-                  :key="key" >
-                  <strong>{{ $t(key) }}</strong><br/>{{ resource[key] }}
-                </a-card-grid>
-              </a-card>
+                <a-list-item slot="renderItem" slot-scope="item" v-if="item in resource">
+                  <div>
+                    <strong>{{ $t(item) }}</strong>
+                    <br/>
+                    <div>
+                      {{ resource[item] }}
+                    </div>
+                  </div>
+                </a-list-item>
+              </a-list>
+            </div>
+            <list-view
+              v-if="tab.name === 'settings'"
+              :columns="settingsColumns"
+              :items="settings " />
 
-              <list-view
-                v-if="tab.name === 'settings'"
-                :columns="settingsColumns"
-                :items="settings " />
-            </a-tab-pane>
-          </a-tabs>
-        </a-card>
-      </a-col>
-    </a-row>
-
-  </div>
+          </a-tab-pane>
+        </a-tabs>
+      </a-card>
+    </div>
+  </resource-layout>
 </template>
 
 <script>
 
 import InfoCard from '@/views/common/InfoCard'
 import ListView from '@/components/widgets/ListView'
+import ResourceLayout from '@/layouts/ResourceLayout'
 import Status from '@/components/widgets/Status'
 
 export default {
@@ -53,6 +59,7 @@ export default {
   components: {
     InfoCard,
     ListView,
+    ResourceLayout,
     Status
   },
   props: {
@@ -103,10 +110,4 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.page-header-wrapper-grid-content-main {
-  width: 100%;
-  height: 100%;
-  min-height: 100%;
-  transition: 0.3s;
-}
 </style>

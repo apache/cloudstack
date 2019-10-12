@@ -24,25 +24,27 @@
       </div>
       <div class="resource-detail-item" v-if="resource.state || resource.status">
         <status :text="resource.state || resource.status" class="resource-detail-item" />
-        <span style="margin-left: 5px">{{ resource.state || resource.status }}</span>
+        <span style="margin-left: 4px">{{ resource.state || resource.status }}</span>
       </div>
       <div class="resource-detail-item" v-if="resource.id">
-        <a-icon type="barcode" class="resource-detail-item"/>{{ resource.id }}
         <a-tooltip placement="right" >
           <template slot="title">
-            <span>Copy</span>
+            <span>Copy ID</span>
           </template>
-          <a-button shape="circle" type="dashed" size="small" v-clipboard:copy="resource.id">
-            <a-icon type="copy"/>
+          <a-button shape="circle" type="dashed" size="small" v-clipboard:copy="resource.id" style="margin-left: -5px">
+            <a-icon type="barcode" style="padding-left: 4px; margin-top: 4px"/>
           </a-button>
         </a-tooltip>
+        <span style="margin-left: 5px;">{{ resource.id }}</span>
       </div>
       <div class="resource-detail-item">
         <slot name="details">
         </slot>
       </div>
       <div class="resource-detail-item" v-if="resource.ipaddress">
-        <a-icon type="environment" class="resource-detail-item"/>{{ resource.ipaddress }}
+        <a-icon type="environment" class="resource-detail-item"/>
+        <span v-if="resource.nic && resource.nic.length > 0">{{ resource.nic.filter(e => { return e.ipaddress }).map(e => { return e.ipaddress }).join(', ') }}</span>
+        <span v-else>{{ resource.ipaddress }}</span>
       </div>
       <div class="resource-detail-item" v-if="resource.virtualmachineid">
         <a-icon type="desktop" class="resource-detail-item"/>
