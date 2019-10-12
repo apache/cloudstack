@@ -12,7 +12,7 @@
         <span v-else-if="$route.params.id">
           {{ $route.params.id }}
           <a-button shape="circle" type="dashed" size="small" v-clipboard:copy="$route.params.id">
-            <a-icon type="copy" style="margin-left: 0px"/>
+            <a-icon type="copy" style="margin-left: -1px; margin-top: 1px"/>
           </a-button>
         </span>
         <span v-else>{{ $t(item.meta.title) }}</span>
