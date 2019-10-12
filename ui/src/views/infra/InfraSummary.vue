@@ -7,7 +7,7 @@
       v-if="routes[section]"
       :key="index">
       <chart-card :loading="loading">
-        <div class="capacity-dashboard-chart-card-inner">
+        <div class="chart-card-inner">
           <h2>{{ $t(routes[section].title) }}</h2>
           <h1><a-icon :type="routes[section].icon" /> {{ stats[section] }}</h1>
         </div>
@@ -92,40 +92,9 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.capacity-dashboard {
-  &-wrapper {
-    display: flex;
-    margin-bottom: 12px;
-  }
-
-  &-chart-card-inner {
-     text-align: center;
-     white-space: nowrap;
-     overflow: hidden;
-  }
-
-  &-select {
-    width: 100%; // for flexbox causes
-
-    .ant-select {
-      width: 100%; // to fill flex item width
-    }
-  }
-
-  &-button {
-    width: auto;
-    padding-left: 12px;
-  }
-
-  &-button-icon {
-    font-size: 16px;
-    padding: 2px;
-  }
-
-  &-footer {
-    padding-top: 12px;
-    padding-left: 3px;
-    white-space: normal;
-  }
+.chart-card-inner {
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
 }
 </style>
