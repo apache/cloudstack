@@ -3,10 +3,7 @@
     <template slot="title">
       {{ text }}
     </template>
-    <span>
-      <a-badge :title="text" :status="getBadgeStatus(text)" />
-      <span v-if="displayText">{{ text }}</span>
-    </span>
+    <a-badge style="display: inline-flex" :title="text" :status="getBadgeStatus(text)" :text="getText()" />
   </a-tooltip>
 </template>
 
@@ -31,6 +28,12 @@ export default {
     }
   },
   methods: {
+    getText () {
+      if (this.displayText && this.text) {
+        return this.text.charAt(0).toUpperCase() + this.text.slice(1)
+      }
+      return ''
+    },
     getBadgeStatus (state) {
       var status = 'default'
       switch (state) {
@@ -74,6 +77,6 @@ export default {
 /deep/ .ant-badge-status-dot {
   width: 12px;
   height: 12px;
-  margin-top: -3px;
+  margin-top: 5px;
 }
 </style>
