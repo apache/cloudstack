@@ -22,9 +22,9 @@
           </slot>
         </div>
       </div>
-      <div class="resource-detail-item" v-if="resource.state || resource.status">
+      <div class="resource-detail-item" style="margin-bottom: 4px" v-if="resource.state || resource.status">
         <status :text="resource.state || resource.status" class="resource-detail-item" />
-        <span style="margin-left: 4px">{{ resource.state || resource.status }}</span>
+        <span style="margin-left: -5px">{{ resource.state || resource.status }}</span>
       </div>
       <div class="resource-detail-item" v-if="resource.id">
         <a-tooltip placement="right" >
@@ -49,12 +49,11 @@
       <div class="resource-detail-item" v-if="resource.virtualmachineid">
         <a-icon type="desktop" class="resource-detail-item"/>
         <router-link :to="{ path: '/vm/' + resource.virtualmachineid }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
-        <status :text="resource.vmstate" v-if="resource.vmstate"/>
+        <status style="margin-top: -5px" :text="resource.vmstate" v-if="resource.vmstate"/>
       </div>
       <div class="resource-detail-item" v-if="resource.volumeid">
         <a-icon type="hdd" class="resource-detail-item"/>
         <router-link :to="{ path: '/volume/' + resource.volumeid }">{{ resource.volumename || resource.volume || resource.volumeid }} </router-link>
-        <status :text="resource.vmstate" v-if="resource.vmstate"/>
       </div>
       <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
         <a-icon type="cloud" class="resource-detail-item"/>
@@ -444,6 +443,7 @@ export default {
   .anticon {
     margin-right: 10px;
   }
+  margin-right: 10px;
   margin-bottom: 8px;
 }
 .user-keys {
