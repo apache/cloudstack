@@ -938,6 +938,7 @@
                                 
                                 // if we have system vms in this zone, execution can stop here
                                 if (systemVMS){
+                                    args.response.success();
                                     return;
                                 }
                                 // hide the window

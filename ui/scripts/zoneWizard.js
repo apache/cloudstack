@@ -485,9 +485,15 @@
                     },
                     name: {
                         label: "label.name",
+                        validation: {
+                            required: true
+                        },
                     },
                     description: {
-                        label: "label.description"
+                        label: "label.description",
+                        validation: {
+                            required: true
+                        },
                     },
                     hypervisor: {
                         label: "label.hypervisor",
@@ -596,7 +602,10 @@
                         }
                     },
                     url: {
-                        label: "label.url"
+                        label: "label.url",
+                        validation: {
+                            required: true
+                        },
                     },
                     file:{
                         label: 'label.local.file',
