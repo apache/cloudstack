@@ -404,6 +404,10 @@ export default {
     closeAction () {
       this.currentAction.loading = false
       this.showAction = false
+      if (this.currentAction.icon === 'delete') {
+        this.currentAction = {}
+        this.$router.go(-1)
+      }
       this.currentAction = {}
     },
     execAction (action) {

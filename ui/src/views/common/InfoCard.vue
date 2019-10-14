@@ -28,6 +28,9 @@
             <a-tag v-if="resource.type">
               {{ resource.type }}
             </a-tag>
+            <a-tag v-if="resource.broadcasturi">
+              {{ resource.broadcasturi }}
+            </a-tag>
             <a-tag v-if="resource.hypervisor">
               {{ resource.hypervisor }}
             </a-tag>
@@ -158,7 +161,7 @@
         <span v-else>{{ resource.ipaddress }}</span>
       </div>
       <div class="resource-detail-item" v-if="resource.virtualmachineid">
-        <a-icon type="laptop" class="resource-detail-item"/>
+        <a-icon type="desktop" class="resource-detail-item"/>
         <router-link :to="{ path: '/vm/' + resource.virtualmachineid }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
         <status style="margin-top: -5px" :text="resource.vmstate" v-if="resource.vmstate"/>
       </div>
