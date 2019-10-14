@@ -534,7 +534,7 @@ public class VmImportManagerImpl implements VmImportService {
             if (Strings.isNullOrEmpty(diskController)) {
                 diskController = disk.getController();
             } else {
-                if(!diskController.equals(disk.getController())) {
+                if (!diskController.equals(disk.getController())) {
                     throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple data disk controllers of different type (%s, %s) are not supported for import. Please make sure that all data disk controllers are of the same type", diskController, disk.getController()));
                 }
             }
@@ -749,28 +749,45 @@ public class VmImportManagerImpl implements VmImportService {
             if (poolSupportsOfferings && profile.getType() == Volume.Type.ROOT) {
                 poolSupportsOfferings = storagePoolSupportsServiceOffering(diskProfileStoragePool.second(), serviceOffering);
             }
-            LOGGER.debug(String.format("Pool tags %s, service offering tags %s, disk offering tags %s", diskProfileStoragePool.second().getId(), serviceOffering.getTags(), dOffering.getTags()));
             if (poolSupportsOfferings) {
                 continue;
             }
             LOGGER.debug(String.format("Volume %s needs to be migrated", volumeVO.getUuid()));
             Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolume(profile.getVolumeId());
-            List<? extends StoragePool> storagePools = poolsPair.second();
-            if (CollectionUtils.isEmpty(storagePools)) {
+            if (CollectionUtils.isEmpty(poolsPair.first()) && CollectionUtils.isEmpty(poolsPair.second())) {
                 cleanupFailedImportVM(vm);
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during volume ID: %s migration as no suitable pool found", userVm.getInstanceName(), volumeVO.getUuid()));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during volume ID: %s migration as no suitable pool(s) found", userVm.getInstanceName(), volumeVO.getUuid()));
             }
+            List<? extends StoragePool> storagePools = poolsPair.second();
             StoragePool storagePool = null;
-            for (StoragePool pool : storagePools) {
-                if (diskProfileStoragePool.second().getId() != pool.getId() &&
-                        storagePoolSupportsDiskOffering(pool, dOffering) &&
-                        storagePoolSupportsServiceOffering(pool, serviceOffering)) {
-                    storagePool = pool;
-                    break;
+            if (CollectionUtils.isNotEmpty(storagePools)) {
+                for (StoragePool pool : storagePools) {
+                    if (diskProfileStoragePool.second().getId() != pool.getId() &&
+                            storagePoolSupportsDiskOffering(pool, dOffering) &&
+                            (!profile.getType().equals(Volume.Type.ROOT) ||
+                                    profile.getType().equals(Volume.Type.ROOT) && storagePoolSupportsServiceOffering(pool, serviceOffering))) {
+                        storagePool = pool;
+                        break;
+                    }
+                }
+            }
+            // For zone-wide pools, at times, suitable storage pools are not returned therefore consider all pools.
+            if (storagePool == null && CollectionUtils.isNotEmpty(poolsPair.first())) {
+                storagePools = poolsPair.first();
+                for (StoragePool pool : storagePools) {
+                    if (diskProfileStoragePool.second().getId() != pool.getId() &&
+                            storagePoolSupportsDiskOffering(pool, dOffering) &&
+                            (!profile.getType().equals(Volume.Type.ROOT) ||
+                                    profile.getType().equals(Volume.Type.ROOT) && storagePoolSupportsServiceOffering(pool, serviceOffering))) {
+                        storagePool = pool;
+                        break;
+                    }
                 }
             }
             if (storagePool == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during volume ID: %s migration as no suitable pool found", userVm.getInstanceName(), volumeVO.getUuid()));
+            } else {
+                LOGGER.debug(String.format("Found storage pool %s(%s) for migrating the volume %s to", storagePool.getName(), storagePool.getUuid(), volumeVO.getUuid()));
             }
             try {
                 volumeManager.migrateVolume(volumeVO, storagePool);
