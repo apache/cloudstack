@@ -496,7 +496,7 @@ public class VmImportManagerImpl implements VmImportService {
         return storagePool;
     }
 
-    private void checkUnmanagedDiskAndOfferingForImport(UnmanagedInstance.Disk disk, DiskOffering diskOffering, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
+    private void checkUnmanagedDiskAndOfferingForImport(UnmanagedInstance.Disk disk, DiskOffering diskOffering, ServiceOffering serviceOffering, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
             throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
         if (diskOffering == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Disk offering for disk ID: %s not found during VM import", disk.getDiskId()));
@@ -515,6 +515,9 @@ public class VmImportManagerImpl implements VmImportService {
         StoragePool storagePool = getStoragePool(disk, zone, cluster);
         if (!migrateAllowed && !storagePoolSupportsDiskOffering(storagePool, diskOffering)) {
             throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with storage pool: %s of unmanaged disk: %s", diskOffering.getUuid(), storagePool.getUuid(), disk.getDiskId()));
+        }
+        if (serviceOffering != null && !migrateAllowed && !storagePoolSupportsServiceOffering(storagePool, serviceOffering)) {
+            throw new InvalidParameterValueException(String.format("Service offering: %s is not compatible with storage pool: %s of unmanaged disk: %s", diskOffering.getUuid(), storagePool.getUuid(), disk.getDiskId()));
         }
     }
 
@@ -535,7 +538,7 @@ public class VmImportManagerImpl implements VmImportService {
                     throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple data disk controllers of different type (%s, %s) are not supported for import. Please make sure that all data disk controllers are of the same type", diskController, disk.getController()));
                 }
             }
-            checkUnmanagedDiskAndOfferingForImport(disk, diskOfferingDao.findById(diskOfferingMap.get(disk.getDiskId())), owner, zone, cluster, migrateAllowed);
+            checkUnmanagedDiskAndOfferingForImport(disk, diskOfferingDao.findById(diskOfferingMap.get(disk.getDiskId())), null, owner, zone, cluster, migrateAllowed);
         }
     }
 
@@ -696,6 +699,7 @@ public class VmImportManagerImpl implements VmImportService {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to check migrations need during import, VM: %s", userVm.getInstanceName()));
         }
         if (!hostSupportsServiceOffering(sourceHost, serviceOffering)) {
+            LOGGER.debug(String.format("VM %s needs to be migrated", vm.getUuid()));
             final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, template, serviceOffering, owner, null);
             DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
             excludeList.addHost(sourceHost.getId());
@@ -745,16 +749,26 @@ public class VmImportManagerImpl implements VmImportService {
             if (poolSupportsOfferings && profile.getType() == Volume.Type.ROOT) {
                 poolSupportsOfferings = storagePoolSupportsServiceOffering(diskProfileStoragePool.second(), serviceOffering);
             }
+            LOGGER.debug(String.format("Pool tags %s, service offering tags %s, disk offering tags %s", diskProfileStoragePool.second().getId(), serviceOffering.getTags(), dOffering.getTags()));
             if (poolSupportsOfferings) {
                 continue;
             }
+            LOGGER.debug(String.format("Volume %s needs to be migrated", volumeVO.getUuid()));
             Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolume(profile.getVolumeId());
             List<? extends StoragePool> storagePools = poolsPair.second();
             if (CollectionUtils.isEmpty(storagePools)) {
                 cleanupFailedImportVM(vm);
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during volume migration", userVm.getInstanceName()));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during volume ID: %s migration as no suitable pool found", userVm.getInstanceName(), volumeVO.getUuid()));
             }
-            StoragePool storagePool = storagePools.get(0);
+            StoragePool storagePool = null;
+            for (StoragePool pool : storagePools) {
+                if (diskProfileStoragePool.second().getId() != pool.getId() &&
+                        storagePoolSupportsDiskOffering(pool, dOffering) &&
+                        storagePoolSupportsServiceOffering(pool, serviceOffering)) {
+                    storagePool = pool;
+                    break;
+                }
+            }
             try {
                 volumeManager.migrateVolume(volumeVO, storagePool);
             } catch (Exception e) {
@@ -841,7 +855,7 @@ public class VmImportManagerImpl implements VmImportService {
         allDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDisk.getController());
         List<UnmanagedInstance.Disk> dataDisks = new ArrayList<>();
         try {
-            checkUnmanagedDiskAndOfferingForImport(rootDisk, diskOffering, owner, zone, cluster, migrateAllowed);
+            checkUnmanagedDiskAndOfferingForImport(rootDisk, diskOffering, validatedServiceOffering, owner, zone, cluster, migrateAllowed);
             if (unmanagedInstanceDisks.size() > 1) { // Data disk(s) present
                 dataDisks.addAll(unmanagedInstanceDisks);
                 dataDisks.remove(0);
