@@ -134,6 +134,8 @@ public class UnmanagedInstance {
 
         private Long capacity;
 
+        private String fileBaseName;
+
         private String imagePath;
 
         private String controller;
@@ -141,6 +143,8 @@ public class UnmanagedInstance {
         private Integer controllerUnit;
 
         private Integer position;
+
+        private String chainInfo;
 
         private String datastoreName;
 
@@ -174,6 +178,14 @@ public class UnmanagedInstance {
             this.capacity = capacity;
         }
 
+        public String getFileBaseName() {
+            return fileBaseName;
+        }
+
+        public void setFileBaseName(String fileBaseName) {
+            this.fileBaseName = fileBaseName;
+        }
+
         public String getImagePath() {
             return imagePath;
         }
@@ -204,6 +216,14 @@ public class UnmanagedInstance {
 
         public void setPosition(Integer position) {
             this.position = position;
+        }
+
+        public String getChainInfo() {
+            return chainInfo;
+        }
+
+        public void setChainInfo(String chainInfo) {
+            this.chainInfo = chainInfo;
         }
 
         public String getDatastoreName() {

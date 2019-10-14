@@ -6813,8 +6813,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         VirtualDisk disk = (VirtualDisk) diskDevice;
                         instanceDisk.setDiskId(disk.getDiskObjectId());
                         instanceDisk.setLabel(disk.getDeviceInfo() != null ? disk.getDeviceInfo().getLabel() : "");
+                        instanceDisk.setFileBaseName(vmMo.getVmdkFileBaseName(disk));
                         instanceDisk.setImagePath(getAbsoluteVmdkFile(disk));
                         instanceDisk.setCapacity(disk.getCapacityInBytes());
+                        instanceDisk.setPosition(diskDevice.getUnitNumber());
+                        DatastoreFile file = new DatastoreFile(getAbsoluteVmdkFile(disk));
+                        if (!Strings.isNullOrEmpty(file.getFileBaseName()) && !Strings.isNullOrEmpty(file.getDatastoreName())) {
+                            VirtualMachineDiskInfo diskInfo = vmMo.getDiskInfoBuilder().getDiskInfoByBackingFileBaseName(file.getFileBaseName(), file.getDatastoreName());
+                            instanceDisk.setChainInfo(getGson().toJson(diskInfo));
+                        }
                         for (VirtualDevice device : vmMo.getAllDeviceList()) {
                             if (diskDevice.getControllerKey() == device.getKey()) {
                                 if (device instanceof VirtualIDEController) {
@@ -6826,7 +6833,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                 } else {
                                     instanceDisk.setController(DiskControllerType.none.toString());
                                 }
-                                instanceDisk.setPosition(diskDevice.getUnitNumber());
                                 break;
                             }
                         }
