@@ -2,44 +2,24 @@
   <resource-layout>
     <div slot="left">
       <slot name="info-card">
-        <info-card :resource="resource" :loading="loading" />
+        <info-card :key="resource.totalStorage || resource.name || resource.id" :resource="resource" :loading="loading" @resourceChange="resourceChange" />
       </slot>
     </div>
     <div slot="right">
       <a-card
         :bordered="true"
         style="width:100%">
-        <a-tabs defaultActiveKey="1" @change="onTabChange" style="width:100%">
+        <a-skeleton active v-if="loading" />
+        <a-tabs
+          v-else
+          :defaultActiveKey="tabs[0].name"
+          style="width: 100%"
+          @change="onTabChange" >
           <a-tab-pane
             v-for="tab in tabs"
             :tab="$t(tab.name)"
             :key="tab.name">
-            <div
-              :bordered="false"
-              style="width:100%"
-              v-if="tab.name === 'details'" >
-              <a-skeleton active v-if="loading" />
-              <a-list
-                v-else
-                size="small"
-                :dataSource="$route.meta.details"
-              >
-                <a-list-item slot="renderItem" slot-scope="item" v-if="item in resource">
-                  <div>
-                    <strong>{{ $t(item) }}</strong>
-                    <br/>
-                    <div>
-                      {{ resource[item] }}
-                    </div>
-                  </div>
-                </a-list-item>
-              </a-list>
-            </div>
-            <list-view
-              v-if="tab.name === 'settings'"
-              :columns="settingsColumns"
-              :items="settings " />
-
+            <component :is="tab.component" :resource="resource" :loading="loading" @resourceChange="resourceChange" />
           </a-tab-pane>
         </a-tabs>
       </a-card>
@@ -49,18 +29,15 @@
 
 <script>
 
+import DetailsTab from '@/views/common/DetailsTab'
 import InfoCard from '@/views/common/InfoCard'
-import ListView from '@/components/widgets/ListView'
 import ResourceLayout from '@/layouts/ResourceLayout'
-import Status from '@/components/widgets/Status'
 
 export default {
-  name: 'DetailView',
+  name: 'ResourceView',
   components: {
     InfoCard,
-    ListView,
-    ResourceLayout,
-    Status
+    ResourceLayout
   },
   props: {
     resource: {
@@ -70,13 +47,19 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    },
+    tabs: {
+      type: Array,
+      default: function () {
+        return [{
+          name: 'details',
+          component: DetailsTab
+        }]
+      }
     }
   },
   data () {
     return {
-      tabs: [{
-        name: 'details'
-      }],
       settingsColumns: [
         {
           title: this.$t('name'),
@@ -104,6 +87,9 @@ export default {
   methods: {
     onTabChange (key) {
       this.activeTab = key
+    },
+    resourceChange (newResource) {
+      this.resource = newResource
     }
   }
 }

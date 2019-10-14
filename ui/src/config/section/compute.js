@@ -9,13 +9,19 @@ export default {
       icon: 'desktop',
       permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ],
       resourceType: 'UserVm',
-      viewComponent: () => import('@/views/compute/InstanceView.vue'),
       columns: [
         { 'name': (record) => { return record.displayname } }, 'state', 'instancename',
         { 'ipaddress': (record) => { return record.nic[0].ipaddress } }, 'account', 'zonename',
         'cpunumber', 'cpuused', 'cputotal', 'memoryintfreekbs', 'memorytotal',
         'networkread', 'networkwrite', 'diskkbsread', 'diskkbswrite', 'diskiopstotal'
       ],
+      tabs: [{
+        name: 'hardware',
+        component: () => import('@/views/compute/InstanceHardware.vue')
+      }, {
+        name: 'settings',
+        component: () => import('@/views/setting/ResourceSettingsTab.vue')
+      }],
       hidden: ['instancename', 'account'],
       actions: [
         {
