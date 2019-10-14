@@ -6,6 +6,9 @@ This document covers how to contribute to the Primate project. Primate uses Gith
 These instructions assume you have a GitHub.com account, so if you don't have one you will have to create one.
 Your proposed code changes will be published to your own fork of the Primate project and you will submit a Pull Request for your changes to be added.
 
+Please refer to project [docs](docs) for reference on standard way of component
+configuration, development, usage, extension and testing.
+
 *Lets get started!!!*
 
 ### Bug fixes
@@ -18,7 +21,7 @@ Since the goal is a stable master, bug fixes should be "merged forward" to the n
 ### New features
 
 Development should be done in a feature branch, branched off of master.
-Send a PR (steps below) to get it into master (at least 1x LGTM applies).
+Send a PR (steps below) to get it into master (at least 2x LGTM applies).
 PR will only be merged when master is open, will be held otherwise until master is open again.
 No back porting / cherry-picking features to existing branches!
 

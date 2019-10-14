@@ -36,8 +36,10 @@ The children should have:
 - `icon`: the icon to be displayed, from AntD's icon set https://vue.ant.design/components/icon/
 - `permission`: the array of API to check against auto-discovered APIs
 - `columns`: list of column keys for list view rendering
+- `details`: list of keys for detail list rendering for a resource
+- `tabs`: array of custom components that will get rendered as tabs in the
+  resource view
 - `component`: the custom component for rendering the route view
-- `viewComponent`: the custom component for rendering a resource from the
   default list view (table)
 - `actions`: arrays of actions/buttons
 
