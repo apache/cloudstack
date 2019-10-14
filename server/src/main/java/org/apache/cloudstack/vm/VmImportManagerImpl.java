@@ -197,6 +197,25 @@ public class VmImportManagerImpl implements VmImportService {
         gson = GsonHelper.getGsonLogger();
     }
 
+    private VMTemplateVO createDefaultDummyVmImportTemplate() {
+        VMTemplateVO template = null;
+        try {
+            template = VMTemplateVO.createSystemIso(templateDao.getNextInSequence(Long.class, "id"), VM_IMPORT_DEFAULT_TEMPLATE_NAME, VM_IMPORT_DEFAULT_TEMPLATE_NAME, true,
+                    "", true, 64, Account.ACCOUNT_ID_SYSTEM, "",
+                    "VM Import Default Template", false, 1);
+            template.setState(VirtualMachineTemplate.State.Inactive);
+            template = templateDao.persist(template);
+            if (template == null) {
+                return null;
+            }
+            templateDao.remove(template.getId());
+            template = templateDao.findByName(VM_IMPORT_DEFAULT_TEMPLATE_NAME);
+        } catch (Exception e) {
+            LOGGER.error("Unable to create default dummy template for VM import", e);
+        }
+        return template;
+    }
+
     private UnmanagedInstanceResponse createUnmanagedInstanceResponse(UnmanagedInstance instance, Cluster cluster, Host host) {
         UnmanagedInstanceResponse response = new UnmanagedInstanceResponse();
         response.setName(instance.getName());
@@ -976,7 +995,10 @@ public class VmImportManagerImpl implements VmImportService {
         if (templateId == null) {
             template = templateDao.findByName(VM_IMPORT_DEFAULT_TEMPLATE_NAME);
             if (template == null) {
-                throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be found. Please use templateid paramter for import", VM_IMPORT_DEFAULT_TEMPLATE_NAME, cluster.getHypervisorType().toString()));
+                template = createDefaultDummyVmImportTemplate();
+                if (template == null) {
+                    throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be created. Please use templateid paramter for import", VM_IMPORT_DEFAULT_TEMPLATE_NAME, cluster.getHypervisorType().toString()));
+                }
             }
         } else {
             template = templateDao.findById(templateId);
