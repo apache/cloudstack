@@ -33,6 +33,7 @@ export function generateRouterMap (section) {
         path: '/' + child.name,
         meta: {
           title: child.title,
+          name: child.name,
           keepAlive: true,
           icon: child.icon,
           permission: child.permission,
@@ -49,6 +50,7 @@ export function generateRouterMap (section) {
             path: '/' + child.name + '/:id',
             meta: {
               title: child.title,
+              name: child.name,
               keepAlive: true,
               icon: child.icon,
               permission: child.permission,
@@ -73,6 +75,7 @@ export function generateRouterMap (section) {
             path: '/action/' + action.api,
             meta: {
               title: child.title,
+              name: child.name,
               keepAlive: true,
               permission: [ action.api ]
             },
@@ -91,6 +94,7 @@ export function generateRouterMap (section) {
       actions: section.actions ? section.actions : [],
       meta: {
         title: section.title,
+        name: section.name,
         keepAlive: true,
         icon: section.icon,
         permission: section.permission,

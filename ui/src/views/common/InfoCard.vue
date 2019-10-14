@@ -5,19 +5,37 @@
       <div class="resource-details">
         <div class="avatar">
           <slot name="avatar">
-            <a-icon style="font-size: 36px" :type="$route.meta.icon" />
+            <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" />
+            <a-icon v-else style="font-size: 36px" :type="$route.meta.icon" />
           </slot>
         </div>
         <div class="name">
           <slot name="name">
             <h4>
-              {{ resource.name }}
+              {{ resource.displayname || resource.name }}
+              <a
+                v-if="['vm', 'systemvm', 'router'].includes($route.meta.name)"
+                :href="'/client/console?cmd=access&vm=' + resource.id"
+                target="_blank">
+                <a-button shape="circle" >
+                  <a-icon type="code" />
+                </a-button>
+              </a>
             </h4>
+            <a-tag v-if="resource.instancename">
+              {{ resource.instancename }}
+            </a-tag>
             <a-tag v-if="resource.type">
               {{ resource.type }}
             </a-tag>
             <a-tag v-if="resource.hypervisor">
               {{ resource.hypervisor }}
+            </a-tag>
+            <a-tag v-if="'haenable' in resource" :color="resource.haenable ? 'green': 'red'">
+              {{ $t('haenable') }}
+            </a-tag>
+            <a-tag v-if="'isdynamicallyscalable' in resource" :color="resource.isdynamicallyscalable ? 'green': 'red'">
+              {{ $t('isdynamicallyscalable') }}
             </a-tag>
           </slot>
         </div>
@@ -37,9 +55,102 @@
         </a-tooltip>
         <span style="margin-left: 5px;">{{ resource.id }}</span>
       </div>
+      <div class="resource-detail-item" v-if="resource.ostypename && resource.ostypeid">
+        <os-logo :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
+        <span style="margin-left: 8px">{{ resource.ostypename }}</span>
+      </div>
+
       <div class="resource-detail-item">
         <slot name="details">
         </slot>
+      </div>
+
+      <div class="resource-detail-item" v-if="resource.keypair">
+        <a-icon type="key" />
+        <router-link :to="{ path: '/ssh/?name=' + resource.keypair }">{{ resource.keypair}}</router-link>
+      </div>
+      <div class="resource-detail-item" v-if="resource.group">
+        <a-icon type="gold" />{{ resource.group }}
+      </div>
+      <div class="resource-detail-item" v-if="resource.cpunumber && resource.cpuspeed">
+        <a-icon type="appstore" />{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz
+        <span
+          v-if="resource.cpuused"
+          style="display: flex; padding-left: 25px">
+          {{ $t('cpuusedghz') }}
+          <a-progress
+            v-if="resource.cpuused"
+            style="padding-left: 10px"
+            size="small"
+            status="active"
+            :percent="parseFloat(resource.cpuused)" />
+        </span>
+        <span
+          v-if="resource.cpuallocated"
+          style="display: flex; padding-left: 25px">
+          {{ $t('cpuallocatedghz') }}
+          <a-progress
+            style="padding-left: 10px"
+            size="small"
+            :percent="parseFloat(resource.cpuallocated)" />
+        </span>
+      </div>
+      <div class="resource-detail-item" v-if="resource.memory">
+        <a-icon type="bulb" />{{ resource.memory }} MB Memory
+        <span
+          v-if="resource.memorykbs && resource.memoryintfreekbs"
+          style="display: flex; padding-left: 25px">
+          {{ $t('memoryusedgb') }}
+          <a-progress
+            style="padding-left: 10px"
+            size="small"
+            status="active"
+            :percent="Number(parseFloat(100.0 * (resource.memorykbs - resource.memoryintfreekbs) / resource.memorykbs).toFixed(2))" />
+        </span>
+      </div>
+      <div class="resource-detail-item" v-else-if="resource.memorytotal">
+        <a-icon type="bulb" />{{ parseFloat(resource.memorytotal / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB Memory
+        <span
+          v-if="resource.memoryused"
+          style="display: flex; padding-left: 25px">
+          {{ $t('memoryusedgb') }}
+          <a-progress
+            style="padding-left: 10px"
+            size="small"
+            status="active"
+            :percent="Number(parseFloat(100.0 * (resource.memoryused) / resource.memorytotal).toFixed(2))" />
+        </span>
+        <span
+          v-if="resource.memoryallocated"
+          style="display: flex; padding-left: 25px">
+          {{ $t('memoryallocatedgb') }}
+          <a-progress
+            style="padding-left: 10px"
+            size="small"
+            :percent="Number(parseFloat(100.0 * (resource.memoryallocated) / resource.memorytotal).toFixed(2))" />
+        </span>
+      </div>
+      <div class="resource-detail-item" v-if="resource.totalStorage">
+        <a-icon type="hdd" />{{ (resource.totalStorage / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage
+        <div style="margin-left: 25px" v-if="resource.diskkbsread && resource.diskkbswrite && resource.diskioread && resource.diskiowrite">
+          <a-tag>Read {{ toSize(resource.diskkbsread) }}</a-tag>
+          <a-tag>Write {{ toSize(resource.diskkbswrite) }}</a-tag><br/>
+          <a-tag>Read (IO) {{ resource.diskioread }}</a-tag>
+          <a-tag>Write (IO) {{ resource.diskiowrite }}</a-tag>
+        </div>
+      </div>
+      <div class="resource-detail-item" v-if="resource.nic || ('networkkbsread' in resource && 'networkkbswrite' in resource)">
+        <a-icon type="wifi" />
+        <span v-if="'networkkbsread' in resource && 'networkkbswrite' in resource">
+          <a-tag><a-icon type="arrow-down" /> RX {{ toSize(resource.networkkbsread) }}</a-tag>
+          <a-tag><a-icon type="arrow-up" /> TX {{ toSize(resource.networkkbswrite) }}</a-tag>
+        </span>
+        <span v-else>{{ resource.nic.length }} NIC(s)
+        </span>
+        <div style="margin-left: 25px" v-if="resource.nic" v-for="(eth, index) in resource.nic" :key="eth.id">
+          <a-icon type="api" />eth{{ index }} {{ eth.ipaddress }}
+          <router-link v-if="eth.networkname && eth.networkid" :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link>
+        </div>
       </div>
       <div class="resource-detail-item" v-if="resource.ipaddress">
         <a-icon type="environment" class="resource-detail-item"/>
@@ -47,7 +158,7 @@
         <span v-else>{{ resource.ipaddress }}</span>
       </div>
       <div class="resource-detail-item" v-if="resource.virtualmachineid">
-        <a-icon type="desktop" class="resource-detail-item"/>
+        <a-icon type="laptop" class="resource-detail-item"/>
         <router-link :to="{ path: '/vm/' + resource.virtualmachineid }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
         <status style="margin-top: -5px" :text="resource.vmstate" v-if="resource.vmstate"/>
       </div>
@@ -74,6 +185,10 @@
       <div class="resource-detail-item" v-if="resource.vpcofferingid">
         <a-icon type="deployment-unit" class="resource-detail-item"/>
         <router-link :to="{ path: '/vpcoffering/' + resource.vpcofferingid }">{{ resource.vpcofferingname || resource.vpcofferingid }} </router-link>
+      </div>
+      <div class="resource-detail-item" v-if="resource.guestnetworkid">
+        <a-icon type="gateway" class="resource-detail-item"/>
+        <router-link :to="{ path: '/guestnetwork/' + resource.guestnetworkid }">{{ resource.guestnetworkname || resource.guestnetworkid }} </router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.storageid">
         <a-icon type="database" class="resource-detail-item"/>
@@ -244,11 +359,13 @@
 <script>
 
 import { api } from '@/api'
+import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 
 export default {
   name: 'InfoCard',
   components: {
+    OsLogo,
     Status
   },
   props: {
@@ -313,6 +430,18 @@ export default {
     }
   },
   methods: {
+    toSize (kb) {
+      if (!kb) {
+        return '0 KB'
+      }
+      if (kb < 1024) {
+        return kb + ' KB'
+      }
+      if (kb < 1024 * 1024) {
+        return parseFloat(kb / 1024.0).toFixed(2) + ' MB'
+      }
+      return parseFloat(kb / (1024.0 * 1024.0)).toFixed(2) + ' GB'
+    },
     getUserKeys () {
       if (!('getUserKeys' in this.$store.getters.apis)) {
         return

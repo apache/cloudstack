@@ -1,80 +1,6 @@
 <template>
   <resource-layout>
-    <info-card slot="left" :resource="resource" :loading="loading">
-      <div slot="avatar">
-        <font-awesome-icon :icon="['fab', osLogo]" size="4x" style="color: #666;" />
-      </div>
-      <div slot="name">
-        <h4>{{ vm.displayname || vm.name }}
-          <a :href="'/client/console?cmd=access&vm=' + vm.id" target="_blank">
-            <a-button shape="circle" >
-              <a-icon type="code" />
-            </a-button>
-          </a>
-        </h4>
-        <div>
-          <a-tag>{{ vm.instancename }}</a-tag>
-          <a-tag>{{ vm.hypervisor }}</a-tag> <br/>
-          <a-tag :color="vm.haenable ? 'green': 'red'">{{ $t('haenable') }}</a-tag>
-          <a-tag :color="vm.isdynamicallyscalable ? 'green': 'red'">{{ $t('isdynamicallyscalable') }}</a-tag>
-        </div>
-      </div>
-      <div slot="details">
-        <div class="vm-detail">
-          <font-awesome-icon :icon="['fab', osLogo]" size="lg"/>{{ guestOsName }}
-        </div>
-        <div class="vm-detail" v-if="vm.keypair">
-          <a-icon type="key" />
-          <router-link :to="{ path: '/ssh/?name=' + vm.keypair }">
-            <span style="margin-left: 10px">{{ vm.keypair }}</span>
-          </router-link>
-        </div>
-        <div class="vm-detail">
-          <a-icon type="laptop" />
-          <span class="vm-detail">{{ vm.cputotal }} ({{ vm.cpunumber }} CPU x {{ vm.cpuspeed }} Mhz)</span>
-          <a-progress
-            style="padding-left: 25px"
-            size="small"
-            :percent="vm && vm.cpuused ? parseFloat(vm.cpuused) : 0.0" />
-        </div>
-        <div class="vm-detail">
-          <a-icon type="appstore" />
-          <span class="vm-detail">{{ vm.memory }} MB Memory
-          </span>
-          <a-progress
-            style="padding-left: 25px"
-            size="small"
-            :percent="vm && vm.memorykbs && vm.memoryintfreekbs && vm.memorykbs > vm.memoryintfreekbs ?
-              Number(parseFloat(100.0 * (vm.memorykbs - vm.memoryintfreekbs) / vm.memorykbs).toFixed(2)) : 0.0" />
-        </div>
-        <div class="vm-detail">
-          <a-icon type="hdd" />
-          <span class="vm-detail" style="margin-left: 10px">{{ (totalStorage / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage
-          </span>
-          <div style="margin-left: 25px">
-            <a-tag>Read {{ toSize(vm.diskkbsread) }}</a-tag>
-            <a-tag>Write {{ toSize(vm.diskkbswrite) }}</a-tag><br/>
-            <a-tag>Read (IO) {{ vm.diskioread }}</a-tag>
-            <a-tag>Write (IO) {{ vm.diskiowrite }}</a-tag>
-          </div>
-        </div>
-        <div class="vm-detail">
-          <a-icon type="wifi" />
-          <span style="margin-left: 10px">
-            <a-tag><a-icon type="arrow-down" /> RX {{ toSize(vm.networkkbsread) }}</a-tag>
-            <a-tag><a-icon type="arrow-up" /> TX {{ toSize(vm.networkkbswrite) }}</a-tag>
-          </span>
-          <div style="margin-left: 25px" v-for="(eth, index) in vm.nic" :key="eth.id">
-            <a-icon type="api"/> eth{{ index }} {{ eth.ipaddress }}
-            (<router-link :to="{ path: '/guestnetwork/' + eth.networkid }">{{ eth.networkname }}</router-link>)
-          </div>
-        </div>
-        <div class="vm-detail" v-if="vm.group">
-          <a-icon type="gold" />
-          <span style="margin-left: 8px">{{ vm.group }}</span>
-        </div>
-      </div>
-    </info-card>
+    <info-card slot="left" :resource="resource" :loading="loading" />
 
     <div slot="right">
       <a-card
@@ -205,8 +131,6 @@ export default {
       vm: {},
       volumes: [],
       totalStorage: 0,
-      guestOsName: '',
-      osLogo: 'linux',
       activeKey: ['1', '2', '3'],
       settingsColumns: [
         {
@@ -234,18 +158,6 @@ export default {
     }
   },
   methods: {
-    toSize (kb) {
-      if (!kb) {
-        return '0 KB'
-      }
-      if (kb < 1024) {
-        return kb + ' KB'
-      }
-      if (kb < 1024 * 1024) {
-        return parseFloat(kb / 1024.0).toFixed(2) + ' MB'
-      }
-      return parseFloat(kb / (1024.0 * 1024.0)).toFixed(2) + ' GB'
-    },
     fetchData () {
       this.volumes = []
       api('listVolumes', { 'listall': true, 'virtualmachineid': this.vm.id }).then(json => {
@@ -257,33 +169,7 @@ export default {
         for (var volume of this.volumes) {
           this.totalStorage += volume.size
         }
-      })
-      api('listOsTypes', { 'id': this.vm.ostypeid }).then(json => {
-        this.guestOsName = json.listostypesresponse.ostype[0].description
-        const osname = this.guestOsName.toLowerCase()
-        if (osname.includes('centos')) {
-          this.osLogo = 'centos'
-        } else if (osname.includes('ubuntu')) {
-          this.osLogo = 'ubuntu'
-        } else if (osname.includes('suse')) {
-          this.osLogo = 'suse'
-        } else if (osname.includes('redhat')) {
-          this.osLogo = 'redhat'
-        } else if (osname.includes('fedora')) {
-          this.osLogo = 'fedora'
-        } else if (osname.includes('linux')) {
-          this.osLogo = 'linux'
-        } else if (osname.includes('bsd')) {
-          this.osLogo = 'freebsd'
-        } else if (osname.includes('apple')) {
-          this.osLogo = 'apple'
-        } else if (osname.includes('window') || osname.includes('dos')) {
-          this.osLogo = 'windows'
-        } else if (osname.includes('oracle')) {
-          this.osLogo = 'java'
-        } else {
-          this.osLogo = 'linux'
-        }
+        this.resource.totalStorage = this.totalStorage
       })
     }
   }
