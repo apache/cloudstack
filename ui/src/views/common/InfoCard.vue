@@ -133,8 +133,8 @@
             :percent="Number(parseFloat(100.0 * (resource.memoryallocated) / resource.memorytotal).toFixed(2))" />
         </span>
       </div>
-      <div class="resource-detail-item" v-if="totalStorage">
-        <a-icon type="hdd" />{{ (totalStorage / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage
+      <div class="resource-detail-item" v-if="resource.volumes">
+        <a-icon type="hdd" />{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage
         <div style="margin-left: 25px" v-if="resource.diskkbsread && resource.diskkbswrite && resource.diskioread && resource.diskiowrite">
           <a-tag>Read {{ toSize(resource.diskkbsread) }}</a-tag>
           <a-tag>Write {{ toSize(resource.diskkbswrite) }}</a-tag><br/>
@@ -397,9 +397,11 @@ export default {
   },
   watch: {
     resource: function (newItem, oldItem) {
-      console.log('reosurce changed in info-card')
-      console.log(newItem)
       this.resource = newItem
+      if (newItem.id === oldItem.id) {
+        return
+      }
+
       this.resourceType = this.$route.meta.resourceType
       this.annotationType = ''
       this.showKeys = false
@@ -432,11 +434,6 @@ export default {
       if ('apikey' in this.resource) {
         this.getUserKeys()
       }
-    }
-  },
-  computed: {
-    totalStorage: function () {
-      return this.resource.totalStorage
     }
   },
   methods: {

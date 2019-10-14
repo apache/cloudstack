@@ -122,6 +122,9 @@ export default {
   watch: {
     resource: function (newItem, oldItem) {
       this.vm = newItem
+      if (newItem.id === oldItem.id) {
+        return
+      }
       this.fetchData()
     }
   },
@@ -133,13 +136,7 @@ export default {
         if (this.volumes) {
           this.volumes.sort((a, b) => { return a.deviceid - b.deviceid })
         }
-        this.totalStorage = 0
-        for (var volume of this.volumes) {
-          this.totalStorage += volume.size
-        }
-        this.resource.volumes = this.volumes
-        this.resource.totalStorage = this.totalStorage
-        this.$emit('resourceChange', this.resource)
+        this.$set(this.resource, 'volumes', this.volumes)
       })
     }
   }
