@@ -769,6 +769,9 @@ public class VmImportManagerImpl implements VmImportService {
                     break;
                 }
             }
+            if (storagePool == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during volume ID: %s migration as no suitable pool found", userVm.getInstanceName(), volumeVO.getUuid()));
+            }
             try {
                 volumeManager.migrateVolume(volumeVO, storagePool);
             } catch (Exception e) {
