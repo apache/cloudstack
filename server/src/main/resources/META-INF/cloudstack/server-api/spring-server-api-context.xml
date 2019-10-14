@@ -29,5 +29,6 @@
 
     <bean id="domainChecker" class="com.cloud.acl.DomainChecker" />
     <bean id="affinityGroupAccessChecker" class="com.cloud.acl.AffinityGroupAccessChecker" />
+    <bean id="uploadServlet" class="com.cloud.api.UploadServlet" />
 
 </beans>

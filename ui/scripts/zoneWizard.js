@@ -3979,7 +3979,6 @@
                     }
                 },
 
-
                 addNetscalerDevice: function(args) {
                     message(_l('message.adding.Netscaler.device'));
 
@@ -5080,7 +5079,7 @@
                             isextractable: false,
                             passwordEnabled: false,
                             isdynamicallyscalable: false,
-                            osTypeId: args.data.osTypeId,
+                            ostypeid: args.data.selectSystemVm.osTypeId,
                             hypervisor: args.data.returnedCluster.hypervisortype,
                             system: true,
                             activate: true,
@@ -5088,16 +5087,23 @@
                         $.ajax({
                             url: createURL('registerTemplate'),
                             data: data,
-                            success: function(json) {
-                                complete({
-                                    data: args.data
-                                });
-                            },
+                            async: false,
                             error: function(XMLHttpResponse) {
                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                 error('addSystemTemplate', errorMsg, {
                                     fn: 'addSystemTemplate',
                                     args: args
+                                });
+                            }
+                        });
+
+                        // Seed the template via api call
+                        $.ajax({
+                            url: createURL('seedOfficialSystemVMTemplate&id=' + args.data.returnedZone.id + '&hypervisor=' + args.data.returnedCluster.hypervisortype + '&url=' + args.data.selectSystemVm.url),
+                            data: data,
+                            success: function(json){
+                                complete({
+                                    data: args.data
                                 });
                             }
                         });
@@ -5182,7 +5188,6 @@
                                         imagestore = json.listimagestoresresponse.imagestore[0].id;
                                     }
                                 });
-
                                 $.ajax({
                                     url: createURL('seedSystemVMTemplate'),
                                     data: {
@@ -5192,6 +5197,32 @@
                                     },
                                     async: false,
                                 });
+
+                                var zones;
+                                $.ajax({
+                                    url: createURL('listZones'),
+                                    async: false,
+                                    success: function(json){
+                                        zones = json.listzonesresponse.zone;
+                                    }
+                                });
+                                // get this template into all other zones
+                                for (var i = 0; i < zones.length; i++){
+                                    if (zones[i].id == args.data.returnedZone.id){
+                                        // don't want to copy to same zone.
+                                        continue;
+                                    }
+                                    $.ajax({
+                                        async: false,
+                                        url: createURL('copyTemplate'),
+                                        data: {
+                                            id: args.data.selectSystemVm.templates,
+                                            destzoneids: zones[i].id,
+                                            sourcezoneid: args.data.selectSystemVm.sourceZone
+                                        }
+                                    })
+                                }
+
                                 complete({
                                     data: args.data
                                 });

@@ -535,7 +535,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     public GetUploadParamsResponse registerTemplateForPostUpload(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException, MalformedURLException {
         TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
         TemplateProfile profile = adapter.prepare(cmd);
-        return registerPostUploadInternal(adapter, profile);
+        GetUploadParamsResponse response = registerPostUploadInternal(adapter, profile);
+        VMTemplateVO template = _tmpltDao.findByUuid(response.getId().toString());
+        if (cmd.getActivate()){
+            activateSystemVMTemplate(template.getId());
+        }
+        return response;
     }
 
     public VirtualMachineTemplate activateSystemVMTemplate(long templateId) {
@@ -2270,12 +2275,34 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = _tmpltDao.findSystemVMTemplate(cmd.getId());
 
         for(TemplateDataStoreVO templateDataStoreVO : templates){
-            templateDataStoreVO.setDownloadState(Status.DOWNLOADED);
-            templateDataStoreVO.setDownloadPercent(100);
-            templateDataStoreVO.setState(ObjectInDataStoreStateMachine.State.Ready);
-            templateDataStoreVO.setInstallPath("template/tmpl/1/" + cmd.getTemplateId() + "/" + template.getUuid() + "." + cmd.getFileExtension());
-            templateDataStoreVO.setErrorString(null);
-            _tmplStoreDao.update(templateDataStoreVO.getId(), templateDataStoreVO);
+            if (templateDataStoreVO.getInstallPath() == null){
+                templateDataStoreVO.setDownloadState(Status.DOWNLOADED);
+                templateDataStoreVO.setDownloadPercent(100);
+                templateDataStoreVO.setState(ObjectInDataStoreStateMachine.State.Ready);
+                templateDataStoreVO.setInstallPath("template/tmpl/1/" + cmd.getTemplateId() + "/" + template.getUuid() + "." + cmd.getFileExtension());
+                templateDataStoreVO.setErrorString(null);
+                _tmplStoreDao.update(templateDataStoreVO.getId(), templateDataStoreVO);
+            }
+        }
+    }
+
+    @Override
+    public void updateTemplate(String zoneId) {
+        // this method will put the template into a usable state
+        DataCenterVO zone = _dcDao.findByUuid(zoneId);
+        VMTemplateVO template = _tmpltDao.findSystemVMTemplate(zone.getId());
+        List<TemplateDataStoreVO> templates = _tmplStoreDao.listByTemplate(template.getId());
+
+        for(TemplateDataStoreVO templateDataStoreVO : templates){
+            if (templateDataStoreVO.getInstallPath() == null) {
+                templateDataStoreVO.setDownloadState(Status.DOWNLOADED);
+                templateDataStoreVO.setSize(0L);
+                templateDataStoreVO.setDownloadPercent(100);
+                templateDataStoreVO.setState(ObjectInDataStoreStateMachine.State.Ready);
+                templateDataStoreVO.setInstallPath("template/tmpl/1/" + template.getId() + "/" + template.getUuid() + "." + template.getFormat().toString().toLowerCase());
+                templateDataStoreVO.setErrorString(null);
+                _tmplStoreDao.update(templateDataStoreVO.getId(), templateDataStoreVO);
+            }
         }
     }
 

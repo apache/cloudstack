@@ -120,8 +120,14 @@ public class SeedOfficialSystemVMTemplateCmd extends BaseCmd {
             // now download the template to the image store for every hypervisor if not specified
             if (this.hypervisor != null && this.url != null){
 
-                if (this.hypervisor.equalsIgnoreCase("kvm")) {
+                if (this.hypervisor.equalsIgnoreCase("kvm") || this.hypervisor.equalsIgnoreCase("lxc")) {
                     this.fileExtension = "qcow2";
+                } else if (this.hypervisor.equalsIgnoreCase("xenserver") || this.hypervisor.equalsIgnoreCase("hyperv")) {
+                    this.fileExtension = "vhd";
+                } else if (this.hypervisor.equalsIgnoreCase("vmware")) {
+                    this.fileExtension = "ova";
+                } else if (this.hypervisor.equalsIgnoreCase("ovm3")) {
+                    this.fileExtension = "raw";
                 }
 
                 this.templateId = _queryService.getSystemVMTemplateId(this);

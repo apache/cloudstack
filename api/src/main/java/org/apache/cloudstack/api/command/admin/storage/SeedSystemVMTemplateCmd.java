@@ -96,6 +96,9 @@ public class SeedSystemVMTemplateCmd extends BaseCmd {
         Script.runSimpleBashScriptForExitValue(command);
 
         Script.runSimpleBashScript("sudo umount " + mountPoint);
+
+        _templateService.updateTemplate(imageStoreResponse.getZoneId());
+
         SeedSystemVMTemplateResponse response = new SeedSystemVMTemplateResponse();
         response.setResponseName(getCommandName());
 

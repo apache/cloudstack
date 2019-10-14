@@ -56,7 +56,6 @@ public class ActivateSystemVMTemplateCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = TemplateResponse.class,
             validations = {ApiArgValidator.PositiveNumber},
-            required = true,
             description = "The template ID of the System VM Template to activate.")
     private Long id;
 

@@ -19,7 +19,6 @@ package com.cloud.api;
 
 import static java.lang.System.out;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,7 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
-import javax.inject.Inject;
 import javax.servlet.MultipartConfigElement;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -39,23 +37,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jetty.server.Request;
 
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.script.Script;
 
 @WebServlet(urlPatterns={"/client/upload"}, name="upload")
 public class UploadServlet extends HttpServlet {
-
-    @Inject
-    VMTemplateDao vmTemplateDao;
-
-    @Inject
-    TemplateDataStoreDao templateDataStoreDao;
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
@@ -79,15 +67,6 @@ public class UploadServlet extends HttpServlet {
 
         InputStream is = filePart.getInputStream();
         Files.copy(is, Paths.get(path + request.getPathInfo()), StandardCopyOption.REPLACE_EXISTING);
-
-        //update db
-        VMTemplateVO templateVO = vmTemplateDao.findByUuid(fileName);
-        if (templateVO != null){
-            templateVO.setState(VirtualMachineTemplate.State.Active);
-            File uploadedFile = Paths.get(path + request.getPathInfo()).toFile();
-            templateVO.setSize(uploadedFile.length());
-            vmTemplateDao.persist(templateVO);
-        }
 
         response.setStatus(200);
         os.print("{ filePath: '" + Paths.get(path + request.getPathInfo()) + "' }");

@@ -1050,6 +1050,29 @@
                                             });
                                         }
 
+                                        // checking if there are any system vms to download the registered template.
+                                        var systemVMS = false;
+                                        
+                                        $.ajax({
+                                            url: createURL('listSystemVms'),
+                                            data: {'zoneid': data.zoneid},
+                                            async: false,
+                                            success: function(json){
+                                                if(!$.isEmptyObject(json.listsystemvmsresponse)){
+                                                    systemVMS = true;
+                                                }
+                                            }
+                                        });
+
+                                        var endpoint = "";
+                                        $.ajax({
+                                            url: createURL('listRegions'),
+                                            async: false,
+                                            success: function(json) {
+                                                endpoint = json.listregionsresponse.region[0].endpoint;
+                                            }
+                                        })
+
                                         $.ajax({
                                             url: createURL('getUploadParamsForTemplate'),
                                             data: data,
@@ -1057,8 +1080,12 @@
                                             success: function(json) {
                                                 var uploadparams = json.postuploadtemplateresponse.getuploadparams;
                                                 var templateId = uploadparams.id;
+                                                var uploadURL = uploadparams.postURL;
+                                                if (!systemVMS){
+                                                    uploadURL = endpoint + "upload/" + templateId
+                                                }
                                                 args.response.success({
-                                                    url: uploadparams.postURL,
+                                                    url: uploadURL,
                                                     ajaxPost: true,
                                                     data: {
                                                         'X-signature': uploadparams.signature,
@@ -1066,6 +1093,8 @@
                                                         'X-metadata': uploadparams.metadata
                                                     }
                                                 });
+                                                
+                                                
                                             }
                                         });
                                     },
@@ -1073,6 +1102,76 @@
                                         if(args.error) {
                                             args.response.error(args.errorMsg);
                                         } else {
+
+                                            var systemVMS = false;
+                                            $.ajax({
+                                                url: createURL('listSystemVms'),
+                                                data: {'zoneid': args.data.zone},
+                                                async: false,
+                                                success: function(json){
+                                                    if(!$.isEmptyObject(json.listsystemvmsresponse)){
+                                                        systemVMS = true;
+                                                    }
+                                                }
+                                            });
+
+                                            if (!systemVMS){
+
+                                                var templateId = "";
+                                                $.ajax({
+                                                    url: createURL('listTemplates'),
+                                                    data: {templateFilter: "system", name: args.data.description},
+                                                    async: false,
+                                                    success: function(json){
+                                                        templateId = json.listtemplatesresponse.template[0].id;
+                                                    }
+                                                });
+
+                                                var imageStore = "";
+                                                $.ajax({
+                                                    url: createURL('listImageStores'),
+                                                    data: {zoneid: args.data.zone},
+                                                    async: false,
+                                                    success: function(json){
+                                                        imageStore = json.listimagestoresresponse.imagestore[0].id;
+                                                    }
+                                                });
+                                                $.ajax({
+                                                    url: createURL('seedSystemVMTemplate'),
+                                                    data: {
+                                                        hypervisor: args.data.hypervisor,
+                                                        imagestoreuuid: imageStore,
+                                                        fileuuid: templateId,
+                                                    },
+                                                    async: false,
+                                                });
+
+                                                var zones;
+                                                $.ajax({
+                                                    url: createURL('listZones'),
+                                                    async: false,
+                                                    success: function(json){
+                                                        zones = json.listzonesresponse.zone;
+                                                    }
+                                                });
+                                                // get this template into all other zones
+                                                for (var i = 0; i < zones.length; i++){
+                                                    if (zones[i].id == args.data.zone){
+                                                        // don't want to copy to same zone.
+                                                        continue;
+                                                    }
+                                                    $.ajax({
+                                                        async: false,
+                                                        url: createURL('copyTemplate'),
+                                                        data: {
+                                                            id: args.data.selectSystemVm.templates,
+                                                            destzoneids: zones[i].id,
+                                                            sourcezoneid: args.data.zone
+                                                        }
+                                                    });
+                                                }
+                                            }
+
                                             cloudStack.dialog.notice({
                                                 message: "This template file has been uploaded. Please check its status at Templates menu > " + args.data.name + " > Zones tab > click a zone > Status field and Ready field."
                                             });

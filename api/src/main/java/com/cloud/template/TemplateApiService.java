@@ -117,4 +117,6 @@ public interface TemplateApiService {
     String getSystemVMTemplateDefaultURL(String hypervisor);
 
     void updateTemplate(SeedOfficialSystemVMTemplateCmd seedOfficialSystemVMTemplateCmd);
+
+    void updateTemplate(String zoneId);
 }
