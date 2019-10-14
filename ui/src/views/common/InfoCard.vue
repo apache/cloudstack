@@ -67,7 +67,7 @@
 
       <div class="resource-detail-item" v-if="resource.keypair">
         <a-icon type="key" />
-        <router-link :to="{ path: '/ssh/?name=' + resource.keypair }">{{ resource.keypair}}</router-link>
+        <router-link :to="{ path: '/ssh/?name=' + resource.keypair }">{{ resource.keypair }}</router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.group">
         <a-icon type="gold" />{{ resource.group }}
