@@ -238,6 +238,16 @@
       </div>
     </div>
 
+    <div class="account-center-tags" v-if="$route.meta.related">
+      <span v-for="item in $route.meta.related" :key="item.path">
+        <router-link :to="{ path: '/' + item.name + '?' + item.param + '=' + resource.id }">
+          <a-button style="margin-right: 10px">
+            View {{ $t(item.title) }}
+          </a-button>
+        </router-link>
+      </span>
+    </div>
+
     <div class="account-center-tags" v-if="showKeys">
       <a-divider/>
       <div class="user-keys">

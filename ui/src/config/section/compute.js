@@ -15,6 +15,15 @@ export default {
         'cpunumber', 'cpuused', 'cputotal', 'memoryintfreekbs', 'memorytotal',
         'networkread', 'networkwrite', 'diskkbsread', 'diskkbswrite', 'diskiopstotal'
       ],
+      related: [{
+        name: 'vmsnapshot',
+        title: 'VM Snapshots',
+        param: 'virtualmachineid'
+      }, {
+        name: 'affinitygroup',
+        title: 'Affinity Groups',
+        param: 'virtualmachineid'
+      }],
       tabs: [{
         name: 'hardware',
         component: () => import('@/views/compute/InstanceHardware.vue')
@@ -174,7 +183,7 @@ export default {
       ]
     },
     {
-      name: 'affinitygroups',
+      name: 'affinitygroup',
       title: 'Affinity Groups',
       icon: 'swap',
       permission: [ 'listAffinityGroups' ],
