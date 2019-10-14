@@ -11,8 +11,6 @@
 
 export default {
   name: 'Status',
-  components: {
-  },
   props: {
     text: {
       type: String,
@@ -21,10 +19,6 @@ export default {
     displayText: {
       type: Boolean,
       default: false
-    }
-  },
-  data () {
-    return {
     }
   },
   methods: {
