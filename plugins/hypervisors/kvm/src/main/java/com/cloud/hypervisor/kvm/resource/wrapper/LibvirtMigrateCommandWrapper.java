@@ -69,6 +69,7 @@ import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.hypervisor.kvm.resource.disconnecthook.MigrationCancelHook;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
@@ -115,6 +116,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         Connect conn = null;
         String xmlDesc = null;
         List<Ternary<String, Boolean, String>> vmsnapshots = null;
+        MigrationCancelHook cancelHook = null;
 
         try {
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
@@ -193,6 +195,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             s_logger.info("Live migration of instance " + vmName + " initiated to destination host: " + dconn.getURI());
             final ExecutorService executor = Executors.newFixedThreadPool(1);
             boolean migrateNonSharedInc = command.isMigrateNonSharedInc() && !migrateStorageManaged;
+
+            // add cancel hook before we start. If migration fails to start and hook is called, it's non-fatal
+            cancelHook = new MigrationCancelHook(dm);
+            libvirtComputingResource.addDisconnectHook(cancelHook);
 
             final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc,
                     migrateStorage, migrateNonSharedInc,
@@ -290,6 +296,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 result = "Exception during migrate: " + e.getMessage();
             }
         } finally {
+            if (cancelHook != null) {
+                libvirtComputingResource.removeDisconnectHook(cancelHook);
+            }
             try {
                 if (dm != null && result != null) {
                     // restore vm snapshots in case of failed migration
