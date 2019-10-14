@@ -25,10 +25,10 @@ Install tools and dependencies:
 
 ## Development
 
-Override the default `API_URL` to a running CloudStack management server:
+Override the default `CS_URL` to a running CloudStack management server:
 
     cp .env.local.example .env.local
-    Change the `API_URL` in the `.env.local` file
+    Change the `CS_URL` in the `.env.local` file
 
 Build and run:
 
@@ -82,7 +82,7 @@ Primate uses the following:
 - [VueJS](https://vuejs.org/)
 - [Ant Design Spec](https://ant.design/docs/spec/introduce)
 - [Ant Design Vue](https://vue.ant.design/)
-- [Ant Design Pro Vue](https://github.com/sendya/ant-design-pro-vue) template
+- [Ant Design Pro Vue](https://github.com/sendya/ant-design-pro-vue)
 - [Fontawesome](https://github.com/FortAwesome/vue-fontawesome)
 - [ViserJS](https://viserjs.github.io/docs.html#/viser/guide/installation)
 - [Icons](https://www.iconfinder.com/iconsets/cat-force) by [Iconka](https://iconka.com/en/downloads/cat-power/)
