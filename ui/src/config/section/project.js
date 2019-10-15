@@ -38,6 +38,13 @@ export default {
       show: (record) => { return record.state !== 'Suspended' }
     },
     {
+      api: 'addAccountToProject',
+      icon: 'user-add',
+      label: 'Add Account to Project',
+      dataView: true,
+      args: ['projectid', 'account', 'email']
+    },
+    {
       api: 'deleteProject',
       icon: 'delete',
       label: 'Delete Project',

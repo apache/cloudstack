@@ -111,6 +111,13 @@ export default {
           show: (record) => { return ['Running'].includes(record.state) }
         },
         {
+          api: 'migrateVirtualMachineWithVolume',
+          icon: 'export',
+          label: 'Migrate VM with Volume(s)',
+          dataView: true,
+          show: (record) => { return ['Running'].includes(record.state) }
+        },
+        {
           api: 'migrateVirtualMachine',
           icon: 'drag',
           label: 'label.migrate.instance.to.ps',
@@ -124,6 +131,14 @@ export default {
           dataView: true,
           args: ['id', 'serviceofferingid'],
           show: (record) => { return ['Stopped'].includes(record.state) }
+        },
+        {
+          api: 'scaleVirtualMachine',
+          icon: 'arrows-alt',
+          label: 'Scale VM',
+          dataView: true,
+          args: ['id', 'serviceofferingid', 'details'],
+          show: (record) => { return record.state === 'Stopped' || record.hypervisor === 'VMWare' }
         },
         {
           api: 'changeServiceForVirtualMachine',
@@ -156,10 +171,26 @@ export default {
           show: (record) => { return ['Stopped'].includes(record.state) }
         },
         {
+          api: 'recoverVirtualMachine',
+          icon: 'medicine-box',
+          label: 'label.recover.vm',
+          args: ['id'],
+          dataView: true,
+          show: (record) => { return ['Destroyed'].includes(record.state) }
+        },
+        {
+          api: 'expungeVirtualMachine',
+          icon: 'delete',
+          label: 'label.action.expunge.instance',
+          args: ['id'],
+          dataView: true,
+          show: (record) => { return ['Destroyed'].includes(record.state) }
+        },
+        {
           api: 'destroyVirtualMachine',
           icon: 'delete',
           label: 'label.action.destroy.instance',
-          args: ['id'],
+          args: ['id', 'expunge', 'volumeids'],
           dataView: true,
           groupAction: true
         }
@@ -185,9 +216,16 @@ export default {
         {
           api: 'createSSHKeyPair',
           icon: 'plus',
-          label: 'Create SSH key pair',
+          label: 'Create SSH Key Pair',
           listView: true,
           args: ['name', 'account', 'domainid']
+        },
+        {
+          api: 'registerSSHKeyPair',
+          icon: 'key',
+          label: 'Register SSH Public Key',
+          listView: true,
+          args: ['name', 'account', 'domainid', 'publickey']
         },
         {
           api: 'deleteSSHKeyPair',
