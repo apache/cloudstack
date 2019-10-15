@@ -49,10 +49,6 @@
               icon="reload"
             />
           </a-tooltip>
-          <a-button-group style="margin-left: 10px" v-if="!dataView">
-            <a-button icon="bars" @click="tableView=true" />
-            <a-button icon="appstore" @click="tableView=false" />
-          </a-button-group>
         </span>
       </a-col>
       <a-col :span="6">
@@ -182,12 +178,7 @@
       <list-view
         :loading="loading"
         :columns="columns"
-        :items="items"
-        v-show="tableView" />
-      <card-view
-        :items="items"
-        :loading="loading"
-        v-show="!tableView" />
+        :items="items" />
       <a-pagination
         class="row-element"
         size="small"
@@ -241,8 +232,7 @@ export default {
       currentAction: {},
       showAction: false,
       dataView: false,
-      actions: [],
-      tableView: true
+      actions: []
     }
   },
   computed: {
