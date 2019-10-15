@@ -13,11 +13,32 @@ export default {
       details: ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'zonename', 'account', 'domain'],
       actions: [
         {
+          api: 'createNetwork',
+          icon: 'plus',
+          label: 'Add Network',
+          listView: true,
+          popup: true,
+          component: () => import('@/views/network/CreateNetwork.vue')
+        },
+        {
+          api: 'updateNetwork',
+          icon: 'edit',
+          label: 'Update Network',
+          dataView: true,
+          args: ['id', 'name', 'displaytext', 'guestvmcidr']
+        },
+        {
+          api: 'restartNetwork',
+          icon: 'sync',
+          label: 'Restart Network',
+          dataView: true,
+          args: ['id', 'makeredundant', 'cleanup']
+        },
+        {
           api: 'deleteNetwork',
           icon: 'delete',
           label: 'Delete Network',
           args: ['id'],
-          listView: true,
           dataView: true
         }
       ]
@@ -29,7 +50,37 @@ export default {
       permission: [ 'listVPCs' ],
       resourceType: 'Vpc',
       columns: ['name', 'state', 'displaytext', 'cidr', 'account', 'zonename'],
-      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain']
+      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain'],
+      actions: [
+        {
+          api: 'createVPC',
+          icon: 'plus',
+          label: 'Add VPC',
+          listView: true,
+          args: ['name', 'displaytext', 'zoneid', 'cidr', 'networkdomain', 'vpcofferingid', 'start']
+        },
+        {
+          api: 'updateVPC',
+          icon: 'edit',
+          label: 'Update VPC',
+          dataView: true,
+          args: ['id', 'name', 'displaytext']
+        },
+        {
+          api: 'restartVPC',
+          icon: 'sync',
+          label: 'Restart VPC',
+          dataView: true,
+          args: ['id', 'makeredundant', 'cleanup']
+        },
+        {
+          api: 'deleteVPC',
+          icon: 'delete',
+          label: 'Delete VPC',
+          args: ['id'],
+          dataView: true
+        }
+      ]
     },
     {
       name: 'securitygroups',
@@ -38,7 +89,24 @@ export default {
       permission: [ 'listSecurityGroups' ],
       resourceType: 'SecurityGroup',
       columns: ['name', 'description', 'account', 'domain'],
-      details: ['name', 'id', 'description', 'account', 'domain']
+      details: ['name', 'id', 'description', 'account', 'domain'],
+      actions: [
+        {
+          api: 'createSecurityGroup',
+          icon: 'plus',
+          label: 'Add Security Group',
+          listView: true,
+          args: ['name', 'description']
+        },
+        {
+          api: 'deleteSecurityGroup',
+          icon: 'delete',
+          label: 'Delete Security Group',
+          args: ['id'],
+          dataView: true,
+          show: (record) => { return record.name !== 'default' }
+        }
+      ]
     },
     {
       name: 'publicip',
@@ -46,8 +114,41 @@ export default {
       icon: 'environment',
       permission: [ 'listPublicIpAddresses' ],
       resourceType: 'PublicIpAddress',
-      columns: ['ipaddress', 'state', 'associatednetworkname', 'virtualmachinename', 'allocated', 'account', 'zonename'],
-      details: ['ipaddress', 'id', 'associatednetworkname', 'virtualmachinename', 'networkid', 'issourcenat', 'isstaticnat', 'virtualmachinename', 'vmipaddress', 'vlan', 'allocated', 'account', 'zonename']
+      columns: ['ipaddress', 'state', 'issourcenat', 'associatednetworkname', 'virtualmachinename', 'allocated', 'account', 'zonename'],
+      details: ['ipaddress', 'id', 'associatednetworkname', 'virtualmachinename', 'networkid', 'issourcenat', 'isstaticnat', 'virtualmachinename', 'vmipaddress', 'vlan', 'allocated', 'account', 'zonename'],
+      actions: [
+        {
+          api: 'associateIpAddress',
+          icon: 'plus',
+          label: 'Acquire New IP',
+          listView: true,
+          args: ['networkid']
+        },
+        {
+          api: 'enableStaticNat',
+          icon: 'check-circle',
+          label: 'Enable Static NAT',
+          dataView: true,
+          args: ['ipaddressid', 'virtualmachineid', 'vmguestip'],
+          show: (record) => { return !record.virtualmachineid }
+        },
+        {
+          api: 'disableStaticNat',
+          icon: 'close-circle',
+          label: 'Disable Static NAT',
+          dataView: true,
+          args: ['ipaddressid'],
+          show: (record) => { return record.virtualmachineid }
+        },
+        {
+          api: 'disassociateIpAddress',
+          icon: 'delete',
+          label: 'Delete IP',
+          args: ['id'],
+          dataView: true,
+          show: (record) => { return !record.issourcenat }
+        }
+      ]
     },
     {
       name: 'vpngateway',
@@ -56,7 +157,16 @@ export default {
       permission: [ 'listVpnCustomerGateways' ],
       resourceType: 'VpnGateway',
       columns: ['name', 'ipaddress', 'gateway', 'cidrlist', 'ipsecpsk', 'account', 'domain'],
-      details: ['name', 'id', 'ipaddress', 'gateway', 'cidrlist', 'ipsecpsk', 'account', 'domain']
+      details: ['name', 'id', 'ipaddress', 'gateway', 'cidrlist', 'ipsecpsk', 'account', 'domain'],
+      actions: [
+        {
+          api: 'createVpnCustomerGateway',
+          icon: 'plus',
+          label: 'Add VPN Customer Gateway',
+          listView: true,
+          args: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'ikelifetime', 'esplifetime', 'dpd', 'forceencap', 'ikepolicy', 'esppolicy']
+        }
+      ]
     }
   ]
 }

@@ -5,20 +5,27 @@
     </a-card>
     <a-row>
       <a-col :span="18">
-        <a-tooltip placement="bottom" v-for="(action, actionIndex) in actions" :key="actionIndex" v-if="action.api in $store.getters.apis && ((!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) || (dataView && action.dataView))">
-          <template slot="title">
-            {{ $t(action.label) }}
-          </template>
-          <a-button
-            :icon="action.icon"
-            :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
-            shape="circle"
-            style="margin-right: 5px"
-            @click="execAction(action)"
-            :disabled="'hidden' in action ? dataView && action.hidden(resource) : false"
-          >
-          </a-button>
-        </a-tooltip>
+        <span
+          v-for="(action, actionIndex) in actions"
+          :key="actionIndex">
+          <a-tooltip
+            placement="bottom"
+            v-if="action.api in $store.getters.apis &&
+              ((!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) ||
+              (dataView && action.dataView && ('show' in action ? action.show(resource) : true)))">
+            <template slot="title">
+              {{ $t(action.label) }}
+            </template>
+            <a-button
+              :icon="action.icon"
+              :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
+              shape="circle"
+              style="margin-right: 5px"
+              @click="execAction(action)"
+            >
+            </a-button>
+          </a-tooltip>
+        </span>
         <span v-if="!dataView" style="float: right; padding-right: 8px; margin-top: -2px">
           <a-tooltip placement="bottom">
             <template slot="title">

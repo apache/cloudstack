@@ -31,7 +31,6 @@ export default {
         name: 'settings',
         component: () => import('@/views/setting/ResourceSettingsTab.vue')
       }],
-      hidden: ['instancename', 'account'],
       actions: [
         {
           api: 'deployVirtualMachine',
@@ -53,7 +52,7 @@ export default {
           label: 'Start VM',
           dataView: true,
           groupAction: true,
-          hidden: (record) => { return record.state !== 'Stopped' },
+          show: (record) => { return ['Stopped'].includes(record.state) },
           args: ['podid', 'clusterid', 'hostid']
         },
         {
@@ -62,82 +61,97 @@ export default {
           label: 'label.action.stop.instance',
           dataView: true,
           groupAction: true,
-          options: ['podid', 'clusterid', 'hostid'],
-          hidden: (record) => { return record.state !== 'Running' }
+          args: ['podid', 'clusterid', 'hostid'],
+          show: (record) => { return ['Running'].includes(record.state) }
         },
         {
           api: 'rebootVirtualMachine',
-          icon: 'sync',
+          icon: 'reload',
           label: 'label.action.reboot.instance',
           dataView: true,
-          hidden: (record) => { return record.state !== 'Running' }
+          show: (record) => { return ['Running'].includes(record.state) }
         },
         {
           api: 'restoreVirtualMachine',
-          icon: 'usb',
+          icon: 'sync',
           label: 'label.reinstall.vm',
           dataView: true,
           args: ['virtualmachineid']
         },
         {
-          api: 'updateVMAffinityGroup',
-          icon: 'swap',
-          label: 'label.change.affinity',
-          dataView: true,
-          args: ['id', 'serviceofferingid']
-        },
-        {
-          api: 'changeServiceForVirtualMachine',
-          icon: 'sliders',
-          label: 'Change Service Offering',
-          dataView: true,
-          args: ['id', 'serviceofferingid']
-        },
-        {
           api: 'createVMSnapshot',
           icon: 'camera',
           label: 'Create VM Snapshot',
-          dataView: true
+          dataView: true,
+          show: (record) => { return ['Running'].includes(record.state) }
         },
         {
           api: 'attachIso',
           icon: 'paper-clip',
           label: 'label.action.attach.iso',
           dataView: true,
-          args: ['id', 'virtualmachineid']
+          args: ['id', 'virtualmachineid'],
+          show: (record) => { return !record.isoid }
         },
         {
           api: 'detachIso',
           icon: 'link',
           label: 'label.action.detach.iso',
           dataView: true,
-          args: ['id', 'virtualmachineid']
+          args: ['id', 'virtualmachineid'],
+          show: (record) => { return 'isoid' in record && record.isoid }
         },
         {
           api: 'migrateVirtualMachine',
           icon: 'drag',
           label: 'label.migrate.instance.to.host',
           dataView: true,
-          hidden: (record) => { return record.state !== 'Running' }
+          show: (record) => { return ['Running'].includes(record.state) }
+        },
+        {
+          api: 'migrateVirtualMachine',
+          icon: 'drag',
+          label: 'label.migrate.instance.to.ps',
+          dataView: true,
+          show: (record) => { return ['Stopped'].includes(record.state) }
+        },
+        {
+          api: 'updateVMAffinityGroup',
+          icon: 'swap',
+          label: 'label.change.affinity',
+          dataView: true,
+          args: ['id', 'serviceofferingid'],
+          show: (record) => { return ['Stopped'].includes(record.state) }
+        },
+        {
+          api: 'changeServiceForVirtualMachine',
+          icon: 'sliders',
+          label: 'Change Service Offering',
+          dataView: true,
+          args: ['id', 'serviceofferingid'],
+          show: (record) => { return ['Stopped'].includes(record.state) }
         },
         {
           api: 'resetPasswordForVirtualMachine',
           icon: 'key',
           label: 'Reset Instance Password',
           dataView: true,
-          args: ['id']
+          args: ['id'],
+          show: (record) => { return ['Stopped'].includes(record.state) }
         },
         {
           api: 'resetSSHKeyForVirtualMachine',
           icon: 'lock',
           label: 'Reset SSH Key',
-          dataView: true
+          dataView: true,
+          show: (record) => { return ['Stopped'].includes(record.state) }
         },
         {
           api: 'assignVirtualMachine',
           icon: 'user-add',
           label: 'Assign Instance to Another Account',
-          dataView: true
+          dataView: true,
+          show: (record) => { return ['Stopped'].includes(record.state) }
         },
         {
           api: 'destroyVirtualMachine',
@@ -171,14 +185,14 @@ export default {
           icon: 'plus',
           label: 'Create SSH key pair',
           listView: true,
-          args: ['name', 'publickey', 'domainid']
+          args: ['name', 'account', 'domainid']
         },
         {
           api: 'deleteSSHKeyPair',
           icon: 'delete',
           label: 'Delete SSH key pair',
           dataView: true,
-          args: ['name', 'domainid', 'account']
+          args: ['name', 'account', 'domainid']
         }
       ]
     },

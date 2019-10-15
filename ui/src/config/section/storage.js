@@ -10,7 +10,6 @@ export default {
       permission: [ 'listVolumesMetrics', 'listVolumes' ],
       resourceType: 'Volume',
       columns: ['name', 'state', 'type', 'vmname', 'size', 'physicalsize', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskiopstotal', 'storage', 'account', 'zonename'],
-      hidden: ['storage', 'utilization'],
       details: ['name', 'id', 'type', 'deviceid', 'sizegb', 'physicalsize', 'provisioningtype', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'diskiopstotal', 'path'],
       actions: [
         {
@@ -31,8 +30,9 @@ export default {
           api: 'getUploadParamsForVolume',
           icon: 'upload',
           label: 'Upload Local Volume',
-          args: ['@file', 'name', 'zoneid', 'format', 'checksum'],
-          listView: true
+          listView: true,
+          popup: true,
+          component: () => import('@/views/storage/UploadLocalVolume.vue')
         },
         {
           api: 'attachVolume',
@@ -40,22 +40,31 @@ export default {
           label: 'Attach Volume',
           args: ['id', 'virtualmachineid'],
           dataView: true,
-          hidden: (record) => { return record.virtualmachineid }
+          show: (record) => { return !('virtualmachineid' in record) }
         },
         {
           api: 'detachVolume',
           icon: 'link',
           label: 'Detach Volume',
-          args: ['id', 'virtualmachineid'],
+          args: ['id'],
           dataView: true,
-          hidden: (record) => { return !record.virtualmachineid }
+          show: (record) => { return 'virtualmachineid' in record && record.virtualmachineid }
         },
         {
-          api: 'migrateVolume',
-          icon: 'drag',
-          label: 'Migrate Volume',
-          args: ['volumeid', 'storageid', 'livemigrate'],
-          dataView: true
+          api: 'createSnapshot',
+          icon: 'camera',
+          label: 'Take Snapshot',
+          args: ['volumeid', 'name', 'asyncbackup', 'tags'],
+          dataView: true,
+          show: (record) => { return record.state === 'Ready' }
+        },
+        {
+          api: 'createSnapshotPolicy',
+          icon: 'video-camera',
+          label: 'Recurring Snapshots',
+          args: ['volumeid', 'schedule', 'timezone', 'intervaltype', 'maxsnaps'],
+          dataView: true,
+          show: (record) => { return record.state === 'Ready' }
         },
         {
           api: 'resizeVolume',
@@ -64,6 +73,14 @@ export default {
           type: 'main',
           args: ['id', 'virtualmachineid'],
           dataView: true
+        },
+        {
+          api: 'migrateVolume',
+          icon: 'drag',
+          label: 'Migrate Volume',
+          args: ['volumeid', 'storageid', 'livemigrate'],
+          dataView: true,
+          show: (record) => { return 'virtualmachineid' in record && record.virtualmachineid }
         },
         {
           api: 'extractVolume',
@@ -76,6 +93,14 @@ export default {
             }
           },
           dataView: true
+        },
+        {
+          api: 'createTemplate',
+          icon: 'picture',
+          label: 'Create Template from Volume',
+          args: ['volumeid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled', 'sshkeyenabled'],
+          dataView: true,
+          show: (record) => { return record.type === 'ROOT' }
         },
         {
           api: 'deleteVolume',
@@ -101,27 +126,28 @@ export default {
           icon: 'plus',
           label: 'Create volume',
           dataView: true,
-          args: [
-            'name', 'snapshotid', 'diskofferingid', 'size'
-          ]
+          args: ['snapshotid', 'name']
+        },
+        {
+          api: 'createTemplate',
+          icon: 'picture',
+          label: 'Create volume',
+          dataView: true,
+          args: ['snapshotid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled', 'sshkeyenabled']
         },
         {
           api: 'revertSnapshot',
-          icon: 'revert',
-          label: 'Revert snapshot',
+          icon: 'sync',
+          label: 'Revert Snapshot',
           dataView: true,
-          args: [
-            'id'
-          ]
+          args: ['id']
         },
         {
           api: 'deleteSnapshot',
           icon: 'delete',
-          label: 'Delete snapshot',
+          label: 'Delete Snapshot',
           dataView: true,
-          args: [
-            'id'
-          ]
+          args: ['id']
         }
       ]
     },
@@ -136,21 +162,17 @@ export default {
       actions: [
         {
           api: 'revertToVMSnapshot',
-          icon: 'revert',
+          icon: 'sync',
           label: 'Revert VM snapshot',
           dataView: true,
-          args: [
-            'vmsnapshotid'
-          ]
+          args: ['vmsnapshotid']
         },
         {
           api: 'deleteVMSnapshot',
           icon: 'delete',
           label: 'Delete VM Snapshot',
           dataView: true,
-          args: [
-            'vmsnapshotid'
-          ]
+          args: ['vmsnapshotid']
         }
       ]
     }

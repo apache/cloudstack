@@ -1,6 +1,6 @@
 <template>
   <div>
-
+  TODO: create network form: L2, isolated and shared
   </div>
 </template>
 
