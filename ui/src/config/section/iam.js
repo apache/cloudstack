@@ -17,65 +17,51 @@ export default {
           icon: 'plus',
           label: 'label.add.user',
           listView: true,
-          args: [
-            'username', 'password', 'email', 'firstname', 'lastname', 'timezone', 'domainid', 'account', 'accounttype'
-          ]
+          args: ['username', 'password', 'password', 'email', 'firstname', 'lastname', 'timezone', 'account', 'domainid']
         },
         {
           api: 'updateUser',
           icon: 'edit',
           label: 'label.edit',
           dataView: true,
-          args: [
-            'id', 'username', 'email', 'firstname', 'lastname', 'timezone'
-          ]
+          args: ['id', 'username', 'email', 'firstname', 'lastname', 'timezone']
         },
         {
           api: 'updateUser',
-          icon: 'plus',
-          label: 'Change password',
+          icon: 'key',
+          label: 'Change Password',
           dataView: true,
-          args: [
-            'id', 'currentPassword', 'password'
-          ]
+          args: ['id', 'password', 'password']
         },
         {
           api: 'registerUserKeys',
-          icon: 'register',
-          label: 'Register user keys',
+          icon: 'file-protect',
+          label: 'Generate Keys',
           dataView: true,
-          args: [
-            'id'
-          ]
-        },
-        {
-          api: 'disableUser',
-          icon: 'disabled',
-          label: 'Disable user',
-          dataView: true,
-          hidden: (record) => { return record.resourcestate === 'Disabled' },
-          args: [
-            'id'
-          ]
+          args: ['id']
         },
         {
           api: 'enableUser',
-          icon: 'enabled',
-          label: 'Enable user',
+          icon: 'play-circle',
+          label: 'Enable User',
           dataView: true,
-          hidden: (record) => { return record.resourcestate === 'Enabled' },
-          args: [
-            'id'
-          ]
+          show: (record) => { return record.state === 'disabled' },
+          args: ['id']
+        },
+        {
+          api: 'disableUser',
+          icon: 'pause-circle',
+          label: 'Disable User',
+          dataView: true,
+          args: ['id'],
+          show: (record) => { return record.state === 'enabled' }
         },
         {
           api: 'deleteUser',
           icon: 'delete',
           label: 'Delete user',
           dataView: true,
-          args: [
-            'id'
-          ]
+          args: ['id']
         }
       ]
     },
@@ -92,57 +78,47 @@ export default {
           icon: 'plus',
           label: 'label.add.account',
           listView: true,
-          args: [
-            'username', 'email', 'firstname', 'lastname', 'password', 'domainid', 'account', 'roleid', 'timezone', 'networkdomain'
-          ]
+          args: ['username', 'password', 'password', 'email', 'firstname', 'lastname', 'domainid', 'account', 'roleid', 'timezone', 'networkdomain']
         },
         {
-          api: 'updateResourceLimit',
-          icon: 'plus',
-          label: 'Update resource limit',
+          api: 'updateAccount',
+          icon: 'edit',
+          label: 'label.update.account',
           dataView: true,
-          args: [
-            'resourceType', 'max', 'domainid', 'account'
-          ]
+          args: ['id', 'newname', 'domainid', 'roleid', 'networkdomain', 'details']
         },
         {
           api: 'updateResourceCount',
-          icon: 'plus',
-          label: 'Update resource count',
+          icon: 'sync',
+          label: 'Update Resource Count',
           dataView: true,
-          args: [
-            'domainid', 'account'
-          ]
-        },
-        {
-          api: 'disableAccount',
-          icon: 'plus',
-          label: 'Disable account',
-          dataView: true,
-          hidden: (record) => { return record.resourcestate === 'Disabled' },
-          args: [
-            'lock', 'domainid', 'account'
-          ]
+          args: ['account', 'domainid']
         },
         {
           api: 'enableAccount',
-          icon: 'plus',
-          label: 'Enable account',
+          icon: 'play-circle',
+          label: 'Enable Account',
           dataView: true,
-          hidden: (record) => { return record.resourcestate === 'Enabled' },
-          args: [
-            'domainid', 'account'
-          ]
+          show: (record) => { return record.state === 'disabled' || record.state === 'locked' },
+          args: ['id'],
+          params: { 'lock': 'false' }
         },
         {
           api: 'disableAccount',
-          icon: 'plus',
+          icon: 'pause-circle',
+          label: 'Disable Account',
+          dataView: true,
+          show: (record) => { return record.state === 'enabled' },
+          args: ['id'],
+          params: { 'lock': 'false' }
+        },
+        {
+          api: 'disableAccount',
+          icon: 'lock',
           label: 'Lock account',
           dataView: true,
-          hidden: (record) => { return record.resourcestate === 'Disabled' },
-          args: [
-            'lock', 'domainid', 'account'
-          ]
+          show: (record) => { return record.state === 'enabled' },
+          args: ['id', 'lock']
         },
         {
           api: 'deleteAccount',
@@ -170,39 +146,29 @@ export default {
           icon: 'plus',
           label: 'label.add.domain',
           listView: true,
-          args: [
-            'parentdomainid', 'name', 'networkdomain', 'domainid'
-          ]
+          args: ['parentdomainid', 'name', 'networkdomain', 'domainid']
         },
         {
           api: 'updateDomain',
           icon: 'edit',
           label: 'label.action.edit.domain',
           dataView: true,
-          args: [
-            'id',
-            'networkdomain'
-          ]
+          args: ['id', 'name', 'networkdomain']
         },
         {
           api: 'updateResourceCount',
-          icon: 'updateresourcecount',
+          icon: 'sync',
           label: 'label.action.update.resource.count',
           dataView: true,
-          args: [
-            'domainid'
-          ]
+          args: ['domainid']
         },
         {
           api: 'deleteDomain',
           icon: 'delete',
           label: 'label.delete.domain',
           dataView: true,
-          hidden: (record) => { return record.level === 0 },
-          args: [
-            'id',
-            'cleanup'
-          ]
+          show: (record) => { return record.level !== 0 },
+          args: ['id', 'cleanup']
         }
       ]
     },
@@ -219,27 +185,21 @@ export default {
           icon: 'plus',
           label: 'Create Role',
           listView: true,
-          args: [
-            'name', 'description', 'type', 'tags', 'state', 'status', 'allocationstate'
-          ]
+          args: ['name', 'description', 'type']
         },
         {
           api: 'updateRole',
           icon: 'edit',
-          label: 'Edit role',
+          label: 'Edit Role',
           dataView: true,
-          args: [
-            'id', 'name', 'description'
-          ]
+          args: ['id', 'name', 'description', 'type']
         },
         {
           api: 'deleteRole',
           icon: 'delete',
           label: 'label.delete.role',
           dataView: true,
-          args: [
-            'id'
-          ]
+          args: ['id']
         }
       ]
     }

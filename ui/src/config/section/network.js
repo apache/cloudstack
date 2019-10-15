@@ -114,7 +114,7 @@ export default {
       icon: 'environment',
       permission: [ 'listPublicIpAddresses' ],
       resourceType: 'PublicIpAddress',
-      columns: ['ipaddress', 'state', 'issourcenat', 'associatednetworkname', 'virtualmachinename', 'allocated', 'account', 'zonename'],
+      columns: ['ipaddress', 'state', 'associatednetworkname', 'virtualmachinename', 'allocated', 'account', 'zonename'],
       details: ['ipaddress', 'id', 'associatednetworkname', 'virtualmachinename', 'networkid', 'issourcenat', 'isstaticnat', 'virtualmachinename', 'vmipaddress', 'vlan', 'allocated', 'account', 'zonename'],
       actions: [
         {
@@ -126,7 +126,7 @@ export default {
         },
         {
           api: 'enableStaticNat',
-          icon: 'check-circle',
+          icon: 'plus-circle',
           label: 'Enable Static NAT',
           dataView: true,
           args: ['ipaddressid', 'virtualmachineid', 'vmguestip'],
@@ -134,7 +134,7 @@ export default {
         },
         {
           api: 'disableStaticNat',
-          icon: 'close-circle',
+          icon: 'minus-circle',
           label: 'Disable Static NAT',
           dataView: true,
           args: ['ipaddressid'],

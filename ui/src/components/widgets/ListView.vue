@@ -28,6 +28,8 @@
     </a>
     <a slot="ipaddress" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+      &nbsp;
+      <a-tag v-if="record.issourcenat">source-nat</a-tag>
     </a>
     <a slot="vmname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>

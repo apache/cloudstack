@@ -61,7 +61,7 @@ export default {
           label: 'label.action.stop.instance',
           dataView: true,
           groupAction: true,
-          args: ['podid', 'clusterid', 'hostid'],
+          args: ['id'],
           show: (record) => { return ['Running'].includes(record.state) }
         },
         {
@@ -69,6 +69,7 @@ export default {
           icon: 'reload',
           label: 'label.action.reboot.instance',
           dataView: true,
+          args: ['id'],
           show: (record) => { return ['Running'].includes(record.state) }
         },
         {
@@ -76,13 +77,14 @@ export default {
           icon: 'sync',
           label: 'label.reinstall.vm',
           dataView: true,
-          args: ['virtualmachineid']
+          args: ['virtualmachineid', 'templateid']
         },
         {
           api: 'createVMSnapshot',
           icon: 'camera',
           label: 'Create VM Snapshot',
           dataView: true,
+          args: ['virtualmachineid', 'name', 'description', 'snapshotmemory', 'quiescevm'],
           show: (record) => { return ['Running'].includes(record.state) }
         },
         {
