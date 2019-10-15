@@ -2,8 +2,8 @@ export default {
   name: 'zone',
   title: 'Zones',
   icon: 'global',
-  permission: [ 'listZones', 'listZonesMetrics' ],
-  columns: [ 'name', 'allocationstate', 'networktype', 'guestcidraddress' ],
+  permission: [ 'listZonesMetrics', 'listZones' ],
+  columns: [ 'name', 'state', 'networktype', 'clusters', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal' ],
   details: [ 'name', 'id', 'allocationstate', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2' ],
   actions: [
     {
@@ -16,140 +16,128 @@ export default {
     },
     {
       api: 'updateZone',
-      icon: 'enable',
-      label: 'label.action.disable.zone',
+      icon: 'edit',
+      label: 'Edit Zone',
       dataView: true,
-      hidden: (record) => { return record.allocationstate === 'Enabled' },
-      args: [ 'id' ],
-      defaultArgs: { allocationstate: 'Disabled' }
+      args: ['id', 'name', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns1', 'internaldns2', 'guestcidraddress', 'domain', 'localstorageenabled'],
+      show: (record) => { return record.networktype === 'Advanced' }
     },
     {
       api: 'updateZone',
-      icon: 'disable',
+      icon: 'edit',
+      label: 'Edit Zone',
+      dataView: true,
+      args: ['id', 'name', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns1', 'internaldns2', 'domain', 'localstorageenabled'],
+      show: (record) => { return record.networktype === 'Basic' }
+    },
+    {
+      api: 'updateZone',
+      icon: 'pause-circle',
+      label: 'label.action.disable.zone',
+      dataView: true,
+      args: ['id'],
+      defaultArgs: { allocationstate: 'Disabled' },
+      show: (record) => { return record.allocationstate === 'Enabled' }
+    },
+    {
+      api: 'updateZone',
+      icon: 'play-circle',
       label: 'label.action.enable.zone',
       dataView: true,
-      hidden: (record) => { return record.allocationstate === 'Disabled' },
       args: [ 'id' ],
-      defaultArgs: { allocationstate: 'Enabled' }
+      defaultArgs: { allocationstate: 'Enabled' },
+      show: (record) => { return record.allocationstate === 'Disabled' }
     },
     {
       api: 'dedicateZone',
-      icon: 'dedicate',
+      icon: 'user-add',
       label: 'label.dedicate.zone',
       dataView: true,
-      hidden: (record) => { return record.domainid !== null },
-      args: [
-        'zoneId', 'domainid', 'account'
-      ]
+      args: ['zoneid', 'domainid', 'account'],
+      show: (record) => { return !record.domainid }
     },
     {
       api: 'releaseDedicatedZone',
-      icon: 'release',
+      icon: 'user-delete',
       label: 'label.release.dedicated.zone',
       dataView: true,
-      hidden: (record) => { return record.domainid !== null },
-      args: [
-        'zoneid'
-      ]
+      args: ['zoneid'],
+      show: (record) => { return record.domainid }
+    },
+    {
+      api: 'enableOutOfBandManagementForZone',
+      icon: 'plus-circle',
+      label: 'label.outofbandmanagement.enable',
+      dataView: true,
+      args: ['zoneid'],
+      show: (record) => {
+        return !record.resourcedetails || !record.resourcedetails.outOfBandManagementEnabled ||
+          record.resourcedetails.outOfBandManagementEnabled === 'false'
+      }
+    },
+    {
+      api: 'disableOutOfBandManagementForZone',
+      icon: 'minus-circle',
+      label: 'label.outofbandmanagement.disable',
+      dataView: true,
+      args: ['zoneid'],
+      show: (record) => {
+        return record.resourcedetails && record.resourcedetails.outOfBandManagementEnabled &&
+          record.resourcedetails.outOfBandManagementEnabled === 'true'
+      }
+    },
+    {
+      api: 'enableHAForZone',
+      icon: 'eye',
+      label: 'label.ha.enable',
+      dataView: true,
+      args: ['zoneid'],
+      show: (record) => {
+        return !record.resourcedetails || !record.resourcedetails.resourceHAEnabled ||
+          record.resourcedetails.resourceHAEnabled === 'false'
+      }
+    },
+    {
+      api: 'disableHAForZone',
+      icon: 'eye-invisible',
+      label: 'label.ha.disable',
+      dataView: true,
+      args: ['zoneid'],
+      show: (record) => {
+        return record.resourcedetails && record.resourcedetails.resourceHAEnabled &&
+          record.resourcedetails.resourceHAEnabled === 'true'
+      }
+    },
+    {
+      api: 'addVmwareDc',
+      icon: 'block',
+      label: 'label.add.vmware.datacenter',
+      dataView: true,
+      args: ['zoneid', 'name', 'vcenter', 'username', 'password'],
+      show: (record) => { return !record.vmwaredcid }
+    },
+    {
+      api: 'updateVmwareDc',
+      icon: 'block',
+      label: 'label.update.vmware.datacenter',
+      dataView: true,
+      args: ['zoneid', 'name', 'vcenter', 'username', 'password', 'isrecursive'],
+      show: (record) => { return record.vmwaredcid }
+    },
+    {
+      api: 'removeVmwareDc',
+      icon: 'minus-square',
+      label: 'label.remove.vmware.datacenter',
+      dataView: true,
+      args: ['zoneid'],
+      show: (record) => { return record.vmwaredcid }
     },
     {
       api: 'deleteZone',
       icon: 'delete',
       label: 'label.action.delete.zone',
       dataView: true,
-      args: [
-        'id'
-      ]
-    },
-    {
-      api: 'updateZone',
-      icon: 'disable',
-      label: 'label.edit',
-      dataView: true,
-      hidden: (record) => { return record.networktype === 'Advanced' },
-      args: [
-        'id', 'name', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'guestcidraddress', 'internaldns1', 'internaldns2', 'domain', 'localstorageenabled'
-      ]
-    },
-    {
-      api: 'updateZone',
-      icon: 'disable',
-      label: 'label.edit',
-      dataView: true,
-      hidden: (record) => { return record.networktype === 'Basic' },
-      args: [
-        'id', 'name', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns1', 'internaldns2', 'domain', 'localstorageenabled'
-      ]
-    },
-    {
-      api: 'disableOutOfBandManagementForZone',
-      icon: 'disableband',
-      label: 'label.outofbandmanagement.disable',
-      dataView: true,
-      hidden: (record) => { return !(record.resourcedetails && record.resourcedetails.outOfBandManagementEnabled && record.resourcedetails.outOfBandManagementEnabled === 'false') },
-      args: [
-        'zoneid'
-      ]
-    },
-    {
-      api: 'enableOutOfBandManagementForZone',
-      icon: 'enableband',
-      label: 'label.outofbandmanagement.enable',
-      dataView: true,
-      hidden: (record) => { return record.resourcedetails && record.resourcedetails.outOfBandManagementEnabled && record.resourcedetails.outOfBandManagementEnabled === 'false' },
-      args: [
-        'zoneid'
-      ]
-    },
-    {
-      api: 'disableHAForZone',
-      icon: 'disableha',
-      label: 'label.ha.disable',
-      dataView: true,
-      hidden: (record) => { return !(record.resourcedetails && record.resourcedetails.resourceHAEnabled && record.resourcedetails.resourceHAEnabled === 'false') },
-      args: [
-        'zoneid'
-      ]
-    },
-    {
-      api: 'enableHAForZone',
-      icon: 'enableha',
-      label: 'label.ha.enable',
-      dataView: true,
-      hidden: (record) => { return record.resourcedetails && record.resourcedetails.resourceHAEnabled && record.resourcedetails.resourceHAEnabled === 'false' },
-      args: [
-        'zoneid'
-      ]
-    },
-    {
-      api: 'addVmwareDc',
-      icon: 'addvmwdc',
-      label: 'label.add.vmware.datacenter',
-      dataView: true,
-      hidden: (record) => { return record.vmwaredcId === null },
-      args: [
-        'zoneid', 'name', 'vcenter', 'username', 'password'
-      ]
-    },
-    {
-      api: 'updateVmwareDc',
-      icon: 'addvmwdc',
-      label: 'label.update.vmware.datacenter',
-      dataView: true,
-      hidden: (record) => { return record.vmwaredcId !== null },
-      args: [
-        'zoneid', 'name', 'vcenter', 'username', 'password'
-      ]
-    },
-    {
-      api: 'removeVmwareDc',
-      icon: 'addvmwdc',
-      label: 'label.remove.vmware.datacenter',
-      dataView: true,
-      hidden: (record) => { return record.vmwaredcId !== null },
-      args: [
-        'zoneid'
-      ]
+      args: ['id']
     }
   ]
 }

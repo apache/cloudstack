@@ -11,18 +11,14 @@ export default {
       icon: 'plus',
       label: 'label.add.secondary.storage',
       listView: true,
-      args: [
-        'name', 'provider', 'zoneid', 'url'
-      ]
+      args: ['name', 'provider', 'zoneid', 'url', 'details']
     },
     {
       api: 'deleteImageStore',
       icon: 'delete',
-      label: 'label.action.delete.primary.storage',
+      label: 'label.action.delete.secondary.storage',
       dataView: true,
-      args: [
-        'id'
-      ]
+      args: ['id']
     }
   ]
 }

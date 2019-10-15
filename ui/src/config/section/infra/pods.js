@@ -11,60 +11,46 @@ export default {
       icon: 'plus',
       label: 'label.add.pod',
       listView: true,
-      popup: true,
-      args: [
-        'zoneid', 'name', 'gateway', 'netmask', 'startip', 'endip'
-      ]
+      args: ['zoneid', 'name', 'gateway', 'netmask', 'startip', 'endip']
     },
     {
       api: 'updatePod',
       icon: 'edit',
       label: 'label.edit',
       dataView: true,
-      args: [
-        'id', 'name', 'netmask', 'gateway'
-      ]
+      args: ['id', 'name', 'netmask', 'gateway']
     },
     {
       api: 'dedicatePod',
-      icon: 'dedicate',
+      icon: 'user-add',
       label: 'label.dedicate.pod',
       dataView: true,
-      hidden: (record) => { return record.domainid !== null },
-      args: [
-        'podId', 'domainid', 'account'
-      ]
+      args: ['podid', 'domainid', 'account'],
+      show: (record) => { return !record.domainid }
     },
     {
       api: 'releaseDedicatedPod',
-      icon: 'release',
+      icon: 'user-delete',
       label: 'label.release.dedicated.pod',
       dataView: true,
-      hidden: (record) => { return record.domainid === null },
-      args: [
-        'podid'
-      ]
+      args: ['podid'],
+      show: (record) => { return record.domainid }
     },
     {
       api: 'updatePod',
-      icon: 'enable',
+      icon: 'play-circle',
       label: 'label.action.enable.pod',
       dataView: true,
-      hidden: (record) => { return record.allocationstate === 'Enabled' },
-      args: [
-        'id'
-      ],
-      defaultArgs: { allocationstate: 'Enabled' }
+      args: ['id'],
+      show: (record) => { return record.allocationstate === 'Disabled' }
     },
     {
       api: 'updatePod',
-      icon: 'disable',
+      icon: 'pause-circle',
       label: 'label.action.disable.pod',
       dataView: true,
-      hidden: (record) => { return record.allocationstate === 'Disabled' },
-      args: [
-        'id'
-      ],
+      args: ['id'],
+      show: (record) => { return record.allocationstate === 'Enabled' },
       defaultArgs: { allocationstate: 'Disabled' }
     },
     {
@@ -72,9 +58,7 @@ export default {
       icon: 'delete',
       label: 'label.action.delete.pod',
       dataView: true,
-      args: [
-        'id'
-      ]
+      args: ['id']
     }
   ]
 }

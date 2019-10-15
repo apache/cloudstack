@@ -8,84 +8,68 @@ export default {
   actions: [
     {
       api: 'startRouter',
-      icon: 'startvm',
+      icon: 'caret-right',
       label: 'label.action.start.router',
       dataView: true,
-      hidden: (record) => { return record.state !== 'Stopped' },
-      args: [
-        'id'
-      ]
+      args: ['id'],
+      show: (record) => { return record.state === 'Stopped' }
     },
     {
       api: 'stopRouter',
-      icon: 'stopvm',
+      icon: 'stop',
       label: 'label.action.stop.router',
       dataView: true,
-      hidden: (record) => { return record.state !== 'Running' },
-      args: [
-        'id', 'forced'
-      ]
-    },
-    {
-      api: 'scaleSystemVm',
-      icon: 'scalevm',
-      label: 'label.change.service.offering',
-      dataView: true,
-      hidden: (record) => { return !(record.state === 'Stopped' || record.hypervisor === 'VMWare') },
-      args: [
-        'id', 'serviceofferingid'
-      ]
+      args: ['id', 'forced'],
+      show: (record) => { return record.state === 'Running' }
     },
     {
       api: 'rebootRouter',
-      icon: 'rebootvm',
+      icon: 'sync',
       label: 'label.action.reboot.router',
       dataView: true,
-      hidden: (record) => { return record.state !== 'Running' },
-      args: [
-        'id'
-      ]
+      args: ['id'],
+      hidden: (record) => { return record.state === 'Running' }
     },
     {
-      api: 'migrateSystemVm',
-      icon: 'migratevm',
-      label: 'label.action.migrate.router',
+      api: 'scaleSystemVm',
+      icon: 'arrows-alt',
+      label: 'label.change.service.offering',
       dataView: true,
-      hidden: (record) => { return record.state !== 'Running' },
-      args: [
-        'hostid', 'virtualmachineid'
-      ]
+      args: ['id', 'serviceofferingid'],
+      show: (record) => { return record.state === 'Stopped' || record.hypervisor === 'VMWare' }
     },
     {
       api: 'upgradeRouterTemplate',
-      icon: 'upgraderouter',
+      icon: 'fullscreen',
       label: 'label.upgrade.router.newer.template',
       dataView: true,
       groupAction: true,
-      hidden: (record) => { return record.requiresupgrade },
-      args: [
-        'id'
-      ]
+      args: ['id'],
+      show: (record) => { return record.requiresupgrade }
+    },
+    {
+      api: 'migrateSystemVm',
+      icon: 'drag',
+      label: 'label.action.migrate.router',
+      dataView: true,
+      args: ['virtualmachineid', 'hostid'],
+      show: (record) => { return record.state === 'Running' }
     },
     {
       api: 'runDiagnostics',
-      icon: 'diagnostics',
+      icon: 'reconciliation',
       label: 'label.action.run.diagnostics',
       dataView: true,
-      hidden: (record) => { return record.state !== 'Running' },
-      args: [
-        'targetid', 'ipaddress', 'type', 'params'
-      ]
+      args: ['targetid', 'type', 'ipaddress', 'params'],
+      show: (record) => { return record.state === 'Running' }
     },
     {
       api: 'destroyRouter',
       icon: 'delete',
       label: 'label.destroy.router',
       dataView: true,
-      hidden: (record) => { return record.state !== 'Running' && record.state !== 'Stopped' },
-      args: [
-        'id'
-      ]
+      args: ['id'],
+      show: (record) => { return ['Running', 'Error', 'Stopped'].includes(record.state) }
     }
   ]
 }
