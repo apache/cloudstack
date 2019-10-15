@@ -308,6 +308,8 @@ public class VmImportManagerImplTest {
     public void importUnmanagedInstanceTest() {
         ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
         when(importUnmanageInstanceCmd.getName()).thenReturn("TestInstance");
+        when(importUnmanageInstanceCmd.getAccountName()).thenReturn(null);
+        when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
         PowerMockito.mockStatic(UsageEventUtils.class);
         vmIngestionService.importUnmanagedInstance(importUnmanageInstanceCmd);
     }
@@ -325,6 +327,8 @@ public class VmImportManagerImplTest {
     public void importUnmanagedInstanceMissingInstanceTest() {
         ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
         when(importUnmanageInstanceCmd.getName()).thenReturn("SomeInstance");
+        when(importUnmanageInstanceCmd.getAccountName()).thenReturn(null);
+        when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
         vmIngestionService.importUnmanagedInstance(importUnmanageInstanceCmd);
     }
 }
