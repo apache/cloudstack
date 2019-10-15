@@ -11,6 +11,18 @@ export default {
       resourceType: 'Network',
       columns: ['name', 'state', 'type', 'cidr', 'ip6cidr', 'broadcasturi', 'account', 'zonename'],
       details: ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'zonename', 'account', 'domain'],
+      related: [{
+        name: 'publicip',
+        title: 'IP Addresses',
+        param: 'associatedNetworkId'
+      }],
+      tabs: [{
+        name: 'details',
+        component: () => import('@/views/common/DetailsTab.vue')
+      }, {
+        name: 'egress-rules',
+        component: () => import('@/views/network/EgressConfigure.vue')
+      }],
       actions: [
         {
           api: 'createNetwork',
@@ -51,6 +63,13 @@ export default {
       resourceType: 'Vpc',
       columns: ['name', 'state', 'displaytext', 'cidr', 'account', 'zonename'],
       details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain'],
+      tabs: [{
+        name: 'configure',
+        component: () => import('@/views/network/VpcConfigure.vue')
+      }, {
+        name: 'details',
+        component: () => import('@/views/common/DetailsTab.vue')
+      }],
       actions: [
         {
           api: 'createVPC',
@@ -90,6 +109,16 @@ export default {
       resourceType: 'SecurityGroup',
       columns: ['name', 'description', 'account', 'domain'],
       details: ['name', 'id', 'description', 'account', 'domain'],
+      tabs: [{
+        name: 'details',
+        component: () => import('@/views/common/DetailsTab.vue')
+      }, {
+        name: 'ingress-rules',
+        component: () => import('@/views/network/IngressRuleConfigure.vue')
+      }, {
+        name: 'egress-rules',
+        component: () => import('@/views/network/EgressRuleConfigure.vue')
+      }],
       actions: [
         {
           api: 'createSecurityGroup',
@@ -116,6 +145,16 @@ export default {
       resourceType: 'PublicIpAddress',
       columns: ['ipaddress', 'state', 'associatednetworkname', 'virtualmachinename', 'allocated', 'account', 'zonename'],
       details: ['ipaddress', 'id', 'associatednetworkname', 'virtualmachinename', 'networkid', 'issourcenat', 'isstaticnat', 'virtualmachinename', 'vmipaddress', 'vlan', 'allocated', 'account', 'zonename'],
+      tabs: [{
+        name: 'configure',
+        component: () => import('@/views/network/IpConfigure.vue')
+      }, {
+        name: 'vpn',
+        component: () => import('@/views/network/VpnDetails.vue')
+      }, {
+        name: 'details',
+        component: () => import('@/views/common/DetailsTab.vue')
+      }],
       actions: [
         {
           api: 'associateIpAddress',
@@ -125,12 +164,26 @@ export default {
           args: ['networkid']
         },
         {
+          api: 'createRemoteAccessVpn',
+          icon: 'link',
+          label: 'Enable Remote Access VPN',
+          dataView: true,
+          args: ['publicipid', 'domainid', 'account']
+        },
+        {
+          api: 'deleteRemoteAccessVpn',
+          icon: 'disconnect',
+          label: 'Disable Remove Access VPN',
+          dataView: true,
+          args: ['publicipid', 'domainid']
+        },
+        {
           api: 'enableStaticNat',
           icon: 'plus-circle',
           label: 'Enable Static NAT',
           dataView: true,
           args: ['ipaddressid', 'virtualmachineid', 'vmguestip'],
-          show: (record) => { return !record.virtualmachineid }
+          show: (record) => { return !record.virtualmachineid && !record.issourcenat }
         },
         {
           api: 'disableStaticNat',
