@@ -1029,8 +1029,7 @@ public class VmImportManagerImpl implements VmImportService {
             throw new InvalidParameterValueException(String.format("Instance name cannot be empty"));
         }
         final Account owner = accountService.getActiveAccountById(cmd.getEntityOwnerId());
-
-        Long userId = null;
+        long userId = CallContext.current().getCallingUserId();
         List<UserVO> userVOs = userDao.listByAccount(owner.getAccountId());
         if (CollectionUtils.isNotEmpty(userVOs)) {
             userId = userVOs.get(0).getId();
