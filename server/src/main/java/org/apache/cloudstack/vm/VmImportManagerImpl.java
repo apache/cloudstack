@@ -542,7 +542,7 @@ public class VmImportManagerImpl implements VmImportService {
         }
     }
 
-    private void checkUnmanagedNicAndNetworkForImport(UnmanagedInstance.Nic nic, Network network, final DataCenter zone, final Account owner) throws ServerApiException {
+    private void checkUnmanagedNicAndNetworkForImport(UnmanagedInstance.Nic nic, Network network, final DataCenter zone, final Account owner, final boolean autoAssign) throws ServerApiException {
         if (nic == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve NIC details during VM import"));
         }
@@ -553,6 +553,9 @@ public class VmImportManagerImpl implements VmImportService {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network(ID: %s) for nic(ID: %s) belongs to a different zone than VM to be imported", network.getUuid(), nic.getNicId()));
         }
         networkModel.checkNetworkPermissions(owner, network);
+        if (!autoAssign && network.getGuestType().equals(Network.GuestType.Isolated)) {
+            return;
+        }
         if (nic.getVlan() != null && nic.getVlan() != 0 && (Strings.isNullOrEmpty(network.getBroadcastUri().toString()) || !network.getBroadcastUri().toString().equals(String.format("vlan://%d", nic.getVlan())))) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) vlan://%d during VM import", network.getUuid(), network.getBroadcastUri().toString(), nic.getNicId(), nic.getVlan()));
         }
@@ -618,7 +621,7 @@ public class VmImportManagerImpl implements VmImportService {
                             continue;
                         }
                         try {
-                            checkUnmanagedNicAndNetworkForImport(nic, networkVO, zone, owner);
+                            checkUnmanagedNicAndNetworkForImport(nic, networkVO, zone, owner, true);
                             network = networkVO;
                         } catch (Exception e) {
                         }
@@ -631,7 +634,7 @@ public class VmImportManagerImpl implements VmImportService {
                 }
             } else {
                 network = networkDao.findById(callerNicNetworkMap.get(nic.getNicId()));
-                checkUnmanagedNicAndNetworkForImport(nic, network, zone, owner);
+                checkUnmanagedNicAndNetworkForImport(nic, network, zone, owner, false);
                 checkUnmanagedNicAndNetworkHostnameForImport(nic, network, hostName);
                 checkUnmanagedNicIpAndNetworkForImport(nic, network, ipAddresses);
             }
