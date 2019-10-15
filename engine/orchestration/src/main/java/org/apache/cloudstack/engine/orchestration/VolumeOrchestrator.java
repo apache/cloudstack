@@ -1005,8 +1005,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
     }
 
+    @Override
     @DB
-    protected Volume liveMigrateVolume(Volume volume, StoragePool destPool) {
+    public Volume liveMigrateVolume(Volume volume, StoragePool destPool) {
         VolumeInfo vol = volFactory.getVolume(volume.getId());
         AsyncCallFuture<VolumeApiResult> future = volService.migrateVolume(vol, (DataStore)destPool);
         try {

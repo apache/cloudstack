@@ -793,7 +793,15 @@ public class VmImportManagerImpl implements VmImportService {
                 LOGGER.debug(String.format("Found storage pool %s(%s) for migrating the volume %s to", storagePool.getName(), storagePool.getUuid(), volumeVO.getUuid()));
             }
             try {
-                volumeManager.migrateVolume(volumeVO, storagePool);
+                Volume volume = null;
+                if (vm.getState().equals(VirtualMachine.State.Running)) {
+                    volume = volumeManager.liveMigrateVolume(volumeVO, storagePool);
+                } else {
+                    volume = volumeManager.migrateVolume(volumeVO, storagePool);
+                }
+                if (volume == null) {
+                    throw new Exception();
+                }
             } catch (Exception e) {
                 LOGGER.error(String.format("VM import failed for unmanaged vm: %s during volume migration", vm.getInstanceName()), e);
                 cleanupFailedImportVM(vm);

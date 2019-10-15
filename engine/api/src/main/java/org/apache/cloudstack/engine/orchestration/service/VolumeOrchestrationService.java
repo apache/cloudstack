@@ -88,6 +88,8 @@ public interface VolumeOrchestrationService {
 
     Volume migrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException;
 
+    Volume liveMigrateVolume(Volume volume, StoragePool destPool);
+
     void cleanupStorageJobs();
 
     void destroyVolume(Volume volume);
