@@ -5,4 +5,6 @@ grep api -R config | sed "s/.*api: '//g" | sed "s/'.*//g" | grep -v \.js | sort 
 grep store.getters.apis -R . | sed "s/' in.*//g" | sed "s/').*//g" | grep "'" | sed "s/.*'//g" | grep -v ']' >> apis.txt
 grep 'permission:\ \[' -R config | sed "s/.*permission: \[ '//g" | grep -v .js | sed "s/', '/\\n/g" | sed "s/'.*//g" >> apis.txt
 cat apis.txt | sort | uniq > apis.uniq
-mv apis.uniq apis.txt
+mv apis.uniq ../docs/api/apis.txt
+cd ../docs/api
+diff -Naur apis.old apis.txt | grep ^- | grep -v "^--" | sed 's/^-//g' | grep -v -i -e cisco -e nicira -e baremetal -e srx -e f5 -e brocade -e palo -e autoscale -e counter -e condition -e ucs -e netscaler -e bigswitch -e ovs -e globalloadbalancer -e opendaylight -e region -e quota >> apis.remaining
