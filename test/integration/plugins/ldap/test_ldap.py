@@ -75,76 +75,18 @@ class TestLDAP(cloudstackTestCase):
             # Build the test env
             cls.create_domains(cls.testdata)
             cls.configure_ldap_for_domains(cls.testdata)
+
+            cls.test_user = [
+                cls.testdata.testdata[LdapTestData.users][0][LdapTestData.uid],
+                cls.testdata.testdata[LdapTestData.users][1][LdapTestData.uid],
+                cls.testdata.testdata[LdapTestData.users][2][LdapTestData.uid]
+            ]
         except Exception as e:
             logger.debug("Exception in setUpClass(cls): %s" % e)
             cls.tearDownClass()
             raise Exception("setup failed due to %s", e)
 
         return
-
-    @classmethod
-    def configure_ldap_for_domains(cls, td) :
-        cmd = addLdapConfiguration.addLdapConfigurationCmd()
-        cmd.hostname = td.testdata[LdapTestData.configuration][LdapTestData.hostname]
-        cmd.port = td.testdata[LdapTestData.configuration][LdapTestData.port]
-
-        logger.debug("configuring ldap server for domain %s" % LdapTestData.manualDomain)
-        cmd.domainid = cls.manualDomain.id
-        response = cls.apiclient.addLdapConfiguration(cmd)
-        cls.globalLdap = response
-
-        logger.debug("configuring ldap server for domain %s" % LdapTestData.importDomain)
-        cmd.domainid = cls.importDomain.id
-        response = cls.apiclient.addLdapConfiguration(cmd)
-        cls.importLdap = response
-
-        logger.debug("configuring ldap server for domain %s" % LdapTestData.syncDomain)
-        cmd.domainid = cls.syncDomain.id
-        response = cls.apiclient.addLdapConfiguration(cmd)
-        cls.syncLdap = response
-
-    @classmethod
-    def remove_ldap_configuration_for_domains(cls) :
-        logger.debug("deleting configurations for ldap server")
-        cmd = deleteLdapConfiguration.deleteLdapConfigurationCmd()
-
-        cmd.hostname = cls.globalLdap.hostname
-        cmd.port = cls.globalLdap.port
-        cmd.domainid = cls.globalLdap.domainid
-        response = cls.apiclient.deleteLdapConfiguration(cmd)
-        logger.debug("configuration deleted for %s" % response)
-
-        cmd.hostname = cls.importLdap.hostname
-        cmd.port = cls.importLdap.port
-        cmd.domainid = cls.importLdap.domainid
-        response = cls.apiclient.deleteLdapConfiguration(cmd)
-        logger.debug("configuration deleted for %s" % response)
-
-        cmd.hostname = cls.syncLdap.hostname
-        cmd.port = cls.syncLdap.port
-        cmd.domainid = cls.syncLdap.domainid
-        logger.debug("deleting configuration %s" % cmd)
-        response = cls.apiclient.deleteLdapConfiguration(cmd)
-        logger.debug("configuration deleted for %s" % response)
-
-
-    @classmethod
-    def create_domains(cls, td):
-        # create a parent domain
-        cls.parentDomain = cls.create_domain(td.testdata["domains"][0], parent_domain=cls.domain.id)
-        cls.manualDomain = cls.create_domain(td.testdata["domains"][1], parent_domain=cls.parentDomain.id)
-        cls.importDomain = cls.create_domain(td.testdata["domains"][2], parent_domain=cls.parentDomain.id)
-        cls.syncDomain = cls.create_domain(td.testdata["domains"][3], parent_domain=cls.parentDomain.id)
-
-    @classmethod
-    def create_domain(cls, domain_to_create, parent_domain = None):
-        logger.debug("Creating domain: %s under %s" % (domain_to_create[LdapTestData.name], parent_domain))
-        if parent_domain:
-            domain_to_create["parentdomainid"] = parent_domain
-        tmpDomain = Domain.create(cls.apiclient, domain_to_create)
-        logger.debug("Created domain %s with id %s " % (tmpDomain.name, tmpDomain.id))
-        cls._cleanup.append(tmpDomain)
-        return tmpDomain
 
     @classmethod
     def tearDownClass(cls):
@@ -166,7 +108,6 @@ class TestLDAP(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -181,33 +122,26 @@ class TestLDAP(cloudstackTestCase):
         a ldap host is configured
         a domain is linked to cloudstack
         '''
-        domainid = self.manualDomain.id
-        type = "OU"
-        ldapdomain = self.testdata.admins
-
-        self.set_ldap_settings_on_domain(domainid)
-
-        self.bind_domain_to_ldap(domainid, ldapdomain)
-
         cmd = listLdapUsers.listLdapUsersCmd()
         cmd.domainid = self.manualDomain.id
+        cmd.userfilter = "LocalDomain"
         response = self.apiclient.listLdapUsers(cmd)
         logger.info("users found for linked domain %s" % response)
-        self.assertEqual(len(response), len(self.testdata.testdata[LdapTestData.users]), "unexpected number of ldap users")
+        self.assertEqual(len(response), len(self.testdata.testdata[LdapTestData.users]), "unexpected number (%d) of ldap users" % len(self.testdata.testdata[LdapTestData.users]))
 
         cmd = ldapCreateAccount.ldapCreateAccountCmd()
         cmd.domainid = self.manualDomain.id
         cmd.accounttype = 0
-        cmd.username = 'dahn'
+        cmd.username = self.test_user[1]
         response = self.apiclient.ldapCreateAccount(cmd)
-        self.assertEqual(len(response.user), 1, "only one user 'dahn' should be present")
+        self.assertEqual(len(response.user), 1, "only one user %s should be present" % self.test_user[1])
 
         # cleanup
         # last results id should be the account
         response = Account.list(self.apiclient, id=response.id)
         self.assertEqual(len(response),
                          1,
-                         "only one account (for user 'dahn') should be present")
+                         "only one account (for user %s) should be present" % self.test_user[1])
         # this is needed purely for cleanup:
         account_created = Account(response[0].__dict__)
         self._cleanup.append(account_created)
@@ -224,13 +158,6 @@ class TestLDAP(cloudstackTestCase):
         a domain is linked to cloudstack
         '''
         domainid = self.importDomain.id
-        type = "Group"
-        accounttype = 2
-        ldapdomain = self.testdata.admins
-
-        self.set_ldap_settings_on_domain(domainid)
-
-        self.bind_domain_to_ldap(domainid, ldapdomain, accounttype=accounttype, type=type)
 
         cmd = importLdapUsers.importLdapUsersCmd()
         cmd.domainid = domainid
@@ -238,10 +165,9 @@ class TestLDAP(cloudstackTestCase):
         response = self.apiclient.importLdapUsers(cmd)
         self.assertEqual(len(response), len(self.testdata.testdata[LdapTestData.users]), "unexpected number of ldap users")
 
-
         # cleanup
         response = Account.list(self.apiclient, domainid=domainid)
-        self.assertEqual(len(response), len(self.testdata.testdata[LdapTestData.users]), "only one account (for user 'dahn') should be present")
+        self.assertEqual(len(response), len(self.testdata.testdata[LdapTestData.users]), "only one account (for user %s) should be present" % self.test_user[1])
         # this is needed purely for cleanup:
         for account in response:
             account_created = Account(account.__dict__)
@@ -260,30 +186,13 @@ class TestLDAP(cloudstackTestCase):
         some accounts in that domain are linked to groups in ldap
         '''
         domainid = self.syncDomain.id
-        username = 'dahn'
-
-        self.set_ldap_settings_on_domain(domainid)
-
-        self.create_sync_accounts()
+        username = self.test_user[1]
 
         # validate the user doesn't exist
         response = User.list(self.apiclient,domainid=domainid,username=username)
         self.assertEqual(response, None, "user should not exist yet")
 
-        # login of dahn should create a user in account juniors
-        args = {}
-        args["command"] = 'login'
-        args["username"] = username
-        args["password"] = 'password'
-        args["domain"] = "/"+self.parentDomain.name+"/"+self.syncDomain.name
-        args["response"] = "json"
-
-        session = requests.Session()
-
-        try:
-            resp = session.post(self.server_url, params=args, verify=False)
-        except requests.exceptions.ConnectionError, e:
-            self.fail("Failed to attempt login request to mgmt server")
+        self.logon_test_user(username)
 
         # now validate the user exists in domain
         response = User.list(self.apiclient,domainid=domainid,username=username)
@@ -291,57 +200,198 @@ class TestLDAP(cloudstackTestCase):
 
         return
 
-    def create_sync_accounts(self):
-        logger.debug("creating account: %s" % LdapTestData.seniors)
-        self.bind_account_to_ldap(
-            account=self.testdata.testdata[LdapTestData.syncAccounts][1]["name"],
-            ldapdomain=self.testdata.testdata[LdapTestData.syncAccounts][1]["group"],
-            accounttype=self.testdata.testdata[LdapTestData.syncAccounts][1]["accounttype"])
-        self.bind_account_to_ldap(
-            account=self.testdata.testdata[LdapTestData.syncAccounts][0]["name"],
-            ldapdomain=self.testdata.testdata[LdapTestData.syncAccounts][0]["group"],
-            accounttype=self.testdata.testdata[LdapTestData.syncAccounts][0]["accounttype"])
+    @attr(tags=["smoke", "advanced"], required_hardware="false")
+    def test_04_filtered_list_of_users(self):
+        '''
+        test if we can get a filtered list of ldap users
 
-    #  make this an init method that add to the _cleanup list
-    def bind_account_to_ldap(self, account, ldapdomain, type="Group", accounttype=0):
+        prerequisite
+        a ldap host is configured
+        a couple of ldapdomains are linked to cloudstack domains
+        some accounts in those domain are linked to groups in ldap
+        some ldap accounts are linked and present with the same uid
+        some ldap accounts are not yet linked but present at other locations in cloudstack
+
+        NOTE 1: if this test is run last only the explicitely imported test user from test_03_sync
+         is in the system. The accounts from test_01_manual and test_02_import should have been cleared
+         by the test tearDown(). We can not depend on test_03_sync having run so the test must avoid
+         depending on it either being available or not.
+
+        NOTE 2: this test will not work if the ldap users UIDs are already present in the ACS instance
+         against which is being tested
+        '''
+        cmd = listLdapUsers.listLdapUsersCmd()
+        cmd.userfilter = "NoFilter"
+        cmd.domainid = self.manualDomain.id
+        response = self.apiclient.listLdapUsers(cmd)
+        logger.debug(str(cmd) + ":" + str(response))
+        self.assertEqual(len(response), len(self.testdata.testdata[LdapTestData.users]), "unexpected number of ldap users")
+
+        # create a non ldap user with the uid of cls.test_user[0] in parentDomain
+        # create a manual import of a cls.test_user[1] in manualDomain
+        # log on with test_user[2] in an syncDomain
+        self.logon_test_user(self.test_user)
+
+        # we can now test all four filtertypes in syncDomain and inspect the respective outcomes for validity
+
+        # cmd.userfilter = "AnyDomain"
+        # cmd.domainid = self.importDomain.id
+        # response = self.apiclient.listLdapUsers(cmd)
+        # logger.debug(str(cmd) + ":" + str(response))
+        # self.assertEqual(len(response),
+        #                  len(self.testdata.testdata[LdapTestData.users]) - 2,
+        #                  "unexpected number of ldap users")
+        #
+        #
+        # cmd.userfilter = "LocalDomain"
+        # cmd.domainid = self.syncDomain.id
+        # response = self.apiclient.listLdapUsers(cmd)
+        # logger.debug(str(cmd) + ":" + str(response))
+        # self.assertEqual(len(response), len(self.testdata.testdata[LdapTestData.users]), "unexpected number of ldap users")
+
+    def logon_test_user(self, username):
+        # login of dahn should create a user in account juniors
+        args = {}
+        args["command"] = 'login'
+        args["username"] = username
+        args["password"] = 'password'
+        args["domain"] = "/" + self.parentDomain.name + "/" + self.syncDomain.name
+        args["response"] = "json"
+        session = requests.Session()
+        try:
+            resp = session.post(self.server_url, params=args, verify=False)
+        except requests.exceptions.ConnectionError as e:
+            self.fail("Failed to attempt login request to mgmt server")
+
+
+    @classmethod
+    def create_domains(cls, td):
+        # create a parent domain
+        cls.parentDomain = cls.create_domain(td.testdata["domains"][0], parent_domain=cls.domain.id)
+        cls.manualDomain = cls.create_domain(td.testdata["domains"][1], parent_domain=cls.parentDomain.id)
+        cls.importDomain = cls.create_domain(td.testdata["domains"][2], parent_domain=cls.parentDomain.id)
+        cls.syncDomain = cls.create_domain(td.testdata["domains"][3], parent_domain=cls.parentDomain.id)
+
+    @classmethod
+    def create_domain(cls, domain_to_create, parent_domain = None):
+        logger.debug("Creating domain: %s under %s" % (domain_to_create[LdapTestData.name], parent_domain))
+        if parent_domain:
+            domain_to_create["parentdomainid"] = parent_domain
+        tmpDomain = Domain.create(cls.apiclient, domain_to_create)
+        logger.debug("Created domain %s with id %s " % (tmpDomain.name, tmpDomain.id))
+        cls._cleanup.append(tmpDomain)
+        return tmpDomain
+
+    @classmethod
+    def configure_ldap_for_domains(cls, td) :
+        cmd = addLdapConfiguration.addLdapConfigurationCmd()
+        cmd.hostname = td.testdata[LdapTestData.configuration][LdapTestData.hostname]
+        cmd.port = td.testdata[LdapTestData.configuration][LdapTestData.port]
+
+        logger.debug("configuring ldap server for domain %s" % LdapTestData.manualDomain)
+        cmd.domainid = cls.manualDomain.id
+        response = cls.apiclient.addLdapConfiguration(cmd)
+        cls.manualLdap = response
+
+        logger.debug("configuring ldap server for domain %s" % LdapTestData.importDomain)
+        cmd.domainid = cls.importDomain.id
+        response = cls.apiclient.addLdapConfiguration(cmd)
+        cls.importLdap = response
+
+        logger.debug("configuring ldap server for domain %s" % LdapTestData.syncDomain)
+        cmd.domainid = cls.syncDomain.id
+        response = cls.apiclient.addLdapConfiguration(cmd)
+        cls.syncLdap = response
+
+        cls.set_ldap_settings_on_domain(domainid=cls.manualDomain.id)
+        cls.bind_domain_to_ldap(domainid=cls.manualDomain.id, ldapdomain=cls.testdata.admins)
+
+        cls.set_ldap_settings_on_domain(domainid=cls.importDomain.id)
+        cls.bind_domain_to_ldap(domainid=cls.importDomain.id, ldapdomain=cls.testdata.admins,
+                                accounttype=2, type="Group") # just to be testing different types
+
+        cls.set_ldap_settings_on_domain(domainid=cls.syncDomain.id)
+        cls.create_sync_accounts()
+
+    @classmethod
+    def remove_ldap_configuration_for_domains(cls) :
+        logger.debug("deleting configurations for ldap server")
+        cmd = deleteLdapConfiguration.deleteLdapConfigurationCmd()
+
+        cmd.hostname = cls.manualLdap.hostname
+        cmd.port = cls.manualLdap.port
+        cmd.domainid = cls.manualLdap.domainid
+        response = cls.apiclient.deleteLdapConfiguration(cmd)
+        logger.debug("configuration deleted for %s" % response)
+
+        cmd.hostname = cls.importLdap.hostname
+        cmd.port = cls.importLdap.port
+        cmd.domainid = cls.importLdap.domainid
+        response = cls.apiclient.deleteLdapConfiguration(cmd)
+        logger.debug("configuration deleted for %s" % response)
+
+        cmd.hostname = cls.syncLdap.hostname
+        cmd.port = cls.syncLdap.port
+        cmd.domainid = cls.syncLdap.domainid
+        logger.debug("deleting configuration %s" % cmd)
+        response = cls.apiclient.deleteLdapConfiguration(cmd)
+        logger.debug("configuration deleted for %s" % response)
+
+
+    @classmethod
+    def create_sync_accounts(cls):
+        logger.debug("creating account: %s" % LdapTestData.seniors)
+        cls.bind_account_to_ldap(
+            account=cls.testdata.testdata[LdapTestData.syncAccounts][1]["name"],
+            ldapdomain=cls.testdata.testdata[LdapTestData.syncAccounts][1]["group"],
+            accounttype=cls.testdata.testdata[LdapTestData.syncAccounts][1]["accounttype"])
+        cls.bind_account_to_ldap(
+            account=cls.testdata.testdata[LdapTestData.syncAccounts][0]["name"],
+            ldapdomain=cls.testdata.testdata[LdapTestData.syncAccounts][0]["group"],
+            accounttype=cls.testdata.testdata[LdapTestData.syncAccounts][0]["accounttype"])
+
+    @classmethod
+    def bind_account_to_ldap(cls, account, ldapdomain, type="Group", accounttype=0):
         cmd = linkAccountToLdap.linkAccountToLdapCmd()
 
-        cmd.domainid = self.syncDomain.id
+        cmd.domainid = cls.syncDomain.id
         cmd.account = account
         cmd.ldapdomain = ldapdomain
         cmd.type = type
         cmd.accounttype = accounttype
 
-        response = self.apiclient.linkAccountToLdap(cmd)
+        response = cls.apiclient.linkAccountToLdap(cmd)
         logger.info("account linked to ladp %s" % response)
 
         # this is needed purely for cleanup:
-        response = Account.list(self.apiclient, id=response.accountid)
+        response = Account.list(cls.apiclient, id=response.accountid)
         account_created = Account(response[0].__dict__)
-        self._cleanup.append(account_created)
+        cls._cleanup.append(account_created)
 
-    def bind_domain_to_ldap(self, domainid, ldapdomain, type="OU", accounttype=0):
+    @classmethod
+    def bind_domain_to_ldap(cls, domainid, ldapdomain, type="OU", accounttype=0):
         cmd = linkDomainToLdap.linkDomainToLdapCmd()
         cmd.domainid = domainid
         cmd.type = type
         cmd.accounttype = accounttype
         cmd.ldapdomain = ldapdomain
-        response = self.apiclient.linkDomainToLdap(cmd)
+        response = cls.apiclient.linkDomainToLdap(cmd)
         logger.info("domain linked to ladp %s" % response)
 
-    def set_ldap_settings_on_domain(self, domainid):
+    @classmethod
+    def set_ldap_settings_on_domain(cls, domainid):
         cmd = updateConfiguration.updateConfigurationCmd()
         cmd.domainid = domainid
         cmd.name = LdapTestData.basednConfig
-        cmd.value = self.testdata.testdata[LdapTestData.configuration][LdapTestData.basedn]
-        response = self.apiclient.updateConfiguration(cmd)
+        cmd.value = cls.testdata.testdata[LdapTestData.configuration][LdapTestData.basedn]
+        response = cls.apiclient.updateConfiguration(cmd)
         logger.debug("set the basedn: %s" % response)
         cmd.name = LdapTestData.ldapPwConfig
-        cmd.value = self.testdata.testdata[LdapTestData.configuration][LdapTestData.ldapPw]
-        response = self.apiclient.updateConfiguration(cmd)
+        cmd.value = cls.testdata.testdata[LdapTestData.configuration][LdapTestData.ldapPw]
+        response = cls.apiclient.updateConfiguration(cmd)
         logger.debug("set the pw: %s" % response)
         cmd.name = LdapTestData.principalConfig
-        cmd.value = self.testdata.testdata[LdapTestData.configuration][LdapTestData.principal]
-        response = self.apiclient.updateConfiguration(cmd)
+        cmd.value = cls.testdata.testdata[LdapTestData.configuration][LdapTestData.principal]
+        response = cls.apiclient.updateConfiguration(cmd)
         logger.debug("set the id: %s" % response)
 
