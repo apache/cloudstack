@@ -4503,6 +4503,14 @@
                         var data = {};
                         listViewDataProvider(args, data);
 
+                        if (args.context != null) {
+                            if ("securityGroups" in args.context) {
+                                $.extend(data, {
+                                    id: args.context.securityGroups[0].id
+                                });
+                            }
+                        }
+
                         $.ajax({
                             url: createURL('listSecurityGroups'),
                             data: data,

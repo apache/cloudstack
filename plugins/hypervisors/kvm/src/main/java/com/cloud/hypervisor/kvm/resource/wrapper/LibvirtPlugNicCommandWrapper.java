@@ -64,6 +64,12 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
             final InterfaceDef interfaceDef = vifDriver.plug(nic, "Other PV", "", null);
             vm.attachDevice(interfaceDef.toString());
 
+            // apply default network rules on new nic
+            if (vmName.startsWith("i-") && nic.isSecurityGroupEnabled()) {
+                final Long vmId = Long.valueOf(vmName.split("-")[2]);
+                libvirtComputingResource.applyDefaultNetworkRulesOnNic(conn, vmName, vmId, nic, false, false);
+            }
+
             return new PlugNicAnswer(command, true, "success");
         } catch (final LibvirtException e) {
             final String msg = " Plug Nic failed due to " + e.toString();

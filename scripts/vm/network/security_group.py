@@ -145,6 +145,44 @@ def split_ips_by_family(ips):
             ip6s.append(ip)
     return ip4s, ip6s
 
+def destroy_network_rules_for_nic(vm_name, vm_ip, vm_mac, vif, sec_ips):
+    try:
+        rules = execute("""iptables-save -t filter | awk '/ %s / { sub(/-A/, "-D", $1) ; print }'""" % vif ).split("\n")
+        for rule in filter(None, rules):
+            try:
+                execute("iptables " + rule)
+            except:
+                logging.debug("Ignoring failure to delete rule: " + rule)
+    except:
+        pass
+
+    try:
+        dnats = execute("""iptables-save -t nat | awk '/ %s / { sub(/-A/, "-D", $1) ; print }'""" % vif ).split("\n")
+        for dnat in filter(None, dnats):
+            try:
+                execute("iptables -t nat " + dnat)
+            except:
+                logging.debug("Ignoring failure to delete dnat: " + dnat)
+    except:
+        pass
+
+    ips = sec_ips.split(';')
+    ips.pop()
+    ips.append(vm_ip)
+    add_to_ipset(vm_name, ips, "-D")
+    ebtables_rules_vmip(vm_name, vm_mac, ips, "-D")
+
+    vmchain_in = vm_name + "-in"
+    vmchain_out = vm_name + "-out"
+    vmchain_in_src = vm_name + "-in-src"
+    vmchain_out_dst = vm_name + "-out-dst"
+    try:
+        execute("ebtables -t nat -D " + vmchain_in_src + " -s " + vm_mac + " -j RETURN")
+        execute("ebtables -t nat -D " + vmchain_out_dst + " -p ARP --arp-op Reply --arp-mac-dst " + vm_mac + " -j RETURN")
+        execute("ebtables -t nat -D PREROUTING -i " + vif + " -j " + vmchain_in)
+        execute("ebtables -t nat -D POSTROUTING -o " + vif + " -j " + vmchain_out)
+    except:
+        logging.debug("Ignoring failure to delete ebtable rules for vm: " + vm_name)
 
 def get_bridge_physdev(brname):
     physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}' | head -1" % brname)
@@ -158,6 +196,9 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
     vm_ipsetname=ipset_chain_name(vm_name)
 
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
+    if 1 in [vm_name.startswith(c) for c in ['r-', 's-', 'v-']]:
+        return True
+
     if vm_name.startswith('i-'):
         vmchain_default = '-'.join(vm_name.split('-')[:-1]) + "-def"
 
@@ -198,9 +239,6 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
     remove_rule_log_for_vm(vm_name)
     remove_secip_log_for_vm(vm_name)
 
-    if 1 in [vm_name.startswith(c) for c in ['r-', 's-', 'v-']]:
-        return True
-
     return True
 
 
@@ -228,7 +266,7 @@ def destroy_ebtables_rules(vm_name, vif):
             execute("ebtables -t nat " + cmd)
         except:
             logging.debug("Ignoring failure to delete ebtables rules for vm " + vm_name)
-    chains = [eb_vm_chain+"-in", eb_vm_chain+"-out", eb_vm_chain+"-in-ips", eb_vm_chain+"-out-ips"]
+    chains = [eb_vm_chain+"-in", eb_vm_chain+"-out", eb_vm_chain+"-in-ips", eb_vm_chain+"-out-ips", eb_vm_chain+"-in-src", eb_vm_chain+"-out-dst"]
     for chain in chains:
         try:
             execute("ebtables -t nat -F " + chain)
@@ -237,14 +275,33 @@ def destroy_ebtables_rules(vm_name, vif):
             logging.debug("Ignoring failure to delete ebtables chain for vm " + vm_name)
 
 
-def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif):
+def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif, is_first_nic=False):
     eb_vm_chain=ebtables_chain_name(vm_name)
     vmchain_in = eb_vm_chain + "-in"
     vmchain_out = eb_vm_chain + "-out"
     vmchain_in_ips = eb_vm_chain + "-in-ips"
     vmchain_out_ips = eb_vm_chain + "-out-ips"
+    vmchain_in_src = eb_vm_chain + "-in-src"
+    vmchain_out_dst = eb_vm_chain + "-out-dst"
 
-    for chain in [vmchain_in, vmchain_out, vmchain_in_ips, vmchain_out_ips]:
+    if not is_first_nic:
+        try:
+            execute("ebtables -t nat -A PREROUTING -i " + vif + " -j " + vmchain_in)
+            execute("ebtables -t nat -A POSTROUTING -o " + vif + " -j " + vmchain_out)
+            execute("ebtables -t nat -I " + vmchain_in_src + " -s " + vm_mac + " -j RETURN")
+            if vm_ip:
+                execute("ebtables -t nat -I " + vmchain_in_ips + " -p ARP -s " + vm_mac + " --arp-mac-src " + vm_mac + " --arp-ip-src " + vm_ip + " -j RETURN")
+            execute("ebtables -t nat -I " + vmchain_out_dst + " -p ARP --arp-op Reply --arp-mac-dst " + vm_mac + " -j RETURN")
+            if vm_ip:
+                execute("ebtables -t nat -I " + vmchain_out_ips + " -p ARP --arp-ip-dst " + vm_ip + " -j RETURN")
+        except:
+            logging.debug("Failed to program rules for additional nic " + vif)
+            return False
+        return
+
+    destroy_ebtables_rules(vm_name, vif)
+
+    for chain in [vmchain_in, vmchain_out, vmchain_in_ips, vmchain_out_ips, vmchain_in_src, vmchain_out_dst]:
         try:
             execute("ebtables -t nat -N " + chain)
         except:
@@ -256,17 +313,19 @@ def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif):
         execute("ebtables -t nat -A POSTROUTING -o " + vif + " -j " + vmchain_out)
         execute("ebtables -t nat -A " + vmchain_in_ips + " -j DROP")
         execute("ebtables -t nat -A " + vmchain_out_ips + " -j DROP")
+        execute("ebtables -t nat -A " + vmchain_in_src + " -j DROP")
+        execute("ebtables -t nat -A " + vmchain_out_dst + " -p ARP --arp-op Reply -j DROP")
+
     except:
         logging.debug("Failed to program default rules")
         return False
 
     try:
-        execute("ebtables -t nat -A " + vmchain_in + " -s ! " + vm_mac + " -j DROP")
-        execute("ebtables -t nat -A " + vmchain_in + " -p ARP -s ! " + vm_mac + " -j DROP")
-        execute("ebtables -t nat -A " + vmchain_in + " -p ARP --arp-mac-src ! " + vm_mac + " -j DROP")
+        execute("ebtables -t nat -A " + vmchain_in + " -j " + vmchain_in_src)
+        execute("ebtables -t nat -I " + vmchain_in_src + " -s " + vm_mac + " -j RETURN")
+        execute("ebtables -t nat -A " + vmchain_in + " -p ARP -j " + vmchain_in_ips)
         if vm_ip:
-            execute("ebtables -t nat -A " + vmchain_in + " -p ARP -j " + vmchain_in_ips)
-            execute("ebtables -t nat -I " + vmchain_in_ips + " -p ARP --arp-ip-src " + vm_ip + " -j RETURN")
+            execute("ebtables -t nat -I " + vmchain_in_ips + " -p ARP -s " + vm_mac + " --arp-mac-src " + vm_mac + " --arp-ip-src " + vm_ip + " -j RETURN")
         execute("ebtables -t nat -A " + vmchain_in + " -p ARP --arp-op Request -j ACCEPT")
         execute("ebtables -t nat -A " + vmchain_in + " -p ARP --arp-op Reply -j ACCEPT")
         execute("ebtables -t nat -A " + vmchain_in + " -p ARP -j DROP")
@@ -275,9 +334,10 @@ def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif):
         return False
 
     try:
-        execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Reply --arp-mac-dst ! " + vm_mac + " -j DROP")
+        execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Reply -j " + vmchain_out_dst)
+        execute("ebtables -t nat -I " + vmchain_out_dst + " -p ARP --arp-op Reply --arp-mac-dst " + vm_mac + " -j RETURN")
+        execute("ebtables -t nat -A " + vmchain_out + " -p ARP -j " + vmchain_out_ips )
         if vm_ip:
-            execute("ebtables -t nat -A " + vmchain_out + " -p ARP -j " + vmchain_out_ips )
             execute("ebtables -t nat -I " + vmchain_out_ips + " -p ARP --arp-ip-dst " + vm_ip + " -j RETURN")
         execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Request -j ACCEPT")
         execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Reply -j ACCEPT")
@@ -286,6 +346,28 @@ def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif):
         logging.debug("Failed to program default ebtables OUT rules")
         return False
 
+def refactor_ebtable_rules(vm_name):
+    vmchain_in = vm_name + "-in"
+    vmchain_in_ips = vm_name + "-in-ips"
+    vmchain_in_src = vm_name + "-in-src"
+
+    try:
+        execute("ebtables -t nat -L " + vmchain_in_src)
+        logging.debug("Chain '" + vmchain_in_src + "' exists, ebtables rules have newer version, skip refactoring")
+        return True
+    except:
+        logging.debug("Chain '" + vmchain_in_src + "' does not exist, ebtables rules have old version, start refactoring")
+
+    vif = execute("ebtables -t nat -L PREROUTING | grep " + vmchain_in + " | awk '{print $2}'").strip()
+    vm_mac = execute("ebtables -t nat -L " + vmchain_in + " | grep arp-mac-src | awk '{print $5}'").strip()
+    vm_ips = execute("ebtables -t nat -L " + vmchain_in_ips + " | grep arp-ip-src | awk '{print $4}'").split('\n')
+
+    destroy_ebtables_rules(vm_name, vif)
+    default_ebtables_rules(vm_name, None, vm_mac, vif, True)
+    ebtables_rules_vmip(vm_name, vm_mac, vm_ips, "-A")
+
+    logging.debug("Refactoring ebtables rules for vm " + vm_name + " is done")
+    return True
 
 def default_network_rules_systemvm(vm_name, localbrname):
     bridges = get_bridges(vm_name)
@@ -382,8 +464,9 @@ def add_to_ipset(ipsetname, ips, action):
     return result
 
 
-def network_rules_vmSecondaryIp(vm_name, ip_secondary, action):
+def network_rules_vmSecondaryIp(vm_name, vm_mac, ip_secondary, action):
     logging.debug("vmName = "+ vm_name)
+    logging.debug("vmMac = " + vm_mac)
     logging.debug("action = "+ action)
 
     vmchain = vm_name
@@ -393,16 +476,16 @@ def network_rules_vmSecondaryIp(vm_name, ip_secondary, action):
 
     add_to_ipset(vmchain, ip4s, action)
 
-    #add ebtables rules for the secondary ips
-    ebtables_rules_vmip(vm_name, ip4s, action)
-
     #add ipv6 addresses to ipv6 ipset
     add_to_ipset(vmchain6, ip6s, action)
 
+    #add ebtables rules for the secondary ip
+    refactor_ebtable_rules(vm_name)
+    ebtables_rules_vmip(vm_name, vm_mac, [ip_secondary], action)
+
     return True
 
-
-def ebtables_rules_vmip (vmname, ips, action):
+def ebtables_rules_vmip (vmname, vmmac, ips, action):
     eb_vm_chain=ebtables_chain_name(vmname)
     vmchain_inips = eb_vm_chain + "-in-ips"
     vmchain_outips = eb_vm_chain + "-out-ips"
@@ -415,46 +498,75 @@ def ebtables_rules_vmip (vmname, ips, action):
         if ip == 0 or ip == "0":
             continue
         try:
-            execute("ebtables -t nat " + action + " " + vmchain_inips + " -p ARP --arp-ip-src " + ip + " -j RETURN")
+            execute("ebtables -t nat " + action + " " + vmchain_inips + " -p ARP -s " + vmmac + " --arp-mac-src " + vmmac + " --arp-ip-src " + ip + " -j RETURN")
             execute("ebtables -t nat " + action + " " + vmchain_outips + " -p ARP --arp-ip-dst " + ip + " -j RETURN")
         except:
             logging.debug("Failed to program ebtables rules for secondary ip %s for vm %s with action %s" % (ip, vmname, action))
 
+def check_default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec_ips, is_first_nic=False):
+    brfw = get_br_fw(brname)
+    vmchain_default = '-'.join(vm_name.split('-')[:-1]) + "-def"
+    try:
+        rules = execute("iptables-save |grep -w %s |grep -w %s |grep -w %s" % (brfw, vif, vmchain_default))
+    except:
+        rules = None
+    if rules is None or rules is "":
+        logging.debug("iptables rules do not exist, programming default rules for %s %s" % (vm_name,vif))
+        default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec_ips, is_first_nic)
+    else:
+        vmchain_in = vm_name + "-in"
+        try:
+            rules = execute("ebtables -t nat -L PREROUTING | grep %s |grep -w %s" % (vmchain_in, vif))
+        except:
+            rules = None
+        if rules is None or rules is "":
+            logging.debug("ebtables rules do not exist, programming default ebtables rules for %s %s" % (vm_name,vif))
+            default_ebtables_rules(vm_name, vm_ip, vm_mac, vif, is_first_nic)
+            ips = sec_ips.split(';')
+            ips.pop()
+            ebtables_rules_vmip(vm_name, vm_mac, ips, "-I")
+    return True
 
-def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec_ips):
+def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec_ips, is_first_nic=False):
     if not add_fw_framework(brname):
         return False
 
     vmName = vm_name
     brfw = get_br_fw(brname)
     domID = get_vm_id(vm_name)
-    delete_rules_for_vm_in_bridge_firewall_chain(vmName)
+
     vmchain = iptables_chain_name(vm_name)
     vmchain_egress = egress_chain_name(vm_name)
     vmchain_default = '-'.join(vmchain.split('-')[:-1]) + "-def"
     ipv6_link_local = ipv6_link_local_addr(vm_mac)
 
-    destroy_ebtables_rules(vm_name, vif)
-
-    for chain in [vmchain, vmchain_egress, vmchain_default]:
-        try:
-            execute('iptables -N ' + chain)
-        except:
-            execute('iptables -F ' + chain)
-
-        try:
-            execute('ip6tables -N ' + chain)
-        except:
-            execute('ip6tables -F ' + chain)
-
     action = "-A"
     vmipsetName = ipset_chain_name(vm_name)
     vmipsetName6 = vmipsetName + '-6'
 
-    #create ipset and add vm ips to that ip set
-    if not create_ipset_forvm(vmipsetName):
-        logging.debug("failed to create ipset for rule %s", vmipsetName)
-        return False
+    if is_first_nic:
+        delete_rules_for_vm_in_bridge_firewall_chain(vmName)
+        destroy_ebtables_rules(vmName, vif)
+
+        for chain in [vmchain, vmchain_egress, vmchain_default]:
+            try:
+                execute('iptables -N ' + chain)
+            except:
+                execute('iptables -F ' + chain)
+
+            try:
+                execute('ip6tables -N ' + chain)
+            except:
+                execute('ip6tables -F ' + chain)
+
+        #create ipset and add vm ips to that ip set
+        if not create_ipset_forvm(vmipsetName):
+            logging.debug("failed to create ipset for rule %s", vmipsetName)
+            return False
+
+        if not create_ipset_forvm(vmipsetName6, family='inet6', type='hash:net'):
+           logging.debug("failed to create ivp6 ipset for rule %s", vmipsetName6)
+           return False
 
     #add primary nic ip to ipset
     if not add_to_ipset(vmipsetName, [vm_ip], action ):
@@ -487,30 +599,29 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
         #allow dhcp
         execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -p udp --dport 67 --sport 68 -j ACCEPT")
         execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-out " + vif + " -p udp --dport 68 --sport 67  -j ACCEPT")
+        execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -p udp --sport 67 -j DROP")
 
         #don't let vm spoof its ip address
         if vm_ip:
             execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set ! --match-set " + vmipsetName + " src -j DROP")
+            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-out " + vif + " -m set ! --match-set " + vmipsetName + " dst -j DROP")
             execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --match-set " + vmipsetName + " src -p udp --dport 53  -j RETURN ")
             execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --match-set " + vmipsetName + " src -p tcp --dport 53  -j RETURN ")
             execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --match-set " + vmipsetName + " src -j " + vmchain_egress)
+
         execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-out " + vif + " -j " + vmchain)
         execute("iptables -A " + vmchain + " -j DROP")
     except:
         logging.debug("Failed to program default rules for vm " + vm_name)
         return False
 
-    default_ebtables_rules(vm_name, vm_ip, vm_mac, vif)
+    default_ebtables_rules(vmchain, vm_ip, vm_mac, vif, is_first_nic)
     #default ebtables rules for vm secondary ips
-    ebtables_rules_vmip(vm_name, ip4s, "-I")
+    ebtables_rules_vmip(vm_name, vm_mac, ip4s, "-I")
 
-    if vm_ip:
+    if vm_ip and is_first_nic:
         if not write_rule_log_for_vm(vmName, vm_id, vm_ip, domID, '_initial_', '-1'):
             logging.debug("Failed to log default network rules, ignoring")
-
-    if not create_ipset_forvm(vmipsetName6, family='inet6', type='hash:net'):
-        logging.debug(" failed to create ivp6 ipset for rule " + str(tokens))
-        return False
 
     vm_ip6_addr = [ipv6_link_local]
     try:
@@ -763,7 +874,8 @@ def get_rule_logs_for_vms():
             name = name.rstrip()
             if 1 not in [name.startswith(c) for c in ['r-', 's-', 'v-', 'i-'] ]:
                 continue
-            network_rules_for_rebooted_vm(name)
+            # Move actions on rebooted vm to java code
+            # network_rules_for_rebooted_vm(name)
             if name.startswith('i-'):
                 log = get_rule_log_for_vm(name)
                 result.append(log)
@@ -992,8 +1104,10 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
             logging.debug("Rules already programmed for vm " + vm_name)
             return True
 
-        if changes[0] or changes[1] or changes[2] or changes[3]:
-            default_network_rules(vmName, vm_id, vm_ip, vm_ip6, vmMac, vif, brname, sec_ips)
+        if rules == "" or rules == None:
+            lines = []
+        else:
+            lines = rules.split(';')[:-1]
 
         logging.debug("programming network rules for IP: " + vm_ip + " vmname=%s", vm_name)
 
@@ -1007,7 +1121,7 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
                 execute('ip6tables -F ' + chain)
         except:
             logging.debug("Error flushing iptables rules for " + vm_name + ". Presuming firewall rules deleted, re-initializing." )
-            default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vmMac, vif, brname, sec_ips)
+            default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vmMac, vif, brname, sec_ips, True)
 
         egressrule_v4 = 0
         egressrule_v6 = 0
@@ -1163,6 +1277,11 @@ def get_br_fw(brname):
 
 def add_fw_framework(brname):
     try:
+        execute("modprobe br_netfilter")
+    except:
+        logging.debug("failed to load kernel module br_netfilter")
+
+    try:
         execute("sysctl -w net.bridge.bridge-nf-call-arptables=1")
         execute("sysctl -w net.bridge.bridge-nf-call-iptables=1")
         execute("sysctl -w net.bridge.bridge-nf-call-ip6tables=1")
@@ -1239,6 +1358,236 @@ def add_fw_framework(brname):
             return False
         return False
 
+def verify_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec_ips):
+    if vm_name is None or vm_ip is None or vm_mac is None:
+        print("vm_name, vm_ip and vm_mac must be specifed")
+        sys.exit(1)
+
+    if vm_id is None:
+        vm_id = vm_name.split("-")[-2]
+
+    if brname is None:
+        brname = execute("virsh domiflist %s |grep -w '%s' |tr -s ' '|cut -d ' ' -f3" % (vm_name, vm_mac)).strip()
+    if brname is None or brname == "":
+        print("Cannot find bridge")
+        sys.exit(1)
+
+    if vif is None:
+        vif = execute("virsh domiflist %s |grep -w '%s' |tr -s ' '|cut -d ' ' -f1" % (vm_name, vm_mac)).strip()
+    if vif is None or vif == "":
+        print("Cannot find vif")
+        sys.exit(1)
+
+    #vm_name = "i-2-55-VM"
+    #vm_id = 55
+    #vm_ip = "10.11.118.128"
+    #vm_ip6 = "fe80::1c00:b4ff:fe00:5"
+    #vm_mac = "1e:00:b4:00:00:05"
+    #vif = "vnet11"
+    #brname = "cloudbr0"
+    #sec_ips = "10.11.118.133;10.11.118.135;10.11.118.138;" # end with ";" and seperated by ";"
+
+    vm_ips = []
+    if sec_ips is not None:
+        vm_ips = sec_ips.split(';')
+        vm_ips.pop()
+        vm_ips.reverse()
+    vm_ips.append(vm_ip)
+
+    if not verify_ipset_for_vm(vm_name, vm_id, vm_ips, vm_ip6):
+        sys.exit(2)
+    if not verify_iptables_rules_for_bridge(brname):
+        sys.exit(3)
+    if not verify_default_iptables_rules_for_vm(vm_name, vm_id, vm_ips, vm_ip6, vm_mac, vif, brname):
+        sys.exit(4)
+    if not verify_ebtables_rules_for_vm(vm_name, vm_id, vm_ips, vm_ip6, vm_mac, vif, brname):
+        sys.exit(5)
+
+    sys.exit(0)
+
+def verify_ipset_for_vm(vm_name, vm_id, vm_ips, vm_ip6):
+    vmipsetName = ipset_chain_name(vm_name)
+    vmipsetName6 = vmipsetName + '-6'
+
+    rules = []
+    for rule in execute("ipset list %s" % vmipsetName).split('\n'):
+        rules.append(rule)
+
+    # Check if all vm ips and ip6 exist
+    for vm_ip in vm_ips:
+        found = False
+        for rule in rules:
+            if rule == vm_ip:
+                found = True
+                break
+        if not found:
+            print("vm ip %s is not found" % vm_ip)
+            return False
+
+    rules = []
+    for rule in execute("ipset list %s" % vmipsetName6).split('\n'):
+        rules.append(rule)
+
+    if vm_ip6 is not None:
+        found = False
+        for rule in rules:
+            if rule == vm_ip6:
+                found = True
+                break
+        if not found:
+            print("vm ipv6 %s is not found" % vm_ip6)
+            return False
+
+    return True
+
+def verify_iptables_rules_for_bridge(brname):
+    brfw = get_br_fw(brname)
+    brfwin = brfw + "-IN"
+    brfwout = brfw + "-OUT"
+
+    expected_rules = []
+    expected_rules.append("-A FORWARD -o %s -m physdev --physdev-is-bridged -j %s" % (brname, brfw))
+    expected_rules.append("-A FORWARD -i %s -m physdev --physdev-is-bridged -j %s" % (brname, brfw))
+    expected_rules.append("-A %s -m state --state RELATED,ESTABLISHED -j ACCEPT" % (brfw))
+    expected_rules.append("-A %s -m physdev --physdev-is-in --physdev-is-bridged -j %s" % (brfw, brfwin))
+    expected_rules.append("-A %s -m physdev --physdev-is-out --physdev-is-bridged -j %s" % (brfw, brfwout))
+    phydev = execute("brctl show | awk '/^%s[ \t]/ {print $4}'" % brname ).strip()
+    expected_rules.append("-A %s -m physdev --physdev-out %s --physdev-is-bridged -j ACCEPT" % (brfw, phydev))
+
+    rules = execute("iptables-save |grep -w %s |grep -v \"^:\"" % brfw).split('\n')
+
+    return verify_expected_rules_exist(expected_rules, rules)
+
+def verify_default_iptables_rules_for_vm(vm_name, vm_id, vm_ips, vm_ip6, vm_mac, vif, brname):
+    brfw = get_br_fw(brname)
+    brfwin = brfw + "-IN"
+    brfwout = brfw + "-OUT"
+    vmchain = iptables_chain_name(vm_name)
+    vmchain_egress = egress_chain_name(vm_name)
+    vm_def = '-'.join(vm_name.split('-')[:-1]) + "-def"
+
+    expected_rules = []
+    expected_rules.append("-A %s -m physdev --physdev-in %s --physdev-is-bridged -j %s" % (brfwin, vif, vm_def))
+    expected_rules.append("-A %s -m physdev --physdev-out %s --physdev-is-bridged -j %s" % (brfwout, vif, vm_def))
+    expected_rules.append("-A %s -m state --state RELATED,ESTABLISHED -j ACCEPT" % (vm_def))
+    expected_rules.append("-A %s -p udp -m physdev --physdev-in %s --physdev-is-bridged -m udp --sport 68 --dport 67 -j ACCEPT" % (vm_def, vif))
+    expected_rules.append("-A %s -p udp -m physdev --physdev-out %s --physdev-is-bridged -m udp --sport 67 --dport 68 -j ACCEPT" % (vm_def, vif))
+    expected_rules.append("-A %s -p udp -m physdev --physdev-in %s --physdev-is-bridged -m udp --sport 67 -j DROP" % (vm_def, vif))
+    expected_rules.append("-A %s -m physdev --physdev-in %s --physdev-is-bridged -m set ! --match-set %s src -j DROP" % (vm_def, vif, vm_name))
+    expected_rules.append("-A %s -m physdev --physdev-out %s --physdev-is-bridged -m set ! --match-set %s dst -j DROP" % (vm_def, vif, vm_name))
+    expected_rules.append("-A %s -p udp -m physdev --physdev-in %s --physdev-is-bridged -m set --match-set %s src -m udp --dport 53 -j RETURN" % (vm_def, vif, vm_name))
+    expected_rules.append("-A %s -p tcp -m physdev --physdev-in %s --physdev-is-bridged -m set --match-set %s src -m tcp --dport 53 -j RETURN" % (vm_def, vif, vm_name))
+    expected_rules.append("-A %s -m physdev --physdev-in %s --physdev-is-bridged -m set --match-set %s src -j %s" % (vm_def, vif, vm_name, vmchain_egress))
+    expected_rules.append("-A %s -m physdev --physdev-out %s --physdev-is-bridged -j %s" % (vm_def, vif, vmchain))
+
+    rules = execute("iptables-save |grep -E \"%s|%s\" |grep -v \"^:\"" % (vm_name, vm_def)).split('\n')
+
+    return verify_expected_rules_in_order(expected_rules, rules)
+
+def verify_ebtables_rules_for_vm(vm_name, vm_id, vm_ips, vm_ip6, vm_mac, vif, brname):
+    vmchain_in = vm_name + "-in"
+    vmchain_out = vm_name + "-out"
+    vmchain_in_ips = vm_name + "-in-ips"
+    vmchain_out_ips = vm_name + "-out-ips"
+    vmchain_in_src = vm_name + "-in-src"
+    vmchain_out_dst = vm_name + "-out-dst"
+
+    new_mac = trim_mac_address(vm_mac)
+
+    # PREROUTING/POSTROUTING
+    expected_rules = []
+    expected_rules.append("-A PREROUTING -i %s -j %s" % (vif, vmchain_in))
+    expected_rules.append("-A POSTROUTING -o %s -j %s" % (vif, vmchain_out))
+    rules = execute("ebtables-save |grep -E \"PREROUTING|POSTROUTING\" | grep %s" % vm_name).split('\n')
+    if not verify_expected_rules_exist(expected_rules, rules):
+        return False
+
+    rules = execute("ebtables-save | grep %s" % vm_name).split('\n')
+
+    # vmchain_in
+    expected_rules = []
+    expected_rules.append("-A %s -j %s" % (vmchain_in, vmchain_in_src))
+    expected_rules.append("-A %s -p ARP -j %s" % (vmchain_in, vmchain_in_ips))
+    expected_rules.append("-A %s -p ARP --arp-op Request -j ACCEPT" % (vmchain_in))
+    expected_rules.append("-A %s -p ARP --arp-op Reply -j ACCEPT" % (vmchain_in))
+    expected_rules.append("-A %s -p ARP -j DROP" % (vmchain_in))
+    if not verify_expected_rules_in_order(expected_rules, rules):
+        return False
+
+    # vmchain_in_src
+    expected_rules = []
+    expected_rules.append("-A %s -s %s -j RETURN" % (vmchain_in_src, new_mac))
+    expected_rules.append("-A %s -j DROP" % (vmchain_in_src))
+    if not verify_expected_rules_in_order(expected_rules, rules):
+        return False
+
+    # vmchain_in_ips
+    expected_rules = []
+    for vm_ip in vm_ips:
+        expected_rules.append("-A %s -p ARP -s %s --arp-ip-src %s --arp-mac-src %s -j RETURN" % (vmchain_in_ips, new_mac, vm_ip, new_mac))
+    expected_rules.append("-A %s -j DROP" % (vmchain_in_ips))
+    if not verify_expected_rules_in_order(expected_rules, rules):
+        return False
+
+    # vmchain_out
+    expected_rules = []
+    expected_rules.append("-A %s -p ARP --arp-op Reply -j %s" % (vmchain_out, vmchain_out_dst))
+    expected_rules.append("-A %s -p ARP -j %s" % (vmchain_out, vmchain_out_ips))
+    expected_rules.append("-A %s -p ARP --arp-op Request -j ACCEPT" % (vmchain_out))
+    expected_rules.append("-A %s -p ARP --arp-op Reply -j ACCEPT" % (vmchain_out))
+    expected_rules.append("-A %s -p ARP -j DROP" % (vmchain_out))
+    if not verify_expected_rules_in_order(expected_rules, rules):
+        return False
+
+    # vmchain_out_dst
+    expected_rules = []
+    expected_rules.append("-A %s -p ARP --arp-op Reply --arp-mac-dst %s -j RETURN" % (vmchain_out_dst, new_mac))
+    expected_rules.append("-A %s -p ARP --arp-op Reply -j DROP" % (vmchain_out_dst))
+    if not verify_expected_rules_in_order(expected_rules, rules):
+        return False
+
+    # vmchain_out_ips
+    expected_rules = []
+    for vm_ip in vm_ips:
+        expected_rules.append("-A %s -p ARP --arp-ip-dst %s -j RETURN" % (vmchain_out_ips, vm_ip))
+    expected_rules.append("-A %s -j DROP" % (vmchain_out_ips))
+    if not verify_expected_rules_in_order(expected_rules, rules):
+        return False
+
+    return True
+
+def trim_mac_address(vm_mac):
+    new_mac = ""
+    for mac in vm_mac.split(":"):
+        if mac.startswith("0"):
+            new_mac += ":" + mac[1:]
+        else:
+            new_mac += ":" + mac
+    return new_mac[1:]
+
+def verify_expected_rules_exist(expected_rules, rules):
+    # Check if expected rules exist
+    for expected_rule in expected_rules:
+        found = False
+        for rule in rules:
+            if rule == expected_rule:
+                found = True
+                break
+        if not found:
+            print("Rule '%s' is not found" % expected_rule)
+            return False
+    return True
+
+def verify_expected_rules_in_order(expected_rules, rules):
+    # Check if expected rules exist in order (!!!)
+    i = 0
+    for rule in rules:
+        if i < len(expected_rules) and rule == expected_rules[i]:
+            i += 1
+    if i != len(expected_rules):
+        print("Cannot find rule '%s'" % expected_rules[i])
+        return False
+    return True
 
 if __name__ == '__main__':
     logging.basicConfig(filename="/var/log/cloudstack/agent/security_group.log", format="%(asctime)s - %(message)s", level=logging.DEBUG)
@@ -1261,6 +1610,8 @@ if __name__ == '__main__':
     parser.add_argument("--nicsecips", dest="nicSecIps")
     parser.add_argument("--action", dest="action")
     parser.add_argument("--privnic", dest="privnic")
+    parser.add_argument("--isFirstNic", action="store_true", dest="isFirstNic")
+    parser.add_argument("--check", action="store_true", dest="check")
     args = parser.parse_args()
     cmd = args.command
     logging.debug("Executing command: %s", cmd)
@@ -1274,10 +1625,15 @@ if __name__ == '__main__':
 
     if cmd == "can_bridge_firewall":
         can_bridge_firewall(args.privnic)
-    elif cmd == "default_network_rules":
-        default_network_rules(args.vmName, args.vmID, args.vmIP, args.vmIP6, args.vmMAC, args.vif, args.brname, args.nicSecIps)
+    elif cmd == "default_network_rules" and args.check:
+        check_default_network_rules(args.vmName, args.vmID, args.vmIP, args.vmIP6, args.vmMAC, args.vif, args.brname, args.nicSecIps, args.isFirstNic)
+    elif cmd == "default_network_rules" and not args.check:
+        default_network_rules(args.vmName, args.vmID, args.vmIP, args.vmIP6, args.vmMAC, args.vif, args.brname, args.nicSecIps, args.isFirstNic)
     elif cmd == "destroy_network_rules_for_vm":
-        destroy_network_rules_for_vm(args.vmName, args.vif)
+        if args.vmIP is None:
+            destroy_network_rules_for_vm(args.vmName, args.vif)
+        else:
+            destroy_network_rules_for_nic(args.vmName, args.vmIP, args.vmMAC, args.vif, args.nicSecIps)
     elif cmd == "default_network_rules_systemvm":
         default_network_rules_systemvm(args.vmName, args.localbrname)
     elif cmd == "get_rule_logs_for_vms":
@@ -1285,11 +1641,13 @@ if __name__ == '__main__':
     elif cmd == "add_network_rules":
         add_network_rules(args.vmName, args.vmID, args.vmIP, args.vmIP6, args.sig, args.seq, args.vmMAC, args.rules, args.vif, args.brname, args.nicSecIps)
     elif cmd == "network_rules_vmSecondaryIp":
-        network_rules_vmSecondaryIp(args.vmName, args.nicSecIps, args.action)
+        network_rules_vmSecondaryIp(args.vmName, args.vmMAC, args.nicSecIps, args.action)
     elif cmd == "cleanup_rules":
         cleanup_rules()
     elif cmd == "post_default_network_rules":
         post_default_network_rules(args.vmName, args.vmID, args.vmIP, args.vmMAC, args.vif, args.brname, args.dhcpSvr, args.hostIp, args.hostMacAddr)
+    elif cmd == "verify_network_rules":
+        verify_network_rules(args.vmName, args.vmID, args.vmIP, args.vmIP6, args.vmMAC, args.vif, args.brname, args.nicSecIps)
     else:
         logging.debug("Unknown command: " + cmd)
         sys.exit(1)

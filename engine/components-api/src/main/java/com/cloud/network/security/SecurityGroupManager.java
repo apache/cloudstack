@@ -53,4 +53,6 @@ public interface SecurityGroupManager {
     SecurityGroup getSecurityGroup(String name, long accountId);
 
     boolean isVmMappedToDefaultSecurityGroup(long vmId);
+
+    void scheduleRulesetUpdateToHosts(List<Long> affectedVms, boolean updateSeqno, Long delayMs);
 }

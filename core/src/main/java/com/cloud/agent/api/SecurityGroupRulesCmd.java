@@ -30,6 +30,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.utils.net.NetUtils;
 
 public class SecurityGroupRulesCmd extends Command {
@@ -51,6 +52,7 @@ public class SecurityGroupRulesCmd extends Command {
     private List<IpPortAndProto> ingressRuleSet;
     private List<IpPortAndProto> egressRuleSet;
     private final List<String> secIps;
+    private VirtualMachineTO vmTO;
 
     public static class IpPortAndProto {
         private final String proto;
@@ -250,6 +252,14 @@ public class SecurityGroupRulesCmd extends Command {
 
     public Long getVmId() {
         return vmId;
+    }
+
+    public void setVmTO(VirtualMachineTO vmTO) {
+        this.vmTO = vmTO;
+    }
+
+    public VirtualMachineTO getVmTO() {
+        return vmTO;
     }
 
     /**
