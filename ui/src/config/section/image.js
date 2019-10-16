@@ -22,7 +22,7 @@ export default {
         },
         {
           api: 'getUploadParamsForVolume',
-          icon: 'upload',
+          icon: 'cloud-upload',
           label: 'Upload Local Template',
           listView: true,
           popup: true,
@@ -84,7 +84,7 @@ export default {
         },
         {
           api: 'getUploadParamsForIso',
-          icon: 'upload',
+          icon: 'cloud-upload',
           label: 'Upload Local Iso',
           listView: true,
           popup: true,

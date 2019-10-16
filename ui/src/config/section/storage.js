@@ -21,14 +21,14 @@ export default {
           listView: true
         }, {
           api: 'uploadVolume',
-          icon: 'cloud-upload',
+          icon: 'link',
           label: 'Upload Volume From URL',
           type: 'main',
           args: ['url', 'name', 'zoneid', 'format', 'diskofferingid', 'checksum'],
           listView: true
         }, {
           api: 'getUploadParamsForVolume',
-          icon: 'upload',
+          icon: 'cloud-upload',
           label: 'Upload Local Volume',
           listView: true,
           popup: true,

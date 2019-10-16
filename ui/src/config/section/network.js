@@ -204,6 +204,30 @@ export default {
       ]
     },
     {
+      name: 'vpnuser',
+      title: 'VPN Users',
+      icon: 'user',
+      permission: [ 'listVpnUsers' ],
+      columns: ['username', 'state', 'account', 'domain'],
+      details: ['username', 'state', 'account', 'domain'],
+      actions: [
+        {
+          api: 'addVpnUser',
+          icon: 'plus',
+          label: 'Add VPN User',
+          listView: true,
+          args: ['username', 'password', 'domainid', 'account']
+        },
+        {
+          api: 'removeVpnUser',
+          icon: 'delete',
+          label: 'Delete VPN User',
+          dataView: true,
+          args: ['username', 'domainid', 'account']
+        }
+      ]
+    },
+    {
       name: 'vpngateway',
       title: 'VPN Gateway',
       icon: 'lock',

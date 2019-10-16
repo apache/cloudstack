@@ -2,7 +2,6 @@ export default {
   name: 'plugin',
   title: 'Plugins',
   icon: 'heat-map',
-  permission: [ 'quotaSummary', 'cloudianSsoLogin' ],
   children: [
     {
       name: 'quota',
