@@ -1,0 +1,60 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+<template>
+  <div>
+    <a-button style="margin-bottom: 15px; float: right">
+      Add Setting
+    </a-button>
+    <setting-table
+      :columns="[{
+        title: $t('name'),
+        dataIndex: 'name',
+        width: '40%'
+      },{
+        title: $t('value'),
+        dataIndex: 'value',
+        width: '40%',
+        scopedSlots: { customRender: 'value' }
+      }]"
+      :items="Object.keys(resource.details).map(k => { return { name: k, value: resource.details[k] } })"
+      :loading="loading"
+    >
+    </setting-table>
+  </div>
+</template>
+
+<script>
+import SettingTable from '@/components/view/SettingTable'
+
+export default {
+  name: 'SettingsTab',
+  components: {
+    SettingTable
+  },
+  props: {
+    resource: {
+      type: Object,
+      required: true
+    },
+    loading: {
+      type: Boolean,
+      default: false
+    }
+  }
+}
+</script>

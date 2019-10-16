@@ -29,8 +29,9 @@
         <a-skeleton active v-if="loading" />
         <a-tabs
           v-else
-          :defaultActiveKey="tabs[0].name"
           style="width: 100%"
+          :animated="false"
+          :defaultActiveKey="tabs[0].name"
           @change="onTabChange" >
           <a-tab-pane
             v-for="tab in tabs"

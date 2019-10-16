@@ -29,6 +29,16 @@ export default {
       params: { 'templatefilter': 'executable' },
       columns: ['name', 'ostypename', 'status', 'hypervisor', 'account', 'domain'],
       details: ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled', 'directdownload', 'isextractable', 'isdynamicallyscalable', 'ispublic', 'isfeatured', 'crosszones', 'type', 'account', 'domain', 'created'],
+      tabs: [{
+        name: 'details',
+        component: () => import('@/components/view/DetailsTab.vue')
+      }, {
+        name: 'zones',
+        component: () => import('@/views/image/TemplateZones.vue')
+      }, {
+        name: 'settings',
+        component: () => import('@/views/image/TemplateSettings.vue')
+      }],
       actions: [
         {
           api: 'registerTemplate',

@@ -50,7 +50,7 @@ export default {
         component: () => import('@/views/compute/InstanceHardware.vue')
       }, {
         name: 'settings',
-        component: () => import('@/views/setting/ResourceSettingsTab.vue')
+        component: () => import('@/views/compute/InstanceSettings.vue')
       }],
       actions: [
         {
