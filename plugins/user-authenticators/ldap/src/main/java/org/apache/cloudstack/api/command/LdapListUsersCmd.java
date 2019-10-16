@@ -140,6 +140,7 @@ public class LdapListUsersCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ServerApiException {
+        cloudstackUsers = null;
         List<LdapUserResponse> ldapResponses = new ArrayList<LdapUserResponse>();
         final ListResponse<LdapUserResponse> response = new ListResponse<LdapUserResponse>();
         try {
