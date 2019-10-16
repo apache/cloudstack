@@ -11,9 +11,10 @@ export default {
       resourceType: 'UserVm',
       columns: [
         { 'name': (record) => { return record.displayname } }, 'state', 'instancename',
-        { 'ipaddress': (record) => { return record.nic[0].ipaddress } }, 'account', 'zonename',
+        { 'ipaddress': (record) => { return record.nic[0].ipaddress } },
         'cpunumber', 'cpuused', 'cputotal', 'memoryintfreekbs', 'memorytotal',
-        'networkread', 'networkwrite', 'diskkbsread', 'diskkbswrite', 'diskiopstotal'
+        'networkread', 'networkwrite', 'diskkbsread', 'diskkbswrite', 'diskiopstotal',
+        'account', 'zonename'
       ],
       related: [{
         name: 'vmsnapshot',
