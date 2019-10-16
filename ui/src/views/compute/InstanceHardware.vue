@@ -84,16 +84,12 @@
 <script>
 
 import { api } from '@/api'
-import InfoCard from '@/views/common/InfoCard'
-import ListView from '@/components/widgets/ListView'
 import ResourceLayout from '@/layouts/ResourceLayout'
 import Status from '@/components/widgets/Status'
 
 export default {
   name: 'InstanceHardware',
   components: {
-    InfoCard,
-    ListView,
     ResourceLayout,
     Status
   },

@@ -198,18 +198,17 @@
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
+
 import Breadcrumb from '@/components/widgets/Breadcrumb'
-import CardView from '@/components/widgets/CardView'
-import ChartCard from '@/components/chart/ChartCard'
-import ListView from '@/components/widgets/ListView'
-import ResourceView from '@/views/common/ResourceView'
 import Status from '@/components/widgets/Status'
+import ChartCard from '@/components/chart/ChartCard'
+import ListView from '@/components/view/ListView'
+import ResourceView from '@/components/view/ResourceView'
 
 export default {
   name: 'Resource',
   components: {
     Breadcrumb,
-    CardView,
     ChartCard,
     ResourceView,
     ListView,

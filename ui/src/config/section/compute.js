@@ -61,7 +61,7 @@ export default {
           label: 'label.action.stop.instance',
           dataView: true,
           groupAction: true,
-          args: ['id'],
+          args: ['id', 'forced'],
           show: (record) => { return ['Running'].includes(record.state) }
         },
         {

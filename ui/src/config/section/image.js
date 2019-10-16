@@ -26,7 +26,7 @@ export default {
           label: 'Upload Local Template',
           listView: true,
           popup: true,
-          component: () => import('@/views/storage/UploadLocalTemplate.vue')
+          component: () => import('@/views/image/UploadLocalTemplate.vue')
         },
         {
           api: 'updateTemplate',
@@ -88,7 +88,7 @@ export default {
           label: 'Upload Local Iso',
           listView: true,
           popup: true,
-          component: () => import('@/views/storage/UploadLocalIso.vue')
+          component: () => import('@/views/image/UploadLocalIso.vue')
         },
         {
           api: 'updateIso',

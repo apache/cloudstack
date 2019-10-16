@@ -18,7 +18,7 @@ export default {
       }],
       tabs: [{
         name: 'details',
-        component: () => import('@/views/common/DetailsTab.vue')
+        component: () => import('@/components/view/DetailsTab.vue')
       }, {
         name: 'egress-rules',
         component: () => import('@/views/network/EgressConfigure.vue')
@@ -68,7 +68,7 @@ export default {
         component: () => import('@/views/network/VpcConfigure.vue')
       }, {
         name: 'details',
-        component: () => import('@/views/common/DetailsTab.vue')
+        component: () => import('@/components/view/DetailsTab.vue')
       }],
       actions: [
         {
@@ -111,7 +111,7 @@ export default {
       details: ['name', 'id', 'description', 'account', 'domain'],
       tabs: [{
         name: 'details',
-        component: () => import('@/views/common/DetailsTab.vue')
+        component: () => import('@/components/view/DetailsTab.vue')
       }, {
         name: 'ingress-rules',
         component: () => import('@/views/network/IngressRuleConfigure.vue')
@@ -153,7 +153,7 @@ export default {
         component: () => import('@/views/network/VpnDetails.vue')
       }, {
         name: 'details',
-        component: () => import('@/views/common/DetailsTab.vue')
+        component: () => import('@/components/view/DetailsTab.vue')
       }],
       actions: [
         {

@@ -29,8 +29,8 @@
 
 <script>
 
-import DetailsTab from '@/views/common/DetailsTab'
-import InfoCard from '@/views/common/InfoCard'
+import DetailsTab from '@/components/view/DetailsTab'
+import InfoCard from '@/components/view/InfoCard'
 import ResourceLayout from '@/layouts/ResourceLayout'
 
 export default {

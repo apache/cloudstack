@@ -9,7 +9,7 @@
 </template>
 
 <script>
-import ListView from '@/components/widgets/ListView'
+import ListView from '@/components/view/ListView'
 
 export default {
   name: 'ResourceSettingsTab',
