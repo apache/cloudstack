@@ -62,11 +62,13 @@ import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -554,8 +556,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         if (snapshotFullBackup != null) {
             fullSnapshot = snapshotFullBackup;
         }
+        boolean isKVMsnapshotsEnabled = SnapshotManager.VMsnapshotKVM.value() == null || SnapshotManager.VMsnapshotKVM.value();
         Map<String, String> options = new HashMap<String, String>();
         options.put("fullSnapshot", fullSnapshot.toString());
+        String param = isKVMsnapshotsEnabled && snapshotInfo.getState() == Snapshot.State.BackingUpForVM  ? "true" : "false";
         Answer answer = null;
         try {
             if (needCacheStorage(srcData, destData)) {
@@ -565,6 +569,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneFlagOnVMwareDest(destData.getTO()), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
                 cmd.setCacheTO(cacheData.getTO());
                 cmd.setOptions(options);
+                cmd.setContextParam("kvmsnapshot", param);
                 EndPoint ep = selector.select(srcData, destData);
                 if (ep == null) {
                     String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
@@ -577,6 +582,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 addFullCloneFlagOnVMwareDest(destData.getTO());
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
                 cmd.setOptions(options);
+                cmd.setContextParam("kvmsnapshot", param);
                 EndPoint ep = selector.select(srcData, destData, StorageAction.BACKUPSNAPSHOT);
                 if (ep == null) {
                     String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";

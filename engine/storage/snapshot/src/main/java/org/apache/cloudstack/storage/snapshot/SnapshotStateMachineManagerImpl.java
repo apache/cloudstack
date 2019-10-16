@@ -35,14 +35,25 @@ public class SnapshotStateMachineManagerImpl implements SnapshotStateMachineMana
 
     public SnapshotStateMachineManagerImpl() {
         stateMachine.addTransition(Snapshot.State.Allocated, Event.CreateRequested, Snapshot.State.Creating);
+        stateMachine.addTransition(Snapshot.State.AllocatedKVM,Event.CreateRequested, Snapshot.State.CreatingForVM);
         stateMachine.addTransition(Snapshot.State.Creating, Event.OperationSucceeded, Snapshot.State.CreatedOnPrimary);
         stateMachine.addTransition(Snapshot.State.Creating, Event.OperationNotPerformed, Snapshot.State.BackedUp);
         stateMachine.addTransition(Snapshot.State.Creating, Event.OperationFailed, Snapshot.State.Error);
+        stateMachine.addTransition(Snapshot.State.CreatingForVM, Event.OperationSucceeded, Snapshot.State.CreatedOnPrimaryForVM);
+        stateMachine.addTransition(Snapshot.State.CreatingForVM, Event.OperationNotPerformed, Snapshot.State.BackedUpForVM);
+        stateMachine.addTransition(Snapshot.State.CreatingForVM, Event.OperationFailed, Snapshot.State.Error);
         stateMachine.addTransition(Snapshot.State.CreatedOnPrimary, Event.BackupToSecondary, Snapshot.State.BackingUp);
         stateMachine.addTransition(Snapshot.State.CreatedOnPrimary, Event.OperationNotPerformed, Snapshot.State.BackedUp);
+        stateMachine.addTransition(Snapshot.State.CreatedOnPrimaryForVM, Event.BackupToSecondary, Snapshot.State.BackingUpForVM);
+        stateMachine.addTransition(Snapshot.State.CreatedOnPrimaryForVM, Event.OperationNotPerformed, Snapshot.State.BackedUpForVM);
         stateMachine.addTransition(Snapshot.State.BackingUp, Event.OperationSucceeded, Snapshot.State.BackedUp);
         stateMachine.addTransition(Snapshot.State.BackingUp, Event.OperationFailed, Snapshot.State.Error);
         stateMachine.addTransition(Snapshot.State.BackingUp, Event.OperationNotPerformed, State.BackedUp);
+        stateMachine.addTransition(Snapshot.State.BackingUpForVM, Event.OperationSucceeded, Snapshot.State.BackedUpForVM);
+        stateMachine.addTransition(Snapshot.State.BackingUpForVM, Event.OperationFailed, Snapshot.State.Error);
+        stateMachine.addTransition(Snapshot.State.BackingUpForVM, Event.BackupToSecondary, Snapshot.State.BackingUpForVM);
+        stateMachine.addTransition(Snapshot.State.BackedUpForVM, Event.CopyingRequested, Snapshot.State.Copying);
+        stateMachine.addTransition(Snapshot.State.BackedUpForVM, Event.BackupToSecondary, Snapshot.State.BackingUpForVM);
         stateMachine.addTransition(Snapshot.State.BackedUp, Event.DestroyRequested, Snapshot.State.Destroying);
         stateMachine.addTransition(Snapshot.State.BackedUp, Event.CopyingRequested, Snapshot.State.Copying);
         stateMachine.addTransition(Snapshot.State.BackedUp, Event.BackupToSecondary, Snapshot.State.BackingUp);

@@ -31,13 +31,20 @@ import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
@@ -64,6 +71,7 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.qemu.QemuCommand;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
@@ -117,9 +125,11 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.S3.S3Utils;
+import com.google.gson.Gson;
 
 public class KVMStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(KVMStorageProcessor.class);
@@ -898,6 +908,8 @@ public class KVMStorageProcessor implements StorageProcessor {
         Connect conn = null;
         KVMPhysicalDisk snapshotDisk = null;
         KVMStoragePool primaryPool = null;
+        boolean isKVMEnabled = cmd.getContextParam("kvmsnapshot") != null ? Boolean.parseBoolean(cmd.getContextParam("kvmsnapshot")) : false;
+        s_logger.debug(String.format("Snapshots on KVM is enabled %s", isKVMEnabled));
         try {
             conn = LibvirtConnection.getConnectionByVmName(vmName);
 
@@ -957,25 +969,66 @@ public class KVMStorageProcessor implements StorageProcessor {
                     return new CopyCmdAnswer(e.toString());
                 }
             } else {
-                final Script command = new Script(_manageSnapshotPath, cmd.getWaitInMillSeconds(), s_logger);
-                command.add("-b", snapshotDisk.getPath());
-                command.add(NAME_OPTION, snapshotName);
-                command.add("-p", snapshotDestPath);
-                if (isCreatedFromVmSnapshot) {
-                    descName = UUID.randomUUID().toString();
-                }
-                command.add("-t", descName);
-                final String result = command.execute();
-                if (result != null) {
-                    s_logger.debug("Failed to backup snaptshot: " + result);
-                    return new CopyCmdAnswer(result);
-                }
-                final File snapFile = new File(snapshotDestPath + "/" + descName);
-                if(snapFile.exists()){
-                    size = snapFile.length();
+                if (isKVMEnabled) {
+                    Domain domain = resource.getDomain(conn, vmName);
+                    Callable<Boolean> job = qemuJobMonitor(domain);
+                    final ExecutorService executor = Executors.newSingleThreadExecutor();
+                    final Future<Boolean> future = executor.submit(job);
+                    executor.shutdown();
+                    try {
+                        //set timeout if the query-block-jobs isn't finished with drive-backup of volume
+                        if (!future.get(5, TimeUnit.MINUTES)) {
+                            return new CopyCmdAnswer("Could not backup snapshot due to timeout");
+                        }
+                    } catch (TimeoutException | InterruptedException | ExecutionException e) {
+                        executor.shutdownNow();
+                        File snapshotOnPrimary = new File(snapshot.getPath());
+                        if (snapshotOnPrimary.exists() && !snapshotOnPrimary.isDirectory()) {
+                            snapshotOnPrimary.delete();
+                            s_logger.info(String.format("Deleting snapshot from primary %s due to and exception", snapshot.getPath()));
+                        }
+                        return new CopyCmdAnswer("Could not backup snapshot due to timeout");
+                    }
+                    if (!executor.isTerminated()) {
+                        executor.shutdownNow();
+                    }
+                    try {
+                        final String snapshotFile = snapshotDestPath + "/" + snapshotName;
+                        File file = new File(snapshotDestPath);
+                        FileUtils.forceMkdir(file);
+                        QemuImgFile srcFile = new QemuImgFile(snapshot.getPath(), snapshotDisk.getFormat());
+                        QemuImgFile destFile = new QemuImgFile(snapshotFile, snapshotDisk.getFormat());
+
+                        QemuImg convert = new QemuImg(cmd.getWaitInMillSeconds());
+                        convert.convert(srcFile, destFile);
+                        final File snapFile = new File(snapshotFile);
+                        size = snapFile.exists() ? snapFile.length() : 0;
+                    } catch (IOException e) {
+                        return new CopyCmdAnswer(e.getMessage());
+                    } catch (QemuImgException e) {
+                        return new CopyCmdAnswer(e.getMessage());
+                    }
+                    s_logger.info("Backup executed successfuly");
+                } else {
+                    final Script command = new Script(_manageSnapshotPath, cmd.getWaitInMillSeconds(), s_logger);
+                    command.add("-b", snapshotDisk.getPath());
+                    command.add(NAME_OPTION, snapshotName);
+                    command.add("-p", snapshotDestPath);
+                    if (isCreatedFromVmSnapshot) {
+                        descName = UUID.randomUUID().toString();
+                    }
+                    command.add("-t", descName);
+                    final String result = command.execute();
+                    if (result != null) {
+                        s_logger.debug("Failed to backup snaptshot: " + result);
+                        return new CopyCmdAnswer(result);
+                    }
+                    final File snapFile = new File(snapshotDestPath + "/" + descName);
+                    if(snapFile.exists()){
+                        size = snapFile.length();
+                    }
                 }
             }
-
             final SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
             newSnapshot.setPath(snapshotRelPath + File.separator + descName);
             newSnapshot.setPhysicalSize(size);
@@ -1006,24 +1059,26 @@ public class KVMStorageProcessor implements StorageProcessor {
                     final KVMStoragePool primaryStorage = storagePoolMgr.getStoragePool(primaryStore.getPoolType(),
                             primaryStore.getUuid());
                     if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && !primaryStorage.isExternalSnapshot()) {
-                        final DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
-                        try {
-                            s_logger.info(String.format("Suspending VM '%s' to delete snapshot,", vm.getName()));
-                            vm.suspend();
-                        } catch (final LibvirtException e) {
-                            s_logger.error("Failed to suspend the VM", e);
-                            throw e;
-                        }
-                        snap.delete(0);
+                        if (!isKVMEnabled) {
+                            final DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
+                            try {
+                                s_logger.info(String.format("Suspending VM '%s' to delete snapshot,", vm.getName()));
+                                vm.suspend();
+                            } catch (final LibvirtException e) {
+                                s_logger.error("Failed to suspend the VM", e);
+                                throw e;
+                            }
+                            snap.delete(0);
 
-                        /*
-                         * libvirt on RHEL6 doesn't handle resume event emitted from
-                         * qemu
-                         */
-                        vm = resource.getDomain(conn, vmName);
-                        state = vm.getInfo().state;
-                        if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
-                            vm.resume();
+                            /*
+                             * libvirt on RHEL6 doesn't handle resume event emitted from
+                             * qemu
+                             */
+                            vm = resource.getDomain(conn, vmName);
+                            state = vm.getInfo().state;
+                            if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
+                                vm.resume();
+                            }
                         }
                     } else {
                         if (primaryPool.getType() != StoragePoolType.RBD) {
@@ -1043,6 +1098,32 @@ public class KVMStorageProcessor implements StorageProcessor {
                 s_logger.debug("Failed to delete secondary storage", ex);
             }
         }
+    }
+
+    private Callable<Boolean> qemuJobMonitor(Domain domain) {
+        Callable<Boolean> job = new Callable<Boolean>() {
+            @Override
+            public Boolean call() {
+                boolean hasFinished = false;
+                try {
+                    String result = domain.qemuMonitorCommand(new Gson()
+                            .toJson(QemuCommand.executeQemuCommand(QemuCommand.QEMU_QUERY_BLOCK_JOBS, null))
+                            .toString(), 0);
+                    while (!QemuCommand.isJobFinished(result)) {
+                        // execute the command every 3 sec. until we receive expected result
+                        Thread.sleep(3000);
+                        result = domain.qemuMonitorCommand(new Gson()
+                                .toJson(QemuCommand.executeQemuCommand(QemuCommand.QEMU_QUERY_BLOCK_JOBS, null))
+                                .toString(), 0);
+                    }
+                    hasFinished = true;
+                } catch (InterruptedException | LibvirtException e) {
+                    throw new CloudRuntimeException(e.getMessage());
+                }
+                return hasFinished;
+            }
+        };
+        return job;
     }
 
     private void deleteSnapshotViaManageSnapshotScript(final String snapshotName, KVMPhysicalDisk snapshotDisk) {
@@ -1481,22 +1562,62 @@ public class KVMStorageProcessor implements StorageProcessor {
             final KVMPhysicalDisk disk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volume.getPath());
             if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && !primaryPool.isExternalSnapshot()) {
                 final String vmUuid = vm.getUUIDString();
-                final Object[] args = new Object[] {snapshotName, vmUuid};
-                final String snapshot = SnapshotXML.format(args);
+                boolean isKVMEnabled = cmd.getContextParam("kvmsnapshot") != null ? Boolean.parseBoolean(cmd.getContextParam("kvmsnapshot")) : false;
+                s_logger.debug(String.format("Snapshots on KVM is enabled %s", isKVMEnabled));
+                if (isKVMEnabled) {
+                    long size = 0;
+                    String queryBlockResult = vm.qemuMonitorCommand(new Gson().toJson(QemuCommand.executeQemuCommand(QemuCommand.QEMU_BLOCK, null)).toString(), 0);
+                    String path = disk.getPath();
+                    String snapshotDestPath = primaryPool.getLocalPath() + File.separator + "tmp";
+                    if (queryBlockResult != null) {
+                        String deviceName = QemuCommand.getDeviceName(queryBlockResult, path);
+                        if (deviceName != null) {
+                            try {
+                                FileUtils.forceMkdir(new File(snapshotDestPath));
+                            } catch (IOException e) {
+                                s_logger.debug("Could not create temporary directory for snapshot");
+                                return new CreateObjectAnswer("Could not create temporary directory for snapshot");
+                            }
+                            String snapshotPath = snapshotDestPath + File.separator + snapshotName;
+                            Map<String, String> qemuCmdArgs = new LinkedHashMap<>();
+                            qemuCmdArgs.put("device", deviceName);
+                            qemuCmdArgs.put("target", snapshotPath);
+                            qemuCmdArgs.put("sync", "full");
+                            String result = vm.qemuMonitorCommand(new Gson().toJson(QemuCommand.executeQemuCommand(QemuCommand.QEMU_DRIVE_BACKUP, qemuCmdArgs)).toString(), 0);
+                            if (QemuCommand.hasPassed(result)) {
+                                final File snapFile = new File(snapshotDestPath + "/" + snapshotName);
+                                if (snapFile.exists()) {
+                                    size = snapFile.length();
+                                }
+                                final SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
+                                newSnapshot.setPath(snapshotDestPath + File.separator + snapshotName);
+                                newSnapshot.setPhysicalSize(size);
+                                return new CreateObjectAnswer(newSnapshot);
+                            } else {
+                                s_logger.debug("Failed to take snapshot: ");
+                                return new CreateObjectAnswer("Failed to take snapshot");
+                            }
+                        } else {
+                            return new CreateObjectAnswer("Could not find device for snapshot");
+                        }
+                    }
+                } else {
+                    final Object[] args = new Object[] { snapshotName, vmUuid };
+                    final String snapshot = SnapshotXML.format(args);
 
-                final long start = System.currentTimeMillis();
-                vm.snapshotCreateXML(snapshot);
-                final long total = (System.currentTimeMillis() - start)/1000;
-                s_logger.debug("snapshot takes " + total + " seconds to finish");
+                    final long start = System.currentTimeMillis();
+                    vm.snapshotCreateXML(snapshot);
+                    final long total = (System.currentTimeMillis() - start) / 1000;
+                    s_logger.debug("snapshot takes " + total + " seconds to finish");
 
-                /*
-                 * libvirt on RHEL6 doesn't handle resume event emitted from
-                 * qemu
-                 */
-                vm = resource.getDomain(conn, vmName);
-                state = vm.getInfo().state;
-                if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
-                    vm.resume();
+                    /*
+                     * libvirt on RHEL6 doesn't handle resume event emitted from qemu
+                     */
+                    vm = resource.getDomain(conn, vmName);
+                    state = vm.getInfo().state;
+                    if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
+                        vm.resume();
+                    }
                 }
             } else {
                 /**
@@ -1672,6 +1793,10 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else if (primaryPool.getType() == StoragePoolType.NetworkFilesystem || primaryPool.getType() == StoragePoolType.Filesystem) {
                 s_logger.info(String.format("Deleting snapshot (id=%s, name=%s, path=%s, storage type=%s) on primary storage", snapshotTO.getId(), snapshotTO.getName(), snapshotTO.getPath(), primaryPool.getType()));
                 deleteSnapshotViaManageSnapshotScript(snapshotName, disk);
+                File snapshotOnPrimary = new File(snapshotTO.getPath());
+                if (snapshotOnPrimary.exists() && !snapshotOnPrimary.isDirectory()) {
+                    snapshotOnPrimary.delete();
+                }
             } else {
                 s_logger.warn("Operation not implemented for storage pool type of " + primaryPool.getType().toString());
                 throw new InternalErrorException("Operation not implemented for storage pool type of " + primaryPool.getType().toString());

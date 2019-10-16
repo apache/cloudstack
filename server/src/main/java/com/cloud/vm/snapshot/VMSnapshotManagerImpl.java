@@ -85,6 +85,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -109,12 +110,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmWork;
 import com.cloud.vm.VmWorkConstants;
 import com.cloud.vm.VmWorkJobHandler;
@@ -358,9 +359,13 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             throw new InvalidParameterValueException("Can not snapshot memory when VM is not in Running state");
         }
 
+        boolean isKVMsnapshotsEnabled = SnapshotManager.VMsnapshotKVM.value() == null || SnapshotManager.VMsnapshotKVM.value();
+
         // for KVM, only allow snapshot with memory when VM is in running state
         if (userVmVo.getHypervisorType() == HypervisorType.KVM && userVmVo.getState() == State.Running && !snapshotMemory) {
-            throw new InvalidParameterValueException("KVM VM does not allow to take a disk-only snapshot when VM is in running state");
+            if (!isKVMsnapshotsEnabled) {
+                throw new InvalidParameterValueException("KVM VM does not allow to take a disk-only snapshot when VM is in running state");
+            }
         }
 
         // check access
@@ -379,8 +384,10 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             if (activeSnapshots.size() > 0) {
                 throw new CloudRuntimeException("There is other active volume snapshot tasks on the instance to which the volume is attached, please try again later.");
             }
-            if (userVmVo.getHypervisorType() == HypervisorType.KVM && volume.getFormat() != ImageFormat.QCOW2) {
-                throw new CloudRuntimeException("We only support create vm snapshots from vm with QCOW2 image");
+            if (userVmVo.getHypervisorType() == HypervisorType.KVM && volume.getFormat() != ImageFormat.QCOW2 ) {
+                if (!isKVMsnapshotsEnabled || snapshotMemory) {
+                    throw new CloudRuntimeException("We only support create vm snapshots from vm with QCOW2 image");
+                }
             }
         }
 
