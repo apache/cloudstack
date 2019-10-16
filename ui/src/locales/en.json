@@ -119,7 +119,7 @@
     "cpuallocated": "CPU Allocated for VMs",
     "cpuallocatedghz": "Allocated",
     "cpumaxdeviation": "Deviation",
-    "cpunumber": "# of CPU Cores",
+    "cpunumber": "CPU Cores",
     "cpusockets": "The Number of CPU Sockets",
     "cpuspeed": "CPU (in MHz)",
     "cputotal": "Total",

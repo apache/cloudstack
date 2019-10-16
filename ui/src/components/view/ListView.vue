@@ -17,9 +17,9 @@
     </template>
 
     <a slot="name" slot-scope="text, record" href="javascript:;">
+      <console :resource="record" size="small" />&nbsp;
       <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
       <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
-      <console :resource="record" size="small" style="float: right" />
     </a>
     <a slot="displayname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -29,8 +29,10 @@
     </a>
     <a slot="ipaddress" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-      &nbsp;
-      <a-tag v-if="record.issourcenat">source-nat</a-tag>
+      <span v-if="record.issourcenat">
+        &nbsp;
+        <a-tag>source-nat</a-tag>
+      </span>
     </a>
     <a slot="vmname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
@@ -38,7 +40,12 @@
     <template slot="state" slot-scope="text">
       <status :text="text ? text : ''" displayText />
     </template>
-
+    <a slot="guestnetworkname" slot-scope="text, record" href="javascript:;">
+      <router-link :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
+    </a>
+    <a slot="vpcname" slot-scope="text, record" href="javascript:;">
+      <router-link :to="{ path: '/vpc/' + record.vpcid }">{{ text }}</router-link>
+    </a>
     <a slot="account" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/account/' + record.accountid }" v-if="record.accountid">{{ text }}</router-link>
       <router-link :to="{ path: '/account', query: { name: record.account, domainid: record.domainid } }" v-else>{{ text }}</router-link>
@@ -46,12 +53,17 @@
     <a slot="domain" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
     </a>
+    <a slot="hostname" slot-scope="text, record" href="javascript:;">
+      <router-link :to="{ path: '/host/' + record.hostid }">{{ text }}</router-link>
+    </a>
+    <a slot="clustername" slot-scope="text, record" href="javascript:;">
+      <router-link :to="{ path: '/cluster/' + record.clusterid }">{{ text }}</router-link>
+    </a>
+    <a slot="podname" slot-scope="text, record" href="javascript:;">
+      <router-link :to="{ path: '/pod/' + record.podid }">{{ text }}</router-link>
+    </a>
     <a slot="zonename" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
-    </a>
-
-    <a slot="guestnetworkname" slot-scope="text, record" href="javascript:;">
-      <router-link :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
     </a>
   </a-table>
 </template>

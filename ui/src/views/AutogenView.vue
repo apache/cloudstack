@@ -313,14 +313,16 @@ export default {
         })
       }
 
-      for (var key of this.columnKeys) {
-        if (typeof key === 'object') {
-          key = Object.keys(key)[0]
+      const customRender = {}
+      for (var columnKey of this.columnKeys) {
+        var key = columnKey
+        if (typeof columnKey === 'object') {
+          key = Object.keys(columnKey)[0]
+          customRender[key] = columnKey[key]
         }
         this.columns.push({
           title: this.$t(key),
           dataIndex: key,
-          width: key === 'state' ? '8%' : '',
           scopedSlots: { customRender: key },
           sorter: (a, b) => String(a[key]).length - String(b[key]).length
         })
@@ -358,6 +360,12 @@ export default {
         }
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx]['key'] = idx
+          for (const key in customRender) {
+            const func = customRender[key]
+            if (func && typeof func === 'function') {
+              this.items[idx][key] = func(this.items[idx])
+            }
+          }
         }
         if (this.items.length > 0) {
           this.resource = this.items[0]
@@ -399,10 +407,6 @@ export default {
     closeAction () {
       this.currentAction.loading = false
       this.showAction = false
-      if (this.currentAction.icon === 'delete') {
-        this.currentAction = {}
-        this.$router.go(-1)
-      }
       this.currentAction = {}
     },
     execAction (action) {
@@ -518,8 +522,6 @@ export default {
             params['id'] = this.resource['id']
           }
 
-          const closeAction = this.closeAction
-          const showError = this.$notification['error']
           api(this.currentAction.api, params).then(json => {
             for (const obj in json) {
               if (obj.includes('response')) {
@@ -532,16 +534,20 @@ export default {
                 break
               }
             }
-            closeAction()
-          }).catch(function (error) {
-            closeAction()
+            if (this.currentAction.icon === 'delete') {
+              this.$router.go(-1)
+            }
+          }).catch(error => {
             console.log(error)
-            showError({
+            this.$notification['error']({
               message: 'Request Failed',
               description: error.response.headers['x-description']
             })
+          }).finally(f => {
+            this.closeAction()
           })
 
+          // TODO: listen for notification success/fail and refresh
           const fetchData = this.fetchData
           setTimeout(function () {
             fetchData()

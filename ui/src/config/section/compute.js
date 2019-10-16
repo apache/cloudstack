@@ -10,10 +10,13 @@ export default {
       permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ],
       resourceType: 'UserVm',
       columns: [
-        { 'name': (record) => { return record.displayname } }, 'state', 'instancename',
-        { 'ipaddress': (record) => { return record.nic[0].ipaddress } },
-        'cpunumber', 'cpuused', 'cputotal', 'memoryintfreekbs', 'memorytotal',
-        'networkread', 'networkwrite', 'diskkbsread', 'diskkbswrite', 'diskiopstotal',
+        'name', 'state', 'instancename', 'ipaddress', 'cpunumber', 'cpuused', 'cputotal',
+        { 'memoryused':
+          (record) => {
+            return record.memorykbs && record.memoryintfreekbs ? parseFloat(100.0 * (record.memorykbs - record.memoryintfreekbs) / record.memorykbs).toFixed(2) + '%' : '0.0%'
+          }
+        },
+        'memorytotal', 'networkread', 'networkwrite', 'diskkbsread', 'diskkbswrite', 'diskiopstotal',
         'account', 'zonename'
       ],
       related: [{
