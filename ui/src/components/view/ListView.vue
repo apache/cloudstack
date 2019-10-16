@@ -93,9 +93,9 @@ export default {
   methods: {
     getRowClassName (record, index) {
       if (index % 2 === 0) {
-        return 'dark-row'
+        return 'light-row'
       }
-      return 'light-row'
+      return 'dark-row'
     },
     onSelectChange (selectedRowKeys) {
       console.log('selectedRowKeys changed: ', selectedRowKeys)
@@ -106,6 +106,10 @@ export default {
 </script>
 
 <style scoped>
+/deep/ .ant-table-thead {
+  background-color: #f9f9f9;
+}
+
 /deep/ .light-row {
   background-color: #fff;
 }
