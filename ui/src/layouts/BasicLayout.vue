@@ -9,7 +9,7 @@
 
 <script>
 import RouteView from '@/layouts/RouteView'
-import MultiTab from '@/components/MultiTab'
+import MultiTab from '@/components/multitab'
 import GlobalLayout from '@/components/page/GlobalLayout'
 
 export default {

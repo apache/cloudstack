@@ -18,7 +18,7 @@
 
 <script>
 import ALayoutSider from 'ant-design-vue/es/layout/Sider'
-import Logo from '../tools/Logo'
+import Logo from '../header/Logo'
 import SMenu from './index'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 

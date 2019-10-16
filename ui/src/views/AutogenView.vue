@@ -200,8 +200,8 @@ import { mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
 
 import Breadcrumb from '@/components/widgets/Breadcrumb'
+import ChartCard from '@/components/widgets/ChartCard'
 import Status from '@/components/widgets/Status'
-import ChartCard from '@/components/chart/ChartCard'
 import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 

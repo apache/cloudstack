@@ -40,9 +40,9 @@
 
 <script>
 import Breadcrumb from '@/components/widgets/Breadcrumb'
-import Logo from '../tools/Logo'
+import Logo from '../header/Logo'
 import SMenu from '../menu/'
-import UserMenu from '../tools/UserMenu'
+import UserMenu from '../header/UserMenu'
 
 import { mixin } from '@/utils/mixin.js'
 

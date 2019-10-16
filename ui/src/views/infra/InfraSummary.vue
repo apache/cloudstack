@@ -46,7 +46,7 @@
 import { api } from '@/api'
 import router from '@/router'
 
-import ChartCard from '@/components/chart/ChartCard'
+import ChartCard from '@/components/widgets/ChartCard'
 
 export default {
   name: 'InfraSummary',

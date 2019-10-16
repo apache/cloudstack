@@ -67,7 +67,7 @@
 
 <script>
 
-import ChartCard from '@/components/chart/ChartCard'
+import ChartCard from '@/components/widgets/ChartCard'
 
 export default {
   name: 'FormView',

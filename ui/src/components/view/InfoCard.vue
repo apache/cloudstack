@@ -13,14 +13,7 @@
           <slot name="name">
             <h4>
               {{ resource.displayname || resource.name }}
-              <a
-                v-if="['vm', 'systemvm', 'router'].includes($route.meta.name)"
-                :href="'/client/console?cmd=access&vm=' + resource.id"
-                target="_blank">
-                <a-button shape="circle" >
-                  <a-icon type="code" />
-                </a-button>
-              </a>
+              <console :resource="resource" size="default" />
             </h4>
             <a-tag v-if="resource.instancename">
               {{ resource.instancename }}
@@ -372,12 +365,14 @@
 <script>
 
 import { api } from '@/api'
+import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 
 export default {
   name: 'InfoCard',
   components: {
+    Console,
     OsLogo,
     Status
   },

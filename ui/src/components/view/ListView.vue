@@ -19,6 +19,7 @@
     <a slot="name" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
       <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
+      <console :resource="record" size="small" style="float: right" />
     </a>
     <a slot="displayname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -56,11 +57,13 @@
 </template>
 
 <script>
+import Console from '@/components/widgets/Console'
 import Status from '@/components/widgets/Status'
 
 export default {
   name: 'ListView',
   components: {
+    Console,
     Status
   },
   props: {

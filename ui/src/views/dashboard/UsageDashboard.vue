@@ -48,13 +48,11 @@
 <script>
 import { api } from '@/api'
 
-import ChartCard from '@/components/chart/ChartCard'
-import ACol from 'ant-design-vue/es/grid/Col'
+import ChartCard from '@/components/widgets/ChartCard'
 
 export default {
   name: 'UsageDashboard',
   components: {
-    ACol,
     ChartCard
   },
   data () {

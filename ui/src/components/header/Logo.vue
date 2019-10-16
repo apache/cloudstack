@@ -6,7 +6,7 @@
 </template>
 
 <script>
-import ProjectMenu from '../tools/ProjectMenu'
+import ProjectMenu from './ProjectMenu'
 
 export default {
   name: 'Logo',
