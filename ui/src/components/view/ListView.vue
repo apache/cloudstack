@@ -18,7 +18,7 @@
 
     <a slot="name" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
-      <router-link :to="{ path: $route.path + '/?name=' + record.name }" v-else>{{ text }}</router-link>
+      <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
     </a>
     <a slot="displayname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>

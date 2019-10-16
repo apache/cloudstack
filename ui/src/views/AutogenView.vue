@@ -329,6 +329,9 @@ export default {
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params['id'] = this.$route.params.id
+        if (this.$route.path.startsWith('/ssh/')) {
+          params['name'] = this.$route.params.id
+        }
       }
       params['page'] = this.page
       params['pagesize'] = this.pageSize
@@ -358,9 +361,6 @@ export default {
         }
         if (this.items.length > 0) {
           this.resource = this.items[0]
-          if (this.items && this.items.length === 1 && Object.keys(this.$route.query).length > 0) {
-            this.dataView = true
-          }
         } else {
           this.resource = {}
         }
