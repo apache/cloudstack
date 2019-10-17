@@ -423,12 +423,12 @@
                                     $form.find(".field[rel='name']").show();
                                     $form.find(".field[rel='description']").show();
                                     $form.find(".field[rel='hypervisor']").show();
-                                    $form.find(".field[rel='hypervisor']").show();
                                     $form.find(".field[rel='activate']").show();
                                     $form.find(".field[rel='sourceZone']").show();
                                     $form.find(".field[rel='templates']").show();
                                     $form.find(".field[rel='format']").show();
                                     $form.find(".field[rel='osTypeId']").show();
+                                    $form.find(".field[rel='file']").hide();
                                 }
                                 // Copy from Zone
                                 if ($(this).val() == "copy"){
@@ -444,6 +444,7 @@
                                 if ($(this).val() == "official" || $(this).val() == "url" ){
                                     $form.find(".field[rel='sourceZone']").hide();
                                     $form.find(".field[rel='templates']").hide();
+                                    $form.find(".field[rel='file']").hide();
                                 } 
                                 // Upload from local
                                 if ($(this).val() == "upload" ){

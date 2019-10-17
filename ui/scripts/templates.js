@@ -2240,6 +2240,9 @@
                                             args.response.success({
                                                 data: item
                                             });
+                                        },
+                                        error: function(json) {
+                                            args.response.error(parseXMLHttpResponse(json));
                                         }
                                     }); //end ajax
                                 }
