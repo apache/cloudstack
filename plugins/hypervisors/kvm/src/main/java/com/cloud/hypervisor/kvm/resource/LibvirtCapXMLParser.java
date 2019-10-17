@@ -80,7 +80,8 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
             }
         } else if (qName.equalsIgnoreCase("arch")) {
             for (int i = 0; i < attributes.getLength(); i++) {
-                if (attributes.getQName(i).equalsIgnoreCase("name") && attributes.getValue(i).equalsIgnoreCase("x86_64")) {
+                if (attributes.getQName(i).equalsIgnoreCase("name") &&
+                        (attributes.getValue(i).equalsIgnoreCase("x86_64") || attributes.getValue(i).equalsIgnoreCase("aarch64"))) {
                     _archTypex8664 = true;
                 }
             }
