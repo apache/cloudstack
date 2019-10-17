@@ -34,7 +34,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -72,8 +71,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
 @Component
-public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
-    private static final Logger s_logger = Logger.getLogger(XenserverSnapshotStrategy.class);
+public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
+    private static final Logger s_logger = Logger.getLogger(DefaultSnapshotStrategy.class);
 
     @Inject
     SnapshotService snapshotSvr;
@@ -90,11 +89,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     @Inject
     SnapshotDataFactory snapshotDataFactory;
     @Inject
-    private SnapshotDao _snapshotDao;
-    @Inject
     private SnapshotDetailsDao _snapshotDetailsDao;
-    @Inject
-    private SyncQueueItemDao _syncQueueItemDao;
     @Inject
     VolumeDetailsDao _volumeDetailsDaoImpl;
 
@@ -269,63 +264,78 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId + " due to it is in " + snapshotVO.getState() + " Status");
         }
 
-        // first mark the snapshot as destroyed, so that ui can't see it, but we
-        // may not destroy the snapshot on the storage, as other snapshots may
-        // depend on it.
         SnapshotInfo snapshotOnImage = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Image);
+
+        boolean deletedOnSecondary = false;
         if (snapshotOnImage == null) {
-            s_logger.debug("Can't find snapshot on backup storage, delete it in db");
-            snapshotDao.remove(snapshotId);
-            return true;
+            s_logger.debug(String.format("Can't find snapshot [snapshot id: %d] on backup storage"));
+        } else {
+            SnapshotObject obj = (SnapshotObject)snapshotOnImage;
+            try {
+                deletedOnSecondary = deleteSnapshotOnSecundaryStorage(snapshotId, snapshotOnImage, obj);
+                if (!deletedOnSecondary) {
+                    s_logger.debug(
+                            String.format("Failed to find/delete snapshot (id: %d) on secondary storage. Still necessary to check and delete snapshot on primary storage.",
+                                    snapshotId));
+                } else {
+                    s_logger.debug(String.format("Snapshot (id: %d) has been deleted on secondary storage.", snapshotId));
+                }
+            } catch (NoTransitionException e) {
+                s_logger.debug("Failed to set the state to destroying: ", e);
+                return false;
+            }
         }
 
-        SnapshotObject obj = (SnapshotObject)snapshotOnImage;
-        try {
-            obj.processEvent(Snapshot.Event.DestroyRequested);
-            List<VolumeDetailVO> volumesFromSnapshot;
-            volumesFromSnapshot = _volumeDetailsDaoImpl.findDetails("SNAPSHOT_ID", String.valueOf(snapshotId), null);
-
-            if (volumesFromSnapshot.size() > 0) {
-                try {
-                    obj.processEvent(Snapshot.Event.OperationFailed);
-                } catch (NoTransitionException e1) {
-                    s_logger.debug("Failed to change snapshot state: " + e1.toString());
-                }
-                throw new InvalidParameterValueException("Unable to perform delete operation, Snapshot with id: " + snapshotId + " is in use  ");
-            }
-        } catch (NoTransitionException e) {
-            s_logger.debug("Failed to set the state to destroying: ", e);
-            return false;
+        boolean deletedOnPrimary = deleteSnapshotOnPrimary(snapshotId);
+        if (deletedOnPrimary) {
+            s_logger.debug(String.format("Successfully deleted snapshot (id: %d) on primary storage.", snapshotId));
+        } else if (deletedOnSecondary) {
+            s_logger.debug(String.format("The snapshot was deleted on secondary storage. Could not find/delete snapshot (id: %d) on primary storage.", snapshotId));
         }
+        return deletedOnSecondary || deletedOnPrimary;
+    }
 
-        try {
-            boolean result = deleteSnapshotChain(snapshotOnImage);
-            obj.processEvent(Snapshot.Event.OperationSucceeded);
-            if (result) {
-                //snapshot is deleted on backup storage, need to delete it on primary storage
-                SnapshotDataStoreVO snapshotOnPrimary = snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
-                if (snapshotOnPrimary != null) {
-                    SnapshotInfo snapshotOnPrimaryInfo = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
-                    long volumeId = snapshotOnPrimary.getVolumeId();
-                    VolumeVO volumeVO = volumeDao.findById(volumeId);
-                    if (((PrimaryDataStoreImpl)snapshotOnPrimaryInfo.getDataStore()).getPoolType() == StoragePoolType.RBD && volumeVO != null) {
-                        snapshotSvr.deleteSnapshot(snapshotOnPrimaryInfo);
-                    }
-                    snapshotOnPrimary.setState(State.Destroyed);
-                    snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
-                }
-            }
-        } catch (Exception e) {
-            s_logger.debug("Failed to delete snapshot: ", e);
+    /**
+     * Deletes the snapshot on secondary storage.
+     * It can return false when the snapshot was stored on primary storage and not backed up on secondary; therefore, the snapshot should also be deleted on primary storage even when this method returns false.
+     */
+    private boolean deleteSnapshotOnSecundaryStorage(Long snapshotId, SnapshotInfo snapshotOnImage, SnapshotObject obj) throws NoTransitionException {
+        obj.processEvent(Snapshot.Event.DestroyRequested);
+        List<VolumeDetailVO> volumesFromSnapshot;
+        volumesFromSnapshot = _volumeDetailsDaoImpl.findDetails("SNAPSHOT_ID", String.valueOf(snapshotId), null);
+
+        if (volumesFromSnapshot.size() > 0) {
             try {
                 obj.processEvent(Snapshot.Event.OperationFailed);
             } catch (NoTransitionException e1) {
-                s_logger.debug("Failed to change snapshot state: " + e.toString());
+                s_logger.debug("Failed to change snapshot state: " + e1.toString());
             }
-            return false;
+            throw new InvalidParameterValueException("Unable to perform delete operation, Snapshot with id: " + snapshotId + " is in use  ");
         }
 
-        return true;
+        boolean result = deleteSnapshotChain(snapshotOnImage);
+        obj.processEvent(Snapshot.Event.OperationSucceeded);
+        return result;
+    }
+
+    /**
+     * Deletes the snapshot on primary storage. It can return false when the snapshot was not stored on primary storage; however this does not means that it failed to delete the snapshot. </br>
+     * In case of failure, it will throw one of the following exceptions: CloudRuntimeException, InterruptedException, or ExecutionException. </br>
+     */
+    private boolean deleteSnapshotOnPrimary(Long snapshotId) {
+        boolean result = false;
+        SnapshotDataStoreVO snapshotOnPrimary = snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
+        if (snapshotOnPrimary != null) {
+            SnapshotInfo snapshotOnPrimaryInfo = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+            long volumeId = snapshotOnPrimary.getVolumeId();
+            VolumeVO volumeVO = volumeDao.findById(volumeId);
+            if (((PrimaryDataStoreImpl)snapshotOnPrimaryInfo.getDataStore()).getPoolType() == StoragePoolType.RBD && volumeVO != null) {
+                result = snapshotSvr.deleteSnapshot(snapshotOnPrimaryInfo);
+            }
+            snapshotOnPrimary.setState(State.Destroyed);
+            snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
+        }
+        return result;
     }
 
     @Override
