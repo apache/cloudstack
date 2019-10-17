@@ -436,6 +436,9 @@
                                     $form.find(".field[rel='name']").hide();
                                     $form.find(".field[rel='description']").hide();
                                     $form.find(".field[rel='hypervisor']").hide();
+                                    $form.find(".field[rel='file']").hide();
+                                    $form.find(".field[rel='format']").hide();
+                                    $form.find(".field[rel='osTypeId']").hide();
                                 } 
                                 // Official cloudstack system vm
                                 if ($(this).val() == "official" || $(this).val() == "url" ){

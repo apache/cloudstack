@@ -905,51 +905,58 @@
                                     });
                                     return 
                                 }
+
+                                zoneIds = [];
+                                if (data.zoneids == '-1'){
+                                    $.ajax({
+                                        url: createURL("listZones"),
+                                        async: false,
+                                        success: function(json){
+                                            for ( var i = 0; i < json.listzonesresponse.length; i++){
+                                                zoneIds.push(json.listzonesresponse[i].id);
+                                            }
+                                        },
+                                        error: function(XMLHttpResponse) {
+                                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                            args.response.error(errorMsg);
+                                        }
+                                    })
+                                } else {
+                                    zoneIds = data.zoneids.split(",");
+                                }
+
                                 // checking if there are any system vms to download the registered template.
                                 var systemVMS = false;
-                                if (Array.isArray(data.zoneids)){
-                                    for (var i = 0; i < data.zoneids.length; i++){
-                                        $.ajax({
-                                            url: createURL('listSystemVms'),
-                                            data: {'zoneid': data.zoneids[i]},
-                                            async: false,
-                                            success: function(json){
-                                                if(!$.isEmptyObject(json.listsystemvmsresponse)){
-                                                    systemVMS = true;
-                                                }
-                                            }
-                                        });
-                                    }
-                                }
-                                listSystemVMURL = "listSystemVms";
-                                if (data.zoneids != '-1'){
-                                    listSystemVMURL += "&zoneid=" + data.zoneids
-                                }
-                                // all zones
-                                $.ajax({
-                                    url: createURL(listSystemVMURL),
-                                    async: false,
-                                    success: function(json){
-                                        if(!$.isEmptyObject(json.listsystemvmsresponse)){
-                                            systemVMS = true;
-                                        }
-                                    }
-                                });
                                 
+                                for (var i = 0; i < zoneIds.length; i++){
+                                    $.ajax({
+                                        url: createURL('listSystemVms'),
+                                        data: {'zoneid': zoneIds[i]},
+                                        async: false,
+                                        success: function(json){
+                                            if(!$.isEmptyObject(json.listsystemvmsresponse)){
+                                                systemVMS = true;
+                                            }
+                                        }
+                                    });
+                                }
                                 // if we have system vms in this zone, execution can stop here
                                 if (systemVMS){
                                     args.response.success();
+                                    $("#basic_search").click();
                                     return;
                                 }
                                 // hide the window
                                 args.response.success({
                                     data: {}
                                 });
+                                $("#basic_search").click();
                                 // Seed the template via api call
                                 $.ajax({
                                     url: createURL('seedOfficialSystemVMTemplate&id=' + data.zoneids + '&hypervisor=' + data.hypervisor + '&url=' + data.url),
                                     data: data,
                                     success: function(json){
+                                        $("#basic_search").click();
                                         args.response.success({
                                             data: {}
                                         });
@@ -2240,6 +2247,9 @@
                             activateTemplate: {
                                 'label': 'label.action.activate.template',
                                 messages: {
+                                    confirm: function(args){
+                                        return 'message.action.activate.template';
+                                    },
                                     notification: function (args) {
                                         return 'label.action.activate.template';
                                     }

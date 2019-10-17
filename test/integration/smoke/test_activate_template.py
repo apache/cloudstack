@@ -29,7 +29,7 @@ from marvin.lib.common import (get_domain,
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from nose.plugins.attrib import attr
 import time
-from marvin.cloudstackAPI import (registerTemplate, listOsTypes, activateSystemVMTemplate, createZone)
+from marvin.cloudstackAPI import (registerTemplate, listOsTypes, activateSystemVMTemplate, createZone, listConfigurations, getSystemVMTemplateDefaultUrl)
 from marvin.lib.utils import cleanup_resources
 
 class TestActivateTemplate(cloudstackTestCase):
@@ -96,8 +96,11 @@ class TestActivateTemplate(cloudstackTestCase):
         self.md5 = "d40bce40b2d5bb4ba73e56d1e95aeae5"
 
         self.activateTemplateCmd = activateSystemVMTemplate.activateSystemVMTemplateCmd()
+        self.listConfigurationsCmd = listConfigurations.listConfigurationsCmd()
+        self.listConfigurationsCmd.name = 'router.template.kvm'
 
-        self.test_zone = test_zone
+        self.getDefaultURLCmd = getSystemVMTemplateDefaultUrl.getSystemVMTemplateDefaultUrlCmd()
+        self.getDefaultURLCmd.hypervisor = 'KVM'
 
         return
 
@@ -107,14 +110,22 @@ class TestActivateTemplate(cloudstackTestCase):
         Test activating registered template
         """
         template = self.registerTemplate(self.test_template)
+        # Registering and Downloading System VM Template
         self.download(self.apiclient, template.id)
         self.activateTemplateCmd.id = template.id
+        # Activating downloaded template
         self.activateTemplate(self.activateTemplateCmd)
+        response = self.checkConfiguration(self.listConfigurationsCmd)
+        # Checking template activation
+        self.assertEqual(response[0].value, "test-system-kvm-4.11.3", "Expected template name to be test-system-kvm-4.11.3")
         return
 
-    def test_02_copySystemVMtemplate(self):
-        # this test needs 2 zones, the template will be copied from 1 zone to the next
-        pass
+    def test_02_get_default_url(self):
+        response = self.apiclient.getSystemVMTemplateDefaultUrl(self.getDefaultURLCmd)
+        self.debug()
+        self.assertNotEqual(response.url.url, "", "Expected a value")
+        # This test will have to be updated for every official template version
+        self.assertEqual(response.url.url, "https://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.3-kvm.qcow2.bz2", "Default url mismatch")
 
     def registerTemplate(self, cmd):
         temp = self.apiclient.registerTemplate(cmd)[0]
@@ -126,6 +137,10 @@ class TestActivateTemplate(cloudstackTestCase):
         response = self.apiclient.activateSystemVMTemplate(cmd)[0]
         return response
     
+    def checkConfiguration(self, cmd):
+        response = self.apiclient.listConfigurations(cmd)
+        return response
+
     def copyTemplate(self, cmd):
         response = self.apiclient.copyTemplate(cmd)
         return response
@@ -136,7 +151,7 @@ class TestActivateTemplate(cloudstackTestCase):
         return self.apiclient.listOsTypes(cmd)[0].id
 
     def download(self, apiclient, template_id, retries=12, interval=10):
-        """Check if template download will finish in 1 minute"""
+        """Check if template download will finish"""
         while retries > -1:
             time.sleep(interval)
             template_response = Template.list(
@@ -151,7 +166,6 @@ class TestActivateTemplate(cloudstackTestCase):
                 if not hasattr(template, 'status') or not template or not template.status:
                     retries = retries - 1
                     continue
-
                 # If template is ready,
                 # template.status = Download Complete
                 # Downloading - x% Downloaded

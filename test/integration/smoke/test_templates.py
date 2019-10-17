@@ -37,7 +37,7 @@ from nose.plugins.attrib import attr
 import urllib
 #Import System modules
 import time
-from marvin.cloudstackAPI import (createTemplate, listOsTypes, activateSystemVMTemplate)
+from marvin.cloudstackAPI import (createTemplate, listOsTypes)
 
 _multiprocess_shared_ = True
 

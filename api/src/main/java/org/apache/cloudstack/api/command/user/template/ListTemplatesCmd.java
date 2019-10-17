@@ -58,6 +58,10 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the template name")
     private String templateName;
 
+    public void setTemplateFilter(String templateFilter) {
+        this.templateFilter = templateFilter;
+    }
+
     @Parameter(name = ApiConstants.TEMPLATE_FILTER,
                type = CommandType.STRING,
                required = true,
