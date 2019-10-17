@@ -27,8 +27,8 @@
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
 
-    <bean id="xenserverSnapshotStrategy"
-        class="org.apache.cloudstack.storage.snapshot.XenserverSnapshotStrategy" />
+    <bean id="defaultSnapshotStrategy"
+        class="org.apache.cloudstack.storage.snapshot.DefaultSnapshotStrategy" />
 
     <bean id="storageSystemSnapshotStrategy"
         class="org.apache.cloudstack.storage.snapshot.StorageSystemSnapshotStrategy" />
