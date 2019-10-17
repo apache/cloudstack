@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.template;
 
-import java.util.List;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
@@ -26,9 +24,8 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ActivateSystemVMTemplateResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.log4j.Logger;
 
@@ -42,7 +39,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = ActivateSystemVMTemplateCmd.APINAME,
         description = "Activates an existing system virtual machine template to be used by CloudStack to create system virtual machines.",
-        responseObject = TemplateResponse.class,
+        responseObject = ActivateSystemVMTemplateResponse.class,
         authorized = {RoleType.Admin})
 public class ActivateSystemVMTemplateCmd extends BaseCmd {
 
@@ -73,10 +70,9 @@ public class ActivateSystemVMTemplateCmd extends BaseCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         VirtualMachineTemplate template = _templateService.activateSystemVMTemplate(id);
         if (template != null) {
-            ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-            List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(ResponseObject.ResponseView.Restricted,
-                    template, 1L, false);
-            response.setResponses(templateResponses);
+            ActivateSystemVMTemplateResponse response = new ActivateSystemVMTemplateResponse();
+            response.setResult("success");
+            response.setObjectName(getCommandName());
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
