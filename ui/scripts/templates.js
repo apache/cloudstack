@@ -364,7 +364,7 @@
                                                         // Only if this hypervisor isn't already part of this
                                                         // list, then add to the drop down
                                                             if (distinctHVNames.indexOf(this.name) < 0 ){
-                                                                if (selectedType == "official" && (this.name == "BareMetal" || this.name == "Ovm")){
+                                                                if ((selectedType == "official" || selectedType == "url" ) && (this.name == "BareMetal" || this.name == "Ovm")){
                                                                     // do nothing
                                                                 } else {
                                                                     distinctHVNames.push(this.name);
@@ -424,8 +424,8 @@
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').css('display', 'inline-block');
                                                     $('#label_root_disk_controller').prop('selectedIndex', 2);
                                                     $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
-                                                    if (isAdmin()) {
-                                                      $form.find('.form-item[rel=directdownload]').css('display', 'inline-block');
+                                                    if (isAdmin() && !($form.find('#label_action_create_template_type').val() == "system") ) {
+                                                      $form.find('.form-item[rel=directdownload]').show();
                                                     }
                                                 } else {
                                                     $form.find('.form-item[rel=rootDiskControllerType]').hide();
@@ -681,7 +681,7 @@
                                                     id: 'BareMetal',
                                                     description: 'BareMetal'
                                                 });
-                                            } else if (args.hypervisor == "Ovm") {
+                                            } else if (args.hypervisor == "Ovm" || args.hypervisor == "Ovm3") {
                                                 //formatSelect.append("<option value='RAW'>RAW</option>");
                                                 items.push({
                                                     id: 'RAW',

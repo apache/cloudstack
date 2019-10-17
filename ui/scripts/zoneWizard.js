@@ -453,8 +453,6 @@
                                     $form.find(".field[rel='url']").hide();
                                     $form.find(".field[rel='file']").show();
                                 }
-
-
                             });
                             // Check if we have other zones.
                             $.ajax({
