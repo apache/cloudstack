@@ -29,6 +29,8 @@ import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -208,6 +210,25 @@ public class ReflectUtil {
         }else{
             return entityName;
         }
+    }
+
+    /**
+     * Finds and returns class loader based on the provided module/jar name
+     * @param name
+     * @return returns ClassLoader
+     */
+    public static ClassLoader getClassLoaderForName(final String name) {
+        final URL[] urls = ((URLClassLoader) (Thread.currentThread().getContextClassLoader())).getURLs();
+        final List<URL> searchUrls = new ArrayList<>();
+        for (final URL url: urls) {
+            if (url.toString().contains(name)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Search URL: " + url.toString());
+                }
+                searchUrls.add(url);
+            }
+        }
+        return new URLClassLoader(searchUrls.toArray(new URL[searchUrls.size()]));
     }
 
 }

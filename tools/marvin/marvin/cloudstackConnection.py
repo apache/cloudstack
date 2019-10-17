@@ -103,8 +103,8 @@ class CSConnection(object):
                     elif job_status == JOB_FAILED:
                         raise Exception("Job failed: %s"\
                                          % async_response)
-                time.sleep(5)
-                timeout -= 5
+                time.sleep(1)
+                timeout -= 1
                 self.logger.debug("=== JobId:%s is Still Processing, "
                                   "Will TimeOut in:%s ====" % (str(jobid),
                                                                str(timeout)))

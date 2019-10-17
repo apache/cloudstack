@@ -39,50 +39,8 @@ import static org.apache.commons.lang.StringUtils.substringBefore;
  */
 public final class CloudStackVersion implements Comparable<CloudStackVersion> {
 
-    private final static Pattern VERSION_FORMAT = Pattern.compile("(\\d+\\.){2}(\\d+\\.)?\\d+");
-
-    /**
-     *
-     * Parses a <code>String</code> representation of a version that conforms one of the following
-     * formats into a <code>CloudStackVersion</code> instance:
-     * <ul>
-     *     <li><code><major version>.<minor version>.<patch release></code></li>
-     *     <li><code><major version>.<minor version>.<patch release>.<security release></code></li>
-     *     <li><code><major version>.<minor version>.<patch release>.<security release>-<any string></code></li>
-     * </ul>
-     *
-     * If the string contains a suffix that begins with a "-" character, then the "-" and all characters following it
-     * will be dropped.
-     *
-     * @param value The value to parse which must be non-blank and conform the formats listed above
-     *
-     * @return <code>value</code> parsed into a <code>CloudStackVersion</code> instance
-     *
-     * @since 4.8.2
-     *
-     */
-    public static CloudStackVersion parse(final String value) {
-
-        // Strip out any legacy patch information from the version string ...
-        final String trimmedValue = substringBefore(value, "-");
-
-        checkArgument(isNotBlank(trimmedValue), CloudStackVersion.class.getName() + ".parse(String) requires a non-blank value");
-        checkArgument(VERSION_FORMAT.matcher(trimmedValue).matches(), CloudStackVersion.class.getName() + "parse(String) passed " +
-                value + ", but requires a value in the format of int.int.int(.int)(-<legacy patch>)");
-
-        final String[] components = trimmedValue.split("\\.");
-
-        checkState(components != null && (components.length == 3 || components.length == 4), "Expected " + value +
-                " to parse to 3 or 4 positions.");
-
-        final int majorRelease = Integer.valueOf(components[0]);
-        final int minorRelease = Integer.valueOf(components[1]);
-        final int patchRelease = Integer.valueOf(components[2]);
-        final Integer securityRelease = components.length == 3 ? null : Integer.valueOf(components[3]);
-
-        return new CloudStackVersion(majorRelease, minorRelease, patchRelease, securityRelease);
-
-    }
+    private final static Pattern NUMBER_VERSION_FORMAT = Pattern.compile("(\\d+\\.){2}(\\d+\\.)?\\d+");
+    private final static Pattern FULL_VERSION_FORMAT = Pattern.compile("(\\d+\\.){2}(\\d+\\.)?\\d+(-[a-zA-Z]+)?(-\\d+)?(-SNAPSHOT)?");
 
     private final int majorRelease;
     private final int minorRelease;
@@ -106,17 +64,63 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
 
     }
 
-    private static ImmutableList<Integer> normalizeVersionValues(final ImmutableList<Integer> values) {
+    /**
+     *
+     * Parses a <code>String</code> representation of a version that conforms one of the following
+     * formats into a <code>CloudStackVersion</code> instance:
+     * <ul>
+     *     <li><code>&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;.&lt;security&gt;</code></li>
+     *     <li><code>&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;.&lt;security&gt;.&lt;security&gt;</code></li>
+     *     <li><code>&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;.&lt;security&gt;.&lt;security&gt;-&lt;any string&gt;</code></li>
+     * </ul>
+     *
+     * If the string contains a suffix that begins with a "-" character, then the "-" and all characters following it
+     * will be dropped.
+     *
+     * @param value The value to parse which must be non-blank and conform the formats listed above
+     *
+     * @return <code>value</code> parsed into a <code>CloudStackVersion</code> instance
+     *
+     * @since 4.8.2
+     *
+     */
+    public static CloudStackVersion parse(final String value) {
 
-        checkArgument(values != null);
-        checkArgument(values.size() == 3 || values.size() == 4);
+        // Strip out any legacy patch information from the version string ...
+        final String trimmedValue = substringBefore(value, "-");
 
-        if (values.size() == 3) {
-            return ImmutableList.<Integer>builder().addAll(values).add(0).build();
-        }
+        checkArgument(isNotBlank(trimmedValue), CloudStackVersion.class.getName() + ".parse(String) requires a non-blank value");
+        checkArgument(NUMBER_VERSION_FORMAT.matcher(trimmedValue).matches(), CloudStackVersion.class.getName() + ".parse(String) passed " +
+                value + ", but requires a value in the format of int.int.int(.int)(-<legacy patch>)");
 
-        return values;
+        final String[] components = trimmedValue.split("\\.");
 
+        checkState(components != null && (components.length == 3 || components.length == 4), "Expected " + value +
+                " to parse to 3 or 4 positions.");
+
+        final int majorRelease = Integer.valueOf(components[0]);
+        final int minorRelease = Integer.valueOf(components[1]);
+        final int patchRelease = Integer.valueOf(components[2]);
+        final Integer securityRelease = components.length == 3 ? null : Integer.valueOf(components[3]);
+
+        return new CloudStackVersion(majorRelease, minorRelease, patchRelease, securityRelease);
+
+    }
+
+    /**
+     * Shortcut method to {@link #parse(String)} and {@link #compareTo(CloudStackVersion)} two versions
+     *
+     * @param version1 the first value to be parsed and compared
+     * @param version2 the second value to be parsed and compared
+     *
+     * @return A value less than zero (0) indicates <code>version1</code> is less than <code>version2</code>.  A value
+     *         equal to zero (0) indicates <code>version1</code> equals <code>version2</code>.  A value greater than zero (0)
+     *         indicates <code>version1</code> is greater than <code>version2</code>.
+     *
+     * @since 4.12.0.0
+     */
+    public static int compare(String version1, String version2) {
+        return parse(version1).compareTo(parse(version2));
     }
 
     /**
@@ -125,7 +129,7 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
      * A couple of notes about the comparison rules for this method:
      * <ul>
      *     <li>Three position versions are normalized to four position versions with the security release being
-     *         defaulted to zero (0).  For example, for the purposes of comparision, <code>4.8.1</code> would be
+     *         defaulted to zero (0).  For example, for the purposes of comparison, <code>4.8.1</code> would be
      *         normalized to <code>4.8.1.0</code> for all comparison operations.</li>
      *     <li>A three position version with a null security release is considered equal to a four position
      *         version number where the major release, minor release, and patch release are the same and the security
@@ -167,6 +171,43 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
     }
 
     /**
+     * Trim full version from router version. Valid versions are:
+     *
+     * <ul>
+     *    <li><code>&lt;major&gt;.&lt;minor&gt;[.&lt;patch&gt;[.&lt;security&gt;]]</li>
+     *    <li><code>&lt;major&gt;.&lt;minor&gt;[.&lt;patch&gt;[.&lt;security&gt;]]-&lt;branding&gt;</li>
+     *    <li><code>&lt;major&gt;.&lt;minor&gt;[.&lt;patch&gt;[.&lt;security&gt;]][-&lt;branding&gt;]-SNAPSHOT</li>
+     *    <li><code>&lt;major&gt;.&lt;minor&gt;[.&lt;patch&gt;[.&lt;security&gt;]][-&lt;branding&gt;]-&lt;epoch timestamp&gt;</li>
+     * </ul>
+     *
+     * @param version to trim
+     *
+     * @return actual trimmed version
+     */
+    public static String trimRouterVersion(String version) {
+        final String[] tokens = version.split(" ");
+
+        if (tokens.length >= 3 && FULL_VERSION_FORMAT.matcher(tokens[2]).matches()) {
+            return tokens[2];
+        }
+
+        return "0";
+    }
+
+    private static ImmutableList<Integer> normalizeVersionValues(final ImmutableList<Integer> values) {
+
+        checkArgument(values != null);
+        checkArgument(values.size() == 3 || values.size() == 4);
+
+        if (values.size() == 3) {
+            return ImmutableList.<Integer>builder().addAll(values).add(0).build();
+        }
+
+        return values;
+
+    }
+
+    /**
      *
      * @return The components of this version as an {@link ImmutableList} in order of major release, minor release,
      * patch release, and security release
@@ -185,6 +226,22 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
 
         return values.build();
 
+    }
+
+    public int getMajorRelease() {
+        return majorRelease;
+    }
+
+    public int getMinorRelease() {
+        return minorRelease;
+    }
+
+    public int getPatchRelease() {
+        return patchRelease;
+    }
+
+    public Integer getSecurityRelease() {
+        return securityRelease;
     }
 
     @Override
@@ -215,21 +272,4 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
     public String toString() {
         return Joiner.on(".").join(asList());
     }
-
-    public int getMajorRelease() {
-        return majorRelease;
-    }
-
-    public int getMinorRelease() {
-        return minorRelease;
-    }
-
-    public int getPatchRelease() {
-        return patchRelease;
-    }
-
-    public Integer getSecurityRelease() {
-        return securityRelease;
-    }
-
 }

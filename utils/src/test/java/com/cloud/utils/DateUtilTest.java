@@ -21,15 +21,22 @@ package com.cloud.utils;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import java.time.format.DateTimeFormatter;
+import java.time.OffsetDateTime;
+
 import com.cloud.utils.DateUtil.IntervalType;
 
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class DateUtilTest {
-
     // command line test tool
     public static void main(String[] args) {
         TimeZone localTimezone = Calendar.getInstance().getTimeZone();
@@ -44,17 +51,83 @@ public class DateUtilTest {
         if (args.length == 2) {
             System.out.println("Next run time: " + DateUtil.getNextRunTime(IntervalType.getIntervalType(args[0]), args[1], "GMT", time).toString());
         }
-
-        time = new Date();
-        DateFormat dfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'Z");
-        String str = dfDate.format(time);
-        System.out.println("Formated TZ time string : " + str);
-        try {
-            Date dtParsed = DateUtil.parseTZDateString(str);
-            System.out.println("Parsed TZ time string : " + dtParsed.toString());
-        } catch (ParseException e) {
-            System.err.println("Parsing failed\n string : " + str + "\nexception :" + e.getLocalizedMessage());
-        }
     }
 
+    @Test
+    public void zonedTimeFormatLegacy() throws ParseException {
+        Date time = new Date();
+        DateFormat dfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'Z");
+        String str = dfDate.format(time);
+        Date dtParsed = DateUtil.parseTZDateString(str);
+
+        assertEquals(str, time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void zonedTimeFormat() throws ParseException {
+        Date time = new Date();
+        DateFormat dfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        String str = dfDate.format(time);
+        Date dtParsed = DateUtil.parseTZDateString(str);
+
+        assertEquals(str, time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void zonedTimeFormatIsoOffsetDateTime() throws ParseException {
+        Instant moment = Instant.now();
+        Date time = Date.from(moment);
+        String str = OffsetDateTime.ofInstant(moment, ZoneId.systemDefault()).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+
+        Date dtParsed = DateUtil.parseTZDateString(str);
+
+        assertEquals(str, time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void zonedTimeFormatIsoInstant() throws ParseException {
+        Instant moment = Instant.now();
+        Date time = Date.from(moment);
+        String str = OffsetDateTime.ofInstant(moment, ZoneId.systemDefault()).format(DateTimeFormatter.ISO_INSTANT);
+
+        Date dtParsed = DateUtil.parseTZDateString(str);
+
+        assertEquals(str, time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void zonedTimeFormatIsoOffsetDateTimeMs() throws ParseException {
+        Instant moment = Instant.now();
+        Date time = Date.from(moment);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSX");
+        String str = OffsetDateTime.ofInstant(moment, ZoneId.systemDefault()).format(formatter);
+
+        Date dtParsed = DateUtil.parseTZDateString(str);
+
+        assertEquals(str, time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void zonedTimeFormatIsoInstantMs() throws ParseException {
+        Instant moment = Instant.now();
+        Date time = Date.from(moment);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'");
+        String str = OffsetDateTime.ofInstant(moment, ZoneId.of("UTC")).format(formatter);
+
+        Date dtParsed = DateUtil.parseTZDateString(str);
+
+        assertEquals(str, time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void zonedTimeFormatIsoNoColonZMs() throws ParseException {
+        Instant moment = Instant.now();
+        Date time = Date.from(moment);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ");
+        String str = OffsetDateTime.ofInstant(moment, ZoneId.systemDefault()).format(formatter);
+
+        Date dtParsed = DateUtil.parseTZDateString(str);
+
+        assertEquals(str, time.toString(), dtParsed.toString());
+    }
 }

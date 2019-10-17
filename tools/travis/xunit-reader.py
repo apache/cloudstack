@@ -99,7 +99,8 @@ def parse_reports(file_path_list):
                     if 'type' in children.attrib:
                         status = children.attrib['type']
 
-            table.add_row([name, status, time, file_path.replace(".xml", "").split("/")[-1]])
+            if status not in ('Skipped', 'Success'):
+                table.add_row([name, status, time, file_path.replace(".xml", "").split("/")[-1]])
 
     print table.draw()
 

@@ -133,6 +133,7 @@ known_categories = {
     'Pool': 'Pool',
     'VPC': 'VPC',
     'PrivateGateway': 'VPC',
+    'migrateVpc': 'VPC',
     'Simulator': 'simulator',
     'StaticRoute': 'VPC',
     'Tags': 'Resource tags',
@@ -168,7 +169,6 @@ known_categories = {
     'Ucs' : 'UCS',
     'CacheStores' : 'Cache Stores',
     'CacheStore' : 'Cache Store',
-    'IAM' : 'IAM',
     'OvsElement' : 'Ovs Element',
     'StratosphereSsp' : ' Stratosphere SSP',
     'Metrics' : 'Metrics',
@@ -188,7 +188,10 @@ known_categories = {
     'removeAnnotation' : 'Annotations',
     'CA': 'Certificate',
     'listElastistorInterface': 'Misc',
-    'cloudian': 'Cloudian'
+    'cloudian': 'Cloudian',
+    'Sioc' : 'Sioc',
+    'Diagnostics': 'Diagnostics',
+    'Management': 'Management',
     }
 
 

@@ -209,7 +209,8 @@ class TestDynamicRoles(cloudstackTestCase):
         """
         self.account.delete(self.apiclient)
         new_role_name = self.getRandomRoleName()
-        self.role.update(self.apiclient, name=new_role_name, type='Admin')
+        new_role_description = "Fake role description created after update"
+        self.role.update(self.apiclient, name=new_role_name, type='Admin', description=new_role_description)
         update_role = Role.list(self.apiclient, id=self.role.id)[0]
         self.assertEqual(
             update_role.name,
@@ -221,7 +222,11 @@ class TestDynamicRoles(cloudstackTestCase):
             'Admin',
             msg="Role type does not match updated role type"
         )
-
+        self.assertEqual(
+            update_role.description,
+            new_role_description,
+            msg="Role description does not match updated role description"
+            )
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
     def test_role_lifecycle_update_role_inuse(self):

@@ -79,7 +79,10 @@
                 });
             }
 
-
+            var $actions = undefined;
+            if(options.editOptionsFirst){
+            	$actions = $('<td>').addClass('multi-actions').appendTo($item.find('tr'));
+            }
             // Setup columns
             $.each(fields, function(fieldName, field) {
                 if (!field || (options.ignoreEmptyFields && !data[fieldName])) {
@@ -160,8 +163,9 @@
                 }
 
                 if (!field.isPassword) {
+                	$td.attr('title', data[fieldName]);
                     if (field.edit) {
-                        // Edit fields append value of data
+                    	// Edit fields append value of data
                         if (field.range) {
                             var start = _s(data[field.range[0]]);
                             var end = _s(data[field.range[1]]);
@@ -177,8 +181,20 @@
                             } else {
                                 $td.append($('<span>').html(_s(data[fieldName])));
                             }
-                            $td.attr('title', data[fieldName]);
                         }
+                    } else if (field.isBoolean) {
+                        var $checkbox = $('<input>');
+                        $checkbox.attr({
+                            disabled: true,
+                            name: fieldName,
+                            type: 'checkbox'
+                        });
+                        if (_s(data[fieldName])) {
+                            $checkbox.attr({
+                                checked: true
+                            });
+                        }
+                        $checkbox.appendTo($td);
                     } else if (field.select) {
                         // Get matching option text
                         var $matchingSelect = $multi.find('select')
@@ -213,7 +229,7 @@
                             $td.append($select);
                         }
                         else {
-                            var matchingValue = $matchingOption.size() ?
+                            var matchingValue = $matchingOption.length ?
                                 $matchingOption.html() : data[fieldName];
 
                             $td.append($('<span>').html(_s(matchingValue)));
@@ -227,7 +243,7 @@
 
                                 var $subItems = $td.closest('.data-item').find('.expandable-listing tr');
 
-                                if ($subItems.size()) {
+                                if ($subItems.length) {
                                     context.subItemData = $subItems.map(function() {
                                         return $(this).data('json-obj');
                                     });
@@ -311,9 +327,9 @@
                 return true;
             });
 
-            // Actions column
-            var $actions = $('<td>').addClass('multi-actions').appendTo($item.find('tr'));
-
+            if(!options.editOptionsFirst){
+            	var $actions = $('<td>').addClass('multi-actions').appendTo($item.find('tr'));
+            }
             // Align action column width
             $actions.width($multi.find('th.multi-actions').width() + 4);
 
@@ -486,31 +502,28 @@
                     .attr('title', _l('label.edit.tags'))
                     .append($('<span></span>').addClass('icon'))
                     .click(function() {
-                        $('<div>')
-                            .dialog({
-                                dialogClass: 'editTags',
-                                title: _l('label.edit.tags'),
-                                width: 400,
-                                buttons: [{
-                                    text: _l('label.done'),
-                                    'class': 'ok',
-                                    click: function() {
-                                        $(this).dialog('destroy');
-                                        $('div.overlay:last').remove();
-
-                                        return true;
-                                    }
-                                }]
-                            })
-                            .append(
-                                $('<div></div>').addClass('multi-edit-tags').tagger($.extend(true, {}, options.tags, {
-                                    context: $.extend(true, {}, options.context, {
-                                        multiRule: [multiRule]
-                                    })
-                                }))
-                        )
-                            .closest('.ui-dialog').overlay();
-
+                        var $dialog = $('<div>').dialog({
+                                            dialogClass: 'editTags',
+                                            title: _l('label.edit.tags'),
+                                            width: 400,
+                                            buttons: [{
+                                                text: _l('label.done'),
+                                                'class': 'ok',
+                                                click: function() {
+                                                    $(this).dialog('destroy');
+                                                    $('div.overlay:last').remove();
+            
+                                                    return true;
+                                                }
+                                            }]
+                                        }).append(
+                                            $('<div></div>').addClass('multi-edit-tags').tagger($.extend(true, {}, options.tags, {
+                                                context: $.extend(true, {}, options.context, {
+                                                    multiRule: [multiRule]
+                                                })
+                                            }))
+                                        );
+                             cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
                         return false;
                     })
                 )
@@ -579,13 +592,13 @@
 
             var $dataList = $listView.addClass('multi-edit-add-list').dialog({
                 dialogClass: 'multi-edit-add-list panel',
-                width: 825,
+                width: 900,
                 title: label,
                 buttons: [{
                     text: _l('label.apply'),
                     'class': 'ok',
                     click: function() {
-                        if (!$listView.find('input[type=radio]:checked, input[type=checkbox]:checked').size()) {
+                        if (!$listView.find('input[type=radio]:checked, input[type=checkbox]:checked').length) {
                             cloudStack.dialog.notice({
                                 message: _l('message.select.item')
                             });
@@ -634,7 +647,8 @@
                         });
                     }
                 }]
-            }).parent('.ui-dialog').overlay();
+            });
+            cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dataList);
         },
 
         /**
@@ -646,7 +660,7 @@
             );
 
             $multi.find('.data tr').filter(function() {
-                return !$(this).closest('.expandable-listing').size();
+                return !$(this).closest('.expandable-listing').length;
             }).each(function() {
                 var $tr = $(this);
 
@@ -892,16 +906,20 @@
         var $thead = $('<tr>').appendTo(
             $('<thead>').appendTo($inputTable)
         );
-        var $inputForm = $('<tr>').appendTo(
-            $('<tbody>').appendTo($inputTable)
-        );
+        if (!args.doNotShowInputTable){
+	        var $inputForm = $('<tr>').appendTo(
+	            $('<tbody>').appendTo($inputTable)
+	        );
+        }
         var $dataBody = $('<div>').addClass('data-body').appendTo($dataTable);
 
         // Setup input table headers
 
         if (reorder) {
             $('<th>').addClass('reorder').appendTo($thead);
-            $('<td>').addClass('reorder').appendTo($inputForm);
+            if (!args.doNotShowInputTable){
+            	$('<td>').addClass('reorder').appendTo($inputForm);
+            }
             $multi.find('.data-body').sortable({
                 handle: '.action.moveDrag',
 
@@ -911,8 +929,8 @@
                     $loading.prependTo($multi);
                     reorder.moveDrag.action({
                         targetIndex: ui.item.index(),
-                        nextItem: ui.item.next().size() ? ui.item.next().data('json-obj') : null,
-                        prevItem: ui.item.prev().size() ? ui.item.prev().data('json-obj') : null,
+                        nextItem: ui.item.next().length ? ui.item.next().data('json-obj') : null,
+                        prevItem: ui.item.prev().length ? ui.item.prev().data('json-obj') : null,
                         context: $.extend(true, {}, context, {
                             // Passes all rules, so that each index can be updated
                             multiRule: [ui.item.data('json-obj')]
@@ -933,6 +951,13 @@
             });
         }
 
+        if (args.editOptionsFirst && args.actions && !args.noHeaderActionsColumn) {
+            $thead.append($('<th></th>').html(_l('label.actions')).addClass('multi-actions'));
+            if (!args.doNotShowInputTable){
+            	$inputForm.append($('<td></td>').addClass('multi-actions'));
+            }
+        }
+        
         $.each(args.fields, function(fieldName, field) {
             if (!field) return true;
 
@@ -941,7 +966,10 @@
             $th.appendTo($thead);
             var $td = $('<td>').addClass(fieldName);
             $td.attr('rel', fieldName);
-            $td.appendTo($inputForm);
+            
+            if (!args.doNotShowInputTable){
+            	$td.appendTo($inputForm);
+            }
 
             var isHidden = $.isFunction(field.isHidden) ?
                     field.isHidden({ context: context }) : field.isHidden;
@@ -980,6 +1008,12 @@
                         error: function(args) {}
                     }
                 });
+            } else if (field.isBoolean) {
+                var $input = $('<input>')
+                    .attr({
+                        name: fieldName,
+                        type: 'checkbox'
+                }).appendTo($td);
             } else if (field.edit && field.edit != 'ignore') {
                 if (field.range) {
                     var $range = $('<div>').addClass('range').appendTo($td);
@@ -1052,7 +1086,10 @@
                 ).appendTo($td);
             }
 
-            if (field.desc) $input.attr('title', field.desc);
+            if (field.desc){ 
+            	$input.attr('title', field.desc);
+            	$th.attr('title', _l(field.desc));
+            }
         });
 
         // Setup header fields
@@ -1074,130 +1111,137 @@
                 .prependTo($multi);
         }
 
-        if (args.actions && !args.noHeaderActionsColumn) {
+        if (!args.editOptionsFirst && args.actions && !args.noHeaderActionsColumn) {
             $thead.append($('<th></th>').html(_l('label.actions')).addClass('multi-actions'));
-            $inputForm.append($('<td></td>').addClass('multi-actions'));
+            if (!args.doNotShowInputTable){
+            	$inputForm.append($('<td></td>').addClass('multi-actions'));
+            }
         }
-
-        $addVM.bind('click', function() {
-            // Validate form first
-            if (!$multiForm.valid()) {
-                if ($multiForm.find('input.error:visible').size()) {
-                    return false;
-                }
-            }
-
-            var $dataList;
-            var addItem = function(itemData) {
-                var data = {};
-
-                $.each(getMultiData($multi), function(key, value) {
-                    if (value != '') {
-                        data[key] = value;
-                    }
-                });
-
-                // Append custom data
-                var $customFields = $multi.find('tbody td').filter(function() {
-                    return $(this).data('multi-custom-data');
-                });
-
-                $customFields.each(function() {
-                    var $field = $(this);
-                    var fieldID = $field.attr('rel');
-                    var fieldData = $field.data('multi-custom-data');
-
-                    data[fieldID] = fieldData;
-                });
-
-                // Loading appearance
-                var $loading = _medit.loadingItem($multi, _l('label.adding') + '...');
-                $dataBody.prepend($loading);
-
-                // Clear out fields
-                $multi.find('input').each(function() {
-                    var $input = $(this);
-
-                    if ($input.data('multi-default-value')) {
-                        $input.val($input.data('multi-default-value'));
-                    } else {
-                        $input.val('');
-                    }
-                });
-                $multi.find('tbody td').each(function() {
-                    var $item = $(this);
-
-                    if ($item.data('multi-custom-data')) {
-                        $item.data('multi-custom-data', null);
-                    }
-                });
-
-                // Apply action
-                args.add.action({
-                    context: context,
-                    data: data,
-                    itemData: itemData,
-                    $multi: $multi,
-                    response: {
-                        success: function(successArgs) {
-                            var notification = successArgs ? successArgs.notification : null;
-                            if (notification) {
-                                $('.notifications').notifications('add', {
-                                    section: 'network',
-                                    desc: notification.label,
-                                    interval: 3000,
-                                    _custom: successArgs._custom,
-                                    poll: function(pollArgs) {
-                                        var complete = pollArgs.complete;
-                                        var error = pollArgs.error;
-
-                                        notification.poll({
-                                            _custom: pollArgs._custom,
-                                            complete: function(completeArgs) {
-                                                complete(args);
-                                                $loading.remove();
-                                                getData();
-                                            },
-
-                                            error: function(args) {
-                                                error(args);
-                                                $loading.remove();
-
-                                                return cloudStack.dialog.error(args);
-                                            }
-                                        });
-                                    }
-                                });
-                            } else {
-                                $loading.remove();
-                                getData();
-                            }
-                        },
-
-                        error: cloudStack.dialog.error(function() {
-                            $loading.remove();
-                        })
-                    }
-                });
-            };
-
-            if (args.noSelect) {
-                // Don't append instance data
-                addItem([]);
-
-                return true;
-            }
-
-            _medit.vmList($multi,
-                args.listView,
-                args.context,
-                multipleAdd, _l('label.add.vms'),
-                addItem);
-
-            return true;
-        });
-
+        if($addVM){
+	        $addVM.bind('click', function() {
+	            // Validate form first
+	            if (!$multiForm.valid()) {
+	                if ($multiForm.find('input.error:visible').length) {
+	                    return false;
+	                }
+	            }
+	
+	            var $dataList;
+	            var addItem = function(itemData) {
+	                var data = {};
+	
+	                $.each(getMultiData($multi), function(key, value) {
+	                    if (value != '') {
+	                        data[key] = value;
+	                    }
+	                });
+	
+	                // Append custom data
+	                var $customFields = $multi.find('tbody td').filter(function() {
+	                    return $(this).data('multi-custom-data');
+	                });
+	
+	                $customFields.each(function() {
+	                    var $field = $(this);
+	                    var fieldID = $field.attr('rel');
+	                    var fieldData = $field.data('multi-custom-data');
+	
+	                    data[fieldID] = fieldData;
+	                });
+	
+	                // Loading appearance
+	                var $loading = _medit.loadingItem($multi, _l('label.adding') + '...');
+	                $dataBody.prepend($loading);
+	
+	                // Clear out fields
+	                $multi.find('input').each(function() {
+	                    var $input = $(this);
+	
+	                    if ($input.is(":checkbox")) {
+	                        $input.attr({
+	                            checked: false
+	                        });
+	                    } else if ($input.data('multi-default-value')) {
+	                        $input.val($input.data('multi-default-value'));
+	                    } else {
+	                        $input.val('');
+	                    }
+	                });
+	                $multi.find('tbody td').each(function() {
+	                    var $item = $(this);
+	
+	                    if ($item.data('multi-custom-data')) {
+	                        $item.data('multi-custom-data', null);
+	                    }
+	                });
+	
+	                // Apply action
+	                args.add.action({
+	                    context: context,
+	                    data: data,
+	                    itemData: itemData,
+	                    $multi: $multi,
+	                    response: {
+	                        success: function(successArgs) {
+	                            var notification = successArgs ? successArgs.notification : null;
+	                            if (notification) {
+	                                $('.notifications').notifications('add', {
+	                                    section: 'network',
+	                                    desc: notification.label,
+	                                    interval: 3000,
+	                                    _custom: successArgs._custom,
+	                                    poll: function(pollArgs) {
+	                                        var complete = pollArgs.complete;
+	                                        var error = pollArgs.error;
+	
+	                                        notification.poll({
+	                                            _custom: pollArgs._custom,
+	                                            complete: function(completeArgs) {
+	                                                complete(args);
+	                                                $loading.remove();
+	                                                getData();
+	                                            },
+	
+	                                            error: function(args) {
+	                                                error(args);
+	                                                $loading.remove();
+	
+	                                                return cloudStack.dialog.error(args);
+	                                            }
+	                                        });
+	                                    }
+	                                });
+	                            } else {
+	                                $loading.remove();
+	                                getData();
+	                            }
+	                        },
+	
+	                        error: cloudStack.dialog.error(function() {
+	                            $loading.remove();
+	                        })
+	                    }
+	                });
+	            };
+	
+	            if (args.noSelect) {
+	                // Don't append instance data
+	                addItem([]);
+	
+	                return true;
+	            }
+	
+	            _medit.vmList($multi,
+	                args.listView,
+	                args.context,
+	                multipleAdd, _l('label.add.vms'),
+	                addItem);
+	
+	            return true;
+	        });
+        }
         var listView = args.listView;
+        var editOptionsFirst = args.editOptionsFirst;
         var getData = function() {
             dataProvider({
                 context: context,
@@ -1224,7 +1268,8 @@
                                     listView: listView,
                                     tags: tags,
                                     reorder: reorder,
-                                    selectPermission: selectPermission
+                                    selectPermission: selectPermission,
+                                    editOptionsFirst: editOptionsFirst
                                 }
                             ).appendTo($dataBody);
                         });

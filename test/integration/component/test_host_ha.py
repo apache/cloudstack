@@ -45,6 +45,8 @@ class TestHostHA(cloudstackTestCase):
         self.services = self.testClient.getParsedTestDataConfig()
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.pod = get_pod(self.apiclient, self.zone.id)
+        self.hostConfig = self.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+
         self.cleanup = []
         self.services = {
                             "service_offering": {
@@ -98,6 +100,7 @@ class TestHostHA(cloudstackTestCase):
 
 
     def createVMs(self, hostId, number, local):
+
         self.template = get_template(
             self.apiclient,
             self.zone.id,
@@ -154,7 +157,8 @@ class TestHostHA(cloudstackTestCase):
 
     def checkHostDown(self, fromHostIp, testHostIp):
         try:
-            ssh = SshClient(fromHostIp, 22, "root", "password")
+            ssh = SshClient(fromHostIp, 22, self.hostConfig["username"],
+                    self.hostConfig["password"])
             res = ssh.execute("ping -c 1 %s" % testHostIp)
             result = str(res)
             if result.count("100% packet loss") == 1:
@@ -167,7 +171,8 @@ class TestHostHA(cloudstackTestCase):
 
     def checkHostUp(self, fromHostIp, testHostIp):
         try:
-            ssh = SshClient(fromHostIp, 22, "root", "password")
+            ssh = SshClient(fromHostIp, 22, self.hostConfig["username"],
+                    self.hostConfig["password"])
             res = ssh.execute("ping -c 1 %s" % testHostIp)
             result = str(res)
             if result.count(" 0% packet loss") == 1:
@@ -273,9 +278,10 @@ class TestHostHA(cloudstackTestCase):
         srcFile = os.path.dirname(os.path.realpath(__file__)) + "/test_host_ha.sh"
         if not(os.path.isfile(srcFile)):
             self.logger.debug("File %s not found" % srcFile)
-            raise unittest.SkipTest("Script file %s required for HA not found" % srcFile);
+            raise unittest.SkipTest("Script file %s required for HA not found" % srcFile)
 
-        ssh = SshClient(hostIp, 22, "root", "password")
+        ssh = SshClient(hostIp, 22, self.hostConfig["username"],
+                    self.hostConfig["password"])
         ssh.scp(srcFile, "/root/test_host_ha.sh")
         ssh.execute("nohup sh /root/test_host_ha.sh -t %s -d all > /dev/null 2>&1 &\n" % timeout)
         return
@@ -284,13 +290,12 @@ class TestHostHA(cloudstackTestCase):
         srcFile = os.path.dirname(os.path.realpath(__file__)) + "/test_host_ha.sh"
         if not(os.path.isfile(srcFile)):
             self.logger.debug("File %s not found" % srcFile)
-            raise unittest.SkipTest("Script file %s required for HA not found" % srcFile);
+            raise unittest.SkipTest("Script file %s required for HA not found" % srcFile)
 
-        ssh = SshClient(hostIp, 22, "root", "password")
+        ssh = SshClient(hostIp, 22, self.hostConfig["username"], self.hostConfig["password"])
         ssh.scp(srcFile, "/root/test_host_ha.sh")
         ssh.execute("nohup sh /root/test_host_ha.sh -t %s -d agent > /dev/null 2>&1 &\n" % timeout)
         return
-
 
     @attr(
         tags=[
@@ -302,12 +307,9 @@ class TestHostHA(cloudstackTestCase):
             "sg"],
         required_hardware="true")
     def test_01_host_ha_with_nfs_storagepool_with_vm(self):
-        raise unittest.SkipTest("Skipping this test as this is for NFS store only.");
-        return
 
         if not(self.isOnlyNFSStorageAvailable()):
-            raise unittest.SkipTest("Skipping this test as this is for NFS store only.");
-            return
+            raise unittest.SkipTest("Skipping this test as this is for NFS store only.")
 
         listHost = Host.list(
             self.apiclient,
@@ -320,9 +322,9 @@ class TestHostHA(cloudstackTestCase):
 
 
         if len(listHost) != 2:
-            self.logger.debug("Host HA can be tested with two host only %s, found" % len(listHost));
-            raise unittest.SkipTest("Host HA can be tested with two host only %s, found" % len(listHost));
-            return
+            self.logger.debug("Host HA can be tested with two host only %s, found" % len(listHost))
+            raise unittest.SkipTest("Host HA can be tested with two host only %s, found" % len(listHost))
+
 
         no_of_vms = self.noOfVMsOnHost(listHost[0].id)
 
@@ -382,11 +384,9 @@ class TestHostHA(cloudstackTestCase):
             "sg"],
         required_hardware="true")
     def test_02_host_ha_with_local_storage_and_nfs(self):
-        raise unittest.SkipTest("Skipping this test as this is for NFS store only.");
-        return
+
         if not(self.isLocalAndNFSStorageAvailable()):
-            raise unittest.SkipTest("Skipping this test as this is for Local storage and NFS storage only.");
-            return
+            raise unittest.SkipTest("Skipping this test as this is for Local storage and NFS storage only.")
 
         listHost = Host.list(
             self.apiclient,
@@ -399,9 +399,8 @@ class TestHostHA(cloudstackTestCase):
 
 
         if len(listHost) != 2:
-            self.logger.debug("Host HA can be tested with two host only %s, found" % len(listHost));
-            raise unittest.SkipTest("Host HA can be tested with two host only %s, found" % len(listHost));
-            return
+            self.logger.debug("Host HA can be tested with two host only %s, found" % len(listHost))
+            raise unittest.SkipTest("Host HA can be tested with two host only %s, found" % len(listHost))
 
         no_of_vms = self.noOfVMsOnHost(listHost[0].id)
 
@@ -462,12 +461,9 @@ class TestHostHA(cloudstackTestCase):
             "sg"],
         required_hardware="true")
     def test_03_host_ha_with_only_local_storage(self):
-        raise unittest.SkipTest("Skipping this test as this is for NFS store only.");
-        return
 
         if not(self.isOnlyLocalStorageAvailable()):
-            raise unittest.SkipTest("Skipping this test as this is for Local storage only.");
-            return
+            raise unittest.SkipTest("Skipping this test as this is for Local storage only.")
 
         listHost = Host.list(
             self.apiclient,
@@ -480,9 +476,8 @@ class TestHostHA(cloudstackTestCase):
 
 
         if len(listHost) != 2:
-            self.logger.debug("Host HA can be tested with two host only %s, found" % len(listHost));
-            raise unittest.SkipTest("Host HA can be tested with two host only %s, found" % len(listHost));
-            return
+            self.logger.debug("Host HA can be tested with two host only %s, found" % len(listHost))
+            raise unittest.SkipTest("Host HA can be tested with two host only %s, found" % len(listHost))
 
         no_of_vms = self.noOfVMsOnHost(listHost[0].id)
 
@@ -543,8 +538,7 @@ class TestHostHA(cloudstackTestCase):
     def test_04_host_ha_vmactivity_check(self):
 
         if not(self.isOnlyNFSStorageAvailable()):
-            raise unittest.SkipTest("Skipping this test as this is for NFS store only.");
-            return
+            raise unittest.SkipTest("Skipping this test as this is for NFS store only.")
 
         listHost = Host.list(
             self.apiclient,
@@ -557,9 +551,8 @@ class TestHostHA(cloudstackTestCase):
 
 
         if len(listHost) != 2:
-            self.logger.debug("Host HA can be tested with two host only %s, found" % len(listHost));
-            raise unittest.SkipTest("Host HA can be tested with two host only %s, found" % len(listHost));
-            return
+            self.logger.debug("Host HA can be tested with two host only %s, found" % len(listHost))
+            raise unittest.SkipTest("Host HA can be tested with two host only %s, found" % len(listHost))
 
         no_of_vms = self.noOfVMsOnHost(listHost[0].id)
 

@@ -21,7 +21,7 @@ package com.cloud.utils.nicira.nvp.plugin;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.maint.Version;
+import org.apache.cloudstack.utils.CloudStackVersion;
 
 public class NiciraNvpApiVersion {
     private static final Logger s_logger = Logger.getLogger(NiciraNvpApiVersion.class);
@@ -33,8 +33,10 @@ public class NiciraNvpApiVersion {
     }
 
     public static synchronized boolean isApiVersionLowerThan(String apiVersion){
-        if (niciraApiVersion == null) return false;
-        int compare = Version.compare(niciraApiVersion, apiVersion);
+        if (niciraApiVersion == null) {
+            return false;
+        }
+        int compare = CloudStackVersion.compare(niciraApiVersion, apiVersion);
         return (compare < 0);
     }
 

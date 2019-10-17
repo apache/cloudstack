@@ -15,8 +15,160 @@
 // specific language governing permissions and limitations
 // under the License.
 (function(cloudStack) {
+    var migrateVolumeCreateFormAction = {
+            title: 'label.migrate.volume',
+            fields: {
+                storagePool: {
+                    label: 'label.storage.pool',
+                    validation: {
+                        required: true
+                    },
+                    select: function(args) {
+                        var mapStoragePoolsByUuid = new Map();
+                        var volumeId = args.context.volumes[0].id;
+                        var volumeBeingMigrated = undefined;
+                        $.ajax({
+                            url: createURL("listVolumes&id=" + volumeId),
+                            dataType: "json",
+                            async: false,
+                            success: function(json){
+                                volumeBeingMigrated = json.listvolumesresponse.volume[0]; 
+                            }
+                        });
+                        var currentStoragePool = undefined;
+                        $.ajax({
+                            url: createURL("listStoragePools&id=" + volumeBeingMigrated.storageid),
+                            dataType: "json",
+                            async: false,
+                            success: function(json){
+                                currentStoragePool = json.liststoragepoolsresponse.storagepool[0]; 
+                            }
+                        });
+                        var isVolumeNotAttachedToVm = volumeBeingMigrated.virtualmachineid == undefined;
+                        var urlToRetrieveStoragePools = "findStoragePoolsForMigration&id=" + args.context.volumes[0].id;
+                        if(isVolumeNotAttachedToVm){
+                            urlToRetrieveStoragePools = "listStoragePools&zoneid=" + args.context.volumes[0].zoneid;
+                        }
+                        $.ajax({
+                            url: createURL(urlToRetrieveStoragePools),
+                            dataType: "json",
+                            async: true,
+                            success: function(json) {
+                                var pools = undefined;
+                                if(isVolumeNotAttachedToVm){
+                                    pools = json.liststoragepoolsresponse.storagepool;
+                                }else{
+                                    pools = json.findstoragepoolsformigrationresponse.storagepool;
+                                }
+                                var items = [];
+                                $(pools).each(function() {
+                                    mapStoragePoolsByUuid.set(this.id, this);
+                                    var description = this.name;
+                                    if(!isVolumeNotAttachedToVm){
+                                        description = description + " (" + (this.suitableformigration ? "Suitable" : "Not Suitable") + ")";
+                                    }
+                                    items.push({
+                                        id: this.id,
+                                        description: description
+                                    });
+                                });
+                                args.response.success({
+                                    data: items
+                                });
+                                var diskOfferings = cloudStack.listDiskOfferings({listAll: true});
+                                $('select[name=storagePool]').change(function(){
+                                    var uuidOfStoragePoolSelected = $(this).val();
+                                    var storagePoolSelected = mapStoragePoolsByUuid.get(uuidOfStoragePoolSelected);
+                                    if(currentStoragePool.scope === storagePoolSelected.scope){
+                                        $('div[rel=newDiskOffering],div[rel=useNewDiskOffering]').hide();
+                                    }else{
+                                        $('div[rel=newDiskOffering],div[rel=useNewDiskOffering]').show();
+                                    }
+                                    var storageType = 'shared';
+                                    if(storagePoolSelected.scope == 'HOST'){
+                                        storageType = 'local';
+                                    }
+                                    $(diskOfferings).each(function(){
+                                        var diskOfferingOption = $('option[value=' + this.id + ']');
+                                        if(this.storagetype == storageType){
+                                            diskOfferingOption.show();
+                                        }else{
+                                            diskOfferingOption.hide();
+                                        }
+                                    });
+                                    var firstAvailableDiskOfferingForStorageType = $('select#label_disk_newOffering').children('option:visible').first().attr('value');
+                                    $('select#label_disk_newOffering').attr('value', firstAvailableDiskOfferingForStorageType);
+                                });
+                                var functionHideShowNewDiskOfferint = function(){
+                                    if($('div[rel=useNewDiskOffering] input[type=checkbox]').is(':checked')){
+                                        $('div[rel=newDiskOffering]').show();
+                                    }else{
+                                        $('div[rel=newDiskOffering]').hide();
+                                    }  
+                                };
+                                $('div[rel=useNewDiskOffering] input[type=checkbox]').click(functionHideShowNewDiskOfferint);
+                                $('select[name=storagePool]').change();
+                                functionHideShowNewDiskOfferint();
+                            }
+                        });
+                    }
+                },
+            useNewDiskOffering:{
+                label: 'label.migrate.volume.newDiskOffering',
+                desc: 'label.migrate.volume.newDiskOffering.desc',
+                validation: {
+                    required: false
+                   },
+                isEditable: true, 
+                isBoolean: true,
+                defaultValue: 'Yes'
+            },
+            newDiskOffering: {
+                label: 'label.disk.newOffering',
+                desc: 'label.disk.newOffering.description',
+                validation: {
+                    required: false
+                   },
+                select: function(args){
+                    var diskOfferings = cloudStack.listDiskOfferings({listAll: true});
+                    var items = [];
+                    $(diskOfferings).each(function() {
+                        items.push({
+                            id: this.id,
+                            description: this.name
+                        });
+                    });
+                    args.response.success({
+                        data: items
+                    });
+                   }
+               }
+           }
+        };
+    var functionMigrateVolume = function(args) {
+        var volumeBeingMigrated = args.context.volumes[0];
+        var isLiveMigrate = volumeBeingMigrated.vmstate == 'Running';
+        var migrateVolumeUrl = "migrateVolume&livemigrate="+ isLiveMigrate +"&storageid=" + args.data.storagePool + "&volumeid=" + volumeBeingMigrated.id;
+        if($('div[rel=useNewDiskOffering] input[name=useNewDiskOffering]:checkbox').is(':checked')){
+            migrateVolumeUrl = migrateVolumeUrl + '&newdiskofferingid=' + $('div[rel=newDiskOffering] select').val();
+        }
+        $.ajax({
+            url: createURL(migrateVolumeUrl),
+            dataType: "json",
+            async: true,
+            success: function(json) {
+                $(window).trigger('cloudStack.fullRefresh');
+                var jid = json.migratevolumeresponse.jobid;
+                args.response.success({
+                    _custom: {
+                        jobId: jid
+                    }
+                });
+            }
+        });
+    }
 
-    var diskofferingObjs, selectedDiskOfferingObj;
+    var diskOfferingsObjList, selectedDiskOfferingObj = null;
 
     cloudStack.sections.storage = {
         title: 'label.storage',
@@ -36,8 +188,10 @@
                     label: 'label.volumes',
                     preFilter: function(args) {
                         var hiddenFields = [];
-                        if (isAdmin() != true)
+                        if (isAdmin() != true) {
                             hiddenFields.push('hypervisor');
+                            hiddenFields.push('account');
+                        }
                         return hiddenFields;
                     },
                     fields: {
@@ -47,11 +201,33 @@
                         type: {
                             label: 'label.type'
                         },
+                        vmdisplayname: {
+                            label: 'label.vm.display.name'
+                        },
                         hypervisor: {
                             label: 'label.hypervisor'
                         },
-                        vmdisplayname: {
-                            label: 'label.vm.display.name'
+                        account: {
+                            label: 'label.account'
+                        },
+                        zonename: {
+                            label: 'label.zone'
+                        },
+                        state: {
+                            label: 'label.metrics.state',
+                            converter: function (str) {
+                                // For localization
+                                return str;
+                            },
+                            indicator: {
+                                'Allocated': 'on',
+                                'Ready': 'on',
+                                'Destroy': 'off',
+                                'Expunging': 'off',
+                                'Migrating': 'warning',
+                                'UploadOp': 'warning',
+                                'Snapshotting': 'warning',
+                            }
                         }
                     },
 
@@ -98,42 +274,50 @@
                                                     });
                                                 }
                                             });
+                                            args.$select.change(function() {
+                                                var diskOfferingSelect = $(this).closest('form').find('select[name=diskOffering]');
+                                                if(diskOfferingSelect) {
+                                                    $(diskOfferingSelect).find('option').remove().end();
+                                                    var data = {
+                                                        zoneid: $(this).val(),
+                                                    };
+                                                    console.log(data);
+                                                    var diskOfferings = cloudStack.listDiskOfferings({ data: data });
+                                                    diskOfferingsObjList = diskOfferings;
+                                                    $(diskOfferings).each(function() {
+                                                        $(diskOfferingSelect).append(new Option(this.displaytext, this.id));
+                                                    });
+                                                }
+                                            });
                                         }
                                     },
                                     diskOffering: {
                                         label: 'label.disk.offering',
                                         docID: 'helpVolumeDiskOffering',
                                         select: function(args) {
-                                            $.ajax({
-                                                url: createURL("listDiskOfferings"),
-                                                dataType: "json",
-                                                async: false,
-                                                success: function(json) {
-                                                    diskofferingObjs = json.listdiskofferingsresponse.diskoffering;
-                                                    var items = [];
-                                                    $(diskofferingObjs).each(function() {
-                                                        items.push({
-                                                            id: this.id,
-                                                            description: this.displaytext
-                                                        });
-                                                    });
-                                                    args.response.success({
-                                                        data: items
-                                                    });
-                                                }
+                                            var diskOfferings = cloudStack.listDiskOfferings({});
+                                            diskOfferingsObjList = diskOfferings;
+                                            var items = [];
+                                            $(diskOfferings).each(function() {
+                                                items.push({
+                                                    id: this.id,
+                                                    description: this.displaytext
+                                                });
                                             });
-
+                                            args.response.success({
+                                                data: items
+                                            });
                                             args.$select.change(function() {
                                                 var diskOfferingId = $(this).val();
-                                                $(diskofferingObjs).each(function() {
+                                                $(diskOfferingsObjList).each(function() {
                                                     if (this.id == diskOfferingId) {
                                                         selectedDiskOfferingObj = this;
                                                         return false; //break the $.each() loop
                                                     }
                                                 });
-                                                if (selectedDiskOfferingObj == null)
+                                                if (selectedDiskOfferingObj == null){
                                                     return;
-
+                                                }
                                                 var $form = $(this).closest('form');
                                                 var $diskSize = $form.find('.form-item[rel=diskSize]');
                                                 if (selectedDiskOfferingObj.iscustomized == true) {
@@ -337,59 +521,21 @@
                                         label: 'label.custom.disk.offering',
                                         docID: 'helpVolumeDiskOffering',
                                         select: function(args) {
-                                            var diskofferingObjs;
-                                            $.ajax({
-                                                url: createURL("listDiskOfferings"),
-                                                dataType: "json",
-                                                async: false,
-                                                success: function(json) {
-                                                    diskofferingObjs = json.listdiskofferingsresponse.diskoffering;
-                                                    var items = [{
-                                                        id: '',
-                                                        description: ''
-                                                    }];
-                                                    $(diskofferingObjs).each(function() {
-                                                        if (this.iscustomized == true) {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.displaytext
-                                                            });
-                                                        }
-                                                    });
-                                                    args.response.success({
-                                                        data: items
+                                            var diskOfferings = cloudStack.listDiskOfferings({});
+                                            var items = [{
+                                                id: '',
+                                                description: ''
+                                            }];
+                                            $(diskOfferings).each(function() {
+                                                if (this.iscustomized == true) {
+                                                    items.push({
+                                                        id: this.id,
+                                                        description: this.name
                                                     });
                                                 }
                                             });
-                                        }
-                                    },
-                                    diskOffering: {
-                                        label: 'label.custom.disk.offering',
-                                        docID: 'helpVolumeDiskOffering',
-                                        select: function(args) {
-                                            var diskofferingObjs;
-                                            $.ajax({
-                                                url: createURL("listDiskOfferings"),
-                                                dataType: "json",
-                                                async: false,
-                                                success: function(json) {
-                                                    diskofferingObjs = json.listdiskofferingsresponse.diskoffering;
-                                                    var items = [{
-                                                        id: '',
-                                                        description: ''
-                                                    }];
-                                                    $(diskofferingObjs).each(function() {
-                                                        if (this.iscustomized == true) {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.displaytext
-                                                            });
-                                                        }
-                                                    });
-                                                    args.response.success({
-                                                        data: items
-                                                    });
-                                                }
+                                            args.response.success({
+                                                data: items
                                             });
                                         }
                                     },
@@ -722,7 +868,6 @@
                             label: 'label.snapshots'
                         },
                         actions: {
-
                             migrateVolume: {
                                 label: 'label.migrate.volume',
                                 messages: {
@@ -734,56 +879,9 @@
                                     }
                                 },
 
-                                createForm: {
-                                    title: 'label.migrate.volume',
-                                    desc: '',
-                                    fields: {
-                                        storagePool: {
-                                            label: 'label.storage.pool',
-                                            validation: {
-                                                required: true
-                                            },
-                                            select: function(args) {
-                                                $.ajax({
-                                                    url: createURL("findStoragePoolsForMigration&id=" + args.context.volumes[0].id),
-                                                    dataType: "json",
-                                                    async: true,
-                                                    success: function(json) {
-                                                        var pools = json.findstoragepoolsformigrationresponse.storagepool;
-                                                        var items = [];
-                                                        $(pools).each(function() {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.name + " (" + (this.suitableformigration ? "Suitable" : "Not Suitable") + ")"
-                                                            });
-                                                        });
-                                                        args.response.success({
-                                                            data: items
-                                                        });
+                                createForm: migrateVolumeCreateFormAction,
 
-                                                    }
-                                                });
-                                            }
-                                        }
-                                    }
-
-                                },
-
-                                action: function(args) {
-                                    $.ajax({
-                                        url: createURL("migrateVolume&livemigrate=true&storageid=" + args.data.storagePool + "&volumeid=" + args.context.volumes[0].id),
-                                        dataType: "json",
-                                        async: true,
-                                        success: function(json) {
-                                            var jid = json.migratevolumeresponse.jobid;
-                                            args.response.success({
-                                                _custom: {
-                                                    jobId: jid
-                                                }
-                                            });
-                                        }
-                                    });
-                                },
+                                action: functionMigrateVolume,
                                 notification: {
                                     poll: pollAsyncJobResult
                                 }
@@ -815,8 +913,12 @@
                                             label: 'label.name'
                                         },
                                         asyncBackup: {
-						label: 'label.async.backup',
-						isBoolean: true
+                                            label: 'label.async.backup',
+                                            isBoolean: true
+                                        },
+                                        tags: {
+                                            label: 'label.tags',
+                                            tagger: true
                                         }
                                     }
                                 },
@@ -831,6 +933,15 @@
                                             name: args.data.name
                                         });
                                     }
+                                    if (!$.isEmptyObject(args.data.tags)) {
+                                        $(args.data.tags).each(function(idx, tagData) {
+                                            var formattedTagData = {};
+                                            formattedTagData["tags[" + _s(idx) + "].key"] = _s(tagData.key);
+                                            formattedTagData["tags[" + _s(idx) + "].value"] = _s(tagData.value);
+                                            $.extend(data, formattedTagData);
+                                        });
+                                    }
+
                                     $.ajax({
                                         url: createURL("createSnapshot"),
                                         data: data,
@@ -840,7 +951,14 @@
                                             var jid = json.createsnapshotresponse.jobid;
                                             args.response.success({
                                                 _custom: {
-                                                    jobId: jid //take snapshot from a volume doesn't change any property in this volume. So, don't need to specify getUpdatedItem() to return updated volume. Besides, createSnapshot API doesn't return updated volume.
+                                                    jobId: jid, //take snapshot from a volume doesn't change any property in this volume. So, don't need to specify getUpdatedItem() to return updated volume. Besides, createSnapshot API doesn't return updated volume.
+                                                    onComplete: function(json, customData) {
+                                                        var volumeId = json.queryasyncjobresultresponse.jobresult.snapshot.volumeid;
+                                                        var snapshotId = json.queryasyncjobresultresponse.jobresult.snapshot.id;
+                                                        cloudStack.dialog.notice({
+                                                            message: "Created snapshot for volume " + volumeId + " with snapshot ID " + snapshotId
+                                                        });
+                                                    }
                                                 }
                                             });
                                         }
@@ -889,7 +1007,9 @@
                                                 var snap = args.snapshot;
 
                                                 var data = {
-                                                    keep: snap.maxsnaps,
+                                                    volumeid: args.context.volumes[0].id,
+                                                    intervaltype: snap['snapshot-type'],
+                                                    maxsnaps: snap.maxsnaps,
                                                     timezone: snap.timezone
                                                 };
 
@@ -942,15 +1062,18 @@
                                                         break;
                                                 }
 
+                                                if (!$.isEmptyObject(snap.tags)) {
+                                                    $(snap.tags).each(function(idx, tagData) {
+                                                        var formattedTagData = {};
+                                                        formattedTagData["tags[" + _s(idx) + "].key"] = _s(tagData.key);
+                                                        formattedTagData["tags[" + _s(idx) + "].value"] = _s(tagData.value);
+                                                        $.extend(data, formattedTagData);
+                                                    });
+                                                }
+
                                                 $.ajax({
                                                     url: createURL('createSnapshotPolicy'),
-                                                    data: {
-                                                        volumeid: args.context.volumes[0].id,
-                                                        intervaltype: snap['snapshot-type'],
-                                                        maxsnaps: snap.maxsnaps,
-                                                        schedule: data.schedule,
-                                                        timezone: snap.timezone
-                                                    },
+                                                    data: data,
                                                     dataType: 'json',
                                                     async: true,
                                                     success: function(successData) {
@@ -1278,175 +1401,7 @@
                                 }
                             },
 
-                            createTemplate: {
-                                label: 'label.create.template',
-                                messages: {
-                                    confirm: function(args) {
-                                        return 'message.create.template';
-                                    },
-                                    notification: function(args) {
-                                        return 'label.create.template';
-                                    }
-                                },
-                                createForm: {
-                                    title: 'label.create.template',
-                                    preFilter: cloudStack.preFilter.createTemplate,
-                                    desc: '',
-                                    preFilter: function(args) {
-                                        if (args.context.volumes[0].hypervisor == "XenServer") {
-                                            args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
-
-                                        }
-                                    },
-                                    fields: {
-                                        name: {
-                                            label: 'label.name',
-                                            validation: {
-                                                required: true
-                                            }
-                                        },
-                                        displayText: {
-                                            label: 'label.description',
-                                            validation: {
-                                                required: true
-                                            }
-                                        },
-                                        xenserverToolsVersion61plus: {
-                                            label: 'label.xenserver.tools.version.61.plus',
-                                            isBoolean: true,
-                                            isChecked: function (args) {
-                                                var b = false;
-                                                var vmObj;
-                                                $.ajax({
-                                                    url: createURL("listVirtualMachines"),
-                                                    data: {
-                                                        id: args.context.volumes[0].virtualmachineid
-                                                    },
-                                                    async: false,
-                                                    success: function(json) {
-                                                        vmObj = json.listvirtualmachinesresponse.virtualmachine[0];
-                                                    }
-                                                });
-                                                if (vmObj == undefined) { //e.g. VM has failed over
-                                                    if (isAdmin()) {
-                                                        $.ajax({
-                                                            url: createURL('listConfigurations'),
-                                                            data: {
-                                                                name: 'xenserver.pvdriver.version'
-                                                            },
-                                                            async: false,
-                                                            success: function (json) {
-                                                                if (json.listconfigurationsresponse.configuration != null && json.listconfigurationsresponse.configuration[0].value == 'xenserver61') {
-                                                                    b = true;
-                                                                }
-                                                            }
-                                                        });
-                                                    }
-                                                } else {
-                                                     if ('details' in vmObj && 'hypervisortoolsversion' in vmObj.details) {
-                                                         if (vmObj.details.hypervisortoolsversion == 'xenserver61')
-                                                             b = true;
-                                                         else
-                                                             b = false;
-                                                     }
-                                                }
-                                                return b;
-                                            },
-                                            isHidden: true
-                                        },
-                                        osTypeId: {
-                                            label: 'label.os.type',
-                                            select: function(args) {
-                                                $.ajax({
-                                                    url: createURL("listOsTypes"),
-                                                    dataType: "json",
-                                                    async: true,
-                                                    success: function(json) {
-                                                        var ostypes = json.listostypesresponse.ostype;
-                                                        var items = [];
-                                                        $(ostypes).each(function() {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.description
-                                                            });
-                                                        });
-                                                        args.response.success({
-                                                            data: items
-                                                        });
-                                                    }
-                                                });
-                                            }
-                                        },
-                                        isPublic: {
-                                            label: 'label.public',
-                                            isBoolean: true
-                                        },
-                                        isPasswordEnabled: {
-                                            label: 'label.password.enabled',
-                                            isBoolean: true
-                                        },
-                                        isFeatured: {
-                                            label: 'label.featured',
-                                            isBoolean: true
-                                        },
-                                        isdynamicallyscalable: {
-                                            label: 'label.dynamically.scalable',
-                                            isBoolean: true
-                                        }
-                                    }
-                                },
-                                action: function(args) {
-                                    var data = {
-                                        volumeId: args.context.volumes[0].id,
-                                        name: args.data.name,
-                                        displayText: args.data.displayText,
-                                        osTypeId: args.data.osTypeId,
-                                        isPublic: (args.data.isPublic == "on"),
-                                        passwordEnabled: (args.data.isPasswordEnabled == "on"),
-                                        isdynamicallyscalable: (args.data.isdynamicallyscalable == "on")
-
-                                    };
-
-                                    if (args.$form.find('.form-item[rel=isFeatured]').css("display") != "none") {
-                                        $.extend(data, {
-                                            isfeatured: (args.data.isFeatured == "on")
-                                        });
-                                    }
-
-                                    //XenServer only (starts here)
-                                    if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').length > 0) {
-                                        if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css("display") != "none") {
-                                            $.extend(data, {
-                                                'details[0].hypervisortoolsversion': (args.data.xenserverToolsVersion61plus == "on") ? "xenserver61" : "xenserver56"
-                                            });
-                                        }
-                                    }
-                                    //XenServer only (ends here)
-
-                                    $.ajax({
-                                        url: createURL('createTemplate'),
-                                        data: data,
-                                        success: function(json) {
-                                            var jid = json.createtemplateresponse.jobid;
-                                            args.response.success({
-                                                _custom: {
-                                                    jobId: jid,
-                                                    getUpdatedItem: function(json) {
-                                                        return {}; //no properties in this volume needs to be updated
-                                                    },
-                                                    getActionFilter: function() {
-                                                        return volumeActionfilter;
-                                                    }
-                                                }
-                                            });
-                                        }
-                                    });
-                                },
-                                notification: {
-                                    poll: pollAsyncJobResult
-                                }
-                            },
-
+                            createTemplate: cloudStack.createTemplateMethod(false),
                             migrateToAnotherStorage: {
                                 label: 'label.migrate.volume.to.primary.storage',
                                 messages: {
@@ -1457,59 +1412,8 @@
                                         return 'label.migrate.volume.to.primary.storage';
                                     }
                                 },
-                                createForm: {
-                                    title: 'label.migrate.volume.to.primary.storage',
-                                    desc: '',
-                                    fields: {
-                                        storageId: {
-                                            label: 'label.primary.storage',
-                                            validation: {
-                                                required: true
-                                            },
-                                            select: function(args) {
-                                                $.ajax({
-                                                    url: createURL("listStoragePools&zoneid=" + args.context.volumes[0].zoneid),
-                                                    dataType: "json",
-                                                    async: true,
-                                                    success: function(json) {
-                                                        var pools = json.liststoragepoolsresponse.storagepool;
-                                                        var items = [];
-                                                        $(pools).each(function() {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.name
-                                                            });
-                                                        });
-                                                        args.response.success({
-                                                            data: items
-                                                        });
-                                                    }
-                                                });
-                                            }
-                                        }
-                                    }
-                                },
-                                action: function(args) {
-                                    $.ajax({
-                                        url: createURL("migrateVolume&storageid=" + args.data.storageId + "&volumeid=" + args.context.volumes[0].id),
-                                        dataType: "json",
-                                        async: true,
-                                        success: function(json) {
-                                            var jid = json.migratevolumeresponse.jobid;
-                                            args.response.success({
-                                                _custom: {
-                                                    jobId: jid,
-                                                    getUpdatedItem: function(json) {
-                                                        return json.queryasyncjobresultresponse.jobresult.volume;
-                                                    },
-                                                    getActionFilter: function() {
-                                                        return volumeActionfilter;
-                                                    }
-                                                }
-                                            });
-                                        }
-                                    });
-                                },
+                                createForm: $.extend({}, migrateVolumeCreateFormAction, {title: 'label.migrate.volume.to.primary.storage'}),
+                                action: functionMigrateVolume,
                                 notification: {
                                     poll: pollAsyncJobResult
                                 }
@@ -1573,25 +1477,17 @@
                                                     });
                                                     return;
                                                 }
-
-                                                $.ajax({
-                                                    url: createURL("listDiskOfferings"),
-                                                    dataType: "json",
-                                                    success: function(json) {
-                                                        diskofferingObjs = json.listdiskofferingsresponse.diskoffering;
-                                                        var items = [];
-                                                        $(diskofferingObjs).each(function() {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.displaytext
-                                                            });
-                                                        });
-                                                        args.response.success({
-                                                            data: items
-                                                        });
-                                                    }
+                                                var diskOfferings = cloudStack.listDiskOfferings({});
+                                                var items = [];
+                                                $(diskOfferings).each(function() {
+                                                    items.push({
+                                                        id: this.id,
+                                                        description: this.displaytext
+                                                    });
                                                 });
-
+                                                args.response.success({
+                                                    data: items
+                                                });
                                                 args.$select.change(function() {
                                                     if(args.context.volumes[0].type == "ROOT") {
                                                         selectedDiskOfferingObj = null;
@@ -1599,15 +1495,15 @@
                                                     }
 
                                                     var diskOfferingId = $(this).val();
-                                                    $(diskofferingObjs).each(function() {
+                                                    $(diskOfferings).each(function() {
                                                         if (this.id == diskOfferingId) {
                                                             selectedDiskOfferingObj = this;
                                                             return false; //break the $.each() loop
                                                         }
                                                     });
-                                                    if (selectedDiskOfferingObj == null)
+                                                    if (selectedDiskOfferingObj == null){
                                                         return;
-
+                                                    }
                                                     var $form = $(this).closest('form');
 
                                                     var $shrinkok = $form.find('.form-item[rel=shrinkok]');
@@ -1671,45 +1567,31 @@
                                 },
                                 action: function(args) {
                                     var array1 = [];
-                                    var newSize;
-                                    if (selectedDiskOfferingObj == null || selectedDiskOfferingObj.iscustomized == true) {
-                                        newSize = args.data.newsize;
-                                        if (newSize != null && newSize.length > 0) {
-                                            array1.push("&size=" + todb(newSize));
-                                        }
-                                    } else {
+                                    if(args.$form.find('.form-item[rel=shrinkok]').css("display") != "none") {
+                                        array1.push("&shrinkok=" + (args.data.shrinkok == "on"));
+                                    }
 
-                                        if(args.$form.find('.form-item[rel=shrinkok]').css("display") != "none") {
-                                            array1.push("&shrinkok=" + (args.data.shrinkok == "on"));
-                                        }
+                                    var newDiskOffering = args.data.newdiskoffering;
+                                    if (newDiskOffering != null && newDiskOffering.length > 0) {
+                                        array1.push("&diskofferingid=" + encodeURIComponent(newDiskOffering));
+                                    }
+                                    if (selectedDiskOfferingObj.iscustomized == true) {
+                                        cloudStack.addNewSizeToCommandUrlParameterArrayIfItIsNotNullAndHigherThanZero(array1, args.data.newsize);
+                                    }
 
-                                        var newDiskOffering = args.data.newdiskoffering;
+                                    var minIops;
+                                    var maxIops
+                                    if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                        minIops = args.data.minIops;
+                                        maxIops = args.data.maxIops;
+                                    }
 
-                                        if (selectedDiskOfferingObj.iscustomized == true) {
-                                            newSize = args.data.newsize;
-                                        }
-                                        if (newDiskOffering != null && newDiskOffering.length > 0) {
-                                            array1.push("&diskofferingid=" + todb(newDiskOffering));
-                                        }
-                                        if (newSize != null && newSize.length > 0) {
-                                            array1.push("&size=" + todb(newSize));
-                                        }
+                                    if (minIops != null && minIops.length > 0) {
+                                        array1.push("&miniops=" + encodeURIComponent(minIops));
+                                    }
 
-                                        var minIops;
-                                        var maxIops
-
-                                        if (selectedDiskOfferingObj.iscustomizediops == true) {
-                                            minIops = args.data.minIops;
-                                            maxIops = args.data.maxIops;
-                                        }
-
-                                        if (minIops != null && minIops.length > 0) {
-                                            array1.push("&miniops=" + todb(minIops));
-                                        }
-
-                                        if (maxIops != null && maxIops.length > 0) {
-                                            array1.push("&maxiops=" + todb(maxIops));
-                                        }
+                                    if (maxIops != null && maxIops.length > 0) {
+                                        array1.push("&maxiops=" + encodeURIComponent(maxIops));
                                     }
                                     //if original disk size  > new disk size
                                     if ((args.context.volumes[0].type == "ROOT")
@@ -1818,10 +1700,10 @@
                                         }
                                     },
                                     clusterid: {
-					label: 'label.cluster'
+                                        label: 'label.cluster'
                                     },
                                     clustername: {
-					label: 'label.cluster.name'
+                                        label: 'label.cluster.name'
                                     },
                                     physicalsize: {
                                         label: 'label.disk.physicalsize',
@@ -2078,103 +1960,7 @@
                     detailView: {
                         name: 'Snapshot detail',
                         actions: {
-                            createTemplate: {
-                                label: 'label.create.template',
-                                messages: {
-                                    confirm: function(args) {
-                                        return 'message.create.template';
-                                    },
-                                    notification: function(args) {
-                                        return 'label.create.template';
-                                    }
-                                },
-                                createForm: {
-                                    title: 'label.create.template',
-                                    desc: '',
-                                    fields: {
-                                        name: {
-                                            label: 'label.name',
-                                            validation: {
-                                                required: true
-                                            }
-                                        },
-                                        displayText: {
-                                            label: 'label.description',
-                                            validation: {
-                                                required: true
-                                            }
-                                        },
-                                        osTypeId: {
-                                            label: 'label.os.type',
-                                            select: function(args) {
-                                                $.ajax({
-                                                    url: createURL("listOsTypes"),
-                                                    dataType: "json",
-                                                    async: true,
-                                                    success: function(json) {
-                                                        var ostypes = json.listostypesresponse.ostype;
-                                                        var items = [];
-                                                        $(ostypes).each(function() {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.description
-                                                            });
-                                                        });
-                                                        args.response.success({
-                                                            data: items
-                                                        });
-                                                    }
-                                                });
-                                            }
-                                        },
-                                        isPublic: {
-                                            label: 'label.public',
-                                            isBoolean: true
-                                        },
-                                        isPasswordEnabled: {
-                                            label: 'label.password.enabled',
-                                            isBoolean: true
-                                        },
-                                        isdynamicallyscalable: {
-                                            label: 'label.dynamically.scalable',
-                                            isBoolean: true
-                                        }
-                                    }
-                                },
-                                action: function(args) {
-                                    var data = {
-                                        snapshotid: args.context.snapshots[0].id,
-                                        name: args.data.name,
-                                        displayText: args.data.displayText,
-                                        osTypeId: args.data.osTypeId,
-                                        isPublic: (args.data.isPublic == "on"),
-                                        passwordEnabled: (args.data.isPasswordEnabled == "on"),
-                                        isdynamicallyscalable: (args.data.isdynamicallyscalable == "on")
-                                    };
-
-                                    $.ajax({
-                                        url: createURL('createTemplate'),
-                                        data: data,
-                                        success: function(json) {
-                                            var jid = json.createtemplateresponse.jobid;
-                                            args.response.success({
-                                                _custom: {
-                                                    jobId: jid,
-                                                    getUpdatedItem: function(json) {
-                                                        return {}; //nothing in this snapshot needs to be updated
-                                                    },
-                                                    getActionFilter: function() {
-                                                        return snapshotActionfilter;
-                                                    }
-                                                }
-                                            });
-                                        }
-                                    });
-                                },
-                                notification: {
-                                    poll: pollAsyncJobResult
-                                }
-                            },
+                            createTemplate: cloudStack.createTemplateMethod(true),
 
                             createVolume: {
                                 label: 'label.action.create.volume',
@@ -2194,6 +1980,9 @@
                                             args.$form.find('.form-item[rel=zoneid]').css('display', 'inline-block');
                                         } else {
                                             args.$form.find('.form-item[rel=zoneid]').hide();
+                                        }
+                                        if(args.context.snapshots[0].volumetype!='ROOT') {
+                                            args.$form.find('.form-item[rel=diskOffering]').hide();
                                         }
                                     },
                                     fields: {
@@ -2231,19 +2020,145 @@
                                                     }
                                                 });
                                             }
+                                        },
+                                        diskOffering: {
+                                            label: 'label.disk.offering',
+                                            docID: 'helpVolumeDiskOffering',
+                                            select: function(args) {
+                                                var snapshotSizeInGB = Math.floor(args.context.snapshots[0].virtualsize/(1024 * 1024 * 1024))
+                                                $.ajax({
+                                                    url: createURL("listDiskOfferings"),
+                                                    dataType: "json",
+                                                    async: false,
+                                                    success: function(json) {
+                                                        diskofferingObjs = json.listdiskofferingsresponse.diskoffering;
+                                                        var items = [];
+                                                        // Sort offerings list with size and keep custom offerings at end
+                                                        for(var i=0;i<diskofferingObjs.length;i++) {
+                                                            for(var j=i+1;j<diskofferingObjs.length;j++) {
+                                                                if((diskofferingObjs[i].disksize>diskofferingObjs[j].disksize &&
+                                                                    diskofferingObjs[j].disksize!=0) ||
+                                                                    (diskofferingObjs[i].disksize==0 &&
+                                                                        diskofferingObjs[j].disksize!=0)) {
+                                                                    var temp = diskofferingObjs[i];
+                                                                    diskofferingObjs[i] = diskofferingObjs[j];
+                                                                    diskofferingObjs[j] = temp;
+                                                                }
+                                                            }
+                                                        }
+                                                        $(diskofferingObjs).each(function() {
+                                                            if(this.disksize==0 || this.disksize>=snapshotSizeInGB) {
+                                                                items.push({
+                                                                    id: this.id,
+                                                                    description: this.displaytext
+                                                                });
+                                                            }
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+
+                                                args.$select.change(function() {
+                                                    var diskOfferingId = $(this).val();
+                                                    selectedDiskOfferingObj = null;
+                                                    $(diskofferingObjs).each(function() {
+                                                        if (this.id == diskOfferingId) {
+                                                            selectedDiskOfferingObj = this;
+                                                            return false;
+                                                        }
+                                                    });
+
+                                                    if (selectedDiskOfferingObj == null) return;
+
+                                                    var $form = $(this).closest('form');
+                                                    var $diskSize = $form.find('.form-item[rel=diskSize]');
+                                                    if (selectedDiskOfferingObj.iscustomized == true) {
+                                                        $diskSize.css('display', 'inline-block');
+                                                        $form.find('input[name=diskSize]').val(''+snapshotSizeInGB);
+                                                    } else {
+                                                        $diskSize.hide();
+                                                    }
+
+                                                    var $minIops = $form.find('.form-item[rel=minIops]');
+                                                    var $maxIops = $form.find('.form-item[rel=maxIops]');
+                                                    if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                                        $minIops.css('display', 'inline-block');
+                                                        $maxIops.css('display', 'inline-block');
+                                                    } else {
+                                                        $minIops.hide();
+                                                        $maxIops.hide();
+                                                    }
+                                                });
+                                            }
+                                        },
+                                        diskSize: {
+                                            label: 'label.disk.size.gb',
+                                            docID: 'helpVolumeSizeGb',
+                                            validation: {
+                                                required: true,
+                                                number: true
+                                            },
+                                            isHidden: true
+                                        },
+                                        minIops: {
+                                            label: 'label.disk.iops.min',
+                                            validation: {
+                                                required: false,
+                                                number: true
+                                            },
+                                            isHidden: true
+                                        },
+                                        maxIops: {
+                                            label: 'label.disk.iops.max',
+                                            validation: {
+                                                required: false,
+                                                number: true
+                                            },
+                                            isHidden: true
                                         }
                                     }
                                 },
                                 action: function(args) {
                                     var data = {
-                                        snapshotid: args.context.snapshots[0].id,
-                                        name: args.data.name
+                                        name: args.data.name,
+                                        snapshotid: args.context.snapshots[0].id
                                     };
 
                                     if (args.$form.find('.form-item[rel=zoneid]').css("display") != "none" && args.data.zoneid != '') {
                                         $.extend(data, {
                                             zoneId: args.data.zoneid
                                         });
+                                    }
+
+                                    if (args.$form.find('.form-item[rel=diskOffering]').css("display") != "none") {
+                                        if (args.data.diskOffering) {
+                                            $.extend(data, {
+                                                diskofferingid: args.data.diskOffering
+                                            });
+                                        }
+                                        if (selectedDiskOfferingObj) {
+                                            if(selectedDiskOfferingObj.iscustomized == true) {
+                                                $.extend(data, {
+                                                    size: args.data.diskSize
+                                                });
+                                            }
+
+                                            if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                                if (args.data.minIops != "" && args.data.minIops > 0) {
+                                                    $.extend(data, {
+                                                        miniops: args.data.minIops
+                                                    });
+                                                }
+
+                                                if (args.data.maxIops != "" && args.data.maxIops > 0) {
+                                                    $.extend(data, {
+                                                        maxiops: args.data.maxIops
+                                                    });
+                                                }
+                                            }
+                                        }
                                     }
 
                                     $.ajax({
@@ -2262,6 +2177,9 @@
                                                     }
                                                 }
                                             });
+                                        },
+                                        error: function(json) {
+                                            args.response.error(parseXMLHttpResponse(json));
                                         }
                                     });
                                 },
@@ -2269,7 +2187,6 @@
                                     poll: pollAsyncJobResult
                                 }
                             },
-
                             revertSnapshot: {
                                 label: 'label.action.revert.snapshot',
                                 messages: {
@@ -2392,36 +2309,36 @@
              */
             vmsnapshots: {
                 type: 'select',
-		title: 'label.vmsnapshot',
-		listView: {
-		    id: 'vmsnapshots',
-		    isMaximized: true,
-		    fields: {
-		        displayname: {
-		            label: 'label.name'
-		        },
-		        state: {
-		            label: 'label.state',
-		            indicator: {
-		                'Ready': 'on',
-		                'Error': 'off'
-		            }
-		        },
-		        type: {
-		            label: 'label.vmsnapshot.type'
-		        },
-		        current: {
-		            label: 'label.vmsnapshot.current',
-		            converter: cloudStack.converters.toBooleanText
-		        },
-		        parentName: {
-		            label: 'label.vmsnapshot.parentname'
-		        },
-		        created: {
-		            label: 'label.date',
-		            converter: cloudStack.converters.toLocalDate
-		        }
-		    },
+                title: 'label.vmsnapshot',
+                listView: {
+                    id: 'vmsnapshots',
+                    isMaximized: true,
+                    fields: {
+                        displayname: {
+                            label: 'label.name'
+                        },
+                        state: {
+                            label: 'label.state',
+                            indicator: {
+                                'Ready': 'on',
+                                'Error': 'off'
+                            }
+                        },
+                        type: {
+                            label: 'label.vmsnapshot.type'
+                        },
+                        current: {
+                            label: 'label.vmsnapshot.current',
+                            converter: cloudStack.converters.toBooleanText
+                        },
+                        parentName: {
+                            label: 'label.vmsnapshot.parentname'
+                        },
+                        created: {
+                            label: 'label.date',
+                            converter: cloudStack.converters.toLocalDate
+                        }
+                    },
 
                     advSearchFields: {
                         name: {
@@ -2491,243 +2408,245 @@
                         }
                     },
 
-		    dataProvider: function(args) {
-                        var data = {};
-                        listViewDataProvider(args, data);
+                    dataProvider: function(args) {
+                        var data = {
+                            listAll: true
+                        };
+                                listViewDataProvider(args, data);
 
-		        if (args.context != null) {
-		            if ("instances" in args.context) {
-                                $.extend(data, {
-                                    virtualMachineId: args.context.instances[0].id
+                        if (args.context != null) {
+                            if ("instances" in args.context) {
+                                        $.extend(data, {
+                                            virtualMachineId: args.context.instances[0].id
+                                        });
+                            }
+                        }
+                        $.ajax({
+                            url: createURL('listVMSnapshot'),
+                                    data: data,
+                            dataType: "json",
+                            async: true,
+                            success: function(json) {
+                                var jsonObj;
+                                jsonObj = json.listvmsnapshotresponse.vmSnapshot;
+                                args.response.success({
+                                            actionFilter: vmSnapshotActionfilter,
+                                    data: jsonObj
                                 });
-		            }
-		        }
-		        $.ajax({
-		            url: createURL('listVMSnapshot&listAll=true'),
-                            data: data,
-		            dataType: "json",
-		            async: true,
-		            success: function(json) {
-		                var jsonObj;
-		                jsonObj = json.listvmsnapshotresponse.vmSnapshot;
-		                args.response.success({
-                                    actionFilter: vmSnapshotActionfilter,
-		                    data: jsonObj
-		                });
-		            }
-		        });
-		    },
-		    //dataProvider end
-		    detailView: {
-		        tabs: {
-		            details: {
-		                title: 'label.details',
-		                fields: {
-		                    id: {
-		                        label: 'label.id'
-		                    },
-		                    name: {
-		                        label: 'label.name'
-		                    },
-		                    displayname: {
-		                        label: 'label.display.name'
-		                    },
-		                    type: {
-		                        label: 'label.vmsnapshot.type'
-		                    },
-		                    description: {
-		                        label: 'label.description'
-		                    },
-		                    state: {
-		                        label: 'label.state',
-		                        indicator: {
-		                            'Ready': 'on',
-		                            'Error': 'off'
-		                        }
-		                    },
-		                    current: {
-		                        label: 'label.vmsnapshot.current',
-		                        converter: cloudStack.converters.toBooleanText
-		                    },
-		                    parentName: {
-		                        label: 'label.vmsnapshot.parentname'
-		                    },
-                                    domain: {
-                                        label: 'label.domain'
+                            }
+                        });
+                    },
+                    //dataProvider end
+                    detailView: {
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+                                fields: {
+                                    id: {
+                                        label: 'label.id'
                                     },
-                                    account: {
-                                        label: 'label.account'
+                                    name: {
+                                        label: 'label.name'
                                     },
-                                    virtualmachineid: {
-                                        label: 'label.vm.id'
+                                    displayname: {
+                                        label: 'label.display.name'
                                     },
-		                    created: {
-		                        label: 'label.date',
-		                        converter: cloudStack.converters.toLocalDate
-		                    }
-		                },
-		                dataProvider: function(args) {
-		                    $.ajax({
-		                        url: createURL("listVMSnapshot&listAll=true&vmsnapshotid=" + args.context.vmsnapshots[0].id),
-		                        dataType: "json",
-		                        async: true,
-		                        success: function(json) {
-		                            var jsonObj;
-		                            jsonObj = json.listvmsnapshotresponse.vmSnapshot[0];
-		                            args.response.success({
-                                                actionFilter: vmSnapshotActionfilter,
-		                                data: jsonObj
-		                            });
-		                        }
-		                    });
-		                },
-		                tags: cloudStack.api.tags({
-		                    resourceType: 'VMSnapshot',
-		                    contextId: 'vmsnapshots'
-		                })
-		            }
-		        },
-		        actions: {
-		            //delete a snapshot
-		            remove: {
-		                label: 'label.action.vmsnapshot.delete',
-		                messages: {
-		                    confirm: function(args) {
-		                        return 'message.action.vmsnapshot.delete';
-		                    },
-		                    notification: function(args) {
-		                        return 'label.action.vmsnapshot.delete';
-		                    }
-		                },
-		                action: function(args) {
-		                    $.ajax({
-		                        url: createURL("deleteVMSnapshot&vmsnapshotid=" + args.context.vmsnapshots[0].id),
-		                        dataType: "json",
-		                        async: true,
-		                        success: function(json) {
-		                            var jid = json.deletevmsnapshotresponse.jobid;
-		                            args.response.success({
-		                                _custom: {
-		                                    jobId: jid
-		                                }
-		                            });
-		                        }
-		                    });
-		                },
-		                notification: {
-		                    poll: pollAsyncJobResult
-		                }
-		            },
-		            revertToVMSnapshot: {
-		                label: 'label.action.vmsnapshot.revert',
-		                messages: {
-		                    confirm: function(args) {
-		                        return 'label.action.vmsnapshot.revert';
-		                    },
-		                    notification: function(args) {
-		                        return 'message.action.vmsnapshot.revert';
-		                    }
-		                },
-		                action: function(args) {
-		                    $.ajax({
-		                        url: createURL("revertToVMSnapshot&vmsnapshotid=" + args.context.vmsnapshots[0].id),
-		                        dataType: "json",
-		                        async: true,
-		                        success: function(json) {
-		                            var jid = json.reverttovmsnapshotresponse.jobid;
-		                            args.response.success({
-		                                _custom: {
-		                                    jobId: jid
-		                                }
-		                            });
-		                        }
-		                    });
-
-		                },
-		                notification: {
-		                    poll: pollAsyncJobResult
-		                }
-		            },
-		            takeSnapshot: {
-		                label: 'Create Snapshot From VM Snapshot',
-		                messages: {
-		                    confirm: function(args) {
-		                        return 'Please confirm that you want to create a volume snapshot from the vm snapshot.';
-		                    },
-		                    notification: function(args) {
-		                        return 'Volume snapshot is created from vm snapshot';
-		                    }
-		                },
-		                createForm: {
-		                    title: 'label.action.take.snapshot',
-		                    desc: 'message.action.take.snapshot',
-		                    fields: {
-		                        name: {
-		                            label: 'label.name',
-		                        },
-                                        volume: {
-                                            label: 'label.volume',
-                                            validation: {
-                                                required: true
-                                            },
-                                            select: function(args) {
-                                                $.ajax({
-                                                    url: createURL("listVolumes&virtualMachineId=" + args.context.vmsnapshots[0].virtualmachineid),
-                                                    dataType: "json",
-                                                    async: true,
-                                                    success: function(json) {
-                                                        var volumes = json.listvolumesresponse.volume;
-                                                        var items = [];
-                                                        $(volumes).each(function() {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.name
-                                                            });
-                                                        });
-                                                        args.response.success({
-                                                            data: items
-                                                        });
-
-                                                    }
-                                                });
-                                            }
+                                    type: {
+                                        label: 'label.vmsnapshot.type'
+                                    },
+                                    description: {
+                                        label: 'label.description'
+                                    },
+                                    state: {
+                                        label: 'label.state',
+                                        indicator: {
+                                            'Ready': 'on',
+                                            'Error': 'off'
                                         }
-		                    }
-		                },
-		                action: function(args) {
-		                    var data = {
-                                        volumeid: args.data.volume,
-		                        vmsnapshotid: args.context.vmsnapshots[0].id
-		                    };
-		                    if (args.data.name != null && args.data.name.length > 0) {
-		                        $.extend(data, {
-		                            name: args.data.name
-		                        });
-		                    }
-		                    $.ajax({
-		                        url: createURL("createSnapshotFromVMSnapshot"),
-		                        data: data,
-		                        dataType: "json",
-		                        async: true,
-		                        success: function(json) {
-		                            var jid = json.createsnapshotfromvmsnapshotresponse.jobid;
-		                            args.response.success({
-		                                _custom: {
-		                                    jobId: jid
-		                                }
-		                            });
-		                        }
-		                    });
+                                    },
+                                    current: {
+                                        label: 'label.vmsnapshot.current',
+                                        converter: cloudStack.converters.toBooleanText
+                                    },
+                                    parentName: {
+                                        label: 'label.vmsnapshot.parentname'
+                                    },
+                                            domain: {
+                                                label: 'label.domain'
+                                            },
+                                            account: {
+                                                label: 'label.account'
+                                            },
+                                            virtualmachineid: {
+                                                label: 'label.vm.id'
+                                            },
+                                    created: {
+                                        label: 'label.date',
+                                        converter: cloudStack.converters.toLocalDate
+                                    }
+                                },
+                                dataProvider: function(args) {
+                                    $.ajax({
+                                        url: createURL("listVMSnapshot&listAll=true&vmsnapshotid=" + args.context.vmsnapshots[0].id),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jsonObj;
+                                            jsonObj = json.listvmsnapshotresponse.vmSnapshot[0];
+                                            args.response.success({
+                                                        actionFilter: vmSnapshotActionfilter,
+                                                data: jsonObj
+                                            });
+                                        }
+                                    });
+                                },
+                                tags: cloudStack.api.tags({
+                                    resourceType: 'VMSnapshot',
+                                    contextId: 'vmsnapshots'
+                                })
+                            }
+                        },
+                        actions: {
+                            //delete a snapshot
+                            remove: {
+                                label: 'label.action.vmsnapshot.delete',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.action.vmsnapshot.delete';
+                                    },
+                                    notification: function(args) {
+                                        return 'label.action.vmsnapshot.delete';
+                                    }
+                                },
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("deleteVMSnapshot&vmsnapshotid=" + args.context.vmsnapshots[0].id),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.deletevmsnapshotresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            revertToVMSnapshot: {
+                                label: 'label.action.vmsnapshot.revert',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'label.action.vmsnapshot.revert';
+                                    },
+                                    notification: function(args) {
+                                        return 'message.action.vmsnapshot.revert';
+                                    }
+                                },
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("revertToVMSnapshot&vmsnapshotid=" + args.context.vmsnapshots[0].id),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.reverttovmsnapshotresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
 
-		                },
-		                notification: {
-		                    poll: pollAsyncJobResult
-		                }
-		            }
-		        }
-		    }
-		    //detailview end
-		}
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            takeSnapshot: {
+                                label: 'Create Snapshot From VM Snapshot',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'Please confirm that you want to create a volume snapshot from the vm snapshot.';
+                                    },
+                                    notification: function(args) {
+                                        return 'Volume snapshot is created from vm snapshot';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.action.take.snapshot',
+                                    desc: 'message.action.take.snapshot',
+                                    fields: {
+                                        name: {
+                                            label: 'label.name',
+                                        },
+                                                volume: {
+                                                    label: 'label.volume',
+                                                    validation: {
+                                                        required: true
+                                                    },
+                                                    select: function(args) {
+                                                        $.ajax({
+                                                            url: createURL("listVolumes&virtualMachineId=" + args.context.vmsnapshots[0].virtualmachineid),
+                                                            dataType: "json",
+                                                            async: true,
+                                                            success: function(json) {
+                                                                var volumes = json.listvolumesresponse.volume;
+                                                                var items = [];
+                                                                $(volumes).each(function() {
+                                                                    items.push({
+                                                                        id: this.id,
+                                                                        description: this.name
+                                                                    });
+                                                                });
+                                                                args.response.success({
+                                                                    data: items
+                                                                });
+
+                                                            }
+                                                        });
+                                                    }
+                                                }
+                                    }
+                                },
+                                action: function(args) {
+                                    var data = {
+                                                volumeid: args.data.volume,
+                                        vmsnapshotid: args.context.vmsnapshots[0].id
+                                    };
+                                    if (args.data.name != null && args.data.name.length > 0) {
+                                        $.extend(data, {
+                                            name: args.data.name
+                                        });
+                                    }
+                                    $.ajax({
+                                        url: createURL("createSnapshotFromVMSnapshot"),
+                                        data: data,
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.createsnapshotfromvmsnapshotresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
+
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        }
+                    }
+                    //detailview end
+                }
             }
         }
     };
@@ -2792,7 +2711,7 @@
                     }
                 } else { // Disk not attached
                     allowedActions.push("remove");
-                    if (jsonObj.state == "Ready" && isAdmin() && jsonObj.storagetype == "shared") {
+                    if (jsonObj.state == "Ready" && isAdmin()) {
                         allowedActions.push("migrateToAnotherStorage");
                     }
                     allowedActions.push("attachDisk");
@@ -2835,7 +2754,10 @@
         if (jsonObj.state == "Ready") {
             allowedActions.push("remove");
             allowedActions.push("revertToVMSnapshot");
-            allowedActions.push("takeSnapshot");
+
+            if (args && args.context && args.context.instances && args.context.instances[0].hypervisor && args.context.instances[0].hypervisor === "KVM") {
+                allowedActions.push("takeSnapshot");
+            }
         }
 
         return allowedActions;

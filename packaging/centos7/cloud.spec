@@ -24,13 +24,8 @@
 Name:      cloudstack
 Summary:   CloudStack IaaS Platform
 #http://fedoraproject.org/wiki/PackageNamingGuidelines#Pre-Release_packages
-%if "%{?_prerelease}" != ""
-%define _maventag %{_ver}-SNAPSHOT
+%define _maventag %{_fullver}
 Release:   %{_rel}%{dist}
-%else
-%define _maventag %{_ver}
-Release:   %{_rel}%{dist}
-%endif
 
 %{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
@@ -58,9 +53,9 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: java => 1.8.0
-Requires: apache-commons-daemon-jsvc
+Requires: java-1.8.0-openjdk
 Requires: python
+Requires: python3
 Requires: bash
 Requires: bzip2
 Requires: gzip
@@ -75,7 +70,7 @@ Requires: sudo
 Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
-Requires: mkisofs
+Requires: genisoimage
 Requires: mysql-connector-python
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
@@ -88,22 +83,25 @@ management, and intelligence in CloudStack.
 %package common
 Summary: Apache CloudStack common files and scripts
 Requires: python
+Requires: python3
 Requires: python-argparse
 Requires: python-netaddr
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
+%global __requires_exclude ^libuuid\\.so\\.1$
 
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: openssh-clients
-Requires: java => 1.8.0
+Requires: java-1.8.0-openjdk
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
 Requires: ebtables
 Requires: iptables
 Requires: ethtool
+Requires: net-tools
 Requires: iproute
 Requires: ipset
 Requires: perl
@@ -129,7 +127,7 @@ The CloudStack baremetal agent
 
 %package usage
 Summary: CloudStack Usage calculation server
-Requires: java => 1.8.0
+Requires: java-1.8.0-openjdk
 Requires: mysql-connector-java
 Group: System Environment/Libraries
 %description usage
@@ -193,7 +191,7 @@ if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then
    FLAGS="$FLAGS -Dsimulator"
 fi
 
-mvn -Psystemvm,developer -DskipTests $FLAGS clean package
+mvn -Psystemvm,developer $FLAGS clean package
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -214,7 +212,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms
 mkdir -p ${RPM_BUILD_ROOT}%{python_sitearch}/
-mkdir -p ${RPM_BUILD_ROOT}%/usr/bin
+mkdir -p ${RPM_BUILD_ROOT}/usr/bin
 cp -r scripts/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 install -D systemvm/dist/systemvm.iso ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/systemvm.iso
 install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
@@ -225,7 +223,7 @@ cp build/gitrev.txt ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 cp packaging/centos7/cloudstack-sccs ${RPM_BUILD_ROOT}/usr/bin
 
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
-cp -r plugins/network-elements/cisco-vnmc/scripts/network/cisco/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
+cp -r plugins/network-elements/cisco-vnmc/src/main/scripts/network/cisco/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
 
 # Management
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
@@ -298,6 +296,7 @@ install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}%{_s
 install -D agent/target/transformed/log4j-cloud.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/log4j-cloud.xml
 install -D agent/target/transformed/cloud-setup-agent ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-agent
 install -D agent/target/transformed/cloudstack-agent-upgrade ${RPM_BUILD_ROOT}%{_bindir}/%{name}-agent-upgrade
+install -D agent/target/transformed/cloud-guest-tool ${RPM_BUILD_ROOT}%{_bindir}/%{name}-guest-tool
 install -D agent/target/transformed/libvirtqemuhook ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib/libvirtqemuhook
 install -D agent/target/transformed/cloud-ssh ${RPM_BUILD_ROOT}%{_bindir}/%{name}-ssh
 install -D agent/target/transformed/cloudstack-agent-profile.sh ${RPM_BUILD_ROOT}%{_sysconfdir}/profile.d/%{name}-agent-profile.sh
@@ -331,7 +330,7 @@ cp -r test/integration/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-integration-tests/
 # MYSQL HA
 if [ "x%{_ossnoss}" == "xnoredist" ] ; then
   mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-mysql-ha/lib
-  cp -r plugins/database/mysql-ha/target/cloud-plugin-database-mysqlha-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-mysql-ha/lib
+  cp -r plugins/database/mysql-ha/target/cloud-plugin-database-mysqlha-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
 fi
 
 #License files from whisker
@@ -349,10 +348,6 @@ install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-marvi
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-marvin-%{version}/LICENSE
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-integration-tests-%{version}/NOTICE
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-integration-tests-%{version}/LICENSE
-if [ "x%{_ossnoss}" == "xnoredist" ] ; then
-  install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-mysql-ha-%{version}/LICENSE
-  install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-mysql-ha-%{version}/NOTICE
-fi
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -397,10 +392,12 @@ if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util
 fi
 
 if [ -f %{_sysconfdir}/sysconfig/%{name}-management ] ; then
-    mv %{_sysconfdir}/sysconfig/%{name}-management  %{_sysconfdir}/default/%{name}-management
+    rm -f %{_sysconfdir}/sysconfig/%{name}-management
 fi
 
 chown -R cloud:cloud /var/log/cloudstack/management
+
+systemctl daemon-reload
 
 %preun agent
 /sbin/service cloudstack-agent stop || true
@@ -425,6 +422,7 @@ if [ ! -d %{_sysconfdir}/libvirt/hooks ] ; then
     mkdir %{_sysconfdir}/libvirt/hooks
 fi
 cp -a ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib/libvirtqemuhook %{_sysconfdir}/libvirt/hooks/qemu
+mkdir -m 0755 -p /usr/share/cloudstack-agent/tmp
 /sbin/service libvirtd restart
 /sbin/systemctl enable cloudstack-agent > /dev/null 2>&1 || true
 
@@ -435,6 +433,8 @@ if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
     # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
     mv %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/cloud.rpmsave/agent/agent.properties.rpmsave
 fi
+
+systemctl daemon-reload
 
 %pre usage
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
@@ -486,7 +486,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/java.security.ciphers
 %config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties
-%attr(0755,root,root) %{_unitdir}/%{name}-management.service
+%attr(0644,root,root) %{_unitdir}/%{name}-management.service
 %attr(0755,cloud,cloud) %{_localstatedir}/run/%{name}-management.pid
 %attr(0755,root,root) %{_bindir}/%{name}-setup-management
 %attr(0755,root,root) %{_bindir}/%{name}-update-xenserver-licenses
@@ -513,11 +513,12 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %attr(0755,root,root) %{_bindir}/%{name}-agent-upgrade
+%attr(0755,root,root) %{_bindir}/%{name}-guest-tool
 %attr(0755,root,root) %{_bindir}/%{name}-ssh
 %attr(0644,root,root) %{_unitdir}/%{name}-agent.service
 %config(noreplace) %{_sysconfdir}/default/%{name}-agent
 %attr(0644,root,root) %{_sysconfdir}/profile.d/%{name}-agent-profile.sh
-%attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-agent
+%config(noreplace) %attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-agent
 %attr(0755,root,root) %{_datadir}/%{name}-common/scripts/network/cisco
 %config(noreplace) %{_sysconfdir}/%{name}/agent
 %dir %{_localstatedir}/log/%{name}/agent
@@ -571,9 +572,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %if "%{_ossnoss}" == "noredist"
 %files mysql-ha
 %defattr(0644,cloud,cloud,0755)
-%attr(0644,root,root) %{_datadir}/%{name}-mysql-ha/lib/*
-%{_defaultdocdir}/%{name}-mysql-ha-%{version}/LICENSE
-%{_defaultdocdir}/%{name}-mysql-ha-%{version}/NOTICE
+%attr(0644,root,root) %{_datadir}/%{name}-management/lib/*mysqlha*jar
 %endif
 
 %files baremetal-agent

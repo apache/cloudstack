@@ -159,7 +159,14 @@ class TestScaleVm(cloudstackTestCase):
         cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.serviceofferingid = self.big_offering.id
         cmd.id = self.virtual_machine.id
-        self.apiclient.scaleVirtualMachine(cmd)
+
+        try:
+            self.apiclient.scaleVirtualMachine(cmd)
+        except Exception as e:
+            if "LicenceRestriction" in str(e):
+                self.skipTest("Your XenServer License does not allow scaling")
+            else:
+                self.fail("Scaling failed with the following exception: " + str(e))
 
         list_vm_response = VirtualMachine.list(
             self.apiclient,

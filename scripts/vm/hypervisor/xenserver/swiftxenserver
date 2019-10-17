@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,7 +18,7 @@
 
 # Version @VERSION@
 #
-# A plugin for executing script needed by cloud  stack
+# A plugin for executing script needed by Apache CloudStack
 
 import os, sys, time
 import XenAPIPlugin
@@ -26,15 +26,16 @@ sys.path.extend(["/opt/xensource/sm/"])
 import util
 import cloudstack_pluginlib as lib
 import logging
+import datetime
 
 lib.setup_logging("/var/log/cloud/swiftxenserver.log")
 
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        logging.debug("#### VMOPS enter  %s ####" % name )
+        logging.debug("#### CLOUD enter  %s ####", name )
         res = fn(*v, **k)
-        logging.debug("#### VMOPS exit  %s ####" % name )
+        logging.debug("#### CLOUD exit   %s ####", name )
         return res
     return wrapped
 
@@ -52,12 +53,16 @@ def upload(args):
     lfilename = args['lfilename']
     isISCSI = args['isISCSI']
     segment = 0
-    logging.debug("#### VMOPS upload %s to swift ####", lfilename)
+    storagepolicy = None
+    if "storagepolicy" in args:
+        storagepolicy = args["storagepolicy"]
+    logging.debug("#### CLOUD upload begin    %s/%s to swift ####", container, lfilename)
+    timestamp_begin = datetime.datetime.now()
     savedpath = os.getcwd()
     os.chdir(ldir)
     try :
-        if isISCSI == 'ture':
-            cmd1 = [ lvchange , "-ay", lfilename ] 
+        if isISCSI == 'true':
+            cmd1 = [ lvchange , "-ay", lfilename ]
             util.pread2(cmd1)
             cmd1 = [ lvdisplay, "-c", lfilename ]
             lines = util.pread2(cmd).split(':');
@@ -66,13 +71,27 @@ def upload(args):
                 segment = 1
         else :
             size = os.path.getsize(lfilename)
-            if size > MAX_SEG_SIZE :        
+            if size > MAX_SEG_SIZE :
                 segment = 1
-        if segment :             
+        if segment :
             cmd = [SWIFT, "-A", url, "-U", account + ":" + username, "-K", key, "upload", "-S", str(MAX_SEG_SIZE), container, lfilename]
         else :
             cmd = [SWIFT, "-A", url ,"-U", account + ":" + username, "-K", key, "upload", container, lfilename]
+        if storagepolicy is not None:
+            cmd.append("--storage-policy")
+            cmd.append(storagepolicy)
         util.pread2(cmd)
+        cmd2 = [SWIFT, "-A", url ,"-U", account + ":" + username, "-K", key, "stat", container, lfilename]
+        upload_stat = util.pread2(cmd2)
+        upload_stat = [line for line in upload_stat.split('\n') if "Content Length" in line]
+        upload_stat = upload_stat[0].split(': ')[1]
+        upload_diff = size - long(upload_stat)
+        if upload_diff != 0:
+            logging.error("#### CLOUD upload file size diff: %s", upload_diff)
+        timestamp_end = datetime.datetime.now()
+        timestamp_delta = timestamp_end - timestamp_begin
+        rate = (size / 1024 / 1024) / timestamp_delta.seconds
+        logging.debug("#### CLOUD upload complete %s/%s to swift: %s @ %s MB/s ####", container, lfilename, str(timestamp_delta)[:7], rate)
         return 'true'
     finally:
         os.chdir(savedpath)
@@ -86,8 +105,6 @@ def swift(session, args):
         return upload(args)
     elif op == 'download':
         return download(args)
-    elif op == 'delete' :
-        cmd = ["st", "-A https://" + hostname + ":8080/auth/v1.0 -U " + account + ":" + username + " -K " + token + " delete " + rfilename]
     else :
         logging.debug("doesn't support swift operation  %s " % op )
         return 'false'
@@ -96,6 +113,6 @@ def swift(session, args):
         return 'true'
     except:
         return 'false'
-   
+
 if __name__ == "__main__":
     XenAPIPlugin.dispatch({"swift": swift})

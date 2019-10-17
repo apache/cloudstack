@@ -1,4 +1,4 @@
-# Apache CloudStack [![Build Status](https://travis-ci.org/apache/cloudstack.svg?branch=master)](https://travis-ci.org/apache/cloudstack) [![Coverity Scan Build Status](https://scan.coverity.com/projects/943/badge.svg)](https://scan.coverity.com/projects/943)
+# Apache CloudStack [![Build Status](https://travis-ci.org/apache/cloudstack.svg?branch=master)](https://travis-ci.org/apache/cloudstack) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apachecloudstack) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=ncloc)](https://sonarcloud.io/dashboard?id=apachecloudstack) ![GitHub language count](https://img.shields.io/github/languages/count/apache/cloudstack.svg) ![GitHub top language](https://img.shields.io/github/languages/top/apache/cloudstack.svg)
 
 ![Apache CloudStack](tools/logo/apache_cloudstack.png)
 
@@ -67,7 +67,7 @@ Interested in helping out with Apache CloudStack? Great! We welcome
 participation from anybody willing to work [The Apache Way](http://theapacheway.com) and make a
 contribution. Note that you do not have to be a developer in order to contribute
 to Apache CloudStack. We need folks to help with documentation, translation,
-promotion etc.See our contribution [page](http://cloudstack.apache.org/contribute.html).
+promotion etc. See our contribution [page](http://cloudstack.apache.org/contribute.html).
 
 If you're interested in learning more or participating in the Apache CloudStack
 project, the mailing lists are the best way to do that. While the project has
@@ -100,7 +100,7 @@ If you've found an issue that you believe is a security vulnerability in a
 released version of CloudStack, please report it to `security@cloudstack.apache.org` with details about the vulnerability, how it
 might be exploited, and any additional information that might be useful.
 
-For more details, please visit our security [page](http://cloudstack.apache.org/security.html)
+For more details, please visit our security [page](http://cloudstack.apache.org/security.html).
 
 ## License
 
@@ -143,7 +143,7 @@ Unrestricted (TSU) exception (see the BIS Export Administration Regulations, Sec
 
 The following provides more details on the included cryptographic software:
 
-* CloudStack makes use of JaSypt cryptographic libraries
+* CloudStack makes use of JaSypt cryptographic libraries.
 * CloudStack has a system requirement of MySQL, and uses native database encryption functionality.
 * CloudStack makes use of the Bouncy Castle general-purpose encryption library.
 * CloudStack can optionally interacts with and controls OpenSwan-based VPNs.

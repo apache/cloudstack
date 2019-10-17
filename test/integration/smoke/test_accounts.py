@@ -19,7 +19,8 @@
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (random_gen,
-                              cleanup_resources)
+                              cleanup_resources,
+                              validateList)
 from marvin.cloudstackAPI import *
 from marvin.lib.base import (Domain,
                              Account,
@@ -29,10 +30,10 @@ from marvin.lib.base import (Domain,
                              User,
                              NATRule,
                              Template,
-                             PublicIPAddress)
+                             PublicIPAddress, Role)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
+                               get_test_template,
                                list_accounts,
                                list_virtual_machines,
                                list_service_offering,
@@ -42,10 +43,10 @@ from marvin.lib.common import (get_domain,
                                wait_for_cleanup)
 from nose.plugins.attrib import attr
 from marvin.cloudstackException import CloudstackAPIException
+from marvin.codes import PASS
 import time
 
 from pyVmomi.VmomiSupport import GetVersionFromVersionUri
-
 
 class Services:
 
@@ -65,6 +66,11 @@ class Services:
                 # Random characters are appended for unique
                 # username
                 "password": "fr3sca",
+            },
+            "role": {
+                "name": "MarvinFake Role",
+                "type": "User",
+                "description": "Fake Role created by Marvin test"
             },
             "user": {
                 "email": "user@test.com",
@@ -128,11 +134,12 @@ class TestAccounts(cloudstackTestCase):
 
         cls.services = Services().services
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
@@ -259,6 +266,53 @@ class TestAccounts(cloudstackTestCase):
         return
 
 
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"],
+          required_hardware="false")
+    def test_02_update_account(self):
+        """
+        Tests that accounts can be updated with new name, network domain, dynamic role
+        :return:
+        """
+        dynamic_roles_active = self.apiclient.listCapabilities(listCapabilities.listCapabilitiesCmd()).dynamicrolesenabled
+        if not dynamic_roles_active:
+            self.skipTest("Dynamic Role-Based API checker not enabled, skipping test")
+
+        ts = str(time.time())
+        network_domain = 'mycloud.com'
+
+        account = Account.create(self.apiclient, self.services['account'])
+        self.cleanup.append(account)
+
+        role = Role.create(self.apiclient, self.services['role'])
+        self.cleanup.append(role)
+
+        account.update(self.apiclient, newname=account.name + ts)
+        account.update(self.apiclient, roleid=role.id)
+        account.update(self.apiclient, networkdomain=network_domain)
+
+        list_accounts_response = list_accounts(self.apiclient, id=account.id)
+        test_account = list_accounts_response[0]
+
+        self.assertEqual(
+            test_account.roleid, role.id,
+            "Check the role for the account is changed")
+
+        self.assertEqual(
+            test_account.networkdomain, network_domain,
+            "Check the domain for the account is changed")
+
+        self.assertEqual(
+            test_account.name, account.name + ts,
+            "Check the name for the account is changed")
+
+        try:
+            account.update(self.apiclient, newname="")
+            self.fail("Account name change to empty name succeeded. Must be error.")
+        except CloudstackAPIException:
+            pass
+
+
+
 class TestRemoveUserFromAccount(cloudstackTestCase):
 
     @classmethod
@@ -270,11 +324,12 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
 
         cls.services = Services().services
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
@@ -948,6 +1003,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
         cls.services = Services().services
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
         cls.sub_domain = Domain.create(
             cls.api_client,
@@ -983,10 +1039,10 @@ class TestAddVmToSubDomain(cloudstackTestCase):
             cls.sub_domain,
             cls.service_offering
         ]
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.vm_1 = VirtualMachine.create(
@@ -1467,6 +1523,91 @@ class TestUserLogin(cloudstackTestCase):
         )
         return
 
+    @attr(tags=["simulator", "advanced",
+                "advancedns", "basic", "eip", "sg"])
+    def test_ApiListDomain(self):
+        """Test case to check the correctness of List domain API, to make sure that no field is missed in the output.
+        """
+
+        # Steps for test scenario
+        # 1. create a domain
+        # 2. Create a sub-domain with domain created in step 1 as parent.
+        # Validate the following
+        # 1. listDomains returns created domain and sub-domain
+        # 2. The list Domain response has all the expected 44 elements/fields in it.
+
+        listDomainResponseElements = ["id", "name", "level", "parentdomainid", "parentdomainname", "haschild", "path",
+                                      "state",
+                                      "vmlimit", "vmtotal", "vmavailable", "iplimit", "iptotal", "ipavailable",
+                                      "volumelimit",
+                                      "volumetotal", "volumeavailable", "snapshotlimit", "snapshottotal",
+                                      "snapshotavailable",
+                                      "templatelimit", "templatetotal", "templateavailable", "projectlimit",
+                                      "projecttotal", "projectavailable",
+                                      "networklimit", "networktotal", "networkavailable", "vpclimit", "vpctotal",
+                                      "vpcavailable",
+                                      "cpulimit", "cputotal", "cpuavailable", "memorylimit", "memorytotal",
+                                      "memoryavailable", "primarystoragelimit",
+                                      "primarystoragetotal", "primarystorageavailable", "secondarystoragelimit",
+                                      "secondarystoragetotal", "secondarystorageavailable"
+                                      ]
+
+        self.debug("Creating a domain for testing list domain reponse")
+        domain = Domain.create(
+            self.apiclient,
+            self.services["domain"],
+            parentdomainid=self.domain.id
+        )
+
+        self.debug("Domain: %s is created successfully." % domain.name)
+
+        self.debug("Validating the created domain")
+        list_domain = Domain.list(self.api_client, id=domain.id)
+        domain_list_validation_result = validateList(list_domain)
+
+        self.assertEqual(domain_list_validation_result[0], PASS,
+                         "Domain list validation failed due to %s" %
+                         domain_list_validation_result[2])
+
+        subDomain = Domain.create(
+            self.apiclient,
+            self.services["domain"],
+            parentdomainid=domain.id
+        )
+
+        self.debug("Sub-Domain: %s is created successfully." % subDomain.name)
+
+        self.cleanup.append(subDomain)
+        self.cleanup.append(domain)
+
+        self.debug("Validating the created sub-domain")
+        list_sub_domain = Domain.list(self.api_client, id=subDomain.id)
+        subdomain_list_validation_result = validateList(list_sub_domain)
+
+        self.assertEqual(subdomain_list_validation_result[0], PASS,
+                         "Sub-Domain list validation failed due to %s" %
+                         subdomain_list_validation_result[2])
+
+        self.debug("Checking that the listDomain response has all the elements.")
+
+        domainOutputString = list_domain[0].__dict__
+
+        for element in listDomainResponseElements:
+            self.assertTrue((element.lower() in domainOutputString), element + " field is missing in list domain rsponse.")
+
+        self.debug("Verified that the listDomain response has all the elements.")
+
+        self.debug("Checking that the list sub-domain response has all the elements.")
+
+        subdomainOutputString = list_sub_domain[0].__dict__
+
+        for element in listDomainResponseElements:
+            self.assertTrue((element.lower() in subdomainOutputString), element + " field is missing in list domain rsponse.")
+
+        self.debug("Verified that the list sub-Domain response has all the elements.")
+
+        return
+
     @attr(tags=["login", "accounts", "simulator", "advanced",
                 "advancedns", "basic", "eip", "sg"])
     def test_LoginApiDomain(self):
@@ -1717,12 +1858,13 @@ class TestDomainForceRemove(cloudstackTestCase):
         cls.services = Services().services
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
 
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -2082,3 +2224,140 @@ class TestDomainForceRemove(cloudstackTestCase):
             domain.delete(self.apiclient, cleanup=False)
         return
 
+class TestMoveUser(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(TestMoveUser, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
+
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.testdata['mode'] = cls.zone.networktype
+
+        cls.template = get_test_template(
+            cls.api_client,
+            cls.zone.id,
+            cls.testdata["ostype"]
+        )
+
+        cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
+        cls._cleanup = []
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            # Clean up, terminate the created resources
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        self.testdata = self.testClient.getParsedTestDataConfig()
+        self.account1 = Account.create(
+            self.apiclient,
+            self.testdata["acl"]["accountD1"],
+            domainid=self.domain.id
+        )
+        self.cleanup.append(self.account1)
+
+        self.account2 = Account.create(
+            self.apiclient,
+            self.testdata["acl"]["accountD1A"],
+            domainid=self.domain.id
+        )
+        self.cleanup.append(self.account2)
+
+        self.user = User.create(
+            self.apiclient,
+            self.testdata["user"],
+            account=self.account1.name,
+            domainid=self.account1.domainid
+        )
+
+        return
+
+    def tearDown(self):
+        try:
+            # Clean up, terminate the created resources
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["domains", "advanced", "advancedns", "simulator","dvs"], required_hardware="false")
+    def test_move_user_to_accountID(self):
+
+        self.user.move(self.api_client, dest_accountid=self.account2.id)
+
+        self.assertEqual(
+            self.account2.name,
+            self.user.list(self.apiclient, id=self.user.id)[0].account,
+            "Check user source of created user"
+        )
+        return
+
+    @attr(tags=["domains", "advanced", "advancedns", "simulator","dvs"], required_hardware="false")
+    def test_move_user_to_account_name(self):
+
+        self.user.move(self.api_client, dest_account=self.account2.name)
+
+        self.assertEqual(
+            self.account2.name,
+            self.user.list(self.apiclient, id=self.user.id)[0].account,
+            "Check user source of created user"
+        )
+        return
+
+    @attr(tags=["domains", "advanced", "advancedns", "simulator","dvs"], required_hardware="false")
+    def test_move_user_to_different_domain(self):
+        domain2 = Domain.create(self.api_client,
+                                self.testdata["domain"],
+                                parentdomainid=self.domain.id
+                                )
+        self.cleanup.append(domain2)
+
+        account_different_domain = Account.create(
+            self.apiclient,
+            self.testdata["acl"]["accountD1B"],
+            domainid=domain2.id
+        )
+        self.cleanup.append(account_different_domain)
+        try:
+            self.user.move(self.api_client, dest_account=account_different_domain.name)
+        except Exception:
+            pass
+        else:
+            self.fail("It should not be allowed to move users across accounts in different domains, failing")
+
+        account_different_domain.delete(self.api_client)
+        return
+
+    @attr(tags=["domains", "advanced", "advancedns", "simulator","dvs"], required_hardware="false")
+    def test_move_user_incorrect_account_id(self):
+
+        try:
+            self.user.move(self.api_client, dest_accountid='incorrect-account-id')
+        except Exception:
+            pass
+        else:
+            self.fail("moving to non-existing account should not be possible, failing")
+        return
+
+    @attr(tags=["domains", "advanced", "advancedns", "simulator","dvs"], required_hardware="false")
+    def test_move_user_incorrect_account_name(self):
+
+        try:
+            self.user.move(self.api_client, dest_account='incorrect-account-name')
+        except Exception:
+            pass
+        else:
+            self.fail("moving to non-existing account should not be possible, failing")
+        return

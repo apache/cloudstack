@@ -67,6 +67,7 @@ class TestSecSRMount(cloudstackTestCase):
                          "timeout": 10,
                          }
 
+
     def tearDown(self):
         try:
             # Clean up, terminate the created templates
@@ -80,7 +81,7 @@ class TestSecSRMount(cloudstackTestCase):
     def isOnlyLocalStorageAvailable(self):
         if not self.zone.localstorageenabled:
             self.skipTest("Local Storage not enabled")
-        
+
         storage_pools = StoragePool.list(
                    self.apiclient,
                    zoneid=self.zone.id,

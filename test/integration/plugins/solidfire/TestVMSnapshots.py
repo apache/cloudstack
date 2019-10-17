@@ -18,6 +18,7 @@
 import logging
 import random
 import SignedAPICall
+import time
 import XenAPI
 
 from solidfire.factory import ElementFactory
@@ -42,6 +43,10 @@ from marvin.lib.utils import cleanup_resources
 #  Only one zone
 #  Only one pod
 #  Only one cluster
+
+# Running the tests:
+#  Change the "hypervisor_type" variable to control which hypervisor type to test.
+#  If using XenServer, verify the "xen_server_hostname" variable is correct.
 
 
 class TestData:
@@ -71,14 +76,18 @@ class TestData:
     xenServer = "xenserver"
     zoneId = "zoneId"
 
+    # modify to control which hypervisor type to test
+    hypervisor_type = xenServer
+    xen_server_hostname = "XenServer-6.5-1"
+
     def __init__(self):
         self.testdata = {
             TestData.solidFire: {
-                TestData.mvip: "192.168.139.112",
+                TestData.mvip: "10.117.40.120",
                 TestData.username: "admin",
                 TestData.password: "admin",
                 TestData.port: 443,
-                TestData.url: "https://192.168.139.112:443"
+                TestData.url: "https://10.117.40.120:443"
             },
             TestData.xenServer: {
                 TestData.username: "root",
@@ -101,7 +110,7 @@ class TestData:
             TestData.primaryStorage: {
                 "name": "SolidFire-%d" % random.randint(0, 100),
                 TestData.scope: "ZONE",
-                "url": "MVIP=192.168.139.112;SVIP=10.10.8.112;" +
+                "url": "MVIP=10.117.40.120;SVIP=10.117.41.120;" +
                        "clusterAdminUsername=admin;clusterAdminPassword=admin;" +
                        "clusterDefaultMinIops=10000;clusterDefaultMaxIops=15000;" +
                        "clusterDefaultBurstIopsPercentOfMaxIops=1.5;",
@@ -125,7 +134,7 @@ class TestData:
                 "customizediops": False,
                 "miniops": "10000",
                 "maxiops": "15000",
-                "hypervisorsnapshotreserve": 200,
+                "hypervisorsnapshotreserve": 400,
                 TestData.tags: TestData.storageTag
             },
             TestData.diskOffering: {
@@ -135,7 +144,7 @@ class TestData:
                 "customizediops": False,
                 "miniops": 300,
                 "maxiops": 500,
-                "hypervisorsnapshotreserve": 200,
+                "hypervisorsnapshotreserve": 400,
                 TestData.tags: TestData.storageTag,
                 "storagetype": "shared"
             },
@@ -145,7 +154,7 @@ class TestData:
             TestData.zoneId: 1,
             TestData.clusterId: 1,
             TestData.domainId: 1,
-            TestData.url: "192.168.129.50"
+            TestData.url: "10.117.40.114"
         }
 
 
@@ -175,7 +184,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         # Set up XenAPI connection
         host_ip = "https://" + \
-                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId], name="XenServer-6.5-1")[0].ipaddress
+                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId], name=TestData.xen_server_hostname)[0].ipaddress
 
         cls.xen_session = XenAPI.Session(host_ip)
 
@@ -190,7 +199,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
-        template = get_template(cls.apiClient, cls.zone.id, cls.configData["ostype"])
+        template = get_template(cls.apiClient, cls.zone.id, hypervisor=TestData.hypervisor_type)
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 
         # Create test account
@@ -252,7 +261,6 @@ class TestVMSnapshots(cloudstackTestCase):
         )
 
         cls._cleanup = [
-            cls.virtual_machine,
             compute_offering,
             cls.disk_offering,
             user,
@@ -262,6 +270,10 @@ class TestVMSnapshots(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
+            time.sleep(60)
+
+            cls.virtual_machine.delete(cls.apiClient, True)
+
             cleanup_resources(cls.apiClient, cls._cleanup)
 
             cls.primary_storage.delete(cls.apiClient)

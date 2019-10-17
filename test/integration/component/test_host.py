@@ -98,9 +98,6 @@ class TestHostHA(cloudstackTestCase):
 
         return
     
-
-
-    
     def checkHostDown(self, fromHostIp, testHostIp):
         try:
             ssh = SshClient(fromHostIp, 22, "root", "password") 
@@ -165,9 +162,9 @@ class TestHostHA(cloudstackTestCase):
         """ Restart management
         server and usage server """
         sshClient = SshClient(self.mgtSvrDetails["mgtSvrIp"],
-                    22,
-                    self.mgtSvrDetails["user"],
-                    self.mgtSvrDetails["passwd"]
+            22,
+            self.mgtSvrDetails["user"],
+            self.mgtSvrDetails["passwd"]
         )
         command = "service cloudstack-management restart"
         sshClient.execute(command)
@@ -197,8 +194,7 @@ class TestHostHA(cloudstackTestCase):
             
 
         hostToTest = listHost[0]
-        hostUpInCloudstack = wait_until(10, 10, self.checkHostUp, hostToTest.ipaddress, hostToTest.ipaddress)
-        #hostUpInCloudstack = wait_until(40, 10, self.checkHostStateInCloudstack, "Up", hostToTest.id)
+        hostUpInCloudstack = wait_until(40, 10, self.checkHostStateInCloudstack, "Up", hostToTest.id)
 
         if not(hostUpInCloudstack): 
             raise self.fail("Host is not up %s, in cloudstack so failing test " % (hostToTest.ipaddress))

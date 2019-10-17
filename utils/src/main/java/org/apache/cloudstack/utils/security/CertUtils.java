@@ -40,6 +40,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
@@ -73,8 +74,6 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 import com.google.common.base.Strings;
-
-//import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
 
 public class CertUtils {
 
@@ -131,7 +130,7 @@ public class CertUtils {
     }
 
     public static String privateKeyToPem(final PrivateKey key) throws IOException {
-        final PemObject pemObject = new PemObject("RSA PRIVATE KEY", key.getEncoded());
+        final PemObject pemObject = new PemObject("PRIVATE KEY", key.getEncoded());
         final StringWriter sw = new StringWriter();
         try (final PemWriter pw = new PemWriter(sw)) {
             pw.writeObject(pemObject);
@@ -219,7 +218,7 @@ public class CertUtils {
 
         final List<ASN1Encodable> subjectAlternativeNames = new ArrayList<ASN1Encodable>();
         if (publicIPAddresses != null) {
-            for (final String publicIPAddress: publicIPAddresses) {
+            for (final String publicIPAddress: new HashSet<>(publicIPAddresses)) {
                 if (Strings.isNullOrEmpty(publicIPAddress)) {
                     continue;
                 }
@@ -227,7 +226,7 @@ public class CertUtils {
             }
         }
         if (dnsNames != null) {
-            for (final String dnsName : dnsNames) {
+            for (final String dnsName : new HashSet<>(dnsNames)) {
                 if (Strings.isNullOrEmpty(dnsName)) {
                     continue;
                 }

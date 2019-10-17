@@ -1,0 +1,53 @@
+{
+  "description": "CentOS 7 x86_64 Built-in template for CloudStack",
+  "provisioners": [
+    {
+      "type": "shell",
+      "scripts": [
+        "scripts/base.sh",
+        "scripts/cleanup.sh"
+      ]
+    }
+  ],
+  "builders": [
+    {
+      "type": "qemu",
+      "accelerator": "kvm",
+      "headless": true,
+      "qemuargs": [
+        [ "-m", "512M" ],
+        [ "-smp", "cpus=1,maxcpus=1,cores=1" ]
+      ],
+      "disk_size": 10240,
+      "format": "qcow2",
+      "disk_interface": "virtio",
+      "net_device": "virtio-net",
+
+      "iso_url": "http://mirror.nbrc.ac.in/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1804.iso",
+      "iso_checksum": "13675c6f74880e7ff3481b91bdaf925ce81bda8f",
+      "iso_checksum_type": "sha1",
+
+      "vm_name": "builtin",
+      "output_directory": "../dist",
+
+      "http_directory": "http",
+      "http_port_min": 10082,
+      "http_port_max": 10089,
+
+      "ssh_host_port_min": 2222,
+      "ssh_host_port_max": 2229,
+
+      "ssh_username": "root",
+      "ssh_password": "password",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "30m",
+
+      "boot_wait": "10s",
+      "boot_command": [
+        "<up><wait><tab><wait> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}//kickstart.cfg<enter><wait>"
+      ],
+
+      "shutdown_command": "shutdown -P now"
+    }
+  ]
+}

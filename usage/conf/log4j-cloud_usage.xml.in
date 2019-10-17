@@ -48,7 +48,7 @@ under the License.
       </rollingPolicy>
 
       <layout class="org.apache.log4j.EnhancedPatternLayout">
-         <param name="ConversionPattern" value="%-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
+         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
       </layout>
    </appender>
 

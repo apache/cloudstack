@@ -213,7 +213,7 @@ public abstract class NioConnection implements Callable<Boolean> {
                     _selector.wakeup();
                     try {
                         sslEngine.beginHandshake();
-                        if (!Link.doHandshake(socketChannel, sslEngine, false)) {
+                        if (!Link.doHandshake(socketChannel, sslEngine)) {
                             throw new IOException("SSL handshake timed out with " + socketChannel.getRemoteAddress());
                         }
                         if (s_logger.isTraceEnabled()) {

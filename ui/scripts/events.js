@@ -46,11 +46,14 @@
                             label: 'label.type',
                             truncate: true
                         },
-                        domain: {
-                            label: 'label.domain'
-                        },
                         account: {
                             label: 'label.account'
+                        },
+                        username: {
+                            label: 'label.username'
+                        },
+                        domain: {
+                            label: 'label.domain'
                         },
                         created: {
                             label: 'label.date',
@@ -331,12 +334,29 @@
                                 else
                                     return true;
                             }
+                        },
+                        username: {
+                            label: 'label.username',
+                            isHidden: function(args) {
+                                if (isAdmin() || isDomainAdmin())
+                                    return false;
+                                else
+                                    return true;
+                            }
                         }
                     },
 
                     dataProvider: function(args) {
                         var data = {};
                         listViewDataProvider(args, data);
+
+                        if ("events" in args.context) {
+                            var startId = args.context.events[0].parentid;
+                            if (!startId) {
+                                startId = args.context.events[0].id;
+                            }
+                            data.startid = startId;
+                        }
 
                         $.ajax({
                             url: createURL('listEvents'),
@@ -357,8 +377,12 @@
                     },
                     detailView: {
                         name: 'label.details',
-                        actions: {
+                        viewAll: {
+                            path: 'events',
+                            label: 'label.event.timeline',
+                        },
 
+                        actions: {
                             // Remove single event
                             remove: {
                                 label: 'label.delete',

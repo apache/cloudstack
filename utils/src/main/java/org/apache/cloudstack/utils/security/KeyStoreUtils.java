@@ -19,23 +19,34 @@
 
 package org.apache.cloudstack.utils.security;
 
+import java.io.File;
+
+import com.cloud.utils.PropertiesUtil;
+
 public class KeyStoreUtils {
+    public static final String KS_SETUP_SCRIPT = "keystore-setup";
+    public static final String KS_IMPORT_SCRIPT = "keystore-cert-import";
 
-    public static String defaultTmpKeyStoreFile = "/tmp/tmp.jks";
-    public static String defaultKeystoreFile = "cloud.jks";
-    public static String defaultPrivateKeyFile = "cloud.key";
-    public static String defaultCsrFile = "cloud.csr";
-    public static String defaultCertFile = "cloud.crt";
-    public static String defaultCaCertFile = "cloud.ca.crt";
-    public static char[] defaultKeystorePassphrase = "vmops.com".toCharArray();
+    public static final String AGENT_PROPSFILE = "agent.properties";
+    public static final String KS_PASSPHRASE_PROPERTY = "keystore.passphrase";
 
-    public static String certNewlineEncoder = "^";
-    public static String certSpaceEncoder = "~";
+    public static final String KS_FILENAME = "cloud.jks";
+    public static final char[] DEFAULT_KS_PASSPHRASE = "vmops.com".toCharArray();
 
-    public static String keyStoreSetupScript = "keystore-setup";
-    public static String keyStoreImportScript = "keystore-cert-import";
-    public static String passphrasePropertyName = "keystore.passphrase";
+    public static final String CACERT_FILENAME = "cloud.ca.crt";
+    public static final String CERT_FILENAME = "cloud.crt";
+    public static final String CSR_FILENAME = "cloud.csr";
+    public static final String PKEY_FILENAME = "cloud.key";
 
-    public static String sshMode = "ssh";
-    public static String agentMode = "agent";
+    public static final String CERT_NEWLINE_ENCODER = "^";
+    public static final String CERT_SPACE_ENCODER = "~";
+
+    public static final String SSH_MODE = "ssh";
+    public static final String AGENT_MODE = "agent";
+    public static final String SECURED = "secured";
+
+    public static boolean isHostSecured() {
+        final File confFile = PropertiesUtil.findConfigFile("agent.properties");
+        return confFile != null && confFile.exists() && new File(confFile.getParent() + "/" + CERT_FILENAME).exists();
+    }
 }

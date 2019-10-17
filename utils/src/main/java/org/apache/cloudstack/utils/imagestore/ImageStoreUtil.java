@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.utils.imagestore;
 
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -30,9 +31,11 @@ public class ImageStoreUtil {
 
         //if ssvm url domain is present, use it to construct hostname in the format 1-2-3-4.domain
         // if the domain name is not present, ssl validation fails and has to be ignored
-        if(StringUtils.isNotBlank(ssvmUrlDomain)) {
+        if(StringUtils.isNotBlank(ssvmUrlDomain) && ssvmUrlDomain.startsWith("*")) {
             hostname = ipAddress.replace(".", "-");
             hostname = hostname + ssvmUrlDomain.substring(1);
+        } else if (StringUtils.isNotBlank(ssvmUrlDomain)) {
+            hostname = ssvmUrlDomain;
         }
 
         //only https works with postupload and url format is fixed
@@ -55,7 +58,7 @@ public class ImageStoreUtil {
             return "";
         }
         // raw
-        if ((output.contains("x86 boot") || output.contains("data")) && (isCorrectExtension(uripath, "raw") || isCorrectExtension(uripath, "img"))) {
+        if ((output.contains("x86 boot") || output.contains("data")) && (isCorrectExtension(uripath, "raw"))) {
             s_logger.debug("File at path " + path + " looks like a raw image :" + output);
             return "";
         }
@@ -81,30 +84,27 @@ public class ImageStoreUtil {
             return "";
         }
 
-        if (output.contains("ISO 9660") && isCorrectExtension(uripath, "iso")) {
+        if ((output.startsWith("ISO 9660") || output.startsWith("DOS/MBR")) && isCorrectExtension(uripath, "iso")) {
             s_logger.debug("File at path " + path + " looks like an iso : " + output);
             return "";
         }
         return output;
     }
 
-    private static boolean isCorrectExtension(String path, String ext) {
-        if (path.toLowerCase().endsWith(ext)
-            || path.toLowerCase().endsWith(ext + ".gz")
-            || path.toLowerCase().endsWith(ext + ".bz2")
-            || path.toLowerCase().endsWith(ext + ".zip")) {
-            return true;
-        }
-        return false;
+    public static boolean isCorrectExtension(String path, String format) {
+        final String lowerCasePath = path.toLowerCase();
+        return UriUtils.getSupportedExtensions(format)
+                .stream()
+                .filter(ext -> !ext.equals(".metalink"))
+                .anyMatch(lowerCasePath::endsWith);
     }
 
-    private static boolean isCompressedExtension(String path) {
-        if (path.toLowerCase().endsWith(".gz")
-            || path.toLowerCase().endsWith(".bz2")
-            || path.toLowerCase().endsWith(".zip")) {
-            return true;
-        }
-        return false;
+    public static boolean isCompressedExtension(String path) {
+        final String lowerCasePath = path.toLowerCase();
+        return UriUtils.COMMPRESSION_FORMATS
+                       .stream()
+                       .map(extension -> "." + extension)
+                       .anyMatch(lowerCasePath::endsWith);
     }
 }
 
