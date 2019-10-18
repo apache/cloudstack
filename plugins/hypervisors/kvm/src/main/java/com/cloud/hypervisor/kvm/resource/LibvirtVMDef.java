@@ -67,6 +67,14 @@ public class LibvirtVMDef {
         private String _uuid;
         private final List<BootOrder> _bootdevs = new ArrayList<BootOrder>();
         private String _machine;
+        private String _nvram;
+        private String _nvramTemplate;
+
+        public static final String GUEST_LOADER_SECURE = "guest.loader.secure";
+        public static final String GUEST_LOADER_LEGACY = "guest.loader.legacy";
+        public static final String GUEST_NVRAM_PATH = "guest.nvram.path";
+        public static final String GUEST_NVRAM_TEMPLATE_SECURE = "guest.nvram.template.secure";
+        public static final String GUEST_NVRAM_TEMPLATE_LEGACY = "guest.nvram.template.legacy";
 
         public void setGuestType(GuestType type) {
             _type = type;
@@ -75,6 +83,10 @@ public class LibvirtVMDef {
         public GuestType getGuestType() {
             return _type;
         }
+
+        public void setNvram(String nvram) { _nvram = nvram; }
+
+        public void setNvramTemplate(String nvramTemplate) { _nvramTemplate = nvramTemplate; }
 
         public void setGuestArch(String arch) {
             _arch = arch;
@@ -125,6 +137,20 @@ public class LibvirtVMDef {
                     guestDef.append(" machine='" + _machine + "'");
                 }
                 guestDef.append(">hvm</type>\n");
+                if (_loader != null) {
+                    guestDef.append("<loader readonly='yes' type='pflash'>" + _loader + "</loader>\n");
+                }
+                if (_nvram != null) {
+                    guestDef.append("<nvram ");
+                    if (_nvramTemplate != null) {
+                        guestDef.append("template='" + _nvramTemplate + "'>");
+                    } else {
+                        guestDef.append(">");
+                    }
+
+                    guestDef.append(_nvram);
+                    guestDef.append(_uuid + ".fd</nvram>");
+                }
                 if (!_bootdevs.isEmpty()) {
                     for (BootOrder bo : _bootdevs) {
                         guestDef.append("<boot dev='" + bo + "'/>\n");

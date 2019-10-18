@@ -701,6 +701,8 @@ import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.dao.UserVmDetailsDao;
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
@@ -719,6 +721,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ConsoleProxyDao _consoleProxyDao;
     @Inject
     private ClusterDao _clusterDao;
+    @Inject
+    private UserVmDetailsDao _UserVmDetailsDao;
     @Inject
     private SecondaryStorageVmDao _secStorageVmDao;
     @Inject
@@ -1181,6 +1185,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             final InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, cannot " + "migrate the vm with specified id");
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
+        }
+
+        UserVmDetailVO userVmDetailVO = _UserVmDetailsDao.findDetail(vm.getId(), "UEFI");
+        if (userVmDetailVO != null){
+            s_logger.info(" Live Migration of UEFI enabled VM : " + vm.getInstanceName()+ " is not supported");
+            if("legacy".equalsIgnoreCase(userVmDetailVO.getValue()) || "secure".equalsIgnoreCase(userVmDetailVO.getValue())) {
+                // Return empty list.
+                return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(new Pair<List <? extends Host>,
+                        Integer>(new ArrayList<HostVO>(), new Integer(0)), new ArrayList<Host>(), new HashMap<Host, Boolean>());
+            }
         }
 
         if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {

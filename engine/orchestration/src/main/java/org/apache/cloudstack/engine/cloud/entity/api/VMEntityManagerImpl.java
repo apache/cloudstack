@@ -148,6 +148,12 @@ public class VMEntityManagerImpl implements VMEntityManager {
         VMInstanceVO vm = _vmDao.findByUuid(vmEntityVO.getUuid());
         VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm);
         vmProfile.setServiceOffering(_serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()));
+        if (vmEntityVO.getDetails() != null) {
+            Map<String, String> details = vmEntityVO.getDetails();
+            if (details.containsKey(VirtualMachineProfile.Param.BootType.getName())) {
+                vmProfile.getParameters().put(VirtualMachineProfile.Param.BootType, details.get(VirtualMachineProfile.Param.BootType.getName()));
+            }
+        }
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null);
         if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
             plan =

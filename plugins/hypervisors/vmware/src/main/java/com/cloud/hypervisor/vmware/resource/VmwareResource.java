@@ -310,6 +310,7 @@ import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardOpaqueNetworkBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachineBootOptions;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineFileLayoutEx;
 import com.vmware.vim25.VirtualMachineFileLayoutExFileInfo;
@@ -1701,6 +1702,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String dataDiskController = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
         String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         DiskTO rootDiskTO = null;
+        String bootMode = "BIOS";
+        if (vmSpec.getDetails().containsKey(VmDetailConstants.BOOT_MODE)) {
+            bootMode = vmSpec.getDetails().get(VmDetailConstants.BOOT_MODE);
+        }
+
         // If root disk controller is scsi, then data disk controller would also be scsi instead of using 'osdefault'
         // This helps avoid mix of different scsi subtype controllers in instance.
         if (DiskControllerType.osdefault == DiskControllerType.getType(dataDiskController) && DiskControllerType.lsilogic == DiskControllerType.getType(rootDiskController)) {
@@ -2258,6 +2264,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     copyVAppConfigsFromTemplate(templateVappConfig, ovfProperties, vmConfigSpec);
                 }
             }
+
+            if (!bootMode.equalsIgnoreCase("BIOS")) {
+                vmConfigSpec.setFirmware("efi");
+                if (bootMode.equalsIgnoreCase("UEFI_SECURE") ) {
+                    VirtualMachineBootOptions bootOptions = new VirtualMachineBootOptions();
+                    bootOptions.setEfiSecureBootEnabled(true);
+                    vmConfigSpec.setBootOptions(bootOptions);
+                }
+            }
+
 
             //
             // Configure VM

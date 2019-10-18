@@ -125,9 +125,13 @@ public class VmWorkStart extends VmWork {
     public void setParams(Map<VirtualMachineProfile.Param, Object> params) {
         if (params != null) {
             rawParams = new HashMap<String, String>();
-            for (Map.Entry<VirtualMachineProfile.Param, Object> entry : params.entrySet()) {
-                rawParams.put(entry.getKey().getName(), JobSerializerHelper.toObjectSerializedString(
-                        entry.getValue() instanceof Serializable ? (Serializable)entry.getValue() : entry.getValue().toString()));
+            if (params != null && !params.isEmpty()) {
+                for (Map.Entry<VirtualMachineProfile.Param, Object> entry : params.entrySet()) {
+                    if (null != entry && null != entry.getValue() && null != entry.getKey()) {
+                        rawParams.put(entry.getKey().getName(), JobSerializerHelper.toObjectSerializedString(
+                                entry.getValue() instanceof Serializable ? (Serializable) entry.getValue() : entry.getValue().toString()));
+                    }
+                }
             }
         }
     }

@@ -43,6 +43,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.gpu.dao.VGPUTypesDao;
 import com.cloud.host.Host;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
@@ -1198,6 +1199,41 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                 .filter(x -> x.getStatus().equals(Status.Up) &&
                         x.getType() == Host.Type.Routing)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<HostVO> listByHostCapability(Type type, Long clusterId, Long podId, long dcId, String hostCapabilty) {
+        SearchBuilder<DetailVO> hostCapabilitySearch = _detailsDao.createSearchBuilder();
+        DetailVO tagEntity = hostCapabilitySearch.entity();
+        hostCapabilitySearch.and("capability", tagEntity.getName(), SearchCriteria.Op.EQ);
+        hostCapabilitySearch.and("value", tagEntity.getValue(), SearchCriteria.Op.EQ);
+
+        SearchBuilder<HostVO> hostSearch = createSearchBuilder();
+        HostVO entity = hostSearch.entity();
+        hostSearch.and("type", entity.getType(), SearchCriteria.Op.EQ);
+        hostSearch.and("pod", entity.getPodId(), SearchCriteria.Op.EQ);
+        hostSearch.and("dc", entity.getDataCenterId(), SearchCriteria.Op.EQ);
+        hostSearch.and("cluster", entity.getClusterId(), SearchCriteria.Op.EQ);
+        hostSearch.and("status", entity.getStatus(), SearchCriteria.Op.EQ);
+        hostSearch.and("resourceState", entity.getResourceState(), SearchCriteria.Op.EQ);
+        hostSearch.join("hostCapabilitySearch", hostCapabilitySearch, entity.getId(), tagEntity.getHostId(), JoinBuilder.JoinType.INNER);
+
+        SearchCriteria<HostVO> sc = hostSearch.create();
+        sc.setJoinParameters("hostCapabilitySearch", "value", Boolean.toString(true));
+        sc.setJoinParameters("hostCapabilitySearch", "capability", hostCapabilty);
+        sc.setParameters("type", type.toString());
+        if (podId != null) {
+            sc.setParameters("pod", podId);
+        }
+        if (clusterId != null) {
+            sc.setParameters("cluster", clusterId);
+        }
+        sc.setParameters("dc", dcId);
+        sc.setParameters("status", Status.Up.toString());
+        sc.setParameters("resourceState", ResourceState.Enabled.toString());
+
+        return listBy(sc);
+
     }
 
     private ResultSet executeSqlGetResultsetForMethodFindHostInZoneToExecuteCommand(HypervisorType hypervisorType, long zoneId, TransactionLegacy tx, String sql) throws SQLException {

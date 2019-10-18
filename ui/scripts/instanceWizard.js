@@ -1366,6 +1366,18 @@
                     keyboard : keyboard
                 });
             }
+            var boottype = args.data.customboot;
+            if (boottype != null && boottype.length > 0) {
+                $.extend(deployVmData, {
+                    boottype : boottype
+                });
+            }
+            var bootmode = args.data.bootmode;
+            if (bootmode != null && bootmode.length > 0) {
+                $.extend(deployVmData, {
+                    bootmode : bootmode
+                });
+            }
 
             if (g_hostid != null) {
                 $.extend(deployVmData, {

@@ -217,6 +217,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _dcId;
     private String _pod;
     private String _clusterId;
+    private final Properties _uefiProperties = new Properties();
 
     private long _hvVersion;
     private Duration _timeout;
@@ -480,6 +481,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return storageHandler;
     }
 
+    public Properties getProperties() {
+        return _uefiProperties;
+    }
+
     private static final class KeyValueInterpreter extends OutputInterpreter {
         private final Map<String, String> map = new HashMap<String, String>();
 
@@ -604,6 +609,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         boolean success = super.configure(name, params);
         if (!success) {
             return false;
+        }
+        try {
+            loadUefiProperties();
+        } catch (FileNotFoundException e) {
+            s_logger.error("uefi properties file not found due to: "+e.getLocalizedMessage());
         }
 
         _storage = new JavaStorageLayer();
@@ -1087,6 +1097,28 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
 
         return true;
+    }
+
+    private void loadUefiProperties() throws FileNotFoundException {
+
+        if (_uefiProperties != null && _uefiProperties.getProperty("guest.loader.legacy") != null)
+            return;
+        final File file = PropertiesUtil.findConfigFile("uefi.properties");
+        if (file == null) {
+            throw new FileNotFoundException("Unable to find uefi.properties.");
+        }
+
+        s_logger.info("uefi.properties found at " + file.getAbsolutePath());
+        try {
+            PropertiesUtil.loadFromFile(_uefiProperties, file);
+            s_logger.info("guest.nvram.template.legacy = " + _uefiProperties.getProperty("guest.nvram.template.legacy"));
+            s_logger.info("guest.loader.legacy = " + _uefiProperties.getProperty("guest.loader.legacy"));
+
+        } catch (final FileNotFoundException ex) {
+            throw new CloudRuntimeException("Cannot find the file: " + file.getAbsolutePath(), ex);
+        } catch (final IOException ex) {
+            throw new CloudRuntimeException("IOException in reading " + file.getAbsolutePath(), ex);
+        }
     }
 
     protected void configureDiskActivityChecks(final Map<String, Object> params) {
@@ -2069,6 +2101,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.setDomDescription(vmTO.getOs());
         vm.setPlatformEmulator(vmTO.getPlatformEmulator());
 
+        Map<String, String> customParams = vmTO.getDetails();
+        boolean isUefiEnabled = false;
+        String bootMode =null;
+        if (customParams != null && customParams.containsKey("UEFI")) {
+            isUefiEnabled = true;
+            bootMode = customParams.get("UEFI");
+        }
+
         Map<String, String> extraConfig = vmTO.getExtraConfig();
         if (dpdkSupport && (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA) || !extraConfig.containsKey(DpdkHelper.DPDK_HUGE_PAGES))) {
             s_logger.info("DPDK is enabled but it needs extra configurations for CPU NUMA and Huge Pages for VM deployment");
@@ -2092,7 +2132,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         guest.setBootOrder(GuestDef.BootOrder.CDROM);
         guest.setBootOrder(GuestDef.BootOrder.HARDISK);
 
-        vm.addComp(guest);
+        if(isUefiEnabled) {
+
+            if (_uefiProperties.getProperty(GuestDef.GUEST_LOADER_SECURE) != null && "secure".equalsIgnoreCase(bootMode))
+                guest.setLoader(_uefiProperties.getProperty(GuestDef.GUEST_LOADER_SECURE));
+
+            if (_uefiProperties.getProperty(GuestDef.GUEST_LOADER_LEGACY) != null && "legacy".equalsIgnoreCase(bootMode))
+                guest.setLoader(_uefiProperties.getProperty(GuestDef.GUEST_LOADER_LEGACY));
+
+            if (_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_PATH) != null)
+                guest.setNvram(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_PATH));
+
+            if (_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE) != null && "secure".equalsIgnoreCase(bootMode))
+                guest.setNvramTemplate(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE));
+        }
+
+            vm.addComp(guest);
 
         final GuestResourceDef grd = new GuestResourceDef();
 

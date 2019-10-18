@@ -111,6 +111,12 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.NETWORK_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = NetworkResponse.class, description = "list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
     private List<Long> networkIds;
 
+    @Parameter(name = ApiConstants.BOOT_TYPE, type = CommandType.STRING, required = false, description = "Guest VM Boot option either custom[UEFI] or default boot [BIOS]")
+    private String bootType;
+
+    @Parameter(name = ApiConstants.BOOT_MODE, type = CommandType.STRING, required = false, description = "Boot Mode [Legacy] or [Secure] Applicable when Boot Type Selected is UEFI, otherwise Legacy By default for BIOS")
+    private String bootMode;
+
     //DataDisk information
     @ACL
     @Parameter(name = ApiConstants.DISK_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "the ID of the disk offering for the virtual machine. If the template is of ISO format,"
@@ -257,11 +263,29 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 }
             }
         }
+        if(getBootType() != null){ // export to get
+            if(getBootType().equalsIgnoreCase("UEFI")) {
+                customparameterMap.put("UEFI", getBootMode());
+            }
+        }
+
         if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
             customparameterMap.put("rootdisksize", rootdisksize.toString());
         }
         return customparameterMap;
     }
+
+    public String getBootType() {
+        if (bootType != null && !("bios".equalsIgnoreCase(bootType) || "uefi".equalsIgnoreCase(bootType))) {
+            throw new InvalidParameterValueException("Invalid Boot Type");
+        }
+        return bootType;
+    }
+
+    public String getBootMode() {
+        return bootMode;
+    }
+
 
     public Map<String, String> getVmOVFProperties() {
         Map<String, String> map = new HashMap<>();

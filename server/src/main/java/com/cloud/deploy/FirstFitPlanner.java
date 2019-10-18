@@ -68,11 +68,14 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.host.dao.HostDetailsDao;
 
 public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPlanner, Configurable, DeploymentPlanner {
     private static final Logger s_logger = Logger.getLogger(FirstFitPlanner.class);
     @Inject
     protected HostDao hostDao;
+    @Inject
+    protected HostDetailsDao hostDetailsDao;
     @Inject
     protected DataCenterDao dcDao;
     @Inject
@@ -187,8 +190,16 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
         if (clusterList != null && !clusterList.isEmpty()) {
             ServiceOffering offering = vmProfile.getServiceOffering();
+            boolean nonUefiVMDeploy =false;
+            if (vmProfile.getParameters().containsKey(VirtualMachineProfile.Param.BootType)) {
+                if (vmProfile.getParameters().get(VirtualMachineProfile.Param.BootType).toString().equalsIgnoreCase("BIOS")) {
+                    nonUefiVMDeploy = true;
+
+                }
+
+            }
             // In case of non-GPU VMs, protect GPU enabled Hosts and prefer VM deployment on non-GPU Hosts.
-            if ((serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) == null) && !(hostGpuGroupsDao.listHostIds().isEmpty())) {
+            if (((serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) == null) && !(hostGpuGroupsDao.listHostIds().isEmpty())) || nonUefiVMDeploy) {
                 int requiredCpu = offering.getCpu() * offering.getSpeed();
                 long requiredRam = offering.getRamSize() * 1024L * 1024L;
                 reorderClustersBasedOnImplicitTags(clusterList, requiredCpu, requiredRam);
@@ -205,7 +216,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
             List<Long> hostList = capacityDao.listHostsWithEnoughCapacity(requiredCpu, requiredRam, clusterId, Host.Type.Routing.toString());
             if (!hostList.isEmpty() && implicitHostTags.length > 0) {
                 uniqueTags = new Long(hostTagsDao.getDistinctImplicitHostTags(hostList, implicitHostTags).size());
-                }
+                uniqueTags = uniqueTags + getHostsByCapability(hostList, Host.HOST_UEFI_ENABLE);
+            }
                 UniqueTagsInClusterMap.put(clusterId, uniqueTags);
             }
             Collections.sort(clusterList, new Comparator<Long>() {
@@ -216,6 +228,20 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                     return t1.compareTo(t2);
                 }
             });
+    }
+
+    private Long getHostsByCapability(List<Long> hostList, String hostCapability) {
+        int totalHostswithCapability = 0;
+        for (Long host : hostList) { //TODO: Fix this in single query instead of polling request for each Host
+            Map<String, String> details = hostDetailsDao.findDetails(host);
+            if (details.containsKey(Host.HOST_UEFI_ENABLE)) {
+                if (details.get(Host.HOST_UEFI_ENABLE).equalsIgnoreCase("Yes")) {
+                    totalHostswithCapability++;
+                }
+
+            }
+        }
+        return totalHostswithCapability > 0 ? new Long(1) : new Long(0);
     }
 
     private List<Long> scanPodsForDestination(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) {

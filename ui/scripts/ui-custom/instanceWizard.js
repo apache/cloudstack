@@ -1393,6 +1393,50 @@
                                     $(this).closest('div.select').hide();
                                 }
                             }
+
+                            var uefi = function(bootType){
+                                var $bootmode  = $step.find('select[name=bootmode]');
+
+                                if(bootType.toLowerCase() == 'uefi' ){
+                                    $bootmode.html('');
+                                    var $option = $('<option>');
+                                    var id = 'LEGACY';
+                                    var description = 'LEGACY';
+
+                                    $option.attr('value', id);
+                                    $option.html(description);
+                                    $option.appendTo($bootmode);
+
+                                    var $option2 = $('<option>');
+                                    var id2 = 'SECURE';
+                                    var description2 = 'SECURE';
+
+                                    $option2.attr('value', id2);
+                                    $option2.html(description2);
+                                    $option2.appendTo($bootmode);
+
+                                }
+
+                                if(bootType.toLowerCase() == 'bios' ){
+                                     $bootmode.html('');
+
+                                     var $option = $('<option>');
+                                     var id = 'LEGACY';
+                                     var description = 'LEGACY';
+
+                                     $option.attr('value', id);
+                                     $option.html(description);
+                                     $option.appendTo($bootmode);
+                                }
+
+                            }
+
+                            var $uefiselect  = $step.find('select[name=customboot]');
+                            $uefiselect.unbind('change');
+                            $uefiselect.change(function(){
+                                 uefi($uefiselect.val());
+                            });
+
                         });
                     }
                 };

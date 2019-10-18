@@ -3903,6 +3903,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 _vmDao.persist(vm);
                 for (String key : customParameters.keySet()) {
+                    if(key.equalsIgnoreCase("uefi")) {
+                        vm.setDetail(key,customParameters.get(key));
+                        continue;
+                    }
                     if( key.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) ||
                             key.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) ||
                             key.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
@@ -4213,13 +4217,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long podId = null;
         Long clusterId = null;
         Long hostId = cmd.getHostId();
+        String bootType = cmd.getBootType();
+        String bootMode = cmd.getBootMode();
+        boolean isUEFIBootEnabled = false;
+        if( bootType != null && bootType.equalsIgnoreCase("UEFI")) {
+            isUEFIBootEnabled = true;
+        }
         Map<Long, DiskOffering> diskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
         if (cmd instanceof DeployVMCmdByAdmin) {
             DeployVMCmdByAdmin adminCmd = (DeployVMCmdByAdmin)cmd;
             podId = adminCmd.getPodId();
             clusterId = adminCmd.getClusterId();
         }
-        return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, null, cmd.getDeploymentPlanner());
+        Map<VirtualMachineProfile.Param, Object> additonalParams = new HashMap<VirtualMachineProfile.Param, Object>();
+        additonalParams.put(VirtualMachineProfile.Param.UefiFlag,isUEFIBootEnabled);
+        additonalParams.put(VirtualMachineProfile.Param.BootType,bootType);
+        additonalParams.put(VirtualMachineProfile.Param.BootMode,bootMode);
+
+        return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additonalParams, cmd.getDeploymentPlanner());
     }
 
     private UserVm startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId, Map<Long, DiskOffering> diskOfferingMap, Map<VirtualMachineProfile.Param, Object> additonalParams, String deploymentPlannerToUse)
@@ -4676,6 +4691,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
+        vmEntity.setParamsToEntity(additionalParams);
 
         DeploymentPlanner planner = null;
         if (deploymentPlannerToUse != null) {
@@ -5027,6 +5043,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Make sure a valid template ID was specified
         if (template == null) {
             throw new InvalidParameterValueException("Unable to use template " + templateId);
+        }
+
+        String bootType = cmd.getBootType();
+        if( bootType != null && bootType.equalsIgnoreCase("UEFI") && cmd.getHypervisor() == HypervisorType.XenServer) {
+            boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(template.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
+            if (serviceOffering.getCpu() < 2) {
+                throw new InvalidParameterValueException("Please verify the Service Offering, UEFI enabled VMs on XenServer must have atleast 2 vCPUs");
+            }
+            if (!isWindows) {
+                throw new InvalidParameterValueException("Please verify the template, in case of XenServer UEFI mode is allowed only for Windows guest operating systems");
+            }
         }
 
         Long diskOfferingId = cmd.getDiskOfferingId();

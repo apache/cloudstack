@@ -1374,6 +1374,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.debug("HVM args are " + bootArgs);
         }
 
+        Map<String, String> vmSpecDetails = vmSpec.getDetails();
+        final Map<String, String> bootParams = new HashMap<String, String>();
+        if (vmSpecDetails != null && vmSpecDetails.containsKey("UEFI")) {
+            bootParams.put("firmware", "uefi");
+        }
+        vm.setHVMBootParams(conn, bootParams);
+
+
         if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {
             if (vmSpec.getBootloader() == BootloaderType.CD) {
                 final DiskTO[] disks = vmSpec.getDisks();
@@ -1750,6 +1758,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (_privateNetworkName != null) {
                 details.put("private.network.device", _privateNetworkName);
             }
+
+            final Map<String, String> hostParams = host.getLicenseParams(conn);
+            final String isGuefiRestricted = hostParams.get("restrict_guefi");
+            if (isGuefiRestricted != null && !isGuefiRestricted.isEmpty()) {
+                details.put(com.cloud.host.Host.HOST_UEFI_ENABLE, new Boolean(isGuefiRestricted.equalsIgnoreCase("false")).toString());
+            } else {
+                details.put(com.cloud.host.Host.HOST_UEFI_ENABLE, Boolean.FALSE.toString());
+            }
+
 
             cmd.setHostDetails(details);
             cmd.setName(hr.nameLabel);

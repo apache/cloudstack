@@ -52,6 +52,7 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
             return strs;
         }
     }
+    public static final String HOST_UEFI_ENABLE = "Host.Uefi.Enable";
 
     /**
      * @return name of the machine.

@@ -166,6 +166,11 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
                 offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
         to.setBootArgs(vmProfile.getBootArgs());
 
+        String bootType = (String)vmProfile.getParameter(new VirtualMachineProfile.Param("BootType"));
+        if (bootType != null && !bootType.isEmpty()) {
+            to.setBootType(bootType);
+        }
+
         List<NicProfile> nicProfiles = vmProfile.getNics();
         NicTO[] nics = new NicTO[nicProfiles.size()];
         int i = 0;

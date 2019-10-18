@@ -741,6 +741,8 @@ public class ApiConstants {
     public static final String EXITCODE = "exitcode";
     public static final String TARGET_ID = "targetid";
     public static final String VOLUME_IDS = "volumeids";
+    public static final String BOOT_TYPE ="boottype";
+    public static final String BOOT_MODE ="bootmode";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

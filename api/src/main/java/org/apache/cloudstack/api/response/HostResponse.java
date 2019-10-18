@@ -243,6 +243,11 @@ public class HostResponse extends BaseResponse {
     @Param(description = "the admin that annotated this host", since = "4.11")
     private String username;
 
+    @SerializedName("ueficapability")
+    @Param(description = "true if the host has capability to support UEFI boot")
+    private Boolean uefiCapabilty;
+
+
     // Default visibility to support accessing the details from unit tests
     Map getDetails() {
         return details;
@@ -495,6 +500,14 @@ public class HostResponse extends BaseResponse {
         detailsCopy.remove("username");
         detailsCopy.remove("password");
 
+        if(detailsCopy.containsKey(Host.HOST_UEFI_ENABLE)) {
+            this.setUefiCapabilty(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_UEFI_ENABLE)));
+            detailsCopy.remove(Host.HOST_UEFI_ENABLE);
+        } else {
+            this.setUefiCapabilty(new Boolean(false)); // in case of existing host which is not scanned for UEFI capability
+        }
+
+
         this.details = detailsCopy;
 
     }
@@ -660,5 +673,9 @@ public class HostResponse extends BaseResponse {
 
     public Boolean getHaHost() {
         return haHost;
+    }
+
+    public void setUefiCapabilty(Boolean hostCapability) {
+        this.uefiCapabilty = hostCapability;
     }
 }
