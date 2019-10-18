@@ -2014,6 +2014,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (final NicVO nic : nics) {
+            final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+            if (network != null && network.getTrafficType() == TrafficType.Guest) {
+                final String nicIp = Strings.isNullOrEmpty(nic.getIPv4Address()) ? nic.getIPv6Address() : nic.getIPv4Address();
+                if (!Strings.isNullOrEmpty(nicIp)) {
+                    NicProfile nicProfile = new NicProfile(nic.getIPv4Address(), nic.getIPv6Address(), nic.getMacAddress());
+                    nicProfile.setId(nic.getId());
+                    cleanupNicDhcpDnsEntry(network, vm, nicProfile);
+                }
+            }
             removeNic(vm, nic);
         }
     }
