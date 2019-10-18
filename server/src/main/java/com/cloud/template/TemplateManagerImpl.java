@@ -537,7 +537,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         TemplateProfile profile = adapter.prepare(cmd);
         GetUploadParamsResponse response = registerPostUploadInternal(adapter, profile);
         VMTemplateVO template = _tmpltDao.findByUuid(response.getId().toString());
-        if (cmd.getActivate()){
+        if (cmd.getActivate() != null && cmd.getActivate()){
             activateSystemVMTemplate(template.getId());
         }
         return response;

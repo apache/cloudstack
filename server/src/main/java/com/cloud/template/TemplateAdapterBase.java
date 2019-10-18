@@ -334,7 +334,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
         String templateType = TemplateType.USER.toString();
         long userId = CallContext.current().getCallingUserId();
-        if (cmd.getSystem()){
+        if (cmd.getSystem() != null && cmd.getSystem()){
             templateType = TemplateType.SYSTEM.toString();
             userId = 1L; //System account;
         }
