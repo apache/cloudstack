@@ -1279,6 +1279,7 @@
                                         label: 'label.zone',
                                         docID: 'helpRegisterTemplateZone',
                                         select: function(args) {
+                                            $("select[name='zone'] option").remove()
                                             $.ajax({
                                                 url: createURL("listZones&available=true"),
                                                 dataType: "json",
