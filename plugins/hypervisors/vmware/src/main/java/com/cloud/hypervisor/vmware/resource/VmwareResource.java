@@ -225,7 +225,6 @@ import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostResourceSummary;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareContextPool;
-import com.cloud.hypervisor.vmware.util.VmwareGuestOsMapper;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -7024,10 +7023,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     osIdentifier = VirtualMachineGuestOsIdentifier.OTHER_GUEST_64;
                 }
             }
-            instance.setOperatingSystem(VmwareGuestOsMapper.getGuestOsName(osIdentifier));
-            if (Strings.isNullOrEmpty(instance.getOperatingSystem())) {
-                instance.setOperatingSystem(vmMo.getGuestInfo().getGuestFullName());
-            }
+            instance.setOperatingSystem(vmMo.getGuestInfo().getGuestFullName());
             if (Strings.isNullOrEmpty(instance.getOperatingSystem())) {
                 instance.setOperatingSystem(vmMo.getConfigSummary().getGuestFullName());
             }

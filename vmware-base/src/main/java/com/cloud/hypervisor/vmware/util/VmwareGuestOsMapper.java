@@ -16,12 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.vmware.util;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.collections.CollectionUtils;
 
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 
@@ -66,39 +62,17 @@ public class VmwareGuestOsMapper {
         s_mapper.put("Windows 8 (64-bit)", VirtualMachineGuestOsIdentifier.WINDOWS_8_64_GUEST);
         s_mapper.put("Windows Server 2012 (64-bit)", VirtualMachineGuestOsIdentifier.WINDOWS_8_SERVER_64_GUEST);
         s_mapper.put("Windows Server 2012 R2 (64-bit)", VirtualMachineGuestOsIdentifier.WINDOWS_8_SERVER_64_GUEST);
-        s_mapper.put("Windows 10 (32-bit)", VirtualMachineGuestOsIdentifier.WINDOWS_9_GUEST);
-        s_mapper.put("Windows 10 (64-bit)", VirtualMachineGuestOsIdentifier.WINDOWS_9_64_GUEST);
-        s_mapper.put("Windows 10 Server (64-bit)", VirtualMachineGuestOsIdentifier.WINDOWS_9_SERVER_64_GUEST);
-        s_mapper.put("Windows Hyper-V", VirtualMachineGuestOsIdentifier.WINDOWS_HYPER_V_GUEST);
 
-        s_mapper.put("Apple Mac OS 10.5 (64 bit)", VirtualMachineGuestOsIdentifier.DARWIN_64_GUEST);
         s_mapper.put("Apple Mac OS X 10.6 (32-bit)", VirtualMachineGuestOsIdentifier.DARWIN_10_GUEST);
         s_mapper.put("Apple Mac OS X 10.6 (64-bit)", VirtualMachineGuestOsIdentifier.DARWIN_10_64_GUEST);
         s_mapper.put("Apple Mac OS X 10.7 (32-bit)", VirtualMachineGuestOsIdentifier.DARWIN_11_GUEST);
         s_mapper.put("Apple Mac OS X 10.7 (64-bit)", VirtualMachineGuestOsIdentifier.DARWIN_11_64_GUEST);
-        s_mapper.put("Apple Mac OS 10.8 (64 bit)", VirtualMachineGuestOsIdentifier.DARWIN_12_64_GUEST);
-        s_mapper.put("Apple Mac OS 10.9 (64 bit)", VirtualMachineGuestOsIdentifier.DARWIN_13_64_GUEST);
-        s_mapper.put("Apple Mac OS 10.10 (64 bit)", VirtualMachineGuestOsIdentifier.DARWIN_14_64_GUEST);
-        s_mapper.put("Apple Mac OS 10.11 (64 bit)", VirtualMachineGuestOsIdentifier.DARWIN_15_64_GUEST);
-        s_mapper.put("Apple Mac OS 10.12 (64 bit)", VirtualMachineGuestOsIdentifier.DARWIN_16_64_GUEST);
-        s_mapper.put("Apple Mac OS 10.13 (64 bit)", VirtualMachineGuestOsIdentifier.DARWIN_17_64_GUEST);
-        s_mapper.put("Apple Mac OS 10.14 (64 bit)", VirtualMachineGuestOsIdentifier.DARWIN_18_64_GUEST);
 
         s_mapper.put("Open Enterprise Server", VirtualMachineGuestOsIdentifier.OES_GUEST);
 
         s_mapper.put("Asianux 3(32-bit)", VirtualMachineGuestOsIdentifier.ASIANUX_3_GUEST);
         s_mapper.put("Asianux 3(64-bit)", VirtualMachineGuestOsIdentifier.ASIANUX_3_64_GUEST);
 
-        s_mapper.put("Debian GNU/Linux 10 (32-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_10_64_GUEST);
-        s_mapper.put("Debian GNU/Linux 10 (64-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_10_64_GUEST);
-        s_mapper.put("Debian GNU/Linux 9 (32-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_9_GUEST);
-        s_mapper.put("Debian GNU/Linux 9 (64-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_9_64_GUEST);
-        s_mapper.put("Debian GNU/Linux 8 (32-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_8_GUEST);
-        s_mapper.put("Debian GNU/Linux 8 (64-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_8_64_GUEST);
-        s_mapper.put("Debian GNU/Linux 7(32-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_7_GUEST);
-        s_mapper.put("Debian GNU/Linux 7(64-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_7_64_GUEST);
-        s_mapper.put("Debian GNU/Linux 6(32-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_6_GUEST);
-        s_mapper.put("Debian GNU/Linux 6(64-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_6_64_GUEST);
         s_mapper.put("Debian GNU/Linux 5(64-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_5_64_GUEST);
         s_mapper.put("Debian GNU/Linux 5.0 (32-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_5_GUEST);
         s_mapper.put("Debian GNU/Linux 4(32-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_4_GUEST);
@@ -128,22 +102,6 @@ public class VmwareGuestOsMapper {
         s_mapper.put("Other SUSE Linux(32-bit)", VirtualMachineGuestOsIdentifier.SUSE_GUEST);
         s_mapper.put("Other SUSE Linux(64-bit)", VirtualMachineGuestOsIdentifier.SUSE_64_GUEST);
 
-        s_mapper.put("Suse Linux Enterprise Server 9", VirtualMachineGuestOsIdentifier.SLES_GUEST);
-        s_mapper.put("Suse Linux Enterprise Server 9 (64 bit)", VirtualMachineGuestOsIdentifier.SLES_64_GUEST);
-        s_mapper.put("SUSE Linux Enterprise Server 10 SP1 (32-bit)", VirtualMachineGuestOsIdentifier.SLES_10_GUEST);
-        s_mapper.put("SUSE Linux Enterprise Server 10 SP1 (64-bit)", VirtualMachineGuestOsIdentifier.SLES_10_64_GUEST);
-        s_mapper.put("SUSE Linux Enterprise Server 10 SP2 (32-bit)", VirtualMachineGuestOsIdentifier.SLES_10_GUEST);
-        s_mapper.put("SUSE Linux Enterprise Server 10 SP2 (64-bit)", VirtualMachineGuestOsIdentifier.SLES_10_64_GUEST);
-        s_mapper.put("SUSE Linux Enterprise Server 10 SP3 (32-bit)", VirtualMachineGuestOsIdentifier.SLES_10_GUEST);
-        s_mapper.put("SUSE Linux Enterprise Server 10 SP3 (64-bit)", VirtualMachineGuestOsIdentifier.SLES_10_64_GUEST);
-        s_mapper.put("SUSE Linux Enterprise Server 10 SP4 (32-bit)", VirtualMachineGuestOsIdentifier.SLES_10_GUEST);
-        s_mapper.put("SUSE Linux Enterprise Server 10 SP4 (64-bit)", VirtualMachineGuestOsIdentifier.SLES_10_64_GUEST);
-        s_mapper.put("SUSE Linux Enterprise Server 11 (32-bit)", VirtualMachineGuestOsIdentifier.SLES_11_GUEST);
-        s_mapper.put("SUSE Linux Enterprise Server 11 (64-bit)", VirtualMachineGuestOsIdentifier.SLES_11_64_GUEST);
-        s_mapper.put("SUSE Linux Enterprise Server 12 (32-bit)", VirtualMachineGuestOsIdentifier.SLES_12_GUEST);
-        s_mapper.put("SUSE Linux Enterprise Server 12 (64-bit)", VirtualMachineGuestOsIdentifier.SLES_12_64_GUEST);
-        s_mapper.put("SUSE Linux Enterprise Server 15 (64-bit)", VirtualMachineGuestOsIdentifier.SLES_15_64_GUEST);
-
         s_mapper.put("CentOS 4.5 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_GUEST);
         s_mapper.put("CentOS 4.6 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_GUEST);
         s_mapper.put("CentOS 4.7 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_GUEST);
@@ -162,11 +120,8 @@ public class VmwareGuestOsMapper {
         s_mapper.put("CentOS 5.5 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_64_GUEST);
         s_mapper.put("CentOS 5.6 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_GUEST);
         s_mapper.put("CentOS 5.6 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_64_GUEST);
-        s_mapper.put("CentOS 6.0 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_6_GUEST);
-        s_mapper.put("CentOS 6.0 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_6_64_GUEST);
-        s_mapper.put("CentOS 7 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_7_GUEST);
-        s_mapper.put("CentOS 7 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_7_64_GUEST);
-        s_mapper.put("CentOS 8 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_8_64_GUEST);
+        s_mapper.put("CentOS 6.0 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_GUEST);
+        s_mapper.put("CentOS 6.0 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_64_GUEST);
         s_mapper.put("Other CentOS (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_GUEST);
         s_mapper.put("Other CentOS (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_64_GUEST);
 
@@ -214,9 +169,6 @@ public class VmwareGuestOsMapper {
         s_mapper.put("Red Hat Enterprise Linux 6.3 (64-bit)", VirtualMachineGuestOsIdentifier.RHEL_6_64_GUEST);
         s_mapper.put("Red Hat Enterprise Linux 6.4 (32-bit)", VirtualMachineGuestOsIdentifier.RHEL_6_GUEST);
         s_mapper.put("Red Hat Enterprise Linux 6.4 (64-bit)", VirtualMachineGuestOsIdentifier.RHEL_6_64_GUEST);
-        s_mapper.put("Red Hat Enterprise Linux 7 (32-bit)", VirtualMachineGuestOsIdentifier.RHEL_7_GUEST);
-        s_mapper.put("Red Hat Enterprise Linux 7 (64-bit)", VirtualMachineGuestOsIdentifier.RHEL_7_64_GUEST);
-        s_mapper.put("Red Hat Enterprise Linux 8 (64-bit)", VirtualMachineGuestOsIdentifier.RHEL_8_64_GUEST);
 
         s_mapper.put("Ubuntu 8.04 (32-bit)", VirtualMachineGuestOsIdentifier.UBUNTU_GUEST);
         s_mapper.put("Ubuntu 8.04 (64-bit)", VirtualMachineGuestOsIdentifier.UBUNTU_64_GUEST);
@@ -248,17 +200,4 @@ public class VmwareGuestOsMapper {
         return s_mapper.get(guestOsName);
     }
 
-    public static String getGuestOsName(VirtualMachineGuestOsIdentifier identifier) {
-        String guestOsName = null;
-        List<String> keys = new ArrayList<>();
-        for (Map.Entry<String, VirtualMachineGuestOsIdentifier> entry : s_mapper.entrySet()) {
-            if (entry.getValue().equals(identifier)) {
-                keys.add(entry.getKey());
-            }
-        }
-        if (CollectionUtils.isNotEmpty(keys)) {
-            guestOsName = keys.get(keys.size()-1);
-        }
-        return guestOsName;
-    }
 }
