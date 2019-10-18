@@ -1134,15 +1134,16 @@ public class VmImportManagerImpl implements VmImportService {
                     }
                     if (template.getName().equals(VM_IMPORT_DEFAULT_TEMPLATE_NAME)) {
                         String osName = unmanagedInstance.getOperatingSystem();
-                        if (Strings.isNullOrEmpty(osName)) {
-                            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve guest OS details for unmanaged VM: %s with OS name: %s. templateid parameter can be used to assign template for VM", name, unmanagedInstance.getOperatingSystem()));
+                        GuestOS guestOS = null;
+                        if (!Strings.isNullOrEmpty(osName)) {
+                            guestOS = guestOSDao.listByDisplayName(osName);
                         }
-                        GuestOS guestOS = guestOSDao.listByDisplayName(osName);
                         GuestOSHypervisor guestOSHypervisor = null;
-                        if (guestOS == null) {
-                            guestOSHypervisor = guestOSHypervisorDao.findByOsNameAndHypervisor(unmanagedInstance.getOperatingSystemId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
-                        } else {
+                        if (guestOS != null) {
                             guestOSHypervisor = guestOSHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
+                        }
+                        if (guestOSHypervisor == null && Strings.isNullOrEmpty(unmanagedInstance.getOperatingSystemId())) {
+                            guestOSHypervisor = guestOSHypervisorDao.findByOsNameAndHypervisor(unmanagedInstance.getOperatingSystemId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
                         }
                         if (guestOSHypervisor == null) {
                             if (guestOS != null) {

@@ -89,6 +89,16 @@ public class VmwareGuestOsMapper {
         s_mapper.put("Asianux 3(32-bit)", VirtualMachineGuestOsIdentifier.ASIANUX_3_GUEST);
         s_mapper.put("Asianux 3(64-bit)", VirtualMachineGuestOsIdentifier.ASIANUX_3_64_GUEST);
 
+        s_mapper.put("Debian GNU/Linux 10 (32-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_10_64_GUEST);
+        s_mapper.put("Debian GNU/Linux 10 (64-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_10_64_GUEST);
+        s_mapper.put("Debian GNU/Linux 9 (32-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_9_GUEST);
+        s_mapper.put("Debian GNU/Linux 9 (64-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_9_64_GUEST);
+        s_mapper.put("Debian GNU/Linux 8 (32-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_8_GUEST);
+        s_mapper.put("Debian GNU/Linux 8 (64-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_8_64_GUEST);
+        s_mapper.put("Debian GNU/Linux 7(32-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_7_GUEST);
+        s_mapper.put("Debian GNU/Linux 7(64-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_7_64_GUEST);
+        s_mapper.put("Debian GNU/Linux 6(32-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_6_GUEST);
+        s_mapper.put("Debian GNU/Linux 6(64-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_6_64_GUEST);
         s_mapper.put("Debian GNU/Linux 5(64-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_5_64_GUEST);
         s_mapper.put("Debian GNU/Linux 5.0 (32-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_5_GUEST);
         s_mapper.put("Debian GNU/Linux 4(32-bit)", VirtualMachineGuestOsIdentifier.DEBIAN_4_GUEST);

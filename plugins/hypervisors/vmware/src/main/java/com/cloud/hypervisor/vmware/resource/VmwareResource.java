@@ -7025,10 +7025,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
             instance.setOperatingSystem(VmwareGuestOsMapper.getGuestOsName(osIdentifier));
-            /*instance.setOperatingSystem(vmMo.getGuestInfo().getGuestFullName());
+            if (Strings.isNullOrEmpty(instance.getOperatingSystem())) {
+                instance.setOperatingSystem(vmMo.getGuestInfo().getGuestFullName());
+            }
             if (Strings.isNullOrEmpty(instance.getOperatingSystem())) {
                 instance.setOperatingSystem(vmMo.getConfigSummary().getGuestFullName());
-            }*/
+            }
             UnmanagedInstance.PowerState powerState = UnmanagedInstance.PowerState.PowerUnknown;
             if (vmMo.getPowerState().toString().equalsIgnoreCase("POWERED_ON")) {
                 powerState = UnmanagedInstance.PowerState.PowerOn;
