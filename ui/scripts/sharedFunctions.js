@@ -1223,7 +1223,7 @@ cloudStack.preFilter = {
             }
             args.$form.find('.form-item[rel=isFeatured]').hide();
             args.$form.find('.form-item[rel=templatetype]').hide();
-            $form.find(".form-item[rel='activate']").hide();
+            args.$form.find(".form-item[rel='activate']").hide();
         }
     },
     addLoadBalancerDevice: function(args) { //add netscaler device OR add F5 device

@@ -239,6 +239,9 @@
                                         label: "label.action.create.template.source.template",
                                         dependsOn: 'sourceZone',
                                         select: function(args){
+                                            if (!isAdmin()){
+                                                return;
+                                            }
                                             if (args.sourceZone == ""){
                                                 return;
                                             }
