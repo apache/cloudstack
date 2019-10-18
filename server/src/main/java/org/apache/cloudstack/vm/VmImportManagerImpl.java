@@ -1142,7 +1142,7 @@ public class VmImportManagerImpl implements VmImportService {
                         if (guestOS != null) {
                             guestOSHypervisor = guestOSHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
                         }
-                        if (guestOSHypervisor == null && Strings.isNullOrEmpty(unmanagedInstance.getOperatingSystemId())) {
+                        if (guestOSHypervisor == null && !Strings.isNullOrEmpty(unmanagedInstance.getOperatingSystemId())) {
                             guestOSHypervisor = guestOSHypervisorDao.findByOsNameAndHypervisor(unmanagedInstance.getOperatingSystemId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
                         }
                         if (guestOSHypervisor == null) {
