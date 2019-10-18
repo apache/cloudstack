@@ -381,7 +381,11 @@
                                             args.$select.change(function() {
                                                 var $form = $(this).closest('form');
                                                 var hypervisor = $(this).val();
-                                                if ($form.find('#label_action_create_template_type').val() == "system" && $form.find('#label_action_create_template_source_template').val() == "official"){
+                                                if (
+                                                    $form.find('#label_action_create_template_type').val() == "system" && 
+                                                    ( $form.find('#label_action_create_template_source_template').val() == "official" ||
+                                                    $form.find('#label_action_create_template_source_template').val() == "url" )
+                                                ){
                                                     
                                                     $.ajax({ 
                                                         url: createURL("getSystemVMTemplateDefaultUrl"), 
