@@ -17,12 +17,14 @@
 package com.cloud.storage.dao;
 
 import java.util.Date;
+import java.util.List;
 
-
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSHypervisorVO;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -114,7 +116,9 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
         sc.setParameters("guest_os_name", guestOsName);
         sc.setParameters("hypervisor_type", hypervisorType);
         sc.setParameters("hypervisor_version", version);
-        return findOneBy(sc);
+        final Filter filter = new Filter(GuestOSHypervisorVO.class, "guestOsId", true, null, null);
+        List<GuestOSHypervisorVO> results = listIncludingRemovedBy(sc, filter);
+        return CollectionUtils.isNotEmpty(results) ? results.get(0) : null;
     }
 
 }
