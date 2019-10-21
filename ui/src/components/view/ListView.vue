@@ -33,8 +33,8 @@
       </span>
     </template>
 
-    <a slot="name" slot-scope="text, record" href="javascript:;">
-      <console :resource="record" size="small" />&nbsp;
+    <a slot="name" slot-scope="text, record" href="javascript:;" style="display: inline-flex">
+      <console :resource="record" size="small" />&nbsp;&nbsp;
       <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
       <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
     </a>
