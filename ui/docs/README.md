@@ -1,6 +1,8 @@
 # Documentation
 
 - Router [Configuration](config.md)
-- Custom Component
+- [List View](listview.md) customisation
+- [Resource Detail View](detailview.md) customisation
+- [Actions](action.md) customisation
 - Styling
 - Testing
