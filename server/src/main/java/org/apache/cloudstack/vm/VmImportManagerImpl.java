@@ -725,7 +725,14 @@ public class VmImportManagerImpl implements VmImportService {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during vm migration, no deployment destination found", vm.getInstanceName()));
             }
             try {
-                virtualMachineManager.migrate(vm.getUuid(), sourceHost.getId(), dest);
+                if (vm.getState().equals(VirtualMachine.State.Stopped)) {
+                    VMInstanceVO vmInstanceVO = vmDao.findById(userVm.getId());
+                    vmInstanceVO.setHostId(dest.getHost().getId());
+                    vmInstanceVO.setLastHostId(dest.getHost().getId());
+                    vmDao.update(vmInstanceVO.getId(), vmInstanceVO);
+                } else {
+                    virtualMachineManager.migrate(vm.getUuid(), sourceHost.getId(), dest);
+                }
                 vm = userVmManager.getUserVm(vm.getId());
             } catch (Exception e) {
                 LOGGER.error(String.format("VM import failed for unmanaged vm: %s during vm migration", vm.getInstanceName()), e);
@@ -788,6 +795,7 @@ public class VmImportManagerImpl implements VmImportService {
                 }
             }
             if (storagePool == null) {
+                cleanupFailedImportVM(vm);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during volume ID: %s migration as no suitable pool found", userVm.getInstanceName(), volumeVO.getUuid()));
             } else {
                 LOGGER.debug(String.format("Found storage pool %s(%s) for migrating the volume %s to", storagePool.getName(), storagePool.getUuid(), volumeVO.getUuid()));
