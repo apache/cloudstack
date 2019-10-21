@@ -109,6 +109,8 @@ weekends during late 2018 and early 2019. During ApacheCon CCCUS19, on 9th
 September 2019, Primate was introduced and demoed as part of the talk [Modern UI
 for CloudStack](https://rohityadav.cloud/files/talks/cccna19-primate.pdf)
 ([video](https://www.youtube.com/watch?v=F2KwZhechzs)).
+[Primate](https://markmail.org/message/vxnskmwhfaagnm4r) was accepted by the
+Apache CloudStack project on 21 Oct 2019.
 
 ## License
 
