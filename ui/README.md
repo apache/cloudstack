@@ -56,6 +56,16 @@ Fix issues and vulnerabilities:
 
 ### Documentation
 
+#### Learning Resources
+
+- VueJS Guide: https://vuejs.org/v2/guide/
+- Ant Design Spec: https://ant.design/docs/spec/introduce
+- Vue Ant Design: https://vue.ant.design/docs/vue/introduce/
+- JavaScript ES6 Reference: https://www.tutorialspoint.com/es6/
+- Introduction to ES6: https://scrimba.com/g/gintrotoes6
+
+#### Primate Development
+
 - Router [Configuration](config.md)
 - [Resource List View](listview.md) customisation
 - [Resource Detail View](detailview.md) customisation
