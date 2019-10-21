@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-card :bordered="true">
+  <a-card :bordered="true" :title="title">
     <a-skeleton active v-if="loading" />
     <div v-else>
       <div class="resource-details">
@@ -30,7 +30,7 @@
           <slot name="name">
             <h4>
               {{ resource.displayname || resource.name }}
-              <console :resource="resource" size="default" />
+              <console :resource="resource" size="default" v-if="resource.id" />
             </h4>
             <a-tag v-if="resource.instancename">
               {{ resource.instancename }}
@@ -71,11 +71,6 @@
       <div class="resource-detail-item" v-if="resource.ostypename && resource.ostypeid">
         <os-logo :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
         <span style="margin-left: 8px">{{ resource.ostypename }}</span>
-      </div>
-
-      <div class="resource-detail-item">
-        <slot name="details">
-        </slot>
       </div>
 
       <div class="resource-detail-item" v-if="resource.keypair">
@@ -170,6 +165,12 @@
         <span v-if="resource.nic && resource.nic.length > 0">{{ resource.nic.filter(e => { return e.ipaddress }).map(e => { return e.ipaddress }).join(', ') }}</span>
         <span v-else>{{ resource.ipaddress }}</span>
       </div>
+
+      <div class="resource-detail-item">
+        <slot name="details">
+        </slot>
+      </div>
+
       <div class="resource-detail-item" v-if="resource.virtualmachineid">
         <a-icon type="desktop" class="resource-detail-item"/>
         <router-link :to="{ path: '/vm/' + resource.virtualmachineid }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
@@ -187,6 +188,10 @@
         <a-icon type="picture" class="resource-detail-item"/>
         <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename || resource.templateid }} </router-link>
       </div>
+      <div class="resource-detail-item" v-if="resource.diskofferingname && resource.diskofferingid">
+        <a-icon type="hdd" class="resource-detail-item"/>
+        <router-link :to="{ path: '/diskoffering/' + resource.diskofferingid }">{{ resource.diskofferingname || resource.diskofferingid }} </router-link>
+      </div>
       <div class="resource-detail-item" v-if="resource.networkofferingid">
         <a-icon type="wifi" class="resource-detail-item"/>
         <router-link :to="{ path: '/networkoffering/' + resource.networkofferingid }">{{ resource.networkofferingname || resource.networkofferingid }} </router-link>
@@ -203,6 +208,7 @@
         <a-icon type="gateway" class="resource-detail-item"/>
         <router-link :to="{ path: '/guestnetwork/' + resource.guestnetworkid }">{{ resource.guestnetworkname || resource.guestnetworkid }} </router-link>
       </div>
+
       <div class="resource-detail-item" v-if="resource.storageid">
         <a-icon type="database" class="resource-detail-item"/>
         <router-link :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
@@ -401,6 +407,10 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    },
+    title: {
+      type: String,
+      default: ''
     }
   },
   data () {

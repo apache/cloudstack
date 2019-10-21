@@ -118,7 +118,7 @@
           :footer="null"
           centered
         >
-          <component :is="currentAction.component"/></component>
+          <component :is="currentAction.component" :resource="resource" :loading="loading" v-bind="{currentAction}" />
         </a-modal>
       </keep-alive>
       <a-modal

@@ -938,5 +938,10 @@
 "zone": "Zone",
 "zoneId": "Zone",
 "zoneid": "Zone",
-"zonename": "Zone"
+"zonename": "Zone",
+"instance": "Instance",
+"yourInstance": "Your instance",
+"newInstance": "New instance",
+"cpu": "CPU",
+"ram": "RAM"
 }
