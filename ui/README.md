@@ -54,17 +54,22 @@ Fix issues and vulnerabilities:
 
     npm audit
 
-### Customisation
+### Documentation
 
-- Theme:  `vue.config.js`
-eg:
+- Router [Configuration](config.md)
+- [Resource List View](listview.md) customisation
+- [Resource Detail View](detailview.md) customisation
+- [Action](action.md) customisation
+- Styling
+- Testing
+- [Theme](https://vue.ant.design/docs/vue/customize-theme/): Customise via `vue.config.js`
 ```ecmascript 6
   css: {
     loaderOptions: {
       less: {
         modifyVars: {
           /* Less variables, required modifyVars*/
-
+          /* Refer to variables at https://vue.ant.design/docs/vue/customize-theme/ */
           'primary-color': '#F5222D',
           'link-color': '#F5222D',
           'border-radius-base': '4px',
