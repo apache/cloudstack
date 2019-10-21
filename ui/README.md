@@ -54,9 +54,9 @@ Fix issues and vulnerabilities:
 
     npm audit
 
-### Documentation
+## Documentation
 
-#### Learning Resources
+### Learning Resources
 
 - VueJS Guide: https://vuejs.org/v2/guide/
 - Ant Design Spec: https://ant.design/docs/spec/introduce
@@ -64,7 +64,7 @@ Fix issues and vulnerabilities:
 - JavaScript ES6 Reference: https://www.tutorialspoint.com/es6/
 - Introduction to ES6: https://scrimba.com/g/gintrotoes6
 
-#### Primate Development
+### Primate Development
 
 - Router [Configuration](config.md)
 - [Resource List View](listview.md) customisation
@@ -90,7 +90,7 @@ Fix issues and vulnerabilities:
   }
 ```
 
-### Attributions
+## Attributions
 
 Primate uses the following:
 
@@ -102,7 +102,7 @@ Primate uses the following:
 - [ViserJS](https://viserjs.github.io/docs.html#/viser/guide/installation)
 - [Icons](https://www.iconfinder.com/iconsets/cat-force) by [Iconka](https://iconka.com/en/downloads/cat-power/)
 
-### History
+## History
 
 The project was created by [Rohit Yadav](https://rohityadav.cloud) over several
 weekends during late 2018 and early 2019. During ApacheCon CCCUS19, on 9th
@@ -110,7 +110,7 @@ September 2019, Primate was introduced and demoed as part of the talk [Modern UI
 for CloudStack](https://rohityadav.cloud/files/talks/cccna19-primate.pdf)
 ([video](https://www.youtube.com/watch?v=F2KwZhechzs)).
 
-### License
+## License
 
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
