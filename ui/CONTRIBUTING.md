@@ -27,7 +27,7 @@ No back porting / cherry-picking features to existing branches!
 
 ## Forking
 
-In your browser, navigate to: [https://github.com/shapeblue/primate](https://github.com/shapeblue/primate)
+In your browser, navigate to: [https://github.com/apache/cloudstack-primate](https://github.com/apache/cloudstack-primate)
 
 Fork the repository by clicking on the 'Fork' button on the top right hand side.
 The fork will happen and you will be taken to your own fork of the repository.
@@ -38,7 +38,7 @@ On your workstation, follow these steps to setup a local repository for working 
 ``` bash
 $ git clone https://github.com/YOUR_ACCOUNT/primate.git
 $ cd primate
-$ git remote add upstream https://github.com/shapeblue/primate.git
+$ git remote add upstream https://github.com/apache/cloudstack-primate.git
 $ git checkout master
 $ git fetch upstream
 $ git rebase upstream/master
