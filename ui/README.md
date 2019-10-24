@@ -1,4 +1,4 @@
-# CloudStack Primate
+# CloudStack Primate [![Build Status](https://travis-ci.org/apache/cloudstack-primate.svg?branch=master)](https://travis-ci.org/apache/cloudstack-primate)
 
 A modern role-based progressive CloudStack UI based on VueJS and Ant Design.
 
