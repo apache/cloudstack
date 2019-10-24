@@ -147,7 +147,7 @@ def split_ips_by_family(ips):
 
 
 def get_bridge_physdev(brname):
-    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}'" % brname)
+    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}' | head -1" % brname)
     return physdev.strip()
 
 
