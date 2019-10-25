@@ -17,97 +17,106 @@
 
 package org.apache.cloudstack.api.command.admin.storage;
 
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.HashSet;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
-import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SeedSystemVMTemplateResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.user.Account;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
-
 
 @APICommand(name = "seedSystemVMTemplate", description = "Copies a system vm template into secondary storage",
-        responseObject = SeedSystemVMTemplateResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.13",
-authorized = {RoleType.Admin})
+        responseObject = ZoneResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.13",
+        authorized = {RoleType.Admin})
 public class SeedSystemVMTemplateCmd extends BaseCmd {
 
-    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "The target hypervisor for the template.")
+    private static final String s_name = "seedsystemvmtemplateresponse";
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of the zone")
+    private Long id;
+
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "The template download url")
+    private String url;
+
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "The Hypervisor to register this template for")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.IMAGE_STORE_UUID, type = CommandType.STRING, required = true, description = "Destination image store id.")
-    private String imageStoreId;
-
-    @Parameter(name = ApiConstants.FILE_UUID, type = CommandType.STRING, required = true, description = "File uuid.")
+    @Parameter(name = ApiConstants.FILE_UUID, type = CommandType.STRING, description = "File uuid.")
     private String fileUUID;
 
-    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.LONG, required = false, description = "template id")
-    private Long templateId;
+    @Parameter(name = ApiConstants.LOCAL_FILE, type = CommandType.BOOLEAN, required = true, description = "Local file or url")
+    private Boolean localFile;
 
-    @Override
-    public void execute(){
-        ListResponse<ImageStoreResponse> imageStoreResponses = _queryService.searchForImageStores(new ListImageStoresCmd());
+    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.STRING, required = true, description = "The id of a specific template")
+    private String templateId;
 
-        ImageStoreResponse imageStoreResponse = new ImageStoreResponse();
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
 
-        if (imageStoreResponses.getCount() > 1){
-            // get image store with correct id;
-            for (ImageStoreResponse response: imageStoreResponses.getResponses()){
-                if (response.getId().equalsIgnoreCase(imageStoreId)){
-                    imageStoreResponse = response;
-                }
-            }
-        } else if (imageStoreResponses.getCount() == 1) {
-            imageStoreResponse = imageStoreResponses.getResponses().get(0);
-        } else if (imageStoreResponses.getCount() == 0) {
-            throw new CloudRuntimeException("Unable to find imagestore.");
-        }
-
-        hypervisor = hypervisor.toLowerCase();
-
-        String mountPoint = "/tmp/nfsmount";
-        String uploadPath = "/tmp/upload";
-
-        try {
-            URI uri = new URI(imageStoreResponse.getUrl());
-
-            Script.runSimpleBashScript("mkdir " + mountPoint);
-            Script.runSimpleBashScript("sudo mount -t nfs " + uri.getHost() + ":" + uri.getPath() + " " + mountPoint);
-
-        } catch (URISyntaxException e) {
-            throw new CloudRuntimeException("Malformed URI " + imageStoreResponse.getUrl());
-        }
-
-        String script = Script.findScript("scripts/storage/secondary/","cloud-install-sys-tmplt");
-
-        String command = script + " -h " + hypervisor + " -F -m " + mountPoint + " -f " + uploadPath + "/" + fileUUID;
-
-        if (templateId != null){
-            command += " -t " + templateId;
-        }
-
-        Script.runSimpleBashScriptForExitValue(command);
-
-        Script.runSimpleBashScript("sudo umount " + mountPoint);
-
-        _templateService.updateTemplate(imageStoreResponse.getZoneId());
-
-        SeedSystemVMTemplateResponse response = new SeedSystemVMTemplateResponse();
-        response.setResponseName(getCommandName());
-
-        this.setResponseObject(response);
+    public Long getId() {
+        return id;
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
+    }
+
+    public String getFileUUID() {
+        return fileUUID;
+    }
+
+    public void setFileUUID(String fileUUID) {
+        this.fileUUID = fileUUID;
+    }
+
+    public Boolean getLocalFile() {
+        return localFile;
+    }
+
+    public void setLocalFile(Boolean localFile) {
+        this.localFile = localFile;
+    }
+
+    public String getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(String templateId) {
+        this.templateId = templateId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
-        return "seedsystemvmtemplateresponse";
+        return s_name;
     }
 
     @Override
@@ -115,4 +124,15 @@ public class SeedSystemVMTemplateCmd extends BaseCmd {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
+    @Override
+    public void execute(){
+        // we need to get secondary storage for this zone.
+        HashSet<String> imageStores = _queryService.searchForImageStores(this);
+        _templateService.seedSystemVMTemplate(imageStores, this);
+        SeedSystemVMTemplateResponse response = new SeedSystemVMTemplateResponse();
+        response.setResult("Done");
+        response.setResponseName(getCommandName());
+        response.setObjectName(getCommandName());
+        this.setResponseObject(response);
+    }
 }

@@ -960,7 +960,7 @@
                                 $("#basic_search").click();
                                 // Seed the template via api call
                                 $.ajax({
-                                    url: createURL('seedOfficialSystemVMTemplate&id=' + data.zoneids + '&hypervisor=' + data.hypervisor + '&url=' + data.url),
+                                    url: createURL('seedSystemVMTemplate&id=' + data.zoneids + '&hypervisor=' + data.hypervisor + '&url=' + data.url + '&localfile=false&templateid=' + registerTemplateResponse[0].id),
                                     data: data,
                                     success: function(json){
                                         $("#basic_search").click();
@@ -1154,9 +1154,11 @@
                                                 $.ajax({
                                                     url: createURL('seedSystemVMTemplate'),
                                                     data: {
+                                                        id: args.data.zone,
                                                         hypervisor: args.data.hypervisor,
-                                                        imagestoreuuid: imageStore,
                                                         fileuuid: templateId,
+                                                        templateid: templateId,
+                                                        localfile: true,
                                                     },
                                                     async: false,
                                                 });

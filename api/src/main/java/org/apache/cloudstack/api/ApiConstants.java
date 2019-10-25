@@ -206,6 +206,7 @@ public class ApiConstants {
     public static final String LEVEL = "level";
     public static final String LENGTH = "length";
     public static final String LIMIT_CPU_USE = "limitcpuuse";
+    public static final String LOCAL_FILE = "localfile";
     public static final String LOCK = "lock";
     public static final String LUN = "lun";
     public static final String LBID = "lbruleid";

@@ -24,11 +24,13 @@ import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemp
 import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemplateXen;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,7 +47,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
-import org.apache.cloudstack.api.command.admin.storage.SeedOfficialSystemVMTemplateCmd;
+import org.apache.cloudstack.api.command.admin.storage.SeedSystemVMTemplateCmd;
 import org.apache.cloudstack.api.command.admin.template.GetSystemVMTemplateDefaultURLCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
@@ -65,6 +67,7 @@ import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
 import org.apache.cloudstack.api.response.GetSystemVMTemplateDefaultURLResponse;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
+import org.apache.cloudstack.api.response.SeedSystemVMTemplateResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -208,6 +211,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
@@ -2268,42 +2272,120 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return "";
     }
 
-    @Override
-    public void updateTemplate(SeedOfficialSystemVMTemplateCmd cmd) {
-        // this method will put the template into a usable state
-        List<TemplateDataStoreVO> templates = _tmplStoreDao.listByTemplate(cmd.getTemplateId());
-        VMTemplateVO template = _tmpltDao.findSystemVMTemplate(cmd.getId());
+    private void startDownloadTemplate(long templateId, long zoneId) {
+        TemplateDataStoreVO templateStore = _tmplStoreDao.findByTemplateZone(templateId, zoneId, DataStoreRole.Image);
+        templateStore.setDownloadState(Status.DOWNLOAD_IN_PROGRESS);
+        templateStore.setErrorString(null);
+        _tmplStoreDao.update(templateStore.getId(), templateStore);
+    }
 
-        for(TemplateDataStoreVO templateDataStoreVO : templates){
-            if (templateDataStoreVO.getInstallPath() == null){
-                templateDataStoreVO.setDownloadState(Status.DOWNLOADED);
-                templateDataStoreVO.setDownloadPercent(100);
-                templateDataStoreVO.setState(ObjectInDataStoreStateMachine.State.Ready);
-                templateDataStoreVO.setInstallPath("template/tmpl/1/" + cmd.getTemplateId() + "/" + template.getUuid() + "." + cmd.getFileExtension());
-                templateDataStoreVO.setErrorString(null);
-                _tmplStoreDao.update(templateDataStoreVO.getId(), templateDataStoreVO);
-            }
+    private void startInstallTemplate(long templateId, long zoneId) {
+        TemplateDataStoreVO templateStore = _tmplStoreDao.findByTemplateZone(templateId, zoneId, DataStoreRole.Image);
+        templateStore.setDownloadPercent(100);
+        templateStore.setErrorString(null);
+        _tmplStoreDao.update(templateStore.getId(), templateStore);
+    }
+
+    private void updateTemplate(long templateId, String fileExtension, long zoneId, boolean setSize) {
+        TemplateDataStoreVO templateStore = _tmplStoreDao.findByTemplateZone(templateId, zoneId, DataStoreRole.Image);
+        VMTemplateVO template = _tmpltDao.findById(templateId);
+        templateStore.setDownloadState(Status.DOWNLOADED);
+        templateStore.setState(ObjectInDataStoreStateMachine.State.Ready);
+        templateStore.setInstallPath("template/tmpl/1/" + templateId + "/" + template.getUuid() + "." + fileExtension);
+        templateStore.setErrorString(null);
+        if (setSize){
+            templateStore.setSize(0L);
         }
+        _tmplStoreDao.update(templateStore.getId(), templateStore);
     }
 
     @Override
-    public void updateTemplate(String zoneId) {
-        // this method will put the template into a usable state
-        DataCenterVO zone = _dcDao.findByUuid(zoneId);
-        VMTemplateVO template = _tmpltDao.findSystemVMTemplate(zone.getId());
-        List<TemplateDataStoreVO> templates = _tmplStoreDao.listByTemplate(template.getId());
+    public SeedSystemVMTemplateResponse seedSystemVMTemplate(HashSet<String> imageStores, SeedSystemVMTemplateCmd cmd) {
 
-        for(TemplateDataStoreVO templateDataStoreVO : templates){
-            if (templateDataStoreVO.getInstallPath() == null) {
-                templateDataStoreVO.setDownloadState(Status.DOWNLOADED);
-                templateDataStoreVO.setSize(0L);
-                templateDataStoreVO.setDownloadPercent(100);
-                templateDataStoreVO.setState(ObjectInDataStoreStateMachine.State.Ready);
-                templateDataStoreVO.setInstallPath("template/tmpl/1/" + template.getId() + "/" + template.getUuid() + "." + template.getFormat().toString().toLowerCase());
-                templateDataStoreVO.setErrorString(null);
-                _tmplStoreDao.update(templateDataStoreVO.getId(), templateDataStoreVO);
-            }
+        String uploadPath = "/tmp/upload";
+
+        VMTemplateVO template = _tmpltDao.findByUuid(cmd.getTemplateId());
+
+        if (template == null){
+            throw new CloudRuntimeException("Unable to find template for seeding.");
         }
+
+        String seedScript = Script.findScript("scripts/storage/secondary/","cloud-install-sys-tmplt");
+
+        // mount locally
+        String mountPoint = "/tmp/nfsmount";
+        int result = Script.runSimpleBashScriptForExitValue("mkdir -p " + mountPoint);
+        if (result != 0){
+            throw new CloudRuntimeException("Unable to create temporary mount folders.");
+        }
+
+        for (String imageStore: imageStores){
+            URI uri;
+            try {
+                uri = new URI(imageStore);
+                // mount secondary storage
+                result = Script.runSimpleBashScriptForExitValue(String.format("sudo mount -t nfs %s:%s %s",  uri.getHost(), uri.getPath(), mountPoint)) ;
+                if (result != 0){
+                    throw new CloudRuntimeException("Unable to mount image store.");
+                }
+            } catch (URISyntaxException e) {
+                throw new CloudRuntimeException("Malformed URI " + imageStore);
+            }
+
+            String fileExtension = "";
+
+
+
+            Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.getType(cmd.getHypervisor());
+            if (hypervisorType == Hypervisor.HypervisorType.KVM || hypervisorType == Hypervisor.HypervisorType.LXC) {
+                fileExtension = "qcow2";
+            } else if (hypervisorType == Hypervisor.HypervisorType.XenServer || hypervisorType == Hypervisor.HypervisorType.Hyperv) {
+                fileExtension = "vhd";
+            } else if (hypervisorType == Hypervisor.HypervisorType.VMware) {
+                fileExtension = "ova";
+            } else if (hypervisorType == Hypervisor.HypervisorType.Ovm || hypervisorType == Hypervisor.HypervisorType.Ovm3) {
+                fileExtension = "raw";
+            }
+
+            String command;
+
+            if (cmd.getLocalFile()){
+                command = String.format(seedScript + " -t %d -h %s -F -m %s -f %s/%s",template.getId(), hypervisorType.toString().toLowerCase(), mountPoint, uploadPath, cmd.getFileUUID());
+            } else {
+                String downloadedFileName = "";
+                URI downloadURI;
+                try {
+                    downloadURI = new URI(cmd.getUrl()); downloadedFileName = downloadURI.getPath();
+                } catch (URISyntaxException e) {
+                    throw new CloudRuntimeException("Malformed URI " + cmd.getUrl());
+                }
+
+                String downloadPath = downloadURI.getPath();
+                downloadedFileName = downloadPath.substring(downloadPath.lastIndexOf("/"), downloadPath.length());
+
+                // using -q silent switch, the output otherwise confuses Script.execute() which waits for the default timeout of 1 hour.
+                command = String.format("wget -q -O /tmp%s %s -P %s", downloadedFileName, cmd.getUrl(), mountPoint);
+                startDownloadTemplate(template.getId(), cmd.getId());
+                result = Script.runSimpleBashScriptForExitValue(command);
+                if (result != 0){
+                    throw new CloudRuntimeException("Unable to download system vm template.");
+                }
+                command = String.format(seedScript + " -t %d -h %s -F -m %s -f /tmp%s", template.getId(), hypervisorType.toString().toLowerCase(), mountPoint, downloadedFileName);
+            }
+            startInstallTemplate(template.getId(), cmd.getId());
+            result = Script.runSimpleBashScriptForExitValue(command);
+            if (result != 0){
+                throw new CloudRuntimeException("Seeding system vm template failed.");
+            }
+            updateTemplate(template.getId(), fileExtension, cmd.getId(), cmd.getLocalFile());
+
+        }
+
+        result = Script.runSimpleBashScriptForExitValue("sudo umount " + mountPoint);
+        if (result != 0){
+            throw new CloudRuntimeException("Unable to unmount temporary template upload folders.");
+        }
+        return new SeedSystemVMTemplateResponse();
     }
 
     private VMTemplateVO updateTemplateOrIso(BaseUpdateTemplateOrIsoCmd cmd) {

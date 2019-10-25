@@ -29,7 +29,7 @@ from marvin.lib.common import (get_domain,
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from nose.plugins.attrib import attr
 import time
-from marvin.cloudstackAPI import (registerTemplate, listOsTypes, activateSystemVMTemplate, createZone, listConfigurations, getSystemVMTemplateDefaultUrl)
+from marvin.cloudstackAPI import (registerTemplate, listTemplates, listOsTypes, activateSystemVMTemplate, createZone, listConfigurations, getSystemVMTemplateDefaultUrl, deleteTemplate)
 from marvin.lib.utils import cleanup_resources
 
 class TestActivateTemplate(cloudstackTestCase):
@@ -40,7 +40,6 @@ class TestActivateTemplate(cloudstackTestCase):
         cls.apiclient = cls.testClient.getApiClient()
         cls.dbclient = cls.testClient.getDbConnection()
         cls._cleanup = []
-        cls.templates = []
 
         cls.services = cls.testClient.getParsedTestDataConfig()
         cls.unsupportedHypervisor = False
@@ -53,8 +52,6 @@ class TestActivateTemplate(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
-        cls.services["mode"] = cls.zone.networktype
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
@@ -68,28 +65,38 @@ class TestActivateTemplate(cloudstackTestCase):
             domainid=cls.domain.id
         )
         cls._cleanup.append(cls.user)
-        cls.service_offering = ServiceOffering.create(
-            cls.apiclient,
-            cls.services["service_offerings"]["tiny"]
-        )
-        cls._cleanup.append(cls.service_offering)
+
+        cls.listTemplatesCmd = listTemplates.listTemplatesCmd()
+        cls.listTemplatesCmd.templatefilter= 'system'
+        # Save the system templates
+        cls.templates = cls.apiclient.listTemplates(cls.listTemplatesCmd)
     
     @classmethod
     def tearDownClass(cls):
         try:
+            # Clean up the created templates
+            for temp in cls.templates:
+                cmd = activateSystemVMTemplate.activateSystemVMTemplateCmd()
+                cmd.id = temp.id
+                cls.apiclient.activateSystemVMTemplate(cmd)
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def setUp(self):
+        # Default URL
+        self.getDefaultURLCmd = getSystemVMTemplateDefaultUrl.getSystemVMTemplateDefaultUrlCmd()
+        self.getDefaultURLCmd.hypervisor = 'KVM'
+        urlResponse = self.apiclient.getSystemVMTemplateDefaultUrl(self.getDefaultURLCmd)
+        
         # Official cloudstack system vm template
         self.test_template = registerTemplate.registerTemplateCmd()
         self.test_template.hypervisor = self.hypervisor
         self.test_template.zoneid = self.zone.id
         self.test_template.name = 'test-system-kvm-4.11.3'
         self.test_template.displaytext = 'test-system-kvm-4.11.3'
-        self.test_template.url = "http://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.3-kvm.qcow2.bz2"
+        self.test_template.url = urlResponse.url.url #"http://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.3-kvm.qcow2.bz2"
         self.test_template.format = "QCOW2"
         self.test_template.system = True
         self.test_template.ostypeid = self.getOsType("Debian GNU/Linux 9 (64-bit)")
@@ -98,10 +105,6 @@ class TestActivateTemplate(cloudstackTestCase):
         self.activateTemplateCmd = activateSystemVMTemplate.activateSystemVMTemplateCmd()
         self.listConfigurationsCmd = listConfigurations.listConfigurationsCmd()
         self.listConfigurationsCmd.name = 'router.template.kvm'
-
-        self.getDefaultURLCmd = getSystemVMTemplateDefaultUrl.getSystemVMTemplateDefaultUrlCmd()
-        self.getDefaultURLCmd.hypervisor = 'KVM'
-
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
@@ -120,9 +123,9 @@ class TestActivateTemplate(cloudstackTestCase):
         self.assertEqual(response[0].value, "test-system-kvm-4.11.3", "Expected template name to be test-system-kvm-4.11.3")
         return
 
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
     def test_02_get_default_url(self):
         response = self.apiclient.getSystemVMTemplateDefaultUrl(self.getDefaultURLCmd)
-        self.debug()
         self.assertNotEqual(response.url.url, "", "Expected a value")
         # This test will have to be updated for every official template version
         self.assertEqual(response.url.url, "https://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.3-kvm.qcow2.bz2", "Default url mismatch")
@@ -143,6 +146,10 @@ class TestActivateTemplate(cloudstackTestCase):
 
     def copyTemplate(self, cmd):
         response = self.apiclient.copyTemplate(cmd)
+        return response
+
+    def listTestTemplates(self, cmd):
+        response = self.apiclient.listTemplates(cmd)
         return response
 
     def getOsType(self, param):

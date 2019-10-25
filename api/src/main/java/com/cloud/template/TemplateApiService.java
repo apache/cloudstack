@@ -18,11 +18,12 @@ package com.cloud.template;
 
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.util.HashSet;
 import java.util.List;
 
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
-import org.apache.cloudstack.api.command.admin.storage.SeedOfficialSystemVMTemplateCmd;
+import org.apache.cloudstack.api.command.admin.storage.SeedSystemVMTemplateCmd;
 import org.apache.cloudstack.api.command.admin.template.GetSystemVMTemplateDefaultURLCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
@@ -38,6 +39,7 @@ import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.response.GetSystemVMTemplateDefaultURLResponse;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
+import org.apache.cloudstack.api.response.SeedSystemVMTemplateResponse;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
@@ -116,7 +118,5 @@ public interface TemplateApiService {
 
     String getSystemVMTemplateDefaultURL(String hypervisor);
 
-    void updateTemplate(SeedOfficialSystemVMTemplateCmd seedOfficialSystemVMTemplateCmd);
-
-    void updateTemplate(String zoneId);
+    SeedSystemVMTemplateResponse seedSystemVMTemplate(HashSet<String> imageStores, SeedSystemVMTemplateCmd cmd);
 }

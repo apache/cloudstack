@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
-import org.apache.cloudstack.api.command.admin.storage.SeedOfficialSystemVMTemplateCmd;
+import org.apache.cloudstack.api.command.admin.storage.SeedSystemVMTemplateCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -179,8 +179,8 @@ public interface QueryService {
 
     List<RouterHealthCheckResultResponse> listRouterHealthChecks(GetRouterHealthCheckResultsCmd cmd);
 
-    HashSet<String> searchForImageStores(SeedOfficialSystemVMTemplateCmd seedOfficialSystemVMTemplateCmd);
+    HashSet<String> searchForImageStores(SeedSystemVMTemplateCmd seedSystemVMTemplateCmd);
 
-    Long getSystemVMTemplateId(SeedOfficialSystemVMTemplateCmd seedOfficialSystemVMTemplateCmd);
+    String getSystemVMTemplateId(SeedSystemVMTemplateCmd seedSystemVMTemplateCmd);
 
 }

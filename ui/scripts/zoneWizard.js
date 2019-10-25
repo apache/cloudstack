@@ -5095,10 +5095,15 @@
                             system: true,
                             activate: true,
                         };
+
+                        newTemplateId = "";
                         $.ajax({
                             url: createURL('registerTemplate'),
                             data: data,
                             async: false,
+                            success: function(response){
+                                newTemplateId = response.registertemplateresponse.template[0].id
+                            },
                             error: function(XMLHttpResponse) {
                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                 error('addSystemTemplate', errorMsg, {
@@ -5110,7 +5115,7 @@
 
                         // Seed the template via api call
                         $.ajax({
-                            url: createURL('seedOfficialSystemVMTemplate&id=' + args.data.returnedZone.id + '&hypervisor=' + args.data.returnedCluster.hypervisortype + '&url=' + args.data.selectSystemVm.url),
+                            url: createURL('seedSystemVMTemplate&id=' + args.data.returnedZone.id + '&hypervisor=' + args.data.returnedCluster.hypervisortype + '&url=' + args.data.selectSystemVm.url + '&localfile=false&templateid=' + newTemplateId),
                             data: data,
                             success: function(json){
                                 complete({
@@ -5203,8 +5208,10 @@
                                     url: createURL('seedSystemVMTemplate'),
                                     data: {
                                         hypervisor: args.data.selectSystemVm.hypervisor,
-                                        imagestoreuuid: imagestore,
+                                        id: args.data.returnedZone.id,
                                         fileuuid: uploadparams.id,
+                                        templateid: uploadparams.id,
+                                        localfile: true,
                                     },
                                     async: false,
                                 });

@@ -55,7 +55,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
-import org.apache.cloudstack.api.command.admin.storage.SeedOfficialSystemVMTemplateCmd;
+import org.apache.cloudstack.api.command.admin.storage.SeedSystemVMTemplateCmd;
 import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
@@ -3980,7 +3980,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     @Override
-
     public List<RouterHealthCheckResultResponse> listRouterHealthChecks(GetRouterHealthCheckResultsCmd cmd) {
         s_logger.info("Executing health check command " + cmd);
         long routerId = cmd.getRouterId();
@@ -4001,7 +4000,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return responseGenerator.createHealthCheckResponse(_routerDao.findById(routerId), result);
     }
 
-    public HashSet<String> searchForImageStores(SeedOfficialSystemVMTemplateCmd cmd) {
+    public HashSet<String> searchForImageStores(SeedSystemVMTemplateCmd cmd) {
 
         Long zoneId = cmd.getId();
 
@@ -4042,9 +4041,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     @Override
-    public Long getSystemVMTemplateId(SeedOfficialSystemVMTemplateCmd cmd) {
+    public String getSystemVMTemplateId(SeedSystemVMTemplateCmd cmd) {
         VMTemplateVO template = _templateDao.findSystemVMTemplate(cmd.getId());
-        return template.getId();
+        return template.getUuid();
     }
 
     @Override

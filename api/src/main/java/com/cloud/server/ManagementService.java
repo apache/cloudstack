@@ -37,7 +37,7 @@ import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
 import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
-import org.apache.cloudstack.api.command.admin.storage.SeedOfficialSystemVMTemplateCmd;
+import org.apache.cloudstack.api.command.admin.storage.SeedSystemVMTemplateCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
@@ -425,5 +425,5 @@ public interface ManagementService {
 
     void cleanupVMReservations();
 
-    Pair<List<? extends Cluster>, Integer> searchForClusters(SeedOfficialSystemVMTemplateCmd seedOfficialSystemVMTemplateCmd);
+    Pair<List<? extends Cluster>, Integer> searchForClusters(SeedSystemVMTemplateCmd seedSystemVMTemplateCmd);
 }
