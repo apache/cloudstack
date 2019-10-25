@@ -1212,7 +1212,6 @@
                                                     $form.find(".form-item[rel='isdynamicallyscalable']").show();
                                                     $form.find(".form-item[rel='isFeatured']").show();
                                                     $form.find(".form-item[rel='isrouting']").show();
-                                                    $form.find(".form-item[rel='zone']").show();
                                                 } else {
                                                     $form.find(".form-item[rel='templateSource']").show();
                                                     $form.find(".form-item[rel='activate']").show();
@@ -1223,7 +1222,6 @@
                                                     $form.find(".form-item[rel='isdynamicallyscalable']").hide();
                                                     $form.find(".form-item[rel='isFeatured']").hide();
                                                     $form.find(".form-item[rel='isrouting']").hide();
-                                                    $form.find(".form-item[rel='zone']").hide();
                                                     $.ajax({
                                                         url: createURL("listOsTypes&description=Debian GNU/Linux 9 (64-bit)"),
                                                         dataType: "json",
