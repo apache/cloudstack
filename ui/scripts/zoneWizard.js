@@ -403,7 +403,18 @@
                         select: function(args){
                             // hide some fields
                             args.$select.change(function(){
+
                                 var $form = $(this).closest('form');
+                                $.ajax({
+                                    url: createURL("listOsTypes&description=Debian GNU/Linux 9 (64-bit)"),
+                                    dataType: "json",
+                                    async: true,
+                                    success: function(json) {
+                                        var ostypeObjs = json.listostypesresponse.ostype;
+                                        $form.find("select[name='osTypeId']").val(ostypeObjs[0].id).change();
+                                    }
+                                });
+
                                 // Empty value
                                 if ($(this).val() == undefined || $(this).val() == null || $(this).val() == '') {
                                     $form.find(".field[rel='url']").hide();
