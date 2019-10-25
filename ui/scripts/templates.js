@@ -291,11 +291,9 @@
                                                 $.ajax({
                                                     url: createURL("listZones&available=true"),
                                                     dataType: "json",
-                                                    async: true,
+                                                    async: false,
                                                     success: function(json) {
-                                                        $("select[name='zone'] option").each(function(){
-                                                            $(this).remove();
-                                                        })
+                                                        $("select[name='zone'] option").remove()
                                                         var zoneObjs = [];
                                                         var items = json.listzonesresponse.zone;
                                                         if (items != null) {
@@ -1281,11 +1279,10 @@
                                         label: 'label.zone',
                                         docID: 'helpRegisterTemplateZone',
                                         select: function(args) {
-                                            $("select[name='zone'] option").remove()
                                             $.ajax({
                                                 url: createURL("listZones&available=true"),
                                                 dataType: "json",
-                                                async: true,
+                                                async: false,
                                                 success: function(json) {
                                                     var zoneObjs = json.listzonesresponse.zone;
                                                     args.response.success({
