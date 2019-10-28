@@ -1205,38 +1205,56 @@
                                         label: 'label.action.create.template.type',
                                         docID : 'helpRegisterTemplateType',
                                         select: function(args) {
-                                            args.$select.change(function(){
-                                                var $form = $(this).closest('form');
-                                                if ($(this).val() == "user"){
-                                                    $form.find(".form-item[rel='templateSource']").hide();
-                                                    $form.find(".form-item[rel='activate']").hide();
-                                                    $form.find(".form-item[rel='sourceTemplate']").hide();
-                                                    $form.find(".form-item[rel='isPasswordEnabled']").show();
-                                                    $form.find(".form-item[rel='requireshvm']").show();
-                                                    $form.find(".form-item[rel='isPublic']").show();
-                                                    $form.find(".form-item[rel='isExtractable']").show();
-                                                    $form.find(".form-item[rel='isdynamicallyscalable']").show();
-                                                    $form.find(".form-item[rel='isFeatured']").show();
-                                                    $form.find(".form-item[rel='isrouting']").show();
-                                                } else {
-                                                    $form.find(".form-item[rel='templateSource']").show();
-                                                    $form.find(".form-item[rel='activate']").show();
-                                                    $form.find(".form-item[rel='isPasswordEnabled']").hide();
-                                                    $form.find(".form-item[rel='requireshvm']").hide();
-                                                    $form.find(".form-item[rel='isPublic']").hide();
-                                                    $form.find(".form-item[rel='isExtractable']").hide();
-                                                    $form.find(".form-item[rel='isdynamicallyscalable']").hide();
-                                                    $form.find(".form-item[rel='isFeatured']").hide();
-                                                    $form.find(".form-item[rel='isrouting']").hide();
-                                                    $.ajax({
-                                                        url: createURL("listOsTypes&description=Debian GNU/Linux 9 (64-bit)"),
-                                                        dataType: "json",
-                                                        async: true,
-                                                        success: function(json) {
-                                                            var ostypeObjs = json.listostypesresponse.ostype;
-                                                            $form.find("#label_os_type").val(ostypeObjs[0].id).change();
-                                                        }
-                                                    });
+                                            args.$select.change(function() {
+                                                if (isAdmin()) {
+                                                    var $form = $(this).closest('form');
+                                                    if ($(this).val() == "user"){
+                                                        $form.find(".form-item[rel='templateSource']").hide();
+                                                        $form.find(".form-item[rel='activate']").hide();
+                                                        $form.find(".form-item[rel='sourceTemplate']").hide();
+                                                        $form.find(".form-item[rel='isPasswordEnabled']").show();
+                                                        $form.find(".form-item[rel='requireshvm']").show();
+                                                        $form.find(".form-item[rel='isPublic']").show();
+                                                        $form.find(".form-item[rel='isExtractable']").show();
+                                                        $form.find(".form-item[rel='isdynamicallyscalable']").show();
+                                                        $form.find(".form-item[rel='isFeatured']").show();
+                                                        $form.find(".form-item[rel='isrouting']").show();
+                                                    } else {
+                                                        $form.find(".form-item[rel='templateSource']").show();
+                                                        $form.find(".form-item[rel='activate']").show();
+                                                        $form.find(".form-item[rel='isPasswordEnabled']").hide();
+                                                        $form.find(".form-item[rel='requireshvm']").hide();
+                                                        $form.find(".form-item[rel='isPublic']").hide();
+                                                        $form.find(".form-item[rel='isExtractable']").hide();
+                                                        $form.find(".form-item[rel='isdynamicallyscalable']").hide();
+                                                        $form.find(".form-item[rel='isFeatured']").hide();
+                                                        $form.find(".form-item[rel='isrouting']").hide();
+                                                        $.ajax({
+                                                            url: createURL("listOsTypes&description=Debian GNU/Linux 9 (64-bit)"),
+                                                            dataType: "json",
+                                                            async: true,
+                                                            success: function(json) {
+                                                                var ostypeObjs = json.listostypesresponse.ostype;
+                                                                $form.find("#label_os_type").val(ostypeObjs[0].id).change();
+                                                            }
+                                                        });
+
+                                                        var hypervisor = $("#label_hypervisor").val();
+
+                                                        $.ajax({ 
+                                                            url: createURL("getSystemVMTemplateDefaultUrl"), 
+                                                            data: {
+                                                                hypervisor: hypervisor,
+                                                            },
+                                                            success: function(json) {
+                                                                url = json.getsystemvmtemplatedefaulturlresponse.url.url;
+                                                                $form.find("input[name='url']").val(url);
+                                                                $form.find("input[name='name']").val("systemvm-" + hypervisor.toLowerCase() + "-" + cloudStackOptions.version);
+                                                                $form.find("input[name='description']").val("systemvm-" + hypervisor.toLowerCase() + "-" + cloudStackOptions.version);
+                                                            }
+                                                        });
+
+                                                    }
                                                 }
                                             });
                                             args.response.success({
@@ -1366,6 +1384,21 @@
                                                 }
                                             });
                                             args.$select.trigger('change');
+                                            if (isAdmin() && $("#label_action_create_template_type").val() == "system"){
+                                                var hypervisor = $("#label_hypervisor").val();
+                                                $.ajax({ 
+                                                    url: createURL("getSystemVMTemplateDefaultUrl"), 
+                                                    data: {
+                                                        hypervisor: hypervisor,
+                                                    },
+                                                    success: function(json) {
+                                                        url = json.getsystemvmtemplatedefaulturlresponse.url.url;
+                                                        $form.find("input[name='url']").val(url);
+                                                        $form.find("input[name='name']").val("systemvm-" + hypervisor.toLowerCase() + "-" + cloudStackOptions.version);
+                                                        $form.find("input[name='description']").val("systemvm-" + hypervisor.toLowerCase() + "-" + cloudStackOptions.version);
+                                                    }
+                                                });
+                                            }
                                         }
                                     },
 
