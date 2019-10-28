@@ -149,7 +149,10 @@
                                                         $form.find(".form-item[rel='isdynamicallyscalable']").show();
                                                         $form.find(".form-item[rel='directdownload']").show();
                                                         $form.find(".form-item[rel='isFeatured']").show();
-                                                        // $form.find(".form-item[rel='isrouting']").show();
+                                                        $form.find(".form-item[rel='isrouting']").show();
+                                                        if ($("#label_direct_download").is(":checked")){
+                                                            $form.find(".form-item[rel='checksum']").show();
+                                                        }
                                                     } else {
                                                         $form.find(".form-item[rel='templateSource']").show();
                                                         $form.find(".form-item[rel='activate']").show();
@@ -160,7 +163,8 @@
                                                         $form.find(".form-item[rel='isdynamicallyscalable']").hide();
                                                         $form.find(".form-item[rel='directdownload']").hide();
                                                         $form.find(".form-item[rel='isFeatured']").hide();
-                                                        // $form.find(".form-item[rel='isrouting']").hide();
+                                                        $form.find(".form-item[rel='isrouting']").hide();
+                                                        $form.find(".form-item[rel='checksum']").hide();
                                                         $("#label_action_create_template_source_template").val("url").change();
                                                     }
                                                 });
