@@ -106,6 +106,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
@@ -3567,11 +3568,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final StringBuilder sb = new StringBuilder();
         if (nicSecIps != null) {
             for (final String ip : nicSecIps) {
-                sb.append(ip).append(";");
+                sb.append(ip).append(SecurityGroupRulesCmd.RULE_COMMAND_SEPARATOR);
             }
             secIpsStr = sb.toString();
         } else {
-            secIpsStr = "0;";
+            secIpsStr = "0" + SecurityGroupRulesCmd.RULE_COMMAND_SEPARATOR;
         }
         final List<InterfaceDef> intfs = getInterfaces(conn, vmName);
         if (intfs.size() == 0 || intfs.size() < nic.getDeviceId()) {
@@ -3650,11 +3651,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final StringBuilder sb = new StringBuilder();
         if (nicSecIps != null) {
             for (final String ip : nicSecIps) {
-                sb.append(ip).append(";");
+                sb.append(ip).append(SecurityGroupRulesCmd.RULE_COMMAND_SEPARATOR);
             }
             secIpsStr = sb.toString();
         } else {
-            secIpsStr = "0;";
+            secIpsStr = "0" + SecurityGroupRulesCmd.RULE_COMMAND_SEPARATOR;
         }
         return defaultNetworkRules(conn, vmName, nic, vmId, secIpsStr, isFirstNic, checkBeforeApply);
     }

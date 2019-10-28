@@ -35,8 +35,8 @@ import com.cloud.utils.net.NetUtils;
 
 public class SecurityGroupRulesCmd extends Command {
     private static final String CIDR_LENGTH_SEPARATOR = "/";
-    private static final char RULE_TARGET_SEPARATOR = ',';
-    private static final char RULE_COMMAND_SEPARATOR = ';';
+    public static final char RULE_TARGET_SEPARATOR = ',';
+    public static final char RULE_COMMAND_SEPARATOR = ';';
     protected static final String EGRESS_RULE = "E:";
     protected static final String INGRESS_RULE = "I:";
     private static final Logger LOGGER = Logger.getLogger(SecurityGroupRulesCmd.class);
