@@ -1297,7 +1297,7 @@
                                         docID: 'helpRegisterTemplateHypervisor',
                                         dependsOn: 'zone',
                                         select: function(args) {
-                                            if (args.zone == null)
+                                            if (args.zone == null || args.zone == "")
                                                 return;
                                             var apiCmd;
                                             if (args.zone == -1) { //All Zones
