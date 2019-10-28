@@ -19,6 +19,9 @@
 
 package com.cloud.utils.nio;
 
+import org.apache.cloudstack.framework.ca.CAService;
+import org.apache.log4j.Logger;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
@@ -26,9 +29,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.WeakHashMap;
-
-import org.apache.cloudstack.framework.ca.CAService;
-import org.apache.log4j.Logger;
 
 public class NioServer extends NioConnection {
     private final static Logger s_logger = Logger.getLogger(NioServer.class);
@@ -61,7 +61,8 @@ public class NioServer extends NioConnection {
 
         _serverSocket.register(_selector, SelectionKey.OP_ACCEPT, null);
 
-        s_logger.info("NioConnection started and listening on " + _serverSocket.socket().getLocalSocketAddress());
+      s_logger.info(
+          "NioServer started and listening on " + _serverSocket.socket().getLocalSocketAddress());
     }
 
     @Override

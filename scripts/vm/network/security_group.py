@@ -101,8 +101,8 @@ def virshlist(states):
 
     conn = get_libvirt_connection()
 
-    alldomains = [d for domain in map(conn.lookupByID, conn.listDomainsID())]
-    alldomains += [d for domain in map(conn.lookupByName, conn.listDefinedDomains())]
+    alldomains = [domain for domain in map(conn.lookupByID, conn.listDomainsID())]
+    alldomains += [domain for domain in map(conn.lookupByName, conn.listDefinedDomains())]
 
     domains = []
     for domain in alldomains:
@@ -147,7 +147,7 @@ def split_ips_by_family(ips):
 
 
 def get_bridge_physdev(brname):
-    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}'" % brname)
+    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}' | head -1" % brname)
     return physdev.strip()
 
 

@@ -19,6 +19,13 @@
 
 package com.cloud.utils.nio;
 
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.framework.ca.CAService;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.log4j.Logger;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -44,14 +51,6 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-
-import org.apache.cloudstack.framework.ca.CAService;
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
-import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.log4j.Logger;
-
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  */
@@ -489,7 +488,7 @@ public class Link {
             try {
                 sslEngine.closeInbound();
             } catch (SSLException e) {
-                s_logger.warn("This SSL engine was forced to close inbound due to end of stream.");
+              s_logger.warn("This SSL engine was forced to close inbound due to end of stream.", e);
             }
             sslEngine.closeOutbound();
             // After closeOutbound the engine will be set to WRAP state,
