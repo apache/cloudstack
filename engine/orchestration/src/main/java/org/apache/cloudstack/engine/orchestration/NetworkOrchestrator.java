@@ -238,7 +238,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         "kvm.mtu.size", "Network", null,
         "Set MTU size for Libvirt and KVM (if not set the default MTU will be considered, "
             + "Attention: If you use OVS the main bridge is adjusted automatically "
-            + "to the guest nic mtu)", false, Scope.Global, null);
+            + "to the guest nic mtu)", true, Scope.Cluster, null);
 
     private Integer _kvmMtuSize = 0;
 
