@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.vm;
 
-import static java.util.Objects.nonNull;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -2085,11 +2083,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
-        final String mtu_size =_configDao.getValue(KVM_MTU_KEY);
-
-        if (nonNull(mtu_size)) {
-            _kvmMtuSize = Integer.valueOf(mtu_size);
-        }
+        _kvmMtuSize = NumbersUtil.parseInt(_configDao.getValue(KVM_MTU_KEY), 0);
 
         _instance = configs.get("instance.name");
         if (_instance == null) {

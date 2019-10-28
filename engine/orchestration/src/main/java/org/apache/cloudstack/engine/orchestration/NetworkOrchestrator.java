@@ -17,8 +17,6 @@
 package org.apache.cloudstack.engine.orchestration;
 
 
-import static java.util.Objects.nonNull;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -213,7 +211,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -230,7 +227,18 @@ import javax.naming.ConfigurationException;
 public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestrationService, Listener, Configurable {
     static final Logger s_logger = Logger.getLogger(NetworkOrchestrator.class);
 
-    private static final String KVM_MTU_SIZE = "kvm.mtu.size";
+    public static final ConfigKey<Integer> NetworkGcWait = new ConfigKey<Integer>(Integer.class,
+        "network.gc.wait", "Advanced", "600",
+        "Time (in seconds) to wait before shutting down a network that's not in used", false,
+        Scope.Global, null);
+    public static final ConfigKey<Integer> NetworkGcInterval = new ConfigKey<Integer>(Integer.class,
+        "network.gc.interval", "Advanced", "600",
+        "Seconds to wait before checking for networks to shutdown", true, Scope.Global, null);
+    public static final ConfigKey<Integer> KvmMtuSize = new ConfigKey<>(Integer.class,
+        "kvm.mtu.size", "Network", null,
+        "Set MTU size for Libvirt and KVM (if not set the default MTU will be considered, "
+            + "Attention: If you use OVS the main bridge is adjusted automatically "
+            + "to the guest nic mtu)", false, Scope.Global, null);
 
     private Integer _kvmMtuSize = 0;
 
@@ -570,10 +578,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                 _networkOfferingDao.persistDefaultL2NetworkOfferings();
 
-                final String mtu_size =_configDao.getValue(KVM_MTU_SIZE);
-                if (nonNull(mtu_size)) {
-                    _kvmMtuSize = Integer.valueOf(mtu_size);
-                }
+                _kvmMtuSize = NumbersUtil.parseInt(_configDao.getValue(KvmMtuSize.key()), 0);
             }
         });
 
@@ -876,7 +881,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             configureNicProfileBasedOnRequestedIp(requested, profile, network);
         }
 
-        if(Objects.isNull(profile.getMtu())) {
+        if (profile.getMtu() == null) {
             profile.setMtu(_kvmMtuSize);
         }
 
@@ -3975,15 +3980,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return NetworkOrchestrationService.class.getSimpleName();
     }
 
-    public static final ConfigKey<Integer> NetworkGcWait = new ConfigKey<Integer>(Integer.class, "network.gc.wait", "Advanced", "600",
-            "Time (in seconds) to wait before shutting down a network that's not in used", false, Scope.Global, null);
-    public static final ConfigKey<Integer> NetworkGcInterval = new ConfigKey<Integer>(Integer.class, "network.gc.interval", "Advanced", "600",
-            "Seconds to wait before checking for networks to shutdown", true, Scope.Global, null);
-
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {NetworkGcWait, NetworkGcInterval, NetworkLockTimeout,
-                GuestDomainSuffix, NetworkThrottlingRate, MinVRVersion,
-                PromiscuousMode, MacAddressChanges, ForgedTransmits, RollingRestartEnabled};
+            GuestDomainSuffix, NetworkThrottlingRate, MinVRVersion, PromiscuousMode,
+            MacAddressChanges, ForgedTransmits, RollingRestartEnabled, KvmMtuSize};
     }
 }

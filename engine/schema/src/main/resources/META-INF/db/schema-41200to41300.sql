@@ -664,7 +664,3 @@ CREATE TABLE `cloud`.`template_ovf_properties` (
 -- Add VM snapshot ID on usage helper tables
 ALTER TABLE `cloud_usage`.`usage_vmsnapshot` ADD COLUMN `vm_snapshot_id` BIGINT(20) NULL DEFAULT NULL AFTER `processed`;
 ALTER TABLE `cloud_usage`.`usage_snapshot_on_primary` ADD COLUMN `vm_snapshot_id` BIGINT(20) NULL DEFAULT NULL AFTER `deleted`;
-
--- Add configuration to set the MTU for OVS and KVM
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'kvm.mtu.size', null,
- 'Set the MTU for Libvirt and KVM (if not set the default MTU will be considered, Attention: If you use OVS the main bridge will automatically adjusted to the guest nic mtu)', null, null, null, 0);
