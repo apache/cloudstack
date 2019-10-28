@@ -135,34 +135,36 @@
                                         label: 'label.action.create.template.type',
                                         docID : 'helpRegisterTemplateType',
                                         select: function(args) {
-                                            args.$select.change(function(){
-                                                var $form = $(this).closest('form');
-                                                if ($(this).val() == "user"){
-                                                    $form.find(".form-item[rel='templateSource']").hide();
-                                                    $form.find(".form-item[rel='activate']").hide();
-                                                    $form.find(".form-item[rel='sourceTemplate']").hide();
-                                                    $form.find(".form-item[rel='isPasswordEnabled']").show();
-                                                    $form.find(".form-item[rel='requireshvm']").show();
-                                                    $form.find(".form-item[rel='isPublic']").show();
-                                                    $form.find(".form-item[rel='isExtractable']").show();
-                                                    $form.find(".form-item[rel='isdynamicallyscalable']").show();
-                                                    $form.find(".form-item[rel='directdownload']").show();
-                                                    $form.find(".form-item[rel='isFeatured']").show();
-                                                    $form.find(".form-item[rel='isrouting']").show();
-                                                } else {
-                                                    $form.find(".form-item[rel='templateSource']").show();
-                                                    $form.find(".form-item[rel='activate']").show();
-                                                    $form.find(".form-item[rel='isPasswordEnabled']").hide();
-                                                    $form.find(".form-item[rel='requireshvm']").hide();
-                                                    $form.find(".form-item[rel='isPublic']").hide();
-                                                    $form.find(".form-item[rel='isExtractable']").hide();
-                                                    $form.find(".form-item[rel='isdynamicallyscalable']").hide();
-                                                    $form.find(".form-item[rel='directdownload']").hide();
-                                                    $form.find(".form-item[rel='isFeatured']").hide();
-                                                    $form.find(".form-item[rel='isrouting']").hide();
-                                                    $("#label_action_create_template_source_template").val("url").change();
-                                                }
-                                            });
+                                            if (isAdmin){
+                                                args.$select.change(function(){
+                                                    var $form = $(this).closest('form');
+                                                    if ($(this).val() == "user"){
+                                                        $form.find(".form-item[rel='templateSource']").hide();
+                                                        $form.find(".form-item[rel='activate']").hide();
+                                                        $form.find(".form-item[rel='sourceTemplate']").hide();
+                                                        $form.find(".form-item[rel='isPasswordEnabled']").show();
+                                                        $form.find(".form-item[rel='requireshvm']").show();
+                                                        $form.find(".form-item[rel='isPublic']").show();
+                                                        $form.find(".form-item[rel='isExtractable']").show();
+                                                        $form.find(".form-item[rel='isdynamicallyscalable']").show();
+                                                        $form.find(".form-item[rel='directdownload']").show();
+                                                        $form.find(".form-item[rel='isFeatured']").show();
+                                                        // $form.find(".form-item[rel='isrouting']").show();
+                                                    } else {
+                                                        $form.find(".form-item[rel='templateSource']").show();
+                                                        $form.find(".form-item[rel='activate']").show();
+                                                        $form.find(".form-item[rel='isPasswordEnabled']").hide();
+                                                        $form.find(".form-item[rel='requireshvm']").hide();
+                                                        $form.find(".form-item[rel='isPublic']").hide();
+                                                        $form.find(".form-item[rel='isExtractable']").hide();
+                                                        $form.find(".form-item[rel='isdynamicallyscalable']").hide();
+                                                        $form.find(".form-item[rel='directdownload']").hide();
+                                                        $form.find(".form-item[rel='isFeatured']").hide();
+                                                        // $form.find(".form-item[rel='isrouting']").hide();
+                                                        $("#label_action_create_template_source_template").val("url").change();
+                                                    }
+                                                });
+                                            }
                                             args.response.success({
                                                 data: [
                                                     { id: "user", description: "User" },
