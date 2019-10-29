@@ -32,7 +32,7 @@ class LdapTestData:
     juniorAccount = "juniors"
 
     ldap_ip_address = "localhost"
-    ldap_port = "389"
+    ldap_port = 389
     hostname = "hostname"
     port = "port"
     dn = "dn"
@@ -52,32 +52,43 @@ class LdapTestData:
     uid = "uid"
     domains = "domains"
     type = "accounttype"
+    password = "userPassword"
+    mail = "email"
+    groupPrinciple = "ldap.search.group.principle"
 
-    admins = "ou=admins,ou=groups,dc=echt,dc=net"
-    juniors = "ou=juniors,ou=groups,dc=echt,dc=net"
-    seniors = "ou=seniors,ou=groups,dc=echt,dc=net"
+    basednValue = "dc=echt,dc=net"
+    people_dn = "ou=people,"+basednValue
+    groups_dn = "ou=groups,"+basednValue
+    admins = "ou=admins,"+groups_dn
+    juniors = "ou=juniors,"+groups_dn
+    seniors = "ou=seniors,"+groups_dn
+    userObject = "userObject"
+    usernameAttribute = "usernameAttribute"
+    memberAttribute = "memberAttribute"
+    mailAttribute = "emailAttribute"
 
     def __init__(self):
         self.testdata = {
             LdapTestData.configuration: {
-                "emailAttribute": "mail",
-                "userObject": "person",
-                "usernameAttribute": LdapTestData.uid,
+                LdapTestData.mailAttribute: "mail",
+                LdapTestData.userObject: "person",
+                LdapTestData.usernameAttribute: LdapTestData.uid,
+                LdapTestData.memberAttribute: LdapTestData.member,
                 # global values for use in all domains
                 LdapTestData.hostname: LdapTestData.ldap_ip_address,
                 LdapTestData.port: LdapTestData.ldap_port,
-                LdapTestData.basedn: "dc=echt,dc=net",
+                LdapTestData.basedn: LdapTestData.basednValue,
                 LdapTestData.ldapPw: "secret",
-                LdapTestData.principal: "cn=willie,dc=echt,dc=net",
+                LdapTestData.principal: "cn=willie,"+LdapTestData.basednValue,
             },
             LdapTestData.groups: [
                 {
-                    LdapTestData.dn : "ou=people,dc=echt,dc=net",
+                    LdapTestData.dn : LdapTestData.people_dn,
                     LdapTestData.objectClass: ["organizationalUnit", "top"],
                     LdapTestData.ou : "People"
                 },
                 {
-                    LdapTestData.dn : "ou=groups,dc=echt,dc=net",
+                    LdapTestData.dn : LdapTestData.groups_dn,
                     LdapTestData.objectClass: ["organizationalUnit", "top"],
                     LdapTestData.ou : "Groups"
                 },
@@ -86,53 +97,64 @@ class LdapTestData:
                     LdapTestData.objectClass: ["groupOfUniqueNames", "top"],
                     LdapTestData.ou : "seniors",
                     LdapTestData.cn : "seniors",
-                    LdapTestData.member : ["uid=bobby,ou=people,dc=echt,dc=net", "uid=rohit,ou=people,dc=echt,dc=net"]
+                    LdapTestData.member : ["uid=bobby,ou=people,"+LdapTestData.basednValue, "uid=rohit,ou=people,"+LdapTestData.basednValue]
                 },
                 {
                     LdapTestData.dn : LdapTestData.juniors,
                     LdapTestData.objectClass : ["groupOfUniqueNames", "top"],
                     LdapTestData.ou : "juniors",
                     LdapTestData.cn : "juniors",
-                    LdapTestData.member : ["uid=dahn,ou=people,dc=echt,dc=net", "uid=paul,ou=people,dc=echt,dc=net"]
+                    LdapTestData.member : ["uid=dahn,ou=people,"+LdapTestData.basednValue, "uid=paul,ou=people,"+LdapTestData.basednValue]
                 }
             ],
             LdapTestData.users: [
                 {
-                    LdapTestData.dn : "uid=bobby,ou=people,dc=echt,dc=net",
+                    LdapTestData.dn : "uid=bobby,ou=people,"+LdapTestData.basednValue,
                     LdapTestData.objectClass : ["inetOrgPerson", "top", "person"],
                     LdapTestData.cn : "bobby",
                     LdapTestData.sn: "Stoyanov",
                     LdapTestData.givenName : "Boris",
                     LdapTestData.uid : "bobby",
-                    "email": "bobby@echt.net"
+                    LdapTestData.mail: "bobby@echt.net"
                 },
                 {
-                    LdapTestData.dn : "uid=dahn,ou=people,dc=echt,dc=net",
+                    LdapTestData.dn : "uid=dahn,ou=people,"+LdapTestData.basednValue,
                     LdapTestData.objectClass : ["inetOrgPerson", "top", "person"],
                     LdapTestData.cn : "dahn",
                     LdapTestData.sn: "Hoogland",
                     LdapTestData.givenName : "Daan",
                     LdapTestData.uid : "dahn",
-                    "email": "dahn@echt.net"
+                    LdapTestData.mail: "dahn@echt.net"
                 },
                 {
-                    LdapTestData.dn : "uid=paul,ou=people,dc=echt,dc=net",
+                    LdapTestData.dn : "uid=paul,ou=people,"+LdapTestData.basednValue,
                     LdapTestData.objectClass : ["inetOrgPerson", "top", "person"],
                     LdapTestData.cn : "Paul",
                     LdapTestData.sn: "Angus",
                     LdapTestData.givenName : "Paul",
                     LdapTestData.uid : "paul",
-                    "email": "paul@echt.net"
+                    LdapTestData.mail: "paul@echt.net"
                 },
                 {
-                    LdapTestData.dn : "uid=rohit,ou=people,dc=echt,dc=net",
+                    LdapTestData.dn : "uid=rohit,ou=people,"+LdapTestData.basednValue,
                     LdapTestData.objectClass : ["inetOrgPerson", "top", "person"],
                     LdapTestData.cn : "rhtyd",
                     LdapTestData.sn: "Yadav",
                     LdapTestData.givenName : "Rohit",
                     LdapTestData.uid : "rohit",
-                    "email": "rhtyd@echt.net"
+                    LdapTestData.mail: "rhtyd@echt.net"
                 },
+                # extra test user (just in case)
+                # {
+                #     LdapTestData.dn : "uid=noone,ou=people,"+LdapTestData.basednValue,
+                #     LdapTestData.objectClass : ["inetOrgPerson", "person"],
+                #     LdapTestData.cn : "noone",
+                #     LdapTestData.sn: "a User",
+                #     LdapTestData.givenName : "Not",
+                #     LdapTestData.uid : "noone",
+                #     LdapTestData.mail: "noone@echt.net",
+                #     LdapTestData.password: 'password'
+                # },
             ],
             LdapTestData.domains : [
                 {

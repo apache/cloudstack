@@ -16,7 +16,7 @@
 # under the License.
 
 #Import Local Modules
-from integration.plugins.ldap.ldap_test_data import LdapTestData
+from .ldap_test_data import LdapTestData
 from marvin.cloudstackTestCase import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
@@ -133,18 +133,19 @@ class TestLDAP(cloudstackTestCase):
         cmd.domainid = self.manualDomain.id
         cmd.accounttype = 0
         cmd.username = self.test_user[1]
-        response = self.apiclient.ldapCreateAccount(cmd)
-        self.assertEqual(len(response.user), 1, "only one user %s should be present" % self.test_user[1])
+        create_response = self.apiclient.ldapCreateAccount(cmd)
 
         # cleanup
         # last results id should be the account
-        response = Account.list(self.apiclient, id=response.id)
-        self.assertEqual(len(response),
+        list_response = Account.list(self.apiclient, id=create_response.id)
+        account_created = Account(list_response[0].__dict__)
+        self.cleanup.append(account_created)
+
+        self.assertEqual(len(create_response.user), 1, "only one user %s should be present" % self.test_user[1])
+
+        self.assertEqual(len(list_response),
                          1,
                          "only one account (for user %s) should be present" % self.test_user[1])
-        # this is needed purely for cleanup:
-        account_created = Account(response[0].__dict__)
-        self._cleanup.append(account_created)
 
         return
 
@@ -162,16 +163,19 @@ class TestLDAP(cloudstackTestCase):
         cmd = importLdapUsers.importLdapUsersCmd()
         cmd.domainid = domainid
         cmd.accounttype = 0
-        response = self.apiclient.importLdapUsers(cmd)
-        self.assertEqual(len(response), len(self.testdata.testdata[LdapTestData.users]), "unexpected number of ldap users")
+        import_response = self.apiclient.importLdapUsers(cmd)
 
-        # cleanup
-        response = Account.list(self.apiclient, domainid=domainid)
-        self.assertEqual(len(response), len(self.testdata.testdata[LdapTestData.users]), "only one account (for user %s) should be present" % self.test_user[1])
         # this is needed purely for cleanup:
-        for account in response:
+        # cleanup
+        list_response = Account.list(self.apiclient, domainid=domainid)
+        for account in list_response:
             account_created = Account(account.__dict__)
-            self._cleanup.append(account_created)
+            logger.debug("account to clean: %s (id: %s)" % (account_created.name, account_created.id))
+            self.cleanup.append(account_created)
+
+        self.assertEqual(len(import_response), len(self.testdata.testdata[LdapTestData.users]), "unexpected number of ldap users")
+
+        self.assertEqual(len(list_response), len(self.testdata.testdata[LdapTestData.users]), "only one account (for user %s) should be present" % self.test_user[1])
 
         return
 
@@ -196,6 +200,12 @@ class TestLDAP(cloudstackTestCase):
 
         # now validate the user exists in domain
         response = User.list(self.apiclient,domainid=domainid,username=username)
+        for user in response:
+            user_created = User(user.__dict__)
+            logger.debug("user to clean: %s (id: %s)" % (user_created.username, user_created.id))
+            self.cleanup.append(user_created)
+
+        # now verify the creation of the user
         self.assertEqual(len(response), 1, "user should exist by now")
 
         return
@@ -224,23 +234,24 @@ class TestLDAP(cloudstackTestCase):
         cmd.userfilter = "NoFilter"
         cmd.domainid = self.manualDomain.id
         response = self.apiclient.listLdapUsers(cmd)
-        logger.debug(str(cmd) + ":" + str(response))
+        logger.debug(cmd.userfilter + " : " + str(response))
         self.assertEqual(len(response), len(self.testdata.testdata[LdapTestData.users]), "unexpected number of ldap users")
 
         # create a non ldap user with the uid of cls.test_user[0] in parentDomain
         # create a manual import of a cls.test_user[1] in manualDomain
         # log on with test_user[2] in an syncDomain
-        self.logon_test_user(self.test_user)
 
         # we can now test all four filtertypes in syncDomain and inspect the respective outcomes for validity
 
-        # cmd.userfilter = "AnyDomain"
-        # cmd.domainid = self.importDomain.id
-        # response = self.apiclient.listLdapUsers(cmd)
-        # logger.debug(str(cmd) + ":" + str(response))
-        # self.assertEqual(len(response),
-        #                  len(self.testdata.testdata[LdapTestData.users]) - 2,
-        #                  "unexpected number of ldap users")
+        self.logon_test_user(self.test_user[2])
+
+        cmd.userfilter = "LocalDomain"
+        cmd.domainid = self.syncDomain.id
+        response = self.apiclient.listLdapUsers(cmd)
+        logger.debug(cmd.userfilter + " : " + str(response))
+        self.assertEqual(len(response),
+                         len(self.testdata.testdata[LdapTestData.users]) - 1,
+                         "unexpected number of ldap users")
         #
         #
         # cmd.userfilter = "LocalDomain"
@@ -249,13 +260,16 @@ class TestLDAP(cloudstackTestCase):
         # logger.debug(str(cmd) + ":" + str(response))
         # self.assertEqual(len(response), len(self.testdata.testdata[LdapTestData.users]), "unexpected number of ldap users")
 
-    def logon_test_user(self, username):
+    def logon_test_user(self, username, domain = None):
         # login of dahn should create a user in account juniors
         args = {}
         args["command"] = 'login'
         args["username"] = username
         args["password"] = 'password'
-        args["domain"] = "/" + self.parentDomain.name + "/" + self.syncDomain.name
+        if domain == None:
+            args["domain"] = "/" + self.parentDomain.name + "/" + self.syncDomain.name
+        else:
+            args["domain"] = domain
         args["response"] = "json"
         session = requests.Session()
         try:
@@ -394,4 +408,11 @@ class TestLDAP(cloudstackTestCase):
         cmd.value = cls.testdata.testdata[LdapTestData.configuration][LdapTestData.principal]
         response = cls.apiclient.updateConfiguration(cmd)
         logger.debug("set the id: %s" % response)
+        if cls.testdata.testdata[LdapTestData.configuration].has_key(LdapTestData.groupPrinciple) :
+            cmd.name = LdapTestData.groupPrinciple
+            cmd.value = cls.testdata.testdata[LdapTestData.configuration][LdapTestData.groupPrinciple]
+            response = cls.apiclient.updateConfiguration(cmd)
+            logger.debug("set the id: %s" % response)
 
+
+## python ldap utility functions
