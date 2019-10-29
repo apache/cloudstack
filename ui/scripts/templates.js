@@ -55,6 +55,12 @@
                             label: 'label.community'
                         },
                         inactive: {
+                            preFilter: function(args) {
+                                if (isAdmin())
+                                    return true;
+                                else
+                                    return false;
+                            },
                             label: 'label.inactive'
                         }
                     },
@@ -888,6 +894,30 @@
                                 }
                                 // for hypervisor == VMware (ends here)
 
+                                var imageStores = false;
+                                // check if we have secondary storage for this template to go to.
+                                $.ajax({
+                                    url: createURL('listImageStores'),
+                                    data: {
+                                        'zoneid': zoneIds[i],
+                                    },
+                                    async: false,
+                                    success: function(json){
+                                        if(!$.isEmptyObject(json.listsystemvmsresponse)){
+                                            imageStores = true;
+                                        }
+                                    },
+                                    error: function(XMLHttpResponse) {
+                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                        args.response.error(errorMsg);
+                                    }
+                                });
+
+                                if (!imageStores){
+                                    args.response.error("No image stores available to store template");
+                                    return;
+                                }
+
                                 var registerTemplateResponse;
                                 var items;
                                 $.ajax({
@@ -942,7 +972,11 @@
                                 for (var i = 0; i < zoneIds.length; i++){
                                     $.ajax({
                                         url: createURL('listSystemVms'),
-                                        data: {'zoneid': zoneIds[i]},
+                                        data: {
+                                            'zoneid': zoneIds[i],
+                                            'systemvmtype': 'secondarystoragevm',
+                                            'state': 'running',
+                                        },
                                         async: false,
                                         success: function(json){
                                             if(!$.isEmptyObject(json.listsystemvmsresponse)){
@@ -1074,7 +1108,11 @@
                                         
                                         $.ajax({
                                             url: createURL('listSystemVms'),
-                                            data: {'zoneid': data.zoneid},
+                                            data: {
+                                                'zoneid': zoneIds[i],
+                                                'systemvmtype': 'secondarystoragevm',
+                                                'state': 'running',
+                                            },
                                             async: false,
                                             success: function(json){
                                                 if(!$.isEmptyObject(json.listsystemvmsresponse)){

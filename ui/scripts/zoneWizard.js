@@ -534,6 +534,9 @@
                             args.$select.change(function() {
                                 var $form = $(this).closest('form');
                                 var hypervisor = $(this).val();
+                                if (hypervisor == null){
+                                    return;
+                                }
                                 if ($form.find('#selectSystemVm_label_action_create_template_source_type').val() != "copy"){
                                     $.ajax({ 
                                         url: createURL("getSystemVMTemplateDefaultUrl"), 
