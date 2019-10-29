@@ -161,7 +161,7 @@
         </div>
       </div>
       <div class="resource-detail-item" v-if="resource.ipaddress">
-        <a-icon type="environment" class="resource-detail-item"/>
+        <a-icon type="environment" />
         <span v-if="resource.nic && resource.nic.length > 0">{{ resource.nic.filter(e => { return e.ipaddress }).map(e => { return e.ipaddress }).join(', ') }}</span>
         <span v-else>{{ resource.ipaddress }}</span>
       </div>
@@ -172,85 +172,85 @@
       </div>
 
       <div class="resource-detail-item" v-if="resource.virtualmachineid">
-        <a-icon type="desktop" class="resource-detail-item"/>
+        <a-icon type="desktop" />
         <router-link :to="{ path: '/vm/' + resource.virtualmachineid }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
         <status style="margin-top: -5px" :text="resource.vmstate" v-if="resource.vmstate"/>
       </div>
       <div class="resource-detail-item" v-if="resource.volumeid">
-        <a-icon type="hdd" class="resource-detail-item"/>
+        <a-icon type="hdd" />
         <router-link :to="{ path: '/volume/' + resource.volumeid }">{{ resource.volumename || resource.volume || resource.volumeid }} </router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
-        <a-icon type="cloud" class="resource-detail-item"/>
+        <a-icon type="cloud" />
         <router-link :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.templateid">
-        <a-icon type="picture" class="resource-detail-item"/>
+        <a-icon type="picture" />
         <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename || resource.templateid }} </router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.diskofferingname && resource.diskofferingid">
-        <a-icon type="hdd" class="resource-detail-item"/>
+        <a-icon type="hdd" />
         <router-link :to="{ path: '/diskoffering/' + resource.diskofferingid }">{{ resource.diskofferingname || resource.diskofferingid }} </router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.networkofferingid">
-        <a-icon type="wifi" class="resource-detail-item"/>
+        <a-icon type="wifi" />
         <router-link :to="{ path: '/networkoffering/' + resource.networkofferingid }">{{ resource.networkofferingname || resource.networkofferingid }} </router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.associatednetworkid">
-        <a-icon type="wifi" class="resource-detail-item"/>
+        <a-icon type="wifi" />
         <router-link :to="{ path: '/guestnetwork/' + resource.associatednetworkid }">{{ resource.associatednetworkname || resource.associatednetworkid }} </router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.vpcofferingid">
-        <a-icon type="deployment-unit" class="resource-detail-item"/>
+        <a-icon type="deployment-unit" />
         <router-link :to="{ path: '/vpcoffering/' + resource.vpcofferingid }">{{ resource.vpcofferingname || resource.vpcofferingid }} </router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.guestnetworkid">
-        <a-icon type="gateway" class="resource-detail-item"/>
+        <a-icon type="gateway" />
         <router-link :to="{ path: '/guestnetwork/' + resource.guestnetworkid }">{{ resource.guestnetworkname || resource.guestnetworkid }} </router-link>
       </div>
 
       <div class="resource-detail-item" v-if="resource.storageid">
-        <a-icon type="database" class="resource-detail-item"/>
+        <a-icon type="database" />
         <router-link :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
         <a-tag v-if="resource.storagetype">
           {{ resource.storagetype }}
         </a-tag>
       </div>
       <div class="resource-detail-item" v-if="resource.hostid">
-        <a-icon type="desktop" class="resource-detail-item"/>
+        <a-icon type="desktop" />
         <router-link :to="{ path: '/host/' + resource.hostid }">{{ resource.hostname || resource.hostid }} </router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.clusterid">
-        <a-icon type="cluster" class="resource-detail-item"/>
+        <a-icon type="cluster" />
         <router-link :to="{ path: '/cluster/' + resource.clusterid }">{{ resource.clustername || resource.cluster || resource.clusterid }}</router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.podid">
-        <a-icon type="appstore" class="resource-detail-item"/>
+        <a-icon type="appstore" />
         <router-link :to="{ path: '/pod/' + resource.podid }">{{ resource.podname || resource.pod || resource.podid }}</router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.zoneid">
-        <a-icon type="global" class="resource-detail-item"/>
+        <a-icon type="global" />
         <router-link :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zonename || resource.zoneid }}</router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.account">
-        <a-icon type="user" class="resource-detail-item"/>
+        <a-icon type="user" />
         <router-link :to="{ path: '/account', query: { name: resource.account, domainid: resource.domainid } }">{{ resource.account }}</router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.roleid">
-        <a-icon type="idcard" class="resource-detail-item"/>
+        <a-icon type="idcard" />
         <router-link :to="{ path: '/role/' + resource.roleid }">{{ resource.rolename || resource.role || resource.roleid }}</router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.domainid">
-        <a-icon type="block" class="resource-detail-item"/>
+        <a-icon type="block" />
         <router-link :to="{ path: '/domain/' + resource.domainid }">{{ resource.domain || resource.domainid }}</router-link>
       </div>
       <div class="resource-detail-item" v-if="resource.managementserverid">
-        <a-icon type="rocket" class="resource-detail-item"/>
+        <a-icon type="rocket" />
         <router-link :to="{ path: '/managementserver/' + resource.managementserverid }">{{ resource.managementserver || resource.managementserverid }}</router-link>
       </div>
 
       <div class="resource-detail-item" v-if="resource.created">
-        <a-icon type="calendar" class="resource-detail-item"/>{{ resource.created }}
+        <a-icon type="calendar" />{{ resource.created }}
       </div>
     </div>
 
@@ -612,7 +612,7 @@ export default {
     margin-right: 10px;
   }
   margin-right: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 .user-keys {
   word-wrap: break-word;
