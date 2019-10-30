@@ -554,7 +554,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                updateTemplate(template);
                 updateVMInstances(template);
                 updateRouterTemplateConfig(template);
                 updateMinRequiredSystemVMVersionConfig();
@@ -573,12 +572,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 _tmpltDao.persist(template);
             }
         }
-    }
-
-    private void updateTemplate(VMTemplateVO template) {
-        template.setTemplateType(TemplateType.SYSTEM);
-        template.setState(VirtualMachineTemplate.State.Active);
-        _tmpltDao.update(template.getId(), template);
     }
 
     private void updateVMInstances(VMTemplateVO template) {
