@@ -899,11 +899,11 @@
                                 $.ajax({
                                     url: createURL('listImageStores'),
                                     data: {
-                                        'zoneid': zoneIds[i],
+                                        'zoneid': zones,
                                     },
                                     async: false,
                                     success: function(json){
-                                        if(!$.isEmptyObject(json.listsystemvmsresponse)){
+                                        if(!$.isEmptyObject(json.listimagestoresresponse)){
                                             imageStores = true;
                                         }
                                     },
@@ -1109,7 +1109,7 @@
                                         $.ajax({
                                             url: createURL('listSystemVms'),
                                             data: {
-                                                'zoneid': zoneIds[i],
+                                                'zoneid': args.data.zone,
                                                 'systemvmtype': 'secondarystoragevm',
                                                 'state': 'running',
                                             },
@@ -1118,6 +1118,10 @@
                                                 if(!$.isEmptyObject(json.listsystemvmsresponse)){
                                                     systemVMS = true;
                                                 }
+                                            },
+                                            error: function(XMLHttpResponse) {
+                                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                args.response.error(errorMsg);
                                             }
                                         });
 
