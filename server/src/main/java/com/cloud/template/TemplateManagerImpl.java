@@ -2317,17 +2317,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             try {
                 uri = new URI(imageStore);
                 // mount secondary storage
-                result = Script.runSimpleBashScriptForExitValue(String.format("sudo mount -t nfs %s:%s %s",  uri.getHost(), uri.getPath(), mountPoint)) ;
-                if (result != 0){
-                    throw new CloudRuntimeException("Unable to mount image store.");
-                }
+                Script.runSimpleBashScriptForExitValue(String.format("sudo mount -t nfs %s:%s %s",  uri.getHost(), uri.getPath(), mountPoint)) ;
+
             } catch (URISyntaxException e) {
                 throw new CloudRuntimeException("Malformed URI " + imageStore);
             }
 
             String fileExtension = "";
-
-
 
             Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.getType(cmd.getHypervisor());
             if (hypervisorType == Hypervisor.HypervisorType.KVM || hypervisorType == Hypervisor.HypervisorType.LXC) {
@@ -2348,13 +2344,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 String downloadedFileName = "";
                 URI downloadURI;
                 try {
-                    downloadURI = new URI(cmd.getUrl()); downloadedFileName = downloadURI.getPath();
+                    downloadURI = new URI(cmd.getUrl());
                 } catch (URISyntaxException e) {
                     throw new CloudRuntimeException("Malformed URI " + cmd.getUrl());
                 }
 
                 String downloadPath = downloadURI.getPath();
-                downloadedFileName = downloadPath.substring(downloadPath.lastIndexOf("/"), downloadPath.length());
+                downloadedFileName = downloadPath.substring(downloadPath.lastIndexOf("/"));
 
                 // using -q silent switch, the output otherwise confuses Script.execute() which waits for the default timeout of 1 hour.
                 command = String.format("wget -q -O /tmp%s %s -P %s", downloadedFileName, cmd.getUrl(), mountPoint);
@@ -2374,10 +2370,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         }
 
-        result = Script.runSimpleBashScriptForExitValue("sudo umount " + mountPoint);
-        if (result != 0){
-            throw new CloudRuntimeException("Unable to unmount temporary template upload folders.");
-        }
+        Script.runSimpleBashScriptForExitValue("sudo umount " + mountPoint);
         return new SeedSystemVMTemplateResponse();
     }
 
