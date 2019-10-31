@@ -896,22 +896,36 @@
 
                                 var imageStores = false;
                                 // check if we have secondary storage for this template to go to.
-                                $.ajax({
-                                    url: createURL('listImageStores'),
-                                    data: {
-                                        'zoneid': zones,
-                                    },
-                                    async: false,
-                                    success: function(json){
-                                        if(!$.isEmptyObject(json.listimagestoresresponse)){
-                                            imageStores = true;
+                                zoneIds = [];
+                                if (data.zoneids == '-1'){
+                                    $.ajax({
+                                        url: createURL("listZones"),
+                                        data: {},
+                                        async: false,
+                                        success: function(json){
+                                            for ( var i = 0; i < json.listzonesresponse.zone.length; i++){
+                                                zoneIds.push(json.listzonesresponse.zone[i].id);
+                                            }
                                         }
-                                    },
-                                    error: function(XMLHttpResponse) {
-                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                        args.response.error(errorMsg);
-                                    }
-                                });
+                                    });
+                                } else {
+                                    zoneIds = data.zoneids.split(",");
+                                }
+                                for (var i = 0; i < zoneIds.length; i++){
+                                    $.ajax({
+                                        url: createURL('listImageStores'),
+                                        data: {
+                                            'zoneid': zoneIds[i],
+                                        },
+                                        async: false,
+                                        success: function(json){
+                                            if(!$.isEmptyObject(json.listimagestoresresponse)){
+                                                imageStores = true;
+                                            }
+                                        }
+                                    });
+                                }
+                                
 
                                 if (!imageStores){
                                     args.response.error("No image stores available to store template");
@@ -945,25 +959,6 @@
                                         data: items[0]
                                     });
                                     return 
-                                }
-
-                                zoneIds = [];
-                                if (data.zoneids == '-1'){
-                                    $.ajax({
-                                        url: createURL("listZones"),
-                                        async: false,
-                                        success: function(json){
-                                            for ( var i = 0; i < json.listzonesresponse.length; i++){
-                                                zoneIds.push(json.listzonesresponse[i].id);
-                                            }
-                                        },
-                                        error: function(XMLHttpResponse) {
-                                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                            args.response.error(errorMsg);
-                                        }
-                                    })
-                                } else {
-                                    zoneIds = data.zoneids.split(",");
                                 }
 
                                 // checking if there are any system vms to download the registered template.
@@ -1188,15 +1183,6 @@
                                                     }
                                                 });
 
-                                                var imageStore = "";
-                                                $.ajax({
-                                                    url: createURL('listImageStores'),
-                                                    data: {zoneid: args.data.zone},
-                                                    async: false,
-                                                    success: function(json){
-                                                        imageStore = json.listimagestoresresponse.imagestore[0].id;
-                                                    }
-                                                });
                                                 $.ajax({
                                                     url: createURL('seedSystemVMTemplate'),
                                                     data: {
