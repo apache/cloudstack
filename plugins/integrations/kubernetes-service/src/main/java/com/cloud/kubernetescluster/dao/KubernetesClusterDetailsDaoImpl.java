@@ -14,11 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($, cloudStack) {
-  cloudStack.plugins = [
-    //'testPlugin',
-    'cloudian',
-    'quota',
-    'cks'
-  ];
-}(jQuery, cloudStack));
+package com.cloud.kubernetescluster.dao;
+
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
+import org.springframework.stereotype.Component;
+
+import com.cloud.kubernetescluster.KubernetesClusterDetailsVO;
+
+
+@Component
+public class KubernetesClusterDetailsDaoImpl extends ResourceDetailsDaoBase<KubernetesClusterDetailsVO> implements KubernetesClusterDetailsDao {
+
+    @Override
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new KubernetesClusterDetailsVO(resourceId, key, value, display));
+    }
+}

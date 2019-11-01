@@ -14,11 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($, cloudStack) {
-  cloudStack.plugins = [
-    //'testPlugin',
-    'cloudian',
-    'quota',
-    'cks'
-  ];
-}(jQuery, cloudStack));
+
+package com.cloud.kubernetesversion;
+
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+/**
+ * KubernetesSupportedVersion describes the properties of supported kubernetes version
+ *
+ */
+public interface KubernetesSupportedVersion extends InternalIdentity, Identity {
+    long getId();
+    String getName();
+    long getIsoId();
+    Long getZoneId();
+}

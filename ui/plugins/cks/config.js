@@ -14,11 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($, cloudStack) {
-  cloudStack.plugins = [
-    //'testPlugin',
-    'cloudian',
-    'quota',
-    'cks'
-  ];
-}(jQuery, cloudStack));
+(function (cloudStack) {
+  cloudStack.plugins.cks.config = {
+    title: 'Kubernetes Service',
+    desc: 'Kubernetes Service',
+    externalLink: 'http://www.cloudstack.org/',
+    authorName: 'Apache CloudStack',
+    authorEmail: 'dev@cloudstack.apache.org'
+  };
+}(cloudStack));

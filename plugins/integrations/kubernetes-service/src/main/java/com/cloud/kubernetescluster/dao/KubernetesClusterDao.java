@@ -14,11 +14,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($, cloudStack) {
-  cloudStack.plugins = [
-    //'testPlugin',
-    'cloudian',
-    'quota',
-    'cks'
-  ];
-}(jQuery, cloudStack));
+package com.cloud.kubernetescluster.dao;
+
+import java.util.List;
+
+import com.cloud.kubernetescluster.KubernetesCluster;
+import com.cloud.kubernetescluster.KubernetesClusterVO;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.fsm.StateDao;
+
+public interface KubernetesClusterDao extends GenericDao<KubernetesClusterVO, Long>,
+        StateDao<KubernetesCluster.State, KubernetesCluster.Event, KubernetesCluster> {
+
+    List<KubernetesClusterVO> listByAccount(long accountId);
+    List<KubernetesClusterVO> findKubernetesClustersToGarbageCollect();
+    List<KubernetesClusterVO> findKubernetesClustersInState(KubernetesCluster.State state);
+    List<KubernetesClusterVO> listByNetworkId(long networkId);
+    List<KubernetesClusterVO> listAllByKubernetesVersion(long kubernetesVersionId);
+}

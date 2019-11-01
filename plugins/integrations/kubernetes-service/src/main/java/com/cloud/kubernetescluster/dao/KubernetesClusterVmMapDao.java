@@ -14,11 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($, cloudStack) {
-  cloudStack.plugins = [
-    //'testPlugin',
-    'cloudian',
-    'quota',
-    'cks'
-  ];
-}(jQuery, cloudStack));
+package com.cloud.kubernetescluster.dao;
+
+import com.cloud.kubernetescluster.KubernetesClusterVmMapVO;
+import com.cloud.utils.db.GenericDao;
+
+import java.util.List;
+
+public interface KubernetesClusterVmMapDao extends GenericDao<KubernetesClusterVmMapVO, Long> {
+    public List<KubernetesClusterVmMapVO> listByClusterId(long clusterId);
+}

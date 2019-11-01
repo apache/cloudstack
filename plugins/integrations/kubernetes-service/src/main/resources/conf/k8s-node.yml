@@ -1,0 +1,191 @@
+#cloud-config
+
+---
+write-files:
+  - path: /opt/bin/setup-kube-system
+    permissions: 0700
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+
+      export PATH=$PATH:/opt/bin
+
+      RELEASE="v1.11.4"
+      ISO_MOUNT_DIR=/mnt/k8sdisk
+      BINARIES_DIR=${ISO_MOUNT_DIR}/${RELEASE}
+      CNI_VERSION="v0.7.1"
+      CRICTL_VERSION="v1.11.1"
+      ATTEMPT_OFFLINE_INSTALL=true
+      setup_complete=false
+
+      OFFLINE_INSTALL_ATTEMPT_SLEEP=5
+      MAX_OFFLINE_INSTALL_ATTEMPTS=36
+      offline_attempts=1
+      MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
+      crucial_cmd_attempts=1
+      while true; do
+        if (( "$offline_attempts" > "$MAX_OFFLINE_INSTALL_ATTEMPTS" )); then
+          echo "Warning: Offline install timed out!"
+          break
+        fi
+        set +e
+        output=`blkid -o device -t TYPE=iso9660`
+        set -e
+        if [ "$output" != "" ]; then
+          while read -r line; do
+            if [ ! -d "${ISO_MOUNT_DIR}" ]; then
+              mkdir "${ISO_MOUNT_DIR}"
+            fi
+            retval=0
+            set +e
+            mount -o ro "${line}" "${ISO_MOUNT_DIR}"
+            retval=$?
+            set -e
+            if [ $retval -eq 0 ]; then
+              if [ -d "$BINARIES_DIR" ]; then
+                break
+              else
+                umount "${line}" && rmdir "${ISO_MOUNT_DIR}"
+              fi
+            fi
+          done <<< "$output"
+        fi
+        if [ -d "$BINARIES_DIR" ]; then
+          break
+        fi
+        echo "Waiting for Binaries directory $BINARIES_DIR to be available, sleeping for $OFFLINE_INSTALL_ATTEMPT_SLEEP seconds, attempt: $offline_attempts"
+        sleep $OFFLINE_INSTALL_ATTEMPT_SLEEP
+        offline_attempts=$[$offline_attempts + 1]
+      done
+
+      if [ -d "$BINARIES_DIR" ]; then
+        ### Binaries available offline ###
+        echo "Installing binaries from ${BINARIES_DIR}"
+        mkdir -p /opt/cni/bin
+        tar -f "${BINARIES_DIR}/cni/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" -C /opt/cni/bin -xz
+
+        mkdir -p /opt/bin
+        tar -f "${BINARIES_DIR}/cri-tools/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz" -C /opt/bin -xz
+
+        mkdir -p /opt/bin
+        cd /opt/bin
+        cp -a ${BINARIES_DIR}/k8s/{kubeadm,kubelet,kubectl} /opt/bin
+        chmod +x {kubeadm,kubelet,kubectl}
+
+        sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/kubelet.service > /etc/systemd/system/kubelet.service
+        mkdir -p /etc/systemd/system/kubelet.service.d
+        sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/10-kubeadm.conf > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+
+        output=`ls ${BINARIES_DIR}/docker/`
+        if [ "$output" != "" ]; then
+          while read -r line; do
+            crucial_cmd_attempts=1
+            while true; do
+              if (( "$crucial_cmd_attempts" > "$MAX_SETUP_CRUCIAL_CMD_ATTEMPTS" )); then
+                echo "Loading docker image ${BINARIES_DIR}/docker/$line failed!"
+                break;
+              fi
+              retval=0
+              set +e
+              docker load < "${BINARIES_DIR}/docker/$line"
+              retval=$?
+              set -e
+              if [ $retval -eq 0 ]; then
+                break;
+              fi
+              crucial_cmd_attempts=$[$crucial_cmd_attempts + 1]
+            done
+          done <<< "$output"
+          setup_complete=true
+        fi
+        umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
+      fi
+      if [ "$setup_complete" = false ]; then
+        ###  Binaries not available offline ###
+        echo "Warning: ${BINARIES_DIR} not found. Will get binaries and docker images from Internet."
+        mkdir -p /opt/cni/bin
+        curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" | tar -C /opt/cni/bin -xz
+
+        mkdir -p /opt/bin
+        curl -L "https://github.com/kubernetes-incubator/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz" | tar -C /opt/bin -xz
+
+        mkdir -p /opt/bin
+        cd /opt/bin
+        curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
+        chmod +x {kubeadm,kubelet,kubectl}
+
+        curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > /etc/systemd/system/kubelet.service
+        mkdir -p /etc/systemd/system/kubelet.service.d
+        curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+      fi
+
+      systemctl enable kubelet && systemctl start kubelet
+      modprobe br_netfilter && sysctl net.bridge.bridge-nf-call-iptables=1
+
+      crucial_cmd_attempts=1
+      while true; do
+        if (( "$crucial_cmd_attempts" > "$MAX_SETUP_CRUCIAL_CMD_ATTEMPTS" )); then
+          echo "Error: kubeadm pull images failed!"
+          exit 1
+        fi
+        retval=0
+        set +e
+        kubeadm config images pull
+        retval=$?
+        set -e
+        if [ $retval -eq 0 ]; then
+          break;
+        fi
+        crucial_cmd_attempts=$[$crucial_cmd_attempts + 1]
+      done
+
+  - path: /opt/bin/deploy-kube-system
+    permissions: 0700
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+      if [[ $(systemctl is-active setup-kube-system) != "inactive" ]]; then
+        echo "setup-kube-system is running!"
+        exit 1
+      fi
+      modprobe ip_vs
+      modprobe ip_vs_wrr
+      modprobe ip_vs_sh
+      modprobe nf_conntrack_ipv4
+      export PATH=$PATH:/opt/bin
+      kubeadm join {{ k8s_master.default_ip }}:6443 --token {{ k8s_master.cluster.token }} --discovery-token-unsafe-skip-ca-verification
+
+coreos:
+  units:
+    - name: docker.service
+      command: start
+      enable: true
+
+    - name: setup-kube-system.service
+      command: start
+      content: |
+        [Unit]
+        Requires=docker.service
+        After=docker.service
+
+        [Service]
+        Type=simple
+        StartLimitInterval=0
+        ExecStart=/opt/bin/setup-kube-system
+
+    - name: deploy-kube-system.service
+      command: start
+      content: |
+        [Unit]
+        After=setup-kube-system.service
+
+        [Service]
+        Type=simple
+        StartLimitInterval=0
+        Restart=on-failure
+        ExecStartPre=/usr/bin/curl -k https://{{ k8s_master.default_ip }}:6443/version
+        ExecStart=/opt/bin/deploy-kube-system
+
+  update:
+    group: stable
+    reboot-strategy: off

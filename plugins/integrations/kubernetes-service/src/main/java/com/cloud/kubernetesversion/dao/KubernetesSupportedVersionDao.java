@@ -14,11 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($, cloudStack) {
-  cloudStack.plugins = [
-    //'testPlugin',
-    'cloudian',
-    'quota',
-    'cks'
-  ];
-}(jQuery, cloudStack));
+
+package com.cloud.kubernetesversion.dao;
+
+import java.util.List;
+
+import com.cloud.kubernetesversion.KubernetesSupportedVersionVO;
+import com.cloud.utils.db.GenericDao;
+
+public interface KubernetesSupportedVersionDao extends GenericDao<KubernetesSupportedVersionVO, Long> {
+    List<KubernetesSupportedVersionVO> listAllInZone(long dataCenterId);
+}

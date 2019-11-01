@@ -14,11 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($, cloudStack) {
-  cloudStack.plugins = [
-    //'testPlugin',
-    'cloudian',
-    'quota',
-    'cks'
-  ];
-}(jQuery, cloudStack));
+
+package com.cloud.kubernetesversion;
+
+public class KubernetesVersionEventTypes {
+    public static final String EVENT_KUBERNETES_VERSION_ADD = "KUBERNETES.VERSION.ADD";
+    public static final String EVENT_KUBERNETES_VERSION_DELETE = "KUBERNETES.VERSION.DELETE";
+}

@@ -14,11 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($, cloudStack) {
-  cloudStack.plugins = [
-    //'testPlugin',
-    'cloudian',
-    'quota',
-    'cks'
-  ];
-}(jQuery, cloudStack));
+package com.cloud.kubernetescluster;
+
+/**
+ * VirtualMachine describes the properties held by a virtual machine
+ *
+ */
+public interface KubernetesClusterVmMap {
+    long getId();
+    long getClusterId();
+    long getVmId();
+}

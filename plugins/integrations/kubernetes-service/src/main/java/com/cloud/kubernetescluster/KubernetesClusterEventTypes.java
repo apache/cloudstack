@@ -14,11 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($, cloudStack) {
-  cloudStack.plugins = [
-    //'testPlugin',
-    'cloudian',
-    'quota',
-    'cks'
-  ];
-}(jQuery, cloudStack));
+package com.cloud.kubernetescluster;
+
+public class KubernetesClusterEventTypes {
+    public static final String EVENT_KUBERNETES_CLUSTER_CREATE = "KUBERNETES.CLUSTER.CREATE";
+    public static final String EVENT_KUBERNETES_CLUSTER_DELETE = "KUBERNETES.CLUSTER.DELETE";
+    public static final String EVENT_KUBERNETES_CLUSTER_START = "KUBERNETES.CLUSTER.START";
+    public static final String EVENT_KUBERNETES_CLUSTER_STOP = "KUBERNETES.CLUSTER.STOP";
+    public static final String EVENT_KUBERNETES_CLUSTER_SCALE = "KUBERNETES.CLUSTER.SCALE";
+}
