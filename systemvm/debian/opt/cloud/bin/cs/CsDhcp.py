@@ -160,9 +160,11 @@ class CsDhcp(CsDataBag):
 
     def add(self, entry):
         self.add_host(entry['ipv4_address'], entry['host_name'])
-        # lease time boils down to once a month
-        # with a splay of 60 hours to prevent storms
-        lease = randint(700, 760)
+        # Lease time is effectively infinite (36000+ days) since we fully control VM lifecycle via CloudStack
+        # Infinite time helps avoid some edge cases which could cause DHCPNAK being sent to VMs since
+        # (RHEL) system lose routes when they receive DHCPNAK
+        # When VM is expunged, it's lease and DHCP/DNS config is properly removed from related files in VR
+        lease = randint(870000, 870010)
 
         if entry['default_entry']:
             self.cloud.add("%s,%s,%s,%sh" % (entry['mac_address'],
