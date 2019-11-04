@@ -46,7 +46,7 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
-@APICommand(name = "updateVmNicIp", description = "Update the default Ip and MTU of a VM Nic", responseObject = UserVmResponse.class)
+@APICommand(name = "updateVmNicIp", description = "Update the default IP and MTU of a VM Nic", responseObject = UserVmResponse.class)
 public class UpdateVmNicIpCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddIpToVmNicCmd.class.getName());
     private static final String s_name = "updatevmnicipresponse";

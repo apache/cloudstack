@@ -21,3 +21,6 @@
 
 -- KVM: enable storage data motion on KVM hypervisor_capabilities
 UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported` = 1 WHERE `hypervisor_capabilities`.`hypervisor_type` = 'KVM';
+
+-- PR#3186 Add possibility to set MTU size for NIC
+ALTER TABLE `cloud`.`nics` ADD COLUMN `mtu` smallint (6) COMMENT 'MTU size for the interface';
