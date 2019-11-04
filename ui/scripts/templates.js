@@ -224,13 +224,27 @@
                                                     
                                                 }
                                             });
-                                            args.response.success({
-                                                data: [
-                                                    { id: "url", description: "URL" },
-                                                    { id: "copy", description: "Copy from Zone" },
-                                                    { id: "official", description: "Official Cloudstack Template" }
-                                                ]
+
+                                            var zoneCount = 0;
+                                            $.ajax({
+                                                url: createURL("listZones&available=true"),
+                                                dataType: "json",
+                                                async: false,
+                                                success: function(json) {
+                                                    zoneCount = json.listzonesresponse.zone.length;
+                                                }
                                             });
+
+                                            var optionData = [
+                                                { id: "url", description: "URL" },
+                                                { id: "official", description: "Official Cloudstack Template" }
+                                            ]
+
+                                            if (zoneCount > 1){
+                                                optionData.push({ id: "copy", description: "Copy from Zone" });
+                                            }
+
+                                            args.response.success({data: optionData});
                                         }
                                     },
                                     sourceZone: { // Get list of zones
