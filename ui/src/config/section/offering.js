@@ -64,7 +64,7 @@ export default {
         listView: true,
         params: { 'issystem': 'true' },
         popup: true,
-        component: () => import('@/views/offering/AddSystemOffering.vue')
+        component: () => import('@/views/offering/AddComputeOffering.vue')
       }, {
         api: 'updateServiceOffering',
         icon: 'edit',

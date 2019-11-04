@@ -48,7 +48,7 @@ export default {
           args: ['url', 'name', 'displaytext', 'directdownload', 'zoneids', 'hypervisor', 'format', 'ostypeid', 'checksum', 'isextractable', 'passwordenabled', 'sshkeyenabled', 'isdynamicallyscalable', 'ispublic', 'isfeatured', 'isrouting', 'requireshvm']
         },
         {
-          api: 'getUploadParamsForVolume',
+          api: 'getUploadParamsForTemplate',
           icon: 'cloud-upload',
           label: 'Upload Local Template',
           listView: true,
