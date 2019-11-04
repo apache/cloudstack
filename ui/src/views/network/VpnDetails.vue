@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    TODO: IP configure view: firewall, pf, lb
+    TODO: VPN configure/detail tab view
   </div>
 </template>
 
