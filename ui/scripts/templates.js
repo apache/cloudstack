@@ -1109,36 +1109,38 @@
                                             });
                                         }
 
-                                        // checking if there are any system vms to download the registered template.
-                                        var systemVMS = false;
-                                        
-                                        $.ajax({
-                                            url: createURL('listSystemVms'),
-                                            data: {
-                                                'zoneid': args.data.zone,
-                                                'systemvmtype': 'secondarystoragevm',
-                                                'state': 'running',
-                                            },
-                                            async: false,
-                                            success: function(json){
-                                                if(!$.isEmptyObject(json.listsystemvmsresponse)){
-                                                    systemVMS = true;
-                                                }
-                                            },
-                                            error: function(XMLHttpResponse) {
-                                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                                args.response.error(errorMsg);
-                                            }
-                                        });
+                                        if (isAdmin && args.data.templatetype == "system"){
+                                            // checking if there are any system vms to download the registered template.
+                                            var systemVMS = false;
 
-                                        var endpoint = "";
-                                        $.ajax({
-                                            url: createURL('listRegions'),
-                                            async: false,
-                                            success: function(json) {
-                                                endpoint = json.listregionsresponse.region[0].endpoint;
-                                            }
-                                        })
+                                            $.ajax({
+                                                url: createURL('listSystemVms'),
+                                                data: {
+                                                    'zoneid': args.data.zone,
+                                                    'systemvmtype': 'secondarystoragevm',
+                                                    'state': 'running',
+                                                },
+                                                async: false,
+                                                success: function(json){
+                                                    if(!$.isEmptyObject(json.listsystemvmsresponse)){
+                                                        systemVMS = true;
+                                                    }
+                                                },
+                                                error: function(XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });
+
+                                            var endpoint = "";
+                                            $.ajax({
+                                                url: createURL('listRegions'),
+                                                async: false,
+                                                success: function(json) {
+                                                    endpoint = json.listregionsresponse.region[0].endpoint;
+                                                }
+                                            });
+                                        }
 
                                         $.ajax({
                                             url: createURL('getUploadParamsForTemplate'),
@@ -1148,7 +1150,7 @@
                                                 var uploadparams = json.postuploadtemplateresponse.getuploadparams;
                                                 var templateId = uploadparams.id;
                                                 var uploadURL = uploadparams.postURL;
-                                                if (!systemVMS){
+                                                if (isAdmin() && !systemVMS){
                                                     uploadURL = endpoint + "upload/" + templateId
                                                 }
                                                 args.response.success({
@@ -1160,8 +1162,6 @@
                                                         'X-metadata': uploadparams.metadata
                                                     }
                                                 });
-                                                
-                                                
                                             }
                                         });
                                     },
@@ -1169,66 +1169,66 @@
                                         if(args.error) {
                                             args.response.error(args.errorMsg);
                                         } else {
-
-                                            var systemVMS = false;
-                                            $.ajax({
-                                                url: createURL('listSystemVms'),
-                                                data: {'zoneid': args.data.zone},
-                                                async: false,
-                                                success: function(json){
-                                                    if(!$.isEmptyObject(json.listsystemvmsresponse)){
-                                                        systemVMS = true;
-                                                    }
-                                                }
-                                            });
-
-                                            if (!systemVMS){
-
-                                                var templateId = "";
+                                            if (isAdmin && args.data.templatetype == "system"){
+                                                var systemVMS = false;
                                                 $.ajax({
-                                                    url: createURL('listTemplates'),
-                                                    data: {templateFilter: "system", name: args.data.description},
+                                                    url: createURL('listSystemVms'),
+                                                    data: {'zoneid': args.data.zone},
                                                     async: false,
                                                     success: function(json){
-                                                        templateId = json.listtemplatesresponse.template[0].id;
+                                                        if(!$.isEmptyObject(json.listsystemvmsresponse)){
+                                                            systemVMS = true;
+                                                        }
                                                     }
                                                 });
-
-                                                $.ajax({
-                                                    url: createURL('seedSystemVMTemplate'),
-                                                    data: {
-                                                        id: args.data.zone,
-                                                        hypervisor: args.data.hypervisor,
-                                                        fileuuid: templateId,
-                                                        templateid: templateId,
-                                                        localfile: true,
-                                                    },
-                                                    async: false,
-                                                });
-
-                                                var zones;
-                                                $.ajax({
-                                                    url: createURL('listZones'),
-                                                    async: false,
-                                                    success: function(json){
-                                                        zones = json.listzonesresponse.zone;
-                                                    }
-                                                });
-                                                // get this template into all other zones
-                                                for (var i = 0; i < zones.length; i++){
-                                                    if (zones[i].id == args.data.zone){
-                                                        // don't want to copy to same zone.
-                                                        continue;
-                                                    }
+    
+                                                if (!systemVMS){
+                                                    var templateId = "";
                                                     $.ajax({
+                                                        url: createURL('listTemplates'),
+                                                        data: {templateFilter: "system", name: args.data.description},
                                                         async: false,
-                                                        url: createURL('copyTemplate'),
-                                                        data: {
-                                                            id: args.data.selectSystemVm.templates,
-                                                            destzoneids: zones[i].id,
-                                                            sourcezoneid: args.data.zone
+                                                        success: function(json){
+                                                            templateId = json.listtemplatesresponse.template[0].id;
                                                         }
                                                     });
+    
+                                                    $.ajax({
+                                                        url: createURL('seedSystemVMTemplate'),
+                                                        data: {
+                                                            id: args.data.zone,
+                                                            hypervisor: args.data.hypervisor,
+                                                            fileuuid: templateId,
+                                                            templateid: templateId,
+                                                            localfile: true,
+                                                        },
+                                                        async: false,
+                                                    });
+    
+                                                    var zones;
+                                                    $.ajax({
+                                                        url: createURL('listZones'),
+                                                        async: false,
+                                                        success: function(json){
+                                                            zones = json.listzonesresponse.zone;
+                                                        }
+                                                    });
+                                                    // get this template into all other zones
+                                                    for (var i = 0; i < zones.length; i++){
+                                                        if (zones[i].id == args.data.zone){
+                                                            // don't want to copy to same zone.
+                                                            continue;
+                                                        }
+                                                        $.ajax({
+                                                            async: false,
+                                                            url: createURL('copyTemplate'),
+                                                            data: {
+                                                                id: args.data.selectSystemVm.templates,
+                                                                destzoneids: zones[i].id,
+                                                                sourcezoneid: args.data.zone
+                                                            }
+                                                        });
+                                                    }
                                                 }
                                             }
 
