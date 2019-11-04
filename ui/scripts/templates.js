@@ -1410,23 +1410,23 @@
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
                                                     $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
                                                 }
+                                                if (isAdmin() && $("#label_action_create_template_type").val() == "system"){
+                                                    var hypervisor = $("#label_hypervisor").val();
+                                                    $.ajax({ 
+                                                        url: createURL("getSystemVMTemplateDefaultUrl"), 
+                                                        data: {
+                                                            hypervisor: hypervisor,
+                                                        },
+                                                        success: function(json) {
+                                                            url = json.getsystemvmtemplatedefaulturlresponse.url.url;
+                                                            $form.find("input[name='url']").val(url);
+                                                            $form.find("input[name='name']").val("systemvm-" + hypervisor.toLowerCase() + "-" + cloudStackOptions.version);
+                                                            $form.find("input[name='description']").val("systemvm-" + hypervisor.toLowerCase() + "-" + cloudStackOptions.version);
+                                                        }
+                                                    });
+                                                }
                                             });
                                             args.$select.trigger('change');
-                                            if (isAdmin() && $("#label_action_create_template_type").val() == "system"){
-                                                var hypervisor = $("#label_hypervisor").val();
-                                                $.ajax({ 
-                                                    url: createURL("getSystemVMTemplateDefaultUrl"), 
-                                                    data: {
-                                                        hypervisor: hypervisor,
-                                                    },
-                                                    success: function(json) {
-                                                        url = json.getsystemvmtemplatedefaulturlresponse.url.url;
-                                                        $form.find("input[name='url']").val(url);
-                                                        $form.find("input[name='name']").val("systemvm-" + hypervisor.toLowerCase() + "-" + cloudStackOptions.version);
-                                                        $form.find("input[name='description']").val("systemvm-" + hypervisor.toLowerCase() + "-" + cloudStackOptions.version);
-                                                    }
-                                                });
-                                            }
                                         }
                                     },
 
