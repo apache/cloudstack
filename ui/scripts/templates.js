@@ -141,7 +141,7 @@
                                         label: 'label.action.create.template.type',
                                         docID : 'helpRegisterTemplateType',
                                         select: function(args) {
-                                            if (isAdmin){
+                                            if (isAdmin()){
                                                 args.$select.change(function(){
                                                     var $form = $(this).closest('form');
                                                     if ($(this).val() == "user"){
@@ -905,43 +905,44 @@
                                 }
                                 // for hypervisor == VMware (ends here)
 
-                                var imageStores = false;
-                                // check if we have secondary storage for this template to go to.
-                                zoneIds = [];
-                                if (data.zoneids == '-1'){
-                                    $.ajax({
-                                        url: createURL("listZones"),
-                                        data: {},
-                                        async: false,
-                                        success: function(json){
-                                            for ( var i = 0; i < json.listzonesresponse.zone.length; i++){
-                                                zoneIds.push(json.listzonesresponse.zone[i].id);
+                                if (isAdmin && args.data.templatetype == "system"){
+                                    var imageStores = false;
+                                    // check if we have secondary storage for this template to go to.
+                                    zoneIds = [];
+                                    if (data.zoneids == '-1'){
+                                        $.ajax({
+                                            url: createURL("listZones"),
+                                            data: {},
+                                            async: false,
+                                            success: function(json){
+                                                for ( var i = 0; i < json.listzonesresponse.zone.length; i++){
+                                                    zoneIds.push(json.listzonesresponse.zone[i].id);
+                                                }
                                             }
-                                        }
-                                    });
-                                } else {
-                                    zoneIds = data.zoneids.split(",");
-                                }
-                                for (var i = 0; i < zoneIds.length; i++){
-                                    $.ajax({
-                                        url: createURL('listImageStores'),
-                                        data: {
-                                            'zoneid': zoneIds[i],
-                                        },
-                                        async: false,
-                                        success: function(json){
-                                            if(!$.isEmptyObject(json.listimagestoresresponse)){
-                                                imageStores = true;
+                                        });
+                                    } else {
+                                        zoneIds = data.zoneids.split(",");
+                                    }
+                                    for (var i = 0; i < zoneIds.length; i++){
+                                        $.ajax({
+                                            url: createURL('listImageStores'),
+                                            data: {
+                                                'zoneid': zoneIds[i],
+                                            },
+                                            async: false,
+                                            success: function(json){
+                                                if(!$.isEmptyObject(json.listimagestoresresponse)){
+                                                    imageStores = true;
+                                                }
                                             }
-                                        }
-                                    });
+                                        });
+                                    }
+                                    if (!imageStores){
+                                        args.response.error("No image stores available to store template");
+                                        return;
+                                    }
                                 }
                                 
-
-                                if (!imageStores){
-                                    args.response.error("No image stores available to store template");
-                                    return;
-                                }
 
                                 var registerTemplateResponse;
                                 var items;
