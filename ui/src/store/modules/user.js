@@ -18,7 +18,7 @@
 import Vue from 'vue'
 import md5 from 'md5'
 import { login, logout, api } from '@/api'
-import { ACCESS_TOKEN, CURRENT_PROJECT, ASYNC_JOB_IDS } from '@/store/mutation-types'
+import { ACCESS_TOKEN, CURRENT_PROJECT, DEFAULT_THEME, ASYNC_JOB_IDS } from '@/store/mutation-types'
 import { welcome } from '@/utils/util'
 
 const user = {
@@ -57,6 +57,9 @@ const user = {
     SET_ASYNC_JOB_IDS: (state, jobsJsonArray) => {
       Vue.ls.set(ASYNC_JOB_IDS, jobsJsonArray)
       state.asyncJobIds = jobsJsonArray
+    },
+    RESET_THEME: (state) => {
+      Vue.ls.set(DEFAULT_THEME, 'light')
     }
   },
 
@@ -121,6 +124,7 @@ const user = {
         commit('SET_TOKEN', '')
         commit('SET_PROJECT', {})
         commit('SET_APIS', {})
+        commit('RESET_THEME')
         Vue.ls.remove(CURRENT_PROJECT)
         Vue.ls.remove(ACCESS_TOKEN)
         Vue.ls.remove(ASYNC_JOB_IDS)
