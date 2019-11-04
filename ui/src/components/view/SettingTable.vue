@@ -16,39 +16,33 @@
 // under the License.
 
 <template>
-  <a-table
-    size="small"
-    :scroll="{ x: 'true' }"
-    :loading="loading"
-    :columns="columns"
-    :dataSource="items"
-    :rowKey="record => record.id || record.name || record.key"
-    :pagination="false"
-    :rowClassName="getRowClassName"
-    bordered
-  >
-    <template slot="value" slot-scope="text, record">
-      <span style="float: left; margin-right: 5px" v-if="record">
-        <a-button size="small" shape="circle">
-          <a-icon type="close" />
-        </a-button>
-        <a-button size="small" shape="circle">
-          <a-icon type="edit" />
-        </a-button>
-      </span>
-      <span>{{ text }}</span>
-    </template>
-  </a-table>
+  <div>
+    <a-button type="dashed" style="width: 100%" icon="plus" @click="addSettingForm()">Add Setting</a-button>
+    <a-list size="large">
+      <a-list-item :key="index" v-for="(item, index) in items">
+        <a-list-item-meta>
+          <span slot="title">{{ item.name }}</span>
+          <span slot="description" style="word-break: break-all">{{ item.value }}</span>
+        </a-list-item-meta>
+        <div slot="actions">
+          <a-button size="small" shape="circle">
+            <a-icon type="edit" />
+          </a-button>
+        </div>
+        <div slot="actions">
+          <a-button size="small" shape="circle">
+            <a-icon type="close" />
+          </a-button>
+        </div>
+      </a-list-item>
+    </a-list>
+  </div>
 </template>
 
 <script>
 export default {
   name: 'SettingTable',
   props: {
-    columns: {
-      type: Array,
-      required: true
-    },
     items: {
       type: Array,
       required: true
@@ -63,26 +57,12 @@ export default {
     }
   },
   methods: {
-    getRowClassName (record, index) {
-      if (index % 2 === 0) {
-        return 'light-row'
-      }
-      return 'dark-row'
+    addSettingForm () {
+      console.log('Add setting button clicked')
     }
   }
 }
 </script>
 
 <style scoped>
-/deep/ .ant-table-thead {
-  background-color: #f9f9f9;
-}
-
-/deep/ .light-row {
-  background-color: #fff;
-}
-
-/deep/ .dark-row {
-  background-color: #f9f9f9;
-}
 </style>

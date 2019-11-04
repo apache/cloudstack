@@ -17,22 +17,9 @@
 
 <template>
   <div>
-    <a-button style="margin-bottom: 15px; float: right">
-      Add Setting
-    </a-button>
     <setting-table
-      :columns="[{
-        title: $t('name'),
-        dataIndex: 'name',
-        width: '40%'
-      },{
-        title: $t('value'),
-        dataIndex: 'value',
-        width: '40%',
-        scopedSlots: { customRender: 'value' }
-      }]"
-      :items="Object.keys(resource.details).map(k => { return { name: k, value: resource.details[k] } })"
       :loading="loading"
+      :items="Object.keys(resource.details).map(k => { return { name: k, value: resource.details[k] } })"
     >
     </setting-table>
   </div>
