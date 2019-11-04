@@ -40,6 +40,7 @@ import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.MovedContextHandler;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
+import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
@@ -92,6 +93,7 @@ public class ServerDaemon implements Daemon {
     private String keystoreFile;
     private String keystorePassword;
     private String webAppLocation;
+    private SessionHandler sessionHandler;
 
     //////////////////////////////////////////////////
     /////////////// Public methods ///////////////////
@@ -184,6 +186,7 @@ public class ServerDaemon implements Daemon {
         createHttpsConnector(httpConfig);
 
         server.start();
+        sessionHandler.setMaxInactiveInterval(sessionTimeout * 60);
         server.join();
     }
 
@@ -240,7 +243,7 @@ public class ServerDaemon implements Daemon {
         final WebAppContext webApp = new WebAppContext();
         webApp.setContextPath(contextPath);
         webApp.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "false");
-        webApp.getSessionHandler().setMaxInactiveInterval(sessionTimeout * 60);
+        sessionHandler = webApp.getSessionHandler();
 
         // GZIP handler
         final GzipHandler gzipHandler = new GzipHandler();
