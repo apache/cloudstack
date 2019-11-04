@@ -173,8 +173,19 @@
                                                         $form.find(".form-item[rel='checksum']").hide();
                                                         $("#label_action_create_template_source_template").val("url").change();
                                                     }
+
+                                                    $.ajax({
+                                                        url: createURL("listOsTypes&description=Debian GNU/Linux 9 (64-bit)"),
+                                                        dataType: "json",
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var ostypeObjs = json.listostypesresponse.ostype;
+                                                            $form.find("#label_os_type").val(ostypeObjs[0].id).change();
+                                                        }
+                                                    });
                                                 });
                                             }
+
                                             args.response.success({
                                                 data: [
                                                     { id: "user", description: "User" },
