@@ -144,6 +144,9 @@ export default {
   methods: {
     fetchData () {
       this.volumes = []
+      if (!this.vm || !this.vm.id) {
+        return
+      }
       api('listVolumes', { 'listall': true, 'virtualmachineid': this.vm.id }).then(json => {
         this.volumes = json.listvolumesresponse.volume
         if (this.volumes) {

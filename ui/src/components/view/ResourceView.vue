@@ -22,13 +22,12 @@
         <info-card :resource="resource" :loading="loading" />
       </slot>
     </div>
-    <div slot="right">
+    <a-spin :spinning="loading" slot="right">
       <a-card
+        class="spin-content"
         :bordered="true"
         style="width:100%">
-        <a-skeleton active v-if="loading" />
         <a-tabs
-          v-else
           style="width: 100%"
           :animated="false"
           :defaultActiveKey="tabs[0].name"
@@ -41,7 +40,7 @@
           </a-tab-pane>
         </a-tabs>
       </a-card>
-    </div>
+    </a-spin>
   </resource-layout>
 </template>
 
