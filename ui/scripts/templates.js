@@ -1110,10 +1110,9 @@
                                             });
                                         }
 
+                                        var systemVMS = false;
                                         if (isAdmin && args.data.templatetype == "system"){
                                             // checking if there are any system vms to download the registered template.
-                                            var systemVMS = false;
-
                                             $.ajax({
                                                 url: createURL('listSystemVms'),
                                                 data: {
@@ -1151,7 +1150,7 @@
                                                 var uploadparams = json.postuploadtemplateresponse.getuploadparams;
                                                 var templateId = uploadparams.id;
                                                 var uploadURL = uploadparams.postURL;
-                                                if (isAdmin() && !systemVMS){
+                                                if (isAdmin() && !systemVMS && args.data.templatetype == "system"){
                                                     uploadURL = endpoint + "upload/" + templateId
                                                 }
                                                 args.response.success({
