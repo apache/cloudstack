@@ -2083,6 +2083,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         }
 
+        if (result) {
+            for (Network guestNetwork : guestNetworks) {
+                _routerDao.addRouterToGuestNetwork(router, guestNetwork);
+            }
+        }
+
         return result;
     }
 
