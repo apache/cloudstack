@@ -29,7 +29,7 @@ from marvin.lib.common import (get_domain,
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from nose.plugins.attrib import attr
 import time
-from marvin.cloudstackAPI import (registerTemplate, listTemplates, listOsTypes, activateSystemVMTemplate, createZone, listConfigurations, getSystemVMTemplateDefaultUrl, deleteTemplate)
+from marvin.cloudstackAPI import (registerTemplate, seedSystemVMTemplate, listTemplates, listOsTypes, activateSystemVMTemplate, createZone, listConfigurations, getSystemVMTemplateDefaultUrl, deleteTemplate)
 from marvin.lib.utils import cleanup_resources
 
 class TestActivateTemplate(cloudstackTestCase):
@@ -74,19 +74,19 @@ class TestActivateTemplate(cloudstackTestCase):
             if cls.firstRun:
                 # Save currently active template
                 activeTemplate = cls.apiclient.listTemplates(cls.listTemplatesCmd)[0]
-                cmd = deleteTemplate.deleteTemplateCmd()
-                cls.debug(activeTemplate)
-                cmd.id = activeTemplate.id
-                cmd.zoneid = cls.zone.id
+                deleteCmd = deleteTemplate.deleteTemplateCmd()
+                deleteCmd.id = activeTemplate.id
+                deleteCmd.zoneid = cls.zone.id
 
                 # Activate initial system template
                 for temp in cls.templates:
                     cmd = activateSystemVMTemplate.activateSystemVMTemplateCmd()
                     cmd.id = temp.id
+                    cls.debug(cmd.id)
                     cls.apiclient.activateSystemVMTemplate(cmd)
 
                 # Remove test template
-                cls.apiclient.deleteTemplate(cmd)
+                cls.apiclient.deleteTemplate(deleteCmd)
                 cls.firstRun = False
 
             cleanup_resources(cls.apiclient, cls._cleanup)
@@ -98,7 +98,7 @@ class TestActivateTemplate(cloudstackTestCase):
         # Default URL
         self.getDefaultURLCmd = getSystemVMTemplateDefaultUrl.getSystemVMTemplateDefaultUrlCmd()
         self.getDefaultURLCmd.hypervisor = self.hypervisor
-        urlResponse = self.apiclient.getSystemVMTemplateDefaultUrl(self.getDefaultURLCmd)
+        self.urlResponse = self.apiclient.getSystemVMTemplateDefaultUrl(self.getDefaultURLCmd)
         
         # Official cloudstack system vm template
         self.test_template = registerTemplate.registerTemplateCmd()
@@ -106,8 +106,8 @@ class TestActivateTemplate(cloudstackTestCase):
         self.test_template.zoneid = self.zone.id
         self.test_template.name = 'test-system-' + self.hypervisor + '-4.11.3'
         self.test_template.displaytext = 'test-system-' + self.hypervisor + '-4.11.3'
-        self.test_template.url = urlResponse.url.url #"http://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.3-kvm.qcow2.bz2"
-        self.test_template.format = "QCOW2"
+        self.test_template.url = self.urlResponse.url.url
+        self.test_template.format = self.urlResponse.url.type
         self.test_template.system = True
         self.test_template.ostypeid = self.getOsType("Debian GNU/Linux 9 (64-bit)")
         self.md5 = "d40bce40b2d5bb4ba73e56d1e95aeae5"
@@ -140,6 +140,23 @@ class TestActivateTemplate(cloudstackTestCase):
         # This test will have to be updated for every official template version
         if self.hypervisor == "kvm":
             self.assertEqual(response.url.url, "https://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.3-kvm.qcow2.bz2", "Default url mismatch")
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_03_seedSystemVMTemplate(self):
+        activeTemplate = self.apiclient.listTemplates(self.listTemplatesCmd)[0]
+        cmd = seedSystemVMTemplate.seedSystemVMTemplateCmd()
+        cmd.id = self.zone.id
+        cmd.templateid = activeTemplate.id
+        systemTemplateId = self.dbclient.execute("SELECT id FROM cloud.vm_template WHERE uuid = '%s';" % activeTemplate.id)
+        cmd.hypervisor = self.hypervisor
+        cmd.localfile = False
+        cmd.url = self.urlResponse.url.url
+        response = self.apiclient.seedSystemVMTemplate(cmd)
+        self.assertEqual(response.seedsystemvmtemplateresponse.result, "Done")
+        systemTemplateUuid = self.dbclient.execute("SELECT uuid FROM cloud.vm_template WHERE id = '%s';" % systemTemplateId[0])
+        installPath = self.dbclient.execute("SELECT install_path FROM cloud.template_store_ref WHERE template_id = '%s';" % systemTemplateId[0])
+        self.debug("template/tmpl/1/%s/%s.%s" % (systemTemplateId[0][0], systemTemplateUuid[0][0], self.urlResponse.url.type))
+        self.assertEqual(installPath[0][0], "template/tmpl/1/%s/%s.%s" % (systemTemplateId[0][0], systemTemplateUuid[0][0], self.urlResponse.url.type), "Unexpected install path for system vm template.")
 
     def registerTemplate(self, cmd):
         temp = self.apiclient.registerTemplate(cmd)[0]

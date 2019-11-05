@@ -31,6 +31,16 @@ public class GetSystemVMTemplateDefaultURLResponse extends BaseResponse {
     @Param(description = "The default URL of the System VM template.")
     private String url;
 
+    private String type;
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
     public String getUrl() {
         return url;
     }

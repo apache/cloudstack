@@ -558,10 +558,17 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 updateRouterTemplateConfig(template);
                 updateMinRequiredSystemVMVersionConfig();
                 deactivateOtherSystemTemplates(template.getId(), template.getHypervisorType().toString());
+                updateTemplate(template);
             }
         });
 
         return template;
+    }
+
+    private void updateTemplate(VMTemplateVO template) {
+        template.setTemplateType(TemplateType.SYSTEM);
+        template.setState(VirtualMachineTemplate.State.Active);
+        _tmpltDao.update(template.getId(), template);
     }
 
     private void deactivateOtherSystemTemplates(long id, String hypervisorType) {
@@ -625,6 +632,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         GetSystemVMTemplateDefaultURLResponse urlResponse = new GetSystemVMTemplateDefaultURLResponse();
         if (cmd.getHypervisor() != null && HypervisorType.getType(cmd.getHypervisor()) != null) {
             urlResponse.setUrl(OfficialSystemVMTemplate.getNewTemplateUrl().get(HypervisorType.getType(cmd.getHypervisor())));
+            urlResponse.setType(OfficialSystemVMTemplate.getNewTemplateFiletype().get(HypervisorType.getType(cmd.getHypervisor())));
         }
         return urlResponse;
     }

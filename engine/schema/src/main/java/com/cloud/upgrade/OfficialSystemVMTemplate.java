@@ -57,6 +57,17 @@ public class OfficialSystemVMTemplate {
         }
     };
 
+    final static Map<Hypervisor.HypervisorType, String> newTemplateFileType = new HashMap<Hypervisor.HypervisorType, String>() {
+        {
+            put(Hypervisor.HypervisorType.KVM, "qcow2");
+            put(Hypervisor.HypervisorType.VMware, "ova");
+            put(Hypervisor.HypervisorType.XenServer, "vhd");
+            put(Hypervisor.HypervisorType.Hyperv, "vhd");
+            put(Hypervisor.HypervisorType.LXC, "qcow2");
+            put(Hypervisor.HypervisorType.Ovm3, "raw");
+        }
+    };
+
     final static Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>() {
         {
             put(Hypervisor.HypervisorType.KVM, "15ec268d0939a8fa0be1bc79f397a167");
@@ -78,6 +89,10 @@ public class OfficialSystemVMTemplate {
 
     public static Map<Hypervisor.HypervisorType, String> getNewTemplateUrl() {
         return newTemplateUrl;
+    }
+
+    public static Map<Hypervisor.HypervisorType, String> getNewTemplateFiletype() {
+        return newTemplateFileType;
     }
 
     public static Map<Hypervisor.HypervisorType, String> getNewTemplateChecksum() {
