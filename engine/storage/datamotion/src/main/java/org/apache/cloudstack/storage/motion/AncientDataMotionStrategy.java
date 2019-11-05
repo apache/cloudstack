@@ -564,7 +564,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             return answer;
         } catch (Exception e) {
-            s_logger.debug("copy snasphot failed: " + e.toString());
+            s_logger.debug("copy snasphot failed: ", e);
             if (cacheData != null) {
                 cacheMgr.deleteCacheObject(cacheData);
             }
