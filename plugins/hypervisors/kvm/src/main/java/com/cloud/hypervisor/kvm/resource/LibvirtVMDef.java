@@ -57,7 +57,17 @@ public class LibvirtVMDef {
             }
         }
 
+        enum BootType {
+            UEFI, BIOS
+        }
+
+        enum BootMode {
+            LEGACY, SECURE
+        }
+
         private GuestType _type;
+        private BootType _boottype;
+        private BootMode _bootmode;
         private String _arch;
         private String _loader;
         private String _kernel;
@@ -115,6 +125,22 @@ public class LibvirtVMDef {
             _uuid = uuid;
         }
 
+        public BootType getBootType() {
+            return _boottype;
+        }
+
+        public void setBootType(BootType boottype) {
+            this._boottype = boottype;
+        }
+
+        public BootMode getBootMode() {
+            return _bootmode;
+        }
+
+        public void setBootMode(BootMode bootmode) {
+            this._bootmode = bootmode;
+        }
+
         @Override
         public String toString() {
             if (_type == GuestType.KVM) {
@@ -138,7 +164,11 @@ public class LibvirtVMDef {
                 }
                 guestDef.append(">hvm</type>\n");
                 if (_loader != null) {
-                    guestDef.append("<loader readonly='yes' type='pflash'>" + _loader + "</loader>\n");
+                    if (_bootmode == BootMode.LEGACY) {
+                        guestDef.append("<loader readonly='yes' secure='no' type='pflash'>" + _loader + "</loader>\n");
+                    } else if (_bootmode == BootMode.SECURE) {
+                        guestDef.append("<loader readonly='yes' secure='yes 'type='pflash'>" + _loader + "</loader>\n");
+                    }
                 }
                 if (_nvram != null) {
                     guestDef.append("<nvram ");
@@ -297,7 +327,11 @@ public class LibvirtVMDef {
             StringBuilder feaBuilder = new StringBuilder();
             feaBuilder.append("<features>\n");
             for (String feature : _features) {
-                feaBuilder.append("<" + feature + "/>\n");
+                if (feature.equalsIgnoreCase("smm")) {
+                    feaBuilder.append("<" + feature + " state=\\'on\\' " + "/>\n");
+                } else {
+                    feaBuilder.append("<" + feature + "/>\n");
+                }
             }
             if (hyperVEnlightenmentFeatureDef != null) {
                 String hpervF = hyperVEnlightenmentFeatureDef.toString();

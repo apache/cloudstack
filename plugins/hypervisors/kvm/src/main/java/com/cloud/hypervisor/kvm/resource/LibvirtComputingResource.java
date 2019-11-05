@@ -2104,7 +2104,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         Map<String, String> customParams = vmTO.getDetails();
         boolean isUefiEnabled = false;
         String bootMode =null;
-        if (customParams != null && customParams.containsKey("UEFI")) {
+        if (MapUtils.isNotEmpty(customParams) && customParams.containsKey("UEFI")) {
             isUefiEnabled = true;
             bootMode = customParams.get("UEFI");
         }
@@ -2128,6 +2128,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         guest.setGuestArch(vmTO.getArch());
         guest.setMachineType("pc");
+        guest.setBootType(GuestDef.BootType.BIOS);
+        if (MapUtils.isNotEmpty(customParams) && customParams.containsKey("UEFI")) {
+            guest.setBootType(GuestDef.BootType.UEFI);
+            guest.setBootMode(GuestDef.BootMode.LEGACY);
+            if (StringUtils.isNotBlank(customParams.get("UEFI")) && "secure".equalsIgnoreCase(customParams.get("UEFI"))) {
+                guest.setMachineType("q35");
+                guest.setBootMode(GuestDef.BootMode.SECURE); // setting to secure mode
+            }
+        }
         guest.setUuid(uuid);
         guest.setBootOrder(GuestDef.BootOrder.CDROM);
         guest.setBootOrder(GuestDef.BootOrder.HARDISK);
@@ -2145,6 +2154,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             if (_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE) != null && "secure".equalsIgnoreCase(bootMode))
                 guest.setNvramTemplate(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE));
+            if(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY)!= null )
+                guest.setNvramTemplate(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY));
+
         }
 
             vm.addComp(guest);
@@ -2207,6 +2219,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         features.addFeatures("pae");
         features.addFeatures("apic");
         features.addFeatures("acpi");
+        if(isUefiEnabled && isSecureMode(customParams.get("UEFI"))) {
+            features.addFeatures("smm");
+        }
 
         //KVM hyperv enlightenment features based on OS Type
         enlightenWindowsVm(vmTO, features);
@@ -3912,5 +3927,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return false;
         }
         return true;
+    }
+
+    public boolean isSecureMode(String bootMode) {
+        if (StringUtils.isNotBlank(bootMode) && "secure".equalsIgnoreCase(bootMode)) {
+            return true;
+        }
+
+        return false;
     }
 }
