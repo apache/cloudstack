@@ -72,7 +72,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                     LOGGER.trace("LDAP is enabled in the ldapManager");
                 }
                 final UserAccount user = _userAccountDao.getUserAccount(username, domainId);
-                List<LdapTrustMapVO> ldapTrustMapVOs = _ldapManager.getDomainLinkage(domainId);
+                List<LdapTrustMapVO> ldapTrustMapVOs = getLdapTrustMapVOS(domainId);
                 if(ldapTrustMapVOs != null && ldapTrustMapVOs.size() > 0) {
                     if(ldapTrustMapVOs.size() == 1 && ldapTrustMapVOs.get(0).getAccountId() == 0) {
                         if (LOGGER.isTraceEnabled()) {
@@ -97,6 +97,10 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
         }
 
         return rc;
+    }
+
+    private List<LdapTrustMapVO> getLdapTrustMapVOS(Long domainId) {
+        return _ldapManager.getDomainLinkage(domainId);
     }
 
     /**

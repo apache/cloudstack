@@ -25,6 +25,7 @@ import javax.naming.NamingException;
 import javax.naming.ldap.LdapContext;
 import java.util.UUID;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.LdapValidator;
 import org.apache.cloudstack.api.command.LDAPConfigCmd;
 import org.apache.cloudstack.api.command.LDAPRemoveCmd;
@@ -78,7 +79,6 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
 
     @Inject
     LdapTrustMapDao _ldapTrustMapDao;
-
 
     public LdapManagerImpl() {
         super();
@@ -394,7 +394,9 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
             account = new AccountVO(cmd.getAccountName(), cmd.getDomainId(), null, cmd.getAccountType(), UUID.randomUUID().toString());
             accountDao.persist((AccountVO)account);
         }
+
         Long accountId = account.getAccountId();
+        clearOldAccountMapping(cmd);
         LdapTrustMapVO vo = _ldapTrustMapDao.persist(new LdapTrustMapVO(cmd.getDomainId(), linkType, cmd.getLdapDomain(), cmd.getAccountType(), accountId));
         DomainVO domain = domainDao.findById(vo.getDomainId());
         String domainUuid = "<unknown>";
@@ -406,5 +408,30 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
 
         LinkAccountToLdapResponse response = new LinkAccountToLdapResponse(domainUuid, vo.getType().toString(), vo.getName(), vo.getAccountType(), account.getUuid(), cmd.getAccountName());
         return response;
+    }
+
+    private void clearOldAccountMapping(LinkAccountToLdapCmd cmd) {
+        //        first find if exists log warning and update
+        LdapTrustMapVO oldVo = _ldapTrustMapDao.findGroupInDomain(cmd.getDomainId(), cmd.getLdapDomain());
+        if(oldVo != null) {
+            // deal with edge cases, i.e. check if the old account is indeed deleted etc.
+            if (oldVo.getAccountId() != 0l) {
+                AccountVO oldAcount = accountDao.findByIdIncludingRemoved(oldVo.getAccountId());
+                String msg = String.format("group %s is mapped to account %d in the current domain (%s)", cmd.getLdapDomain(), oldVo.getAccountId(), cmd.getDomainId());
+                if (null == oldAcount.getRemoved()) {
+                    msg += ", delete the old map before mapping a new account to the same group.";
+                    LOGGER.error(msg);
+                    throw new CloudRuntimeException(msg);
+                } else {
+                    msg += ", the old map is deleted.";
+                    LOGGER.warn(msg);
+                    _ldapTrustMapDao.expunge(oldVo.getId());
+                }
+            } else {
+                String msg = String.format("group %s is mapped to the current domain (%s) for autoimport and can not be used for autosync", cmd.getLdapDomain(), cmd.getDomainId());
+                LOGGER.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+        }
     }
 }

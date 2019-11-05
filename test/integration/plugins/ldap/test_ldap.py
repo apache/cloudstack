@@ -260,6 +260,61 @@ class TestLDAP(cloudstackTestCase):
         # logger.debug(str(cmd) + ":" + str(response))
         # self.assertEqual(len(response), len(self.testdata.testdata[LdapTestData.users]), "unexpected number of ldap users")
 
+    @attr(tags=["smoke", "advanced"], required_hardware="false")
+    def test_05_relink_account_and_reuse_user(self):
+        '''
+        test if an account and thus a user can be removed and re-added
+
+        test if components still are synced
+
+        prerequisite
+        a ldap host is configured
+        a domain is linked to cloudstack
+        some accounts in that domain are linked to groups in ldap
+        '''
+        domainid = self.syncDomain.id
+        username = self.test_user[1]
+
+        # validate the user doesn't exist
+        response = User.list(self.apiclient,domainid=domainid,username=username)
+        self.assertEqual(response, None, "user should not exist yet")
+
+        self.logon_test_user(username)
+
+        # now validate the user exists in domain
+        response = User.list(self.apiclient,domainid=domainid,username=username)
+        # for user in response:
+        #     user_created = User(user.__dict__)
+        #     self.debug("user to clean: %s (id: %s)" % (user_created.username, user_created.id))
+        #     # we don't cleanup to test if re-adding fails
+        #     self.cleanup.append(user_created)
+
+        # now verify the creation of the user
+        self.assertEqual(len(response), 1, "user should exist by now")
+
+        # delete the account - quick implementation: user[1] happens to be a junior
+        self.junior_account.delete(self.apiclient)
+
+        # add the account with the same ldap group
+        self.bind_account_to_ldap(
+            account=self.testdata.testdata[LdapTestData.syncAccounts][0]["name"],
+            ldapdomain=self.testdata.testdata[LdapTestData.syncAccounts][0]["group"],
+            accounttype=self.testdata.testdata[LdapTestData.syncAccounts][0]["accounttype"])
+
+        # logon the user - should succeed - reported to fail
+        self.logon_test_user(username)
+
+        # now verify the creation of the user
+        response = User.list(self.apiclient,domainid=domainid,username=username)
+        for user in response:
+            user_created = User(user.__dict__)
+            self.debug("user to clean: %s (id: %s)" % (user_created.username, user_created.id))
+            # we don't cleanup to test if re-adding fails
+            # self.cleanup.append(user_created)
+        self.assertEqual(len(response), 1, "user should exist again")
+        return
+
+
     def logon_test_user(self, username, domain = None):
         # login of dahn should create a user in account juniors
         args = {}
@@ -355,11 +410,11 @@ class TestLDAP(cloudstackTestCase):
     @classmethod
     def create_sync_accounts(cls):
         logger.debug("creating account: %s" % LdapTestData.seniors)
-        cls.bind_account_to_ldap(
+        cls.senior_account = cls.bind_account_to_ldap(
             account=cls.testdata.testdata[LdapTestData.syncAccounts][1]["name"],
             ldapdomain=cls.testdata.testdata[LdapTestData.syncAccounts][1]["group"],
             accounttype=cls.testdata.testdata[LdapTestData.syncAccounts][1]["accounttype"])
-        cls.bind_account_to_ldap(
+        cls.junior_account = cls.bind_account_to_ldap(
             account=cls.testdata.testdata[LdapTestData.syncAccounts][0]["name"],
             ldapdomain=cls.testdata.testdata[LdapTestData.syncAccounts][0]["group"],
             accounttype=cls.testdata.testdata[LdapTestData.syncAccounts][0]["accounttype"])
@@ -381,6 +436,7 @@ class TestLDAP(cloudstackTestCase):
         response = Account.list(cls.apiclient, id=response.accountid)
         account_created = Account(response[0].__dict__)
         cls._cleanup.append(account_created)
+        return account_created
 
     @classmethod
     def bind_domain_to_ldap(cls, domainid, ldapdomain, type="OU", accounttype=0):
