@@ -420,10 +420,8 @@
                                                 var hypervisor = $(this).val();
                                                 if (
                                                     $form.find('#label_action_create_template_type').val() == "system" && 
-                                                    ( $form.find('#label_action_create_template_source_template').val() == "official" ||
-                                                    $form.find('#label_action_create_template_source_template').val() == "url" )
+                                                    $form.find('#label_action_create_template_source_template').val() == "official"
                                                 ){
-                                                    
                                                     $.ajax({ 
                                                         url: createURL("getSystemVMTemplateDefaultUrl"), 
                                                         data: {
