@@ -545,11 +545,13 @@
                                         },
                                         success: function(json) {
                                             url = json.getsystemvmtemplatedefaulturlresponse.url.url;
-                                            $form.find("#selectSystemVm_label_url").val(url);
+                                            if ($form.find('#selectSystemVm_label_action_create_template_source_type').val() == "official"){
+                                                $form.find("#selectSystemVm_label_url").val(url);
+                                            }
                                             $form.find("#selectSystemVm_label_name").val("systemvm-" + hypervisor + "-" + cloudStackOptions.version);
                                             $form.find("#selectSystemVm_label_description").val("systemVM-" + hypervisor + "-" + cloudStackOptions.version);
                                         }
-                                    });                                                    
+                                    });
                                 }
                             });
                         }
@@ -632,6 +634,7 @@
                     },
                     activate: {
                         label: "label.action.create.template.activate",
+                        desc: 'Activate this template as the Sytem VM Template to be used by CloudStack to create system VMs',
                         isBoolean: true,
                         isChecked: true,
                     },
