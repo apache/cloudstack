@@ -65,7 +65,7 @@ import com.google.common.base.Strings;
         authorized = {RoleType.Admin},
         since = "4.14.0")
 public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ImportUnmanagedInstanceCmd.class);
+    public static final Logger LOGGER = Logger.getLogger(ImportUnmanagedInstanceCmd.class);
     public static final String API_NAME = "importUnmanagedInstance";
 
     @Inject

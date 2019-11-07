@@ -52,7 +52,7 @@ import com.cloud.user.Account;
         authorized = {RoleType.Admin},
         since = "4.14.0")
 public class ListUnmanagedInstancesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListUnmanagedInstancesCmd.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(ListUnmanagedInstancesCmd.class.getName());
     public static final String API_NAME = "listUnmanagedInstances";
 
     @Inject
