@@ -450,6 +450,7 @@
                                     $form.find(".field[rel='file']").hide();
                                     $form.find(".field[rel='format']").hide();
                                     $form.find(".field[rel='osTypeId']").hide();
+                                    $form.find(".field[rel='activate']").hide();
                                 } 
                                 // Official cloudstack system vm
                                 if ($(this).val() == "official" || $(this).val() == "url" ){
