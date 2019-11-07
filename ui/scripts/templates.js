@@ -153,7 +153,6 @@
                                                         $form.find(".form-item[rel='isPublic']").show();
                                                         $form.find(".form-item[rel='isExtractable']").show();
                                                         $form.find(".form-item[rel='isdynamicallyscalable']").show();
-                                                        $form.find(".form-item[rel='directdownload']").show();
                                                         $form.find(".form-item[rel='isFeatured']").show();
                                                         $form.find(".form-item[rel='isrouting']").show();
                                                         if ($("#label_direct_download").is(":checked")){
