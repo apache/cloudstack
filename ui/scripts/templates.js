@@ -1199,7 +1199,11 @@
                                                 var systemVMS = false;
                                                 $.ajax({
                                                     url: createURL('listSystemVms'),
-                                                    data: {'zoneid': args.data.zone},
+                                                    data: {
+                                                        'zoneid': args.data.zone,
+                                                        'systemvmtype': 'secondarystoragevm',
+                                                        'state': 'running',
+                                                    },
                                                     async: false,
                                                     success: function(json){
                                                         if(!$.isEmptyObject(json.listsystemvmsresponse)){
