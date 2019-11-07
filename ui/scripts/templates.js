@@ -1048,6 +1048,7 @@
                                 title: 'label.upload.template.from.local',
                                 preFilter: cloudStack.preFilter.createTemplate,
                                 fileUpload: {
+                                    templateID: "",
                                     getURL: function(args) {
                                         args.data = args.formData;
 
@@ -1062,7 +1063,6 @@
                                             osTypeId: args.data.osTypeId,
                                             hypervisor: args.data.hypervisor,
                                             system: (args.data.templatetype == "system"),
-                                            activate: (args.data.activate == "on" && args.data.templatetype == "system")
                                         };
 
                                         // for hypervisor == XenServer (starts here)
@@ -1124,7 +1124,7 @@
                                         }
 
                                         var systemVMS = false;
-                                        if (isAdmin && args.data.templatetype == "system"){
+                                        if (isAdmin() && args.data.templatetype == "system"){
                                             // checking if there are any system vms to download the registered template.
                                             $.ajax({
                                                 url: createURL('listSystemVms'),
@@ -1155,13 +1155,15 @@
                                             });
                                         }
 
+                                        var templateId;
+
                                         $.ajax({
                                             url: createURL('getUploadParamsForTemplate'),
                                             data: data,
                                             async: false,
                                             success: function(json) {
                                                 var uploadparams = json.postuploadtemplateresponse.getuploadparams;
-                                                var templateId = uploadparams.id;
+                                                templateId = uploadparams.id;
                                                 var uploadURL = uploadparams.postURL;
                                                 if (isAdmin() && !systemVMS && args.data.templatetype == "system"){
                                                     uploadURL = endpoint + "upload/" + templateId
@@ -1177,12 +1179,23 @@
                                                 });
                                             }
                                         });
+
+                                        this.templateID = templateId;
                                     },
                                     postUpload: function(args) {
                                         if(args.error) {
                                             args.response.error(args.errorMsg);
                                         } else {
-                                            if (isAdmin && args.data.templatetype == "system"){
+                                            if (isAdmin() && args.data.templatetype == "system"){
+                                                var templateId = this.templateID;
+                                                if (args.data.activate == "on"){
+                                                    $.ajax({
+                                                        url: createURL('activateSystemVMTemplate'),
+                                                        data: {id: templateId},
+                                                        async: false,
+                                                    });
+                                                }
+
                                                 var systemVMS = false;
                                                 $.ajax({
                                                     url: createURL('listSystemVms'),
@@ -1196,16 +1209,6 @@
                                                 });
     
                                                 if (!systemVMS){
-                                                    var templateId = "";
-                                                    $.ajax({
-                                                        url: createURL('listTemplates'),
-                                                        data: {templateFilter: "system", name: args.data.description},
-                                                        async: false,
-                                                        success: function(json){
-                                                            templateId = json.listtemplatesresponse.template[0].id;
-                                                        }
-                                                    });
-    
                                                     $.ajax({
                                                         url: createURL('seedSystemVMTemplate'),
                                                         data: {

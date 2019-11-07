@@ -566,9 +566,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     private void updateTemplate(VMTemplateVO template) {
-        template.setTemplateType(TemplateType.SYSTEM);
-        template.setState(VirtualMachineTemplate.State.Active);
-        _tmpltDao.update(template.getId(), template);
+        if (template.getState() == VirtualMachineTemplate.State.Inactive) {
+            template.setState(VirtualMachineTemplate.State.Active);
+            _tmpltDao.update(template.getId(), template);
+        }
     }
 
     private void deactivateOtherSystemTemplates(long id, String hypervisorType) {
