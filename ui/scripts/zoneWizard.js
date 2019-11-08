@@ -550,7 +550,7 @@
                                                 $form.find("#selectSystemVm_label_url").val(url);
                                             }
                                             $form.find("#selectSystemVm_label_name").val("systemvm-" + hypervisor.toLowerCase() + "-" + cloudStackOptions.version);
-                                            $form.find("#selectSystemVm_label_description").val("systemVM-" + hypervisor.toLowerCase() + "-" + cloudStackOptions.version);
+                                            $form.find("#selectSystemVm_label_description").val("systemvm-" + hypervisor.toLowerCase() + "-" + cloudStackOptions.version);
                                         }
                                     });
                                 }
