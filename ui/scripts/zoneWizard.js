@@ -549,8 +549,8 @@
                                             if ($form.find('#selectSystemVm_label_action_create_template_source_type').val() == "official"){
                                                 $form.find("#selectSystemVm_label_url").val(url);
                                             }
-                                            $form.find("#selectSystemVm_label_name").val("systemvm-" + hypervisor + "-" + cloudStackOptions.version);
-                                            $form.find("#selectSystemVm_label_description").val("systemVM-" + hypervisor + "-" + cloudStackOptions.version);
+                                            $form.find("#selectSystemVm_label_name").val("systemvm-" + hypervisor.toLowerCase() + "-" + cloudStackOptions.version);
+                                            $form.find("#selectSystemVm_label_description").val("systemVM-" + hypervisor.toLowerCase() + "-" + cloudStackOptions.version);
                                         }
                                     });
                                 }
