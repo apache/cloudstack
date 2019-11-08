@@ -5175,16 +5175,6 @@
                             activate: (args.data.selectSystemVm.activate == "on")
                         };
 
-                        var endpoint = "";
-
-                        $.ajax({
-                            url: createURL('listRegions'),
-                            async: false,
-                            success: function(json) {
-                                endpoint = json.listregionsresponse.region[0].endpoint;
-                            }
-                        })
-
                         $.ajax({
                             url: createURL('getUploadParamsForTemplate'),
                             data: data,
@@ -5197,7 +5187,7 @@
                                 formData.append("X-signature", uploadparams.signature);
                                 formData.append("X-metadata", uploadparams.metadata);
                                 $.ajax({
-                                    url: endpoint + "upload/" + uploadparams.id,
+                                    url: location.origin + "/client/upload/" + uploadparams.id,
                                     type: 'POST',
                                     async: false,
                                     data: formData,

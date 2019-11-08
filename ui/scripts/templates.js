@@ -1144,15 +1144,6 @@
                                                     args.response.error(errorMsg);
                                                 }
                                             });
-
-                                            var endpoint = "";
-                                            $.ajax({
-                                                url: createURL('listRegions'),
-                                                async: false,
-                                                success: function(json) {
-                                                    endpoint = json.listregionsresponse.region[0].endpoint;
-                                                }
-                                            });
                                         }
 
                                         var templateId;
@@ -1166,7 +1157,7 @@
                                                 templateId = uploadparams.id;
                                                 var uploadURL = uploadparams.postURL;
                                                 if (isAdmin() && !systemVMS && args.data.templatetype == "system"){
-                                                    uploadURL = endpoint + "upload/" + templateId
+                                                    uploadURL = location.origin + "/client/upload/" + templateId
                                                 }
                                                 args.response.success({
                                                     url: uploadURL,
