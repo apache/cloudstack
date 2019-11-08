@@ -207,6 +207,7 @@
                                                     $form.find(".form-item[rel='hypervisor']").hide();
                                                     $form.find(".form-item[rel='format']").hide();
                                                     $form.find(".form-item[rel='osTypeId']").hide();
+                                                    $form.find(".form-item[rel='activate']").hide();
                                                     $("select[name='zone'] option[value='-1']").remove()
                                                 } else {
                                                     $form.find(".form-item[rel='sourceZone']").hide();
@@ -217,6 +218,7 @@
                                                     $form.find(".form-item[rel='hypervisor']").show();
                                                     $form.find(".form-item[rel='format']").show();
                                                     $form.find(".form-item[rel='osTypeId']").show();
+                                                    $form.find(".form-item[rel='activate']").hide();
                                                     if (!$("select[name='zone'] option[value='-1']").length){
                                                         $("select[name='zone']").prepend(new Option("All Zones", "-1"));
                                                     }
