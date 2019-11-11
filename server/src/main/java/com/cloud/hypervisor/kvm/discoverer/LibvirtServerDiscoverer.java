@@ -251,7 +251,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                 throw new DiscoveredWithErrorException("Authentication error");
             }
 
-            if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "lsmod|grep kvm")) {
+            if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "ls /dev/kvm")) {
                 s_logger.debug("It's not a KVM enabled machine");
                 return null;
             }
