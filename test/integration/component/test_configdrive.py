@@ -1871,10 +1871,6 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         self.then_config_drive_is_as_expected(vm1, public_ip_1, metadata=True)
 
         # =====================================================================
-        # Nuage --
-        #   Update offering to VR
-        # =====================================================================
-
         self.debug("+++ Scenario: "
                    "update userdata and reset password after reboot")
         vm1.reboot(self.api_client)
