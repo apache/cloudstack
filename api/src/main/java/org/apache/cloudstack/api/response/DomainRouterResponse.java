@@ -20,8 +20,6 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -29,6 +27,7 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = VirtualMachine.class)
 @SuppressWarnings("unused")
@@ -217,6 +216,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     @Param(description = "true if the router template requires upgrader")
     private boolean requiresUpgrade;
 
+    @SerializedName("healthcheckresults")
+    @Param(description = "Last executed health check result for the router", responseObject = DomainRouterHealthCheckResultsResponse.class, since = "4.14")
+    DomainRouterHealthCheckResultsResponse healthCheckResults;
+
     public DomainRouterResponse() {
         nics = new LinkedHashSet<NicResponse>();
     }
@@ -276,6 +279,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
 
     public String getHypervisor() {
         return hypervisor;
+    }
+
+    public DomainRouterHealthCheckResultsResponse getHealthCheckResults() {
+        return healthCheckResults;
     }
 
     public void setHypervisor(String hypervisor) {
@@ -445,5 +452,9 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
 
     public void setRequiresUpgrade(boolean requiresUpgrade) {
         this.requiresUpgrade = requiresUpgrade;
+    }
+
+    public void setHealthCheckResults(DomainRouterHealthCheckResultsResponse healthCheckResults) {
+        this.healthCheckResults = healthCheckResults;
     }
 }

@@ -45,6 +45,15 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     static final String SetServiceMonitorCK = "network.router.EnableServiceMonitoring";
     static final String RouterAlertsCheckIntervalCK = "router.alerts.check.interval";
 
+    static final String RouterHealthChecksEnabledCK = "router.health.checks.enabled";
+    static final String RouterHealthChecksBasicIntervalCK = "router.health.checks.basic.interval";
+    static final String RouterHealthChecksAdvancedIntervalCK = "router.health.checks.advanced.interval";
+    static final String RouterHealthChecksDataRefreshIntervalCK = "router.health.checks.data.refresh.interval";
+    static final String RouterHealthChecksResultFetchIntervalCK = "router.health.checks.results.fetch.interval";
+    static final String RouterHealthChecksFailuresToRestartVrCK = "router.health.checks.failures.to.restart.vr";
+    static final String RouterHealthChecksToExcludeCK = "router.health.checks.to.exclude";
+    static final String RouterHealthChecksFreeDiskSpaceThresholdCK = "router.health.checks.free.disk.space.threshold";
+
     static final ConfigKey<String> RouterTemplateXen = new ConfigKey<String>(String.class, RouterTemplateXenCK, "Advanced", "SystemVM Template (XenServer)",
             "Name of the default router template on Xenserver.", true, ConfigKey.Scope.Zone, null);
     static final ConfigKey<String> RouterTemplateKvm = new ConfigKey<String>(String.class, RouterTemplateKvmCK, "Advanced", "SystemVM Template (KVM)",
@@ -67,6 +76,31 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
             "If true, router minimum required version is checked before sending command", false);
     static final ConfigKey<Boolean> UseExternalDnsServers = new ConfigKey<Boolean>(Boolean.class, "use.external.dns", "Advanced", "false",
             "Bypass internal dns, use external dns1 and dns2", true, ConfigKey.Scope.Zone, null);
+
+    // Health checks
+    static final ConfigKey<Boolean> RouterHealthChecksEnabled = new ConfigKey<Boolean>(Boolean.class, RouterHealthChecksEnabledCK, "Advanced", "true",
+            "If true, router health checks are performed periodically as per other configurations",
+            true, ConfigKey.Scope.Zone, null);
+    static final ConfigKey<Integer> RouterHealthChecksBasicInterval = new ConfigKey<Integer>(Integer.class, RouterHealthChecksBasicIntervalCK, "Advanced", "3",
+            "Intervals (in minutes) at which basic router health checks are performed in minutes. Checks are disabled if set to zero.",
+            true, ConfigKey.Scope.Global, null);
+    static final ConfigKey<Integer> RouterHealthChecksAdvancedInterval = new ConfigKey<Integer>(Integer.class, RouterHealthChecksAdvancedIntervalCK, "Advanced", "15",
+            "Intervals (in minutes) at which advanced router health checks are performed in minutes. Checks are disabled if set to zero.",
+            true, ConfigKey.Scope.Global, null);
+    static final ConfigKey<Integer> RouterHealthChecksDataRefreshInterval = new ConfigKey<Integer>(Integer.class, RouterHealthChecksDataRefreshIntervalCK, "Advanced", "10",
+            "Intervals (in minutes) at which router health checks data - such as scheduling interval, excluded checks, etc is updated on all VRs.",
+            true, ConfigKey.Scope.Global, null);
+    static final ConfigKey<Integer> RouterHealthChecksResultFetchInterval = new ConfigKey<Integer>(Integer.class, RouterHealthChecksResultFetchIntervalCK, "Advanced", "10",
+            "Intervals (in minutes) at which router health checks results are fetched in minutes. On each check management server evaluates need to restart as per " + RouterHealthChecksFailuresToRestartVrCK,
+            true, ConfigKey.Scope.Global, null);
+    static final ConfigKey<String> RouterHealthChecksFailuresToRestartVr = new ConfigKey<String>(String.class, RouterHealthChecksFailuresToRestartVrCK, "Advanced", "",
+            "Health checks failures that should cause router to restart. If empty the restart never happens. Put 'any' to restart on any failure",
+            true, ConfigKey.Scope.Zone, null);
+    static final ConfigKey<String> RouterHealthChecksToExclude = new ConfigKey<String>(String.class, RouterHealthChecksToExcludeCK, "Advanced", "",
+            "Health checks that should be excluded when executing scheduled checks", true, ConfigKey.Scope.Cluster, null);
+    static final ConfigKey<Integer> RouterHealthChecksFreeDiskSpaceThreshold = new ConfigKey<Integer>(Integer.class, RouterHealthChecksFreeDiskSpaceThresholdCK,
+            "Advanced", "100", "Free disk space in MB threshold on VR below which the VR needs to be restarted as is considered a failure",
+            true, ConfigKey.Scope.Zone, null);
 
     public static final int DEFAULT_ROUTER_VM_RAMSIZE = 256;            // 256M
     public static final int DEFAULT_ROUTER_CPU_MHZ = 500;                // 500 MHz

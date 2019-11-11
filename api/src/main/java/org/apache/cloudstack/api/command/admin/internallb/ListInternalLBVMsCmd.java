@@ -73,6 +73,11 @@ public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd 
     @Parameter(name = ApiConstants.FOR_VPC, type = CommandType.BOOLEAN, description = "if true is passed for this parameter, list only VPC Internal LB VMs")
     private Boolean forVpc;
 
+
+    @Parameter(name = ApiConstants.INCLUDE_ROUTER_HEALTH_CHECK_RESULTS, type = CommandType.BOOLEAN, since = "4.14",
+            description = "if true is passed for this parameter, also fetch last executed health check results for the VM. Default is false")
+    private Boolean includeHealthCheckResults;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -115,6 +120,10 @@ public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd 
 
     public String getRole() {
         return Role.INTERNAL_LB_VM.toString();
+    }
+
+    public boolean shouldIncludeHealthCheckResults() {
+        return includeHealthCheckResults == null ? false : includeHealthCheckResults.booleanValue();
     }
 
     /////////////////////////////////////////////////////

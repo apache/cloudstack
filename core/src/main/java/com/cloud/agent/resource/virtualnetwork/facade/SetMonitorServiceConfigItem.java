@@ -21,21 +21,49 @@ package com.cloud.agent.resource.virtualnetwork.facade;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetMonitorServiceCommand;
 import com.cloud.agent.resource.virtualnetwork.ConfigItem;
+import com.cloud.agent.resource.virtualnetwork.ScriptConfigItem;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
 import com.cloud.agent.resource.virtualnetwork.model.MonitorService;
 
 public class SetMonitorServiceConfigItem extends AbstractConfigItemFacade {
+    private static final Logger s_logger = Logger.getLogger(SetMonitorServiceConfigItem.class);
 
     @Override
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {
         final SetMonitorServiceCommand command = (SetMonitorServiceCommand) cmd;
 
-        final MonitorService monitorService = new MonitorService(command.getConfiguration(), cmd.getAccessDetail(NetworkElementCommand.ROUTER_MONITORING_ENABLE));
-        return generateConfigItems(monitorService);
+        final MonitorService monitorService = new MonitorService(
+                command.getConfiguration(),
+                cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_MONITORING_ENABLED),
+                cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED));
+
+        try {
+            monitorService.setHealthChecksBasicRunInterval(Integer.parseInt(cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL)));
+        } catch (NumberFormatException exception) {
+            s_logger.error("Unexpected health check basic interval set" + cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL) +
+                    ". Exception: " + exception + "Will use default value");
+        }
+
+        try {
+            monitorService.setHealthChecksAdvanceRunInterval(Integer.parseInt(cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL)));
+        } catch (NumberFormatException exception) {
+            s_logger.error("Unexpected health check advance interval set" + cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL) +
+                    ". Exception: " + exception + "Will use default value");
+        }
+
+        monitorService.setExcludedHealthChecks(cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED));
+        monitorService.setAdditionalData(command.getAdditionalData());
+        List<ConfigItem> configItems = generateConfigItems(monitorService);
+        if (configItems != null && command.shouldReconfigureAfterUpdate()) {
+            configItems.add(new ScriptConfigItem(VRScripts.CONFIGURE, "monitor_service.json"));
+        }
+        return configItems;
     }
 
     @Override

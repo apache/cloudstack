@@ -16,16 +16,17 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
-
-
-
 from ConfigParser import SafeConfigParser
 from subprocess import *
-from os import path
+from datetime import datetime
 import time
 import os
 import logging
+import json
+from os import sys, path
+
+sys.path.append('/opt/cloud/bin')
+from healthchecksutility import getHealthChecksData
 
 class StatusCodes:
     SUCCESS      = 0
@@ -48,9 +49,11 @@ class Config:
     RETRY_FOR_RESTART = 5
     MONITOR_LOG = '/var/log/monitor.log'
     UNMONIT_PS_FILE = '/etc/unmonit_psList.txt'
+    HEALTH_CHECKS_SCRIPTS_DIR = 'health_scripts'
+    MONITOR_RESULT_FILE_SUFFIX = 'monitor_results.json'
+    FAILING_CHECKS_FILE = 'failing_health_checks'
 
-
-def getConfig( config_file_path = "/etc/monitor.conf" ):
+def getServicesConfig( config_file_path = "/etc/monitor.conf" ):
     """
     Reads the process configuration from the config file.
     Config file contains the processes to be monitored.
@@ -66,7 +69,7 @@ def getConfig( config_file_path = "/etc/monitor.conf" ):
 
         for name, value in parser.items(section):
             process_dict[section][name] = value
-#           printd (" %s = %r" % (name, value))
+            printd (" %s = %r" % (name, value))
 
     return  process_dict
 
@@ -77,12 +80,12 @@ def printd (msg):
 
     #for debug
     #print msg
-    return 0
 
-    f= open(Config.MONITOR_LOG,'r+')
+    f= open(Config.MONITOR_LOG, 'w' if not path.isfile(Config.MONITOR_LOG) else 'r+')
     f.seek(0, 2)
     f.write(str(msg)+"\n")
     f.close()
+    print str(msg)
 
 def raisealert(severity, msg, process_name=None):
     """ Writes the alert message"""
@@ -97,6 +100,7 @@ def raisealert(severity, msg, process_name=None):
     logging.info(log)
     msg = 'logger -t monit '+ log
     pout = Popen(msg, shell=True, stdout=PIPE)
+    print "[Alert] " + msg
 
 
 def isPidMatchPidFile(pidfile, pids):
@@ -126,7 +130,7 @@ def isPidMatchPidFile(pidfile, pids):
         fd.close()
         return StatusCodes.FAILED
 
-    printd("file content "+str(inp))
+    printd("file content of pidfile " + pidfile + " = " + str(inp).strip())
     printd(pids)
     tocheck_pid  =  inp.strip()
     for item in pids:
@@ -152,7 +156,7 @@ def checkProcessRunningStatus(process_name, pidFile):
 
     #check there is only one pid or not
     if exitStatus == 0:
-        pids = temp_out.split(' ')
+        pids = temp_out.strip().split(' ')
         printd("pid(s) of process %s are %s " %(process_name, pids))
 
         #there is more than one process so match the pid file
@@ -181,8 +185,6 @@ def restartService(service_name):
 
     return False
 
-
-
 def checkProcessStatus( process ):
     """
     Check the process running status, if not running tries to restart
@@ -203,7 +205,7 @@ def checkProcessStatus( process ):
 
     if status == True:
         printd("The process is running ....")
-        return  StatusCodes.RUNNING
+        return StatusCodes.RUNNING
     else:
         printd("Process %s is not running trying to recover" %process_name)
         #Retry the process state for few seconds
@@ -245,16 +247,20 @@ def checkProcessStatus( process ):
             printd("Restart failed after number of retries")
             return StatusCodes.STOPPED
 
-    return  StatusCodes.RUNNING
+    return StatusCodes.RUNNING
 
 
 def monitProcess( processes_info ):
     """
     Monitors the processes which got from the config file
     """
+    service_status = {}
+    failing_services = []
     if len( processes_info ) == 0:
-        printd("Invalid Input")
-        return  StatusCodes.INVALID_INP
+        printd("No config items provided - means a redundant VR or a VPC Router")
+        return service_status, failing_services
+
+    print "[Process Info] " + json.dumps(processes_info)
 
     dict_unmonit={}
     umonit_update={}
@@ -270,22 +276,28 @@ def monitProcess( processes_info ):
     csec = repr(time.time()).split('.')[0]
 
     for process,properties in processes_info.items():
+        serviceName = process + ".service"
         #skip the process it its time stamp less than Config.MONIT_AFTER_MINS
-        printd ("checking the service %s \n" %process)
-
+        printd ("---------------------------\nchecking the service %s\n---------------------------- " %process)
         if not is_emtpy(dict_unmonit):
             if dict_unmonit.has_key(process):
                 ts = dict_unmonit[process]
 
                 if checkPsTimeStampForMonitor (csec, ts, properties) == False:
+                    service_status[serviceName] = {"success": "False", "message": "down since" + str(ts)}
+                    failing_services.append(serviceName)
                     unMonitPs = True
                     continue
 
-        if checkProcessStatus( properties) != StatusCodes.RUNNING:
+        if checkProcessStatus(properties) != StatusCodes.RUNNING:
             printd( "\n Service %s is not Running"%process)
             #add this process into unmonit list
             printd ("updating the service for unmonit %s\n" %process)
             umonit_update[process]=csec
+            service_status[serviceName] = {"success": "False", "message": "down since" + str(csec)}
+            failing_services.append(serviceName)
+        else:
+            service_status[serviceName] = {"success": "True", "message": "service is running"}
 
     #if dict is not empty write to file else delete it
     if not is_emtpy(umonit_update):
@@ -294,6 +306,7 @@ def monitProcess( processes_info ):
         if is_emtpy(umonit_update) and unMonitPs == False:
             #delete file it is there
             removeFile(Config.UNMONIT_PS_FILE)
+    return service_status, failing_services
 
 
 def checkPsTimeStampForMonitor(csec,ts, process):
@@ -364,17 +377,92 @@ def is_emtpy(struct):
     else:
         return True
 
-def main():
+def execute(script, checkType = "basic"):
+    cmd = "./" + script + " " + checkType
+    printd ("Executing health check script command: " + cmd)
+
+    pout = Popen(cmd, shell=True, stdout=PIPE)
+    exitStatus = pout.wait()
+    output = pout.communicate()[0].strip()
+
+    if exitStatus == 0:
+        if len(output) > 0:
+            printd("Successful execution of " + script)
+            return {"success": "True", "message": output}
+        return {} #Skip script if no output is received
+    else:
+        printd("Script execution failed " + script)
+        return {"success": "False", "message": output}
+
+def main(checkType = "basic"):
+    startTime = int(time.time())
     '''
-    Step1 : Get Config
+    Step1 : Get Services Config
     '''
     printd("monitoring started")
-    temp_dict  = getConfig()
+    configDict = getServicesConfig()
 
     '''
-    Step2: Monitor and Raise Alert
+    Step2: Monitor services and Raise Alerts
     '''
-    monitProcess( temp_dict )
+    monitResult = {}
+    failingChecks = []
+    if checkType == "basic":
+        monitResult, failingChecks = monitProcess(configDict)
+
+    '''
+    Step3: Run health check scripts as needed
+    '''
+    hc_data = getHealthChecksData()
+
+    if "health_checks_enabled" in hc_data and hc_data['health_checks_enabled']:
+        hc_exclude = hc_data["excluded_health_checks"] if "excluded_health_checks" in hc_data else []
+        for f in os.listdir(Config.HEALTH_CHECKS_SCRIPTS_DIR):
+            if f in hc_exclude:
+                continue
+            fpath = path.join(Config.HEALTH_CHECKS_SCRIPTS_DIR, f)
+            if path.isfile(fpath) and os.access(fpath, os.X_OK):
+                ret = execute(fpath, checkType)
+                if len(ret) == 0:
+                    continue
+                if "success" in ret and not ret["success"]:
+                    failingChecks.append(f)
+                monitResult[f] = ret
+
+    '''
+    Step4: Write results to the json file for admins/management server to read
+    '''
+
+    endTime = int(time.time())
+    monitResult["lastRun"] = {
+        "start": str(datetime.fromtimestamp(startTime)),
+        "end": str(datetime.fromtimestamp(endTime)),
+        "duration": str(endTime - startTime)
+    }
+
+    with open(checkType + "_" + Config.MONITOR_RESULT_FILE_SUFFIX, 'w') as f:
+        json.dump(monitResult, f, ensure_ascii=False)
+
+    failChecksFile = Config.FAILING_CHECKS_FILE
+    if len(failingChecks) > 0:
+        fcs = ""
+        for fc in failingChecks:
+            fcs = fcs + fc + ","
+        fcs = fcs[0, -1]
+        with open(failChecksFile, 'w') as f:
+            f.write(fcs)
+    elif path.isfile(failChecksFile):
+        os.remove(failChecksFile)
 
 if __name__ == "__main__":
-    main()
+    checkType = "basic"
+    if len(sys.argv) == 2:
+        if sys.argv[1] == "advance":
+            main("advance")
+        elif sys.argv[1] == "basic":
+            main("basic")
+        else:
+            printd("Error: Unknown type of test: " + sys.argv)
+    else:
+        main("basic")
+        main("advance")

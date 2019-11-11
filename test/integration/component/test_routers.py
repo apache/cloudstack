@@ -21,7 +21,8 @@ from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import (stopVirtualMachine,
                                   stopRouter,
-                                  startRouter)
+                                  startRouter,
+                                  getRouterHealthCheckResults)
 from marvin.lib.utils import (cleanup_resources,
                               get_process_status)
 from marvin.lib.base import (ServiceOffering,
@@ -593,6 +594,67 @@ class TestRouterServices(cloudstackTestCase):
             )
 
         return
+
+    @attr(tags=["advanced"], required_hardware="false")
+    def test_04_RouterHealthChecksResults(self):
+        """Test advanced zone router list contains health check records
+        """
+
+        routers = list_routers(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            includehealthcheckresults=True
+        )
+
+        self.assertEqual(isinstance(routers, list), True,
+            "Check for list routers response return valid data"
+        )
+        self.assertNotEqual(
+            len(routers), 0,
+            "Check list router response"
+        )
+
+        router = routers[0]
+        self.info("Router ID: %s & Router state: %s" % (
+            router.id, router.state
+        ))
+        self.assertEqual(router.id, router.healthcheckresults.routerId,
+            "Router response should contain it's health check result so id should match"
+        )
+        self.assertEqual(router.name, router.healthcheckresults.name,
+            "Router response should contain it's health check result so router name should match"
+        )
+
+        for checkType in ["basic", "advance"]:
+            self.assertTrue(
+                checkType in router.healthcheckresults.details,
+                "Router should contain health check results info for type " + checkType
+            )
+
+        cmd = getRouterHealthCheckResults.getRouterHealthCheckResultsCmd()
+        cmd.id = router.id
+        cmd.performfreshchecks = True # Perform fresh checks as a newly created router may not have results
+        healthData = self.api_client.getRouterHealthCheckResults(cmd)
+        print healthData
+        self.info("Router ID: %s & Router state: %s" % (
+            router.id, router.state
+        ))
+        self.assertEqual(router.id, healthData.routerId,
+            "Router response should contain it's health check result so id should match"
+        )
+        self.assertEqual(router.name, healthData.name,
+            "Router response should contain it's health check result so router name should match"
+        )
+        self.assertTrue(healthData.success == "true",
+            "Router health check result should be successful"
+        )
+
+        for detailPattern in ["basic", "advance", "lastRun", "dns_check.py", "dhcp_check.py", "haproxy_check.py", "disk_space_check.py", "iptables_check.py", "gateways_check.py"]:
+            self.assertTrue(
+                detailPattern in healthData.details,
+                "Router health check details string should contain " + detailPattern
+            )
 
 
 class TestRouterStopCreatePF(cloudstackTestCase):

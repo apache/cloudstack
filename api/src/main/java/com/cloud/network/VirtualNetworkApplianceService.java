@@ -17,6 +17,7 @@
 package com.cloud.network;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
@@ -31,8 +32,7 @@ public interface VirtualNetworkApplianceService {
     /**
      * Starts domain router
      *
-     * @param cmd
-     *            the command specifying router's id
+     * @param cmd the command specifying router's id
      * @return DomainRouter object
      */
     VirtualRouter startRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
@@ -51,10 +51,8 @@ public interface VirtualNetworkApplianceService {
     /**
      * Stops domain router
      *
-     * @param id
-     *            of the router
-     * @param forced
-     *            just do it. caller knows best.
+     * @param id of the router
+     * @param forced just do it. caller knows best.
      * @return router if successful, null otherwise
      * @throws ResourceUnavailableException
      * @throws ConcurrentOperationException
@@ -68,4 +66,14 @@ public interface VirtualNetworkApplianceService {
     VirtualRouter findRouter(long routerId);
 
     List<Long> upgradeRouterTemplate(UpgradeRouterTemplateCmd cmd);
+
+    /**
+     * Returns the health check results for the router. It can run the health checks on demand if runChecks is true. Otherwise,
+     * it fetches the previously executed health checks.
+     *
+     * @param routerId id of the router
+     * @param runChecks
+     * @return
+     */
+    Map<String, String> getRouterHealthCheckResults(long routerId, boolean runChecks);
 }

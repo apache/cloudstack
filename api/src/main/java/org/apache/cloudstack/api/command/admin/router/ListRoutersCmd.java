@@ -80,6 +80,10 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name = ApiConstants.VERSION, type = CommandType.STRING, description = "list virtual router elements by version")
     private String version;
 
+    @Parameter(name = ApiConstants.INCLUDE_ROUTER_HEALTH_CHECK_RESULTS, type = CommandType.BOOLEAN, since = "4.14",
+            description = "if true is passed for this parameter, also fetch last executed health check results for the router. Default is false")
+    private Boolean includeHealthCheckResults;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -131,6 +135,11 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     public String getRole() {
         return Role.VIRTUAL_ROUTER.toString();
     }
+
+    public boolean shouldIncludeHealthCheckResults() {
+        return includeHealthCheckResults == null ? false : includeHealthCheckResults.booleanValue();
+    }
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

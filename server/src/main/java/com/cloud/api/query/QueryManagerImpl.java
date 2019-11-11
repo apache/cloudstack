@@ -31,9 +31,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.cloud.agent.api.storage.OVFProperty;
-import com.cloud.storage.TemplateOVFPropertyVO;
-import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -42,6 +39,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.ResourceDetail;
+import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.admin.account.ListAccountsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
@@ -123,6 +121,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.agent.api.storage.OVFProperty;
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
@@ -182,6 +181,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.org.Grouping;
@@ -206,9 +206,11 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePoolTagVO;
+import com.cloud.storage.TemplateOVFPropertyVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.StoragePoolTagsDao;
+import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -394,6 +396,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     TemplateOVFPropertiesDao templateOVFPropertiesDao;
+
+    @Inject
+    public VpcVirtualNetworkApplianceService routerService;
+
+    @Inject
+    private ResponseGenerator responseGenerator;
 
     /*
      * (non-Javadoc)
@@ -1160,6 +1168,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
+        if (cmd.shouldIncludeHealthCheckResults()) {
+            for (DomainRouterResponse res : routerResponses) {
+                DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
+                res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter, routerService.getRouterHealthCheckResults(resRouter.getId(), false)));
+            }
+        }
         response.setResponses(routerResponses, result.second());
         return response;
     }
@@ -1171,6 +1185,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
+        if (cmd.shouldIncludeHealthCheckResults()) {
+            for (DomainRouterResponse res : routerResponses) {
+                DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
+                res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter, routerService.getRouterHealthCheckResults(resRouter.getId(), false)));
+            }
+        }
         response.setResponses(routerResponses, result.second());
         return response;
     }

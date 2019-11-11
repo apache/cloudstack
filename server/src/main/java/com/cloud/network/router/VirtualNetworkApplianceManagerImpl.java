@@ -25,6 +25,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,6 +43,9 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
+import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,6 +91,9 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.AggregationControlCommand;
 import com.cloud.agent.api.routing.AggregationControlCommand.Action;
 import com.cloud.agent.api.routing.GetRouterAlertsCommand;
+import com.cloud.agent.api.routing.GetRouterMonitorResultsAnswer;
+import com.cloud.agent.api.routing.GetRouterMonitorResultsCommand;
+import com.cloud.agent.api.routing.GroupAnswer;
 import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetMonitorServiceCommand;
@@ -95,6 +102,10 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiAsyncJobDispatcher;
 import com.cloud.api.ApiGsonHelper;
+import com.cloud.api.query.dao.DomainRouterJoinDao;
+import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.vo.DomainRouterJoinVO;
+import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.Config;
@@ -146,6 +157,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.MonitoringServiceDao;
 import com.cloud.network.dao.MonitoringServiceVO;
@@ -175,6 +187,7 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatImpl;
@@ -214,6 +227,7 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.QueryBuilder;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
@@ -310,6 +324,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject private OpRouterMonitorServiceDao _opRouterMonitorServiceDao;
 
     @Inject protected NetworkTopologyContext _networkTopologyContext;
+
+    @Inject private UserVmJoinDao userVmJoinDao;
+    @Inject private DomainRouterJoinDao domainRouterJoinDao;
+    @Inject private PortForwardingRulesDao portForwardingDao;
+    @Inject private ApplicationLoadBalancerRuleDao applicationLoadBalancerRuleDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -658,7 +677,21 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (routerAlertsCheckInterval > 0) {
             _checkExecutor.scheduleAtFixedRate(new CheckRouterAlertsTask(), routerAlertsCheckInterval, routerAlertsCheckInterval, TimeUnit.SECONDS);
         } else {
-            s_logger.debug("router.alerts.check.interval - " + routerAlertsCheckInterval + " so not scheduling the router alerts checking thread");
+            s_logger.debug(RouterAlertsCheckIntervalCK + "=" + routerAlertsCheckInterval + " so not scheduling the router alerts checking thread");
+        }
+
+        final int routerHealthCheckDataRefreshInterval = RouterHealthChecksDataRefreshInterval.value();
+        if (routerHealthCheckDataRefreshInterval > 0) {
+            _checkExecutor.scheduleAtFixedRate(new UpdateRouterHealthChecksConfigDataTask(), routerHealthCheckDataRefreshInterval, routerHealthCheckDataRefreshInterval, TimeUnit.MINUTES);
+        } else {
+            s_logger.debug(RouterHealthChecksDataRefreshIntervalCK + "=" + routerAlertsCheckInterval + " so not scheduling the router health check data thread");
+        }
+
+        final int routerHealthChecksFetchInterval = RouterHealthChecksResultFetchInterval.value();
+        if (routerHealthChecksFetchInterval > 0) {
+            _checkExecutor.scheduleAtFixedRate(new AnalyseRouterMonitorResultsTask(), routerHealthChecksFetchInterval, routerHealthChecksFetchInterval, TimeUnit.MINUTES);
+        } else {
+            s_logger.debug(RouterHealthChecksResultFetchIntervalCK + "=" + routerAlertsCheckInterval + " so not scheduling the router checks fetching thread");
         }
 
         return true;
@@ -1186,6 +1219,259 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
     }
 
+    protected class AnalyseRouterMonitorResultsTask extends ManagedContextRunnable {
+        public AnalyseRouterMonitorResultsTask() {
+        }
+
+        @Override
+        protected void runInContext() {
+            try {
+                final List<DomainRouterVO> routers = _routerDao.listByStateAndManagementServer(VirtualMachine.State.Running, mgmtSrvrId);
+                s_logger.debug("Found " + routers.size() + " running routers. ");
+
+                for (final DomainRouterVO router : routers) {
+                    GetRouterMonitorResultsAnswer answer = getMonitorResults(router, false);
+                    String checkFailsToRestartVr = RouterHealthChecksFailuresToRestartVr.valueIn(router.getDataCenterId());
+                    if (answer != null && answer.getFailingChecks().size() > 0 && StringUtils.isNotBlank(checkFailsToRestartVr)) {
+                        for (String failedCheck : answer.getFailingChecks()) {
+                            if (checkFailsToRestartVr.contains(failedCheck)) {
+                                rebootRouter(router.getId(), true);
+                            }
+                        }
+                    }
+                }
+            } catch (final Exception ex) {
+                s_logger.error("Fail to complete the AnalyseRouterMonitorResultsTask! ", ex);
+            }
+        }
+    }
+
+    // Returns null if health checks are not enabled
+    private GetRouterMonitorResultsAnswer getMonitorResults(DomainRouterVO router, boolean performFreshChecks) {
+        if (!RouterHealthChecksEnabled.valueIn(router.getDataCenterId())) {
+            return null;
+        }
+
+        String controlIP = getRouterControlIP(router);
+        if (StringUtils.isNotBlank(controlIP) && !controlIP.equals("0.0.0.0")) {
+            final GetRouterMonitorResultsCommand command = new GetRouterMonitorResultsCommand(performFreshChecks);
+            command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlIP);
+            command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+            try {
+                final Answer answer = _agentMgr.easySend(router.getHostId(), command);
+
+                if (answer == null) {
+                    s_logger.warn("Unable to fetch monitoring results data from router " + router.getHostName());
+                    return null;
+                }
+                if (answer instanceof GetRouterMonitorResultsAnswer) {
+                    return (GetRouterMonitorResultsAnswer) answer;
+                } else {
+                    s_logger.warn("Unable to fetch health checks results to router " + router.getHostName() + " Received answer " + answer.getDetails());
+                    return new GetRouterMonitorResultsAnswer(command, false, null, answer.getDetails());
+                }
+            } catch (final Exception e) {
+                s_logger.warn("Error while collecting alerts from router: " + router.getInstanceName(), e);
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public Map<String, String> getRouterHealthCheckResults(long routerId, boolean runChecks) {
+        DomainRouterVO router = _routerDao.findById(routerId);
+        Map<String, String> result = new HashMap<>();
+
+        if (router == null) {
+            result.put("success", "False");
+            result.put("message", "Router not found");
+            return result;
+        }
+
+        if (!RouterHealthChecksEnabled.valueIn(router.getDataCenterId())) {
+            result.put("success", "False");
+            result.put("message", "Router id not valid. Either router not found or it contains VPC.");
+            return result;
+        }
+
+        GetRouterMonitorResultsAnswer answer = getMonitorResults(router, runChecks);
+        if (answer == null) {
+            result.put("success", "False");
+            result.put("message", "Router is unreachable.");
+            return result;
+        }
+
+        result.put("success", String.valueOf(answer.getResult()));
+        result.put("message", answer.getDetails());
+
+        return result;
+    }
+
+    protected class UpdateRouterHealthChecksConfigDataTask extends ManagedContextRunnable {
+        public UpdateRouterHealthChecksConfigDataTask() {
+        }
+
+        @Override
+        protected void runInContext() {
+            try {
+                final List<DomainRouterVO> routers = _routerDao.listByStateAndManagementServer(VirtualMachine.State.Running, mgmtSrvrId);
+                s_logger.debug("Found " + routers.size() + " running routers. ");
+
+                for (final DomainRouterVO router : routers) {
+                    if (!RouterHealthChecksEnabled.valueIn(router.getDataCenterId())) {
+                        continue;
+                    }
+
+                    String controlIP = getRouterControlIP(router);
+                    if (StringUtils.isNotBlank(controlIP) && !controlIP.equals("0.0.0.0")) {
+
+                        final SetMonitorServiceCommand command = new SetMonitorServiceCommand();
+                        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIP(router));
+                        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+                        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.valueIn(router.getDataCenterId()).toString());
+                        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
+                        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
+                        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, RouterHealthChecksToExclude.valueIn(router.getDataCenterId()));
+                        command.setAdditionalData(getAdditionalDataForRouterHealthChecks(router));
+                        command.setReconfigureAfterUpdate(true);
+
+                        try {
+                            final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
+                            GroupAnswer answer = null;
+
+                            if (origAnswer == null) {
+                                s_logger.warn("Unable to update health checks data to router " + router.getHostName());
+                                continue;
+                            }
+                            if (origAnswer instanceof GroupAnswer) {
+                                answer = (GroupAnswer) origAnswer;
+                            } else {
+                                s_logger.warn("Unable to update health checks data to router " + router.getHostName() + " Received answer " + origAnswer.getDetails());
+                                continue;
+                            }
+                            if (!answer.getResult()) {
+                                s_logger.warn("Unable to update health checks data to router " + router.getHostName() + ", details : " + answer.getDetails());
+                                continue;
+                            }
+                        } catch (final Exception e) {
+                            s_logger.warn("Error while collecting alerts from router: " + router.getInstanceName(), e);
+                            continue;
+                        }
+                    }
+                }
+            } catch (final Exception ex) {
+                s_logger.error("Fail to complete the UpdateRouterHealthChecksConfigDataTask! ", ex);
+            }
+        }
+    }
+
+    private Map<String, String> getAdditionalDataForRouterHealthChecks(final DomainRouterVO router) {
+        s_logger.info("Updating data for router health checks for all routers");
+        Map<String, String> data = new HashMap<>();
+        List<DomainRouterJoinVO> routerJoinVOs = domainRouterJoinDao.searchByIds(router.getId());
+        StringBuilder vmsData = new StringBuilder();
+        StringBuilder portData = new StringBuilder();
+        StringBuilder loadBalancingData = new StringBuilder();
+        StringBuilder gateways = new StringBuilder();
+        gateways.append("gatewaysIps=");
+        for (DomainRouterJoinVO routerJoinVO : routerJoinVOs) {
+            if (StringUtils.isNotBlank(routerJoinVO.getGateway())) {
+                gateways.append(routerJoinVO.getGateway() + " ");
+            }
+            SearchBuilder<UserVmJoinVO> sbvm = userVmJoinDao.createSearchBuilder();
+            sbvm.and("networkId", sbvm.entity().getNetworkId(), SearchCriteria.Op.EQ);
+            SearchCriteria<UserVmJoinVO> scvm = sbvm.create();
+            scvm.setParameters("networkId", routerJoinVO.getNetworkId());
+            List<UserVmJoinVO> vms = userVmJoinDao.search(scvm, null);
+            for (UserVmJoinVO vm : vms) {
+                if (vm.getState() != VirtualMachine.State.Running) {
+                    continue;
+                }
+
+                vmsData.append("vmName=").append(vm.getName())
+                        .append(",macAddress=").append(vm.getMacAddress())
+                        .append(",ip=").append(vm.getIpAddress()).append(";");
+                SearchBuilder<PortForwardingRuleVO> sbpf = portForwardingDao.createSearchBuilder();
+                sbpf.and("networkId", sbpf.entity().getNetworkId(), SearchCriteria.Op.EQ);
+                sbpf.and("instanceId", sbpf.entity().getVirtualMachineId(), SearchCriteria.Op.EQ);
+                SearchCriteria<PortForwardingRuleVO> scpf = sbpf.create();
+                scpf.setParameters("networkId", routerJoinVO.getNetworkId());
+                scpf.setParameters("instanceId", vm.getId());
+                List<PortForwardingRuleVO> portForwardingRules = portForwardingDao.search(scpf, null);
+                for (PortForwardingRuleVO portForwardingRule : portForwardingRules) {
+                    portData.append("sourceIp=").append(_ipAddressDao.findById(portForwardingRule.getSourceIpAddressId()).getAddress().toString())
+                            .append(",sourcePortStart=").append(portForwardingRule.getSourcePortStart())
+                            .append(",sourcePortEnd=").append(portForwardingRule.getSourcePortEnd())
+                            .append(",destIp=").append(portForwardingRule.getDestinationIpAddress())
+                            .append(",destPortStart=").append(portForwardingRule.getDestinationPortStart())
+                            .append(",destPortEnd=").append(portForwardingRule.getDestinationPortEnd()).append(";");
+                }
+            }
+
+            List<? extends FirewallRuleVO> loadBalancerVOs = this.getLBRules(routerJoinVO);
+            for (FirewallRuleVO firewallRuleVO : loadBalancerVOs) {
+                List<LoadBalancerVMMapVO> vmMapVOs = _loadBalancerVMMapDao.listByLoadBalancerId(firewallRuleVO.getId(), false);
+                if (vmMapVOs.size() > 0) {
+
+                    final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(routerJoinVO.getNetworkId()).getNetworkOfferingId());
+                    if (offering.getConcurrentConnections() == null) {
+                        loadBalancingData.append("maxconn=").append(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
+                    } else {
+                        loadBalancingData.append("maxconn=").append(offering.getConcurrentConnections().toString());
+                    }
+
+                    loadBalancingData.append(",sourcePortStart=").append(firewallRuleVO.getSourcePortStart())
+                            .append(",sourcePortEnd=").append(firewallRuleVO.getSourcePortEnd());
+                    if (firewallRuleVO instanceof LoadBalancerVO) {
+                        LoadBalancerVO loadBalancerVO = (LoadBalancerVO) firewallRuleVO;
+                        loadBalancingData.append(",sourceIp=").append(_ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString())
+                                .append(",destPortStart=").append(loadBalancerVO.getDefaultPortStart())
+                                .append(",destPortEnd=").append(loadBalancerVO.getDefaultPortEnd())
+                                .append(",algorithm=").append(loadBalancerVO.getAlgorithm()).append(",vmIps=");
+                    } else if (firewallRuleVO instanceof ApplicationLoadBalancerRuleVO) {
+                        ApplicationLoadBalancerRuleVO appLoadBalancerVO = (ApplicationLoadBalancerRuleVO) firewallRuleVO;
+                        loadBalancingData.append(",sourceIp=").append(appLoadBalancerVO.getSourceIp())
+                                .append(",destPortStart=").append(appLoadBalancerVO.getDefaultPortStart())
+                                .append(",destPortEnd=").append(appLoadBalancerVO.getDefaultPortEnd())
+                                .append(",algorithm=").append(appLoadBalancerVO.getAlgorithm()).append(",vmIps=");
+
+                    }
+                    for (LoadBalancerVMMapVO vmMapVO : vmMapVOs) {
+                        loadBalancingData.append(vmMapVO.getInstanceIp()).append(" ");
+                    }
+                    loadBalancingData.setCharAt(loadBalancingData.length() - 1, ';');
+                }
+            }
+        }
+        data.put("virtualMachines", vmsData.toString());
+        data.put("gateways", gateways.toString());
+        data.put("portForwarding", portData.toString());
+        data.put("haproxyData", loadBalancingData.toString());
+        data.put("systemThresholds", "minSpaceNeeded=" + RouterHealthChecksFreeDiskSpaceThreshold.valueIn(router.getDataCenterId()).toString());
+        return data;
+    }
+
+    private List<? extends FirewallRuleVO> getLBRules(final DomainRouterJoinVO router) {
+        if (router.getRole() == Role.VIRTUAL_ROUTER) {
+            SearchBuilder<LoadBalancerVO> sblb = _loadBalancerDao.createSearchBuilder();
+            sblb.and("networkId", sblb.entity().getNetworkId(), SearchCriteria.Op.EQ);
+            sblb.and("sourceIpAddressId", sblb.entity().getSourceIpAddressId(), SearchCriteria.Op.NNULL);
+            SearchCriteria<LoadBalancerVO> sclb = sblb.create();
+            sclb.setParameters("networkId", router.getNetworkId());
+            return _loadBalancerDao.search(sclb, null);
+        } else if (router.getRole() == Role.INTERNAL_LB_VM) {
+            SearchBuilder<ApplicationLoadBalancerRuleVO> sbalb = applicationLoadBalancerRuleDao.createSearchBuilder();
+            sbalb.and("networkId", sbalb.entity().getNetworkId(), SearchCriteria.Op.EQ);
+            sbalb.and("sourceIpAddress", sbalb.entity().getSourceIp(), SearchCriteria.Op.NNULL);
+            SearchCriteria<ApplicationLoadBalancerRuleVO> sclb = sbalb.create();
+            sclb.setParameters("networkId", router.getNetworkId());
+            return applicationLoadBalancerRuleDao.search(sclb, null);
+        }
+        return Collections.emptyList();
+    }
+
     protected class CheckRouterAlertsTask extends ManagedContextRunnable {
         public CheckRouterAlertsTask() {
         }
@@ -1205,7 +1491,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             final List<DomainRouterVO> routers = _routerDao.listByStateAndManagementServer(VirtualMachine.State.Running, mgmtSrvrId);
 
             s_logger.debug("Found " + routers.size() + " running routers. ");
-
             for (final DomainRouterVO router : routers) {
                 final String serviceMonitoringFlag = SetServiceMonitor.valueIn(router.getDataCenterId());
                 // Skip the routers in VPC network or skip the routers where
@@ -1253,7 +1538,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         final String alerts[] = answer.getAlerts();
                         if (alerts != null) {
                             final String lastAlertTimeStamp = answer.getTimeStamp();
-                            final SimpleDateFormat sdfrmt = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+                            final SimpleDateFormat sdfrmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                             sdfrmt.setLenient(false);
                             try {
                                 sdfrmt.parse(lastAlertTimeStamp);
@@ -1674,9 +1959,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     final String serviceMonitringSet = _configDao.getValue(Config.EnableServiceMonitoring.key());
 
                     if (serviceMonitringSet != null && serviceMonitringSet.equalsIgnoreCase("true")) {
-                        finalizeMonitorServiceOnStrat(cmds, profile, router, provider, guestNetworkId, true);
+                        finalizeMonitorServiceOnStart(cmds, profile, router, provider, guestNetworkId, true);
                     } else {
-                        finalizeMonitorServiceOnStrat(cmds, profile, router, provider, guestNetworkId, false);
+                        finalizeMonitorServiceOnStart(cmds, profile, router, provider, guestNetworkId, false);
                     }
                 }
 
@@ -1692,8 +1977,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return true;
     }
 
-    private void finalizeMonitorServiceOnStrat(final Commands cmds, final VirtualMachineProfile profile, final DomainRouterVO router, final Provider provider,
-            final long networkId, final Boolean add) {
+    private void finalizeMonitorServiceOnStart(final Commands cmds, final VirtualMachineProfile profile, final DomainRouterVO router, final Provider provider,
+                                               final long networkId, final Boolean add) {
 
         final NetworkVO network = _networkDao.findById(networkId);
 
@@ -1734,14 +2019,23 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (controlNic == null) {
             throw new CloudRuntimeException("VirtualMachine " + profile.getInstanceName() + " doesn't have a control interface");
         }
+
         final SetMonitorServiceCommand command = new SetMonitorServiceCommand(servicesTO);
         command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlNic.getIPv4Address());
         command.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(networkId, router.getId()));
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
         if (!add) {
-            command.setAccessDetail(NetworkElementCommand.ROUTER_MONITORING_ENABLE, add.toString());
+            command.setAccessDetail(SetMonitorServiceCommand.ROUTER_MONITORING_ENABLED, add.toString());
         }
+
+        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.valueIn(router.getDataCenterId()).toString());
+        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
+        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
+        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, RouterHealthChecksToExclude.valueIn(router.getDataCenterId()));
+        command.setAdditionalData(getAdditionalDataForRouterHealthChecks(router));
+        command.setReconfigureAfterUpdate(false); // As part of aggregate command we don't need to reconfigure
+
         cmds.addCommand("monitor", command);
     }
 
@@ -2599,7 +2893,20 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { UseExternalDnsServers, routerVersionCheckEnabled, SetServiceMonitor, RouterAlertsCheckInterval };
+        return new ConfigKey<?>[] {
+                UseExternalDnsServers,
+                routerVersionCheckEnabled,
+                SetServiceMonitor,
+                RouterAlertsCheckInterval,
+                RouterHealthChecksEnabled,
+                RouterHealthChecksBasicInterval,
+                RouterHealthChecksAdvancedInterval,
+                RouterHealthChecksDataRefreshInterval,
+                RouterHealthChecksResultFetchInterval,
+                RouterHealthChecksFailuresToRestartVr,
+                RouterHealthChecksToExclude,
+                RouterHealthChecksFreeDiskSpaceThreshold
+        };
     }
 
     @Override

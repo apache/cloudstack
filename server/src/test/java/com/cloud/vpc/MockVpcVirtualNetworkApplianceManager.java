@@ -249,6 +249,11 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     }
 
     @Override
+    public Map<String, String> getRouterHealthCheckResults(long routerId, boolean runChecks) {
+        return null;
+    }
+
+    @Override
     public boolean prepareAggregatedExecution(final Network network, final List<DomainRouterVO> routers) throws AgentUnavailableException {
         return true;  //To change body of implemented methods use File | Settings | File Templates.
     }

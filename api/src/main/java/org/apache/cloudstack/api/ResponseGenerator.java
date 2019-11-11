@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.api.response.DomainRouterHealthCheckResultsResponse;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -466,4 +467,6 @@ public interface ResponseGenerator {
     SSHKeyPairResponse createSSHKeyPairResponse(SSHKeyPair sshkeyPair, boolean privatekey);
 
     ManagementServerResponse createManagementResponse(ManagementServerHost mgmt);
+
+    DomainRouterHealthCheckResultsResponse createHealthCheckResponse(VirtualMachine router, Map<String, String> healthCheckResults);
 }

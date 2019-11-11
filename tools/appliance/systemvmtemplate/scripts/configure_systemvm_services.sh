@@ -48,6 +48,7 @@ function install_cloud_scripts() {
     /root/{clearUsageRules.sh,reconfigLB.sh,monitorServices.py} \
     /etc/profile.d/cloud.sh /etc/cron.daily/* /etc/cron.hourly/*
 
+  chmod -R +x /root/health/
   chmod -x /etc/systemd/system/*
 
   systemctl daemon-reload

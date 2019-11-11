@@ -19,34 +19,80 @@
 
 package com.cloud.agent.resource.virtualnetwork.model;
 
+import java.util.Map;
+
 public class MonitorService extends ConfigBase {
     public String config, disableMonitoring;
+    public Boolean healthChecksEnabled;
+    public Integer healthChecksBasicRunInterval;
+    public Integer healthChecksAdvanceRunInterval;
+    public String excludedHealthChecks;
+    public Map<String, String> additionalData;
 
     public MonitorService() {
         super(ConfigBase.MONITORSERVICE);
     }
 
-    public MonitorService(String config, String disableMonitoring) {
+    public MonitorService(String config, String disableMonitoring, String healthChecksEnabled) {
         super(ConfigBase.MONITORSERVICE);
         this.config = config;
         this.disableMonitoring = disableMonitoring;
+        this.healthChecksEnabled = Boolean.parseBoolean(healthChecksEnabled);
     }
 
     public String getConfig() {
         return config;
     }
 
-    public void setConfig(String config) {
-        this.config = config;
-    }
-
     public String getDisableMonitoring() {
         return disableMonitoring;
+    }
+
+    public Boolean getHealthChecksEnabled() {
+        return healthChecksEnabled;
+    }
+
+    public Integer getHealthChecksBasicRunInterval() {
+        return healthChecksBasicRunInterval;
+    }
+
+    public Integer getHealthChecksAdvanceRunInterval() {
+        return healthChecksAdvanceRunInterval;
+    }
+
+    public String getExcludedHealthChecks() {
+        return excludedHealthChecks;
+    }
+
+    public Map<String, String> getAdditionalData() {
+        return additionalData;
+    }
+
+    public void setConfig(String config) {
+        this.config = config;
     }
 
     public void setDisableMonitoring(String disableMonitoring) {
         this.disableMonitoring = disableMonitoring;
     }
 
+    public void setHealthChecksEnabled(Boolean healthChecksEnabled) {
+        this.healthChecksEnabled = healthChecksEnabled;
+    }
 
+    public void setHealthChecksBasicRunInterval(Integer healthChecksBasicRunInterval) {
+        this.healthChecksBasicRunInterval = healthChecksBasicRunInterval;
+    }
+
+    public void setHealthChecksAdvanceRunInterval(Integer healthChecksAdvanceRunInterval) {
+        this.healthChecksAdvanceRunInterval = healthChecksAdvanceRunInterval;
+    }
+
+    public void setExcludedHealthChecks(String excludedHealthChecks) {
+        this.excludedHealthChecks = excludedHealthChecks;
+    }
+
+    public void setAdditionalData(Map<String, String> additionalData) {
+        this.additionalData = additionalData;
+    }
 }

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,22 +16,33 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from netaddr import *
+# getRouterMonitorResults.sh  --- Send the monitor results to Management Server
 
+if [ "$1" == "true" ]
+then
+    python /root/monitorServices.py > /dev/null
+fi
 
-def merge(dbag, data):
+if [ -f /root/failing_health_checks ]
+then
+    printf "FAILING CHECKS:\n"
+    echo `cat /root/failing_health_checks`
+fi
 
-    if "config" in data:
-        dbag['config'] = data["config"]
-    if "health_checks_enabled" in data:
-        dbag["health_checks_enabled"] = data["health_checks_enabled"]
-    if "health_checks_basic_run_interval" in data:
-        dbag["health_checks_basic_run_interval"] = data["health_checks_basic_run_interval"]
-    if "health_checks_advance_run_interval" in data:
-        dbag["health_checks_advance_run_interval"] = data["health_checks_advance_run_interval"]
-    if "excluded_health_checks" in data:
-        dbag["excluded_health_checks"] = data["excluded_health_checks"]
-    if "additional_data" in data:
-        dbag["additional_data"] = data["additional_data"]
+printf "MONITOR RESULTS:\n"
+echo "{\"basic\":"
+if [ -f /root/basic_monitor_results.json ]
+then
+    echo `cat /root/basic_monitor_results.json`
+else
+    echo "\"Not available yet\""
+fi
+echo ", \"advance\":"
+if [ -f /root/advance_monitor_results.json ]
+then
+    echo `cat /root/advance_monitor_results.json`
+else
+    echo "\"Not available yet\""
+fi
 
-    return dbag
+echo "}"
