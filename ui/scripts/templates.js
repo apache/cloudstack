@@ -1215,31 +1215,6 @@
                                                         },
                                                         async: false,
                                                     });
-    
-                                                    var zones;
-                                                    $.ajax({
-                                                        url: createURL('listZones'),
-                                                        async: false,
-                                                        success: function(json){
-                                                            zones = json.listzonesresponse.zone;
-                                                        }
-                                                    });
-                                                    // get this template into all other zones
-                                                    for (var i = 0; i < zones.length; i++){
-                                                        if (zones[i].id == args.data.zone){
-                                                            // don't want to copy to same zone.
-                                                            continue;
-                                                        }
-                                                        $.ajax({
-                                                            async: false,
-                                                            url: createURL('copyTemplate'),
-                                                            data: {
-                                                                id: args.data.selectSystemVm.templates,
-                                                                destzoneids: zones[i].id,
-                                                                sourcezoneid: args.data.zone
-                                                            }
-                                                        });
-                                                    }
                                                 }
                                             }
 

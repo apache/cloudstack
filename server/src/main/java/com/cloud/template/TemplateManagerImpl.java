@@ -2276,7 +2276,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     private void startDownloadTemplate(long templateId, long zoneId) {
         TemplateDataStoreVO templateStore = _tmplStoreDao.findByTemplateZone(templateId, zoneId, DataStoreRole.Image);
-        templateStore.setDownloadState(Status.DOWNLOAD_IN_PROGRESS);
+        // Setting the state to downloaded to stop waiting for storage host.
+        templateStore.setDownloadState(Status.DOWNLOADED);
         templateStore.setErrorString(null);
         _tmplStoreDao.update(templateStore.getId(), templateStore);
     }
@@ -2298,7 +2299,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (setSize){
             templateStore.setSize(0L);
         }
+        template.setState(VirtualMachineTemplate.State.Active);
         _tmplStoreDao.update(templateStore.getId(), templateStore);
+        _tmpltDao.update(template.getId(), template);
     }
 
     @Override
