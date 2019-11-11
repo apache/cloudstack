@@ -121,7 +121,7 @@
         <cs.batik.version>1.9.1</cs.batik.version>
         <cs.bcprov.version>1.59</cs.bcprov.version>
         <cs.cglib.version>3.2.5</cs.cglib.version>
-        <cs.checkstyle-lib.version>8.7</cs.checkstyle-lib.version>
+        <cs.checkstyle-lib.version>8.18</cs.checkstyle-lib.version>
         <cs.cxf.version>3.2.0</cs.cxf.version>
         <cs.ehcache.version>2.6.11</cs.ehcache.version>
         <cs.globodns-client.version>0.0.23</cs.globodns-client.version>
