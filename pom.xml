@@ -158,7 +158,7 @@
         <cs.reflections.version>0.9.11</cs.reflections.version>
         <cs.servicemix.version>2.5.8_1</cs.servicemix.version>
         <cs.servlet.version>4.0.0</cs.servlet.version>
-        <cs.tomcat-embed-core.version>8.0.30</cs.tomcat-embed-core.version>
+        <cs.tomcat-embed-core.version>8.5.40</cs.tomcat-embed-core.version>
         <cs.trilead.version>1.0.0-build221</cs.trilead.version>
         <cs.vmware.api.version>6.7</cs.vmware.api.version>
         <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
