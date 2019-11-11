@@ -221,6 +221,7 @@ import ChartCard from '@/components/widgets/ChartCard'
 import Status from '@/components/widgets/Status'
 import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
+import { genericCompare } from '@/utils/sort.js'
 
 export default {
   name: 'Resource',
@@ -342,7 +343,7 @@ export default {
           title: this.$t(key),
           dataIndex: key,
           scopedSlots: { customRender: key },
-          sorter: (a, b) => String(a[key]).length - String(b[key]).length
+          sorter: function (a, b) { return genericCompare(a[this.dataIndex], b[this.dataIndex]) }
         })
       }
 
