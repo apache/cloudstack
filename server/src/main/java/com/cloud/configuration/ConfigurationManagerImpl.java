@@ -400,6 +400,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
 
+    public static ConfigKey<Long> iopsMaximumRateLength = new ConfigKey<Long>(Long.class, "iops.maximum.rate.length", "Advanced", "0",
+            "Sets the maximum IOPS read/write length (seconds) accepted; thus, preventing irrealistic values for a disk offering (e.g. hours or days of burst IOPS)."
+                    + " The default value is 0 (zero) and allows any IOPS maximum rate length."
+                    + " Example: iops.maximum.rate.length = 3600 sets the maximum IOPS length accepted for a disk offering as 3600 seconds (60 minutes).",
+            false, ConfigKey.Scope.Global, null);
+
     private static final String DefaultForSystemVmsForPodIpRange = "0";
     private static final String DefaultVlanForPodIpRange = Vlan.UNTAGGED.toString();
 
@@ -2996,12 +3002,56 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long iopsWriteRateMaxLength = cmd.getIopsWriteRateMaxLength();
         final Integer hypervisorSnapshotReserve = cmd.getHypervisorSnapshotReserve();
 
+        valildateIopsRateOfferings(iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength);
+
         final Long userId = CallContext.current().getCallingUserId();
         return createDiskOffering(userId, domainIds, zoneIds, name, description, provisioningType, numGibibytes, tags, isCustomized,
                 localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops,
                 maxIops, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
                 iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength,
                 hypervisorSnapshotReserve);
+    }
+
+    /**
+     * Validates IOPS read and write rate offerings. It throws InvalidParameterValueException in case of one of the following cases is not respected: </br>
+     * <ul>
+     *  <li>IOPS write rate cannot be greater than IOPS write maximum rate</li>
+     *  <li>IOPS read rate cannot be greater than IOPS read maximum rate</li>
+     *  <li>IOPS read rate max length (seconds) must be greater than zero</li>
+     *  <li>IOPS write rate max length (seconds) must be greater than zero</li>
+     * </ul>
+     */
+    protected void valildateIopsRateOfferings(final Long iopsReadRate, final Long iopsReadRateMax, final Long iopsReadRateMaxLength, final Long iopsWriteRate,
+            final Long iopsWriteRateMax, final Long iopsWriteRateMaxLength) {
+        if (iopsWriteRateMax != null && iopsWriteRate != null && iopsWriteRateMax < iopsWriteRate) {
+            throw new InvalidParameterValueException(
+                    String.format("IOPS write rate (rate: %s) cannot be greater than IOPS write maximum rate (maximum rate: %s)", iopsWriteRate, iopsWriteRateMax));
+        }
+
+        if (iopsReadRateMax != null && iopsReadRate != null && iopsReadRateMax < iopsReadRate) {
+            throw new InvalidParameterValueException(
+                    String.format("IOPS read rate (rate: %s) cannot be greater than IOPS read maximum rate (maximum rate: %s)", iopsReadRate, iopsReadRateMax));
+        }
+
+        if (iopsReadRateMaxLength != null && iopsReadRateMaxLength <= 0) {
+            throw new InvalidParameterValueException(String.format("IOPS read rate max length (max length: %s seconds) must be greater than zero", iopsReadRateMaxLength));
+        }
+
+        if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength <= 0) {
+            throw new InvalidParameterValueException(String.format("IOPS write rate max length (max length: %s seconds) must be greater than zero", iopsWriteRateMaxLength));
+        }
+
+        if (iopsMaximumRateLength.value() != null && !iopsMaximumRateLength.value().equals(0L)) {
+            if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > iopsMaximumRateLength.value()) {
+                throw new InvalidParameterValueException(String.format("IOPS read max length (%s seconds) cannot be greater than iops.maximum.rate.length (%s seconds)",
+                        iopsReadRateMaxLength, iopsMaximumRateLength.value()));
+            }
+
+            if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > iopsMaximumRateLength.value()) {
+                throw new InvalidParameterValueException(String.format("IOPS write max length (%s seconds) cannot be greater than sane.iops.maximum.rate.length (%s seconds)",
+                        iopsWriteRateMaxLength, iopsMaximumRateLength.value()));
+            }
+        }
     }
 
     @Override
@@ -6281,6 +6331,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {SystemVMUseLocalStorage};
+        return new ConfigKey<?>[] {SystemVMUseLocalStorage, iopsMaximumRateLength};
     }
 }
