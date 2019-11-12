@@ -17,13 +17,14 @@
 # under the License.
 
 from os import sys, path
+from healthchecksutility import getHealthChecksData
 
 sys.path.append('/opt/cloud/bin')
-from healthchecksutility import getHealthChecksData
+
 
 def main():
     vMs = getHealthChecksData("virtualMachines")
-    if vMs != None and len(vMs) > 0:
+    if vMs is not None and len(vMs) > 0:
         with open('/etc/dhcphosts.txt', 'r') as hostsFile:
             allHosts = hostsFile.readlines()
             hostsFile.close()
@@ -35,7 +36,7 @@ def main():
                     foundEntry = True
                     break
 
-            if foundEntry == False:
+            if not foundEntry:
                 print "Missing entry in dhcphosts.txt - " + entry
                 exit(1)
 
@@ -43,6 +44,7 @@ def main():
     else:
         print "No VMs running data available"
     exit(0)
+
 
 if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1] == "advance":

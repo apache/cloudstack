@@ -17,9 +17,10 @@
 # under the License.
 
 from os import sys, path, statvfs
+from healthchecksutility import getHealthChecksData
 
 sys.path.append('/opt/cloud/bin')
-from healthchecksutility import getHealthChecksData
+
 
 def main():
     entries = getHealthChecksData("systemThresholds")
@@ -38,8 +39,9 @@ def main():
             print "Sufficient free space is " + str(freeSpace/1024) + " MB"
             exit(0)
     else:
-        print "Missing config in health_checks_data systemThresholds > minSpaceNeeded"
+        print "Missing config in health_checks_data systemThresholds"
         exit(1)
+
 
 if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1] == "basic":

@@ -17,10 +17,11 @@
 
 import json
 
-def getHealthChecksData(additionalDataKey = None):
+
+def getHealthChecksData(additionalDataKey=None):
     with open('health_checks_data.json', 'r') as hc_data_file:
         hc_data = json.load(hc_data_file)
-    if additionalDataKey == None:
+    if additionalDataKey is None:
         return hc_data
     if additionalDataKey in hc_data["additional_data"]:
         data = hc_data["additional_data"][additionalDataKey].strip().split(";")

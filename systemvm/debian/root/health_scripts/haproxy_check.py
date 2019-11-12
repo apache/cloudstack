@@ -17,9 +17,10 @@
 # under the License.
 
 from os import sys, path
+from healthchecksutility import getHealthChecksData
 
 sys.path.append('/opt/cloud/bin')
-from healthchecksutility import getHealthChecksData
+
 
 def checkMaxconn(haproxyData, haCfgSections):
     if "maxconn" in haproxyData and "maxconn" in haCfgSections["global"]:
@@ -29,13 +30,17 @@ def checkMaxconn(haproxyData, haCfgSections):
 
     return True
 
-def formatPort(portStart, portEnd, delim = "-"):
+
+def formatPort(portStart, portEnd, delim="-"):
     return portStart if portStart == portEnd else portStart + delim + portEnd
+
 
 def checkLoadBalance(haproxyData, haCfgSections):
     correct = True
     for lbSec in haproxyData:
-        srcServer = lbSec["sourceIp"].replace('.', '_') + "-" + formatPort(lbSec["sourcePortStart"], lbSec["sourcePortEnd"])
+        srcServer = lbSec["sourceIp"].replace('.', '_') + "-" + \
+                    formatPort(lbSec["sourcePortStart"],
+                               lbSec["sourcePortEnd"])
         secName = "listen " + srcServer
 
         if secName not in haCfgSections:
@@ -45,14 +50,19 @@ def checkLoadBalance(haproxyData, haCfgSections):
             cfgSection = haCfgSections[secName]
             if "server" in cfgSection:
                 if lbSec["algorithm"] != cfgSection["balance"][0]:
-                    print "Incorrect balance method for source " + secName + "Expected : " + lbSec["algorithm"] + " but found " + cfgSection["balance"][0] + "\n"
+                    print "Incorrect balance method for " + secName + \
+                          "Expected : " + lbSec["algorithm"] + \
+                          " but found " + cfgSection["balance"][0] + "\n"
                     correct = False
                 expectedServerIps = lbSec["vmIps"].split(" ")
                 for expectedServerIp in expectedServerIps:
-                    pattern = expectedServerIp + ":" + formatPort(lbSec["destPortStart"], lbSec["destPortEnd"])
+                    pattern = expectedServerIp + ":" + \
+                              formatPort(lbSec["destPortStart"],
+                                         lbSec["destPortEnd"])
                     foundPattern = False
                     for server in cfgSection["server"]:
-                        if server.find(srcServer) != -1 and server.find(pattern) != -1:
+                        if server.find(srcServer) != -1 and \
+                                server.find(pattern) != -1:
                             foundPattern = True
                             break
 
@@ -60,13 +70,12 @@ def checkLoadBalance(haproxyData, haCfgSections):
                         correct = False
                         print "Missing load balancing for " + pattern + ". "
 
-
     return correct
 
 
 def main():
     haproxyData = getHealthChecksData("haproxyData")
-    if haproxyData == None or len(haproxyData) == 0:
+    if haproxyData is None or len(haproxyData) == 0:
         print "No data provided to check"
         exit(0)
 
@@ -98,9 +107,11 @@ def main():
             if lineSec[0] not in currSectionDict:
                 currSectionDict[lineSec[0]] = []
 
-            currSectionDict[lineSec[0]].append(lineSec[1] if len(lineSec) > 1 else '')
+            currSectionDict[lineSec[0]]\
+                .append(lineSec[1] if len(lineSec) > 1 else '')
 
-    if checkMaxconn(haproxyData, haCfgSections) and checkLoadBalance(haproxyData, haCfgSections):
+    if checkMaxconn(haproxyData, haCfgSections) and \
+            checkLoadBalance(haproxyData, haCfgSections):
         print "All checks pass"
         exit(0)
     else:

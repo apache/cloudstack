@@ -18,13 +18,14 @@
 
 from os import sys, path
 from subprocess import *
+from healthchecksutility import getHealthChecksData
 
 sys.path.append('/opt/cloud/bin')
-from healthchecksutility import getHealthChecksData
+
 
 def main():
     portForwards = getHealthChecksData("portForwarding")
-    if portForwards != None and len(portForwards) > 0:
+    if portForwards is not None and len(portForwards) > 0:
         entriesExpected = []
         for portForward in portForwards:
             srcIp = portForward["sourceIp"]
@@ -33,7 +34,16 @@ def main():
             destIp = portForward["destIp"]
             destPortStart = portForward["destPortStart"]
             destPortEnd = portForward["destPortEnd"]
-            entriesExpected.append(["-d " + srcIp, "--dport " + (srcPortStart if (srcPortStart == srcPortEnd) else (srcPortStart + ":" + srcPortEnd)), "--to-destination " + destIp + ":" + (destPortStart if (destPortStart == destPortEnd) else (destPortStart + "-" + destPortEnd))])
+            entriesExpected\
+                .append(["-d " + srcIp,
+                         "--dport " +
+                         (srcPortStart
+                          if (srcPortStart == srcPortEnd)
+                          else (srcPortStart + ":" + srcPortEnd)),
+                         "--to-destination " + destIp + ":" +
+                         (destPortStart
+                          if (destPortStart == destPortEnd)
+                          else (destPortStart + "-" + destPortEnd))])
 
         pout = Popen("iptables-save | grep " + destIp, shell=True, stdout=PIPE)
         if pout.wait() != 0:
@@ -44,7 +54,8 @@ def main():
         for pfEntryListExpected in entriesExpected:
             foundPfEntryList = False
             for ipTableEntry in ipTablesMatchingEntries:
-                # Check if all expected parts of pfEntryList is present in this ipTableEntry
+                # Check if all expected parts of pfEntryList
+                # is present in this ipTableEntry
                 foundAll = True
                 for expectedEntry in pfEntryListExpected:
                     if ipTableEntry.find(expectedEntry) == -1:
@@ -55,16 +66,18 @@ def main():
                     foundPfEntryList = True
                     break
 
-            if foundPfEntryList == False:
-                print "Missing entry for port forwarding rules in Iptables - "
+            if not foundPfEntryList:
+                print "Missing port forwarding rules in Iptables - "
                 print pfEntryListExpected
                 exit(1)
 
-        print "Found all entries (count " + str(len(portForwards)) + ") in iptables"
+        print "Found all entries (count " + \
+              str(len(portForwards)) + ") in iptables"
     else:
         print "No portforwarding rules provided to check"
 
     exit(0)
+
 
 if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1] == "advance":

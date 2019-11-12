@@ -18,13 +18,14 @@
 
 from os import sys, path
 from subprocess import *
+from healthchecksutility import getHealthChecksData
 
 sys.path.append('/opt/cloud/bin')
-from healthchecksutility import getHealthChecksData
+
 
 def main():
     gws = getHealthChecksData("gateways")
-    if gws != None and len(gws) > 0:
+    if gws is not None and len(gws) > 0:
         unreachableGateWays = []
         gwsList = gws[0]["gatewaysIps"].strip().split(' ')
         for gw in gwsList:
@@ -50,6 +51,7 @@ def main():
     else:
         print "No gateways data available"
     exit(0)
+
 
 if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1] == "basic":

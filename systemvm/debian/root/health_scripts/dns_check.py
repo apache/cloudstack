@@ -17,13 +17,14 @@
 # under the License.
 
 from os import sys, path
+from healthchecksutility import getHealthChecksData
 
 sys.path.append('/opt/cloud/bin')
-from healthchecksutility import getHealthChecksData
+
 
 def main():
     vMs = getHealthChecksData("virtualMachines")
-    if vMs != None and len(vMs) > 0:
+    if vMs is not None and len(vMs) > 0:
         with open('/etc/hosts', 'r') as hostsFile:
             allHosts = hostsFile.readlines()
             hostsFile.close()
@@ -34,14 +35,16 @@ def main():
                     foundEntry = True
                     break
 
-            if foundEntry == False:
-                print "Missing entry in /etc/hosts - " + vM["ip"] + " " + vM["vmName"]
+            if not foundEntry:
+                print "Missing entry in /etc/hosts - " + vM["ip"] + \
+                      " " + vM["vmName"]
                 exit(1)
 
         print "All " + str(len(vMs)) + " VMs are present in /etc/hosts"
     else:
         print "No VMs running data available"
     exit(0)
+
 
 if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1] == "advance":
