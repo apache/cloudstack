@@ -636,7 +636,6 @@ class TestRouterServices(cloudstackTestCase):
         cmd.id = router.id
         cmd.performfreshchecks = True # Perform fresh checks as a newly created router may not have results
         healthData = self.api_client.getRouterHealthCheckResults(cmd)
-        print healthData
         self.info("Router ID: %s & Router state: %s" % (
             router.id, router.state
         ))

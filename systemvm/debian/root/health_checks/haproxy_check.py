@@ -17,9 +17,7 @@
 # under the License.
 
 from os import sys, path
-from healthchecksutility import getHealthChecksData
-
-sys.path.append('/opt/cloud/bin')
+from utility import getHealthChecksData
 
 
 def checkMaxconn(haproxyData, haCfgSections):

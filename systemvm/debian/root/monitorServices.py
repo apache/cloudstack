@@ -24,9 +24,7 @@ import os
 import logging
 import json
 from os import sys, path
-
-sys.path.append('/opt/cloud/bin')
-from healthchecksutility import getHealthChecksData
+from health_checks.utility import getHealthChecksData
 
 class StatusCodes:
     SUCCESS      = 0
@@ -49,7 +47,7 @@ class Config:
     RETRY_FOR_RESTART = 5
     MONITOR_LOG = '/var/log/monitor.log'
     UNMONIT_PS_FILE = '/etc/unmonit_psList.txt'
-    HEALTH_CHECKS_SCRIPTS_DIR = 'health_scripts'
+    HEALTH_CHECKS_DIR = 'health_checks'
     MONITOR_RESULT_FILE_SUFFIX = 'monitor_results.json'
     FAILING_CHECKS_FILE = 'failing_health_checks'
 
@@ -417,10 +415,10 @@ def main(checkType = "basic"):
 
     if "health_checks_enabled" in hc_data and hc_data['health_checks_enabled']:
         hc_exclude = hc_data["excluded_health_checks"] if "excluded_health_checks" in hc_data else []
-        for f in os.listdir(Config.HEALTH_CHECKS_SCRIPTS_DIR):
+        for f in os.listdir(Config.HEALTH_CHECKS_DIR):
             if f in hc_exclude:
                 continue
-            fpath = path.join(Config.HEALTH_CHECKS_SCRIPTS_DIR, f)
+            fpath = path.join(Config.HEALTH_CHECKS_DIR, f)
             if path.isfile(fpath) and os.access(fpath, os.X_OK):
                 ret = execute(fpath, checkType)
                 if len(ret) == 0:

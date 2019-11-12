@@ -19,7 +19,7 @@ import json
 
 
 def getHealthChecksData(additionalDataKey=None):
-    with open('health_checks_data.json', 'r') as hc_data_file:
+    with open('/root/health_checks_data.json', 'r') as hc_data_file:
         hc_data = json.load(hc_data_file)
     if additionalDataKey is None:
         return hc_data

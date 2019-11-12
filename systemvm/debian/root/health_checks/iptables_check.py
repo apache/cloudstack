@@ -18,9 +18,7 @@
 
 from os import sys, path
 from subprocess import *
-from healthchecksutility import getHealthChecksData
-
-sys.path.append('/opt/cloud/bin')
+from utility import getHealthChecksData
 
 
 def main():
