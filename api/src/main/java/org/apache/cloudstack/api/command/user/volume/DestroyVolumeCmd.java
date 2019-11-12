@@ -15,29 +15,36 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
+
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.event.EventTypes;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteVolume", description = "Deletes a detached disk volume.", responseObject = SuccessResponse.class, entityType = {Volume.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class DeleteVolumeCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteVolumeCmd.class.getName());
-    private static final String s_name = "deletevolumeresponse";
+@APICommand(name = "destroyVolume", description = "Destroys a Volume.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {Volume.class},
+            since = "4.14.0",
+            authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = true)
+public class DestroyVolumeCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(DestroyVolumeCmd.class.getName());
+
+    private static final String s_name = "destroyvolumeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -45,8 +52,14 @@ public class DeleteVolumeCmd extends BaseCmd {
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
-            required=true, description="The ID of the disk volume")
+            required=true, description="The ID of the volume")
     private Long id;
+
+    @Parameter(name = ApiConstants.EXPUNGE,
+               type = CommandType.BOOLEAN,
+               description = "If true is passed, the volume is expunged immediately. False by default.",
+               since = "4.6.0")
+    private Boolean expunge;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -56,6 +69,13 @@ public class DeleteVolumeCmd extends BaseCmd {
         return id;
     }
 
+    public boolean getExpunge() {
+        if (expunge == null) {
+            return false;
+        }
+        return expunge;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -63,10 +83,6 @@ public class DeleteVolumeCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
-    }
-
-    public static String getResultObjectName() {
-        return "volume";
     }
 
     @Override
@@ -80,14 +96,35 @@ public class DeleteVolumeCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ConcurrentOperationException {
-        CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getId()));
-        Volume result = _volumeService.destroyVolume(id, CallContext.current().getCallingAccount(), true, false);
+    public String getEventType() {
+        return EventTypes.EVENT_VOLUME_DESTROY;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "destroying volume: " + getId();
+    }
+
+    @Override
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Volume;
+    }
+
+    @Override
+    public Long getInstanceId() {
+        return getId();
+    }
+
+    @Override
+    public void execute() {
+        CallContext.current().setEventDetails("Volume Id: " + getId());
+        Volume result = _volumeService.destroyVolume(getId(), CallContext.current().getCallingAccount(), getExpunge(), false);
         if (result != null) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
+            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, result);
+            response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete volume");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to destroy volume");
         }
     }
 }

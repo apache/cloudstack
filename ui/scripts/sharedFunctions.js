@@ -31,6 +31,7 @@ var g_kvmsnapshotenabled =  null;
 var g_regionsecondaryenabled = null;
 var g_userPublicTemplateEnabled = "true";
 var g_allowUserExpungeRecoverVm = "false";
+var g_allowUserExpungeRecoverVolume = "false";
 var g_cloudstackversion = null;
 var g_queryAsyncJobResultInterval = 3000;
 var g_idpList = null;

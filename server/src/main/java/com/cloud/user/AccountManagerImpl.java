@@ -132,7 +132,6 @@ import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.server.auth.UserAuthenticator.ActionOnFailedAuthentication;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -782,13 +781,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // Mark the account's volumes as destroyed
             List<VolumeVO> volumes = _volumeDao.findDetachedByAccount(accountId);
             for (VolumeVO volume : volumes) {
-                if (!volume.getState().equals(Volume.State.Destroy)) {
-                    try {
-                        volumeService.deleteVolume(volume.getId(), caller);
-                    } catch (Exception ex) {
-                        s_logger.warn("Failed to cleanup volumes as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
-                        accountCleanupNeeded = true;
-                    }
+                try {
+                    volumeService.deleteVolume(volume.getId(), caller);
+                } catch (Exception ex) {
+                    s_logger.warn("Failed to cleanup volumes as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
+                    accountCleanupNeeded = true;
                 }
             }
 
