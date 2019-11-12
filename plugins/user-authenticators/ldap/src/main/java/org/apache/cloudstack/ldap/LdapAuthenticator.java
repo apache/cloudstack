@@ -205,6 +205,8 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
             processLdapUser(password, domainId, user, rc, ldapUser, accountType);
         } catch (NoLdapUserMatchingQueryException e) {
             LOGGER.debug(e.getMessage());
+            // no user in ldap ==>> disable user in cloudstack
+            disableUserInCloudStack(user);
         }
         return rc;
     }
@@ -251,6 +253,10 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                 LOGGER.debug(e.getMessage());
             }
         }
+        return processResultAndAction(user, result);
+    }
+
+    private Pair<Boolean, ActionOnFailedAuthentication> processResultAndAction(UserAccount user, boolean result) {
         return (!result && user != null) ?
                 new Pair<Boolean, ActionOnFailedAuthentication>(result, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT):
                 new Pair<Boolean, ActionOnFailedAuthentication>(result, null);
