@@ -17,25 +17,27 @@
 
 #Import Local Modules
 from .ldap_test_data import LdapTestData
-from marvin.cloudstackTestCase import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.utils import (cleanup_resources)
+from marvin.lib.base import (listLdapUsers,
+                             ldapCreateAccount,
+                             importLdapUsers,
+                             User,
+                             Domain,
+                             Account,
+                             addLdapConfiguration,
+                             deleteLdapConfiguration,
+                             linkAccountToLdap,
+                             linkDomainToLdap,
+                             updateConfiguration)
+from marvin.lib.common import (get_domain,
+                               get_zone)
 from nose.plugins.attrib import attr
 
 # for login validation
 import requests
 
-#Import System modules
 import logging
-
-logger = logging.getLogger(__name__)
-logger_handler = logging.FileHandler('/tmp/MarvinLogs/{}.log'.format(__name__))
-logger_formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-logger_handler.setFormatter(logger_formatter)
-logger.addHandler(logger_handler)
-logger.setLevel(logging.DEBUG)
-
 
 class TestLDAP(cloudstackTestCase):
 
@@ -49,7 +51,14 @@ class TestLDAP(cloudstackTestCase):
              -- LDAP/import
              -- LDAP/sync
         '''
-        logger.info("Setting up Class")
+        cls.logger = logging.getLogger(__name__)
+        stream_handler = logging.StreamHandler()
+        logger_formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        stream_handler.setFormatter(logger_formatter)
+        cls.logger.setLevel(logging.DEBUG)
+        cls.logger.addHandler(stream_handler)
+
+        cls.logger.info("Setting up Class")
         testClient = super(TestLDAP, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
 
@@ -57,17 +66,17 @@ class TestLDAP(cloudstackTestCase):
             # Setup test data
             cls.testdata = LdapTestData()
             if cls.config.TestData and cls.config.TestData.Path:
-                logger.debug("reading extra config from '" + cls.config.TestData.Path + "'")
+                cls.logger.debug("reading extra config from '" + cls.config.TestData.Path + "'")
                 cls.testdata.update(cls.config.TestData.Path)
-            logger.debug(cls.testdata)
+            cls.logger.debug(cls.testdata)
 
             cls.services = testClient.getParsedTestDataConfig()
             cls.services["configurableData"]["ldap_configuration"] = cls.testdata.testdata["ldap_configuration"]
-            logger.debug(cls.services["configurableData"]["ldap_configuration"])
+            cls.logger.debug(cls.services["configurableData"]["ldap_configuration"])
 
             # Get Zone, Domain
             cls.domain = get_domain(cls.apiclient)
-            logger.debug("standard domain: %s" % cls.domain.id)
+            cls.logger.debug("standard domain: %s" % cls.domain.id)
             cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
 
             cls._cleanup = []
@@ -82,7 +91,7 @@ class TestLDAP(cloudstackTestCase):
                 cls.testdata.testdata[LdapTestData.users][2][LdapTestData.uid]
             ]
         except Exception as e:
-            logger.debug("Exception in setUpClass(cls): %s" % e)
+            cls.logger.debug("Exception in setUpClass(cls): %s" % e)
             cls.tearDownClass()
             raise Exception("setup failed due to %s", e)
 
@@ -90,13 +99,13 @@ class TestLDAP(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        logger.info("Tearing Down Class")
+        cls.logger.info("Tearing Down Class")
         try:
             cleanup_resources(cls.apiclient, reversed(cls._cleanup))
             cls.remove_ldap_configuration_for_domains()
-            logger.debug("done cleaning up resources in tearDownClass(cls) %s")
+            cls.logger.debug("done cleaning up resources in tearDownClass(cls) %s")
         except Exception as e:
-            logger.debug("Exception in tearDownClass(cls): %s" % e)
+            cls.logger.debug("Exception in tearDownClass(cls): %s" % e)
 
     def setUp(self):
         self.cleanup = []
@@ -126,7 +135,7 @@ class TestLDAP(cloudstackTestCase):
         cmd.domainid = self.manualDomain.id
         cmd.userfilter = "LocalDomain"
         response = self.apiclient.listLdapUsers(cmd)
-        logger.info("users found for linked domain %s" % response)
+        self.logger.info("users found for linked domain %s" % response)
         self.assertEqual(len(response), len(self.testdata.testdata[LdapTestData.users]), "unexpected number (%d) of ldap users" % len(self.testdata.testdata[LdapTestData.users]))
 
         cmd = ldapCreateAccount.ldapCreateAccountCmd()
@@ -170,7 +179,7 @@ class TestLDAP(cloudstackTestCase):
         list_response = Account.list(self.apiclient, domainid=domainid)
         for account in list_response:
             account_created = Account(account.__dict__)
-            logger.debug("account to clean: %s (id: %s)" % (account_created.name, account_created.id))
+            self.logger.debug("account to clean: %s (id: %s)" % (account_created.name, account_created.id))
             self.cleanup.append(account_created)
 
         self.assertEqual(len(import_response), len(self.testdata.testdata[LdapTestData.users]), "unexpected number of ldap users")
@@ -202,7 +211,7 @@ class TestLDAP(cloudstackTestCase):
         response = User.list(self.apiclient,domainid=domainid,username=username)
         for user in response:
             user_created = User(user.__dict__)
-            logger.debug("user to clean: %s (id: %s)" % (user_created.username, user_created.id))
+            self.logger.debug("user to clean: %s (id: %s)" % (user_created.username, user_created.id))
             self.cleanup.append(user_created)
 
         # now verify the creation of the user
@@ -234,7 +243,7 @@ class TestLDAP(cloudstackTestCase):
         cmd.userfilter = "NoFilter"
         cmd.domainid = self.manualDomain.id
         response = self.apiclient.listLdapUsers(cmd)
-        logger.debug(cmd.userfilter + " : " + str(response))
+        self.logger.debug(cmd.userfilter + " : " + str(response))
         self.assertEqual(len(response), len(self.testdata.testdata[LdapTestData.users]), "unexpected number of ldap users")
 
         # create a non ldap user with the uid of cls.test_user[0] in parentDomain
@@ -248,17 +257,10 @@ class TestLDAP(cloudstackTestCase):
         cmd.userfilter = "LocalDomain"
         cmd.domainid = self.syncDomain.id
         response = self.apiclient.listLdapUsers(cmd)
-        logger.debug(cmd.userfilter + " : " + str(response))
+        self.logger.debug(cmd.userfilter + " : " + str(response))
         self.assertEqual(len(response),
                          len(self.testdata.testdata[LdapTestData.users]) - 1,
                          "unexpected number of ldap users")
-        #
-        #
-        # cmd.userfilter = "LocalDomain"
-        # cmd.domainid = self.syncDomain.id
-        # response = self.apiclient.listLdapUsers(cmd)
-        # logger.debug(str(cmd) + ":" + str(response))
-        # self.assertEqual(len(response), len(self.testdata.testdata[LdapTestData.users]), "unexpected number of ldap users")
 
     @attr(tags=["smoke", "advanced"], required_hardware="false")
     def test_05_relink_account_and_reuse_user(self):
@@ -343,11 +345,11 @@ class TestLDAP(cloudstackTestCase):
 
     @classmethod
     def create_domain(cls, domain_to_create, parent_domain = None):
-        logger.debug("Creating domain: %s under %s" % (domain_to_create[LdapTestData.name], parent_domain))
+        cls.logger.debug("Creating domain: %s under %s" % (domain_to_create[LdapTestData.name], parent_domain))
         if parent_domain:
             domain_to_create["parentdomainid"] = parent_domain
         tmpDomain = Domain.create(cls.apiclient, domain_to_create)
-        logger.debug("Created domain %s with id %s " % (tmpDomain.name, tmpDomain.id))
+        cls.logger.debug("Created domain %s with id %s " % (tmpDomain.name, tmpDomain.id))
         cls._cleanup.append(tmpDomain)
         return tmpDomain
 
@@ -357,17 +359,17 @@ class TestLDAP(cloudstackTestCase):
         cmd.hostname = td.testdata[LdapTestData.configuration][LdapTestData.hostname]
         cmd.port = td.testdata[LdapTestData.configuration][LdapTestData.port]
 
-        logger.debug("configuring ldap server for domain %s" % LdapTestData.manualDomain)
+        cls.logger.debug("configuring ldap server for domain %s" % LdapTestData.manualDomain)
         cmd.domainid = cls.manualDomain.id
         response = cls.apiclient.addLdapConfiguration(cmd)
         cls.manualLdap = response
 
-        logger.debug("configuring ldap server for domain %s" % LdapTestData.importDomain)
+        cls.logger.debug("configuring ldap server for domain %s" % LdapTestData.importDomain)
         cmd.domainid = cls.importDomain.id
         response = cls.apiclient.addLdapConfiguration(cmd)
         cls.importLdap = response
 
-        logger.debug("configuring ldap server for domain %s" % LdapTestData.syncDomain)
+        cls.logger.debug("configuring ldap server for domain %s" % LdapTestData.syncDomain)
         cmd.domainid = cls.syncDomain.id
         response = cls.apiclient.addLdapConfiguration(cmd)
         cls.syncLdap = response
@@ -384,32 +386,32 @@ class TestLDAP(cloudstackTestCase):
 
     @classmethod
     def remove_ldap_configuration_for_domains(cls) :
-        logger.debug("deleting configurations for ldap server")
+        cls.logger.debug("deleting configurations for ldap server")
         cmd = deleteLdapConfiguration.deleteLdapConfigurationCmd()
 
         cmd.hostname = cls.manualLdap.hostname
         cmd.port = cls.manualLdap.port
         cmd.domainid = cls.manualLdap.domainid
         response = cls.apiclient.deleteLdapConfiguration(cmd)
-        logger.debug("configuration deleted for %s" % response)
+        cls.logger.debug("configuration deleted for %s" % response)
 
         cmd.hostname = cls.importLdap.hostname
         cmd.port = cls.importLdap.port
         cmd.domainid = cls.importLdap.domainid
         response = cls.apiclient.deleteLdapConfiguration(cmd)
-        logger.debug("configuration deleted for %s" % response)
+        cls.logger.debug("configuration deleted for %s" % response)
 
         cmd.hostname = cls.syncLdap.hostname
         cmd.port = cls.syncLdap.port
         cmd.domainid = cls.syncLdap.domainid
-        logger.debug("deleting configuration %s" % cmd)
+        cls.logger.debug("deleting configuration %s" % cmd)
         response = cls.apiclient.deleteLdapConfiguration(cmd)
-        logger.debug("configuration deleted for %s" % response)
+        cls.logger.debug("configuration deleted for %s" % response)
 
 
     @classmethod
     def create_sync_accounts(cls):
-        logger.debug("creating account: %s" % LdapTestData.seniors)
+        cls.logger.debug("creating account: %s" % LdapTestData.seniors)
         cls.senior_account = cls.bind_account_to_ldap(
             account=cls.testdata.testdata[LdapTestData.syncAccounts][1]["name"],
             ldapdomain=cls.testdata.testdata[LdapTestData.syncAccounts][1]["group"],
@@ -430,7 +432,7 @@ class TestLDAP(cloudstackTestCase):
         cmd.accounttype = accounttype
 
         response = cls.apiclient.linkAccountToLdap(cmd)
-        logger.info("account linked to ladp %s" % response)
+        cls.logger.info("account linked to ladp %s" % response)
 
         # this is needed purely for cleanup:
         response = Account.list(cls.apiclient, id=response.accountid)
@@ -446,7 +448,7 @@ class TestLDAP(cloudstackTestCase):
         cmd.accounttype = accounttype
         cmd.ldapdomain = ldapdomain
         response = cls.apiclient.linkDomainToLdap(cmd)
-        logger.info("domain linked to ladp %s" % response)
+        cls.logger.info("domain linked to ladp %s" % response)
 
     @classmethod
     def set_ldap_settings_on_domain(cls, domainid):
@@ -455,20 +457,20 @@ class TestLDAP(cloudstackTestCase):
         cmd.name = LdapTestData.basednConfig
         cmd.value = cls.testdata.testdata[LdapTestData.configuration][LdapTestData.basedn]
         response = cls.apiclient.updateConfiguration(cmd)
-        logger.debug("set the basedn: %s" % response)
+        cls.logger.debug("set the basedn: %s" % response)
         cmd.name = LdapTestData.ldapPwConfig
         cmd.value = cls.testdata.testdata[LdapTestData.configuration][LdapTestData.ldapPw]
         response = cls.apiclient.updateConfiguration(cmd)
-        logger.debug("set the pw: %s" % response)
+        cls.logger.debug("set the pw: %s" % response)
         cmd.name = LdapTestData.principalConfig
         cmd.value = cls.testdata.testdata[LdapTestData.configuration][LdapTestData.principal]
         response = cls.apiclient.updateConfiguration(cmd)
-        logger.debug("set the id: %s" % response)
+        cls.logger.debug("set the id: %s" % response)
         if cls.testdata.testdata[LdapTestData.configuration].has_key(LdapTestData.groupPrinciple) :
             cmd.name = LdapTestData.groupPrinciple
             cmd.value = cls.testdata.testdata[LdapTestData.configuration][LdapTestData.groupPrinciple]
             response = cls.apiclient.updateConfiguration(cmd)
-            logger.debug("set the id: %s" % response)
+            cls.logger.debug("set the id: %s" % response)
 
 
 ## python ldap utility functions
