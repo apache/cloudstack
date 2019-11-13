@@ -595,7 +595,7 @@ class TestRouterServices(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced"], required_hardware="true")
     def test_04_RouterHealthChecksResults(self):
         """Test advanced zone router list contains health check records
         """
