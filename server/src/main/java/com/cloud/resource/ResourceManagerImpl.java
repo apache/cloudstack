@@ -1209,6 +1209,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     private boolean doMaintain(final long hostId) {
         final HostVO host = _hostDao.findById(hostId);
+        s_logger.info("Maintenance: attempting maintenance of host " + host.getUuid());
+        ResourceState hostState = host.getResourceState();
+        if (hostState == ResourceState.PrepareForMaintenance || hostState == ResourceState.ErrorInPrepareForMaintenance ||
+                hostState == ResourceState.Maintenance || hostState == ResourceState.ErrorInMaintenance) {
+            throw new CloudRuntimeException("Cannot perform maintain when resource state is " + hostState + ", hostId = " + hostId);
+        }
+
         final MaintainAnswer answer = (MaintainAnswer)_agentMgr.easySend(hostId, new MaintainCommand());
         if (answer == null || !answer.getResult()) {
             s_logger.warn("Unable to send MaintainCommand to host: " + hostId);
@@ -1240,11 +1247,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         || _serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
                     // Migration is not supported for VGPU Vms so stop them.
                     // for the last host in this cluster, stop all the VMs
+                    s_logger.error("Maintenance: No hosts available for migrations. Scheduling shutdown instead of migrations.");
                     _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
                 } else if (HypervisorType.LXC.equals(host.getHypervisorType()) && VirtualMachine.Type.User.equals(vm.getType())){
                     //Migration is not supported for LXC Vms. Schedule restart instead.
                     _haMgr.scheduleRestart(vm, false);
                 } else {
+                    s_logger.info("Maintenance: scheduling migration of VM " + vm.getUuid() + " from host " + host.getUuid());
                     _haMgr.scheduleMigration(vm);
                 }
             }
@@ -1272,20 +1281,21 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new InvalidParameterValueException("Unable to find host with ID: " + hostId + ". Please specify a valid host ID.");
         }
 
-        if (_hostDao.countBy(host.getClusterId(), ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance) > 0) {
-            throw new InvalidParameterValueException("There are other servers in PrepareForMaintenance OR ErrorInMaintenance STATUS in cluster " + host.getClusterId());
+        if (_hostDao.countBy(host.getClusterId(), ResourceState.PrepareForMaintenance, ResourceState.ErrorInPrepareForMaintenance) > 0) {
+            throw new CloudRuntimeException("There are other servers attempting migrations for maintenance. " +
+                    "Found hosts in PrepareForMaintenance OR ErrorInPrepareForMaintenance STATUS in cluster " + host.getClusterId());
         }
 
         if (_storageMgr.isLocalStorageActiveOnHost(host.getId())) {
-            throw new InvalidParameterValueException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
+            throw new CloudRuntimeException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
         }
         List<VMInstanceVO> migratingInVMs = _vmDao.findByHostInStates(hostId, State.Migrating);
         if (migratingInVMs.size() > 0) {
             throw new CloudRuntimeException("Host contains incoming VMs migrating. Please wait for them to complete before putting to maintenance.");
         }
 
-        if (_vmDao.findByHostInStates(hostId, State.Starting).size() > 0) {
-            throw new CloudRuntimeException("Host contains VMs in starting state. Please wait for them to complete before putting to maintenance.");
+        if (_vmDao.findByHostInStates(hostId, State.Starting, State.Stopping, State.Expunging).size() > 0) {
+            throw new CloudRuntimeException("Host contains VMs in starting/stopping/expunging state. Please wait for them to complete before putting to maintenance.");
         }
 
         if (_vmDao.findByHostInStates(hostId, State.Error, State.Unknown, State.Shutdowned).size() > 0) {
@@ -1388,6 +1398,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     protected boolean attemptMaintain(HostVO host) throws NoTransitionException {
         final long hostId = host.getId();
 
+        s_logger.info("Attempting maintenance for host " + host.getName());
         // Step 1: If there are no VMs in migrating, running, starting, stopping, error or unknown state we can safely move the host to maintenance.
         if (CollectionUtils.isEmpty(_vmDao.findByHostInStates(host.getId(), State.Migrating, State.Running, State.Starting, State.Stopping, State.Error, State.Unknown))) {
             return setHostIntoMaintenance(host);
@@ -2749,7 +2760,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
         }
         sc.and(sc.entity().getType(), Op.EQ, type);
-        sc.and(sc.entity().getResourceState(), Op.NIN, ResourceState.Maintenance, ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance,
+        sc.and(sc.entity().getResourceState(), Op.NIN,
+                ResourceState.Maintenance,
+                ResourceState.ErrorInMaintenance,
+                ResourceState.ErrorInPrepareForMaintenance,
+                ResourceState.PrepareForMaintenance,
                 ResourceState.Error);
         return sc.list();
     }

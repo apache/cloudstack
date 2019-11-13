@@ -285,7 +285,7 @@ class TestHostMaintenance(cloudstackTestCase):
         for host in listHost:
             self.logger.debug('2 Hypervisor = {}'.format(host.id))
             
-        if (len(listHost) != 2):
+        if (len(listHost) < 2):
             raise unittest.SkipTest("Cancel host maintenance when VMs are migrating can only be tested with 2 hosts");
             return
 
@@ -339,7 +339,7 @@ class TestHostMaintenance(cloudstackTestCase):
         for host in listHost:
             self.logger.debug('2 Hypervisor = {}'.format(host.id))
 
-        if (len(listHost) != 2):
+        if (len(listHost) < 2):
             raise unittest.SkipTest("Cancel host maintenance when VMs are migrating can only be tested with 2 hosts");
             return
 

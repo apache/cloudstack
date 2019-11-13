@@ -650,9 +650,15 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             _itMgr.migrateAway(vm.getUuid(), srcHostId);
             return null;
         } catch (InsufficientServerCapacityException e) {
-            s_logger.warn("Insufficient capacity for migrating a VM.");
+            s_logger.warn("Migration attempt: Insufficient capacity for migrating a VM " +
+                    _instanceDao.findById(vmId).getUuid() + " from source host id " + srcHostId +
+                    ". Exception: " + e.getMessage());
             _resourceMgr.maintenanceFailed(srcHostId);
             return (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
+        } catch (Exception e) {
+            s_logger.warn("Migration attempt: Unexpected exception occurred when attempting migration of " +
+                    _instanceDao.findById(vmId) + e.getMessage());
+            throw e;
         }
     }
 
@@ -826,12 +832,13 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             VMInstanceVO vm = _instanceDao.findById(work.getInstanceId());
             work.setUpdateTime(vm.getUpdated());
             work.setPreviousState(vm.getState());
+        } finally {
+            if (!Step.Done.equals(work.getStep()) && work.getTimesTried() >= _maxRetries) {
+                s_logger.warn("Giving up, retried max. times for work: " + work);
+                work.setStep(Step.Done);
+            }
+            _haDao.update(work.getId(), work);
         }
-        if (!Step.Done.equals(work.getStep()) && work.getTimesTried() >= _maxRetries) {
-            s_logger.warn("Giving up, retried max. times for work: " + work);
-            work.setStep(Step.Done);
-        }
-        _haDao.update(work.getId(), work);
     }
 
     @Override
