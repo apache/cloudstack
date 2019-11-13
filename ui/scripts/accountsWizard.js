@@ -74,24 +74,24 @@
         informationNotInLdap: {
             filter: {
                 label: 'label.filterBy',
-                docID: 'helpAccountFilter',
+                docID: 'helpLdapUserFilter',
                 select: function(args) {
                     var items = [];
                     items.push({
                         id: "NoFilter",
-                        description: "no filtering is done"
+                        description: "No filter"
                     });
                     items.push({
                         id: "LocalDomain",
-                        description: "shows only users not in the current or requested domain"
+                        description: "Local domain"
                     });
                     items.push({
                         id: "AnyDomain",
-                        description: "shows only users not currently known to cloudstack (in any domain)"
+                        description: "Any domain"
                     });
                     items.push({
                         id: "PotentialImport",
-                        description: "shows all users that (would be) automatically imported to cloudstack"
+                        description: "Potential import"
                     });
                     args.response.success({
                         data: items

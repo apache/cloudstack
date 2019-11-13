@@ -217,10 +217,12 @@
                 var informationNotInLdapForm = informationNotInLdap.$formContainer.find('form .form-item');
                 informationNotInLdapForm.find('.value #label_filterBy').addClass('required');
                 informationNotInLdapForm.find('.value #label_filterBy').change(function() {
+                    userFilter = $wizard.find('#label_filterBy').val();
                     loadList();
                 });
                 informationNotInLdapForm.find('.value #label_domain').addClass('required');
                 informationNotInLdapForm.find('.value #label_domain').change(function() {
+                    domainId = $wizard.find('#label_domain').val();
                     loadList();
                 });
                 informationNotInLdapForm.find('.value #label_type').addClass('required');
