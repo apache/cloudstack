@@ -35,9 +35,11 @@ def main():
         if pout.wait() == 0:
             currentUsage = float(pout.communicate()[0].strip())
             if currentUsage > maxMemoryUsage:
-                print "Memory Usage " + str(currentUsage) + "% has crossed threshold of " + str(maxMemoryUsage) + "%"
+                print "Memory Usage " + str(currentUsage) + \
+                      "% has crossed threshold of " + str(maxMemoryUsage) + "%"
                 exit(1)
-            print "Memory Usage within limits with current at " + str(currentUsage) + "%"
+            print "Memory Usage within limits with current at " + \
+                  str(currentUsage) + "%"
             exit(0)
         else:
             print "Failed to retrieve memory usage using " + cmd

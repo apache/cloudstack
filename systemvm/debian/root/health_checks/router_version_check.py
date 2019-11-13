@@ -31,6 +31,7 @@ def getFirstLine(file=None):
 
         return ret
 
+
 def main():
     entries = getHealthChecksData("routerVersion")
     data = {}
@@ -47,15 +48,17 @@ def main():
     if "templateVersion" in data:
         expected = data["templateVersion"].strip()
         found = getFirstLine("/etc/cloudstack-release")
-        if  expected != found:
-            print "Template Version mismatch. Expected: " + expected + ", found: " + found
+        if expected != found:
+            print "Template Version mismatch. Expected: " + \
+                  expected + ", found: " + found
             templateVersionMatches = False
 
     if "scriptsVersion" in data:
         expected = data["scriptsVersion"].strip()
         found = getFirstLine("/var/cache/cloud/cloud-scripts-signature")
-        if  expected != found:
-            print "Scripts Version mismatch. Expected: " + expected + ", found: " + found
+        if expected != found:
+            print "Scripts Version mismatch. Expected: " + \
+                  expected + ", found: " + found
             scriptVersionMatches = False
 
     if templateVersionMatches and scriptVersionMatches:
