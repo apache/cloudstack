@@ -17,6 +17,7 @@
 # under the License.
 
 from os import sys, path, statvfs
+from subprocess import *
 from utility import getHealthChecksData
 
 
@@ -26,18 +27,25 @@ def main():
     if len(entries) == 1:
         data = entries[0]
 
-    if "minDiskNeeded" in data:
-        minDiskNeeded = float(data["minDiskNeeded"]) * 1024
-        s = statvfs('/')
-        freeSpace = (s.f_bavail * s.f_frsize) / 1024
-        if (freeSpace < minDiskNeeded):
-            print "Insufficient free space is " + str(freeSpace/1024) + " MB"
-            exit(1)
-        else:
-            print "Sufficient free space is " + str(freeSpace/1024) + " MB"
+    if "maxCpuUsage" in data:
+        maxCpuUsage = float(data["maxCpuUsage"]) * 1024
+        cmd = "top -b -n2 -p 1 | fgrep \"Cpu(s)\" | tail -1 | " \
+              "awk -F 'id,' " \
+              "'{ split($1, vs, \",\");  idle=vs[length(vs)]; " \
+              "sub(\"%\", \"\", idle); printf \"%.2f\", 100 - idle }'"
+        pout = Popen(cmd, shell=True, stdout=PIPE)
+        if pout.wait() == 0:
+            currentUsage = float(pout.communicate()[0].strip())
+            if currentUsage > maxCpuUsage:
+                print "CPU Usage " + str(currentUsage) + "% has crossed threshold of " + str(maxCpuUsage) + "%"
+                exit(1)
+            print "CPU Usage within limits with current at " + str(currentUsage) + "%"
             exit(0)
+        else:
+            print "Failed to retrieve cpu usage using " + cmd
+            exit(1)
     else:
-        print "Missing minDiskNeeded in health_checks_data systemThresholds"
+        print "Missing maxCpuUsage in health_checks_data systemThresholds"
         exit(1)
 
 

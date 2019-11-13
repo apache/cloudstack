@@ -53,6 +53,8 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     static final String RouterHealthChecksFailuresToRestartVrCK = "router.health.checks.failures.to.restart.vr";
     static final String RouterHealthChecksToExcludeCK = "router.health.checks.to.exclude";
     static final String RouterHealthChecksFreeDiskSpaceThresholdCK = "router.health.checks.free.disk.space.threshold";
+    static final String RouterHealthChecksMaxCpuUsageThresholdCK = "router.health.checks.max.cpu.usage.threshold";
+    static final String RouterHealthChecksMaxMemoryUsageThresholdCK = "router.health.checks.max.memory.usage.threshold";
 
     static final ConfigKey<String> RouterTemplateXen = new ConfigKey<String>(String.class, RouterTemplateXenCK, "Advanced", "SystemVM Template (XenServer)",
             "Name of the default router template on Xenserver.", true, ConfigKey.Scope.Zone, null);
@@ -98,8 +100,14 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
             true, ConfigKey.Scope.Zone, null);
     static final ConfigKey<String> RouterHealthChecksToExclude = new ConfigKey<String>(String.class, RouterHealthChecksToExcludeCK, "Advanced", "",
             "Health checks that should be excluded when executing scheduled checks", true, ConfigKey.Scope.Cluster, null);
-    static final ConfigKey<Integer> RouterHealthChecksFreeDiskSpaceThreshold = new ConfigKey<Integer>(Integer.class, RouterHealthChecksFreeDiskSpaceThresholdCK,
+    static final ConfigKey<Double> RouterHealthChecksFreeDiskSpaceThreshold = new ConfigKey<Double>(Double.class, RouterHealthChecksFreeDiskSpaceThresholdCK,
             "Advanced", "100", "Free disk space in MB threshold on VR below which the VR needs to be restarted as is considered a failure",
+            true, ConfigKey.Scope.Zone, null);
+    static final ConfigKey<Double> RouterHealthChecksMaxCpuUsageThreshold = new ConfigKey<Double>(Double.class, RouterHealthChecksMaxCpuUsageThresholdCK,
+            "Advanced", "100", "Max CPU Usage as % above which check is considered a failure. Default is 100% meaning all CPU Usage is allowed",
+            true, ConfigKey.Scope.Zone, null);
+    static final ConfigKey<Double> RouterHealthChecksMaxMemoryUsageThreshold = new ConfigKey<Double>(Double.class, RouterHealthChecksMaxMemoryUsageThresholdCK,
+            "Advanced", "100", "Max Memory Usage as % above which check is considered a failure. Default is 100% meaning all memory Usage is allowed",
             true, ConfigKey.Scope.Zone, null);
 
     public static final int DEFAULT_ROUTER_VM_RAMSIZE = 256;            // 256M

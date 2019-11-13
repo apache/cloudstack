@@ -17,6 +17,7 @@
 # under the License.
 
 from os import sys, path, statvfs
+from subprocess import *
 from utility import getHealthChecksData
 
 
@@ -26,18 +27,23 @@ def main():
     if len(entries) == 1:
         data = entries[0]
 
-    if "minDiskNeeded" in data:
-        minDiskNeeded = float(data["minDiskNeeded"]) * 1024
-        s = statvfs('/')
-        freeSpace = (s.f_bavail * s.f_frsize) / 1024
-        if (freeSpace < minDiskNeeded):
-            print "Insufficient free space is " + str(freeSpace/1024) + " MB"
-            exit(1)
-        else:
-            print "Sufficient free space is " + str(freeSpace/1024) + " MB"
+    if "maxMemoryUsage" in data:
+        maxMemoryUsage = float(data["maxMemoryUsage"]) * 1024
+        cmd = "free | awk 'FNR == 2 { print $3 * 100 / $2 }'"
+        pout = Popen(cmd, shell=True, stdout=PIPE)
+
+        if pout.wait() == 0:
+            currentUsage = float(pout.communicate()[0].strip())
+            if currentUsage > maxMemoryUsage:
+                print "Memory Usage " + str(currentUsage) + "% has crossed threshold of " + str(maxMemoryUsage) + "%"
+                exit(1)
+            print "Memory Usage within limits with current at " + str(currentUsage) + "%"
             exit(0)
+        else:
+            print "Failed to retrieve memory usage using " + cmd
+            exit(1)
     else:
-        print "Missing minDiskNeeded in health_checks_data systemThresholds"
+        print "Missing maxMemoryUsage in health_checks_data systemThresholds"
         exit(1)
 
 

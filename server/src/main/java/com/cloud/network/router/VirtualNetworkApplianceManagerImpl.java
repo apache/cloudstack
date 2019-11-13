@@ -1296,6 +1296,14 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return result;
         }
 
+        s_logger.info("Getting router health check results for router " + router.getUuid());
+
+        if (runChecks) {
+            boolean successfullyUpdatedData = updateRouterHealthCheckData(router);
+            s_logger.info("Updating health check data for fresh run successfully: " + successfullyUpdatedData);
+        }
+
+        s_logger.info("Retrieving results for fresh health check execution for router " + router.getUuid());
         GetRouterMonitorResultsAnswer answer = getMonitorResults(router, runChecks);
         if (answer == null) {
             result.put("success", "False");
@@ -1320,46 +1328,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 s_logger.debug("Found " + routers.size() + " running routers. ");
 
                 for (final DomainRouterVO router : routers) {
-                    if (!RouterHealthChecksEnabled.valueIn(router.getDataCenterId())) {
-                        continue;
-                    }
-
-                    String controlIP = getRouterControlIP(router);
-                    if (StringUtils.isNotBlank(controlIP) && !controlIP.equals("0.0.0.0")) {
-
-                        final SetMonitorServiceCommand command = new SetMonitorServiceCommand();
-                        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIP(router));
-                        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-                        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.valueIn(router.getDataCenterId()).toString());
-                        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
-                        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
-                        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, RouterHealthChecksToExclude.valueIn(router.getDataCenterId()));
-                        command.setAdditionalData(getAdditionalDataForRouterHealthChecks(router));
-                        command.setReconfigureAfterUpdate(true);
-
-                        try {
-                            final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
-                            GroupAnswer answer = null;
-
-                            if (origAnswer == null) {
-                                s_logger.warn("Unable to update health checks data to router " + router.getHostName());
-                                continue;
-                            }
-                            if (origAnswer instanceof GroupAnswer) {
-                                answer = (GroupAnswer) origAnswer;
-                            } else {
-                                s_logger.warn("Unable to update health checks data to router " + router.getHostName() + " Received answer " + origAnswer.getDetails());
-                                continue;
-                            }
-                            if (!answer.getResult()) {
-                                s_logger.warn("Unable to update health checks data to router " + router.getHostName() + ", details : " + answer.getDetails());
-                                continue;
-                            }
-                        } catch (final Exception e) {
-                            s_logger.warn("Error while collecting alerts from router: " + router.getInstanceName(), e);
-                            continue;
-                        }
-                    }
+                    updateRouterHealthCheckData(router);
                 }
             } catch (final Exception ex) {
                 s_logger.error("Fail to complete the UpdateRouterHealthChecksConfigDataTask! ", ex);
@@ -1367,8 +1336,56 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
     }
 
+    private boolean updateRouterHealthCheckData(DomainRouterVO router) {
+        if (!RouterHealthChecksEnabled.valueIn(router.getDataCenterId())) {
+            return false;
+        }
+
+        String controlIP = getRouterControlIP(router);
+        if (StringUtils.isNotBlank(controlIP) && !controlIP.equals("0.0.0.0")) {
+            s_logger.info("Updating data for router health checks for router " + router.getUuid());
+            final SetMonitorServiceCommand command = new SetMonitorServiceCommand();
+            command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIP(router));
+            command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+            command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.valueIn(router.getDataCenterId()).toString());
+            command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
+            command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
+            command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, RouterHealthChecksToExclude.valueIn(router.getDataCenterId()));
+            command.setAdditionalData(getAdditionalDataForRouterHealthChecks(router));
+            command.setReconfigureAfterUpdate(true);
+
+            Answer origAnswer = null;
+            try {
+                origAnswer = _agentMgr.easySend(router.getHostId(), command);
+            } catch (final Exception e) {
+                s_logger.warn("Error while collecting alerts from router: " + router.getInstanceName(), e);
+                return false;
+            }
+
+            if (origAnswer == null) {
+                s_logger.warn("Unable to update health checks data to router " + router.getHostName());
+                return false;
+            }
+
+            GroupAnswer answer = null;
+            if (origAnswer instanceof GroupAnswer) {
+                answer = (GroupAnswer) origAnswer;
+            } else {
+                s_logger.warn("Unable to update health checks data to router " + router.getHostName() + " Received answer " + origAnswer.getDetails());
+                return false;
+            }
+
+            if (!answer.getResult()) {
+                s_logger.warn("Unable to update health checks data to router " + router.getHostName() + ", details : " + answer.getDetails());
+            }
+
+            return answer.getResult();
+        }
+        s_logger.debug("Skipping update data on router " + router.getUuid() + " because controlIp is not correct.");
+        return false;
+    }
+
     private Map<String, String> getAdditionalDataForRouterHealthChecks(final DomainRouterVO router) {
-        s_logger.info("Updating data for router health checks for all routers");
         Map<String, String> data = new HashMap<>();
         List<DomainRouterJoinVO> routerJoinVOs = domainRouterJoinDao.searchByIds(router.getId());
         StringBuilder vmsData = new StringBuilder();
@@ -1445,11 +1462,25 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 }
             }
         }
+
         data.put("virtualMachines", vmsData.toString());
         data.put("gateways", gateways.toString());
         data.put("portForwarding", portData.toString());
         data.put("haproxyData", loadBalancingData.toString());
-        data.put("systemThresholds", "minSpaceNeeded=" + RouterHealthChecksFreeDiskSpaceThreshold.valueIn(router.getDataCenterId()).toString());
+
+        StringBuilder systemThresholds = new StringBuilder()
+                .append("minDiskNeeded=" + RouterHealthChecksFreeDiskSpaceThreshold.valueIn(router.getDataCenterId()))
+                .append(",maxCpuUsage=" + RouterHealthChecksMaxCpuUsageThreshold.valueIn(router.getDataCenterId()))
+                .append(",maxMemoryUsage=" + RouterHealthChecksMaxMemoryUsageThreshold.valueIn(router.getDataCenterId()) + ";");
+        data.put("systemThresholds", systemThresholds.toString());
+
+        if (router.getTemplateVersion() != null && router.getScriptsVersion() != null) {
+            StringBuilder routerVersion = new StringBuilder()
+                    .append("templateVersion=" + router.getTemplateVersion())
+                    .append(",scriptsVersion=" + router.getScriptsVersion());
+            data.put("routerVersion", routerVersion.toString());
+        }
+
         return data;
     }
 
@@ -2905,7 +2936,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksResultFetchInterval,
                 RouterHealthChecksFailuresToRestartVr,
                 RouterHealthChecksToExclude,
-                RouterHealthChecksFreeDiskSpaceThreshold
+                RouterHealthChecksFreeDiskSpaceThreshold,
+                RouterHealthChecksMaxCpuUsageThreshold,
+                RouterHealthChecksMaxMemoryUsageThreshold
         };
     }
 

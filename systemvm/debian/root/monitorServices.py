@@ -186,6 +186,7 @@ def restartService(service_name):
 def checkProcessStatus( process ):
     """
     Check the process running status, if not running tries to restart
+    Returns the process status and if it was restarted
     """
     process_name = process.get('processname')
     service_name = process.get('servicename')
@@ -197,13 +198,13 @@ def checkProcessStatus( process ):
     cmd=''
     if process_name is None:
         printd ("\n Invalid Process Name")
-        return StatusCodes.INVALID_INP
+        return StatusCodes.INVALID_INP, False
 
     status, pids = checkProcessRunningStatus(process_name, pidfile)
 
     if status == True:
         printd("The process is running ....")
-        return StatusCodes.RUNNING
+        return StatusCodes.RUNNING, False
     else:
         printd("Process %s is not running trying to recover" %process_name)
         #Retry the process state for few seconds
@@ -243,9 +244,9 @@ def checkProcessStatus( process ):
             raisealert(Log.ALERT,process_name,msg)
 
             printd("Restart failed after number of retries")
-            return StatusCodes.STOPPED
+            return StatusCodes.STOPPED, False
 
-    return StatusCodes.RUNNING
+        return StatusCodes.RUNNING, True
 
 
 def monitProcess( processes_info ):
@@ -286,16 +287,22 @@ def monitProcess( processes_info ):
                     failing_services.append(serviceName)
                     unMonitPs = True
                     continue
-
-        if checkProcessStatus(properties) != StatusCodes.RUNNING:
+        processStatus, wasRestarted = checkProcessStatus(properties)
+        if processStatus != StatusCodes.RUNNING:
             printd( "\n Service %s is not Running"%process)
             #add this process into unmonit list
             printd ("updating the service for unmonit %s\n" %process)
             umonit_update[process]=csec
-            service_status[serviceName] = {"success": "False", "message": "down since" + str(csec)}
+            service_status[serviceName] = {
+                "success": "False",
+                "message": "down since" + str(csec)
+            }
             failing_services.append(serviceName)
         else:
-            service_status[serviceName] = {"success": "True", "message": "service is running"}
+            service_status[serviceName] = {
+                "success": "True",
+                "message": "service is running" + (", was restarted" if wasRestarted else "")
+            }
 
     #if dict is not empty write to file else delete it
     if not is_emtpy(umonit_update):
