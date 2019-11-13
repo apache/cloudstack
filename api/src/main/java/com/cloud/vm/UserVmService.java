@@ -396,7 +396,7 @@ public interface UserVmService {
      * @throws ResourceUnavailableException
      *             if the resources required the deploy the VM is not currently available.
      */
-    UserVm startVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    UserVm startVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException;
 
     /**
      * Creates a vm group.
