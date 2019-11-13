@@ -1292,7 +1292,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         if (!RouterHealthChecksEnabled.valueIn(router.getDataCenterId())) {
             result.put("success", "False");
-            result.put("message", "Router id not valid. Either router not found or it contains VPC.");
+            result.put("message", "Router id not valid. Health checks are disabled in router's zone.");
             return result;
         }
 
