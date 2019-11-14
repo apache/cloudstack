@@ -21,6 +21,7 @@ import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -33,7 +34,6 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -41,6 +41,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.inject.Inject;
 
 @Component
 public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements ClusterDao {
@@ -51,6 +53,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     protected final SearchBuilder<ClusterVO> ZoneSearch;
     protected final SearchBuilder<ClusterVO> ZoneHyTypeSearch;
     protected final SearchBuilder<ClusterVO> ZoneClusterSearch;
+    protected final SearchBuilder<ClusterVO> HyTypeAndClTypeSearch;
 
     protected GenericSearchBuilder<ClusterVO, Long> ClusterIdSearch;
 
@@ -97,6 +100,11 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         ClusterIdSearch.selectFields(ClusterIdSearch.entity().getId());
         ClusterIdSearch.and("dataCenterId", ClusterIdSearch.entity().getDataCenterId(), Op.EQ);
         ClusterIdSearch.done();
+
+        HyTypeAndClTypeSearch = createSearchBuilder();
+        HyTypeAndClTypeSearch.and("hypervisorType", HyTypeAndClTypeSearch.entity().getHypervisorType(), Op.EQ);
+        HyTypeAndClTypeSearch.and("clusterType", HyTypeAndClTypeSearch.entity().getClusterType(), Op.EQ);
+        HyTypeAndClTypeSearch.done();
     }
 
     @Override
@@ -282,5 +290,14 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         }
 
         return false;
+    }
+
+    @Override
+    public List<ClusterVO> listByHypervisorAndCluster(final HypervisorType hypervisorType,
+        final Cluster.ClusterType clusterType) {
+        final SearchCriteria<ClusterVO> sc = HyTypeAndClTypeSearch.create();
+        sc.setParameters("hypervisorType", hypervisorType.toString());
+        sc.setParameters("clusterType", clusterType.toString());
+        return listBy(sc);
     }
 }

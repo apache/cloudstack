@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.vm;
 
+import static com.cloud.utils.NumbersUtil.parseInt;
+import static org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService.KvmMtuSize;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -48,6 +51,9 @@ import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -382,6 +388,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private ClusterDao _clusterDao;
     @Inject
+    private ClusterDetailsDao _clusterDetailsDao;
+    @Inject
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
     private SecurityGroupManager _securityGroupMgr;
@@ -504,7 +512,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
     private static final int MAX_HTTP_POST_LENGTH = 16 * MAX_USER_DATA_LENGTH_BYTES;
-    private static final String KVM_MTU_KEY = "kvm.mtu.size";
 
     private Integer _kvmMtuSize = 0;
 
@@ -1041,9 +1048,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (customParameters.size() != 0) {
             Map<String, String> offeringDetails = serviceOfferingDetailsDao.listDetailsKeyPairs(serviceOffering.getId());
             if (serviceOffering.getCpu() == null) {
-                int minCPU = NumbersUtil.parseInt(offeringDetails.get(ApiConstants.MIN_CPU_NUMBER), 1);
-                int maxCPU = NumbersUtil.parseInt(offeringDetails.get(ApiConstants.MAX_CPU_NUMBER), Integer.MAX_VALUE);
-                int cpuNumber = NumbersUtil.parseInt(customParameters.get(UsageEventVO.DynamicParameters.cpuNumber.name()), -1);
+                int minCPU = parseInt(offeringDetails.get(ApiConstants.MIN_CPU_NUMBER), 1);
+                int maxCPU = parseInt(offeringDetails.get(ApiConstants.MAX_CPU_NUMBER), Integer.MAX_VALUE);
+                int cpuNumber = parseInt(customParameters.get(UsageEventVO.DynamicParameters.cpuNumber.name()), -1);
                 if (cpuNumber < minCPU || cpuNumber > maxCPU) {
                     throw new InvalidParameterValueException(String.format("Invalid cpu cores value, specify a value between %d and %d", minCPU, maxCPU));
                 }
@@ -1054,7 +1061,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             if (serviceOffering.getSpeed() == null) {
                 String cpuSpeed = customParameters.get(UsageEventVO.DynamicParameters.cpuSpeed.name());
-                if ((cpuSpeed == null) || (NumbersUtil.parseInt(cpuSpeed, -1) <= 0)) {
+                if ((cpuSpeed == null) || (parseInt(cpuSpeed, -1) <= 0)) {
                     throw new InvalidParameterValueException("Invalid cpu speed value, specify a value between 1 and " + Integer.MAX_VALUE);
                 }
             } else if (!serviceOffering.isCustomCpuSpeedSupported() && customParameters.containsKey(UsageEventVO.DynamicParameters.cpuSpeed.name())) {
@@ -1063,9 +1070,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             if (serviceOffering.getRamSize() == null) {
-                int minMemory = NumbersUtil.parseInt(offeringDetails.get(ApiConstants.MIN_MEMORY), 32);
-                int maxMemory = NumbersUtil.parseInt(offeringDetails.get(ApiConstants.MAX_MEMORY), Integer.MAX_VALUE);
-                int memory = NumbersUtil.parseInt(customParameters.get(UsageEventVO.DynamicParameters.memory.name()), -1);
+                int minMemory = parseInt(offeringDetails.get(ApiConstants.MIN_MEMORY), 32);
+                int maxMemory = parseInt(offeringDetails.get(ApiConstants.MAX_MEMORY), Integer.MAX_VALUE);
+                int memory = parseInt(customParameters.get(UsageEventVO.DynamicParameters.memory.name()), -1);
                 if (memory < minMemory || memory > maxMemory) {
                     throw new InvalidParameterValueException(String.format("Invalid memory value, specify a value between %d and %d", minMemory, maxMemory));
                 }
@@ -2083,7 +2090,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
-        _kvmMtuSize = NumbersUtil.parseInt(_configDao.getValue(KVM_MTU_KEY), 0);
+        final List<ClusterVO> clusterVOs = _clusterDao.listByHypervisorAndCluster(HypervisorType.KVM, Cluster.ClusterType.CloudManaged);
+
+        if ((clusterVOs != null) && !clusterVOs.isEmpty()) {
+            final ClusterDetailsVO clusterDetails = _clusterDetailsDao.findDetail(clusterVOs.get(0).getId(), KvmMtuSize.key());
+
+            if ((clusterDetails != null) && (parseInt(clusterDetails.getValue(), 0) > 0)) {
+                _kvmMtuSize = parseInt(clusterDetails.getValue(), 0);
+            } else {
+                _kvmMtuSize = parseInt(_configDao.getValue(KvmMtuSize.key()), 0);
+            }
+        }
 
         _instance = configs.get("instance.name");
         if (_instance == null) {
@@ -2091,23 +2108,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         String workers = configs.get("expunge.workers");
-        int wrks = NumbersUtil.parseInt(workers, 10);
-        capacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
+        int wrks = parseInt(workers, 10);
+        capacityReleaseInterval = parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
 
         String time = configs.get("expunge.interval");
-        _expungeInterval = NumbersUtil.parseInt(time, 86400);
+        _expungeInterval = parseInt(time, 86400);
         time = configs.get("expunge.delay");
-        _expungeDelay = NumbersUtil.parseInt(time, _expungeInterval);
+        _expungeDelay = parseInt(time, _expungeInterval);
 
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UserVm-Scavenger"));
 
         String vmIpWorkers = configs.get(VmIpFetchTaskWorkers.value());
-        int vmipwrks = NumbersUtil.parseInt(vmIpWorkers, 10);
+        int vmipwrks = parseInt(vmIpWorkers, 10);
 
         _vmIpFetchExecutor =   Executors.newScheduledThreadPool(vmipwrks, new NamedThreadFactory("UserVm-ipfetch"));
 
         String aggregationRange = configs.get("usage.stats.job.aggregation.range");
-        int _usageAggregationRange  = NumbersUtil.parseInt(aggregationRange, 1440);
+        int _usageAggregationRange  = parseInt(aggregationRange, 1440);
         int HOURLY_TIME = 60;
         final int DAILY_TIME = 60 * 24;
         if (_usageAggregationRange == DAILY_TIME) {
@@ -2125,7 +2142,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String value = _configDao.getValue(Config.SetVmInternalNameUsingDisplayName.key());
         _instanceNameFlag = (value == null) ? false : Boolean.parseBoolean(value);
 
-        _scaleRetry = NumbersUtil.parseInt(configs.get(Config.ScaleRetry.key()), 2);
+        _scaleRetry = parseInt(configs.get(Config.ScaleRetry.key()), 2);
 
         _vmIpFetchThreadExecutor = Executors.newFixedThreadPool(VmIpFetchThreadPoolMax.value(), new NamedThreadFactory("vmIpFetchThread"));
 

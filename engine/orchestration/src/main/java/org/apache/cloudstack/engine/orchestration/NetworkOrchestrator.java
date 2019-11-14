@@ -17,6 +17,8 @@
 package org.apache.cloudstack.engine.orchestration;
 
 
+import static com.cloud.utils.NumbersUtil.parseInt;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -32,6 +34,9 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -39,6 +44,7 @@ import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.PodVlanMapDao;
@@ -135,11 +141,11 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.org.Cluster;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UuidUtils;
@@ -234,11 +240,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public static final ConfigKey<Integer> NetworkGcInterval = new ConfigKey<Integer>(Integer.class,
         "network.gc.interval", "Advanced", "600",
         "Seconds to wait before checking for networks to shutdown", true, Scope.Global, null);
-    public static final ConfigKey<Integer> KvmMtuSize = new ConfigKey<>(Integer.class,
-        "kvm.mtu.size", "Network", null,
-        "Set MTU size for Libvirt and KVM (if not set the default MTU will be considered, "
-            + "Attention: If you use OVS the main bridge is adjusted automatically "
-            + "to the guest nic mtu)", true, Scope.Cluster, null);
 
     private Integer _kvmMtuSize = 0;
 
@@ -260,6 +261,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     AlertManager _alertMgr;
     @Inject
     ConfigurationManager _configMgr;
+    @Inject
+    ClusterDao _clusterDao;
+    @Inject
+    ClusterDetailsDao _clusterDetailsDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
     @Inject
@@ -578,7 +583,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                 _networkOfferingDao.persistDefaultL2NetworkOfferings();
 
-                _kvmMtuSize = NumbersUtil.parseInt(_configDao.getValue(KvmMtuSize.key()), 0);
+                final List<ClusterVO> clusterVOs = _clusterDao.listByHypervisorAndCluster(HypervisorType.KVM, Cluster.ClusterType.CloudManaged);
+
+                if ((clusterVOs != null) && !clusterVOs.isEmpty()) {
+                    final ClusterDetailsVO clusterDetails = _clusterDetailsDao.findDetail(clusterVOs.get(0).getId(), KvmMtuSize.key());
+
+                    if ((clusterDetails != null) && (parseInt(clusterDetails.getValue(), 0) > 0)) {
+                        _kvmMtuSize = parseInt(clusterDetails.getValue(), 0);
+                    } else {
+                        _kvmMtuSize = parseInt(_configDao.getValue(KvmMtuSize.key()), 0);
+                    }
+                }
             }
         });
 
@@ -621,7 +636,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     public boolean start() {
-        final int netGcInterval = NumbersUtil.parseInt(_configDao.getValue(NetworkGcInterval.key()), 60);
+        final int netGcInterval = parseInt(_configDao.getValue(NetworkGcInterval.key()), 60);
         s_logger.info("Network Manager will run the NetworkGarbageCollector every '" + netGcInterval + "' seconds.");
 
         _executor.scheduleWithFixedDelay(new NetworkGarbageCollector(), netGcInterval, netGcInterval, TimeUnit.SECONDS);
@@ -2881,7 +2896,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 final HashMap<Long, Long> stillFree = new HashMap<Long, Long>();
 
                 final List<Long> networkIds = _networksDao.findNetworksToGarbageCollect();
-                final int netGcWait = NumbersUtil.parseInt(_configDao.getValue(NetworkGcWait.key()), 60);
+                final int netGcWait = parseInt(_configDao.getValue(NetworkGcWait.key()), 60);
                 s_logger.info("NetworkGarbageCollector uses '" + netGcWait + "' seconds for GC interval.");
 
                 for (final Long networkId : networkIds) {

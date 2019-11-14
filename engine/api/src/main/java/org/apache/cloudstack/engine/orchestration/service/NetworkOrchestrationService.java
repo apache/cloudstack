@@ -16,13 +16,6 @@
 // under the License.
 package org.apache.cloudstack.engine.orchestration.service;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -55,6 +48,13 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * NetworkManager manages the network for the different end users.
@@ -95,6 +95,10 @@ public interface NetworkOrchestrationService {
 
     ConfigKey<Boolean> RollingRestartEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.rolling.restart", "true",
             "Whether to allow or deny rolling restart of network routers.", true);
+
+    ConfigKey<Integer> KvmMtuSize = new ConfigKey<>(Integer.class,"kvm.mtu.size", "Network", null,
+        "Set MTU size for Libvirt and KVM (if not set the default MTU will be considered, "
+            + "Attention: If you use OVS the main bridge is adjusted automatically to the guest nic mtu)", true, Scope.Cluster, null);
 
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
