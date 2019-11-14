@@ -17162,7 +17162,8 @@
                                     title: 'label.outofbandmanagement.action.issue',
                                     desc: function(args) {
                                           var host = args.context.hosts[0];
-                                          if (host.resourcestate == 'Maintenance' || host.resourcestate == 'PrepareForMaintenance' || host.resourcestate == 'ErrorInMaintenance') {
+                                          if (host.resourcestate == 'Maintenance' || host.resourcestate == 'PrepareForMaintenance' ||
+                                                host.resourcestate == 'ErrorInPrepareForMaintenance' || host.resourcestate == 'ErrorInMaintenance') {
                                               return _l('message.outofbandmanagement.action.maintenance');
                                           }
                                     },
@@ -17776,6 +17777,7 @@
                                 'Down': 'off',
                                 'Removed': 'off',
                                 'ErrorInMaintenance': 'off',
+                                'ErrorInPrepareForMaintenance': 'warning',
                                 'PrepareForMaintenance': 'warning',
                                 'CancelMaintenance': 'warning',
                                 'Maintenance': 'warning',
@@ -21975,7 +21977,7 @@
             allowedActions.push("edit");
             allowedActions.push("enableMaintenanceMode");
             allowedActions.push("cancelMaintenanceMode");
-        } else if (jsonObj.resourcestate == "PrepareForMaintenance") {
+        } else if (jsonObj.resourcestate == "PrepareForMaintenance" || jsonObj.resourcestate == 'ErrorInPrepareForMaintenance') {
             allowedActions.push("edit");
             allowedActions.push("cancelMaintenanceMode");
         } else if (jsonObj.resourcestate == "Maintenance") {
@@ -22029,7 +22031,7 @@
         } else if (jsonObj.state == "ErrorInMaintenance") {
             allowedActions.push("enableMaintenanceMode");
             allowedActions.push("cancelMaintenanceMode");
-        } else if (jsonObj.state == "PrepareForMaintenance") {
+        } else if (jsonObj.state == "PrepareForMaintenance" || jsonObj.resourcestate == "ErrorInPrepareForMaintenance") {
             allowedActions.push("cancelMaintenanceMode");
         } else if (jsonObj.state == "Maintenance") {
             allowedActions.push("cancelMaintenanceMode");

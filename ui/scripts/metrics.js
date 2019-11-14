@@ -679,6 +679,7 @@
                                 'Down': 'off',
                                 'Removed': 'off',
                                 'ErrorInMaintenance': 'off',
+                                'ErrorInPrepareForMaintenance': 'warning',
                                 'PrepareForMaintenance': 'warning',
                                 'CancelMaintenance': 'warning',
                                 'Maintenance': 'warning',
