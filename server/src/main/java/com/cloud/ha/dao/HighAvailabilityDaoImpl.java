@@ -116,7 +116,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
 
         MigratingWorkSearch = createSearchBuilder();
         MigratingWorkSearch.and("instance", MigratingWorkSearch.entity().getInstanceId(), Op.EQ);
-        MigratingWorkSearch.and("type", MigratingWorkSearch.entity().getType(), Op.EQ);
+        MigratingWorkSearch.and("workType", MigratingWorkSearch.entity().getWorkType(), Op.EQ);
         MigratingWorkSearch.and("step", MigratingWorkSearch.entity().getStep(), Op.NIN);
         MigratingWorkSearch.done();
     }
@@ -133,9 +133,9 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
 
     @Override
     public List<HaWorkVO> listPendingMigrationsForVm(long vmId) {
-        SearchCriteria<HaWorkVO> sc = PendingHaWorkSearch.create();
+        SearchCriteria<HaWorkVO> sc = MigratingWorkSearch.create();
         sc.setParameters("instance", vmId);
-        sc.setParameters("type", WorkType.Migration);
+        sc.setParameters("workType", WorkType.Migration);
         sc.setParameters("step", Step.Done, Step.Error, Step.Cancelled);
 
         return search(sc, null);

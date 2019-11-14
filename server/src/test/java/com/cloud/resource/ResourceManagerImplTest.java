@@ -217,6 +217,7 @@ public class ResourceManagerImplTest {
         // Test entering into ErrorInPrepareForMaintenance when pending migrations retries and due to - Failed Migrations
         setupFailedMigrations();
         setupPendingMigrationRetries();
+        when(vmInstanceDao.findByHostInStates(hostId, VirtualMachine.State.Running)).thenReturn(Arrays.asList(vm2));
         verifyErrorInPrepareForMaintenanceCalls();
     }
 
@@ -225,6 +226,7 @@ public class ResourceManagerImplTest {
         // Test entering into ErrorInMaintenance when pending migrations retries due to - no migrating but error VMs
         setupErrorVms();
         setupPendingMigrationRetries();
+        when(vmInstanceDao.listVmsMigratingFromHost(hostId)).thenReturn(Arrays.asList(vm2));
         verifyErrorInPrepareForMaintenanceCalls();
     }
 
@@ -379,7 +381,7 @@ public class ResourceManagerImplTest {
     private void setupErrorVms() {
         when(vmInstanceDao.listByHostId(hostId)).thenReturn(Arrays.asList(vm1, vm2));
         when(vmInstanceDao.findByHostInStates(hostId, VirtualMachine.State.Migrating, VirtualMachine.State.Running, VirtualMachine.State.Starting, VirtualMachine.State.Stopping, VirtualMachine.State.Error, VirtualMachine.State.Unknown)).thenReturn(Arrays.asList(vm1, vm2));
-        when(vmInstanceDao.findByHostInStates(hostId, VirtualMachine.State.Unknown, VirtualMachine.State.Error, VirtualMachine.State.Shutdowned)).thenReturn(Arrays.asList(vm1));
+        when(vmInstanceDao.findByHostInStates(hostId, VirtualMachine.State.Unknown, VirtualMachine.State.Error)).thenReturn(Arrays.asList(vm1));
     }
 
     private void verifyErrorInMaintenanceCalls() throws NoTransitionException {

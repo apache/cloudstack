@@ -636,28 +636,30 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
     public Long migrate(final HaWorkVO work) {
         long vmId = work.getInstanceId();
-
         long srcHostId = work.getHostId();
+
+        VMInstanceVO vm = _instanceDao.findById(vmId);
+        if (vm == null) {
+            return null;
+        }
+        s_logger.info("Migration attempt: for VM " + vm.getUuid() + "from host id " + srcHostId +
+                ". Try number: " + work.getTimesTried() + " with max retries at " + _maxRetries);
         try {
             work.setStep(Step.Migrating);
             _haDao.update(work.getId(), work);
 
-            VMInstanceVO vm = _instanceDao.findById(vmId);
-            if (vm == null) {
-                return null;
-            }
             // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
             _itMgr.migrateAway(vm.getUuid(), srcHostId);
             return null;
         } catch (InsufficientServerCapacityException e) {
             s_logger.warn("Migration attempt: Insufficient capacity for migrating a VM " +
-                    _instanceDao.findById(vmId).getUuid() + " from source host id " + srcHostId +
+                    vm.getUuid() + " from source host id " + srcHostId +
                     ". Exception: " + e.getMessage());
             _resourceMgr.maintenanceFailed(srcHostId);
             return (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
         } catch (Exception e) {
             s_logger.warn("Migration attempt: Unexpected exception occurred when attempting migration of " +
-                    _instanceDao.findById(vmId) + e.getMessage());
+                    vm.getUuid() + e.getMessage());
             throw e;
         }
     }
@@ -775,7 +777,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     }
 
     private void rescheduleWork(final HaWorkVO work, final long nextTime) {
-        s_logger.info("Rescheduling work " + work + " to try again at " + new Date(nextTime << 10));
+        s_logger.info("Rescheduling work " + work + " to try again at " + new Date(nextTime << 10) +
+                ". Already tried " + work.getTimesTried() + 1 + " times with max retries at " + _maxRetries);
         work.setTimeToTry(nextTime);
         work.setTimesTried(work.getTimesTried() + 1);
         work.setServerId(null);

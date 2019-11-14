@@ -44,10 +44,16 @@ class TestHostMaintenance(cloudstackTestCase):
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.pod = get_pod(self.apiclient, self.zone.id)
         self.cleanup = []
+        self.ssh_client = None
+        self.needs_unblock_iptables = False
 
     def tearDown(self):
         try:
-            # Clean up, terminate the created templates
+            if self.ssh_client is not None and self.needs_unblock_iptables:
+                self.ssh_client.execute("iptables -D OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 49152:49215 -m comment --comment 'test block migrations'")
+                self.ssh_client.execute("iptables -D OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 16509 -m comment --comment 'test block migrations'")
+
+        # Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
@@ -168,14 +174,15 @@ class TestHostMaintenance(cloudstackTestCase):
                                        hostid=hostId
                                        )
         no_of_vms=0
+        self.logger.debug("Counting VMs on host " + hostId)
         if (listVms is not None):
             for vm in listVms:
                 self.logger.debug('VirtualMachine on Hyp 1 = {}'.format(vm.id))
                 no_of_vms=no_of_vms+1
-             
+        self.logger.debug("Found VMs on host " + str(no_of_vms))
         return no_of_vms
 
-    def wait_until_host_is_in_state(self, hostid, resourcestate, interval=2, retries=100):
+    def wait_until_host_is_in_state(self, hostid, resourcestate, interval=3, retries=200):
         def check_resource_state():
             response = Host.list(
                 self.apiclient,
@@ -183,14 +190,16 @@ class TestHostMaintenance(cloudstackTestCase):
             )
             if isinstance(response, list):
                 if response[0].resourcestate == resourcestate:
-                    self.logger.debug('Host with id %s is in resource state = %s' % (hostid, resourcestate))
+                    self.logger.debug("Host with id " + hostid + " has reached resource state = " + resourcestate)
                     return True, None
+                self.logger.debug("Waiting for host with id " + hostid + " to reach resource state = " +
+                                  resourcestate + " from state " + response[0].resourcestate)
             return False, None
 
         done, _ = wait_until(interval, retries, check_resource_state)
         if not done:
-            raise Exception("Failed to wait for host %s to be on resource state %s" % (hostid, resourcestate))
-        return True
+            self.logger.error("Failed to wait for host " + hostid + " to be on resource state " + resourcestate)
+        return done
 
     def hostPrepareAndCancelMaintenance(self, target_host_id, other_host_id):
         # Wait for all VMs to complete any pending migrations.
@@ -239,30 +248,30 @@ class TestHostMaintenance(cloudstackTestCase):
         )
         for host in listHost:
             self.logger.debug('1 Hypervisor = {}'.format(host.id))
-            
-                  
+
+
         if (len(listHost) < 2):
             raise unittest.SkipTest("Cancel host maintenance when VMs are migrating should be tested for 2 or more hosts");
             return
 
         migrations_finished = True
-        
+
         try:
 
             migrations_finished = self.hostPrepareAndCancelMaintenance(listHost[0].id, listHost[1].id)
 
             if migrations_finished:
                 migrations_finished = self.hostPrepareAndCancelMaintenance(listHost[1].id, listHost[0].id)
-           
+
         except Exception as e:
             self.logger.debug("Exception {}".format(e))
             self.fail("Cancel host maintenance failed {}".format(e[0]))
-        
+
 
         if (migrations_finished == False):
             raise unittest.SkipTest("VMs are still migrating and the test will not be able to check the conditions the test is intended for");
-                
-            
+
+
         return
 
     @attr(
@@ -275,7 +284,7 @@ class TestHostMaintenance(cloudstackTestCase):
             "sg"],
         required_hardware="true")
     def test_02_cancel_host_maintenace_with_migration_jobs(self):
-        
+
         listHost = Host.list(
             self.apiclient,
             type='Routing',
@@ -284,31 +293,31 @@ class TestHostMaintenance(cloudstackTestCase):
         )
         for host in listHost:
             self.logger.debug('2 Hypervisor = {}'.format(host.id))
-            
+
         if (len(listHost) < 2):
             raise unittest.SkipTest("Cancel host maintenance when VMs are migrating can only be tested with 2 hosts");
             return
 
-        
+
         no_of_vms = self.noOfVMsOnHost(listHost[0].id)
-        
+
         no_of_vms = no_of_vms + self.noOfVMsOnHost(listHost[1].id)
-                
+
         if no_of_vms < 5:
             self.logger.debug("Create VMs as there are not enough vms to check host maintenance")
             no_vm_req = 5 - no_of_vms
             if (no_vm_req > 0):
                 self.logger.debug("Creating vms = {}".format(no_vm_req))
                 self.vmlist = self.createVMs(listHost[0].id, no_vm_req)
-        
+
         migrations_finished = True
-        
+
         try:
             migrations_finished = self.hostPrepareAndCancelMaintenance(listHost[0].id, listHost[1].id)
 
             if migrations_finished:
                 migrations_finished = self.hostPrepareAndCancelMaintenance(listHost[1].id, listHost[0].id)
-           
+
         except Exception as e:
             self.logger.debug("Exception {}".format(e))
             self.fail("Cancel host maintenance failed {}".format(e[0]))
@@ -358,9 +367,10 @@ class TestHostMaintenance(cloudstackTestCase):
 
         migrations_finished = True
 
-        ssh_client = self.get_ssh_client(listHost[1].ipaddress)
-        ssh_client.execute("iptables -I OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 49152:49215 -m comment --comment 'test block migrations'")
-        ssh_client.execute("iptables -I OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 16509 -m comment --comment 'test block migrations'")
+        self.ssh_client = self.get_ssh_client(listHost[0].ipaddress)
+        self.ssh_client.execute("iptables -I OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 49152:49215 -m comment --comment 'test block migrations'")
+        self.ssh_client.execute("iptables -I OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 16509 -m comment --comment 'test block migrations'")
+        self.needs_unblock_iptables = True
 
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = target_host_id
@@ -377,9 +387,6 @@ class TestHostMaintenance(cloudstackTestCase):
         self.apiclient.cancelHostMaintenance(cmd)
 
         self.logger.debug('Host with id {} has been sent to cancelHostMaintenance'.format(target_host_id))
-
-        ssh_client.execute("iptables -I OUTPUT -j ACCEPT -m state --state NEW -m tcp -p tcp --dport 49152:49215 -m comment --comment 'open port for migrations'")
-        ssh_client.execute("iptables -I OUTPUT -j ACCEPT -m state --state NEW -m tcp -p tcp --dport 16509 -m comment --comment 'open port for migrations'")
 
         if error_in_maintenance_reached == False:
             self.fail("Error in maintenance state should have reached after ports block")

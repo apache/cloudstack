@@ -1162,6 +1162,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new InvalidParameterValueException("Host with id " + hostId.toString() + " doesn't exist");
         }
 
+        if (host.getResourceState() != ResourceState.PrepareForMaintenance &&
+                host.getResourceState() != ResourceState.ErrorInPrepareForMaintenance &&
+                host.getResourceState() != ResourceState.Maintenance &&
+                host.getResourceState() != ResourceState.ErrorInMaintenance) {
+            throw new CloudRuntimeException("Cannot perform cancelMaintenance when resource state is " + host.getResourceState() + ", hostId = " + hostId);
+        }
+
         processResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_BEFORE, hostId);
         final boolean success = cancelMaintenance(hostId);
         processResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, hostId);
@@ -1279,6 +1286,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (host == null) {
             s_logger.debug("Unable to find host " + hostId);
             throw new InvalidParameterValueException("Unable to find host with ID: " + hostId + ". Please specify a valid host ID.");
+        }
+
+        final ResourceState hostState = host.getResourceState();
+        if (hostState == ResourceState.Maintenance || hostState == ResourceState.PrepareForMaintenance ||
+                hostState == ResourceState.ErrorInMaintenance || hostState == ResourceState.ErrorInPrepareForMaintenance) {
+            throw new CloudRuntimeException("Host is already in state " + hostState + ". Cannot recall for maintenance until resolved.");
         }
 
         if (_hostDao.countBy(host.getClusterId(), ResourceState.PrepareForMaintenance, ResourceState.ErrorInPrepareForMaintenance) > 0) {
@@ -1400,7 +1413,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         s_logger.info("Attempting maintenance for host " + host.getName());
         // Step 1: If there are no VMs in migrating, running, starting, stopping, error or unknown state we can safely move the host to maintenance.
-        if (CollectionUtils.isEmpty(_vmDao.findByHostInStates(host.getId(), State.Migrating, State.Running, State.Starting, State.Stopping, State.Error, State.Unknown))) {
+        if (CollectionUtils.isEmpty(_vmDao.findByHostInStates(host.getId(),
+                State.Migrating, State.Running, State.Starting, State.Stopping, State.Error, State.Unknown))) {
             return setHostIntoMaintenance(host);
         }
 
@@ -1415,8 +1429,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         final List<VMInstanceVO> failedMigrations = new ArrayList<>(_vmDao.listNonMigratingVmsByHostEqualsLastHost(hostId));
-        final List<VMInstanceVO> errorVms = new ArrayList<>(_vmDao.findByHostInStates(hostId, State.Unknown, State.Error, State.Shutdowned));
-        final boolean hasMigratingVms = CollectionUtils.isNotEmpty(_vmDao.listVmsMigratingFromHost(hostId));
+        final List<VMInstanceVO> errorVms = new ArrayList<>(_vmDao.findByHostInStates(hostId, State.Unknown, State.Error));
+        final boolean hasMigratingAwayVms = CollectionUtils.isNotEmpty(_vmDao.listVmsMigratingFromHost(hostId));
         final boolean hasRunningVms = CollectionUtils.isNotEmpty(_vmDao.findByHostInStates(hostId, State.Running));
         final boolean hasFailedMigrations = CollectionUtils.isNotEmpty(failedMigrations);
         final boolean hasVmsInFailureStates = CollectionUtils.isNotEmpty(errorVms);
@@ -1425,13 +1439,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         // Step 3: If there are no pending migration retries but host still has running VMs or,
         // host has VMs in failure state / failed migrations we move the host to ErrorInMaintenance state.
-        if (!hasPendingMigrationRetries && (hasRunningVms || (!hasMigratingVms && hasVmsInFailureStates))) {
+        if ((!hasPendingMigrationRetries && !hasMigratingAwayVms && hasRunningVms) ||
+                (!hasRunningVms && !hasMigratingAwayVms && hasVmsInFailureStates)) {
             return setHostIntoErrorInMaintenance(host, errorVms);
         }
 
         // Step 4: IF there are pending migrations or ongoing retries left or stopping VMs and there were errors or failed
         // migrations we put the host into ErrorInPrepareForMaintenance
-        if ((hasPendingMigrationRetries || hasMigratingVms || hasStoppingVms) && (hasVmsInFailureStates || hasFailedMigrations)) {
+        if ((hasPendingMigrationRetries || hasMigratingAwayVms || hasStoppingVms) && (hasVmsInFailureStates || hasFailedMigrations)) {
             return setHostIntoErrorInPrepareForMaintenance(host, errorVms);
         }
 
@@ -1454,7 +1469,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 hostInMaintenance = attemptMaintain(host);
             }
         } catch (final NoTransitionException e) {
-            s_logger.debug("Cannot transmit host " + host.getId() + "to Maintenance state", e);
+            s_logger.debug("Cannot transmit host " + host.getId() + " to Maintenance state", e);
         }
         return hostInMaintenance;
     }
