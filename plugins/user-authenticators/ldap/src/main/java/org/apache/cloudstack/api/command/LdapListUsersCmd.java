@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import com.cloud.domain.Domain;
 import com.cloud.user.User;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -76,7 +77,7 @@ import com.cloud.user.Account;
  * @enduml
  */
 @APICommand(name = "listLdapUsers", responseObject = LdapUserResponse.class, description = "Lists LDAP Users according to the specifications from the user request.", since = "4.2.0",
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin,RoleType.DomainAdmin})
 public class LdapListUsersCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(LdapListUsersCmd.class.getName());
@@ -170,7 +171,8 @@ public class LdapListUsersCmd extends BaseListCmd {
             ListResponse<UserResponse> cloudstackUsersresponse;
             switch (getUserFilter()) {
             case ANY_DOMAIN:
-                cloudstackUsersresponse = _queryService.searchForUsers(1l,true);
+                // get the user domain so if the calling user is a root admin ....
+                cloudstackUsersresponse = _queryService.searchForUsers(CallContext.current().getCallingAccount().getDomainId(), true);
                 break;
             case NO_FILTER:
                 cloudstackUsersresponse = _queryService.searchForUsers(this.domainId,true);

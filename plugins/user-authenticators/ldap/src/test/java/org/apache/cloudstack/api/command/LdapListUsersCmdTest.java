@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command;
 
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
+import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainService;
 import com.cloud.user.User;
@@ -33,6 +34,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.ArrayList;
@@ -53,6 +56,7 @@ import static org.powermock.api.mockito.PowerMockito.spy;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 @RunWith(PowerMockRunner.class)
+@PrepareForTest(CallContext.class)
 public class LdapListUsersCmdTest implements LdapConfigurationChanger {
 
     public static final String LOCAL_DOMAIN_ID = "12345678-90ab-cdef-fedc-ba0987654321";
@@ -73,6 +77,14 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
         ldapListUsersCmd = new LdapListUsersCmd(ldapManager, queryService);
         cmdSpy = spy(ldapListUsersCmd);
+
+        PowerMockito.mockStatic(CallContext.class);
+        CallContext callContextMock = PowerMockito.mock(CallContext.class);
+        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
+        Account accountMock = PowerMockito.mock(Account.class);
+        PowerMockito.when(accountMock.getDomainId()).thenReturn(1l);
+        PowerMockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+
 // no need to        setHiddenField(ldapListUsersCmd, .... );
     }
 
