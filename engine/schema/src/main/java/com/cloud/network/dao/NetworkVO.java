@@ -181,6 +181,9 @@ public class NetworkVO implements Network {
     @Transient
     boolean rollingRestart = false;
 
+    @Transient
+    PVlanType pVlanType;
+
     public NetworkVO() {
         uuid = UUID.randomUUID().toString();
     }
@@ -660,5 +663,13 @@ public class NetworkVO implements Network {
 
     public void setRollingRestart(boolean rollingRestart) {
         this.rollingRestart = rollingRestart;
+    }
+
+    public PVlanType getPvlanType() {
+        return pVlanType;
+    }
+
+    public void setPvlanType(PVlanType pvlanType) {
+        this.pVlanType = pvlanType;
     }
 }

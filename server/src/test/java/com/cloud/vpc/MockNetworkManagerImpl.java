@@ -641,7 +641,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, boolean bypassVlanOverlapCheck, String networkDomain,
                                       Account owner, Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String gatewayv6,
-                                      String cidrv6, Boolean displayNetworkEnabled, String isolatedPvlan, String externalId) throws ConcurrentOperationException, InsufficientCapacityException,
+                                      String cidrv6, Boolean displayNetworkEnabled, String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId) throws ConcurrentOperationException, InsufficientCapacityException,
         ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
