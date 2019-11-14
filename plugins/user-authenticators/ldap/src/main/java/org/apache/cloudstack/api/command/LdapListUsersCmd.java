@@ -402,15 +402,14 @@ public class LdapListUsersCmd extends BaseListCmd {
         if(s_logger.isTraceEnabled()) {
             s_logger.trace("should be filtering potential imports!!!");
         }
-        // todo do not add only users not yet in cloudstack but include users that would be moved if they are so in ldap?
+        // functional possibility do not add only users not yet in cloudstack but include users that would be moved if they are so in ldap?
         // this means if they are part of a account linked to an ldap group/ou
-        for (LdapUserResponse ldapUser : input) {
-            if (isACloudstackUser(ldapUser)) {
-                if (getCloudstackUser(ldapUser).getUserSource().equals(User.Source.LDAP)) {
-                    input.remove(ldapUser);
-                }
-            }
-        }
+        input.removeIf(ldapUser ->
+                (
+                        (isACloudstackUser(ldapUser))
+                        && (getCloudstackUser(ldapUser).getUserSource().equalsIgnoreCase(User.Source.LDAP.toString()))
+                )
+        );
         annotateUserListWithSources(input);
         return input;
     }
@@ -426,7 +425,8 @@ public class LdapListUsersCmd extends BaseListCmd {
         if (cloudstackUser != null) {
             user.setUserSource(cloudstackUser.getUserSource());
         } else {
-            user.setUserSource(User.Source.LDAP.toString());
+            // it makes more sense to make it User.Source.UNKNOWN.toString()
+            user.setUserSource("");
         }
     }
 
