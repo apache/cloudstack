@@ -2004,14 +2004,10 @@
                                                         args.response.success({
                                                             data: items
                                                         });
-                                                    } else if(args.page == 1) {
+                                                    } else {
                                                         args.response.success({
                                                             data: null
                                                         });
-                                                    } else {
-                                                         cloudStack.dialog.notice({
-                                                             message: _l('message.no.more.hosts.available')
-                                                         });
                                                     }
                                                 }
                                             });
