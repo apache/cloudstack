@@ -48,7 +48,7 @@ public class NicProfile implements InternalIdentity, Serializable {
     URI broadcastUri;
     ReservationStrategy strategy;
     boolean defaultNic;
-    Integer mtu;
+    private Integer mtu;
     Integer networkRate;
     boolean isSecurityGroupEnabled;
 
