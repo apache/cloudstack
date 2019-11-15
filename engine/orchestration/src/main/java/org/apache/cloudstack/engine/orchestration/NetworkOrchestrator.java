@@ -18,6 +18,7 @@ package org.apache.cloudstack.engine.orchestration;
 
 
 import static com.cloud.utils.NumbersUtil.parseInt;
+import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -262,9 +263,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Inject
     ConfigurationManager _configMgr;
     @Inject
-    ClusterDao _clusterDao;
+    private ClusterDao clusterDao;
     @Inject
-    ClusterDetailsDao _clusterDetailsDao;
+    private ClusterDetailsDao clusterDetailsDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
     @Inject
@@ -583,10 +584,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                 _networkOfferingDao.persistDefaultL2NetworkOfferings();
 
-                final List<ClusterVO> clusterVOs = _clusterDao.listByHypervisorAndCluster(HypervisorType.KVM, Cluster.ClusterType.CloudManaged);
+                final List<ClusterVO> clusterVOs = clusterDao.listByHypervisorAndCluster(HypervisorType.KVM, Cluster.ClusterType.CloudManaged);
 
-                if ((clusterVOs != null) && !clusterVOs.isEmpty()) {
-                    final ClusterDetailsVO clusterDetails = _clusterDetailsDao.findDetail(clusterVOs.get(0).getId(), KvmMtuSize.key());
+                if (isNotEmpty(clusterVOs)) {
+                    final ClusterDetailsVO clusterDetails = clusterDetailsDao.findDetail(clusterVOs.get(0).getId(), KvmMtuSize.key());
 
                     if ((clusterDetails != null) && (parseInt(clusterDetails.getValue(), 0) > 0)) {
                         _kvmMtuSize = parseInt(clusterDetails.getValue(), 0);

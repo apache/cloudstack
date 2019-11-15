@@ -18,6 +18,8 @@ package com.cloud.vm;
 
 import static com.cloud.utils.NumbersUtil.parseInt;
 import static org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService.KvmMtuSize;
+import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -386,9 +388,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private AccountService _accountService;
     @Inject
-    private ClusterDao _clusterDao;
+    private ClusterDao clusterDao;
     @Inject
-    private ClusterDetailsDao _clusterDetailsDao;
+    private ClusterDetailsDao clusterDetailsDao;
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
@@ -1061,7 +1063,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             if (serviceOffering.getSpeed() == null) {
                 String cpuSpeed = customParameters.get(UsageEventVO.DynamicParameters.cpuSpeed.name());
-                if ((cpuSpeed == null) || (parseInt(cpuSpeed, -1) <= 0)) {
+                if (isBlank(cpuSpeed) || (parseInt(cpuSpeed, -1) <= 0)) {
                     throw new InvalidParameterValueException("Invalid cpu speed value, specify a value between 1 and " + Integer.MAX_VALUE);
                 }
             } else if (!serviceOffering.isCustomCpuSpeedSupported() && customParameters.containsKey(UsageEventVO.DynamicParameters.cpuSpeed.name())) {
@@ -2090,10 +2092,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
-        final List<ClusterVO> clusterVOs = _clusterDao.listByHypervisorAndCluster(HypervisorType.KVM, Cluster.ClusterType.CloudManaged);
+        final List<ClusterVO> clusterVOs = clusterDao.listByHypervisorAndCluster(HypervisorType.KVM, Cluster.ClusterType.CloudManaged);
 
-        if ((clusterVOs != null) && !clusterVOs.isEmpty()) {
-            final ClusterDetailsVO clusterDetails = _clusterDetailsDao.findDetail(clusterVOs.get(0).getId(), KvmMtuSize.key());
+        if (isNotEmpty(clusterVOs)) {
+            final ClusterDetailsVO clusterDetails = clusterDetailsDao.findDetail(clusterVOs.get(0).getId(), KvmMtuSize.key());
 
             if ((clusterDetails != null) && (parseInt(clusterDetails.getValue(), 0) > 0)) {
                 _kvmMtuSize = parseInt(clusterDetails.getValue(), 0);
@@ -4739,7 +4741,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new PermissionDeniedException(
                         "Parameter " + ApiConstants.CLUSTER_ID + " can only be specified by a Root Admin, permission denied");
             }
-            destinationCluster = _clusterDao.findById(clusterId);
+            destinationCluster = clusterDao.findById(clusterId);
             if (destinationCluster == null) {
                 throw new InvalidParameterValueException("Unable to find the cluster to deploy the VM, cluster id=" + clusterId);
             }
@@ -5321,7 +5323,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void checkDestinationHypervisorType(StoragePool destPool, VMInstanceVO vm) {
         HypervisorType destHypervisorType = destPool.getHypervisor();
         if (destHypervisorType == null) {
-            destHypervisorType = _clusterDao.findById(
+            destHypervisorType = clusterDao.findById(
                     destPool.getClusterId()).getHypervisorType();
         }
 
@@ -5433,7 +5435,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // call to core process
         DataCenterVO dcVO = _dcDao.findById(destinationHost.getDataCenterId());
         HostPodVO pod = _podDao.findById(destinationHost.getPodId());
-        Cluster cluster = _clusterDao.findById(destinationHost.getClusterId());
+        Cluster cluster = clusterDao.findById(destinationHost.getClusterId());
         DeployDestination dest = new DeployDestination(dcVO, pod, cluster, destinationHost);
 
         // check max guest vm limit for the destinationHost
