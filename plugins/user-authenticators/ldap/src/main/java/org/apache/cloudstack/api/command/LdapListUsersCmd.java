@@ -246,7 +246,7 @@ public class LdapListUsersCmd extends BaseListCmd {
     }
 
     String getUserFilterString() {
-        return userFilter == null ? getListTypeString() == null ? "NoFilter" : getListTypeString().equals("any") ? "NoFilter" : "AnyDomain" : userFilter;
+        return userFilter == null ? getListTypeString() == null ? "NoFilter" : getListTypeString().equals("all") ? "NoFilter" : "AnyDomain" : userFilter;
     }
 
     UserFilter getUserFilter() {

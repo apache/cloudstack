@@ -196,7 +196,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
      */
     @Test
     public void getListtypeAny() {
-        when(cmdSpy.getListTypeString()).thenReturn("any");
+        when(cmdSpy.getListTypeString()).thenReturn("all");
         String userfilter = cmdSpy.getUserFilterString();
         assertEquals("NoFilter", userfilter);
     }
