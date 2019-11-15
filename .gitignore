@@ -28,11 +28,12 @@ dist/
 cloud-*.tar.bz2
 *.log
 *.pyc
+*.patch
 *.egginfo/
 *.egg-info/
 *.prefs
 build.number
-*.log.*.gz
+*.log.*
 cloud.log.*.*
 unittest
 deps/cloud.userlibraries

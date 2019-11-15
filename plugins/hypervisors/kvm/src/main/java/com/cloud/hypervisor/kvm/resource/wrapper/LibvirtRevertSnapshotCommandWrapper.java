@@ -86,14 +86,16 @@ public final class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<Re
                 rados.connect();
 
                 String[] rbdPoolAndVolumeAndSnapshot = snapshotRelPath.split("/");
+                int snapshotIndex = rbdPoolAndVolumeAndSnapshot.length - 1;
+                String rbdSnapshotId = rbdPoolAndVolumeAndSnapshot[snapshotIndex];
 
                 IoCTX io = rados.ioCtxCreate(primaryPool.getSourceDir());
                 Rbd rbd = new Rbd(io);
-                RbdImage image = rbd.open(rbdPoolAndVolumeAndSnapshot[1]);
 
-                s_logger.debug(String.format("Attempting to rollback RBD snapshot [name:%s], [pool:%s], [volumeid:%s], [snapshotid:%s]", snapshot.getName(),
-                        rbdPoolAndVolumeAndSnapshot[0], rbdPoolAndVolumeAndSnapshot[1], rbdPoolAndVolumeAndSnapshot[2]));
-                image.snapRollBack(rbdPoolAndVolumeAndSnapshot[2]);
+                s_logger.debug(String.format("Attempting to rollback RBD snapshot [name:%s], [volumeid:%s], [snapshotid:%s]", snapshot.getName(), volumePath, rbdSnapshotId));
+
+                RbdImage image = rbd.open(volumePath);
+                image.snapRollBack(rbdSnapshotId);
 
                 rbd.close(image);
                 rados.ioCtxDestroy(io);

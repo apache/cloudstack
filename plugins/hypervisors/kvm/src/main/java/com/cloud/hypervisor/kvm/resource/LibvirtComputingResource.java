@@ -46,8 +46,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
-import com.cloud.resource.RequestWrapper;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -112,6 +110,7 @@ import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ClockDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ConsoleDef;
@@ -148,6 +147,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStorageProcessor;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.resource.RequestWrapper;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.JavaStorageLayer;
@@ -260,6 +260,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _localStoragePath;
     protected String _localStorageUUID;
     protected boolean _noMemBalloon = false;
+    protected String _guestCpuArch;
     protected String _guestCpuMode;
     protected String _guestCpuModel;
     protected boolean _noKvmClock;
@@ -953,6 +954,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             _hypervisorQemuVersion = conn.getVersion();
         } catch (final LibvirtException e) {
             s_logger.trace("Ignoring libvirt error.", e);
+        }
+
+        final String cpuArchOverride = (String)params.get("guest.cpu.arch");
+        if (!Strings.isNullOrEmpty(cpuArchOverride)) {
+            _guestCpuArch = cpuArchOverride;
+            s_logger.info("Using guest CPU architecture: " + _guestCpuArch);
         }
 
         _guestCpuMode = (String)params.get("guest.cpu.mode");
@@ -2086,8 +2093,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             vm.setLibvirtVersion(_hypervisorLibvirtVersion);
             vm.setQemuVersion(_hypervisorQemuVersion);
         }
-        guest.setGuestArch(vmTO.getArch());
-        guest.setMachineType("pc");
+        guest.setGuestArch(_guestCpuArch != null ? _guestCpuArch : vmTO.getArch());
+        guest.setMachineType(_guestCpuArch != null && _guestCpuArch.equals("aarch64") ? "virt" : "pc");
         guest.setUuid(uuid);
         guest.setBootOrder(GuestDef.BootOrder.CDROM);
         guest.setBootOrder(GuestDef.BootOrder.HARDISK);
@@ -2208,6 +2215,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final InputDef input = new InputDef("tablet", "usb");
         devices.addDevice(input);
 
+        // Add an explicit USB devices for ARM64
+        if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
+            devices.addDevice(new InputDef("keyboard", "usb"));
+            devices.addDevice(new InputDef("mouse", "usb"));
+            devices.addDevice(new LibvirtVMDef.USBDef((short)0, 0, 5, 0, 0));
+        }
 
         DiskDef.DiskBus busT = getDiskModelFromVMDetail(vmTO);
 
@@ -2353,6 +2366,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 } else {
                     disk.defISODisk(volPath, devId);
                 }
+                if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
+                    disk.setBusType(DiskDef.DiskBus.SCSI);
+                }
             } else {
                 if (diskBusType == DiskDef.DiskBus.SCSI ) {
                     disk.setQemuDriver(true);
@@ -2411,6 +2427,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (_sysvmISOPath != null) {
                 final DiskDef iso = new DiskDef();
                 iso.defISODisk(_sysvmISOPath);
+                if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
+                    iso.setBusType(DiskDef.DiskBus.SCSI);
+                }
                 vm.getDevices().addDevice(iso);
             }
         }
@@ -3183,6 +3202,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return null;
         }
 
+        if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
+            return DiskDef.DiskBus.SCSI;
+        }
+
         final String rootDiskController = details.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         if (StringUtils.isNotBlank(rootDiskController)) {
             s_logger.debug("Passed custom disk bus " + rootDiskController);
@@ -3197,6 +3220,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private DiskDef.DiskBus getGuestDiskModel(final String platformEmulator) {
+        if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
+            return DiskDef.DiskBus.SCSI;
+        }
+
         if (platformEmulator == null) {
             return DiskDef.DiskBus.IDE;
         } else if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {

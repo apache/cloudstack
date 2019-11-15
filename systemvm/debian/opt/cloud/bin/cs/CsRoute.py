@@ -79,7 +79,7 @@ class CsRoute:
         found = False
         search = cmd
         if "throw" in search:
-            search = "type " + search
+            search = search.replace("throw", "")
         for i in CsHelper.execute("ip route show " + search):
             found = True
         if not found and method == "add":
