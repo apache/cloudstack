@@ -24,6 +24,7 @@ import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.util.Properties;
 
+import com.cloud.utils.Pair;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.eclipse.jetty.jmx.MBeanContainer;
@@ -40,6 +41,7 @@ import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.MovedContextHandler;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
+import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
@@ -175,7 +177,8 @@ public class ServerDaemon implements Daemon {
         createHttpConnector(httpConfig);
 
         // Setup handlers
-        server.setHandler(createHandlers());
+        Pair<SessionHandler,HandlerCollection> pair = createHandlers();
+        server.setHandler(pair.second());
 
         // Extra config options
         server.setStopAtShutdown(true);
@@ -184,6 +187,8 @@ public class ServerDaemon implements Daemon {
         createHttpsConnector(httpConfig);
 
         server.start();
+        // Must set the session timeout after the server has started
+        pair.first().setMaxInactiveInterval(sessionTimeout * 60);
         server.join();
     }
 
@@ -236,11 +241,10 @@ public class ServerDaemon implements Daemon {
         }
     }
 
-    private HandlerCollection createHandlers() {
+    private Pair<SessionHandler,HandlerCollection> createHandlers() {
         final WebAppContext webApp = new WebAppContext();
         webApp.setContextPath(contextPath);
         webApp.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "false");
-        webApp.getSessionHandler().setMaxInactiveInterval(sessionTimeout * 60);
 
         // GZIP handler
         final GzipHandler gzipHandler = new GzipHandler();
@@ -259,14 +263,14 @@ public class ServerDaemon implements Daemon {
         final RequestLogHandler log = new RequestLogHandler();
         log.setRequestLog(createRequestLog());
 
-        // Redirect root context handler
+        // Redirect root context handler_war
         MovedContextHandler rootRedirect = new MovedContextHandler();
         rootRedirect.setContextPath("/");
         rootRedirect.setNewContextURL(contextPath);
         rootRedirect.setPermanent(true);
 
         // Put rootRedirect at the end!
-        return new HandlerCollection(log, gzipHandler, rootRedirect);
+        return new Pair<>(webApp.getSessionHandler(), new HandlerCollection(log, gzipHandler, rootRedirect));
     }
 
     private RequestLog createRequestLog() {

@@ -835,7 +835,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
             public void reallyRun() {
                 try {
-                    s_logger.info("Begin cleanup expired async-jobs");
+                    s_logger.trace("Begin cleanup expired async-jobs");
 
                     // forcefully cancel blocking queue items if they've been staying there for too long
                     List<SyncQueueItemVO> blockItems = _queueMgr.getBlockedQueueItems(JobCancelThresholdMinutes.value() * 60000, false);
@@ -885,7 +885,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         }
                     }
 
-                    s_logger.info("End cleanup expired async-jobs");
+                    s_logger.trace("End cleanup expired async-jobs");
                 } catch (Throwable e) {
                     s_logger.error("Unexpected exception when trying to execute queue item, ", e);
                 }
