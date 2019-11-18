@@ -111,6 +111,7 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.NicProfile;
@@ -329,6 +330,7 @@ public class VmImportManagerImpl implements VmImportService {
                         }
                     }
                 } catch (Exception e) {
+                    LOGGER.warn(String.format("Unable to find volume file name for volume ID: %s while adding filters unmanaged VMs", volumeVO.getUuid()), e);
                 }
                 if (!volumeFileNames.isEmpty()) {
                     additionalNameFilter.addAll(volumeFileNames);
@@ -684,6 +686,7 @@ public class VmImportManagerImpl implements VmImportService {
         try {
             networkOrchestrationService.release(profile, true);
         } catch (Exception e) {
+            LOGGER.error(String.format("Unable to release NICs for unsuccessful import unmanaged VM: %s", userVm.getInstanceName()), e);
             nicDao.removeNicsForInstance(userVm.getId());
         }
         // Remove vm
@@ -808,7 +811,14 @@ public class VmImportManagerImpl implements VmImportService {
                     volume = volumeManager.migrateVolume(volumeVO, storagePool);
                 }
                 if (volume == null) {
-                    throw new Exception();
+                    String msg = "";
+                    if (vm.getState().equals(VirtualMachine.State.Running)) {
+                        msg = String.format("Live migration for volume ID: %s to destination pool ID: %s failed", volumeVO.getUuid(), storagePool.getUuid());
+                    } else {
+                        msg = String.format("Migration for volume ID: %s to destination pool ID: %s failed", volumeVO.getUuid(), storagePool.getUuid());
+                    }
+                    LOGGER.error(msg);
+                    throw new CloudRuntimeException(msg);
                 }
             } catch (Exception e) {
                 LOGGER.error(String.format("VM import failed for unmanaged vm: %s during volume migration", vm.getInstanceName()), e);
@@ -834,7 +844,7 @@ public class VmImportManagerImpl implements VmImportService {
                         userVm.getHypervisorType().toString(), VirtualMachine.class.getName(), userVm.getUuid(), userVm.getDetails(), userVm.isDisplayVm());
             }
         } catch (Exception e) {
-            LOGGER.error("Failed to publish usage records during VM import");
+            LOGGER.error(String.format("Failed to publish usage records during VM import for unmanaged vm %s", userVm.getInstanceName()), e);
             cleanupFailedImportVM(userVm);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm %s during publishing usage records", userVm.getInstanceName()));
         }
@@ -848,7 +858,7 @@ public class VmImportManagerImpl implements VmImportService {
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(), null, volume.getSize(),
                         Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
             } catch (Exception e) {
-                LOGGER.error(String.format("Failed to publish volume usage records during VM import. %s", Strings.nullToEmpty(e.getMessage())));
+                LOGGER.error(String.format("Failed to publish volume ID: %s usage records during VM import", volume.getUuid()), e);
             }
             resourceLimitService.incrementResourceCount(userVm.getAccountId(), Resource.ResourceType.volume, volume.isDisplayVolume());
             resourceLimitService.incrementResourceCount(userVm.getAccountId(), Resource.ResourceType.primary_storage, volume.isDisplayVolume(), volume.getSize());
