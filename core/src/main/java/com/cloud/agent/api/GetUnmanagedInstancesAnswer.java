@@ -19,18 +19,18 @@ package com.cloud.agent.api;
 
 import java.util.HashMap;
 
-import org.apache.cloudstack.vm.UnmanagedInstance;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
 @LogLevel(LogLevel.Log4jLevel.Trace)
 public class GetUnmanagedInstancesAnswer extends Answer {
 
     private String instanceName;
-    private HashMap<String, UnmanagedInstance> unmanagedInstances;
+    private HashMap<String, UnmanagedInstanceTO> unmanagedInstances;
 
     GetUnmanagedInstancesAnswer() {
     }
 
-    public GetUnmanagedInstancesAnswer(GetUnmanagedInstancesCommand cmd, String details, HashMap<String, UnmanagedInstance> unmanagedInstances) {
+    public GetUnmanagedInstancesAnswer(GetUnmanagedInstancesCommand cmd, String details, HashMap<String, UnmanagedInstanceTO> unmanagedInstances) {
         super(cmd, true, details);
         this.instanceName = cmd.getInstanceName();
         this.unmanagedInstances = unmanagedInstances;
@@ -44,11 +44,11 @@ public class GetUnmanagedInstancesAnswer extends Answer {
         this.instanceName = instanceName;
     }
 
-    public HashMap<String, UnmanagedInstance> getUnmanagedInstances() {
+    public HashMap<String, UnmanagedInstanceTO> getUnmanagedInstances() {
         return unmanagedInstances;
     }
 
-    public void setUnmanagedInstances(HashMap<String, UnmanagedInstance> unmanagedInstances) {
+    public void setUnmanagedInstances(HashMap<String, UnmanagedInstanceTO> unmanagedInstances) {
         this.unmanagedInstances = unmanagedInstances;
     }
 

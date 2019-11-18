@@ -19,11 +19,17 @@ package com.cloud.agent.api;
 
 import java.util.List;
 
+/**
+ * Unmanaged instances are those virtual machines which are present at hypervisor end but not available in CloudStack.
+ * Such virtual machines might have been created out of band, directly from hypervisor.
+ * Managed instances will be those virtual machines that are created from CloudStack or CloudStack have database record for them.
+ * All managed instances will be filtered while trying to find unmanaged instances.
+ */
+
 @LogLevel(LogLevel.Log4jLevel.Trace)
 public class GetUnmanagedInstancesCommand extends Command {
 
     String instanceName;
-
     List<String> managedInstancesNames;
 
     public GetUnmanagedInstancesCommand() {

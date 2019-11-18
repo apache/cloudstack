@@ -1654,14 +1654,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         } else {
             vol.setDeviceId(1l);
         }
-        if (template.getFormat() == ImageFormat.ISO) {
-            vol.setIsoId(template.getId());
-        } else if (template.getTemplateType().equals(Storage.TemplateType.DATADISK)) {
-            vol.setTemplateId(template.getId());
-        }
 
-        if (type == Type.ROOT) {
-            vol.setTemplateId(template.getId());
+        if (template != null) {
+            if (template.getFormat() == ImageFormat.ISO) {
+                vol.setIsoId(template.getId());
+            } else if (template.getTemplateType().equals(Storage.TemplateType.DATADISK)) {
+                vol.setTemplateId(template.getId());
+            }
+            if (type == Type.ROOT) {
+                vol.setTemplateId(template.getId());
+            }
         }
 
         // display flag matters only for the User vms

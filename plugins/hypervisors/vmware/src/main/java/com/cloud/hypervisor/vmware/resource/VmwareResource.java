@@ -53,7 +53,7 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
-import org.apache.cloudstack.vm.UnmanagedInstance;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -6796,8 +6796,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return keyFile;
     }
 
-    private List<UnmanagedInstance.Disk> getUnmanageInstanceDisks(VirtualMachineMO vmMo) {
-        List<UnmanagedInstance.Disk> instanceDisks = new ArrayList<>();
+    private List<UnmanagedInstanceTO.Disk> getUnmanageInstanceDisks(VirtualMachineMO vmMo) {
+        List<UnmanagedInstanceTO.Disk> instanceDisks = new ArrayList<>();
         VirtualDisk[] disks = null;
         try {
             disks = vmMo.getAllDiskDevice();
@@ -6808,7 +6808,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             for (VirtualDevice diskDevice : disks) {
                 try {
                     if (diskDevice instanceof VirtualDisk) {
-                        UnmanagedInstance.Disk instanceDisk = new UnmanagedInstance.Disk();
+                        UnmanagedInstanceTO.Disk instanceDisk = new UnmanagedInstanceTO.Disk();
                         VirtualDisk disk = (VirtualDisk) diskDevice;
                         instanceDisk.setDiskId(disk.getDiskObjectId());
                         instanceDisk.setLabel(disk.getDeviceInfo() != null ? disk.getDeviceInfo().getLabel() : "");
@@ -6864,13 +6864,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     s_logger.info("Unable to retrieve unmanaged instance disk info. " + e.getMessage());
                 }
             }
-            Collections.sort(instanceDisks, new Comparator<UnmanagedInstance.Disk>() {
+            Collections.sort(instanceDisks, new Comparator<UnmanagedInstanceTO.Disk>() {
                 @Override
-                public int compare(final UnmanagedInstance.Disk disk1, final UnmanagedInstance.Disk disk2) {
+                public int compare(final UnmanagedInstanceTO.Disk disk1, final UnmanagedInstanceTO.Disk disk2) {
                     return extractInt(disk1) - extractInt(disk2);
                 }
 
-                int extractInt(UnmanagedInstance.Disk disk) {
+                int extractInt(UnmanagedInstanceTO.Disk disk) {
                     String num = disk.getLabel().replaceAll("\\D", "");
                     // return 0 if no digits found
                     return num.isEmpty() ? 0 : Integer.parseInt(num);
@@ -6880,8 +6880,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return instanceDisks;
     }
 
-    private List<UnmanagedInstance.Nic> getUnmanageInstanceNics(VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo) {
-        List<UnmanagedInstance.Nic> instanceNics = new ArrayList<>();
+    private List<UnmanagedInstanceTO.Nic> getUnmanageInstanceNics(VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo) {
+        List<UnmanagedInstanceTO.Nic> instanceNics = new ArrayList<>();
 
         HashMap<String, List<String>> guestNicMacIPAddressMap = new HashMap<>();
         try {
@@ -6915,7 +6915,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 try {
                     VirtualEthernetCard ethCardDevice = (VirtualEthernetCard) nic;
                     s_logger.error(nic.getClass().getCanonicalName() + " " + nic.getBacking().getClass().getCanonicalName() + " " + ethCardDevice.getMacAddress());
-                    UnmanagedInstance.Nic instanceNic = new UnmanagedInstance.Nic();
+                    UnmanagedInstanceTO.Nic instanceNic = new UnmanagedInstanceTO.Nic();
                     instanceNic.setNicId(ethCardDevice.getDeviceInfo().getLabel());
                     if (ethCardDevice instanceof VirtualPCNet32) {
                         instanceNic.setAdapterType(VirtualEthernetCardType.PCNet32.toString());
@@ -6986,13 +6986,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     s_logger.info("Unable to retrieve unmanaged instance nic info. " + e.getMessage());
                 }
             }
-            Collections.sort(instanceNics, new Comparator<UnmanagedInstance.Nic>() {
+            Collections.sort(instanceNics, new Comparator<UnmanagedInstanceTO.Nic>() {
                 @Override
-                public int compare(final UnmanagedInstance.Nic nic1, final UnmanagedInstance.Nic nic2) {
+                public int compare(final UnmanagedInstanceTO.Nic nic1, final UnmanagedInstanceTO.Nic nic2) {
                     return extractInt(nic1) - extractInt(nic2);
                 }
 
-                int extractInt(UnmanagedInstance.Nic nic) {
+                int extractInt(UnmanagedInstanceTO.Nic nic) {
                     String num = nic.getNicId().replaceAll("\\D", "");
                     // return 0 if no digits found
                     return num.isEmpty() ? 0 : Integer.parseInt(num);
@@ -7002,10 +7002,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return  instanceNics;
     }
 
-    private UnmanagedInstance getUnmanagedInstance(VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo) {
-        UnmanagedInstance instance = null;
+    private UnmanagedInstanceTO getUnmanagedInstance(VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo) {
+        UnmanagedInstanceTO instance = null;
         try {
-            instance = new UnmanagedInstance();
+            instance = new UnmanagedInstanceTO();
             instance.setName(vmMo.getVmName());
             instance.setCpuCores(vmMo.getConfigSummary().getNumCpu());
             instance.setCpuCoresPerSocket(vmMo.getCoresPerSocket());
@@ -7027,12 +7027,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (Strings.isNullOrEmpty(instance.getOperatingSystem())) {
                 instance.setOperatingSystem(vmMo.getConfigSummary().getGuestFullName());
             }
-            UnmanagedInstance.PowerState powerState = UnmanagedInstance.PowerState.PowerUnknown;
+            UnmanagedInstanceTO.PowerState powerState = UnmanagedInstanceTO.PowerState.PowerUnknown;
             if (vmMo.getPowerState().toString().equalsIgnoreCase("POWERED_ON")) {
-                powerState = UnmanagedInstance.PowerState.PowerOn;
+                powerState = UnmanagedInstanceTO.PowerState.PowerOn;
             }
             if (vmMo.getPowerState().toString().equalsIgnoreCase("POWERED_OFF")) {
-                powerState = UnmanagedInstance.PowerState.PowerOff;
+                powerState = UnmanagedInstanceTO.PowerState.PowerOff;
             }
             instance.setPowerState(powerState);
             instance.setDisks(getUnmanageInstanceDisks(vmMo));
@@ -7050,7 +7050,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         VmwareContext context = getServiceContext();
-        HashMap<String, UnmanagedInstance> unmanagedInstances = new HashMap<>();
+        HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>();
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(context);
 
@@ -7073,7 +7073,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         !cmd.getInstanceName().equals(vmMo.getVmName())) {
                     continue;
                 }
-                UnmanagedInstance instance = getUnmanagedInstance(hyperHost, vmMo);
+                UnmanagedInstanceTO instance = getUnmanagedInstance(hyperHost, vmMo);
                 if (instance != null) {
                     unmanagedInstances.put(instance.getName(), instance);
                 }

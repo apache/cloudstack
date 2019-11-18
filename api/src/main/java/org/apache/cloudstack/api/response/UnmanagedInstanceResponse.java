@@ -23,12 +23,12 @@ import java.util.Set;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.vm.UnmanagedInstance;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value = UnmanagedInstance.class)
+@EntityReference(value = UnmanagedInstanceTO.class)
 public class UnmanagedInstanceResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NAME)

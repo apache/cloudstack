@@ -19,7 +19,7 @@ package org.apache.cloudstack.vm;
 
 import java.util.List;
 
-public class UnmanagedInstance {
+public class UnmanagedInstanceTO {
 
     public enum PowerState {
         PowerUnknown,

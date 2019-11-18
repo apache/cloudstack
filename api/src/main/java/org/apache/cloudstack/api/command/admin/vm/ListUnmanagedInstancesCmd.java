@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.vm.UnmanagedInstance;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.cloudstack.vm.VmImportService;
 import org.apache.log4j.Logger;
 
@@ -46,7 +46,7 @@ import com.cloud.user.Account;
         description = "Lists unmanaged virtual machines for a given cluster.",
         responseObject = UnmanagedInstanceResponse.class,
         responseView = ResponseObject.ResponseView.Full,
-        entityType = {UnmanagedInstance.class},
+        entityType = {UnmanagedInstanceTO.class},
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin},

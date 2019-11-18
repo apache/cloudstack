@@ -167,15 +167,15 @@ public class VmImportManagerImplTest {
         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
 
-        UnmanagedInstance instance = new UnmanagedInstance();
+        UnmanagedInstanceTO instance = new UnmanagedInstanceTO();
         instance.setName("TestInstance");
         instance.setCpuCores(2);
         instance.setCpuCoresPerSocket(1);
         instance.setCpuSpeed(1000);
         instance.setMemory(1024);
         instance.setOperatingSystem("CentOS 7");
-        List<UnmanagedInstance.Disk> instanceDisks = new ArrayList<>();
-        UnmanagedInstance.Disk instanceDisk = new UnmanagedInstance.Disk();
+        List<UnmanagedInstanceTO.Disk> instanceDisks = new ArrayList<>();
+        UnmanagedInstanceTO.Disk instanceDisk = new UnmanagedInstanceTO.Disk();
         instanceDisk.setDiskId("1000-1");
         instanceDisk.setLabel("DiskLabel");
         instanceDisk.setController("scsi");
@@ -187,15 +187,15 @@ public class VmImportManagerImplTest {
         instanceDisk.setDatastoreType("NFS");
         instanceDisks.add(instanceDisk);
         instance.setDisks(instanceDisks);
-        List<UnmanagedInstance.Nic> instanceNics = new ArrayList<>();
-        UnmanagedInstance.Nic instanceNic = new UnmanagedInstance.Nic();
+        List<UnmanagedInstanceTO.Nic> instanceNics = new ArrayList<>();
+        UnmanagedInstanceTO.Nic instanceNic = new UnmanagedInstanceTO.Nic();
         instanceNic.setNicId("NIC 1");
         instanceNic.setAdapterType("VirtualE1000E");
         instanceNic.setMacAddress("02:00:2e:0f:00:02");
         instanceNic.setVlan(1024);
         instanceNics.add(instanceNic);
         instance.setNics(instanceNics);
-        instance.setPowerState(UnmanagedInstance.PowerState.PowerOn);
+        instance.setPowerState(UnmanagedInstanceTO.PowerState.PowerOn);
 
         ClusterVO clusterVO = new ClusterVO(1L, 1L, "Cluster");
         clusterVO.setHypervisorType(Hypervisor.HypervisorType.VMware.toString());
@@ -215,7 +215,7 @@ public class VmImportManagerImplTest {
         when(vmDao.listByHostId(Mockito.anyLong())).thenReturn(vms);
         when(vmDao.listByLastHostIdAndStates(Mockito.anyLong())).thenReturn(vms);
         GetUnmanagedInstancesCommand cmd = Mockito.mock(GetUnmanagedInstancesCommand.class);
-        HashMap<String, UnmanagedInstance> map = new HashMap<>();
+        HashMap<String, UnmanagedInstanceTO> map = new HashMap<>();
         map.put(instance.getName(), instance);
         Answer answer = new GetUnmanagedInstancesAnswer(cmd, "", map);
         when(agentManager.easySend(Mockito.anyLong(), Mockito.any(GetUnmanagedInstancesCommand.class))).thenReturn(answer);
