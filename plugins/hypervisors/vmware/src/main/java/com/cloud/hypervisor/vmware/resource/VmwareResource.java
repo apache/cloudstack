@@ -643,7 +643,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
      * @return copy of params including new values, if suitable
      */
     protected EnumMap<VmwareStorageProcessorConfigurableFields, Object> examineStorageSubSystemCommandFullCloneFlagForVmware(CopyCommand cmd,
-                                                                                                                             EnumMap<VmwareStorageProcessorConfigurableFields, Object> params) {
+            EnumMap<VmwareStorageProcessorConfigurableFields, Object> params) {
         EnumMap<VmwareStorageProcessorConfigurableFields, Object> paramsCopy = new EnumMap<VmwareStorageProcessorConfigurableFields, Object>(params);
         HypervisorType hypervisor = cmd.getDestTO().getHypervisorType();
         if (hypervisor != null && hypervisor.equals(HypervisorType.VMware)) {
