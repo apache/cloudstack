@@ -28,6 +28,7 @@ from distutils.util import strtobool
 from marvin.sshClient import SshClient
 
 _multiprocess_shared_ = False
+MIN_VMS_FOR_TEST = 3
 
 
 class TestHostMaintenance(cloudstackTestCase):
@@ -113,18 +114,27 @@ class TestHostMaintenance(cloudstackTestCase):
         self.cleanup.append(self.service_offering)
         return vms
 
-    def checkAllVmsRunningOnHost(self, hostId):
+    def checkAllVmsRunningOnHost(self, data):
+        hostId = data["hostId"]
+        expectedNumVms = data["expected_vms"] if "expected_vms" in data else -1
         listVms1 = VirtualMachine.list(
             self.apiclient,
             hostid=hostId
         )
 
+        runningVms = 0
         if (listVms1 is not None):
             self.logger.debug('Vms found to test all running = {} '.format(len(listVms1)))
             for vm in listVms1:
                 if (vm.state != "Running"):
                     self.logger.debug('VirtualMachine on Host with id = {} is in {}'.format(vm.id, vm.state))
                     return (False, None)
+                else:
+                    runningVms = runningVms + 1
+            if expectedNumVms != -1:
+                if expectedNumVms != runningVms:
+                    return (False, None)
+
 
         response = list_ssvms(
             self.apiclient,
@@ -177,7 +187,7 @@ class TestHostMaintenance(cloudstackTestCase):
         self.logger.debug("Counting VMs on host " + hostId)
         if (listVms is not None):
             for vm in listVms:
-                self.logger.debug('VirtualMachine on Hyp 1 = {}'.format(vm.id))
+                self.logger.debug("VirtualMachine on Host " + hostId + " = " + vm.id)
                 no_of_vms=no_of_vms+1
         self.logger.debug("Found VMs on host " + str(no_of_vms))
         return no_of_vms
@@ -203,7 +213,8 @@ class TestHostMaintenance(cloudstackTestCase):
 
     def hostPrepareAndCancelMaintenance(self, target_host_id, other_host_id):
         # Wait for all VMs to complete any pending migrations.
-        if not wait_until(2, 60, self.checkAllVmsRunningOnHost, target_host_id) or not wait_until(2, 60, self.checkAllVmsRunningOnHost, other_host_id):
+        if not wait_until(3, 100, self.checkAllVmsRunningOnHost, {"hostId" : target_host_id}) or \
+                not wait_until(3, 100, self.checkAllVmsRunningOnHost, {"hostId": other_host_id}):
             raise Exception("Failed to wait for all VMs to reach running state to execute test")
 
         expected_vm_count_after_maintenance = self.noOfVMsOnHost(target_host_id) + self.noOfVMsOnHost(other_host_id)
@@ -214,8 +225,11 @@ class TestHostMaintenance(cloudstackTestCase):
         
         self.logger.debug('Host with id {} is in prepareHostForMaintenance'.format(target_host_id))
 
-        migrations_finished = wait_until(2, 100, self.migrationsFinished, target_host_id)
-        wait_until(2, 60, self.checkAllVmsRunningOnHost, other_host_id)
+        migrations_finished = wait_until(3, 200, self.migrationsFinished, target_host_id)
+        wait_until(3, 200, self.checkAllVmsRunningOnHost, {
+            "hostId": other_host_id,
+            "expected_vms": expected_vm_count_after_maintenance
+        })
         other_vm_count_after_maintenance = self.noOfVMsOnHost(other_host_id)
 
         self.logger.debug('Canceling Host with id {} from maintain'.format(target_host_id))
@@ -303,9 +317,9 @@ class TestHostMaintenance(cloudstackTestCase):
 
         no_of_vms = no_of_vms + self.noOfVMsOnHost(listHost[1].id)
 
-        if no_of_vms < 5:
+        if no_of_vms < MIN_VMS_FOR_TEST:
             self.logger.debug("Create VMs as there are not enough vms to check host maintenance")
-            no_vm_req = 5 - no_of_vms
+            no_vm_req = MIN_VMS_FOR_TEST - no_of_vms
             if (no_vm_req > 0):
                 self.logger.debug("Creating vms = {}".format(no_vm_req))
                 self.vmlist = self.createVMs(listHost[0].id, no_vm_req)

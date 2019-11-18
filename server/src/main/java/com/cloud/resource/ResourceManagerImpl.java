@@ -1290,7 +1290,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         final ResourceState hostState = host.getResourceState();
         if (hostState == ResourceState.Maintenance || hostState == ResourceState.PrepareForMaintenance ||
-                hostState == ResourceState.ErrorInMaintenance || hostState == ResourceState.ErrorInPrepareForMaintenance) {
+                hostState == ResourceState.ErrorInPrepareForMaintenance) {
             throw new CloudRuntimeException("Host is already in state " + hostState + ". Cannot recall for maintenance until resolved.");
         }
 
@@ -1307,11 +1307,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new CloudRuntimeException("Host contains incoming VMs migrating. Please wait for them to complete before putting to maintenance.");
         }
 
-        if (_vmDao.findByHostInStates(hostId, State.Starting, State.Stopping, State.Expunging).size() > 0) {
-            throw new CloudRuntimeException("Host contains VMs in starting/stopping/expunging state. Please wait for them to complete before putting to maintenance.");
+        if (_vmDao.findByHostInStates(hostId, State.Starting, State.Stopping).size() > 0) {
+            throw new CloudRuntimeException("Host contains VMs in starting/stopping state. Please wait for them to complete before putting to maintenance.");
         }
 
-        if (_vmDao.findByHostInStates(hostId, State.Error, State.Unknown, State.Shutdowned).size() > 0) {
+        if (_vmDao.findByHostInStates(hostId, State.Error, State.Unknown).size() > 0) {
             throw new CloudRuntimeException("Host contains VMs in error/unknown/shutdown state. Please fix errors to proceed.");
         }
 

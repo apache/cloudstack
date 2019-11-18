@@ -643,7 +643,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             return null;
         }
         s_logger.info("Migration attempt: for VM " + vm.getUuid() + "from host id " + srcHostId +
-                ". Try number: " + work.getTimesTried() + " with max retries at " + _maxRetries);
+                ". Retry count: " + work.getTimesTried() + "/" + _maxRetries + " times.");
         try {
             work.setStep(Step.Migrating);
             _haDao.update(work.getId(), work);
@@ -778,7 +778,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
     private void rescheduleWork(final HaWorkVO work, final long nextTime) {
         s_logger.info("Rescheduling work " + work + " to try again at " + new Date(nextTime << 10) +
-                ". Already tried " + work.getTimesTried() + 1 + " times with max retries at " + _maxRetries);
+                ". Retry count " + work.getTimesTried() + "/" + _maxRetries + " times.");
         work.setTimeToTry(nextTime);
         work.setTimesTried(work.getTimesTried() + 1);
         work.setServerId(null);
