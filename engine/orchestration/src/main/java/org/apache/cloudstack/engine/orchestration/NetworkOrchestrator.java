@@ -3971,7 +3971,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
         final String finalGuestIp = guestIp;
-        NicVO vo = Transaction.execute(new TransactionCallback<NicVO>() {
+        final NicVO vo = Transaction.execute(new TransactionCallback<NicVO>() {
             @Override
             public NicVO doInTransaction(TransactionStatus status) {
                 NicVO vo = new NicVO(network.getGuruName(), vm.getId(), network.getId(), vm.getType());
@@ -3993,10 +3993,20 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 vo.setDeviceId(deviceId);
                 vo.setDefaultNic(isDefaultNic);
                 vo = _nicDao.persist(vo);
+
+                int count = 1;
+                if (vo.getVmType() == VirtualMachine.Type.User) {
+                    s_logger.debug("Changing active number of nics for network id=" + network.getUuid() + " on " + count);
+                    _networksDao.changeActiveNicsBy(network.getId(), count);
+                }
+                if (vo.getVmType() == VirtualMachine.Type.User
+                        || vo.getVmType() == VirtualMachine.Type.DomainRouter && _networksDao.findById(network.getId()).getTrafficType() == TrafficType.Guest) {
+                    _networksDao.setCheckForGc(network.getId());
+                }
+
                 return vo;
             }
         });
-        updateNic(vo, network.getId(), 1);
 
         final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
         final NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
