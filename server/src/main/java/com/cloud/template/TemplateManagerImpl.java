@@ -2440,7 +2440,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         CompressorInputStream input = null;
         try {
             fin = new FileInputStream(fileIn);
-            bis = new BufferedInputStream(fin, 1024 * 1024 * 1024);
+            bis = new BufferedInputStream(fin, 1024 * 1024 * 128);
             input = new CompressorStreamFactory().createCompressorInputStream(bis);
             IOUtils.copy(input, Files.newOutputStream(Paths.get(outputFile)), 4096 * 2);
         } catch (CompressorException | IOException e) {
