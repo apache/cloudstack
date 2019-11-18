@@ -967,7 +967,7 @@ def parse_network_rules(rules):
         ipv6 = []
         for ip in cidrs.split(","):
             try:
-                network = ipaddress.ip_network(ip)
+                network = ipaddress.ip_network(ip, False)
                 if network.version == 4:
                     ipv4.append(ip)
                 else:
