@@ -22,11 +22,22 @@ import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemp
 import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemplateOvm3;
 import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemplateVmware;
 import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemplateXen;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -115,6 +126,10 @@ import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.compress.compressors.CompressorInputStream;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -2289,33 +2304,26 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         _tmplStoreDao.update(templateStore.getId(), templateStore);
     }
 
-    private void updateTemplate(long templateId, String fileExtension, long zoneId, boolean setSize) {
+    private void updateTemplate(long templateId, String fileExtension, long zoneId, long size) {
         TemplateDataStoreVO templateStore = _tmplStoreDao.findByTemplateZone(templateId, zoneId, DataStoreRole.Image);
         VMTemplateVO template = _tmpltDao.findById(templateId);
         templateStore.setDownloadState(Status.DOWNLOADED);
         templateStore.setState(ObjectInDataStoreStateMachine.State.Ready);
         templateStore.setInstallPath("template/tmpl/1/" + templateId + "/" + template.getUuid() + "." + fileExtension);
         templateStore.setErrorString(null);
-        if (setSize){
-            templateStore.setSize(0L);
-        }
         template.setState(VirtualMachineTemplate.State.Active);
+        templateStore.setSize(size);
         _tmplStoreDao.update(templateStore.getId(), templateStore);
         _tmpltDao.update(template.getId(), template);
     }
 
     @Override
     public SeedSystemVMTemplateResponse seedSystemVMTemplate(HashSet<String> imageStores, SeedSystemVMTemplateCmd cmd) {
-
-        String uploadPath = "/tmp/upload";
-
         VMTemplateVO template = _tmpltDao.findByUuid(cmd.getTemplateId());
 
         if (template == null){
             throw new CloudRuntimeException("Unable to find template for seeding.");
         }
-
-        String seedScript = Script.findScript("scripts/storage/secondary/","cloud-install-sys-tmplt");
 
         // mount locally
         String mountPoint = "/tmp/nfsmount";
@@ -2324,6 +2332,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new CloudRuntimeException("Unable to create temporary mount folders.");
         }
 
+        // All image stores in this zone
         for (String imageStore: imageStores){
             URI uri;
             try {
@@ -2348,12 +2357,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 fileExtension = "raw";
             }
 
-            String command;
-
+            String inputFile;
+            String downloadedFileName = "";
             if (cmd.getLocalFile()){
-                command = String.format(seedScript + " -t %d -h %s -F -m %s -f %s/%s",template.getId(), hypervisorType.toString().toLowerCase(), mountPoint, uploadPath, cmd.getFileUUID());
+                // File location on management server
+                inputFile = "/tmp/upload/" + cmd.getTemplateId();
             } else {
-                String downloadedFileName = "";
+
                 URI downloadURI;
                 try {
                     downloadURI = new URI(cmd.getUrl());
@@ -2364,26 +2374,95 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 String downloadPath = downloadURI.getPath();
                 downloadedFileName = downloadPath.substring(downloadPath.lastIndexOf("/"));
 
-                // using -q silent switch, the output otherwise confuses Script.execute() which waits for the default timeout of 1 hour.
-                command = String.format("wget -q -O /tmp%s %s -P %s", downloadedFileName, cmd.getUrl(), mountPoint);
                 startDownloadTemplate(template.getId(), cmd.getId());
-                result = Script.runSimpleBashScriptForExitValue(command);
-                if (result != 0){
-                    throw new CloudRuntimeException("Unable to download system vm template.");
-                }
-                command = String.format(seedScript + " -t %d -h %s -F -m %s -f /tmp%s", template.getId(), hypervisorType.toString().toLowerCase(), mountPoint, downloadedFileName);
+                download(cmd.getUrl(), "/tmp" + downloadedFileName);
+
+                inputFile = "/tmp" + downloadedFileName;
             }
+
             startInstallTemplate(template.getId(), cmd.getId());
-            result = Script.runSimpleBashScriptForExitValue(command);
-            if (result != 0){
-                throw new CloudRuntimeException("Seeding system vm template failed.");
+            // Decompress file
+            decompressFile(inputFile, "/tmp/" + template.getUuid() + "." + fileExtension);
+
+            String finalDestination = mountPoint + "/template/tmpl/1/" + template.getId() + "/"+ template.getUuid() + "." + fileExtension;
+
+            try {
+                // create folder
+                result = Script.runSimpleBashScriptForExitValue("mkdir -p " + mountPoint + "/template/tmpl/1/" + template.getId());
+                if (result != 0){
+                    throw new CloudRuntimeException("Unable to create temporary mount folders.");
+                }
+                // Copy template File to image store
+                Files.copy(new File("/tmp/"+ template.getUuid() + "." + fileExtension).toPath(), new File(finalDestination).toPath(), REPLACE_EXISTING);
+            } catch (IOException e) {
+                throw new CloudRuntimeException("Failure copying system VM template to image store");
             }
-            updateTemplate(template.getId(), fileExtension, cmd.getId(), cmd.getLocalFile());
 
+            File destinationFile = new File(finalDestination);
+            // Create new template properties File
+            PrintWriter writer = null;
+            try {
+                writer = new PrintWriter(mountPoint + "/template/tmpl/1/" + template.getId() + "/template.properties", "UTF-8");
+            } catch (FileNotFoundException | UnsupportedEncodingException e) {
+                throw new CloudRuntimeException("Unable to create system VM template properties file");
+            }
+
+            writer.println(fileExtension + "=true");
+            writer.println("id=" + template.getId());
+            writer.println("public=true");
+            writer.println(fileExtension +".filename=" + template.getUuid() + "." + fileExtension);
+            writer.println("uniquename=routing-" + template.getId());
+            writer.println(fileExtension + ".virtualsize=" + destinationFile.length());
+            writer.println("virtualsize=" + destinationFile.length());
+            writer.println(fileExtension + ".size=" + destinationFile.length());
+            writer.close();
+
+            updateTemplate(template.getId(), fileExtension, cmd.getId(), destinationFile.length());
+
+            Script.runSimpleBashScriptForExitValue("sudo umount " + mountPoint);
         }
-
-        Script.runSimpleBashScriptForExitValue("sudo umount " + mountPoint);
         return new SeedSystemVMTemplateResponse();
+    }
+
+    // Download file
+    private void download(String url, String fileName)  {
+        try (InputStream in = URI.create(url).toURL().openStream()) {
+            Files.copy(in, Paths.get(fileName), REPLACE_EXISTING);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failure downloading system VM template");
+        }
+    }
+
+    // Unzip file
+    public void decompressFile(String fileIn, String outputFile)  {
+        FileInputStream fin = null;
+        BufferedInputStream bis = null;
+        CompressorInputStream input = null;
+        try {
+            fin = new FileInputStream(fileIn);
+            bis = new BufferedInputStream(fin, 1024 * 1024 * 1024);
+            input = new CompressorStreamFactory().createCompressorInputStream(bis);
+            IOUtils.copy(input, Files.newOutputStream(Paths.get(outputFile)), 4096 * 2);
+        } catch (CompressorException | IOException e) {
+            if (e.getClass() == CompressorException.class &&
+                    e.getMessage().equals("No Compressor found for the stream signature.")
+            ) {
+                // This file is not in any known compressed format,
+                // we do nothing in this case and let execution continue
+            } else {
+                throw new CloudRuntimeException("Error while decompressing system vm template file.");
+            }
+        } finally {
+            try {
+                if (input != null){
+                    input.close();
+                }
+                bis.close();
+                fin.close();
+            } catch (IOException e) {
+                throw new CloudRuntimeException("Error closing file io streams while decompressing system vm template.");
+            }
+        }
     }
 
     private VMTemplateVO updateTemplateOrIso(BaseUpdateTemplateOrIsoCmd cmd) {
