@@ -566,7 +566,7 @@
                                             success: function(json) {
                                                 args.response.success({
                                                     _custom: {
-                                                        jobId: json.deletecontaierclusterresponse.jobid,
+                                                        jobId: json.deletekubernetesclusterresponse.jobid,
                                                         getUpdatedItem: function(json) {
                                                             return { 'toRemove': true };
                                                         }
