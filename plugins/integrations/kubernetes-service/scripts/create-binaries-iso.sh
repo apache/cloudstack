@@ -16,19 +16,26 @@
 # specific language governing permissions and limitations
 # under the License.
 
-RELEASE="v1.11.4"
+
+echo "Params $#"
+if [ $# -lt 3 ]; then
+    echo "Invalid input. Valid usage: ./create-binaries-iso KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION, eg: ./create-binaries-iso 1.11.4 0.7.1 1.11.1"
+    exit 1
+fi
+
+RELEASE="v${1}"
 start_dir="$PWD"
 iso_dir="${start_dir}/iso"
 working_dir="${iso_dir}/${RELEASE}"
 mkdir -p "${working_dir}"
 
-CNI_VERSION="v0.7.1"
+CNI_VERSION="v${2}"
 echo "Downloading CNI ${CNI_VERSION}..."
 cni_dir="${working_dir}/cni/${CNI_VERSION}"
 mkdir -p "${cni_dir}"
 curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-amd64-${CNI_VERSION}.tgz"
 
-CRICTL_VERSION="v1.11.1"
+CRICTL_VERSION="v${3}"
 echo "Downloading CRI tools ${CRICTL_VERSION}..."
 crictl_dir="${working_dir}/cri-tools/${CRICTL_VERSION}"
 mkdir -p "${crictl_dir}"
