@@ -78,7 +78,6 @@ public class ListBackupOfferingsCmd extends BaseBackupListCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ServerApiException, ConcurrentOperationException {
-        validateParameters();
         try {
             final List<BackupOffering> backupOfferings = backupManager.listBackupOfferings(getZoneId(), getPolicyId());
             setupResponseBackupOfferingsList(backupOfferings);
@@ -86,12 +85,6 @@ public class ListBackupOfferingsCmd extends BaseBackupListCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
         } catch (CloudRuntimeException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
-        }
-    }
-
-    private void validateParameters() {
-        if (getZoneId() == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please provide a valid zone ID");
         }
     }
 
