@@ -118,8 +118,11 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
         try {
             LdapUser ldapUser = _ldapManager.getUser(username, domainId);
             List<String> memberships = ldapUser.getMemberships();
+            tracelist("memberships for " + username, memberships);
             List<String> mappedGroups = getMappedGroups(ldapTrustMapVOs);
+            tracelist("mappedgroups for " + username, mappedGroups);
             mappedGroups.retainAll(memberships);
+            tracelist("actual groups for " + username, mappedGroups);
             // check membership, there must be only one match in this domain
             if(ldapUser.isDisabled()) {
                 logAndDisable(userAccount, "attempt to log on using disabled ldap user " + userAccount.getUsername(), false);
@@ -131,8 +134,12 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                 // a valid ldap configured user exists
                 LdapTrustMapVO mapping = _ldapManager.getLinkedLdapGroup(domainId,mappedGroups.get(0));
                 // we could now assert that ldapTrustMapVOs.contains(mapping);
-                // createUser in Account can only be done by account name not by account id
-                String accountName = _accountManager.getAccount(mapping.getAccountId()).getAccountName();
+                // createUser in Account can only be done by account name not by account id;
+                Account account = _accountManager.getAccount(mapping.getAccountId());
+                if(null == account) {
+                    throw new CloudRuntimeException(String.format("account for user (%s) not found by id %l", username, mapping.getAccountId()));
+                }
+                String accountName = account.getAccountName();
                 rc.first(_ldapManager.canAuthenticate(ldapUser.getPrincipal(), password, domainId));
                 // for security reasons we keep processing on faulty login attempt to not give a way information on userid existence
                 if (userAccount == null) {
@@ -167,6 +174,19 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
         }
 
         return rc;
+    }
+
+    private void tracelist(String msg, List<String> listToTrace) {
+        if (LOGGER.isTraceEnabled()) {
+            StringBuilder logMsg = new StringBuilder();
+            logMsg.append(msg);
+            logMsg.append(':');
+            for (String listMember : listToTrace) {
+                logMsg.append(' ');
+                logMsg.append(listMember);
+            }
+            LOGGER.trace(logMsg.toString());
+        }
     }
 
     private void logAndDisable(UserAccount userAccount, String msg, boolean remove) {
