@@ -58,6 +58,8 @@
         <module>api/rate-limit</module>
         <module>api/solidfire-intg-test</module>
 
+        <module>backup/dummy</module>
+
         <module>ca/root-ca</module>
 
         <module>database/quota</module>
@@ -187,19 +189,10 @@
                 </property>
             </activation>
             <modules>
+                <module>api/vmware-sioc</module>
+                <module>backup/veeam</module>
                 <module>hypervisors/vmware</module>
                 <module>network-elements/cisco-vnmc</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>vmware-sioc</id>
-            <activation>
-                <property>
-                    <name>noredist</name>
-                </property>
-            </activation>
-            <modules>
-                <module>api/vmware-sioc</module>
             </modules>
         </profile>
         <profile>

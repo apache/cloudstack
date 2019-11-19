@@ -12280,11 +12280,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .restart .icon,
+.restoreBackup .icon,
 .releaseDedicatedZone .icon {
   background-position: 0 -63px;
 }
 
 .restart:hover .icon,
+.restoreBackup:hover .icon,
 .releaseDedicatedZone:hover .icon {
   background-position: 0 -645px;
 }
@@ -12400,12 +12402,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .snapshot .icon,
 .takeSnapshot .icon,
+.startBackup .icon,
 .storageSnapshot .icon {
   background-position: -36px -91px;
 }
 
 .snapshot:hover .icon,
 .takeSnapshot:hover .icon,
+.startBackup:hover .icon,
 .storageSnapshot:hover .icon {
   background-position: -36px -673px;
 }
@@ -12735,10 +12739,12 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -197px -647px;
 }
 
+.createBackup .icon,
 .forceReconnect .icon {
   background-position: -196px -95px;
 }
 
+.createBackup:hover .icon,
 .forceReconnect:hover .icon {
   background-position: -196px -677px;
 }

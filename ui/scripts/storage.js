@@ -2647,6 +2647,258 @@
                     }
                     //detailview end
                 }
+            },
+
+            /**
+             * Backups
+             */
+            backups: {
+                type: 'select',
+                title: 'label.backup',
+                listView: {
+                    id: 'backups',
+                    isMaximized: true,
+                    fields: {
+                        name: {
+                            label: 'label.name'
+                        },
+                        status: {
+                            label: 'label.state',
+                            indicator: {
+                                'BackedUp': 'on',
+                                'Failed': 'off',
+                                'Error': 'off'
+                            }
+                        },
+                        zoneid: {
+                            label: 'label.zone'
+                        }
+                    },
+
+                    dataProvider: function(args) {
+                        var data = {
+                            listAll: true
+                        };
+                        listViewDataProvider(args, data);
+
+                        if (args.context != null) {
+                            if ("instances" in args.context) {
+                                $.extend(data, {
+                                    virtualmachineid: args.context.instances[0].id
+                                });
+                            }
+                        }
+
+                        $.ajax({
+                            url: createURL('listBackups'),
+                            data: data,
+                            dataType: "json",
+                            async: true,
+                            success: function(json) {
+                                var jsonObj;
+                                jsonObj = json.listbackupsresponse.backup;
+                                args.response.success({
+                                    actionFilter: backupActionfilter,
+                                    data: jsonObj
+                                });
+                            }
+                        });
+                    },
+                    //dataProvider end
+                    detailView: {
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+                                fields: {
+                                    id: {
+                                        label: 'label.id'
+                                    },
+                                    name: {
+                                        label: 'label.name'
+                                    },
+                                    status: {
+                                        label: 'label.state'
+                                    },
+                                    externalid: {
+                                        label: 'label.external.id'
+                                    },
+                                    size: {
+                                        label: 'label.size'
+                                    },
+                                    virtualsize: {
+                                        label: 'label.virtual.size'
+                                    },
+                                    volumes: {
+                                        label: 'label.volumes'
+                                    },
+				    virtualmachineid: {
+					label: 'label.vm.id'
+				    },
+				    accountid: {
+					label: 'label.account'
+				    },
+				    zoneid: {
+					label: 'label.zone'
+				    },
+                                    created: {
+                                        label: 'label.date',
+                                        converter: cloudStack.converters.toLocalDate
+                                    }
+                                },
+                                dataProvider: function(args) {
+                                    $.ajax({
+                                        url: createURL("listBackups&id=" + args.context.backups[0].id),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jsonObj;
+                                            jsonObj = json.listbackupsresponse.backup[0];
+                                            args.response.success({
+                                                actionFilter: backupActionfilter,
+                                                data: jsonObj
+                                            });
+                                        }
+                                    });
+                                },
+                                tags: cloudStack.api.tags({
+                                    resourceType: 'Backup',
+                                    contextId: 'backups'
+                                })
+                            }
+                        },
+                        actions: {
+                            remove: {
+                                label: 'Delete Backup',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'Are you sure you want to delete the backup?';
+                                    },
+                                    notification: function(args) {
+                                        return 'Delete Backup';
+                                    }
+                                },
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("deleteBackup&id=" + args.context.backups[0].id),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.deletebackupresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+
+                            startBackup: {
+                                label: 'Start Ad-hoc Backup',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'Please confirm that you want to start an ad-hoc backup of the VM?';
+                                    },
+                                    notification: function(args) {
+                                        return 'Ad-hoc VM Backup';
+                                    }
+                                },
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("startBackup&id=" + args.context.backups[0].id),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.startbackupresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+
+                            restoreBackup: {
+                                label: 'Restore Backup',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'Please confirm that you want to restore the vm backup on the stopped VM?';
+                                    },
+                                    notification: function(args) {
+                                        return 'Backup restored for the VM';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'Restore Backup',
+                                    desc: 'Please confirm that you want to restore the VM backup on the stopped VM?',
+                                    fields: {
+					restorepoint: {
+					    label: 'Restore Point',
+					    validation: {
+						required: true
+					    },
+					    select: function(args) {
+						$.ajax({
+						    url: createURL("listRestorePoints&backupid=" + args.context.backups[0].id),
+						    dataType: "json",
+						    async: true,
+						    success: function(json) {
+							var rps = json.listrestorepointsresponse.restorepoint;
+							var items = [];
+							$(rps).each(function() {
+							    items.push({
+								id: this.id,
+								description: this.created + " (" + this.type + ")"
+							    });
+							});
+							args.response.success({
+							    data: items
+							});
+
+						    }
+						});
+					    }
+					}
+			    }
+                                },
+                                action: function(args) {
+                                    var data = {
+                                        restorepointid: args.data.restorepoint,
+                                        backupid: args.context.backups[0].id
+                                    };
+                                    $.ajax({
+                                        url: createURL("restoreBackup"),
+                                        data: data,
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.restorebackupresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
+
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        }
+                    }
+                    //detailview end
+                }
             }
         }
     };
@@ -2762,5 +3014,22 @@
 
         return allowedActions;
     }
+
+    var backupActionfilter = cloudStack.actionFilter.backupActionfilter = function(args) {
+        var jsonObj = args.context.item;
+
+        if (jsonObj.state == 'Destroyed') {
+            return [];
+        }
+
+        var allowedActions = [];
+        allowedActions.push("remove");
+        allowedActions.push("startBackup");
+        allowedActions.push("restoreBackup");
+
+        return allowedActions;
+    };
+
+
 
 })(cloudStack);

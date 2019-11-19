@@ -19,6 +19,13 @@ package com.cloud.event;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.annotation.Annotation;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.usage.Usage;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
@@ -69,12 +76,6 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RolePermission;
-import org.apache.cloudstack.annotation.Annotation;
-import org.apache.cloudstack.config.Configuration;
-import org.apache.cloudstack.ha.HAConfig;
-import org.apache.cloudstack.usage.Usage;
 
 public class EventTypes {
 
@@ -471,6 +472,14 @@ public class EventTypes {
     public static final String EVENT_VM_SNAPSHOT_ON_PRIMARY = "VMSNAPSHOT.ON_PRIMARY";
     public static final String EVENT_VM_SNAPSHOT_OFF_PRIMARY = "VMSNAPSHOT.OFF_PRIMARY";
     public static final String EVENT_VM_SNAPSHOT_REVERT = "VMSNAPSHOT.REVERTTO";
+
+    // Backup and Recovery events
+    public static final String EVENT_VM_BACKUP_IMPORT_OFFERING = "BACKUP.IMPORT.OFFERING";
+    public static final String EVENT_VM_BACKUP_CREATE = "BACKUP.CREATE";
+    public static final String EVENT_VM_BACKUP_RESTORE = "BACKUP.RESTORE";
+    public static final String EVENT_VM_BACKUP_DELETE = "BACKUP.DELETE";
+    public static final String EVENT_VM_BACKUP_CUSTOM_SCHEDULE = "BACKUP.CUSTOM.SCHEDULE";
+    public static final String EVENT_VM_BACKUP_RESTORE_VOLUME_TO_VM = "BACKUP.RESTORE.VOLUME.TO.VM";
 
     // external network device events
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_ADD = "PHYSICAL.NVPCONTROLLER.ADD";

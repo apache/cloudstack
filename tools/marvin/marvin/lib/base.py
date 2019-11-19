@@ -5241,3 +5241,127 @@ class ResourceDetails:
         cmd.resourceid = resourceid
         cmd.resourcetype = resourcetype
         return (apiclient.removeResourceDetail(cmd))
+
+# Backup and Recovery
+
+class BackupOffering:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def importExisting(self, apiclient, zoneid, externalid, name, description):
+        """Import existing backup offering from the provider"""
+
+        cmd = importBackupOffering.importBackupOfferingCmd()
+        cmd.zoneid = zoneid
+        cmd.externalid = externalid
+        cmd.name = name
+        cmd.description = description
+        return BackupOffering(apiclient.importBackupOffering(cmd).__dict__)
+
+    @classmethod
+    def listInternalById(self, apiclient, id):
+        """List imported backup policies by id"""
+
+        cmd = listBackupPolicies.listBackupPoliciesCmd()
+        cmd.id = id
+        return (apiclient.listBackupPolicies(cmd))
+
+    @classmethod
+    def listInternal(self, apiclient, zoneid):
+        """List imported backup policies"""
+
+        cmd = listBackupPolicies.listBackupPoliciesCmd()
+        cmd.zoneid = zoneid
+        return (apiclient.listBackupPolicies(cmd))
+
+    @classmethod
+    def listExternal(self, apiclient, zoneid):
+        """List external backup policies"""
+
+        cmd = listBackupPolicies.listBackupPoliciesCmd()
+        cmd.zoneid = zoneid
+        cmd.external = True
+        return (apiclient.listBackupPolicies(cmd))
+
+    def delete(self, apiclient):
+        """Delete an imported backup offering"""
+
+        cmd = deleteBackupOffering.deleteBackupOfferingCmd()
+        cmd.id = self.id
+        return (apiclient.deleteBackupOffering(cmd))
+
+    def addVM(self, apiclient, vmid):
+        """Add a VM to a backup offering"""
+
+        cmd = addVMToBackupOffering.addVMToBackupOfferingCmd()
+        cmd.policyid = self.id
+        cmd.virtualmachineid = vmid
+        return (apiclient.addVMToBackupOffering(cmd))
+
+    def removeVM(self, apiclient, vmid):
+        """Remove a VM from a backup offering"""
+
+        cmd = removeVMFromBackupOffering.removeVMFromBackupOfferingCmd()
+        cmd.policyid = self.id
+        cmd.virtualmachineid = vmid
+        return (apiclient.removeVMFromBackupOffering(cmd))
+
+    @classmethod
+    def listVMMappings(self, apiclient, policyid=None, vmid=None, zoneid=None):
+        """List VM - Backup policies mappings"""
+
+        cmd = listBackupOfferingVMMappings.listBackupOfferingVMMappingsCmd()
+        if vmid:
+            cmd.virtualmachineid = vmid
+        if zoneid:
+            cmd.zoneid = zoneid
+        if policyid:
+            cmd.policyid = policyid
+        return (apiclient.listBackupOfferingVMMappings(cmd))
+
+class Backup:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(self, apiclient, vmid):
+        """Create VM backup"""
+
+        cmd = createBackup.createBackupCmd()
+        cmd.virtualmachineid = vmid
+        return (apiclient.createBackup(cmd))
+
+    @classmethod
+    def delete(self, apiclient, id):
+        """Delete VM backup"""
+
+        cmd = deleteBackup.deleteBackupCmd()
+        cmd.id = id
+        return (apiclient.deleteBackup(cmd))
+
+    @classmethod
+    def list(self, apiclient, vmid):
+        """List VM backups"""
+
+        cmd = listBackups.listBackupsCmd()
+        cmd.virtualmachineid = vmid
+        return (apiclient.listBackups(cmd))
+
+    def restoreVM(self, apiclient):
+        """Restore VM from backup"""
+
+        cmd = restoreVMFromBackup.restoreVMFromBackupCmd()
+        cmd.id = self.id
+        return (apiclient.restoreVMFromBackup(cmd))
+
+    def restoreVolumeAndAttachToVM(self, apiclient, volumeid, vmid):
+        """Restore volume from backup and attach it to VM"""
+
+        cmd = restoreVolumeFromBackupAndAttachToVM.restoreVolumeFromBackupAndAttachToVMCmd()
+        cmd.id = self.id
+        cmd.volumeid = volumeid
+        cmd.virtualmachineid = vmid
+        return (apiclient.restoreVolumeFromBackupAndAttachToVM(cmd))

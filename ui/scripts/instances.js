@@ -796,6 +796,9 @@
                     path: 'storage.vmsnapshots',
                     label: 'label.snapshots'
                 }, {
+                    path: 'storage.backups',
+                    label: 'label.backup'
+                }, {
                     path: 'affinityGroups',
                     label: 'label.affinity.groups'
                 }, {
@@ -1257,6 +1260,76 @@
                         poll: pollAsyncJobResult
                       }
                     },
+
+                    createBackup: {
+                      messages: {
+                        notification: function() {
+                          return 'Create VM Backup';
+                        }
+                      },
+                      label: 'Create VM Backup',
+                      createForm: {
+                        title: 'Create VM Backup',
+                        desc: 'Please select a backup offering for the VM backup with a name and description',
+                        fields: {
+                          name: {
+                            label: 'label.name',
+                          },
+                          description: {
+                            label: 'label.description'
+                          },
+                          policy: {
+                            label: 'Backup Offering',
+                            select: function(args) {
+                              var items = [];
+                              $.ajax({
+                                url: createURL('listBackupOfferings'),
+                                dataType: 'json',
+                                async: false,
+                                success: function(json) {
+                                  var policies = json.listbackupofferingsresponse.backupoffering;
+                                  $(policies).each(function(index, policy) {
+                                    items.push({
+                                      id: policy.id,
+                                      description: policy.name
+                                    });
+                                  });
+                                  args.response.success({
+                                    data: items
+                                  });
+                                }
+                              });
+                            }
+                          }
+                        }
+                      },
+                      action: function(args) {
+                        var data = {
+                          virtualmachineid: args.context.instances[0].id,
+                          name: args.data.name,
+                          description: args.data.description,
+                          policyid: args.data.policy
+                        };
+                        $.ajax({
+                          url: createURL('createBackup'),
+                          data: data,
+                          dataType: 'json',
+                          async: true,
+                          success: function(json) {
+                            var jid = json.createbackupresponse.jobid;
+                            args.response.success({
+                              _custom: {
+                                jobId: jid
+                              }
+                            });
+                          }
+                        });
+                      },
+                      notification: {
+                        poll: pollAsyncJobResult
+                      }
+                    },
+
                     destroy: vmDestroyAction(),
                     expunge: {
                         label: 'label.action.expunge.instance',
@@ -3717,6 +3790,7 @@
                 allowedActions.push("expunge");
             }
         }
+        allowedActions.push("createBackup");
         return allowedActions;
     }
 

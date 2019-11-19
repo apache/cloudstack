@@ -1,0 +1,87 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+package org.apache.cloudstack.backup.dao;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.backup.BackupOfferingVO;
+
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+
+public class BackupOfferingDaoImpl extends GenericDaoBase<BackupOfferingVO, Long> implements BackupOfferingDao {
+
+    @Inject
+    DataCenterDao dataCenterDao;
+
+    private SearchBuilder<BackupOfferingVO> backupPoliciesSearch;
+
+    public BackupOfferingDaoImpl() {
+    }
+
+    @PostConstruct
+    protected void init() {
+        backupPoliciesSearch = createSearchBuilder();
+        backupPoliciesSearch.and("zone_id", backupPoliciesSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        backupPoliciesSearch.and("external_id", backupPoliciesSearch.entity().getExternalId(), SearchCriteria.Op.EQ);
+        backupPoliciesSearch.done();
+    }
+
+    @Override
+    public BackupOfferingResponse newBackupOfferingResponse(BackupOffering policy) {
+        DataCenterVO zone = dataCenterDao.findById(policy.getZoneId());
+
+        BackupOfferingResponse response = new BackupOfferingResponse();
+        if (policy.isImported()) {
+            response.setId(policy.getUuid());
+            if (zone != null) {
+                response.setZoneId(zone.getUuid());
+            }
+        }
+        response.setName(policy.getName());
+        response.setDescription(policy.getDescription());
+        response.setExternalId(policy.getExternalId());
+        response.setObjectName("backupoffering");
+        return response;
+    }
+
+    @Override
+    public List<BackupOffering> listByZone(Long zoneId) {
+        SearchCriteria<BackupOfferingVO> sc = backupPoliciesSearch.create();
+        if (zoneId != null) {
+            sc.setParameters("zone_id", zoneId);
+        }
+        return new ArrayList<>(listBy(sc));
+    }
+
+    @Override
+    public BackupOffering listByExternalId(String externalId) {
+        SearchCriteria<BackupOfferingVO> sc = backupPoliciesSearch.create();
+        sc.setParameters("external_id", externalId);
+        return findOneBy(sc);
+    }
+}
