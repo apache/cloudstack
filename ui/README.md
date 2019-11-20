@@ -88,6 +88,21 @@ server {
 }
 ```
 
+### Docker
+
+A production-ready Docker container can also be built with the provided
+Dockerfile and build script.
+
+Make sure Docker is installed, then run build.sh:
+
+    ./build.sh
+
+Change the example configuration in `nginx/default.conf` according to your needs.
+
+Run Primate:
+
+    docker run -ti --rm -p 8080:80 -v $(pwd)/nginx:/etc/nginx/conf.d:ro cloudstack-primate:latest
+
 ## Documentation
 
 ### Learning Resources
