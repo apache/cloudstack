@@ -196,13 +196,16 @@
                     $wizard.removeClass('multi-wizard');
                 }
 
+                var informationNotInLdap = $.extend(true,{},args.informationNotInLdap);
+
                 if (!ldapStatus) {
-                    delete args.informationNotInLdap.ldapGroupName;
+                    delete informationNotInLdap.filter;
+                    delete informationNotInLdap.ldapGroupName;
                 }
 
                 if (g_idpList == null) {
-                    delete args.informationNotInLdap.samlEnable;
-                    delete args.informationNotInLdap.samlEntity;
+                    delete informationNotInLdap.samlEnable;
+                    delete informationNotInLdap.samlEntity;
                 }
 
                 var informationNotInLdap = cloudStack.dialog.createForm({
@@ -210,7 +213,7 @@
                     noDialog: true,
                     form: {
                         title: '',
-                        fields: args.informationNotInLdap
+                        fields: informationNotInLdap
                     }
                 });
 
