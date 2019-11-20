@@ -15,13 +15,11 @@ Install node: (CentOS/Fedora)
     curl -sL https://rpm.nodesource.com/setup_10.x | sudo bash -
     sudo yum install nodejs
 
-Install tools and dependencies:
+For development, install tools and dependencies system-wide:
 
     sudo npm install -g @vue/cli webpack eslint
     sudo npm install -g npm@next
     sudo npm install -g npm-check-updates
-    ncu -u # optional: upgrade dependencies
-    npm install
 
 ## Development
 
@@ -38,11 +36,7 @@ Build and run:
     or
     npm run serve
 
-Production Build:
-
-    npm run build
-
-Upgrade dependencies:
+Upgrade dependencies to the latest versions:
 
     ncu -u
 
@@ -55,6 +49,44 @@ Run Tests:
 Fix issues and vulnerabilities:
 
     npm audit
+
+## Production
+
+Fetch dependencies and build:
+
+    npm install
+    npm run build
+
+This creates a static webpack application in `dist/`, which can then be served
+from any web server or CloudStack management server (jetty).
+
+To use CloudStack management server (jetty), you may copy the built Primate build
+to a new/existing webapp directory on the management server host. If the webapp
+directory is changed, please change the `webapp.dir` in the
+`/etc/cloudstack/management/server.properties` and restart the management server host.
+
+To use a separate webserver, note that the API server is accessed through the path
+`/client`, which needs be forwarded to an actual CloudStack instance.
+
+For example, a simple way to serve Primate with nginx can be implemented with the
+following nginx configuration (to be put into /etc/nginx/conf.d/default.conf or similar):
+
+```nginx
+server {
+    listen       80;
+    server_name  localhost;
+    location / {
+        # /src/primate/dist contains the built Primate webpack
+        root   /src/primate/dist;
+        index  index.html;
+    }
+    location /client/ {
+        # http://127.0.0.1:800 should be replaced your CloudStack management
+        # server's actual URI
+        proxy_pass   http://127.0.0.1:8000;
+    }
+}
+```
 
 ## Documentation
 

@@ -61,6 +61,8 @@
     "vuex": "^3.1.2"
   },
   "devDependencies": {
+    "@kazupon/vue-i18n-loader": "^0.4.1",
+    "@vue/cli": "^4.0.5",
     "@vue/cli-plugin-babel": "^4.0.5",
     "@vue/cli-plugin-eslint": "^4.0.5",
     "@vue/cli-plugin-unit-jest": "^4.0.5",
@@ -75,11 +77,11 @@
     "eslint-plugin-html": "^6.0.0",
     "eslint-plugin-vue": "^6.0.1",
     "less": "^3.10.3",
-    "@kazupon/vue-i18n-loader": "^0.4.1",
     "less-loader": "^5.0.0",
     "vue-cli-plugin-i18n": "^0.6.0",
     "vue-svg-icon-loader": "^2.1.1",
-    "vue-template-compiler": "^2.6.10"
+    "vue-template-compiler": "^2.6.10",
+    "webpack": "^4.41.2"
   },
   "eslintConfig": {
     "root": true,
