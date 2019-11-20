@@ -28,5 +28,6 @@ import com.cloud.utils.db.GenericDao;
 public interface BackupOfferingDao extends GenericDao<BackupOfferingVO, Long> {
     BackupOfferingResponse newBackupOfferingResponse(BackupOffering policy);
     List<BackupOffering> listByZone(Long zoneId);
-    BackupOffering listByExternalId(String externalId);
+    BackupOffering findByExternalId(String externalId, Long zoneId);
+    BackupOffering findByName(String name, Long zoneId);
 }

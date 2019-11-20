@@ -115,14 +115,19 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_IMPORT_OFFERING, eventDescription = "importing backup offering", async = true)
     public BackupOffering importBackupOffering(final Long zoneId, final String offeringExternalId,
                                                final String offeringName, final String offeringDescription) {
-        final BackupOffering existingOffering = backupOfferingDao.listByExternalId(offeringExternalId);
+        final BackupOffering existingOffering = backupOfferingDao.findByExternalId(offeringExternalId, zoneId);
         if (existingOffering != null) {
             throw new CloudRuntimeException("A backup offering with external ID " + offeringExternalId + " already exists");
         }
+        if (backupOfferingDao.findByName(offeringName, zoneId) != null) {
+            throw new CloudRuntimeException("A backup offering with the same name already exists in this zone");
+        }
+
         final BackupProvider provider = getBackupProvider(zoneId);
         if (!provider.isBackupOffering(zoneId, offeringExternalId)) {
             throw new CloudRuntimeException("Policy " + offeringExternalId + " does not exist on provider " + provider.getName() + " on zone " + zoneId);
         }
+
         final BackupOfferingVO policy = new BackupOfferingVO(zoneId, offeringExternalId, offeringName, offeringDescription);
         final BackupOfferingVO savedPolicy = backupOfferingDao.persist(policy);
         if (savedPolicy == null) {

@@ -46,6 +46,7 @@ public class BackupOfferingDaoImpl extends GenericDaoBase<BackupOfferingVO, Long
     @PostConstruct
     protected void init() {
         backupPoliciesSearch = createSearchBuilder();
+        backupPoliciesSearch.and("name", backupPoliciesSearch.entity().getName(), SearchCriteria.Op.EQ);
         backupPoliciesSearch.and("zone_id", backupPoliciesSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
         backupPoliciesSearch.and("external_id", backupPoliciesSearch.entity().getExternalId(), SearchCriteria.Op.EQ);
         backupPoliciesSearch.done();
@@ -79,9 +80,19 @@ public class BackupOfferingDaoImpl extends GenericDaoBase<BackupOfferingVO, Long
     }
 
     @Override
-    public BackupOffering listByExternalId(String externalId) {
+    public BackupOffering findByExternalId(String externalId, Long zoneId) {
         SearchCriteria<BackupOfferingVO> sc = backupPoliciesSearch.create();
         sc.setParameters("external_id", externalId);
+        if (zoneId != null) {
+            sc.setParameters("zone_id", zoneId);
+        }
         return findOneBy(sc);
     }
+
+    @Override
+    public BackupOffering findByName(String name, Long zoneId) {
+        SearchCriteria<BackupOfferingVO> sc = backupPoliciesSearch.create();
+        sc.setParameters("name", name);
+        sc.setParameters("zone_id", zoneId);
+        return findOneBy(sc);    }
 }
