@@ -375,7 +375,10 @@ public class LdapListUsersCmd extends BaseListCmd {
         String domainId = getCurrentDomainId();
         for (final LdapUserResponse user : input) {
             UserResponse cloudstackUser = getCloudstackUser(user);
-            if (cloudstackUser == null || !domainId.equals(cloudstackUser.getDomainId())) {
+            if (cloudstackUser == null /*doesn't exist in cloudstack*/
+                    || !domainId.equals(cloudstackUser.getDomainId()) /* doesn't exist in this domain */
+                    || !cloudstackUser.getUserSource().equalsIgnoreCase(User.Source.LDAP.toString()) /* is from another source */
+            ) {
                 ldapResponses.add(user);
             }
         }
@@ -439,6 +442,9 @@ public class LdapListUsersCmd extends BaseListCmd {
             for (final UserResponse cloudstackUser : cloudstackUsers) {
                 if (user.getUsername().equals(cloudstackUser.getUsername())) {
                     returnObject = cloudstackUser;
+                    if (returnObject.getDomainId() == this.getCurrentDomainId()) {
+                        break;
+                    }
                 }
             }
         }

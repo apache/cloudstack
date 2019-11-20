@@ -85,6 +85,8 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         PowerMockito.when(accountMock.getDomainId()).thenReturn(1l);
         PowerMockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
 
+        ldapListUsersCmd._domainService = domainService;
+
 // no need to        setHiddenField(ldapListUsersCmd, .... );
     }
 
@@ -124,6 +126,12 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         mockACSUserSearch();
 
         mockResponseCreation();
+
+        DomainVO domainVO = new DomainVO();
+        domainVO.setName(LOCAL_DOMAIN_NAME);
+        domainVO.setId(2l);
+        domainVO.setUuid(LOCAL_DOMAIN_ID);
+        when(domainService.getDomain(anyLong())).thenReturn(domainVO);
 
         ldapListUsersCmd.execute();
 
@@ -248,6 +256,12 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         mockACSUserSearch();
         mockResponseCreation();
 
+        DomainVO domainVO = new DomainVO();
+        domainVO.setName(LOCAL_DOMAIN_NAME);
+        domainVO.setId(2l);
+        domainVO.setUuid(LOCAL_DOMAIN_ID);
+        when(domainService.getDomain(anyLong())).thenReturn(domainVO);
+
         setHiddenField(ldapListUsersCmd, "userFilter", "NoFilter");
         ldapListUsersCmd.execute();
 
@@ -293,12 +307,11 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         when(domainService.getDomain(anyLong())).thenReturn(domainVO);
         localDomain = domainVO;
 
-        ldapListUsersCmd._domainService = domainService;
-
         ldapListUsersCmd.execute();
 
         // 'rmurphy' filtered out 'bob' still in
-        assertEquals(1, ((ListResponse)ldapListUsersCmd.getResponseObject()).getResponses().size());
+        assertEquals(2, ((ListResponse)ldapListUsersCmd.getResponseObject()).getResponses().size());
+        // todo: assert user sources
     }
 
     /**
@@ -326,12 +339,11 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         when(domainService.getDomain(anyLong())).thenReturn(domainVO);
         localDomain = domainVO;
 
-        ldapListUsersCmd._domainService = domainService;
-
         ldapListUsersCmd.execute();
 
         // 'rmurphy' filtered out 'bob' still in
-        assertEquals(1, ((ListResponse)ldapListUsersCmd.getResponseObject()).getResponses().size());
+        assertEquals(2, ((ListResponse)ldapListUsersCmd.getResponseObject()).getResponses().size());
+        // todo: assert usersources
     }
 
     /**
@@ -344,6 +356,12 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
     public void applyPotentialImport() throws NoSuchFieldException, IllegalAccessException, NoLdapUserMatchingQueryException {
         mockACSUserSearch();
         mockResponseCreation();
+
+        DomainVO domainVO = new DomainVO();
+        domainVO.setName(LOCAL_DOMAIN_NAME);
+        domainVO.setId(2l);
+        domainVO.setUuid(LOCAL_DOMAIN_ID);
+        when(domainService.getDomain(anyLong())).thenReturn(domainVO);
 
         setHiddenField(ldapListUsersCmd, "userFilter", "PotentialImport");
         ldapListUsersCmd.execute();
