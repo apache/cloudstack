@@ -31,6 +31,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.utils.DateUtil;
 import com.google.gson.Gson;
 
 @Entity
@@ -64,6 +65,22 @@ public class BackupVO implements Backup {
 
     @Column(name = "status")
     private Status status;
+
+    @Column(name = "schedule_type")
+    private Short scheduleType;
+
+    @Column(name = "schedule")
+    String schedule;
+
+    @Column(name = "timezone")
+    String timezone;
+
+    @Column(name = "scheduled_timestamp")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    Date scheduledTimestamp;
+
+    @Column(name = "async_job_id")
+    Long asyncJobId;
 
     @Column(name = "account_id")
     private long accountId;
@@ -146,6 +163,31 @@ public class BackupVO implements Backup {
     }
 
     @Override
+    public DateUtil.IntervalType getScheduleType() {
+        return scheduleType == null ? null : DateUtil.getIntervalType(scheduleType);
+    }
+
+    @Override
+    public String getSchedule() {
+        return schedule;
+    }
+
+    @Override
+    public String getTimezone() {
+        return timezone;
+    }
+
+    @Override
+    public Date getScheduledTimestamp() {
+        return scheduledTimestamp;
+    }
+
+    @Override
+    public Long getAsyncJobId() {
+        return asyncJobId;
+    }
+
+    @Override
     public Date getCreated() {
         return created;
     }
@@ -176,6 +218,26 @@ public class BackupVO implements Backup {
 
     public void setProtectedSize(Long protectedSize) {
         this.protectedSize = protectedSize;
+    }
+
+    public void setScheduleType(short scheduleType) {
+        this.scheduleType = scheduleType;
+    }
+
+    public void setSchedule(String schedule) {
+        this.schedule = schedule;
+    }
+
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
+    }
+
+    public void setScheduledTimestamp(Date scheduledTimestamp) {
+        this.scheduledTimestamp = scheduledTimestamp;
+    }
+
+    public void setAsyncJobId(Long asyncJobId) {
+        this.asyncJobId = asyncJobId;
     }
 
     public void setCreated(Date start) {
