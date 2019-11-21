@@ -79,7 +79,7 @@ public class SetNetworkAclConfigItem extends AbstractConfigItemFacade {
                 // If we check the size of the array, it will fail to setup the network.
                 // So, let's catch the exception and continue in the loop.
                 try {
-                    aclRule = new ProtocolAclRule(ruleParts[5], false, Integer.parseInt(ruleParts[1]));
+                    aclRule = new ProtocolAclRule(ruleParts[4], "ACCEPT".equals(ruleParts[5]), Integer.parseInt(ruleParts[1]));
                 } catch (final Exception e) {
                     s_logger.warn("Problem occured when reading the entries in the ruleParts array. Actual array size is '" + ruleParts.length + "', but trying to read from index 5.");
                     continue;
