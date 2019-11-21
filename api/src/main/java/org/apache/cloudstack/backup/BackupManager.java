@@ -86,11 +86,27 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     List<Backup.RestorePoint> listBackupRestorePoints(final Long backupId);
 
     /**
+     * Assigns a VM to a backup offering
+     * @param vmId
+     * @param offeringId
+     * @return
+     */
+    Backup assignVMToBackupOffering(final Long vmId, final Long offeringId);
+
+    /**
+     * Removes a VM from a backup offering
+     * @param vmId
+     * @param offeringId
+     * @return
+     */
+    boolean removeVMFromBackupOffering(final Long vmId, final Long offeringId);
+
+    /**
      * Creates backup of a VM
      * @param vmId Virtual Machine ID
      * @return returns operation success
      */
-    Backup createBackup(final Long vmId, final Long policyId);
+    Backup createBackup(final Long vmId);
 
     /**
      * Deletes a backup

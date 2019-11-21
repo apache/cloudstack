@@ -27,9 +27,9 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
@@ -39,14 +39,13 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = CreateBackupCmd.APINAME,
-        description = "Create VM backup",
+@APICommand(name = AssignVirtualMachineToBackupOfferingCmd.APINAME,
+        description = "Assigns a backup offering to a VM",
         responseObject = BackupResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class CreateBackupCmd extends BaseAsyncCmd {
-    public static final String APINAME = "createBackup";
+public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
+    public static final String APINAME = "assignVirtualMachineToBackupOffering";
 
     @Inject
     private BackupManager backupManager;
@@ -59,8 +58,15 @@ public class CreateBackupCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "ID of the VM")
+            description = "ID of the virtual machine")
     private Long vmId;
+
+    @Parameter(name = ApiConstants.BACKUP_OFFERING_ID,
+            type = CommandType.UUID,
+            entityType = BackupOfferingResponse.class,
+            required = true,
+            description = "ID of the backup offering")
+    private Long offeringId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -70,6 +76,10 @@ public class CreateBackupCmd extends BaseAsyncCmd {
         return vmId;
     }
 
+    public Long getOfferingId() {
+        return offeringId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -77,14 +87,7 @@ public class CreateBackupCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            Backup backup = backupManager.createBackup(getVmId());
-            if (backup != null) {
-                BackupResponse response = _responseGenerator.createBackupResponse(backup);
-                response.setResponseName(getCommandName());
-                setResponseObject(response);
-            } else {
-                throw new CloudRuntimeException("Error while creating backup of VM");
-            }
+            // TODO implement API
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
@@ -102,11 +105,11 @@ public class CreateBackupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VM_BACKUP_CREATE;
+        return EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN;
     }
 
     @Override
     public String getEventDescription() {
-        return "Creating backup for VM " + vmId;
+        return "Assigning VM to backup offering ID: " + offeringId;
     }
 }

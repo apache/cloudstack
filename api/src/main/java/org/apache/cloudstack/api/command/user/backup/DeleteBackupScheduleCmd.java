@@ -101,7 +101,7 @@ public class DeleteBackupScheduleCmd  extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VM_BACKUP_DELETE;
+        return EventTypes.EVENT_VM_BACKUP_SCHEDULE_DELETE;
     }
 
     @Override

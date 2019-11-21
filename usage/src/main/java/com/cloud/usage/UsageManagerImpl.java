@@ -1081,7 +1081,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     }
 
     private boolean isBackupEvent(String eventType) {
-        return eventType != null && (eventType.equals(EventTypes.EVENT_VM_BACKUP_CREATE) || eventType.equals(EventTypes.EVENT_VM_BACKUP_DELETE));
+        return eventType != null && (eventType.equals(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN) || eventType.equals(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE));
     }
 
     private void createVMHelperEvent(UsageEventVO event) {
@@ -1909,13 +1909,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         Account account = _accountDao.findByIdIncludingRemoved(event.getAccountId());
         Long domainId = account.getDomainId();
 
-        if (EventTypes.EVENT_VM_BACKUP_CREATE.equals(event.getType())) {
+        if (EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN.equals(event.getType())) {
             final UsageBackupVO backupVO = new UsageBackupVO(zoneId, accountId, domainId, backupId, vmId, created);
             usageBackupDao.persist(backupVO);
-        } else if (EventTypes.EVENT_VM_BACKUP_DELETE.equals(event.getType())) {
+        } else if (EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE.equals(event.getType())) {
             usageBackupDao.removeUsage(accountId, zoneId, backupId);
         }
-
     }
 
     private class Heartbeat extends ManagedContextRunnable {

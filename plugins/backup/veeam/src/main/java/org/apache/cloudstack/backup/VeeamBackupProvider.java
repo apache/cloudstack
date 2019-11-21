@@ -137,9 +137,9 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public Backup createBackup(final BackupOffering policy, final VirtualMachine vm, final Backup backup) {
+    public Backup assignVMToBackupOffering(final VirtualMachine vm, final Backup backup, final BackupOffering backupOffering) {
         final VeeamClient client = getClient(vm.getDataCenterId());
-        final Job parentJob = client.listJob(policy.getExternalId());
+        final Job parentJob = client.listJob(backupOffering.getExternalId());
         final String clonedJobName = getGuestBackupName(vm.getInstanceName(), backup.getUuid());
         if (client.cloneVeeamJob(parentJob, clonedJobName)) {
             for (BackupOffering job : client.listJobs()) {
@@ -163,14 +163,14 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                 }
             }
         } else {
-            LOG.error("Failed to clone pre-defined Veeam job (backup offering) for policy id: " + policy.getExternalId());
+            LOG.error("Failed to clone pre-defined Veeam job (backup offering) for backup offering ID: " + backupOffering.getExternalId());
         }
         ((BackupVO) backup).setStatus(Backup.Status.Error);
         return backup;
     }
 
     @Override
-    public boolean removeBackup(final VirtualMachine vm, final Backup backup) {
+    public boolean removeVMFromBackupOffering(final VirtualMachine vm, final Backup backup) {
         final VeeamClient client = getClient(vm.getDataCenterId());
         final VmwareDatacenter vmwareDC = findVmwareDatacenterForVM(vm);
         try {
@@ -192,6 +192,12 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     public boolean takeBackup(final Backup backup) {
         final VeeamClient client = getClient(backup.getZoneId());
         return client.startBackupJob(backup.getExternalId());
+    }
+
+    @Override
+    public boolean deleteBackup(Backup backup) {
+        // Veeam does not support removal of a restore point or point-in-time backup
+        throw new CloudRuntimeException("Backend plugin does not allow removal of backup, to delete the backup chain remove VM from the backup offering");
     }
 
     @Override

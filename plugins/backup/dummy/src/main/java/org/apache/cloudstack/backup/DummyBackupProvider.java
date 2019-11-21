@@ -63,8 +63,8 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public Backup createBackup(BackupOffering policy, VirtualMachine vm, Backup backup) {
-        s_logger.debug("Creating VM backup for VM " + vm.getInstanceName() + " from backup offering " + policy.getName());
+    public Backup assignVMToBackupOffering(VirtualMachine vm, Backup backup, BackupOffering backupOffering) {
+        s_logger.debug("Creating VM backup for VM " + vm.getInstanceName() + " from backup offering " + backupOffering.getName());
 
         List<Backup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
         BackupVO dummyBackup = (BackupVO) backup;
@@ -104,7 +104,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public boolean removeBackup(VirtualMachine vm, Backup vmBackup) {
+    public boolean removeVMFromBackupOffering(VirtualMachine vm, Backup vmBackup) {
         s_logger.debug("Removing VM backup " + vmBackup.getUuid() + " for VM " + vm.getInstanceName() + " on the Dummy Backup Provider");
         final List<Backup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
         for (final Backup backup : backups) {
@@ -118,6 +118,11 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Override
     public boolean takeBackup(Backup backup) {
         s_logger.debug("Starting backup " + backup.getUuid() + " on Dummy provider");
+        return true;
+    }
+
+    @Override
+    public boolean deleteBackup(Backup backup) {
         return true;
     }
 

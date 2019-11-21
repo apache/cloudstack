@@ -48,12 +48,13 @@ public interface BackupProvider {
     boolean isBackupOffering(Long zoneId, String uuid);
 
     /**
-     * Creates backup of a VM assigned to a policy
-     * @param policy
+     * Assign a VM to a backup offering or policy
      * @param vm
-     * @return true if backup successfully starts
+     * @param backup
+     * @param policy
+     * @return
      */
-    Backup createBackup(BackupOffering policy, VirtualMachine vm, Backup backup);
+    Backup assignVMToBackupOffering(VirtualMachine vm, Backup backup, BackupOffering backupOffering);
 
     /**
      * Removes a VM backup
@@ -61,7 +62,7 @@ public interface BackupProvider {
      * @param backup
      * @return
      */
-    boolean removeBackup(VirtualMachine vm, Backup backup);
+    boolean removeVMFromBackupOffering(VirtualMachine vm, Backup backup);
 
     /**
      * Starts and creates an adhoc backup process
@@ -70,6 +71,13 @@ public interface BackupProvider {
      * @return
      */
     boolean takeBackup(Backup backup);
+
+    /**
+     * Delete an existing backup
+     * @param backup
+     * @return
+     */
+    boolean deleteBackup(Backup backup);
 
     /**
      * Restore VM from backup
