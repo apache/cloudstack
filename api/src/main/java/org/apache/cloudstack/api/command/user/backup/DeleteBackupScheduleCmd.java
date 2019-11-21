@@ -28,17 +28,24 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = CreateBackupScheduleCmd.APINAME,
-        description = "Create a user-defined VM backup schedule",
-        responseObject = BackupResponse.class, since = "4.14.0",
+@APICommand(name = DeleteBackupScheduleCmd.APINAME,
+        description = "Deletes a VM backup schedule",
+        responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
-    public static final String APINAME = "createBackupSchedule";
+public class DeleteBackupScheduleCmd  extends BaseAsyncCmd {
+    public static final String APINAME = "deleteBackupSchedule";
 
     @Inject
     private BackupManager backupManager;
@@ -47,28 +54,18 @@ public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.BACKUP_ID,
+    @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
             entityType = BackupResponse.class,
             required = true,
-            description = "id of the backup for which custom schedule is to be defined")
+            description = "ID of the backup whose schedule needs to be deleted")
     private Long backupId;
-
-    @Parameter(name = ApiConstants.INTERVAL_TYPE, type = CommandType.STRING, required = true, description = "valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
-    private String intervalType;
-
-    @Parameter(name = ApiConstants.MAX_BACKUPS, type = CommandType.INTEGER, required = true, description = "maximum number of backup restore points to keep")
-    private Integer maxBackups;
-
-    @Parameter(name = ApiConstants.SCHEDULE, type = CommandType.STRING, required = true, description = "custom backup schedule, the format is:"
-            + "for HOURLY MM*, for DAILY MM:HH*, for WEEKLY MM:HH:DD (1-7)*, for MONTHLY MM:HH:DD (1-28)")
-    private String schedule;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getBackupId() {
+    public Long getId() {
         return backupId;
     }
 
@@ -77,9 +74,16 @@ public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ServerApiException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            // TODO: ask service layer to do the magic
+            boolean result = false; // TODO: use backupManager
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
+                response.setResponseName(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new CloudRuntimeException("Error while deleting backup of VM");
+            }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
@@ -97,11 +101,11 @@ public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VM_BACKUP_SCHEDULE_CREATE;
+        return EventTypes.EVENT_VM_BACKUP_DELETE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Creating user-defined backup schedule for backup " + backupId;
+        return "Deleting backup schedule for backup ID " + backupId;
     }
 }

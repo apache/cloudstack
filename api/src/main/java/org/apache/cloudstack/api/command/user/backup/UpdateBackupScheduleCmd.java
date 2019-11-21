@@ -28,17 +28,23 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = CreateBackupScheduleCmd.APINAME,
-        description = "Create a user-defined VM backup schedule",
-        responseObject = BackupResponse.class, since = "4.14.0",
+@APICommand(name = UpdateBackupScheduleCmd.APINAME,
+        description = "Updates backup schedule of a VM backup with an existing schedule",
+        responseObject = BackupScheduleResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
-    public static final String APINAME = "createBackupSchedule";
+public class UpdateBackupScheduleCmd extends BaseAsyncCmd {
+    public static final String APINAME = "updateBackupSchedule";
 
     @Inject
     private BackupManager backupManager;
@@ -51,18 +57,8 @@ public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = BackupResponse.class,
             required = true,
-            description = "id of the backup for which custom schedule is to be defined")
+            description = "ID of the backup")
     private Long backupId;
-
-    @Parameter(name = ApiConstants.INTERVAL_TYPE, type = CommandType.STRING, required = true, description = "valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
-    private String intervalType;
-
-    @Parameter(name = ApiConstants.MAX_BACKUPS, type = CommandType.INTEGER, required = true, description = "maximum number of backup restore points to keep")
-    private Integer maxBackups;
-
-    @Parameter(name = ApiConstants.SCHEDULE, type = CommandType.STRING, required = true, description = "custom backup schedule, the format is:"
-            + "for HOURLY MM*, for DAILY MM:HH*, for WEEKLY MM:HH:DD (1-7)*, for MONTHLY MM:HH:DD (1-28)")
-    private String schedule;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -77,9 +73,9 @@ public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ServerApiException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            // TODO: ask service layer to do the magic
+            // TODO implement API
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
@@ -97,11 +93,11 @@ public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VM_BACKUP_SCHEDULE_CREATE;
+        return EventTypes.EVENT_VM_BACKUP_SCHEDULE_UPDATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Creating user-defined backup schedule for backup " + backupId;
+        return "Updating VM backup schedule for VM backup ID: " + backupId;
     }
 }

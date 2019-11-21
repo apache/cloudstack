@@ -33,10 +33,13 @@ import org.apache.cloudstack.api.command.admin.vm.ImportVMCmdByAdmin;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupCmd;
+import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupSchedulesCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.api.command.user.backup.RestoreBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.RestoreVolumeFromBackupAndAttachToVMCmd;
+import org.apache.cloudstack.api.command.user.backup.UpdateBackupScheduleCmd;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.context.CallContext;
@@ -491,6 +494,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(ImportVMCmdByAdmin.class);
         // Schedule
         cmdList.add(CreateBackupScheduleCmd.class);
+        cmdList.add(ListBackupSchedulesCmd.class);
+        cmdList.add(UpdateBackupScheduleCmd.class);
+        cmdList.add(DeleteBackupScheduleCmd.class);
         return cmdList;
     }
 
