@@ -3665,7 +3665,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.add("network_rules_vmSecondaryIp");
         cmd.add("--vmname", vmName);
         cmd.add("--nicsecips", secIp);
-        cmd.add("--action", action);
+        cmd.add("--action=" + action);
 
         final String result = cmd.execute();
         if (result != null) {
