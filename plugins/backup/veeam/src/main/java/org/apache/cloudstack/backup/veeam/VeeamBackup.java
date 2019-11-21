@@ -22,6 +22,8 @@ import java.util.List;
 
 import org.apache.cloudstack.backup.Backup;
 
+import com.cloud.utils.DateUtil;
+
 public class VeeamBackup implements Backup {
 
     private String name;
@@ -44,6 +46,31 @@ public class VeeamBackup implements Backup {
 
     @Override
     public String getExternalId() {
+        return null;
+    }
+
+    @Override
+    public DateUtil.IntervalType getScheduleType() {
+        return null;
+    }
+
+    @Override
+    public String getSchedule() {
+        return null;
+    }
+
+    @Override
+    public String getTimezone() {
+        return null;
+    }
+
+    @Override
+    public Date getScheduledTimestamp() {
+        return null;
+    }
+
+    @Override
+    public Long getAsyncJobId() {
         return null;
     }
 
