@@ -24,11 +24,12 @@ export default {
       name: 'vm',
       title: 'Instances',
       icon: 'desktop',
-      permission: [ 'listVirtualMachinesMetrics', 'listVirtualMachines' ],
+      permission: ['listVirtualMachinesMetrics', 'listVirtualMachines'],
       resourceType: 'UserVm',
       columns: [
         'name', 'state', 'instancename', 'ipaddress', 'cpunumber', 'cpuused', 'cputotal',
-        { 'memoryused':
+        {
+          memoryused:
           (record) => {
             return record.memorykbs && record.memoryintfreekbs ? parseFloat(100.0 * (record.memorykbs - record.memoryintfreekbs) / record.memorykbs).toFixed(2) + '%' : '0.0%'
           }
@@ -230,7 +231,7 @@ export default {
       name: 'ssh',
       title: 'SSH Key Pairs',
       icon: 'key',
-      permission: [ 'listSSHKeyPairs' ],
+      permission: ['listSSHKeyPairs'],
       columns: ['name', 'fingerprint', 'account', 'domain'],
       details: ['name', 'fingerprint', 'account', 'domain'],
       actions: [
@@ -261,7 +262,7 @@ export default {
       name: 'affinitygroup',
       title: 'Affinity Groups',
       icon: 'swap',
-      permission: [ 'listAffinityGroups' ],
+      permission: ['listAffinityGroups'],
       columns: ['name', 'type', 'description', 'account', 'domain'],
       details: ['name', 'id', 'description', 'type', 'account', 'domain'],
       actions: [

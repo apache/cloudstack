@@ -19,9 +19,9 @@ export default {
   name: 'imagestore',
   title: 'Secondary Storages',
   icon: 'picture',
-  permission: [ 'listImageStores' ],
-  columns: [ 'name', 'url', 'protocol', 'scope', 'zonename' ],
-  details: [ 'name', 'id', 'url', 'protocol', 'provider', 'scope', 'zonename' ],
+  permission: ['listImageStores'],
+  columns: ['name', 'url', 'protocol', 'scope', 'zonename'],
+  details: ['name', 'id', 'url', 'protocol', 'provider', 'scope', 'zonename'],
   actions: [
     {
       api: 'addImageStore',

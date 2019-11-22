@@ -19,11 +19,11 @@ export default {
   name: 'host',
   title: 'Hosts',
   icon: 'desktop',
-  permission: [ 'listHostsMetrics', 'listHosts' ],
+  permission: ['listHostsMetrics', 'listHosts'],
   resourceType: 'Host',
-  params: { 'type': 'routing' },
-  columns: [ 'name', 'state', 'resourcestate', 'powerstate', 'ipaddress', 'hypervisor', 'instances', 'cpunumber', 'cputotalghz', 'cpuusedghz', 'cpuallocatedghz', 'memorytotalgb', 'memoryusedgb', 'memoryallocatedgb', 'networkread', 'networkwrite', 'clustername', 'zonename' ],
-  details: [ 'name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'hypervisorversion', 'version', 'type', 'oscategoryname', 'hosttags', 'clustername', 'podname', 'zonename', 'created' ],
+  params: { type: 'routing' },
+  columns: ['name', 'state', 'resourcestate', 'powerstate', 'ipaddress', 'hypervisor', 'instances', 'cpunumber', 'cputotalghz', 'cpuusedghz', 'cpuallocatedghz', 'memorytotalgb', 'memoryusedgb', 'memoryallocatedgb', 'networkread', 'networkwrite', 'clustername', 'zonename'],
+  details: ['name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'hypervisorversion', 'version', 'type', 'oscategoryname', 'hosttags', 'clustername', 'podname', 'zonename', 'created'],
   actions: [
     {
       api: 'addHost',
@@ -69,7 +69,7 @@ export default {
       icon: 'play-circle',
       label: 'Enable Host',
       dataView: true,
-      args: [ 'id' ],
+      args: ['id'],
       defaultArgs: { allocationstate: 'Enable' },
       show: (record) => { return record.resourcestate === 'Disabled' }
     },

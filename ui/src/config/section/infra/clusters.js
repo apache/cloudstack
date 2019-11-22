@@ -19,9 +19,9 @@ export default {
   name: 'cluster',
   title: 'Clusters',
   icon: 'cluster',
-  permission: [ 'listClustersMetrics', 'listClusters' ],
-  columns: [ 'name', 'state', 'clustertype', 'hypervisortype', 'hosts', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'podname', 'zonename' ],
-  details: [ 'name', 'id', 'allocationstate', 'clustertype', 'hypervisortype', 'podname', 'zonename' ],
+  permission: ['listClustersMetrics', 'listClusters'],
+  columns: ['name', 'state', 'clustertype', 'hypervisortype', 'hosts', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'podname', 'zonename'],
+  details: ['name', 'id', 'allocationstate', 'clustertype', 'hypervisortype', 'podname', 'zonename'],
   actions: [
     {
       api: 'addCluster',
@@ -44,7 +44,7 @@ export default {
       icon: 'play-circle',
       label: 'label.action.disable.cluster',
       dataView: true,
-      args: [ 'id' ],
+      args: ['id'],
       defaultArgs: { allocationstate: 'Enabled' },
       show: (record) => { return record.allocationstate === 'Disabled' }
     },

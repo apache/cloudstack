@@ -19,9 +19,9 @@ export default {
   name: 'zone',
   title: 'Zones',
   icon: 'global',
-  permission: [ 'listZonesMetrics', 'listZones' ],
-  columns: [ 'name', 'state', 'networktype', 'clusters', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal' ],
-  details: [ 'name', 'id', 'allocationstate', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2' ],
+  permission: ['listZonesMetrics', 'listZones'],
+  columns: ['name', 'state', 'networktype', 'clusters', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal'],
+  details: ['name', 'id', 'allocationstate', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2'],
   actions: [
     {
       api: 'createZone',
@@ -61,7 +61,7 @@ export default {
       icon: 'play-circle',
       label: 'label.action.enable.zone',
       dataView: true,
-      args: [ 'id' ],
+      args: ['id'],
       defaultArgs: { allocationstate: 'Enabled' },
       show: (record) => { return record.allocationstate === 'Disabled' }
     },

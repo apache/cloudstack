@@ -84,7 +84,7 @@ export default {
       getNextPage()
     },
     isDisabled () {
-      return !store.getters.apis.hasOwnProperty('listProjects')
+      return !Object.prototype.hasOwnProperty.call(store.getters.apis, 'listProjects')
     },
     setSelectedProject (project) {
       this.selectedProject = project.displaytext || project.name

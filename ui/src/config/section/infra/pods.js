@@ -19,9 +19,9 @@ export default {
   name: 'pod',
   title: 'Pods',
   icon: 'appstore',
-  permission: [ 'listPods' ],
-  columns: [ 'name', 'allocationstate', 'gateway', 'netmask', 'zonename' ],
-  details: [ 'name', 'id', 'allocationstate', 'netmask', 'gateway', 'zonename' ],
+  permission: ['listPods'],
+  columns: ['name', 'allocationstate', 'gateway', 'netmask', 'zonename'],
+  details: ['name', 'id', 'allocationstate', 'netmask', 'gateway', 'zonename'],
   actions: [
     {
       api: 'createPod',

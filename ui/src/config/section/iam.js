@@ -19,13 +19,13 @@ export default {
   name: 'iam',
   title: 'Identity and Access',
   icon: 'solution',
-  permission: [ 'listAccounts', 'listUsers', 'listDomains', 'listRoles' ],
+  permission: ['listAccounts', 'listUsers', 'listDomains', 'listRoles'],
   children: [
     {
       name: 'accountuser',
       title: 'Users',
       icon: 'user',
-      permission: [ 'listUsers' ],
+      permission: ['listUsers'],
       columns: ['username', 'state', 'firstname', 'lastname', 'email', 'account', 'domain'],
       details: ['username', 'id', 'firstname', 'lastname', 'email', 'usersource', 'timezone', 'rolename', 'roletype', 'account', 'domain', 'created'],
       actions: [
@@ -86,7 +86,7 @@ export default {
       name: 'account',
       title: 'Accounts',
       icon: 'team',
-      permission: [ 'listAccounts' ],
+      permission: ['listAccounts'],
       columns: ['name', 'state', 'firstname', 'lastname', 'rolename', 'roletype', 'domain'],
       details: ['name', 'id', 'rolename', 'roletype', 'domain', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
       actions: [
@@ -118,7 +118,7 @@ export default {
           dataView: true,
           show: (record) => { return record.state === 'disabled' || record.state === 'locked' },
           args: ['id'],
-          params: { 'lock': 'false' }
+          params: { lock: 'false' }
         },
         {
           api: 'disableAccount',
@@ -127,7 +127,7 @@ export default {
           dataView: true,
           show: (record) => { return record.state === 'enabled' },
           args: ['id'],
-          params: { 'lock': 'false' }
+          params: { lock: 'false' }
         },
         {
           api: 'disableAccount',
@@ -153,7 +153,7 @@ export default {
       name: 'domain',
       title: 'Domains',
       icon: 'block',
-      permission: [ 'listDomains' ],
+      permission: ['listDomains'],
       resourceType: 'Domain',
       columns: ['name', 'state', 'path', 'parentdomainname', 'level'],
       details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
@@ -193,7 +193,7 @@ export default {
       name: 'role',
       title: 'Roles',
       icon: 'idcard',
-      permission: [ 'listRoles' ],
+      permission: ['listRoles'],
       columns: ['name', 'type', 'description'],
       details: ['name', 'id', 'type', 'description'],
       actions: [

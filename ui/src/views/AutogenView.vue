@@ -295,7 +295,7 @@ export default {
       }
 
       if (this.searchQuery !== '') {
-        params['keyword'] = this.searchQuery
+        params.keyword = this.searchQuery
       }
 
       if (this.$route && this.$route.params && this.$route.params.id) {
@@ -320,7 +320,7 @@ export default {
       }
 
       if (!this.columnKeys || this.columnKeys.length === 0) {
-        for (const field of store.getters.apis[this.apiName]['response']) {
+        for (const field of store.getters.apis[this.apiName].response) {
           this.columnKeys.push(field.name)
         }
         this.columnKeys = [...new Set(this.columnKeys)]
@@ -349,13 +349,13 @@ export default {
 
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
-        params['id'] = this.$route.params.id
+        params.id = this.$route.params.id
         if (this.$route.path.startsWith('/ssh/')) {
-          params['name'] = this.$route.params.id
+          params.name = this.$route.params.id
         }
       }
-      params['page'] = this.page
-      params['pagesize'] = this.pageSize
+      params.page = this.page
+      params.pagesize = this.pageSize
       api(this.apiName, params).then(json => {
         var responseName
         var objectName
@@ -367,7 +367,7 @@ export default {
         }
         for (const key in json[responseName]) {
           if (key === 'count') {
-            this.itemCount = json[responseName]['count']
+            this.itemCount = json[responseName].count
             continue
           }
           objectName = key
@@ -378,7 +378,7 @@ export default {
           this.items = []
         }
         for (let idx = 0; idx < this.items.length; idx++) {
-          this.items[idx]['key'] = idx
+          this.items[idx].key = idx
           for (const key in customRender) {
             const func = customRender[key]
             if (func && typeof func === 'function') {
@@ -393,7 +393,7 @@ export default {
         }
       }).catch(error => {
         // handle error
-        this.$notification['error']({
+        this.$notification.error({
           message: 'Request Failed',
           description: error.response.headers['x-description']
         })
@@ -434,7 +434,7 @@ export default {
         return
       }
       this.currentAction = action
-      var params = store.getters.apis[this.currentAction.api]['params']
+      var params = store.getters.apis[this.currentAction.api].params
       params.sort(function (a, b) {
         if (a.name === 'name' && b.name !== 'name') { return -1 }
         if (a.name !== 'name' && b.name === 'name') { return -1 }
@@ -444,17 +444,17 @@ export default {
         return 0
       })
       if (action.args && action.args.length > 0) {
-        this.currentAction['params'] = action.args.map(function (arg) {
+        this.currentAction.params = action.args.map(function (arg) {
           return params.filter(function (param) {
             return param.name.toLowerCase() === arg.toLowerCase()
           })[0]
         })
       } else {
-        this.currentAction['params'] = params
+        this.currentAction.params = params
       }
 
       this.showAction = true
-      for (const param of this.currentAction['params']) {
+      for (const param of this.currentAction.params) {
         if (param.type === 'uuid' || param.name === 'account') {
           this.listUuidOpts(param)
         }
@@ -482,7 +482,7 @@ export default {
       param.opts = []
       var params = { listall: true }
       if (possibleApi === 'listTemplates') {
-        params['templatefilter'] = 'executable'
+        params.templatefilter = 'executable'
       }
       api(possibleApi, params).then(json => {
         param.loading = false
@@ -513,7 +513,7 @@ export default {
           const params = {}
           for (const key in values) {
             const input = values[key]
-            for (const param of this.currentAction['params']) {
+            for (const param of this.currentAction.params) {
               if (param.name === key) {
                 if (input === undefined) {
                   if (param.type === 'boolean') {
@@ -522,7 +522,7 @@ export default {
                   break
                 }
                 if (param.type === 'uuid') {
-                  params[key] = param.opts[input]['id']
+                  params[key] = param.opts[input].id
                 } else {
                   params[key] = input
                 }
@@ -538,7 +538,7 @@ export default {
           }
 
           if ('id' in this.resource) {
-            params['id'] = this.resource['id']
+            params.id = this.resource.id
           }
 
           api(this.currentAction.api, params).then(json => {
@@ -546,7 +546,7 @@ export default {
               if (obj.includes('response')) {
                 for (const res in json[obj]) {
                   if (res === 'jobid') {
-                    this.$store.dispatch('AddAsyncJob', { 'title': this.$t(this.currentAction.label), 'jobid': json[obj][res], 'description': this.resource.name, 'status': 'progress' })
+                    this.$store.dispatch('AddAsyncJob', { title: this.$t(this.currentAction.label), jobid: json[obj][res], description: this.resource.name, status: 'progress' })
                     break
                   }
                 }
@@ -558,7 +558,7 @@ export default {
             }
           }).catch(error => {
             console.log(error)
-            this.$notification['error']({
+            this.$notification.error({
               message: 'Request Failed',
               description: error.response.headers['x-description']
             })

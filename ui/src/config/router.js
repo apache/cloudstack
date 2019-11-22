@@ -96,7 +96,7 @@ export function generateRouterMap (section) {
               title: child.title,
               name: child.name,
               keepAlive: true,
-              permission: [ action.api ]
+              permission: [action.api]
             },
             component: action.component,
             hidden: true

@@ -19,22 +19,22 @@ export default {
   name: 'config',
   title: 'Configuration',
   icon: 'setting',
-  permission: [ 'listConfigurations' ],
+  permission: ['listConfigurations'],
   children: [
     {
       name: 'globalsetting',
       title: 'Global Settings',
       icon: 'setting',
-      permission: [ 'listConfigurations' ],
-      columns: [ 'name', 'description', 'category', 'value' ],
-      details: [ 'name', 'category', 'description', 'value' ]
+      permission: ['listConfigurations'],
+      columns: ['name', 'description', 'category', 'value'],
+      details: ['name', 'category', 'description', 'value']
     },
     {
       name: 'ldapsetting',
       title: 'LDAP Configuration',
       icon: 'team',
-      permission: [ 'listLdapConfigurations' ],
-      columns: [ 'hostname', 'port' ],
+      permission: ['listLdapConfigurations'],
+      columns: ['hostname', 'port'],
       actions: [
         {
           api: 'addLdapConfiguration',
@@ -51,8 +51,8 @@ export default {
       name: 'hypervisorcapability',
       title: 'Hypervisor Capabilities',
       icon: 'database',
-      permission: [ 'listHypervisorCapabilities' ],
-      columns: [ 'hypervisor', 'hypervisorversion', 'maxguestlimit', 'maxdatavolumeslimit', 'maxhostspercluster' ],
+      permission: ['listHypervisorCapabilities'],
+      columns: ['hypervisor', 'hypervisorversion', 'maxguestlimit', 'maxdatavolumeslimit', 'maxhostspercluster'],
       actions: [
         {
           api: 'updateHypervisorCapabilities',

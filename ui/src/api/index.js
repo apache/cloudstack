@@ -18,8 +18,8 @@
 import { axios } from '@/utils/request'
 
 export function api (command, args = {}) {
-  args['command'] = command
-  args['response'] = 'json'
+  args.command = command
+  args.response = 'json'
   return axios.get('/', {
     params: args
   })

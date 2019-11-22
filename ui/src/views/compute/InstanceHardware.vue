@@ -147,7 +147,7 @@ export default {
       if (!this.vm || !this.vm.id) {
         return
       }
-      api('listVolumes', { 'listall': true, 'virtualmachineid': this.vm.id }).then(json => {
+      api('listVolumes', { listall: true, virtualmachineid: this.vm.id }).then(json => {
         this.volumes = json.listvolumesresponse.volume
         if (this.volumes) {
           this.volumes.sort((a, b) => { return a.deviceid - b.deviceid })

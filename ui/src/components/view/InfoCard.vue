@@ -496,7 +496,7 @@ export default {
         return
       }
       this.tags = []
-      api('listTags', { 'listall': true, 'resourceid': this.resource.id, 'resourcetype': this.resourceType }).then(json => {
+      api('listTags', { listall: true, resourceid: this.resource.id, resourcetype: this.resourceType }).then(json => {
         if (json.listtagsresponse && json.listtagsresponse.tag) {
           this.tags = json.listtagsresponse.tag
         }
@@ -507,7 +507,7 @@ export default {
         return
       }
       this.notes = []
-      api('listAnnotations', { 'entityid': this.resource.id, 'entitytype': this.annotationType }).then(json => {
+      api('listAnnotations', { entityid: this.resource.id, entitytype: this.annotationType }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
           this.notes = json.listannotationsresponse.annotation
         }
@@ -527,8 +527,8 @@ export default {
     },
     handleInputConfirm () {
       const args = {}
-      args['resourceids'] = this.resource.id
-      args['resourcetype'] = this.resourceType
+      args.resourceids = this.resource.id
+      args.resourcetype = this.resourceType
       args['tags[0].key'] = this.inputKey
       args['tags[0].value'] = this.inputValue
       api('createTags', args).then(json => {
@@ -542,8 +542,8 @@ export default {
     },
     handleDeleteTag (tag) {
       const args = {}
-      args['resourceids'] = tag.resourceid
-      args['resourcetype'] = tag.resourcetype
+      args.resourceids = tag.resourceid
+      args.resourcetype = tag.resourcetype
       args['tags[0].key'] = tag.key
       args['tags[0].value'] = tag.value
       api('deleteTags', args).then(json => {
@@ -560,9 +560,9 @@ export default {
       }
       this.showNotesInput = false
       const args = {}
-      args['entityid'] = this.resource.id
-      args['entitytype'] = this.annotationType
-      args['annotation'] = this.annotation
+      args.entityid = this.resource.id
+      args.entitytype = this.annotationType
+      args.annotation = this.annotation
       api('addAnnotation', args).then(json => {
       }).finally(e => {
         this.getNotes()
@@ -571,7 +571,7 @@ export default {
     },
     deleteNote (annotation) {
       const args = {}
-      args['id'] = annotation.id
+      args.id = annotation.id
       api('removeAnnotation', args).then(json => {
       }).finally(e => {
         this.getNotes()

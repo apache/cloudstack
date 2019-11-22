@@ -28,13 +28,13 @@ export default {
   name: 'infra',
   title: 'Infrastructure',
   icon: 'bank',
-  permission: [ 'listInfrastructure' ],
+  permission: ['listInfrastructure'],
   children: [
     {
       name: 'infrasummary',
       title: 'Summary',
       icon: 'read',
-      permission: [ 'listInfrastructure' ],
+      permission: ['listInfrastructure'],
       component: () => import('@/views/infra/InfraSummary.vue')
     },
     zones,
@@ -49,16 +49,16 @@ export default {
       name: 'cpusocket',
       title: 'CPU Sockets',
       icon: 'api',
-      permission: [ 'listHosts' ],
-      params: { 'type': 'routing' },
-      columns: [ 'hypervisor', 'hosts', 'cpusockets' ]
+      permission: ['listHosts'],
+      params: { type: 'routing' },
+      columns: ['hypervisor', 'hosts', 'cpusockets']
     },
     {
       name: 'managementserver',
       title: 'Management Servers',
       icon: 'rocket',
-      permission: [ 'listManagementServers' ],
-      columns: [ 'name', 'state', 'version' ]
+      permission: ['listManagementServers'],
+      columns: ['name', 'state', 'version']
     }
   ]
 }

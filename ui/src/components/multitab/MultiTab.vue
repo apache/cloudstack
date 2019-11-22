@@ -150,7 +150,7 @@ export default {
     }
   },
   watch: {
-    '$route': function (newVal) {
+    $route: function (newVal) {
       this.activeKey = newVal.fullPath
       if (this.fullPathList.indexOf(newVal.fullPath) < 0) {
         this.fullPathList.push(newVal.fullPath)

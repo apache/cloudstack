@@ -24,7 +24,7 @@ export default {
       name: 'volume',
       title: 'Volumes',
       icon: 'hdd',
-      permission: [ 'listVolumesMetrics', 'listVolumes' ],
+      permission: ['listVolumesMetrics', 'listVolumes'],
       resourceType: 'Volume',
       columns: ['name', 'state', 'type', 'vmname', 'size', 'physicalsize', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskiopstotal', 'storage', 'account', 'zonename'],
       details: ['name', 'id', 'type', 'deviceid', 'sizegb', 'physicalsize', 'provisioningtype', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'diskiopstotal', 'path'],
@@ -105,8 +105,8 @@ export default {
           label: 'Download Volume',
           args: ['id', 'zoneid', 'mode'],
           paramOptions: {
-            'mode': {
-              'value': 'HTTP_DOWNLOAD'
+            mode: {
+              value: 'HTTP_DOWNLOAD'
             }
           },
           dataView: true
@@ -133,7 +133,7 @@ export default {
       name: 'snapshot',
       title: 'Snapshots',
       icon: 'build',
-      permission: [ 'listSnapshots' ],
+      permission: ['listSnapshots'],
       resourceType: 'Snapshot',
       columns: ['name', 'state', 'volumename', 'intervaltype', 'created', 'account'],
       details: ['name', 'id', 'volumename', 'intervaltype', 'account', 'domain', 'created'],
@@ -172,7 +172,7 @@ export default {
       name: 'vmsnapshot',
       title: 'VM Snapshots',
       icon: 'camera',
-      permission: [ 'listVMSnapshot' ],
+      permission: ['listVMSnapshot'],
       resourceType: 'VMSnapshot',
       columns: ['name', 'state', 'type', 'current', 'parent', 'created', 'account'],
       details: ['name', 'id', 'displayname', 'description', 'type', 'current', 'parent', 'virtualmachineid', 'account', 'domain', 'created'],

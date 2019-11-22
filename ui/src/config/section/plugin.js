@@ -24,13 +24,13 @@ export default {
       name: 'quota',
       title: 'Quota',
       icon: 'pie-chart',
-      permission: [ 'quotaSummary', 'quotaIsEnabled' ]
+      permission: ['quotaSummary', 'quotaIsEnabled']
     },
     {
       name: 'cloudian',
       title: 'Cloudian Storage',
       icon: 'cloud-download',
-      permission: [ 'cloudianSsoLogin', 'cloudianIsEnabled' ]
+      permission: ['cloudianSsoLogin', 'cloudianIsEnabled']
     }
   ]
 }
