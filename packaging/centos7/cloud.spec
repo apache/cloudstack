@@ -58,6 +58,7 @@ Requires: java-1.8.0-openjdk
 Requires: python
 Requires: python3
 Requires: bash
+Requires: gawk
 Requires: bzip2
 Requires: gzip
 Requires: unzip
