@@ -79,7 +79,7 @@ export default {
     startPolling () {
       this.poller = setInterval(() => {
         this.pollJobs()
-      }, 2500)
+      }, 4000)
     },
     async pollJobs () {
       var hasUpdated = false

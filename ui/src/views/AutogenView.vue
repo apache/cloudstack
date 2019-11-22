@@ -508,6 +508,22 @@ export default {
       }).then(function () {
       })
     },
+    pollActionCompletion (jobId, action) {
+      api('queryAsyncJobResult', { jobid: jobId }).then(json => {
+        var result = json.queryasyncjobresultresponse
+        if (result.jobstatus === 1) {
+          this.fetchData()
+        } else if (result.jobstatus === 2) {
+          this.fetchData()
+        } else {
+          this.$message
+            .loading(this.$t(action.label) + ' in progress for ' + this.resource.name, 3)
+            .then(() => this.pollActionCompletion(jobId, action))
+        }
+      }).catch(function (e) {
+        console.log('Error encountered while fetching async job result' + e)
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
       this.form.validateFields((err, values) => {
@@ -544,12 +560,15 @@ export default {
             params.id = this.resource.id
           }
 
+          var hasJobId = false
           api(this.currentAction.api, params).then(json => {
             for (const obj in json) {
               if (obj.includes('response')) {
                 for (const res in json[obj]) {
                   if (res === 'jobid') {
                     this.$store.dispatch('AddAsyncJob', { title: this.$t(this.currentAction.label), jobid: json[obj][res], description: this.resource.name, status: 'progress' })
+                    this.pollActionCompletion(json[obj][res], this.currentAction)
+                    hasJobId = true
                     break
                   }
                 }
@@ -558,6 +577,10 @@ export default {
             }
             if (this.currentAction.icon === 'delete') {
               this.$router.go(-1)
+            } else {
+              if (!hasJobId) {
+                this.fetchData()
+              }
             }
           }).catch(error => {
             console.log(error)
@@ -568,12 +591,6 @@ export default {
           }).finally(f => {
             this.closeAction()
           })
-
-          // TODO: listen for notification success/fail and refresh
-          const fetchData = this.fetchData
-          setTimeout(function () {
-            fetchData()
-          }, 2500)
         }
       })
     },
