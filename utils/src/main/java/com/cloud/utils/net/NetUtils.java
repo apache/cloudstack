@@ -268,7 +268,7 @@ public class NetUtils {
             final String defDev = Script.runSimpleBashScript("/sbin/route -n get default 2> /dev/null | grep interface | awk '{print $2}'");
             return defDev;
         }
-        return Script.runSimpleBashScript("ip route | grep default | head -1 | grep -Po '(?<=dev )(\\S+)'");
+        return Script.runSimpleBashScript("awk '$2 == 00000000 { print $1 }' /proc/net/route");
     }
 
     public static String getLocalIPString() {
