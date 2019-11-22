@@ -63,9 +63,7 @@
             </template>
             <a-button type="danger" shape="circle">
               <router-link :to="{ name: 'host', query: {'state': 'Alert'} }">
-                <a-badge dot>
-                  <a-icon class="capacity-dashboard-button-icon" type="desktop" />
-                </a-badge>
+                <a-icon class="capacity-dashboard-button-icon" type="desktop" />
               </router-link>
             </a-button>
           </a-tooltip>

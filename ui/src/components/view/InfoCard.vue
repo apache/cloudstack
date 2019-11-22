@@ -80,8 +80,10 @@
         <div class="resource-detail-item" v-if="resource.group">
           <a-icon type="gold" />{{ resource.group }}
         </div>
-        <div class="resource-detail-item" v-if="resource.cpunumber && resource.cpuspeed">
-          <a-icon type="appstore" />{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz
+        <div class="resource-detail-item" v-if="(resource.cpunumber && resource.cpuspeed) || resource.cputotal">
+          <a-icon type="appstore" />
+          <span v-if="resource.cpunumber && resource.cpuspeed">{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz</span>
+          <span v-else-if="resource.cputotal">{{ resource.cputotal }}</span>
           <span
             v-if="resource.cpuused"
             style="display: flex; padding-left: 25px">
@@ -116,17 +118,39 @@
               :percent="Number(parseFloat(100.0 * (resource.memorykbs - resource.memoryintfreekbs) / resource.memorykbs).toFixed(2))" />
           </span>
         </div>
-        <div class="resource-detail-item" v-else-if="resource.memorytotal">
-          <a-icon type="bulb" />{{ parseFloat(resource.memorytotal / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB Memory
+        <div class="resource-detail-item" v-else-if="resource.memorytotalgb">
+          <a-icon type="bulb" />{{ resource.memorytotalgb }} Memory
           <span
-            v-if="resource.memoryused"
+            v-if="resource.memoryusedgb"
             style="display: flex; padding-left: 25px">
             {{ $t('memoryusedgb') }}
             <a-progress
               style="padding-left: 10px"
               size="small"
               status="active"
-              :percent="Number(parseFloat(100.0 * (resource.memoryused) / resource.memorytotal).toFixed(2))" />
+              :percent="Number(parseFloat(100.0 * parseFloat(resource.memoryusedgb) / parseFloat(resource.memorytotalgb)).toFixed(2))" />
+          </span>
+          <span
+            v-if="resource.memoryallocatedgb"
+            style="display: flex; padding-left: 25px">
+            {{ $t('memoryallocatedgb') }}
+            <a-progress
+              style="padding-left: 10px"
+              size="small"
+              :percent="Number(parseFloat(100.0 * parseFloat(resource.memoryallocatedgb) / parseFloat(resource.memorytotalgb)).toFixed(2))" />
+          </span>
+        </div>
+        <div class="resource-detail-item" v-else-if="resource.memorytotal">
+          <a-icon type="bulb" />{{ resource.memorytotal }} Memory
+          <span
+            v-if="resource.memoryused"
+            style="display: flex; padding-left: 25px">
+            {{ $t('memoryused') }}
+            <a-progress
+              style="padding-left: 10px"
+              size="small"
+              status="active"
+              :percent="parseFloat(resource.memoryused)" />
           </span>
           <span
             v-if="resource.memoryallocated"
@@ -135,17 +159,41 @@
             <a-progress
               style="padding-left: 10px"
               size="small"
-              :percent="Number(parseFloat(100.0 * (resource.memoryallocated) / resource.memorytotal).toFixed(2))" />
+              :percent="parseFloat(resource.memoryallocated)" />
           </span>
         </div>
-        <div class="resource-detail-item" v-if="resource.volumes">
-          <a-icon type="hdd" />{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage
+        <div class="resource-detail-item" v-if="resource.volumes || resource.sizegb">
+          <a-icon type="hdd" />
+          <span v-if="resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage</span>
+          <span v-else-if="resource.sizegb">{{ resource.sizegb }}</span>
           <div style="margin-left: 25px" v-if="resource.diskkbsread && resource.diskkbswrite && resource.diskioread && resource.diskiowrite">
             <a-tag>Read {{ toSize(resource.diskkbsread) }}</a-tag>
             <a-tag>Write {{ toSize(resource.diskkbswrite) }}</a-tag><br/>
             <a-tag>Read (IO) {{ resource.diskioread }}</a-tag>
             <a-tag>Write (IO) {{ resource.diskiowrite }}</a-tag>
           </div>
+        </div>
+        <div class="resource-detail-item" v-else-if="resource.disksizetotalgb">
+          <a-icon type="database" />{{ resource.disksizetotalgb }}
+          <span
+            v-if="resource.disksizeusedgb"
+            style="display: flex; padding-left: 25px">
+            {{ $t('disksizeusedgb') }}
+            <a-progress
+              style="padding-left: 10px"
+              size="small"
+              status="active"
+              :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeusedgb) / parseFloat(resource.disksizetotalgb)).toFixed(2))" />
+          </span>
+          <span
+            v-if="resource.disksizeallocatedgb"
+            style="display: flex; padding-left: 25px">
+            {{ $t('disksizeallocatedgb') }}
+            <a-progress
+              style="padding-left: 10px"
+              size="small"
+              :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / parseFloat(resource.disksizetotalgb)).toFixed(2))" />
+          </span>
         </div>
         <div class="resource-detail-item" v-if="resource.nic || ('networkkbsread' in resource && 'networkkbswrite' in resource)">
           <a-icon type="wifi" />
