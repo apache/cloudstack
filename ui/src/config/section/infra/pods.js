@@ -22,6 +22,15 @@ export default {
   permission: ['listPods'],
   columns: ['name', 'allocationstate', 'gateway', 'netmask', 'zonename'],
   details: ['name', 'id', 'allocationstate', 'netmask', 'gateway', 'zonename'],
+  related: [{
+    name: 'cluster',
+    title: 'Clusters',
+    param: 'podid'
+  }, {
+    name: 'host',
+    title: 'Hosts',
+    param: 'podid'
+  }],
   actions: [
     {
       api: 'createPod',

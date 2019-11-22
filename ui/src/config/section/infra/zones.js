@@ -22,6 +22,27 @@ export default {
   permission: ['listZonesMetrics', 'listZones'],
   columns: ['name', 'state', 'networktype', 'clusters', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal'],
   details: ['name', 'id', 'allocationstate', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2'],
+  related: [{
+    name: 'pod',
+    title: 'Pods',
+    param: 'zoneid'
+  }, {
+    name: 'cluster',
+    title: 'Clusters',
+    param: 'zoneid'
+  }, {
+    name: 'host',
+    title: 'Hosts',
+    param: 'zoneid'
+  }, {
+    name: 'storagepool',
+    title: 'Primate Storage',
+    param: 'zoneid'
+  }, {
+    name: 'imagestore',
+    title: 'Secondary Storage',
+    param: 'zoneid'
+  }],
   actions: [
     {
       api: 'createZone',

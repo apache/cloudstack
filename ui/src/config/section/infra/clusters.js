@@ -22,6 +22,11 @@ export default {
   permission: ['listClustersMetrics', 'listClusters'],
   columns: ['name', 'state', 'clustertype', 'hypervisortype', 'hosts', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'podname', 'zonename'],
   details: ['name', 'id', 'allocationstate', 'clustertype', 'hypervisortype', 'podname', 'zonename'],
+  related: [{
+    name: 'host',
+    title: 'Hosts',
+    param: 'clusterid'
+  }],
   actions: [
     {
       api: 'addCluster',

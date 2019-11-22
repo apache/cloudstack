@@ -28,6 +28,11 @@ export default {
       permission: ['listServiceOfferings'],
       columns: ['name', 'displaytext', 'cpunumber', 'cpuspeed', 'memory', 'tags', 'domain', 'zone'],
       details: ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'tags', 'domain', 'zone', 'created'],
+      related: [{
+        name: 'vm',
+        title: 'Instances',
+        param: 'serviceofferingid'
+      }],
       actions: [{
         api: 'createServiceOffering',
         icon: 'plus',
@@ -88,6 +93,11 @@ export default {
       permission: ['listDiskOfferings'],
       columns: ['name', 'displaytext', 'disksize', 'tags', 'domain', 'zone'],
       details: ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'tags', 'domain', 'zone', 'created'],
+      related: [{
+        name: 'volume',
+        title: 'Volumes',
+        param: 'diskofferingid'
+      }],
       actions: [{
         api: 'createDiskOffering',
         icon: 'plus',
@@ -145,6 +155,11 @@ export default {
       resourceType: 'VpcOffering',
       columns: ['name', 'state', 'displaytext', 'domain', 'zone'],
       details: ['name', 'id', 'displaytext', 'distributedvpcrouter', 'service', 'tags', 'domain', 'zone', 'created'],
+      related: [{
+        name: 'vpc',
+        title: 'VPCs',
+        param: 'vpcofferingid'
+      }],
       actions: [{
         api: 'createVPCOffering',
         icon: 'plus',

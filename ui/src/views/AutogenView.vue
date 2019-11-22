@@ -385,6 +385,9 @@ export default {
               this.items[idx][key] = func(this.items[idx])
             }
           }
+          if (this.$route.path.startsWith('/ssh')) {
+            this.items[idx].id = this.items[idx].name
+          }
         }
         if (this.items.length > 0) {
           this.resource = this.items[0]

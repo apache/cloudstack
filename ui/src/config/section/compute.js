@@ -38,6 +38,10 @@ export default {
         'account', 'zonename'
       ],
       related: [{
+        name: 'volume',
+        title: 'Volumes',
+        param: 'virtualmachineid'
+      }, {
         name: 'vmsnapshot',
         title: 'VM Snapshots',
         param: 'virtualmachineid'
@@ -234,6 +238,11 @@ export default {
       permission: ['listSSHKeyPairs'],
       columns: ['name', 'fingerprint', 'account', 'domain'],
       details: ['name', 'fingerprint', 'account', 'domain'],
+      related: [{
+        name: 'vm',
+        title: 'Instances',
+        param: 'keypair'
+      }],
       actions: [
         {
           api: 'createSSHKeyPair',
@@ -265,6 +274,11 @@ export default {
       permission: ['listAffinityGroups'],
       columns: ['name', 'type', 'description', 'account', 'domain'],
       details: ['name', 'id', 'description', 'type', 'account', 'domain'],
+      related: [{
+        name: 'vm',
+        title: 'Instances',
+        param: 'affinitygroupid'
+      }],
       actions: [
         {
           api: 'createAffinityGroup',

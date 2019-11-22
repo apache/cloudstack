@@ -31,7 +31,11 @@ export default {
       related: [{
         name: 'publicip',
         title: 'IP Addresses',
-        param: 'associatedNetworkId'
+        param: 'associatednetworkid'
+      }, {
+        name: 'vm',
+        title: 'Instances',
+        param: 'networkid'
       }],
       tabs: [{
         name: 'details',
@@ -80,6 +84,11 @@ export default {
       resourceType: 'Vpc',
       columns: ['name', 'state', 'displaytext', 'cidr', 'account', 'zonename'],
       details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain'],
+      related: [{
+        name: 'vm',
+        title: 'Instances',
+        param: 'vpcid'
+      }],
       tabs: [{
         name: 'configure',
         component: () => import('@/views/network/VpcConfigure.vue')
