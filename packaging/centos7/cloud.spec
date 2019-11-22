@@ -64,6 +64,7 @@ Requires: unzip
 Requires: /sbin/mount.nfs
 Requires: openssh-clients
 Requires: nfs-utils
+Requires: iproute
 Requires: wget
 Requires: mysql
 Requires: mysql-connector-java
