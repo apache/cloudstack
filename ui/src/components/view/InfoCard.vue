@@ -72,7 +72,6 @@
           <os-logo :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
           <span style="margin-left: 8px">{{ resource.ostypename }}</span>
         </div>
-
         <div class="resource-detail-item" v-if="resource.keypair">
           <a-icon type="key" />
           <router-link :to="{ path: '/ssh/' + resource.keypair }">{{ resource.keypair }}</router-link>
@@ -228,6 +227,18 @@
           <a-icon type="hdd" />
           <router-link :to="{ path: '/volume/' + resource.volumeid }">{{ resource.volumename || resource.volume || resource.volumeid }} </router-link>
         </div>
+        <div class="resource-detail-item" v-if="resource.associatednetworkid">
+          <a-icon type="wifi" />
+          <router-link :to="{ path: '/guestnetwork/' + resource.associatednetworkid }">{{ resource.associatednetworkname || resource.associatednetworkid }} </router-link>
+        </div>
+        <div class="resource-detail-item" v-if="resource.guestnetworkid">
+          <a-icon type="gateway" />
+          <router-link :to="{ path: '/guestnetwork/' + resource.guestnetworkid }">{{ resource.guestnetworkname || resource.guestnetworkid }} </router-link>
+        </div>
+        <div class="resource-detail-item" v-if="resource.vpcid">
+          <a-icon type="deployment-unit" />
+          <router-link :to="{ path: '/vpc/' + resource.vpcid }">{{ resource.vpcname || resource.vpcid }}</router-link>
+        </div>
         <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
           <a-icon type="cloud" />
           <router-link :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
@@ -244,19 +255,10 @@
           <a-icon type="wifi" />
           <router-link :to="{ path: '/networkoffering/' + resource.networkofferingid }">{{ resource.networkofferingname || resource.networkofferingid }} </router-link>
         </div>
-        <div class="resource-detail-item" v-if="resource.associatednetworkid">
-          <a-icon type="wifi" />
-          <router-link :to="{ path: '/guestnetwork/' + resource.associatednetworkid }">{{ resource.associatednetworkname || resource.associatednetworkid }} </router-link>
-        </div>
         <div class="resource-detail-item" v-if="resource.vpcofferingid">
           <a-icon type="deployment-unit" />
           <router-link :to="{ path: '/vpcoffering/' + resource.vpcofferingid }">{{ resource.vpcofferingname || resource.vpcofferingid }} </router-link>
         </div>
-        <div class="resource-detail-item" v-if="resource.guestnetworkid">
-          <a-icon type="gateway" />
-          <router-link :to="{ path: '/guestnetwork/' + resource.guestnetworkid }">{{ resource.guestnetworkname || resource.guestnetworkid }} </router-link>
-        </div>
-
         <div class="resource-detail-item" v-if="resource.storageid">
           <a-icon type="database" />
           <router-link :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
