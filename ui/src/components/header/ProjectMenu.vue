@@ -134,7 +134,7 @@ export default {
   }
 
   &-icon {
-    font-size: 20px;
+    font-size: 18px;
     line-height: 1;
     padding-top: 5px;
     padding-right: 5px;
