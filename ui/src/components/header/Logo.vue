@@ -18,17 +18,14 @@
 <template>
   <div class="logo">
     <img class="logo-image" src="~@/assets/logo.svg"/>
-    <project-menu></project-menu>
   </div>
 </template>
 
 <script>
-import ProjectMenu from './ProjectMenu'
 
 export default {
   name: 'Logo',
   components: {
-    ProjectMenu
   },
   props: {
     title: {
@@ -50,7 +47,6 @@ export default {
   height: 64px;
   position: relative;
   line-height: 64px;
-  padding-left: 12px;
   -webkit-transition: all .3s;
   transition: all .3s;
   background: #002140;
@@ -63,8 +59,7 @@ export default {
 }
 
 .logo-image {
-  width: 54px;
-  margin-right: 10px;
+  width: 256px;
   display: inline-block;
   vertical-align: middle;
 }

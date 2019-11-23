@@ -49,7 +49,7 @@
         </a-form-item>
 
         <a-form-item>
-          <a-input
+          <a-input-password
             size="large"
             type="password"
             autocomplete="false"
@@ -60,7 +60,7 @@
             ]"
           >
             <a-icon slot="prefix" type="lock" :style="{ color: 'rgba(0,0,0,.25)' }"/>
-          </a-input>
+          </a-input-password>
         </a-form-item>
 
         <a-form-item>

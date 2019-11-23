@@ -25,16 +25,11 @@
       :key="index">
       <chart-card :loading="loading">
         <div class="chart-card-inner">
-          <h2>{{ $t(routes[section].title) }}</h2>
-          <h1><a-icon :type="routes[section].icon" /> {{ stats[section] }}</h1>
+          <router-link :to="{ name: section.substring(0, section.length - 1) }">
+            <h2>{{ $t(routes[section].title) }}</h2>
+            <h1><a-icon :type="routes[section].icon" /> {{ stats[section] }}</h1>
+          </router-link>
         </div>
-        <template slot="footer">
-          <center>
-            <router-link :to="{ name: section.substring(0, section.length - 1) }">
-              <a-button style="margin-bottom: 3px">View {{ $t(routes[section].title) }}</a-button>
-            </router-link>
-          </center>
-        </template>
       </chart-card>
     </a-col>
     <!-- move refresh and ssl cert setup somewhere more friendly -->
@@ -43,16 +38,17 @@
       :style="{ marginBottom: '12px', marginTop: '12px' }">
       <a-card>
         <a-button
-          style="margin-right: 20px"
-          icon="safety-certificate">
-          {{ $t('SSL Certificate') }}
-        </a-button>
-        <a-button
+          style="width: 100%"
+          icon="reload"
           @click="fetchData()"
           :loading="loading"
-          type="primary"
-          icon="reload">
+          type="primary">
           {{ $t('Refresh') }}
+        </a-button>
+        <a-button
+          style="width: 100%"
+          icon="safety-certificate">
+          {{ $t('SSL Certificate') }}
         </a-button>
       </a-card>
     </a-col>
@@ -73,7 +69,7 @@ export default {
   data () {
     return {
       loading: true,
-      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'systemvms', 'routers', 'cpusockets', 'managementservers'],
+      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts'],
       routes: {},
       stats: {}
     }

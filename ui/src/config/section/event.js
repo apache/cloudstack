@@ -15,46 +15,32 @@
 // specific language governing permissions and limitations
 // under the License.
 
-<template>
-  <div>
-    <a-button style="margin-bottom: 15px; float: right">
-      Add Setting
-    </a-button>
-    <setting-table
-      :columns="[{
-        title: $t('name'),
-        dataIndex: 'name',
-        width: '40%'
-      },{
-        title: $t('value'),
-        dataIndex: 'value',
-        width: '40%',
-        scopedSlots: { customRender: 'value' }
-      }]"
-      :items="Object.keys(resource.details).map(k => { return { name: k, value: resource.details[k] } })"
-      :loading="loading"
-    >
-    </setting-table>
-  </div>
-</template>
-
-<script>
-import SettingTable from '@/components/view/SettingTable'
-
 export default {
-  name: 'SettingsTab',
-  components: {
-    SettingTable
-  },
-  props: {
-    resource: {
-      type: Object,
-      required: true
+  name: 'event',
+  title: 'Events',
+  icon: 'schedule',
+  permission: ['listEvents'],
+  columns: ['username', 'description', 'state', 'level', 'type', 'account', 'domain', 'created'],
+  details: ['username', 'id', 'description', 'state', 'level', 'type', 'account', 'domain', 'created'],
+  related: [{
+    name: 'event',
+    title: 'Event Timeline',
+    param: 'startid'
+  }],
+  actions: [
+    {
+      api: 'archiveEvents',
+      icon: 'book',
+      label: 'Archive Event',
+      dataView: true,
+      args: ['ids']
     },
-    loading: {
-      type: Boolean,
-      default: false
+    {
+      api: 'deleteEvents',
+      icon: 'delete',
+      label: 'Delete Event',
+      dataView: true,
+      args: ['ids']
     }
-  }
+  ]
 }
-</script>

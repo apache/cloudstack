@@ -59,6 +59,30 @@ export default {
       icon: 'rocket',
       permission: ['listManagementServers'],
       columns: ['name', 'state', 'version']
+    },
+    {
+      name: 'alert',
+      title: 'Alerts',
+      icon: 'flag',
+      permission: ['listAlerts'],
+      columns: ['name', 'description', 'type', 'sent'],
+      details: ['name', 'id', 'type', 'sent', 'description'],
+      actions: [
+        {
+          api: 'archiveAlerts',
+          icon: 'book',
+          label: 'Archive Alert',
+          dataView: true,
+          args: ['ids']
+        },
+        {
+          api: 'deleteAlerts',
+          icon: 'delete',
+          label: 'Delete Alert',
+          dataView: true,
+          args: ['ids']
+        }
+      ]
     }
   ]
 }

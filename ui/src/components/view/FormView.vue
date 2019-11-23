@@ -68,7 +68,15 @@
               :placeholder="field.description"
             />
           </span>
-          <span v-else>
+          <span v-else-if="field.name==='password'">
+            <a-input-password
+              v-decorator="[field.name, {
+                rules: [{ required: field.required, message: 'Please enter input' }]
+              }]"
+              :placeholder="field.description"
+            />
+          </span>
+          <span v-else">
             <a-input
               v-decorator="[field.name, {
                 rules: [{ required: field.required, message: 'Please enter input' }]

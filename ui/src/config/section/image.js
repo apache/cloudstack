@@ -42,7 +42,7 @@ export default {
         component: () => import('@/views/image/TemplateZones.vue')
       }, {
         name: 'settings',
-        component: () => import('@/views/image/TemplateSettings.vue')
+        component: () => import('@/components/view/DetailSettings')
       }],
       actions: [
         {

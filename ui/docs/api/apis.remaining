@@ -62,7 +62,6 @@ deleteVpnCustomerGateway
 deleteVpnGateway
 findHostsForMigration
 findStoragePoolsForMigration
-getUploadParamsForTemplate
 importLdapUsers
 ldapCreateAccount
 linkDomainToLdap

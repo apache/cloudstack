@@ -18,6 +18,7 @@
 <template>
   <div class="user-menu">
 
+    <project-menu class="action"/>
     <translation-menu class="action"/>
     <header-notice class="action"/>
     <a-dropdown>
@@ -59,12 +60,14 @@
 <script>
 import config from '@/config/settings'
 import HeaderNotice from './HeaderNotice'
+import ProjectMenu from './ProjectMenu'
 import TranslationMenu from './TranslationMenu'
 import { mapActions, mapGetters } from 'vuex'
 
 export default {
   name: 'UserMenu',
   components: {
+    ProjectMenu,
     TranslationMenu,
     HeaderNotice
   },

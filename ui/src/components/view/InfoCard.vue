@@ -72,13 +72,6 @@
           <os-logo :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
           <span style="margin-left: 8px">{{ resource.ostypename }}</span>
         </div>
-        <div class="resource-detail-item" v-if="resource.keypair">
-          <a-icon type="key" />
-          <router-link :to="{ path: '/ssh/' + resource.keypair }">{{ resource.keypair }}</router-link>
-        </div>
-        <div class="resource-detail-item" v-if="resource.group">
-          <a-icon type="gold" />{{ resource.group }}
-        </div>
         <div class="resource-detail-item" v-if="(resource.cpunumber && resource.cpuspeed) || resource.cputotal">
           <a-icon type="appstore" />
           <span v-if="resource.cpunumber && resource.cpuspeed">{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz</span>
@@ -216,6 +209,15 @@
         <div class="resource-detail-item">
           <slot name="details">
           </slot>
+        </div>
+
+        <div class="resource-detail-item" v-if="resource.groupid">
+          <a-icon type="gold" />
+          <router-link :to="{ path: '/vmgroup/' + resource.groupid }">{{ resource.group || resource.groupid }}</router-link>
+        </div>
+        <div class="resource-detail-item" v-if="resource.keypair">
+          <a-icon type="key" />
+          <router-link :to="{ path: '/ssh/' + resource.keypair }">{{ resource.keypair }}</router-link>
         </div>
 
         <div class="resource-detail-item" v-if="resource.virtualmachineid">

@@ -55,7 +55,7 @@ export default {
         component: () => import('@/views/compute/InstanceHardware.vue')
       }, {
         name: 'settings',
-        component: () => import('@/views/compute/InstanceSettings.vue')
+        component: () => import('@/components/view/DetailSettings')
       }],
       actions: [
         {
@@ -231,6 +231,42 @@ export default {
       component: () => import('@/components/Test.vue')
     },
     */
+    {
+      name: 'vmgroup',
+      title: 'Instance Groups',
+      icon: 'gold',
+      permission: ['listInstanceGroups'],
+      columns: ['name', 'account', 'domain'],
+      details: ['name', 'id', 'account', 'domain', 'created'],
+      related: [{
+        name: 'vm',
+        title: 'Instances',
+        param: 'groupid'
+      }],
+      actions: [
+        {
+          api: 'createInstanceGroup',
+          icon: 'plus',
+          label: 'New Instance Group',
+          listView: true,
+          args: ['name']
+        },
+        {
+          api: 'updateInstanceGroup',
+          icon: 'edit',
+          label: 'Update Instance Group',
+          dataView: true,
+          args: ['name']
+        },
+        {
+          api: 'deleteInstanceGroup',
+          icon: 'delete',
+          label: 'Delete Instance Group',
+          dataView: true,
+          args: ['id']
+        }
+      ]
+    },
     {
       name: 'ssh',
       title: 'SSH Key Pairs',

@@ -34,6 +34,9 @@
     </template>
 
     <a slot="name" slot-scope="text, record" href="javascript:;" style="display: inline-flex">
+      <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
+        <a-button type="dashed" size="small" shape="circle" icon="login" @click="changeProject(record)" />
+      </span>
       <console :resource="record" size="small" />
       <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
       <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
@@ -129,6 +132,12 @@ export default {
     onSelectChange (selectedRowKeys) {
       console.log('selectedRowKeys changed: ', selectedRowKeys)
       this.selectedRowKeys = selectedRowKeys
+    },
+    changeProject (project) {
+      this.$store.dispatch('SetProject', project)
+      this.$store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
+      this.$message.success(`Switched to "${project.name}"`)
+      this.$router.push({ name: 'dashboard' })
     }
   }
 }

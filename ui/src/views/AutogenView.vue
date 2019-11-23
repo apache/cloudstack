@@ -101,7 +101,6 @@
           v-if="!dataView"
           @search="onSearch"
         >
-          <a-icon slot="prefix" type="search" />
         </a-input-search>
       </a-col>
     </a-row>
@@ -170,6 +169,14 @@
                 <a-input-number
                   v-decorator="[field.name, {
                     rules: [{ required: field.required, message: 'Please enter a number' }]
+                  }]"
+                  :placeholder="field.description"
+                />
+              </span>
+              <span v-else-if="field.name==='password' || field.name==='currentpassword'">
+                <a-input-password
+                  v-decorator="[field.name, {
+                    rules: [{ required: field.required, message: 'Please enter input' }]
                   }]"
                   :placeholder="field.description"
                 />

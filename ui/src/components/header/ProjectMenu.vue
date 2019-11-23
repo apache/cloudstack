@@ -16,21 +16,43 @@
 // under the License.
 
 <template>
-  <span class="project-wrapper" :disabled="true">
-    <a-select
-      class="project-wrapper-select"
-      size="default"
-      defaultValue="Default View"
-      :value="selectedProject"
-      :disabled="isDisabled()"
-      :filterOption="filterProject"
-      @change="changeProject"
-      showSearch>
-      <a-select-option v-for="(project, index) in projects" :key="index">
-        {{ project.displaytext || project.name }}
-      </a-select-option>
-    </a-select>
-  </span>
+  <a-popover
+    class="project"
+    v-model="visible"
+    trigger="click"
+    placement="bottom"
+    :autoAdjustOverflow="true"
+    :arrowPointAtCenter="true">
+    <template slot="content">
+      <a-menu style="margin: -12px -16px">
+        <a-menu-item>
+          <a-icon class="project-icon" type="login" />
+          <a-select
+            class="project-select"
+            size="default"
+            defaultValue="Default View"
+            :value="selectedProject"
+            :disabled="isDisabled()"
+            :filterOption="filterProject"
+            @change="changeProject"
+            showSearch>
+            <a-select-option v-for="(project, index) in projects" :key="index">
+              {{ project.displaytext || project.name }}
+            </a-select-option>
+          </a-select>
+        </a-menu-item>
+        <a-menu-item>
+          <router-link :to="{ path: '/project' }">
+            <a-icon class="project-icon" type="project" />
+            {{ $t('Projects') }}
+          </router-link>
+        </a-menu-item>
+      </a-menu>
+    </template>
+    <span @click="visible = !visible" class="header-notice-opener">
+      <a-icon class="project-icon" type="project" />
+    </span>
+  </a-popover>
 </template>
 
 <script>
@@ -43,6 +65,7 @@ export default {
   name: 'ProjectMenu',
   data () {
     return {
+      visible: false,
       projects: [],
       selectedProject: 'Default View'
     }
@@ -105,9 +128,16 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.project-wrapper {
+.project {
   &-select {
-    width: 165px;
+    width: 200px;
+  }
+
+  &-icon {
+    font-size: 20px;
+    line-height: 1;
+    padding-top: 5px;
+    padding-right: 5px;
   }
 }
 </style>

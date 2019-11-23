@@ -48,7 +48,7 @@ export default {
           icon: 'key',
           label: 'Change Password',
           dataView: true,
-          args: ['id', 'password', 'password']
+          args: ['id', 'currentpassword', 'password']
         },
         {
           api: 'registerUserKeys',

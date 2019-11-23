@@ -25,7 +25,7 @@
     overlayClassName="header-notice-popover">
     <template slot="content">
       <a-spin :spinning="loading">
-        <a-list>
+        <a-list style="min-width: 200px">
           <a-list-item>
             <a-list-item-meta title="Notifications">
               <a-avatar :style="{backgroundColor: '#6887d0', verticalAlign: 'middle'}" icon="notification" slot="avatar"/>
