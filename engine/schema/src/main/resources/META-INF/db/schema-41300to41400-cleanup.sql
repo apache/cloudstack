@@ -19,3 +19,5 @@
 -- Schema upgrade cleanup from 4.13.0.0 to 4.14.0.0
 --;
 
+# Delete an ancient template added in 2.2, which was set as removed in 4.5. For sake of cleanup and easier overview of builtin templates
+DELETE FROM `cloud`.`vm_template` WHERE `id`=2 AND `unique_name`="centos53-x86_64" AND `name`="CentOS 5.3(64-bit) no GUI (XenServer)";
