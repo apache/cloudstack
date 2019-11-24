@@ -41,8 +41,8 @@ INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created,
 
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
     VALUES (7, UUID(), 'default-tmpl-centos8.0-vmware', 'CentOS 8.0(64-bit) no GUI (vSphere)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloudstack.org/releases/4.14/default-tmpl-centos8.0.ova', '85168c007c6ab85c516274cdf23eda48', 0, 'CentOS 8.0(64-bit) no GUI (vSphere)', 'OVA', 274, 1, 1, 'VMware', 1);
-INSERT INTO `cloud`.`vm_template_details` (`id`, `template_id`, `name`, `value`, `display`) VALUES (1, 7, 'nicAdapter', 'Vmxnet3', 1);
-INSERT INTO `cloud`.`vm_template_details` (`id`, `template_id`, `name`, `value`, `display`) VALUES (2, 7, 'rootDiskController', 'pvscsi', 1);
+INSERT INTO `cloud`.`vm_template_details` (`id`, `template_id`, `name`, `value`) VALUES (1, 7, 'nicAdapter', 'Vmxnet3');
+INSERT INTO `cloud`.`vm_template_details` (`id`, `template_id`, `name`, `value`) VALUES (2, 7, 'rootDiskController', 'pvscsi');
 
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (1, UUID(), 'CentOS');
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (2, UUID(), 'Debian');
