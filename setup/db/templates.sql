@@ -30,9 +30,6 @@ INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created,
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
     VALUES (9, UUID(), 'routing-9', 'SystemVM Template (HyperV)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloudstack.org/systemvm/4.6/systemvm64template-4.6.0-hyperv.vhd.zip', '53e24bddfa56ea3139ed37af4b519013', 0, 'SystemVM Template (HyperV)', 'VHD', 15, 0, 1, 'Hyperv' );
 
-INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, removed, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
-    VALUES (2, UUID(), 'centos53-x86_64', 'CentOS 5.3(64-bit) no GUI (XenServer)', 1, now(), now(), 'BUILTIN', 0, 64, 1, 'http://download.cloudstack.org/templates/builtin/f59f18fb-ae94-4f97-afd2-f84755767aca.vhd.bz2', 'b63d854a9560c013142567bbae8d98cf', 0, 'CentOS 5.3(64-bit) no GUI (XenServer)', 'VHD', 12, 1, 1, 'XenServer', 1);
-
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, display_text, enable_password, format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
     VALUES (4, UUID(), 'default-tmpl-centos8.0-kvm', 'CentOS 8.0(64-bit) no GUI (KVM)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloudstack.org/releases/4.14/default-tmpl-centos8.0.qcow2.bz2', '80da87ecc67d1e4fcf90079873241619', 'CentOS 8.0(64-bit) no GUI (KVM)', 0, 'QCOW2', 274, 1, 1, 'KVM', 1);
 
