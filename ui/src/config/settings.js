@@ -27,7 +27,7 @@ export default {
   multiTab: false, // enable to have tab/route history stuff
   // CloudStack options
   apiBase: '/client/api',
-  helpUrl: 'http://docs.cloudstack.apache.org/en/latest/',
+  docBase: 'http://docs.cloudstack.apache.org/en/latest',
   appTitle: 'CloudStack',
   // vue-ls options
   storageOptions: {

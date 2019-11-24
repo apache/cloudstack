@@ -18,6 +18,13 @@
 <template>
   <a-breadcrumb class="breadcrumb">
     <a-breadcrumb-item v-for="(item, index) in breadList" :key="index">
+      <a
+        v-if="item.meta.docHelp"
+        style="margin-right: 5px"
+        :href="docBase + '/' + item.meta.docHelp"
+        target="_blank">
+        <a-icon type="question-circle-o"></a-icon>
+      </a>
       <router-link
         v-if="item && item.name"
         :to="{ path: item.path === '' ? '/' : item.path }"
@@ -51,15 +58,15 @@
 </template>
 
 <script>
+import config from '@/config/settings'
 
 export default {
   name: 'Breadcrumb',
-  components: {
-  },
   data () {
     return {
       name: '',
-      breadList: []
+      breadList: [],
+      docBase: config.docBase
     }
   },
   created () {

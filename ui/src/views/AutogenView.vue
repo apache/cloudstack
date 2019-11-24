@@ -96,7 +96,6 @@
       </keep-alive>
       <a-modal
         v-else
-        :title="$t(currentAction.label)"
         :visible="showAction"
         :closable="true"
         style="top: 20px;"
@@ -105,6 +104,16 @@
         :confirmLoading="currentAction.loading"
         centered
       >
+        <span slot="title">
+          {{ $t(currentAction.label) }}
+          <a
+            v-if="currentAction.docHelp || $route.meta.docHelp"
+            style="margin-left: 5px"
+            :href="docBase + '/' + (currentAction.docHelp || $route.meta.docHelp)"
+            target="_blank">
+            <a-icon type="question-circle-o"></a-icon>
+          </a>
+        </span>
         <a-spin :spinning="currentAction.loading">
           <a-form
             :form="form"
@@ -195,6 +204,7 @@
 <script>
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
+import config from '@/config/settings'
 import store from '@/store'
 
 import Breadcrumb from '@/components/widgets/Breadcrumb'
@@ -217,6 +227,7 @@ export default {
   data () {
     return {
       apiName: '',
+      docBase: config.docBase,
       loading: false,
       columns: [],
       items: [],

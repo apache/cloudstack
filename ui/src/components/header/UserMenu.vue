@@ -39,7 +39,7 @@
           </router-link>
         </a-menu-item>
         <a-menu-item class="user-menu-item" key="3" disabled>
-          <a :href="helpUrl" target="_blank">
+          <a :href="docBase" target="_blank">
             <a-icon class="user-menu-item-icon" type="question-circle-o"></a-icon>
             <span class="user-menu-item-name">Help</span>
           </a>
@@ -70,7 +70,7 @@ export default {
   },
   data () {
     return {
-      helpUrl: config.helpUrl
+      docBase: config.docBase
     }
   },
   methods: {

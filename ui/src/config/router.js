@@ -36,7 +36,7 @@ export function generateRouterMap (section) {
     name: section.name,
     path: '/' + section.name,
     hidden: section.hidden,
-    meta: { title: section.title, keepAlive: true, icon: section.icon },
+    meta: { title: section.title, keepAlive: true, icon: section.icon, docHelp: section.docHelp },
     component: RouteView
   }
 
@@ -54,6 +54,7 @@ export function generateRouterMap (section) {
           name: child.name,
           keepAlive: true,
           icon: child.icon,
+          docHelp: child.docHelp,
           permission: child.permission,
           resourceType: child.resourceType,
           params: child.params ? child.params : {},
@@ -117,6 +118,7 @@ export function generateRouterMap (section) {
         name: section.name,
         keepAlive: true,
         icon: section.icon,
+        docHelp: section.docHelp,
         permission: section.permission,
         resourceType: section.resourceType,
         params: section.params ? section.params : {},
