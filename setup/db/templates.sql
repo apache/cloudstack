@@ -37,7 +37,7 @@ INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created,
     VALUES (4, UUID(), 'default-tmpl-centos8.0-kvm', 'CentOS 8.0(64-bit) no GUI (KVM)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloudstack.org/releases/4.14/default-tmpl-centos8.0.qcow2.bz2', '80da87ecc67d1e4fcf90079873241619', 'CentOS 8.0(64-bit) no GUI (KVM)', 0, 'QCOW2', 274, 1, 1, 'KVM', 1);
 
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
-    VALUES (5, UUID(), 'default-tmpl-centos7.2-xen', 'CentOS 7.2(64-bit) no GUI (XenServer)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloudstack.org/releases/4.14/default-tmpl-centos8.0.vhd.bz2', '9a2726a0d7680fb15a24af874f2a26e8', 0, 'CentOS 7.2(64-bit) no GUI (XenServer)', 'VHD', 274, 1, 1, 'XenServer', 1);
+    VALUES (5, UUID(), 'default-tmpl-centos8.0-xen', 'CentOS 8.0(64-bit) no GUI (XenServer)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloudstack.org/releases/4.14/default-tmpl-centos8.0.vhd.bz2', '440acfd548a7391b26559c4763377118', 0, 'CentOS 8.0(64-bit) no GUI (XenServer)', 'VHD', 274, 1, 1, 'XenServer', 1);
 
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
     VALUES (6, UUID(), 'centos64-x64', 'CentOS 6.4(64-bit) GUI (Hyperv)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloudstack.org/releases/4.3/centos6_4_64bit.vhd.bz2', 'eef6b9940ea3ed01221d963d4a012d0a', 0, 'CentOS 6.4 (64-bit) GUI (Hyperv)', 'VHD', 182, 1, 1, 'Hyperv', 1);
