@@ -52,7 +52,7 @@
                 <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" style="font-size: 24px"/>
               </a-button>
               <a-button shape="circle" size="small" @click="hideEditDetail(index)" style="margin: 2px">
-                <a-icon type="close-circle" theme="twoTone" twoToneColor="#eb2f96" style="font-size: 24px"/>
+                <a-icon type="close-circle" theme="twoTone" twoToneColor="#f5222d" style="font-size: 24px"/>
               </a-button>
             </span>
             <span v-else>{{ item.value }}</span>

@@ -17,93 +17,67 @@
 
 <template>
   <div>
-    <a-card class="mobile-breadcrumb" v-if="device === 'mobile'">
-      <breadcrumb />
-    </a-card>
-    <a-row>
-      <a-col :span="18">
-        <span
-          v-for="(action, actionIndex) in actions"
-          :key="actionIndex">
-          <a-tooltip
-            placement="bottom"
-            v-if="action.api in $store.getters.apis &&
-              ((!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) ||
-              (dataView && action.dataView && ('show' in action ? action.show(resource) : true)))">
-            <template slot="title">
-              {{ $t(action.label) }}
-            </template>
-            <a-button
-              :icon="action.icon"
-              :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
-              shape="circle"
-              style="margin-right: 5px"
-              @click="execAction(action)"
-            >
-            </a-button>
-          </a-tooltip>
-        </span>
-        <span v-if="!dataView" style="float: right; padding-right: 8px; margin-top: -2px">
-          <a-tooltip placement="bottom">
-            <template slot="title">
-              {{ "Auto-Refresh" }}
-            </template>
-            <a-switch
-              style="margin: 8px;"
-              :loading="loading"
-              :checked="autoRefresh"
-              @change="toggleAutoRefresh"
-            />
-          </a-tooltip>
-          <a-tooltip placement="bottom">
-            <template slot="title">
-              {{ "Refresh" }}
-            </template>
-            <a-button
-              @click="fetchData()"
-              :loading="loading"
-              shape="circle"
-              icon="reload"
-            />
-          </a-tooltip>
-        </span>
-      </a-col>
-      <a-col :span="6">
-        <a-tooltip placement="bottom" v-if="dataView">
-          <template slot="title">
-            {{ "Refresh" }}
-          </template>
-          <a-button
-            style="float: right"
-            @click="fetchData()"
-            :loading="loading"
-            shape="circle"
-            icon="reload"
-          />
-        </a-tooltip>
-        <a-tooltip placement="bottom" v-if="dataView">
-          <template slot="title">
-            {{ "Auto-Refresh" }}
-          </template>
-          <a-switch
-            v-if="dataView"
-            style="float: right; margin: 5px;"
-            :loading="loading"
-            :checked="autoRefresh"
-            @change="toggleAutoRefresh"
-          />
-        </a-tooltip>
+    <a-card class="mobile-breadcrumb">
+      <a-row>
+        <a-col :span="24" style="display: inline-flex">
+          <breadcrumb style="margin-right: 10px; width: 100%" @refresh="fetchData()" />
+          <span
+            v-for="(action, actionIndex) in actions"
+            :key="actionIndex">
+            <a-tooltip
+              placement="bottom"
+              v-if="action.api in $store.getters.apis &&
+                ((!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) ||
+                (dataView && action.dataView && ('show' in action ? action.show(resource) : true)))">
+              <template slot="title">
+                {{ $t(action.label) }}
+              </template>
+              <a-button
+                :icon="action.icon"
+                :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
+                shape="circle"
+                style="margin-right: 5px"
+                @click="execAction(action)"
+              >
+              </a-button>
+            </a-tooltip>
+          </span>
 
-        <a-input-search
-          size="default"
-          placeholder="Search"
-          v-model="searchQuery"
-          v-if="!dataView"
-          @search="onSearch"
-        >
-        </a-input-search>
-      </a-col>
-    </a-row>
+          <a-input-search
+            style="width: 100%; padding-left: 5px"
+            size="default"
+            placeholder="Search"
+            v-model="searchQuery"
+            v-if="!dataView"
+            @search="onSearch"
+          >
+          </a-input-search>
+        </a-col>
+        <a-col :span="24" v-if="false">
+          <span
+            v-for="(action, actionIndex) in actions"
+            :key="actionIndex">
+            <a-tooltip
+              placement="bottom"
+              v-if="action.api in $store.getters.apis &&
+                ((!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) ||
+                (dataView && action.dataView && ('show' in action ? action.show(resource) : true)))">
+              <template slot="title">
+                {{ $t(action.label) }}
+              </template>
+              <a-button
+                :icon="action.icon"
+                :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
+                shape="circle"
+                style="margin-right: 5px"
+                @click="execAction(action)"
+              >
+              </a-button>
+            </a-tooltip>
+          </span>
+        </a-col>
+      </a-row>
+    </a-card>
 
     <div v-show="showAction">
       <keep-alive v-if="currentAction.component">
@@ -244,7 +218,6 @@ export default {
     return {
       apiName: '',
       loading: false,
-      autoRefresh: false,
       columns: [],
       items: [],
       itemCount: 0,
@@ -417,21 +390,6 @@ export default {
     onSearch (value) {
       this.searchQuery = value
       this.fetchData()
-    },
-    toggleAutoRefresh () {
-      this.autoRefresh = !this.autoRefresh
-      this.doRefresh()
-    },
-    doRefresh () {
-      if (!this.autoRefresh) {
-        return
-      }
-      const doRefresh = this.doRefresh
-      const fetchData = this.fetchData
-      setTimeout(function () {
-        fetchData()
-        doRefresh()
-      }, 5000)
     },
     closeAction () {
       this.currentAction.loading = false
@@ -626,8 +584,8 @@ export default {
 <style scoped>
 
 .mobile-breadcrumb {
-  margin-left: -16px;
-  margin-right: -16px;
+  margin-left: -24px;
+  margin-right: -24px;
   margin-top: -16px;
   margin-bottom: 12px;
 }

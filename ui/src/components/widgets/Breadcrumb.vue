@@ -27,11 +27,25 @@
       </router-link>
       <span v-else-if="$route.params.id">
         {{ $route.params.id }}
-        <a-button shape="circle" type="dashed" size="small" v-clipboard:copy="$route.params.id">
-          <a-icon type="copy" style="margin-left: -1px; margin-top: 1px"/>
-        </a-button>
       </span>
-      <span v-else>{{ $t(item.meta.title) }}</span>
+      <span v-else>
+        {{ $t(item.meta.title) }}
+      </span>
+      <a-tooltip v-if="index === (breadList.length - 1)" placement="bottom">
+        <template slot="title">
+          {{ "Refresh" }}
+        </template>
+        <a-button
+          shape="circle"
+          style="margin-left: 8px"
+          @click="$emit('refresh')" >
+          <a-icon
+            type="reload"
+            style="margin-left: 0px"
+            @click="$emit('refresh')"
+          />
+        </a-button>
+      </a-tooltip>
     </a-breadcrumb-item>
   </a-breadcrumb>
 </template>

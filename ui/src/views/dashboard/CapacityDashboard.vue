@@ -37,34 +37,9 @@
               Fetch Latest
             </template>
             <a-button
-              type="primary"
               shape="circle"
               @click="listCapacity(zoneSelected, true)">
               <a-icon class="capacity-dashboard-button-icon" type="reload" />
-            </a-button>
-          </a-tooltip>
-        </div>
-        <div class="capacity-dashboard-button">
-          <a-tooltip placement="bottom">
-            <template slot="title">
-              View Alerts
-            </template>
-            <a-button shape="circle">
-              <router-link :to="{ name: 'alert' }">
-                <a-icon class="capacity-dashboard-button-icon" type="flag" />
-              </router-link>
-            </a-button>
-          </a-tooltip>
-        </div>
-        <div class="capacity-dashboard-button">
-          <a-tooltip placement="bottom">
-            <template slot="title">
-              View Hosts in Alert State
-            </template>
-            <a-button type="danger" shape="circle">
-              <router-link :to="{ name: 'host', query: {'state': 'Alert'} }">
-                <a-icon class="capacity-dashboard-button-icon" type="desktop" />
-              </router-link>
             </a-button>
           </a-tooltip>
         </div>
@@ -96,7 +71,36 @@
     <a-col :xl="6">
       <chart-card>
         <div style="text-align: center">
-          <a-button><router-link :to="{ name: 'event' }">View Events</router-link></a-button>
+          <a-tooltip placement="bottom" class="capacity-dashboard-button-wrapper">
+            <template slot="title">
+              View Hosts in Alert State
+            </template>
+            <a-button type="danger" shape="circle">
+              <router-link :to="{ name: 'host', query: {'state': 'Alert'} }">
+                <a-icon class="capacity-dashboard-button-icon" type="desktop" />
+              </router-link>
+            </a-button>
+          </a-tooltip>
+          <a-tooltip placement="bottom" class="capacity-dashboard-button-wrapper">
+            <template slot="title">
+              View Alerts
+            </template>
+            <a-button shape="circle">
+              <router-link :to="{ name: 'alert' }">
+                <a-icon class="capacity-dashboard-button-icon" type="flag" />
+              </router-link>
+            </a-button>
+          </a-tooltip>
+          <a-tooltip placement="bottom" class="capacity-dashboard-button-wrapper">
+            <template slot="title">
+              View Events
+            </template>
+            <a-button shape="circle">
+              <router-link :to="{ name: 'event' }">
+                <a-icon class="capacity-dashboard-button-icon" type="schedule" />
+              </router-link>
+            </a-button>
+          </a-tooltip>
         </div>
         <template slot="footer">
           <div class="capacity-dashboard-footer">
@@ -259,6 +263,10 @@ export default {
     .ant-select {
       width: 100%; // to fill flex item width
     }
+  }
+
+  &-button-wrapper {
+    margin-left: 12px;
   }
 
   &-button {

@@ -28,7 +28,7 @@
         class="trigger"
         :type="collapsed ? 'menu-unfold' : 'menu-fold'"
         @click="toggle"/>
-      <breadcrumb v-if="device !== 'mobile'" />
+      <project-menu v-if="device !== 'mobile'" />
       <user-menu></user-menu>
     </div>
     <div v-else :class="['top-nav-header-index', theme]">
@@ -47,8 +47,8 @@
             :type="collapsed ? 'menu-fold' : 'menu-unfold'"
             @click="toggle"></a-icon>
         </div>
-        <breadcrumb v-if="device !== 'mobile'" />
-        <user-menu class="header-index-right"></user-menu>
+        <project-menu v-if="device !== 'mobile'" />
+        <user-menu></user-menu>
       </div>
     </div>
 
@@ -59,6 +59,7 @@
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import Logo from '../header/Logo'
 import SMenu from '../menu/'
+import ProjectMenu from '../header/ProjectMenu'
 import UserMenu from '../header/UserMenu'
 
 import { mixin } from '@/utils/mixin.js'
@@ -69,6 +70,7 @@ export default {
     Breadcrumb,
     Logo,
     SMenu,
+    ProjectMenu,
     UserMenu
   },
   mixins: [mixin],
