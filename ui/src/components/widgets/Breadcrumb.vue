@@ -18,13 +18,6 @@
 <template>
   <a-breadcrumb class="breadcrumb">
     <a-breadcrumb-item v-for="(item, index) in breadList" :key="index">
-      <a
-        v-if="item.meta.docHelp"
-        style="margin-right: 5px"
-        :href="docBase + '/' + item.meta.docHelp"
-        target="_blank">
-        <a-icon type="question-circle-o"></a-icon>
-      </a>
       <router-link
         v-if="item && item.name"
         :to="{ path: item.path === '' ? '/' : item.path }"
@@ -40,18 +33,15 @@
       </span>
       <a-tooltip v-if="index === (breadList.length - 1)" placement="bottom">
         <template slot="title">
-          {{ "Refresh" }}
+          {{ "Open Documentation" }}
         </template>
-        <a-button
-          shape="circle"
-          style="margin-left: 8px"
-          @click="$emit('refresh')" >
-          <a-icon
-            type="reload"
-            style="margin-left: 0px"
-            @click="$emit('refresh')"
-          />
-        </a-button>
+        <a
+          v-if="item.meta.docHelp"
+          style="margin-right: 5px"
+          :href="docBase + '/' + $route.meta.docHelp"
+          target="_blank">
+          <a-icon type="question-circle-o"></a-icon>
+        </a>
       </a-tooltip>
     </a-breadcrumb-item>
   </a-breadcrumb>

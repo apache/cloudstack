@@ -308,8 +308,10 @@
 
       <div class="account-center-tags" v-if="$route.meta.related">
         <span v-for="item in $route.meta.related" :key="item.path">
-          <router-link :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : resource.id) }">
-            <a-button style="margin-right: 10px">
+          <router-link
+            v-if="$router.resolve('/' + item.name).route.name !== '404'"
+            :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : resource.id) }">
+            <a-button style="margin-right: 10px" :icon="$router.resolve('/' + item.name).route.meta.icon" >
               View {{ $t(item.title) }}
             </a-button>
           </router-link>

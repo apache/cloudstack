@@ -33,13 +33,29 @@
       </span>
     </template>
 
-    <a slot="name" slot-scope="text, record" href="javascript:;" style="display: inline-flex">
+    <a slot="name" slot-scope="text, record" href="javascript:;">
+      <div>
       <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
         <a-button type="dashed" size="small" shape="circle" icon="login" @click="changeProject(record)" />
       </span>
       <console :resource="record" size="small" />
       <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
       <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
+      </div>
+      <div v-if="$route.meta.related" style="padding-top: 5px">
+        <span v-for="item in $route.meta.related" :key="item.path">
+          <router-link
+            v-if="$router.resolve('/' + item.name).route.name !== '404'"
+            :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.param === 'account' ? record.name + '&domainid=' + record.domainid : record.id) }">
+            <a-tooltip placement="bottom">
+              <template slot="title">
+                View {{ $t(item.title) }}
+              </template>
+              <a-button size="small" shape="round" :icon="$router.resolve('/' + item.name).route.meta.icon" />
+            </a-tooltip>
+          </router-link>
+        </span>
+      </div>
     </a>
     <a slot="displayname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>

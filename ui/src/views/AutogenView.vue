@@ -19,53 +19,34 @@
   <div>
     <a-card class="mobile-breadcrumb">
       <a-row>
-        <a-col :span="24" style="display: inline-flex">
-          <breadcrumb style="margin-right: 10px; width: 100%" @refresh="fetchData()" />
-          <span
-            v-for="(action, actionIndex) in actions"
-            :key="actionIndex">
-            <a-tooltip
-              placement="bottom"
-              v-if="action.api in $store.getters.apis &&
-                ((!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) ||
-                (dataView && action.dataView && ('show' in action ? action.show(resource) : true)))">
-              <template slot="title">
-                {{ $t(action.label) }}
-              </template>
-              <a-button
-                :icon="action.icon"
-                :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
-                shape="circle"
-                style="margin-right: 5px"
-                @click="execAction(action)"
-              >
-              </a-button>
-            </a-tooltip>
-          </span>
-
-          <a-input-search
-            style="width: 100%; padding-left: 5px"
-            size="default"
-            placeholder="Search"
-            v-model="searchQuery"
-            v-if="!dataView"
-            @search="onSearch"
-          >
-          </a-input-search>
+        <a-col :span="14">
+          <breadcrumb style="padding-top: 6px" />
         </a-col>
-        <a-col :span="24" v-if="false">
-          <span
-            v-for="(action, actionIndex) in actions"
-            :key="actionIndex">
+        <a-col :span="10">
+          <span style="float: right">
+            <a-tooltip placement="bottom">
+              <template slot="title">
+                {{ "Refresh" }}
+              </template>
+              <a-button
+                :loading="loading"
+                shape="circle"
+                type="dashed"
+                icon="reload"
+                style="margin-right: 5px"
+                @click="fetchData()" />
+            </a-tooltip>
             <a-tooltip
-              placement="bottom"
-              v-if="action.api in $store.getters.apis &&
-                ((!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) ||
-                (dataView && action.dataView && ('show' in action ? action.show(resource) : true)))">
+              v-for="(action, actionIndex) in actions"
+              :key="actionIndex"
+              placement="bottom">
               <template slot="title">
                 {{ $t(action.label) }}
               </template>
               <a-button
+                v-if="action.api in $store.getters.apis &&
+                  ((!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) ||
+                  (dataView && action.dataView && ('show' in action ? action.show(resource) : true)))"
                 :icon="action.icon"
                 :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
                 shape="circle"
@@ -74,6 +55,12 @@
               >
               </a-button>
             </a-tooltip>
+            <a-input-search
+              style="width: unset"
+              placeholder="Search"
+              v-model="searchQuery"
+              v-if="!dataView"
+              @search="onSearch" />
           </span>
         </a-col>
       </a-row>

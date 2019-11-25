@@ -33,6 +33,10 @@ export default {
         title: 'IP Addresses',
         param: 'associatednetworkid'
       }, {
+        name: 'router',
+        title: 'Routers',
+        param: 'networkid'
+      }, {
         name: 'vm',
         title: 'Instances',
         param: 'networkid'
