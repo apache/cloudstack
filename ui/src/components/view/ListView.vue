@@ -35,12 +35,12 @@
 
     <a slot="name" slot-scope="text, record" href="javascript:;">
       <div>
-      <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
-        <a-button type="dashed" size="small" shape="circle" icon="login" @click="changeProject(record)" />
-      </span>
-      <console :resource="record" size="small" />
-      <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
-      <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
+        <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
+          <a-button type="dashed" size="small" shape="circle" icon="login" @click="changeProject(record)" />
+        </span>
+        <console :resource="record" size="small" />
+        <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
+        <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
       </div>
       <div v-if="$route.meta.related" style="padding-top: 5px">
         <span v-for="item in $route.meta.related" :key="item.path">
