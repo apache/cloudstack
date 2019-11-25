@@ -20,5 +20,6 @@
 --;
 
 -- Delete an ancient template added in 2.2, which was set as removed in 4.5. For the sake of cleanup and easier overview of builtin templates in DB.
--- This DOES assume one is not running any VMs from this template!
-DELETE FROM `cloud`.`vm_template` WHERE `id`=2 AND `unique_name`="centos53-x86_64" AND `name`="CentOS 5.3(64-bit) no GUI (XenServer)";
+-- This DOES assume one is not running any VMs from this template, otherwise we are not deleting the template.
+DELETE FROM `cloud`.`vm_template` WHERE `id`=2 AND `unique_name`="centos53-x86_64" AND `name`="CentOS 5.3(64-bit) no GUI (XenServer)" AND NOT EXISTS (SELECT 1 FROM `cloud`.`vm_instance` WHERE vm_template_id=2 AND removed IS NULL);
+
