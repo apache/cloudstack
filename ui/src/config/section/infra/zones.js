@@ -57,7 +57,7 @@ export default {
       icon: 'edit',
       label: 'Edit Zone',
       dataView: true,
-      args: ['id', 'name', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns1', 'internaldns2', 'guestcidraddress', 'domain', 'localstorageenabled'],
+      args: ['name', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns1', 'internaldns2', 'guestcidraddress', 'domain', 'localstorageenabled'],
       show: (record) => { return record.networktype === 'Advanced' }
     },
     {
@@ -65,7 +65,7 @@ export default {
       icon: 'edit',
       label: 'Edit Zone',
       dataView: true,
-      args: ['id', 'name', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns1', 'internaldns2', 'domain', 'localstorageenabled'],
+      args: ['name', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns1', 'internaldns2', 'domain', 'localstorageenabled'],
       show: (record) => { return record.networktype === 'Basic' }
     },
     {
@@ -73,7 +73,6 @@ export default {
       icon: 'pause-circle',
       label: 'label.action.disable.zone',
       dataView: true,
-      args: ['id'],
       defaultArgs: { allocationstate: 'Disabled' },
       show: (record) => { return record.allocationstate === 'Enabled' }
     },
@@ -82,7 +81,6 @@ export default {
       icon: 'play-circle',
       label: 'label.action.enable.zone',
       dataView: true,
-      args: ['id'],
       defaultArgs: { allocationstate: 'Enabled' },
       show: (record) => { return record.allocationstate === 'Disabled' }
     },
@@ -174,8 +172,7 @@ export default {
       api: 'deleteZone',
       icon: 'delete',
       label: 'label.action.delete.zone',
-      dataView: true,
-      args: ['id']
+      dataView: true
     }
   ]
 }

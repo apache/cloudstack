@@ -28,7 +28,6 @@ export default {
       icon: 'caret-right',
       label: 'label.action.start.router',
       dataView: true,
-      args: ['id'],
       show: (record) => { return record.state === 'Stopped' }
     },
     {
@@ -36,7 +35,7 @@ export default {
       icon: 'stop',
       label: 'label.action.stop.router',
       dataView: true,
-      args: ['id', 'forced'],
+      args: ['forced'],
       show: (record) => { return record.state === 'Running' }
     },
     {
@@ -44,7 +43,6 @@ export default {
       icon: 'sync',
       label: 'label.action.reboot.router',
       dataView: true,
-      args: ['id'],
       hidden: (record) => { return record.state === 'Running' }
     },
     {
@@ -52,8 +50,8 @@ export default {
       icon: 'arrows-alt',
       label: 'label.change.service.offering',
       dataView: true,
-      args: ['id', 'serviceofferingid'],
-      show: (record) => { return record.state === 'Stopped' || record.hypervisor === 'VMWare' }
+      args: ['serviceofferingid'],
+      show: (record) => { return record.hypervisor !== 'KVM' }
     },
     {
       api: 'upgradeRouterTemplate',
@@ -61,7 +59,6 @@ export default {
       label: 'label.upgrade.router.newer.template',
       dataView: true,
       groupAction: true,
-      args: ['id'],
       show: (record) => { return record.requiresupgrade }
     },
     {
@@ -85,7 +82,6 @@ export default {
       icon: 'delete',
       label: 'label.destroy.router',
       dataView: true,
-      args: ['id'],
       show: (record) => { return ['Running', 'Error', 'Stopped'].includes(record.state) }
     }
   ]

@@ -34,8 +34,7 @@ export default {
       api: 'deleteImageStore',
       icon: 'delete',
       label: 'label.action.delete.secondary.storage',
-      dataView: true,
-      args: ['id']
+      dataView: true
     }
   ]
 }

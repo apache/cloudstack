@@ -44,7 +44,7 @@ export default {
       icon: 'edit',
       label: 'label.edit',
       dataView: true,
-      args: ['id', 'name', 'netmask', 'gateway']
+      args: ['name', 'netmask', 'gateway']
     },
     {
       api: 'dedicatePod',
@@ -67,7 +67,6 @@ export default {
       icon: 'play-circle',
       label: 'label.action.enable.pod',
       dataView: true,
-      args: ['id'],
       show: (record) => { return record.allocationstate === 'Disabled' }
     },
     {
@@ -75,7 +74,6 @@ export default {
       icon: 'pause-circle',
       label: 'label.action.disable.pod',
       dataView: true,
-      args: ['id'],
       show: (record) => { return record.allocationstate === 'Enabled' },
       defaultArgs: { allocationstate: 'Disabled' }
     },
@@ -83,8 +81,7 @@ export default {
       api: 'deletePod',
       icon: 'delete',
       label: 'label.action.delete.pod',
-      dataView: true,
-      args: ['id']
+      dataView: true
     }
   ]
 }

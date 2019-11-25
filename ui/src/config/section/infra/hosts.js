@@ -42,7 +42,7 @@ export default {
       icon: 'edit',
       label: 'label.edit',
       dataView: true,
-      args: ['id', 'hosttags', 'oscategoryid']
+      args: ['hosttags', 'oscategoryid']
     },
     {
       api: 'provisionCertificate',
@@ -57,7 +57,6 @@ export default {
       icon: 'forward',
       label: 'label.action.force.reconnect',
       dataView: true,
-      args: ['id'],
       show: (record) => { return ['Disconnected', 'Up'].includes(record.state) }
     },
     {
@@ -65,7 +64,6 @@ export default {
       icon: 'pause-circle',
       label: 'Disable Host',
       dataView: true,
-      args: ['id'],
       defaultArgs: { allocationstate: 'Disable' },
       show: (record) => { return record.resourcestate === 'Enabled' }
     },
@@ -74,7 +72,6 @@ export default {
       icon: 'play-circle',
       label: 'Enable Host',
       dataView: true,
-      args: ['id'],
       defaultArgs: { allocationstate: 'Enable' },
       show: (record) => { return record.resourcestate === 'Disabled' }
     },
@@ -99,7 +96,6 @@ export default {
       icon: 'plus-square',
       label: 'label.action.enable.maintenance.mode',
       dataView: true,
-      args: ['id'],
       show: (record) => { return record.resourcestate === 'Enabled' }
     },
     {
@@ -107,7 +103,6 @@ export default {
       icon: 'minus-square',
       label: 'label.action.cancel.maintenance.mode',
       dataView: true,
-      args: ['id'],
       show: (record) => { return record.resourcestate === 'Maintenance' || record.resourcestate === 'ErrorInMaintenance' || record.resourcestate === 'PrepareForMaintenance' }
     },
     {
@@ -195,7 +190,7 @@ export default {
       icon: 'delete',
       label: 'Remove Host',
       dataView: true,
-      args: ['id', 'forced'],
+      args: ['forced'],
       show: (record) => { return ['Maintenance', 'Disabled', 'Down', 'Alert', 'Disconnected'].includes(record.resourcestate) }
     }
   ]

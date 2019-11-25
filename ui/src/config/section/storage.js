@@ -60,7 +60,7 @@ export default {
           api: 'attachVolume',
           icon: 'paper-clip',
           label: 'Attach Volume',
-          args: ['id', 'virtualmachineid'],
+          args: ['virtualmachineid'],
           dataView: true,
           show: (record) => { return !('virtualmachineid' in record) }
         },
@@ -68,7 +68,6 @@ export default {
           api: 'detachVolume',
           icon: 'link',
           label: 'Detach Volume',
-          args: ['id'],
           dataView: true,
           show: (record) => { return 'virtualmachineid' in record && record.virtualmachineid }
         },
@@ -76,25 +75,37 @@ export default {
           api: 'createSnapshot',
           icon: 'camera',
           label: 'Take Snapshot',
-          args: ['volumeid', 'name', 'asyncbackup', 'tags'],
           dataView: true,
-          show: (record) => { return record.state === 'Ready' }
+          show: (record) => { return record.state === 'Ready' },
+          args: ['volumeid', 'name', 'asyncbackup', 'tags'],
+          mapping: {
+            volumeid: {
+              value: (record) => { return record.id }
+            }
+          }
         },
         {
           api: 'createSnapshotPolicy',
           icon: 'video-camera',
           label: 'Recurring Snapshots',
-          args: ['volumeid', 'schedule', 'timezone', 'intervaltype', 'maxsnaps'],
           dataView: true,
-          show: (record) => { return record.state === 'Ready' }
+          show: (record) => { return record.state === 'Ready' },
+          args: ['volumeid', 'intervaltype', 'schedule', 'maxsnaps', 'timezone'],
+          mapping: {
+            volumeid: {
+              value: (record) => { return record.id }
+            },
+            intervaltype: {
+              options: ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY']
+            }
+          }
         },
         {
           api: 'resizeVolume',
           icon: 'fullscreen',
           label: 'Resize Volume',
-          type: 'main',
-          args: ['id', 'virtualmachineid'],
-          dataView: true
+          dataView: true,
+          args: ['size']
         },
         {
           api: 'migrateVolume',
@@ -102,19 +113,30 @@ export default {
           label: 'Migrate Volume',
           args: ['volumeid', 'storageid', 'livemigrate'],
           dataView: true,
-          show: (record) => { return 'virtualmachineid' in record && record.virtualmachineid }
+          show: (record) => { return 'virtualmachineid' in record && record.virtualmachineid },
+          mapping: {
+            volumeid: {
+              value: (record) => { return record.id }
+            },
+            storageid: {
+              api: 'listStoragePools'
+            }
+          }
         },
         {
           api: 'extractVolume',
           icon: 'cloud-download',
           label: 'Download Volume',
-          args: ['id', 'zoneid', 'mode'],
-          paramOptions: {
+          dataView: true,
+          args: ['zoneid', 'mode'],
+          mapping: {
+            zoneid: {
+              value: (record) => { return record.zoneid }
+            },
             mode: {
-              value: 'HTTP_DOWNLOAD'
+              value: (record) => { return 'HTTP_DOWNLOAD' }
             }
-          },
-          dataView: true
+          }
         },
         {
           api: 'createTemplate',
@@ -128,7 +150,6 @@ export default {
           api: 'deleteVolume',
           icon: 'delete',
           label: 'Delete Volume',
-          args: ['id'],
           dataView: true,
           groupAction: true
         }
@@ -148,28 +169,36 @@ export default {
           icon: 'plus',
           label: 'Create volume',
           dataView: true,
-          args: ['snapshotid', 'name']
+          args: ['snapshotid', 'name'],
+          mapping: {
+            snapshotid: {
+              value: (record) => { return record.id }
+            }
+          }
         },
         {
           api: 'createTemplate',
           icon: 'picture',
           label: 'Create volume',
           dataView: true,
-          args: ['snapshotid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled', 'sshkeyenabled']
+          args: ['snapshotid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled', 'sshkeyenabled'],
+          mapping: {
+            snapshotid: {
+              value: (record) => { return record.id }
+            }
+          }
         },
         {
           api: 'revertSnapshot',
           icon: 'sync',
           label: 'Revert Snapshot',
-          dataView: true,
-          args: ['id']
+          dataView: true
         },
         {
           api: 'deleteSnapshot',
           icon: 'delete',
           label: 'Delete Snapshot',
-          dataView: true,
-          args: ['id']
+          dataView: true
         }
       ]
     },
@@ -187,14 +216,24 @@ export default {
           icon: 'sync',
           label: 'Revert VM snapshot',
           dataView: true,
-          args: ['vmsnapshotid']
+          args: ['vmsnapshotid'],
+          mapping: {
+            vmsnapshotid: {
+              value: (record) => { return record.id }
+            }
+          }
         },
         {
           api: 'deleteVMSnapshot',
           icon: 'delete',
           label: 'Delete VM Snapshot',
           dataView: true,
-          args: ['vmsnapshotid']
+          args: ['vmsnapshotid'],
+          mapping: {
+            vmsnapshotid: {
+              value: (record) => { return record.id }
+            }
+          }
         }
       ]
     }

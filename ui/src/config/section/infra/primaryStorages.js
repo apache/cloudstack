@@ -40,14 +40,13 @@ export default {
       icon: 'edit',
       label: 'label.edit',
       dataView: true,
-      args: ['id', 'tags', 'capacitybytes', 'capacityiops']
+      args: ['tags', 'capacitybytes', 'capacityiops']
     },
     {
       api: 'enableStorageMaintenance',
       icon: 'plus-square',
       label: 'label.action.enable.maintenance.mode',
       dataView: true,
-      args: ['id'],
       show: (record) => { return ['Up', 'Connecting', 'Down', 'ErrorInMaintenance'].includes(record.state) }
     },
     {
@@ -55,7 +54,6 @@ export default {
       icon: 'minus-square',
       label: 'label.action.cancel.maintenance.mode',
       dataView: true,
-      args: ['id'],
       show: (record) => { return ['Maintenance', 'PrepareForMaintenance', 'ErrorInMaintenance'].includes(record.state) }
     },
     {
@@ -63,7 +61,7 @@ export default {
       icon: 'delete',
       label: 'label.action.delete.primary.storage',
       dataView: true,
-      args: ['id', 'forced'],
+      args: ['forced'],
       show: (record) => { return !(record.state === 'Down' || record.state === 'Alert' || record.state === 'Maintenance' || record.state === 'Disconnected') }
     }
   ]

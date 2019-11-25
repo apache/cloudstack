@@ -45,13 +45,12 @@ export default {
         icon: 'edit',
         label: 'Edit Offering',
         dataView: true,
-        args: ['id', 'name', 'displaytext']
+        args: ['name', 'displaytext']
       }, {
         api: 'deleteServiceOffering',
         icon: 'delete',
         label: 'Delete Offering',
-        dataView: true,
-        args: ['id']
+        dataView: true
       }]
     },
     {
@@ -76,14 +75,13 @@ export default {
         label: 'Edit Offering',
         dataView: true,
         params: { issystem: 'true' },
-        args: ['id', 'name', 'displaytext']
+        args: ['name', 'displaytext']
       }, {
         api: 'deleteServiceOffering',
         icon: 'delete',
         label: 'Delete Offering',
         dataView: true,
-        params: { issystem: 'true' },
-        args: ['id']
+        params: { issystem: 'true' }
       }]
     },
     {
@@ -110,13 +108,12 @@ export default {
         icon: 'edit',
         label: 'Edit Offering',
         dataView: true,
-        args: ['id', 'name', 'displaytext']
+        args: ['name', 'displaytext']
       }, {
         api: 'deleteDiskOffering',
         icon: 'delete',
         label: 'Delete Offering',
-        dataView: true,
-        args: ['id']
+        dataView: true
       }]
     },
     {
@@ -138,13 +135,12 @@ export default {
         icon: 'edit',
         label: 'Edit Offering',
         dataView: true,
-        args: ['id', 'name', 'displaytext', 'availability']
+        args: ['name', 'displaytext', 'availability']
       }, {
         api: 'deleteNetworkOffering',
         icon: 'delete',
         label: 'Delete Offering',
-        dataView: true,
-        args: ['id']
+        dataView: true
       }]
     },
     {
@@ -172,13 +168,12 @@ export default {
         icon: 'edit',
         label: 'Edit Offering',
         dataView: true,
-        args: ['id', 'name', 'displaytext']
+        args: ['name', 'displaytext']
       }, {
         api: 'deleteVPCOffering',
         icon: 'delete',
         label: 'Delete Offering',
-        dataView: true,
-        args: ['id']
+        dataView: true
       }]
     }
   ]

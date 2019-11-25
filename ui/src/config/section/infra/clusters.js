@@ -40,7 +40,6 @@ export default {
       icon: 'pause-circle',
       label: 'label.action.enable.cluster',
       dataView: true,
-      args: ['id'],
       defaultArgs: { allocationstate: 'Disabled' },
       show: (record) => { return record.allocationstate === 'Enabled' }
     },
@@ -49,7 +48,6 @@ export default {
       icon: 'play-circle',
       label: 'label.action.disable.cluster',
       dataView: true,
-      args: ['id'],
       defaultArgs: { allocationstate: 'Enabled' },
       show: (record) => { return record.allocationstate === 'Disabled' }
     },
@@ -74,7 +72,6 @@ export default {
       icon: 'plus-square',
       label: 'Manage Cluster',
       dataView: true,
-      args: ['id'],
       defaultArgs: { managedstate: 'Managed' },
       show: (record) => { return record.clustertype === 'CloudManaged' && ['PrepareUnmanaged', 'Unmanaged'].includes(record.state) }
     },
@@ -83,7 +80,6 @@ export default {
       icon: 'minus-square',
       label: 'Unmanage Cluster',
       dataView: true,
-      args: ['id'],
       defaultArgs: { managedstate: 'Unmanaged' },
       show: (record) => { return record.clustertype === 'CloudManaged' && record.state === 'Enabled' }
     },
@@ -135,8 +131,7 @@ export default {
       api: 'deleteCluster',
       icon: 'delete',
       label: 'label.action.delete.cluster',
-      dataView: true,
-      args: ['id']
+      dataView: true
     }
   ]
 }

@@ -41,44 +41,40 @@ export default {
           icon: 'edit',
           label: 'label.edit',
           dataView: true,
-          args: ['id', 'username', 'email', 'firstname', 'lastname', 'timezone']
+          args: ['username', 'email', 'firstname', 'lastname', 'timezone']
         },
         {
           api: 'updateUser',
           icon: 'key',
           label: 'Change Password',
           dataView: true,
-          args: ['id', 'currentpassword', 'password']
+          args: ['currentpassword', 'password']
         },
         {
           api: 'registerUserKeys',
           icon: 'file-protect',
           label: 'Generate Keys',
-          dataView: true,
-          args: ['id']
+          dataView: true
         },
         {
           api: 'enableUser',
           icon: 'play-circle',
           label: 'Enable User',
           dataView: true,
-          show: (record) => { return record.state === 'disabled' },
-          args: ['id']
+          show: (record) => { return record.state === 'disabled' }
         },
         {
           api: 'disableUser',
           icon: 'pause-circle',
           label: 'Disable User',
           dataView: true,
-          args: ['id'],
           show: (record) => { return record.state === 'enabled' }
         },
         {
           api: 'deleteUser',
           icon: 'delete',
           label: 'Delete user',
-          dataView: true,
-          args: ['id']
+          dataView: true
         }
       ]
     },
@@ -102,7 +98,7 @@ export default {
           icon: 'edit',
           label: 'label.update.account',
           dataView: true,
-          args: ['id', 'newname', 'domainid', 'roleid', 'networkdomain', 'details']
+          args: ['newname', 'domainid', 'roleid', 'networkdomain', 'details']
         },
         {
           api: 'updateResourceCount',
@@ -117,7 +113,6 @@ export default {
           label: 'Enable Account',
           dataView: true,
           show: (record) => { return record.state === 'disabled' || record.state === 'locked' },
-          args: ['id'],
           params: { lock: 'false' }
         },
         {
@@ -126,7 +121,6 @@ export default {
           label: 'Disable Account',
           dataView: true,
           show: (record) => { return record.state === 'enabled' },
-          args: ['id'],
           params: { lock: 'false' }
         },
         {
@@ -135,7 +129,7 @@ export default {
           label: 'Lock account',
           dataView: true,
           show: (record) => { return record.state === 'enabled' },
-          args: ['id', 'lock']
+          args: ['lock']
         },
         {
           api: 'deleteAccount',
@@ -175,14 +169,19 @@ export default {
           icon: 'edit',
           label: 'label.action.edit.domain',
           dataView: true,
-          args: ['id', 'name', 'networkdomain']
+          args: ['name', 'networkdomain']
         },
         {
           api: 'updateResourceCount',
           icon: 'sync',
           label: 'label.action.update.resource.count',
           dataView: true,
-          args: ['domainid']
+          args: ['domainid'],
+          mapping: {
+            domainid: {
+              value: (record) => { return record.id }
+            }
+          }
         },
         {
           api: 'deleteDomain',
@@ -190,7 +189,7 @@ export default {
           label: 'label.delete.domain',
           dataView: true,
           show: (record) => { return record.level !== 0 },
-          args: ['id', 'cleanup']
+          args: ['cleanup']
         }
       ]
     },
@@ -214,14 +213,13 @@ export default {
           icon: 'edit',
           label: 'Edit Role',
           dataView: true,
-          args: ['id', 'name', 'description', 'type']
+          args: ['name', 'description', 'type']
         },
         {
           api: 'deleteRole',
           icon: 'delete',
           label: 'label.delete.role',
-          dataView: true,
-          args: ['id']
+          dataView: true
         }
       ]
     }

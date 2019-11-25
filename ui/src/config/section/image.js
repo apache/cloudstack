@@ -65,34 +65,34 @@ export default {
           icon: 'edit',
           label: 'label.edit',
           dataView: true,
-          args: ['id', 'name', 'displaytext', 'passwordenabled', 'sshkeyenabled', 'ostypeid', 'isdynamicallyscalable', 'isrouting']
+          args: ['name', 'displaytext', 'passwordenabled', 'sshkeyenabled', 'ostypeid', 'isdynamicallyscalable', 'isrouting']
         },
         {
           api: 'extractTemplate',
           icon: 'cloud-download',
           label: 'Download Template',
           dataView: true,
-          args: ['id', 'zoneid', 'mode']
+          args: ['zoneid', 'mode']
         },
         {
           api: 'updateTemplatePermissions',
           icon: 'reconciliation',
           label: 'Update template permissions',
           dataView: true,
-          args: ['id', 'op', 'accounts', 'projectids']
+          args: ['op', 'accounts', 'projectids']
         },
         {
           api: 'copyTemplate',
           icon: 'copy',
           label: 'Copy Template',
-          args: ['id', 'sourcezoneid', 'destzoneids'],
+          args: ['sourcezoneid', 'destzoneids'],
           dataView: true
         },
         {
           api: 'deleteTemplate',
           icon: 'delete',
           label: 'Delete Template',
-          args: ['id', 'zoneid'],
+          args: ['zoneid'],
           dataView: true,
           groupAction: true
         }
@@ -133,34 +133,34 @@ export default {
           icon: 'edit',
           label: 'label.edit',
           dataView: true,
-          args: ['id', 'name', 'displaytext', 'bootable', 'ostypeid', 'isdynamicallyscalable', 'isrouting']
+          args: ['name', 'displaytext', 'bootable', 'ostypeid', 'isdynamicallyscalable', 'isrouting']
         },
         {
           api: 'extractIso',
           icon: 'cloud-download',
           label: 'Download ISO',
           dataView: true,
-          args: ['id', 'zoneid', 'mode']
+          args: ['zoneid', 'mode']
         },
         {
           api: 'updateIsoPermissions',
           icon: 'reconciliation',
           label: 'Update ISO Permissions',
           dataView: true,
-          args: ['id', 'op', 'accounts', 'projectids']
+          args: ['op', 'accounts', 'projectids']
         },
         {
           api: 'copyIso',
           icon: 'copy',
           label: 'Copy ISO',
-          args: ['id', 'sourcezoneid', 'destzoneids'],
+          args: ['sourcezoneid', 'destzoneids'],
           dataView: true
         },
         {
           api: 'deleteIso',
           icon: 'delete',
           label: 'Delete ISO',
-          args: ['id', 'zoneid'],
+          args: ['zoneid'],
           dataView: true,
           groupAction: true
         }

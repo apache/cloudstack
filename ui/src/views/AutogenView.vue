@@ -120,13 +120,12 @@
             @submit="handleSubmit"
             layout="vertical" >
             <a-form-item
-              v-for="(field, fieldIndex) in currentAction.params"
+              v-for="(field, fieldIndex) in currentAction.paramFields"
               :key="fieldIndex"
               :label="$t(field.name)"
               :v-bind="field.name"
-              v-if="field.name !== 'id'"
+              v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
             >
-
               <span v-if="field.type==='boolean'">
                 <a-switch
                   v-decorator="[field.name, {
@@ -135,7 +134,20 @@
                   :placeholder="field.description"
                 />
               </span>
-              <span v-else-if="field.type==='uuid' || field.name==='account'">
+              <span v-else-if="currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].options">
+                <a-select
+                  :loading="field.loading"
+                  v-decorator="[field.name, {
+                    rules: [{ required: field.required, message: 'Please select option' }]
+                  }]"
+                  :placeholder="field.description"
+                >
+                  <a-select-option v-for="(opt, optIndex) in currentAction.mapping[field.name].options" :key="optIndex">
+                    {{ opt }}
+                  </a-select-option>
+                </a-select>
+              </span>
+              <span v-else-if="field.type==='uuid' || field.name==='account' || field.name==='keypair'">
                 <a-select
                   :loading="field.loading"
                   v-decorator="[field.name, {
@@ -145,6 +157,20 @@
                 >
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                     {{ opt.name || opt.description }}
+                  </a-select-option>
+                </a-select>
+              </span>
+              <span v-else-if="field.type==='list'">
+                <a-select
+                  :loading="field.loading"
+                  mode="multiple"
+                  v-decorator="[field.name, {
+                    rules: [{ required: field.required, message: 'Please select option' }]
+                  }]"
+                  :placeholder="field.description"
+                >
+                  <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
+                    {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
                   </a-select-option>
                 </a-select>
               </span>
@@ -413,8 +439,9 @@ export default {
         return
       }
       this.currentAction = action
-      var params = store.getters.apis[this.currentAction.api].params
-      params.sort(function (a, b) {
+      this.currentAction.params = store.getters.apis[this.currentAction.api].params
+      var paramFields = this.currentAction.params
+      paramFields.sort(function (a, b) {
         if (a.name === 'name' && b.name !== 'name') { return -1 }
         if (a.name !== 'name' && b.name === 'name') { return -1 }
         if (a.name === 'id') { return -1 }
@@ -422,29 +449,34 @@ export default {
         if (a.name > b.name) { return 1 }
         return 0
       })
+      this.currentAction.paramFields = []
       if (action.args && action.args.length > 0) {
-        this.currentAction.params = action.args.map(function (arg) {
-          return params.filter(function (param) {
+        this.currentAction.paramFields = action.args.map(function (arg) {
+          return paramFields.filter(function (param) {
             return param.name.toLowerCase() === arg.toLowerCase()
           })[0]
         })
-      } else {
-        this.currentAction.params = params
       }
 
       this.showAction = true
-      for (const param of this.currentAction.params) {
-        if (param.type === 'uuid' || param.name === 'account') {
+      for (const param of this.currentAction.paramFields) {
+        if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
           this.listUuidOpts(param)
         }
       }
+      console.log(this.currentAction.paramFields)
       this.currentAction.loading = false
     },
     listUuidOpts (param) {
+      if (this.currentAction.mapping && param.name in this.currentAction.mapping && !this.currentAction.mapping[param.name].api) {
+        return
+      }
       var paramName = param.name
-      const possibleName = 'list' + paramName.replace('id', '').toLowerCase() + 's'
+      const possibleName = 'list' + paramName.replace('ids', '').replace('id', '').toLowerCase() + 's'
       var possibleApi
-      if (paramName === 'id') {
+      if (this.currentAction.mapping && param.name in this.currentAction.mapping && this.currentAction.mapping[param.name].api) {
+        possibleApi = this.currentAction.mapping[param.name].api
+      } else if (paramName === 'id') {
         possibleApi = this.apiName
       } else {
         for (const api in store.getters.apis) {
@@ -462,6 +494,8 @@ export default {
       var params = { listall: true }
       if (possibleApi === 'listTemplates') {
         params.templatefilter = 'executable'
+      } else if (possibleApi === 'listIsos') {
+        params.isofilter = 'executable'
       }
       api(possibleApi, params).then(json => {
         param.loading = false
@@ -503,9 +537,13 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       this.form.validateFields((err, values) => {
+        console.log(values)
         if (!err) {
           this.currentAction.loading = true
           const params = {}
+          if ('id' in this.resource && this.currentAction.params.map(i => { return i.name }).includes('id')) {
+            params.id = this.resource.id
+          }
           for (const key in values) {
             const input = values[key]
             for (const param of this.currentAction.params) {
@@ -516,8 +554,14 @@ export default {
                   }
                   break
                 }
-                if (param.type === 'uuid') {
+                if (this.currentAction.mapping && key in this.currentAction.mapping && this.currentAction.mapping[key].options) {
+                  params[key] = this.currentAction.mapping[key].options[input]
+                } else if (param.type === 'uuid') {
                   params[key] = param.opts[input].id
+                } else if (param.type === 'list') {
+                  params[key] = input.map(e => { return param.opts[e].id }).reduce((str, name) => { return str + ',' + name })
+                } else if (param.name === 'account' || param.name === 'keypair') {
+                  params[key] = param.opts[input].name
                 } else {
                   params[key] = input
                 }
@@ -532,9 +576,18 @@ export default {
             }
           }
 
-          if ('id' in this.resource) {
-            params.id = this.resource.id
+          console.log(this.currentAction)
+
+          if (this.currentAction.mapping) {
+            for (const key in this.currentAction.mapping) {
+              if (!this.currentAction.mapping[key].value) {
+                continue
+              }
+              var keyName = this.currentAction.mapping[key].rename ? this.currentAction.mapping[key].rename : key
+              params[keyName] = this.currentAction.mapping[key].value(this.resource, params)
+            }
           }
+          console.log(params)
 
           var hasJobId = false
           api(this.currentAction.api, params).then(json => {

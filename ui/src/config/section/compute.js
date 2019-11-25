@@ -90,7 +90,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
           groupAction: true,
-          args: ['id', 'forced'],
+          args: ['forced'],
           show: (record) => { return ['Running'].includes(record.state) }
         },
         {
@@ -98,7 +98,6 @@ export default {
           icon: 'reload',
           label: 'label.action.reboot.instance',
           dataView: true,
-          args: ['id'],
           show: (record) => { return ['Running'].includes(record.state) }
         },
         {
@@ -106,7 +105,12 @@ export default {
           icon: 'sync',
           label: 'label.reinstall.vm',
           dataView: true,
-          args: ['virtualmachineid', 'templateid']
+          args: ['virtualmachineid', 'templateid'],
+          mapping: {
+            virtualmachineid: {
+              value: (record) => { return record.id }
+            }
+          }
         },
         {
           api: 'createVMSnapshot',
@@ -114,7 +118,12 @@ export default {
           label: 'Create VM Snapshot',
           dataView: true,
           args: ['virtualmachineid', 'name', 'description', 'snapshotmemory', 'quiescevm'],
-          show: (record) => { return ['Running'].includes(record.state) }
+          show: (record) => { return ['Running'].includes(record.state) },
+          mapping: {
+            virtualmachineid: {
+              value: (record, params) => { return record.id }
+            }
+          }
         },
         {
           api: 'attachIso',
@@ -122,15 +131,28 @@ export default {
           label: 'label.action.attach.iso',
           dataView: true,
           args: ['id', 'virtualmachineid'],
-          show: (record) => { return !record.isoid }
+          show: (record) => { return !record.isoid },
+          mapping: {
+            id: {
+              api: 'listIsos'
+            },
+            virtualmachineid: {
+              value: (record, params) => { return record.id }
+            }
+          }
         },
         {
           api: 'detachIso',
           icon: 'link',
           label: 'label.action.detach.iso',
           dataView: true,
-          args: ['id', 'virtualmachineid'],
-          show: (record) => { return 'isoid' in record && record.isoid }
+          args: ['virtualmachineid'],
+          show: (record) => { return 'isoid' in record && record.isoid },
+          mapping: {
+            virtualmachineid: {
+              value: (record, params) => { return record.id }
+            }
+          }
         },
         {
           api: 'migrateVirtualMachine',
@@ -158,7 +180,7 @@ export default {
           icon: 'swap',
           label: 'label.change.affinity',
           dataView: true,
-          args: ['id', 'serviceofferingid'],
+          args: ['affinitygroupids'],
           show: (record) => { return ['Stopped'].includes(record.state) }
         },
         {
@@ -166,15 +188,15 @@ export default {
           icon: 'arrows-alt',
           label: 'Scale VM',
           dataView: true,
-          args: ['id', 'serviceofferingid', 'details'],
-          show: (record) => { return record.state === 'Stopped' || record.hypervisor === 'VMWare' }
+          args: ['serviceofferingid', 'details'],
+          show: (record) => { return record.hypervisor !== 'KVM' }
         },
         {
           api: 'changeServiceForVirtualMachine',
           icon: 'sliders',
           label: 'Change Service Offering',
           dataView: true,
-          args: ['id', 'serviceofferingid'],
+          args: ['serviceofferingid'],
           show: (record) => { return ['Stopped'].includes(record.state) }
         },
         {
@@ -182,7 +204,6 @@ export default {
           icon: 'key',
           label: 'Reset Instance Password',
           dataView: true,
-          args: ['id'],
           show: (record) => { return ['Stopped'].includes(record.state) }
         },
         {
@@ -190,20 +211,31 @@ export default {
           icon: 'lock',
           label: 'Reset SSH Key',
           dataView: true,
-          show: (record) => { return ['Stopped'].includes(record.state) }
+          args: ['keypair'],
+          show: (record) => { return ['Stopped'].includes(record.state) },
+          mapping: {
+            keypair: {
+              api: 'listSSHKeyPairs'
+            }
+          }
         },
         {
           api: 'assignVirtualMachine',
           icon: 'user-add',
           label: 'Assign Instance to Another Account',
           dataView: true,
-          show: (record) => { return ['Stopped'].includes(record.state) }
+          show: (record) => { return ['Stopped'].includes(record.state) },
+          args: ['virtualmachineid', 'account', 'domainid'],
+          mapping: {
+            virtualmachineid: {
+              value: (record, params) => { return record.id }
+            }
+          }
         },
         {
           api: 'recoverVirtualMachine',
           icon: 'medicine-box',
           label: 'label.recover.vm',
-          args: ['id'],
           dataView: true,
           show: (record) => { return ['Destroyed'].includes(record.state) }
         },
@@ -211,7 +243,6 @@ export default {
           api: 'expungeVirtualMachine',
           icon: 'delete',
           label: 'label.action.expunge.instance',
-          args: ['id'],
           dataView: true,
           show: (record) => { return ['Destroyed'].includes(record.state) }
         },
@@ -219,7 +250,7 @@ export default {
           api: 'destroyVirtualMachine',
           icon: 'delete',
           label: 'label.action.destroy.instance',
-          args: ['id', 'expunge', 'volumeids'],
+          args: ['expunge', 'volumeids'],
           dataView: true,
           groupAction: true
         }
@@ -266,8 +297,7 @@ export default {
           api: 'deleteInstanceGroup',
           icon: 'delete',
           label: 'Delete Instance Group',
-          dataView: true,
-          args: ['id']
+          dataView: true
         }
       ]
     },
@@ -304,7 +334,18 @@ export default {
           icon: 'delete',
           label: 'Delete SSH key pair',
           dataView: true,
-          args: ['name', 'account', 'domainid']
+          args: ['name', 'account', 'domainid'],
+          mapping: {
+            name: {
+              value: (record, params) => { return record.name }
+            },
+            account: {
+              value: (record, params) => { return record.account }
+            },
+            domainid: {
+              value: (record, params) => { return record.domainid }
+            }
+          }
         }
       ]
     },
@@ -327,14 +368,18 @@ export default {
           icon: 'plus',
           label: 'New Affinity Group',
           listView: true,
-          args: ['name', 'description', 'type']
+          args: ['name', 'description', 'type'],
+          mapping: {
+            type: {
+              options: ['host anti-affinity', 'host affinity']
+            }
+          }
         },
         {
           api: 'deleteAffinityGroup',
           icon: 'delete',
           label: 'Delete Affinity Group',
-          dataView: true,
-          args: ['id']
+          dataView: true
         }
       ]
     }

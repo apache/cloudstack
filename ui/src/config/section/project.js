@@ -36,14 +36,13 @@ export default {
       icon: 'edit',
       label: 'Edit Project',
       dataView: true,
-      args: ['id', 'displaytext']
+      args: ['displaytext']
     },
     {
       api: 'activateProject',
       icon: 'play-circle',
       label: 'Activate Project',
       dataView: true,
-      args: ['id'],
       show: (record) => { return record.state === 'Suspended' }
     },
     {
@@ -51,7 +50,6 @@ export default {
       icon: 'pause-circle',
       label: 'Suspend Project',
       dataView: true,
-      args: ['id'],
       show: (record) => { return record.state !== 'Suspended' }
     },
     {
@@ -65,8 +63,7 @@ export default {
       api: 'deleteProject',
       icon: 'delete',
       label: 'Delete Project',
-      dataView: true,
-      args: ['id']
+      dataView: true
     }
   ]
 }

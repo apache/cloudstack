@@ -58,20 +58,19 @@ export default {
           icon: 'edit',
           label: 'Update Network',
           dataView: true,
-          args: ['id', 'name', 'displaytext', 'guestvmcidr']
+          args: ['name', 'displaytext', 'guestvmcidr']
         },
         {
           api: 'restartNetwork',
           icon: 'sync',
           label: 'Restart Network',
           dataView: true,
-          args: ['id', 'makeredundant', 'cleanup']
+          args: ['makeredundant', 'cleanup']
         },
         {
           api: 'deleteNetwork',
           icon: 'delete',
           label: 'Delete Network',
-          args: ['id'],
           dataView: true
         }
       ]
@@ -109,20 +108,19 @@ export default {
           icon: 'edit',
           label: 'Update VPC',
           dataView: true,
-          args: ['id', 'name', 'displaytext']
+          args: ['name', 'displaytext']
         },
         {
           api: 'restartVPC',
           icon: 'sync',
           label: 'Restart VPC',
           dataView: true,
-          args: ['id', 'makeredundant', 'cleanup']
+          args: ['makeredundant', 'cleanup']
         },
         {
           api: 'deleteVPC',
           icon: 'delete',
           label: 'Delete VPC',
-          args: ['id'],
           dataView: true
         }
       ]
@@ -157,7 +155,6 @@ export default {
           api: 'deleteSecurityGroup',
           icon: 'delete',
           label: 'Delete Security Group',
-          args: ['id'],
           dataView: true,
           show: (record) => { return record.name !== 'default' }
         }
@@ -223,7 +220,6 @@ export default {
           api: 'disassociateIpAddress',
           icon: 'delete',
           label: 'Delete IP',
-          args: ['id'],
           dataView: true,
           show: (record) => { return !record.issourcenat }
         }

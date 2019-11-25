@@ -28,7 +28,6 @@ export default {
       icon: 'caret-right',
       label: 'label.action.start.systemvm',
       dataView: true,
-      args: ['id'],
       show: (record) => { return record.state === 'Stopped' }
     },
     {
@@ -36,7 +35,6 @@ export default {
       icon: 'stop',
       label: 'label.action.stop.systemvm',
       dataView: true,
-      args: ['id'],
       show: (record) => { return record.state === 'Running' }
     },
     {
@@ -44,7 +42,6 @@ export default {
       icon: 'sync',
       label: 'label.action.reboot.systemvm',
       dataView: true,
-      args: ['id'],
       show: (record) => { return record.state === 'Running' }
     },
     {
@@ -52,8 +49,8 @@ export default {
       icon: 'arrows-alt',
       label: 'label.change.service.offering',
       dataView: true,
-      args: ['id', 'serviceofferingid'],
-      show: (record) => { return record.hypervisor === 'VMWare' || record.state === 'Stopped' }
+      args: ['serviceofferingid'],
+      show: (record) => { return record.hypervisor !== 'KVM' }
     },
     {
       api: 'migrateSystemVm',
@@ -76,7 +73,6 @@ export default {
       icon: 'delete',
       label: 'label.action.destroy.systemvm',
       dataView: true,
-      args: ['id'],
       show: (record) => { return ['Running', 'Error', 'Stopped'].includes(record.state) }
     }
   ]
