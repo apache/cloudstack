@@ -3019,36 +3019,37 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      *  <li>IOPS read rate cannot be greater than IOPS read maximum rate</li>
      *  <li>IOPS read rate max length (seconds) must be greater than zero</li>
      *  <li>IOPS write rate max length (seconds) must be greater than zero</li>
+     *  <li>If iops.maximum.rate.length is not 0 (zero), blank or null, IOPS write/read maximum rate length (seconds) cannot be bigger than thevalue from iops.maximum.rate.length</li>
      * </ul>
      */
     protected void valildateIopsRateOfferings(final Long iopsReadRate, final Long iopsReadRateMax, final Long iopsReadRateMaxLength, final Long iopsWriteRate,
             final Long iopsWriteRateMax, final Long iopsWriteRateMaxLength) {
         if (iopsWriteRateMax != null && iopsWriteRate != null && iopsWriteRateMax < iopsWriteRate) {
             throw new InvalidParameterValueException(
-                    String.format("IOPS write rate (rate: %s) cannot be greater than IOPS write maximum rate (maximum rate: %s)", iopsWriteRate, iopsWriteRateMax));
+                    String.format("IOPS write rate (rate: %d) cannot be greater than IOPS write maximum rate (maximum rate: %d)", iopsWriteRate, iopsWriteRateMax));
         }
 
         if (iopsReadRateMax != null && iopsReadRate != null && iopsReadRateMax < iopsReadRate) {
             throw new InvalidParameterValueException(
-                    String.format("IOPS read rate (rate: %s) cannot be greater than IOPS read maximum rate (maximum rate: %s)", iopsReadRate, iopsReadRateMax));
+                    String.format("IOPS read rate (rate: %d) cannot be greater than IOPS read maximum rate (maximum rate: %d)", iopsReadRate, iopsReadRateMax));
         }
 
         if (iopsReadRateMaxLength != null && iopsReadRateMaxLength <= 0) {
-            throw new InvalidParameterValueException(String.format("IOPS read rate max length (max length: %s seconds) must be greater than zero", iopsReadRateMaxLength));
+            throw new InvalidParameterValueException(String.format("IOPS read rate max length (max length: %d seconds) must be greater than zero", iopsReadRateMaxLength));
         }
 
         if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength <= 0) {
-            throw new InvalidParameterValueException(String.format("IOPS write rate max length (max length: %s seconds) must be greater than zero", iopsWriteRateMaxLength));
+            throw new InvalidParameterValueException(String.format("IOPS write rate max length (max length: %d seconds) must be greater than zero", iopsWriteRateMaxLength));
         }
 
         if (iopsMaximumRateLength.value() != null && !iopsMaximumRateLength.value().equals(0L)) {
             if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > iopsMaximumRateLength.value()) {
-                throw new InvalidParameterValueException(String.format("IOPS read max length (%s seconds) cannot be greater than iops.maximum.rate.length (%s seconds)",
+                throw new InvalidParameterValueException(String.format("IOPS read max length (%d seconds) cannot be greater than iops.maximum.rate.length (%ds seconds)",
                         iopsReadRateMaxLength, iopsMaximumRateLength.value()));
             }
 
             if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > iopsMaximumRateLength.value()) {
-                throw new InvalidParameterValueException(String.format("IOPS write max length (%s seconds) cannot be greater than sane.iops.maximum.rate.length (%s seconds)",
+                throw new InvalidParameterValueException(String.format("IOPS write max length (%d seconds) cannot be greater than sane.iops.maximum.rate.length (%d seconds)",
                         iopsWriteRateMaxLength, iopsMaximumRateLength.value()));
             }
         }
