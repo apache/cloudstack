@@ -266,7 +266,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
         boolean deletedOnSecondary = false;
         if (snapshotOnImage == null) {
-            s_logger.debug(String.format("Can't find snapshot [snapshot id: %d] on backup storage"));
+            s_logger.debug(String.format("Can't find snapshot [snapshot id: %d] on backup storage", snapshotId));
         } else {
             SnapshotObject obj = (SnapshotObject)snapshotOnImage;
             try {
@@ -321,19 +321,29 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
      * In case of failure, it will throw one of the following exceptions: CloudRuntimeException, InterruptedException, or ExecutionException. </br>
      */
     private boolean deleteSnapshotOnPrimary(Long snapshotId) {
-        boolean result = false;
         SnapshotDataStoreVO snapshotOnPrimary = snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
-        if (snapshotOnPrimary != null) {
-            SnapshotInfo snapshotOnPrimaryInfo = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
-            long volumeId = snapshotOnPrimary.getVolumeId();
-            VolumeVO volumeVO = volumeDao.findById(volumeId);
-            if (((PrimaryDataStoreImpl)snapshotOnPrimaryInfo.getDataStore()).getPoolType() == StoragePoolType.RBD && volumeVO != null) {
-                result = snapshotSvr.deleteSnapshot(snapshotOnPrimaryInfo);
-            }
+        SnapshotInfo snapshotOnPrimaryInfo = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+        if (isSnapshotOnPrimaryStorage(snapshotId) && snapshotSvr.deleteSnapshot(snapshotOnPrimaryInfo)) {
             snapshotOnPrimary.setState(State.Destroyed);
             snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
+            snapshotDao.remove(snapshotId);
+            return true;
         }
-        return result;
+        return false;
+    }
+
+    /**
+     * Returns true if the snapshot volume is on primary storage.
+     */
+    private boolean isSnapshotOnPrimaryStorage(long snapshotId) {
+        SnapshotDataStoreVO snapshotOnPrimary = snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
+        if (snapshotOnPrimary != null) {
+            long volumeId = snapshotOnPrimary.getVolumeId();
+            VolumeVO volumeVO = volumeDao.findById(volumeId);
+            boolean isVolumeOnPrimary = volumeVO != null && volumeVO.getRemoved() == null;
+            return isVolumeOnPrimary;
+        }
+        return false;
     }
 
     @Override
