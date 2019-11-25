@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1162,10 +1163,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new InvalidParameterValueException("Host with id " + hostId.toString() + " doesn't exist");
         }
 
-        if (host.getResourceState() != ResourceState.PrepareForMaintenance &&
-                host.getResourceState() != ResourceState.ErrorInPrepareForMaintenance &&
-                host.getResourceState() != ResourceState.Maintenance &&
-                host.getResourceState() != ResourceState.ErrorInMaintenance) {
+        if (!ResourceState.isMaintenanceState(host.getResourceState())) {
             throw new CloudRuntimeException("Cannot perform cancelMaintenance when resource state is " + host.getResourceState() + ", hostId = " + hostId);
         }
 
@@ -1218,8 +1216,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final HostVO host = _hostDao.findById(hostId);
         s_logger.info("Maintenance: attempting maintenance of host " + host.getUuid());
         ResourceState hostState = host.getResourceState();
-        if (hostState == ResourceState.PrepareForMaintenance || hostState == ResourceState.ErrorInPrepareForMaintenance ||
-                hostState == ResourceState.Maintenance || hostState == ResourceState.ErrorInMaintenance) {
+        if (ResourceState.isMaintenanceState(hostState)) {
             throw new CloudRuntimeException("Cannot perform maintain when resource state is " + hostState + ", hostId = " + hostId);
         }
 
@@ -1287,11 +1284,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             s_logger.debug("Unable to find host " + hostId);
             throw new InvalidParameterValueException("Unable to find host with ID: " + hostId + ". Please specify a valid host ID.");
         }
-
-        final ResourceState hostState = host.getResourceState();
-        if (hostState == ResourceState.Maintenance || hostState == ResourceState.PrepareForMaintenance ||
-                hostState == ResourceState.ErrorInPrepareForMaintenance) {
-            throw new CloudRuntimeException("Host is already in state " + hostState + ". Cannot recall for maintenance until resolved.");
+        if (Arrays.asList(ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.ErrorInPrepareForMaintenance).contains(host.getResourceState())) {
+            throw new CloudRuntimeException("Host is already in state " + host.getResourceState() + ". Cannot recall for maintenance until resolved.");
         }
 
         if (_hostDao.countBy(host.getClusterId(), ResourceState.PrepareForMaintenance, ResourceState.ErrorInPrepareForMaintenance) > 0) {
@@ -2651,7 +2645,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public boolean maintenanceFailed(final long hostId) {
+    public boolean migrateAwayFailed(final long hostId, final long vmId) {
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
             if (s_logger.isDebugEnabled()) {
@@ -2660,6 +2654,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return false;
         } else {
             try {
+                s_logger.warn("Migration of VM " + _vmDao.findById(vmId) + " failed from host " + _hostDao.findById(hostId) +
+                ". Emitting event UnableToMigrate.");
                 return resourceStateTransitTo(host, ResourceState.Event.UnableToMigrate, _nodeId);
             } catch (final NoTransitionException e) {
                 s_logger.debug("No next resource state for host " + host.getId() + " while current state is " + host.getResourceState() + " with event " +

@@ -92,7 +92,7 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     boolean umanageHost(long hostId);
 
-    boolean maintenanceFailed(long hostId);
+    boolean migrateAwayFailed(long hostId, long vmId);
 
     public boolean maintain(final long hostId) throws AgentUnavailableException;
 

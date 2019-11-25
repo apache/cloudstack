@@ -321,6 +321,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         if (vm.getHostId() != null) {
             final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.Migration, Step.Scheduled, vm.getHostId(), vm.getState(), 0, vm.getUpdated());
             _haDao.persist(work);
+            s_logger.info("Scheduled migration work of VM " + vm.getUuid() + " from host " + vm.getHostName() + " with HAWork " + work);
             wakeupWorkers();
         }
         return true;
@@ -640,10 +641,11 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
         VMInstanceVO vm = _instanceDao.findById(vmId);
         if (vm == null) {
+            s_logger.info("Unable to find vm: " + vmId + ", skipping migrate.");
             return null;
         }
         s_logger.info("Migration attempt: for VM " + vm.getUuid() + "from host id " + srcHostId +
-                ". Retry count: " + work.getTimesTried() + "/" + _maxRetries + " times.");
+                ". Starting attempt: " + (1 + work.getTimesTried()) + "/" + _maxRetries + " times.");
         try {
             work.setStep(Step.Migrating);
             _haDao.update(work.getId(), work);
@@ -655,7 +657,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             s_logger.warn("Migration attempt: Insufficient capacity for migrating a VM " +
                     vm.getUuid() + " from source host id " + srcHostId +
                     ". Exception: " + e.getMessage());
-            _resourceMgr.maintenanceFailed(srcHostId);
+            _resourceMgr.migrateAwayFailed(srcHostId, vmId);
             return (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
         } catch (Exception e) {
             s_logger.warn("Migration attempt: Unexpected exception occurred when attempting migration of " +
@@ -759,7 +761,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     @Override
     public void cancelScheduledMigrations(final HostVO host) {
         WorkType type = host.getType() == HostVO.Type.Storage ? WorkType.Stop : WorkType.Migration;
-
+        s_logger.info("Canceling all scheduled migrations from host " + host.getUuid());
         _haDao.deleteMigrationWorkItems(host.getId(), type, _serverId);
     }
 
@@ -777,8 +779,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     }
 
     private void rescheduleWork(final HaWorkVO work, final long nextTime) {
-        s_logger.info("Rescheduling work " + work + " to try again at " + new Date(nextTime << 10) +
-                ". Retry count " + work.getTimesTried() + "/" + _maxRetries + " times.");
         work.setTimeToTry(nextTime);
         work.setTimesTried(work.getTimesTried() + 1);
         work.setServerId(null);
@@ -819,7 +819,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             }
 
             if (nextTime == null) {
-                s_logger.info("Completed work " + work);
+                s_logger.info("Completed work " + work + ". Took " + (work.getTimesTried() + 1) + "/" + _maxRetries + " attempts.");
                 work.setStep(Step.Done);
             } else {
                 rescheduleWork(work, nextTime.longValue());
@@ -836,9 +836,14 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             work.setUpdateTime(vm.getUpdated());
             work.setPreviousState(vm.getState());
         } finally {
-            if (!Step.Done.equals(work.getStep()) && work.getTimesTried() >= _maxRetries) {
-                s_logger.warn("Giving up, retried max. times for work: " + work);
-                work.setStep(Step.Done);
+            if (!Step.Done.equals(work.getStep())) {
+                if (work.getTimesTried() >= _maxRetries) {
+                    s_logger.warn("Giving up, retried max " + work.getTimesTried() + "/" + _maxRetries + " times for work: " + work);
+                    work.setStep(Step.Done);
+                } else {
+                    s_logger.warn("Rescheduling work " + work + " to try again at " + new Date(work.getTimeToTry() << 10) +
+                            ". Finished attempt " + work.getTimesTried() + "/" + _maxRetries + " times.");
+                }
             }
             _haDao.update(work.getId(), work);
         }
@@ -1038,6 +1043,9 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         for (HaWorkVO work : haWorks) {
             if (work.getTimesTried() < _maxRetries) {
                 return true;
+            } else {
+                s_logger.warn("HAWork Job of migration type " + work + " found in database which has max " +
+                        "retries more than " + _maxRetries + " but still not in Done, Cancelled, or Error State");
             }
         }
         return false;

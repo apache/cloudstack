@@ -60,6 +60,23 @@ class TestHostMaintenanceBase(cloudstackTestCase):
             raise Exception("Failed to wait for host %s to be on resource state %s" % (hostid, resourcestate))
         return True
 
+    def prepare_host_for_maintenance(self, hostid):
+        self.logger.debug('Sending Host with id % to prepareHostForMaintenance' % hostid)
+        cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
+        cmd.id = hostid
+        response = self.apiclient.prepareHostForMaintenance(cmd)
+        self.logger.debug('Host with id %s is in prepareHostForMaintenance' % hostid)
+        return response
+
+    def cancel_host_maintenance(self, hostid):
+        self.logger.debug('Canceling Host with id %s from maintain' % (hostid))
+        cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
+        cmd.id = hostid
+        res = self.apiclient.cancelHostMaintenance(cmd)
+        self.logger.debug('Host with id %s is cancelling maintenance' % hostid)
+        return res
+
+
 class TestHostMaintenance(TestHostMaintenanceBase):
 
     def setUp(self):
@@ -76,6 +93,7 @@ class TestHostMaintenance(TestHostMaintenanceBase):
         self.cleanup = []
         self.ssh_client = None
         self.needs_unblock_iptables = False
+        self.hostIdToCancelMaintenance = None
         self.hostConfig = self.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
 
 
@@ -85,7 +103,10 @@ class TestHostMaintenance(TestHostMaintenanceBase):
                 self.ssh_client.execute("iptables -D OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 49152:49215 -m comment --comment 'test block migrations'")
                 self.ssh_client.execute("iptables -D OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 16509 -m comment --comment 'test block migrations'")
 
-        # Clean up, terminate the created templates
+            if self.hostIdToCancelMaintenance is not None:
+                self.cancel_host_maintenance(self.hostIdToCancelMaintenance)
+
+            # Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
@@ -230,13 +251,10 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             raise Exception("Failed to wait for all VMs to reach running state to execute test")
 
         expected_vm_count_after_maintenance = self.noOfVMsOnHost(target_host_id) + self.noOfVMsOnHost(other_host_id)
-        cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
-        cmd.id = target_host_id
-        self.logger.debug('Sending Host with id {} to prepareHostForMaintenance'.format(target_host_id))
-        response = self.apiclient.prepareHostForMaintenance(cmd)
-        
-        self.logger.debug('Host with id {} is in prepareHostForMaintenance'.format(target_host_id))
 
+        self.hostIdToCancelMaintenance = target_host_id
+
+        self.prepare_host_for_maintenance(target_host_id)
         migrations_finished = wait_until(3, 200, self.migrationsFinished, target_host_id)
         wait_until(3, 200, self.checkAllVmsRunningOnHost, {
             "hostId": other_host_id,
@@ -244,12 +262,8 @@ class TestHostMaintenance(TestHostMaintenanceBase):
         })
         other_vm_count_after_maintenance = self.noOfVMsOnHost(other_host_id)
 
-        self.logger.debug('Canceling Host with id {} from maintain'.format(target_host_id))
-        cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
-        cmd.id = target_host_id
-        self.apiclient.cancelHostMaintenance(cmd)
-        
-        self.logger.debug('Host with id {} has been sent to cancelHostMaintenance'.format(target_host_id))
+        self.cancel_host_maintenance(target_host_id)
+        self.hostIdToCancelMaintenance = None
 
         if expected_vm_count_after_maintenance != other_vm_count_after_maintenance:
             self.fail('All VMs not found on other host after maintenance. Other host VM counts expected {} but was {}'.format(expected_vm_count_after_maintenance, other_vm_count_after_maintenance))
@@ -387,23 +401,16 @@ class TestHostMaintenance(TestHostMaintenanceBase):
         self.ssh_client = self.get_ssh_client(listHost[0].ipaddress, self.hostConfig["username"], self.hostConfig["password"])
         self.ssh_client.execute("iptables -I OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 49152:49215 -m comment --comment 'test block migrations'")
         self.ssh_client.execute("iptables -I OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 16509 -m comment --comment 'test block migrations'")
+
         self.needs_unblock_iptables = True
+        self.hostIdToCancelMaintenance = target_host_id
 
-        cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
-        cmd.id = target_host_id
-        self.logger.debug('Sending Host with id {} to prepareHostForMaintenance'.format(target_host_id))
-        response = self.apiclient.prepareHostForMaintenance(cmd)
-
-        self.logger.debug('Attempting to put host with id {} in Maintenance'.format(target_host_id))
+        self.prepare_host_for_maintenance(target_host_id)
 
         error_in_maintenance_reached = self.wait_until_host_is_in_state(target_host_id, "ErrorInMaintenance", 5, 200)
 
-        self.logger.debug('Canceling Host with id {} from maintain'.format(target_host_id))
-        cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
-        cmd.id = target_host_id
-        self.apiclient.cancelHostMaintenance(cmd)
-
-        self.logger.debug('Host with id {} has been sent to cancelHostMaintenance'.format(target_host_id))
+        self.cancel_host_maintenance(target_host_id)
+        self.hostIdToCancelMaintenance = None
 
         if error_in_maintenance_reached == False:
             self.fail("Error in maintenance state should have reached after ports block")
@@ -506,12 +513,6 @@ class TestHostMaintenanceAgents(TestHostMaintenanceBase):
         value = "true" if on else "false"
         cls.updateConfiguration('kvm.ssh.to.agent', value)
 
-    def prepare_host_for_maintenance(self, hostid):
-        cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
-        cmd.id = hostid
-        self.apiclient.prepareHostForMaintenance(cmd)
-        self.logger.debug('Host with id %s is in prepareHostForMaintenance' % hostid)
-
     def wait_until_agent_is_in_state(self, hostid, state, interval=3, retries=20):
         def check_agent_state():
             response = Host.list(
@@ -528,12 +529,6 @@ class TestHostMaintenanceAgents(TestHostMaintenanceBase):
         if not done:
             raise Exception("Failed to wait for host agent %s to be on state %s" % (hostid, state))
         return True
-
-    def cancel_host_maintenance(self, hostid):
-        cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
-        cmd.id = hostid
-        self.apiclient.cancelHostMaintenance(cmd)
-        self.logger.debug('Host with id %s is cancelling maintenance' % hostid)
 
     def get_enabled_host_connected_agent(self):
         hosts = Host.list(

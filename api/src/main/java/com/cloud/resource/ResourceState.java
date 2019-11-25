@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.resource;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -39,7 +40,7 @@ public enum ResourceState {
         AdminCancelMaintenance("Admin asks to cancel maintenance"),
         InternalEnterMaintenance("Resource enters maintenance"),
         UpdatePassword("Admin updates password of host"),
-        UnableToMigrate("Management server migrates VM failed"),
+        UnableToMigrate("Migration of VM failed, such as from scheduled HAWork"),
         UnableToMaintain("Management server has exhausted all legal operations and attempts to put into maintenance has failed"),
         ErrorsCorrected("Errors were corrected on a resource attempting to enter maintenance but encountered errors"),
         Error("An internal error happened"),
@@ -93,6 +94,11 @@ public enum ResourceState {
         return strs;
     }
 
+    public static boolean isMaintenanceState(ResourceState state) {
+        return Arrays.asList(ResourceState.Maintenance, ResourceState.ErrorInMaintenance,
+                ResourceState.PrepareForMaintenance, ResourceState.ErrorInPrepareForMaintenance).contains(state);
+    }
+
     protected static final StateMachine<ResourceState, Event> s_fsm = new StateMachine<ResourceState, Event>();
     static {
         s_fsm.addTransition(null, Event.InternalCreated, ResourceState.Enabled);
@@ -114,12 +120,14 @@ public enum ResourceState {
         s_fsm.addTransition(ResourceState.Maintenance, Event.AdminCancelMaintenance, ResourceState.Enabled);
         s_fsm.addTransition(ResourceState.Maintenance, Event.InternalCreated, ResourceState.Maintenance);
         s_fsm.addTransition(ResourceState.Maintenance, Event.DeleteHost, ResourceState.Disabled);
+        s_fsm.addTransition(ResourceState.ErrorInPrepareForMaintenance, Event.InternalCreated, ResourceState.ErrorInPrepareForMaintenance);
+        s_fsm.addTransition(ResourceState.ErrorInPrepareForMaintenance, Event.Disable, ResourceState.Disabled);
+        s_fsm.addTransition(ResourceState.ErrorInPrepareForMaintenance, Event.DeleteHost, ResourceState.Disabled);
         s_fsm.addTransition(ResourceState.ErrorInPrepareForMaintenance, Event.InternalEnterMaintenance, ResourceState.Maintenance);
         s_fsm.addTransition(ResourceState.ErrorInPrepareForMaintenance, Event.AdminCancelMaintenance, ResourceState.Enabled);
         s_fsm.addTransition(ResourceState.ErrorInPrepareForMaintenance, Event.UnableToMigrate, ResourceState.ErrorInPrepareForMaintenance);
         s_fsm.addTransition(ResourceState.ErrorInPrepareForMaintenance, Event.UnableToMaintain, ResourceState.ErrorInMaintenance);
         s_fsm.addTransition(ResourceState.ErrorInPrepareForMaintenance, Event.ErrorsCorrected, ResourceState.PrepareForMaintenance);
-        s_fsm.addTransition(ResourceState.ErrorInPrepareForMaintenance, Event.InternalCreated, ResourceState.ErrorInPrepareForMaintenance);
         s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.InternalCreated, ResourceState.ErrorInMaintenance);
         s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.Disable, ResourceState.Disabled);
         s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.DeleteHost, ResourceState.Disabled);

@@ -732,9 +732,7 @@ public class EngineHostVO implements EngineHost, Identity {
 
     @Override
     public boolean isInMaintenanceStates() {
-        ResourceState state = getResourceState();
-        return (state == ResourceState.Maintenance || state == ResourceState.ErrorInMaintenance ||
-                state == ResourceState.PrepareForMaintenance || state == ResourceState.ErrorInPrepareForMaintenance);
+        return ResourceState.isMaintenanceState(getResourceState());
     }
 
     public long getUpdated() {
