@@ -16,6 +16,7 @@
 // under the License.
 
 import zones from '@/config/section/infra/zones'
+import phynetworks from '@/config/section/infra/phynetworks'
 import pods from '@/config/section/infra/pods'
 import clusters from '@/config/section/infra/clusters'
 import hosts from '@/config/section/infra/hosts'
@@ -38,6 +39,7 @@ export default {
       component: () => import('@/views/infra/InfraSummary.vue')
     },
     zones,
+    phynetworks,
     pods,
     clusters,
     hosts,
@@ -48,7 +50,7 @@ export default {
     {
       name: 'cpusocket',
       title: 'CPU Sockets',
-      icon: 'api',
+      icon: 'inbox',
       permission: ['listHosts'],
       params: { type: 'routing' },
       columns: ['hypervisor', 'hosts', 'cpusockets']
@@ -73,14 +75,24 @@ export default {
           icon: 'book',
           label: 'Archive Alert',
           dataView: true,
-          args: ['ids']
+          args: ['ids'],
+          mapping: {
+            ids: {
+              value: (record) => { return record.id }
+            }
+          }
         },
         {
           api: 'deleteAlerts',
           icon: 'delete',
           label: 'Delete Alert',
           dataView: true,
-          args: ['ids']
+          args: ['ids'],
+          mapping: {
+            ids: {
+              value: (record) => { return record.id }
+            }
+          }
         }
       ]
     }

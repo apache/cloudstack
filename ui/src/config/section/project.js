@@ -57,7 +57,12 @@ export default {
       icon: 'user-add',
       label: 'Add Account to Project',
       dataView: true,
-      args: ['projectid', 'account', 'email']
+      args: ['projectid', 'account', 'email'],
+      mapping: {
+        projectid: {
+          value: (record) => { return record.id }
+        }
+      }
     },
     {
       api: 'deleteProject',

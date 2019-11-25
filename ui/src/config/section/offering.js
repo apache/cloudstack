@@ -137,6 +137,30 @@ export default {
         dataView: true,
         args: ['name', 'displaytext', 'availability']
       }, {
+        api: 'updateNetworkOffering',
+        icon: 'play-circle',
+        label: 'Enable Offering',
+        dataView: true,
+        show: (record) => { return record.state === 'Disabled' },
+        args: ['state'],
+        mapping: {
+          state: {
+            value: (record) => { return 'Enabled' }
+          }
+        }
+      }, {
+        api: 'updateNetworkOffering',
+        icon: 'pause-circle',
+        label: 'Disable Offering',
+        dataView: true,
+        show: (record) => { return record.state === 'Enabled' },
+        args: ['state'],
+        mapping: {
+          state: {
+            value: (record) => { return 'Disabled' }
+          }
+        }
+      }, {
         api: 'deleteNetworkOffering',
         icon: 'delete',
         label: 'Delete Offering',
@@ -169,6 +193,30 @@ export default {
         label: 'Edit Offering',
         dataView: true,
         args: ['name', 'displaytext']
+      }, {
+        api: 'updateVPCOffering',
+        icon: 'play-circle',
+        label: 'Enable Offering',
+        dataView: true,
+        show: (record) => { return record.state === 'Disabled' },
+        args: ['state'],
+        mapping: {
+          state: {
+            value: (record) => { return 'Enabled' }
+          }
+        }
+      }, {
+        api: 'updateVPCOffering',
+        icon: 'pause-circle',
+        label: 'Disable Offering',
+        dataView: true,
+        show: (record) => { return record.state === 'Enabled' },
+        args: ['state'],
+        mapping: {
+          state: {
+            value: (record) => { return 'Disabled' }
+          }
+        }
       }, {
         api: 'deleteVPCOffering',
         icon: 'delete',

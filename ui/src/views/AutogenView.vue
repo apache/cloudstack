@@ -496,6 +496,8 @@ export default {
         params.templatefilter = 'executable'
       } else if (possibleApi === 'listIsos') {
         params.isofilter = 'executable'
+      } else if (possibleApi === 'listHosts') {
+        params.type = 'routing'
       }
       api(possibleApi, params).then(json => {
         param.loading = false

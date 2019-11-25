@@ -308,7 +308,7 @@
 
       <div class="account-center-tags" v-if="$route.meta.related">
         <span v-for="item in $route.meta.related" :key="item.path">
-          <router-link :to="{ path: '/' + item.name + '?' + item.param + '=' + resource.id }">
+          <router-link :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : resource.id) }">
             <a-button style="margin-right: 10px">
               View {{ $t(item.title) }}
             </a-button>

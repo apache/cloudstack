@@ -85,6 +85,11 @@ export default {
       permission: ['listAccounts'],
       columns: ['name', 'state', 'firstname', 'lastname', 'rolename', 'roletype', 'domain'],
       details: ['name', 'id', 'rolename', 'roletype', 'domain', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
+      related: [{
+        name: 'accountuser',
+        title: 'Users',
+        param: 'account'
+      }],
       actions: [
         {
           api: 'createAccount',
@@ -105,7 +110,15 @@ export default {
           icon: 'sync',
           label: 'Update Resource Count',
           dataView: true,
-          args: ['account', 'domainid']
+          args: ['account', 'domainid'],
+          mapping: {
+            account: {
+              value: (record) => { return record.account }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
+            }
+          }
         },
         {
           api: 'enableAccount',
@@ -121,7 +134,12 @@ export default {
           label: 'Disable Account',
           dataView: true,
           show: (record) => { return record.state === 'enabled' },
-          params: { lock: 'false' }
+          args: ['lock'],
+          mapping: {
+            lock: {
+              value: (record) => { return false }
+            }
+          }
         },
         {
           api: 'disableAccount',
@@ -129,17 +147,19 @@ export default {
           label: 'Lock account',
           dataView: true,
           show: (record) => { return record.state === 'enabled' },
-          args: ['lock']
+          args: ['lock'],
+          mapping: {
+            lock: {
+              value: (record) => { return true }
+            }
+          }
         },
         {
           api: 'deleteAccount',
           icon: 'delete',
           label: 'Delete account',
           dataView: true,
-          hidden: (record) => { return record.name === 'admin' },
-          args: [
-            'id'
-          ]
+          hidden: (record) => { return record.name === 'admin' }
         }
       ]
     },
@@ -206,14 +226,24 @@ export default {
           icon: 'plus',
           label: 'Create Role',
           listView: true,
-          args: ['name', 'description', 'type']
+          args: ['name', 'description', 'type'],
+          mapping: {
+            type: {
+              options: ['Admin', 'DomainAdmin', 'User']
+            }
+          }
         },
         {
           api: 'updateRole',
           icon: 'edit',
           label: 'Edit Role',
           dataView: true,
-          args: ['name', 'description', 'type']
+          args: ['name', 'description', 'type'],
+          mapping: {
+            type: {
+              options: ['Admin', 'DomainAdmin', 'User']
+            }
+          }
         },
         {
           api: 'deleteRole',

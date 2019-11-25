@@ -66,16 +66,29 @@ export default {
       icon: 'drag',
       label: 'label.action.migrate.router',
       dataView: true,
+      show: (record) => { return record.state === 'Running' },
       args: ['virtualmachineid', 'hostid'],
-      show: (record) => { return record.state === 'Running' }
+      mapping: {
+        virtualmachineid: {
+          value: (record) => { return record.id }
+        }
+      }
     },
     {
       api: 'runDiagnostics',
       icon: 'reconciliation',
       label: 'label.action.run.diagnostics',
       dataView: true,
+      show: (record) => { return record.state === 'Running' },
       args: ['targetid', 'type', 'ipaddress', 'params'],
-      show: (record) => { return record.state === 'Running' }
+      mapping: {
+        targetid: {
+          value: (record) => { return record.id }
+        },
+        type: {
+          options: ['ping', 'traceroute', 'arping']
+        }
+      }
     },
     {
       api: 'destroyRouter',

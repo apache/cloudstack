@@ -155,27 +155,6 @@ export default {
           }
         },
         {
-          api: 'migrateVirtualMachine',
-          icon: 'drag',
-          label: 'label.migrate.instance.to.host',
-          dataView: true,
-          show: (record) => { return ['Running'].includes(record.state) }
-        },
-        {
-          api: 'migrateVirtualMachineWithVolume',
-          icon: 'export',
-          label: 'Migrate VM with Volume(s)',
-          dataView: true,
-          show: (record) => { return ['Running'].includes(record.state) }
-        },
-        {
-          api: 'migrateVirtualMachine',
-          icon: 'drag',
-          label: 'label.migrate.instance.to.ps',
-          dataView: true,
-          show: (record) => { return ['Stopped'].includes(record.state) }
-        },
-        {
           api: 'updateVMAffinityGroup',
           icon: 'swap',
           label: 'label.change.affinity',
@@ -198,6 +177,42 @@ export default {
           dataView: true,
           args: ['serviceofferingid'],
           show: (record) => { return ['Stopped'].includes(record.state) }
+        },
+        {
+          api: 'migrateVirtualMachine',
+          icon: 'drag',
+          label: 'label.migrate.instance.to.host',
+          dataView: true,
+          show: (record) => { return ['Running'].includes(record.state) },
+          args: ['hostid', 'virtualmachineid'],
+          mapping: {
+            virtualmachineid: {
+              value: (record) => { return record.id }
+            }
+          }
+        },
+        {
+          api: 'migrateVirtualMachineWithVolume',
+          icon: 'export',
+          label: 'Migrate VM with Volume(s)',
+          dataView: true,
+          show: (record) => { return ['Running'].includes(record.state) }
+        },
+        {
+          api: 'migrateVirtualMachine',
+          icon: 'drag',
+          label: 'label.migrate.instance.to.ps',
+          dataView: true,
+          show: (record) => { return ['Stopped'].includes(record.state) },
+          args: ['storageid', 'virtualmachineid'],
+          mapping: {
+            storageid: {
+              api: 'listStoragePools'
+            },
+            virtualmachineid: {
+              value: (record) => { return record.id }
+            }
+          }
         },
         {
           api: 'resetPasswordForVirtualMachine',

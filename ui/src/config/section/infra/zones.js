@@ -23,6 +23,10 @@ export default {
   columns: ['name', 'state', 'networktype', 'clusters', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal'],
   details: ['name', 'id', 'allocationstate', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2'],
   related: [{
+    name: 'physicalnetwork',
+    title: 'Physical Networks',
+    param: 'zoneid'
+  }, {
     name: 'pod',
     title: 'Pods',
     param: 'zoneid'
@@ -33,6 +37,10 @@ export default {
   }, {
     name: 'host',
     title: 'Hosts',
+    param: 'zoneid'
+  }, {
+    name: 'systemvm',
+    title: 'SystemVMs',
     param: 'zoneid'
   }, {
     name: 'storagepool',
@@ -89,26 +97,41 @@ export default {
       icon: 'user-add',
       label: 'label.dedicate.zone',
       dataView: true,
+      show: (record) => { return !record.domainid },
       args: ['zoneid', 'domainid', 'account'],
-      show: (record) => { return !record.domainid }
+      mapping: {
+        zoneid: {
+          value: (record) => { return record.id }
+        }
+      }
     },
     {
       api: 'releaseDedicatedZone',
       icon: 'user-delete',
       label: 'label.release.dedicated.zone',
       dataView: true,
+      show: (record) => { return record.domainid },
       args: ['zoneid'],
-      show: (record) => { return record.domainid }
+      mapping: {
+        zoneid: {
+          value: (record) => { return record.id }
+        }
+      }
     },
     {
       api: 'enableOutOfBandManagementForZone',
       icon: 'plus-circle',
       label: 'label.outofbandmanagement.enable',
       dataView: true,
-      args: ['zoneid'],
       show: (record) => {
         return !record.resourcedetails || !record.resourcedetails.outOfBandManagementEnabled ||
           record.resourcedetails.outOfBandManagementEnabled === 'false'
+      },
+      args: ['zoneid'],
+      mapping: {
+        zoneid: {
+          value: (record) => { return record.id }
+        }
       }
     },
     {
@@ -116,10 +139,15 @@ export default {
       icon: 'minus-circle',
       label: 'label.outofbandmanagement.disable',
       dataView: true,
-      args: ['zoneid'],
       show: (record) => {
         return record.resourcedetails && record.resourcedetails.outOfBandManagementEnabled &&
           record.resourcedetails.outOfBandManagementEnabled === 'true'
+      },
+      args: ['zoneid'],
+      mapping: {
+        zoneid: {
+          value: (record) => { return record.id }
+        }
       }
     },
     {
@@ -127,10 +155,15 @@ export default {
       icon: 'eye',
       label: 'label.ha.enable',
       dataView: true,
-      args: ['zoneid'],
       show: (record) => {
         return !record.resourcedetails || !record.resourcedetails.resourceHAEnabled ||
           record.resourcedetails.resourceHAEnabled === 'false'
+      },
+      args: ['zoneid'],
+      mapping: {
+        zoneid: {
+          value: (record) => { return record.id }
+        }
       }
     },
     {
@@ -138,10 +171,15 @@ export default {
       icon: 'eye-invisible',
       label: 'label.ha.disable',
       dataView: true,
-      args: ['zoneid'],
       show: (record) => {
         return record.resourcedetails && record.resourcedetails.resourceHAEnabled &&
           record.resourcedetails.resourceHAEnabled === 'true'
+      },
+      args: ['zoneid'],
+      mapping: {
+        zoneid: {
+          value: (record) => { return record.id }
+        }
       }
     },
     {
@@ -149,24 +187,39 @@ export default {
       icon: 'block',
       label: 'label.add.vmware.datacenter',
       dataView: true,
+      show: (record) => { return !record.vmwaredcid },
       args: ['zoneid', 'name', 'vcenter', 'username', 'password'],
-      show: (record) => { return !record.vmwaredcid }
+      mapping: {
+        zoneid: {
+          value: (record) => { return record.id }
+        }
+      }
     },
     {
       api: 'updateVmwareDc',
       icon: 'block',
       label: 'label.update.vmware.datacenter',
       dataView: true,
+      show: (record) => { return record.vmwaredcid },
       args: ['zoneid', 'name', 'vcenter', 'username', 'password', 'isrecursive'],
-      show: (record) => { return record.vmwaredcid }
+      mapping: {
+        zoneid: {
+          value: (record) => { return record.id }
+        }
+      }
     },
     {
       api: 'removeVmwareDc',
       icon: 'minus-square',
       label: 'label.remove.vmware.datacenter',
       dataView: true,
+      show: (record) => { return record.vmwaredcid },
       args: ['zoneid'],
-      show: (record) => { return record.vmwaredcid }
+      mapping: {
+        zoneid: {
+          value: (record) => { return record.id }
+        }
+      }
     },
     {
       api: 'deleteZone',

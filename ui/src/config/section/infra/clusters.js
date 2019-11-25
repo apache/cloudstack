@@ -37,35 +37,45 @@ export default {
     },
     {
       api: 'updateCluster',
-      icon: 'pause-circle',
-      label: 'label.action.enable.cluster',
-      dataView: true,
-      defaultArgs: { allocationstate: 'Disabled' },
-      show: (record) => { return record.allocationstate === 'Enabled' }
-    },
-    {
-      api: 'updateCluster',
       icon: 'play-circle',
-      label: 'label.action.disable.cluster',
+      label: 'label.action.enable.cluster',
       dataView: true,
       defaultArgs: { allocationstate: 'Enabled' },
       show: (record) => { return record.allocationstate === 'Disabled' }
+    },
+    {
+      api: 'updateCluster',
+      icon: 'pause-circle',
+      label: 'label.action.disable.cluster',
+      dataView: true,
+      defaultArgs: { allocationstate: 'Disabled' },
+      show: (record) => { return record.allocationstate === 'Enabled' }
     },
     {
       api: 'dedicateCluster',
       icon: 'user-add',
       label: 'label.dedicate.cluster',
       dataView: true,
+      show: (record) => { return !record.domainid },
       args: ['clusterid', 'domainid', 'account'],
-      show: (record) => { return !record.domainid }
+      mapping: {
+        clusterid: {
+          value: (record) => { return record.id }
+        }
+      }
     },
     {
       api: 'releaseDedicatedCluster',
       icon: 'user-delete',
       label: 'label.release.dedicated.cluster',
       dataView: true,
+      show: (record) => { return record.domainid },
       args: ['clusterid'],
-      show: (record) => { return record.domainid }
+      mapping: {
+        clusterid: {
+          value: (record) => { return record.id }
+        }
+      }
     },
     {
       api: 'updateCluster',
@@ -88,10 +98,15 @@ export default {
       icon: 'plus-circle',
       label: 'label.outofbandmanagement.enable',
       dataView: true,
-      args: ['clusterid'],
       show: (record) => {
         return !record.resourcedetails || !record.resourcedetails.outOfBandManagementEnabled ||
           record.resourcedetails.outOfBandManagementEnabled === 'false'
+      },
+      args: ['clusterid'],
+      mapping: {
+        clusterid: {
+          value: (record) => { return record.id }
+        }
       }
     },
     {
@@ -99,10 +114,15 @@ export default {
       icon: 'minus-circle',
       label: 'label.outofbandmanagement.disable',
       dataView: true,
-      args: ['clusterid'],
       show: (record) => {
         return record.resourcedetails && record.resourcedetails.outOfBandManagementEnabled &&
           record.resourcedetails.outOfBandManagementEnabled === 'true'
+      },
+      args: ['clusterid'],
+      mapping: {
+        clusterid: {
+          value: (record) => { return record.id }
+        }
       }
     },
     {
@@ -110,10 +130,15 @@ export default {
       icon: 'eye',
       label: 'label.ha.enable',
       dataView: true,
-      args: ['clusterid'],
       show: (record) => {
         return !record.resourcedetails || !record.resourcedetails.resourceHAEnabled ||
           record.resourcedetails.resourceHAEnabled === 'false'
+      },
+      args: ['clusterid'],
+      mapping: {
+        clusterid: {
+          value: (record) => { return record.id }
+        }
       }
     },
     {
@@ -121,10 +146,15 @@ export default {
       icon: 'eye-invisible',
       label: 'label.ha.disable',
       dataView: true,
-      args: ['clusterid'],
       show: (record) => {
         return record.resourcedetails && record.resourcedetails.resourceHAEnabled &&
           record.resourcedetails.resourceHAEnabled === 'true'
+      },
+      args: ['clusterid'],
+      mapping: {
+        clusterid: {
+          value: (record) => { return record.id }
+        }
       }
     },
     {

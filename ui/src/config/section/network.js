@@ -191,30 +191,59 @@ export default {
           icon: 'link',
           label: 'Enable Remote Access VPN',
           dataView: true,
-          args: ['publicipid', 'domainid', 'account']
+          args: ['publicipid', 'domainid', 'account'],
+          mapping: {
+            publicipid: {
+              value: (record) => { return record.id }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
+            },
+            account: {
+              value: (record) => { return record.account }
+            }
+          }
         },
         {
           api: 'deleteRemoteAccessVpn',
           icon: 'disconnect',
           label: 'Disable Remove Access VPN',
           dataView: true,
-          args: ['publicipid', 'domainid']
+          args: ['publicipid', 'domainid'],
+          mapping: {
+            publicipid: {
+              value: (record) => { return record.id }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
+            }
+          }
         },
         {
           api: 'enableStaticNat',
           icon: 'plus-circle',
           label: 'Enable Static NAT',
           dataView: true,
+          show: (record) => { return !record.virtualmachineid && !record.issourcenat },
           args: ['ipaddressid', 'virtualmachineid', 'vmguestip'],
-          show: (record) => { return !record.virtualmachineid && !record.issourcenat }
+          mapping: {
+            ipaddressid: {
+              value: (record) => { return record.id }
+            }
+          }
         },
         {
           api: 'disableStaticNat',
           icon: 'minus-circle',
           label: 'Disable Static NAT',
           dataView: true,
+          show: (record) => { return record.virtualmachineid },
           args: ['ipaddressid'],
-          show: (record) => { return record.virtualmachineid }
+          mapping: {
+            ipaddressid: {
+              value: (record) => { return record.id }
+            }
+          }
         },
         {
           api: 'disassociateIpAddress',
@@ -245,7 +274,18 @@ export default {
           icon: 'delete',
           label: 'Delete VPN User',
           dataView: true,
-          args: ['username', 'domainid', 'account']
+          args: ['username', 'domainid', 'account'],
+          mapping: {
+            username: {
+              value: (record) => { return record.username }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
+            },
+            account: {
+              value: (record) => { return record.account }
+            }
+          }
         }
       ]
     },
@@ -264,6 +304,12 @@ export default {
           label: 'Add VPN Customer Gateway',
           listView: true,
           args: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'ikelifetime', 'esplifetime', 'dpd', 'forceencap', 'ikepolicy', 'esppolicy']
+        },
+        {
+          api: 'deleteVpnCustomerGateway',
+          icon: 'delete',
+          label: 'Delete VPN Customer Gateway',
+          dataView: true
         }
       ]
     }

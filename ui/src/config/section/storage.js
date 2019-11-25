@@ -38,16 +38,19 @@ export default {
           api: 'createVolume',
           icon: 'plus',
           label: 'Create Volume',
-          type: 'main',
-          args: ['name', 'zoneid', 'diskofferingid'],
-          listView: true
+          listView: true,
+          args: ['name', 'zoneid', 'diskofferingid']
         }, {
           api: 'uploadVolume',
           icon: 'link',
           label: 'Upload Volume From URL',
-          type: 'main',
+          listView: true,
           args: ['url', 'name', 'zoneid', 'format', 'diskofferingid', 'checksum'],
-          listView: true
+          mapping: {
+            format: {
+              options: ['RAW', 'VHD', 'VHDX', 'OVA', 'QCOW2']
+            }
+          }
         }, {
           api: 'getUploadParamsForVolume',
           icon: 'cloud-upload',
@@ -142,9 +145,14 @@ export default {
           api: 'createTemplate',
           icon: 'picture',
           label: 'Create Template from Volume',
-          args: ['volumeid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled', 'sshkeyenabled'],
           dataView: true,
-          show: (record) => { return record.type === 'ROOT' }
+          show: (record) => { return record.type === 'ROOT' },
+          args: ['volumeid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled', 'sshkeyenabled'],
+          mapping: {
+            volumeid: {
+              value: (record) => { return record.id }
+            }
+          }
         },
         {
           api: 'deleteVolume',
@@ -169,6 +177,7 @@ export default {
           icon: 'plus',
           label: 'Create volume',
           dataView: true,
+          show: (record) => { return record.state === 'BackedUp' },
           args: ['snapshotid', 'name'],
           mapping: {
             snapshotid: {
@@ -181,6 +190,7 @@ export default {
           icon: 'picture',
           label: 'Create volume',
           dataView: true,
+          show: (record) => { return record.state === 'BackedUp' },
           args: ['snapshotid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled', 'sshkeyenabled'],
           mapping: {
             snapshotid: {
@@ -216,6 +226,7 @@ export default {
           icon: 'sync',
           label: 'Revert VM snapshot',
           dataView: true,
+          show: (record) => { return record.state === 'Ready' },
           args: ['vmsnapshotid'],
           mapping: {
             vmsnapshotid: {

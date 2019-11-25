@@ -51,16 +51,26 @@ export default {
       icon: 'user-add',
       label: 'label.dedicate.pod',
       dataView: true,
+      show: (record) => { return !record.domainid },
       args: ['podid', 'domainid', 'account'],
-      show: (record) => { return !record.domainid }
+      mapping: {
+        podid: {
+          value: (record) => { return record.id }
+        }
+      }
     },
     {
       api: 'releaseDedicatedPod',
       icon: 'user-delete',
       label: 'label.release.dedicated.pod',
       dataView: true,
+      show: (record) => { return record.domainid },
       args: ['podid'],
-      show: (record) => { return record.domainid }
+      mapping: {
+        podid: {
+          value: (record) => { return record.id }
+        }
+      }
     },
     {
       api: 'updatePod',

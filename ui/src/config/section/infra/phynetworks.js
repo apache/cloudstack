@@ -16,38 +16,12 @@
 // under the License.
 
 export default {
-  name: 'event',
-  title: 'Events',
-  icon: 'schedule',
-  permission: ['listEvents'],
-  columns: ['username', 'description', 'state', 'level', 'type', 'account', 'domain', 'created'],
-  details: ['username', 'id', 'description', 'state', 'level', 'type', 'account', 'domain', 'created'],
-  actions: [
-    {
-      api: 'archiveEvents',
-      icon: 'book',
-      label: 'Archive Event',
-      listView: true,
-      dataView: true,
-      args: ['ids'],
-      mapping: {
-        ids: {
-          value: (record) => { return record.id }
-        }
-      }
-    },
-    {
-      api: 'deleteEvents',
-      icon: 'delete',
-      label: 'Delete Event',
-      listView: true,
-      dataView: true,
-      args: ['ids'],
-      mapping: {
-        ids: {
-          value: (record) => { return record.id }
-        }
-      }
-    }
-  ]
+  name: 'physicalnetwork',
+  title: 'Physical Networks',
+  icon: 'api',
+  hidden: true,
+  permission: ['listPhysicalNetworks'],
+  columns: ['name', 'state', 'isolationmethods', 'vlan', 'broadcastdomainrange', 'zoneid'],
+  details: ['name', 'state', 'isolationmethods', 'vlan', 'broadcastdomainrange', 'zoneid'],
+  actions: []
 }
