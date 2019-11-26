@@ -53,6 +53,10 @@ class TestHostMaintenanceBase(cloudstackTestCase):
                 if response[0].resourcestate == resourcestate:
                     self.logger.debug('Host with id %s is in resource state = %s' % (hostid, resourcestate))
                     return True, None
+                else:
+                    self.logger.debug("Waiting for host " + hostid +
+                                      " to reach state " + resourcestate +
+                                      ", with current state " + response[0].resourcestate)
             return False, None
 
         done, _ = wait_until(interval, retries, check_resource_state)
@@ -61,19 +65,20 @@ class TestHostMaintenanceBase(cloudstackTestCase):
         return True
 
     def prepare_host_for_maintenance(self, hostid):
-        self.logger.debug('Sending Host with id % to prepareHostForMaintenance' % hostid)
+        self.logger.debug("Sending Host with id %s to prepareHostForMaintenance" % hostid)
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = hostid
         response = self.apiclient.prepareHostForMaintenance(cmd)
-        self.logger.debug('Host with id %s is in prepareHostForMaintenance' % hostid)
+        self.logger.debug("Host with id %s is in prepareHostForMaintenance" % hostid)
+        self.logger.debug(response)
         return response
 
     def cancel_host_maintenance(self, hostid):
-        self.logger.debug('Canceling Host with id %s from maintain' % (hostid))
+        self.logger.debug("Canceling Host with id %s from maintain" % hostid)
         cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
         cmd.id = hostid
         res = self.apiclient.cancelHostMaintenance(cmd)
-        self.logger.debug('Host with id %s is cancelling maintenance' % hostid)
+        self.logger.debug("Host with id %s is cancelling maintenance" % hostid)
         return res
 
 
@@ -102,9 +107,13 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             if self.ssh_client is not None and self.needs_unblock_iptables:
                 self.ssh_client.execute("iptables -D OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 49152:49215 -m comment --comment 'test block migrations'")
                 self.ssh_client.execute("iptables -D OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 16509 -m comment --comment 'test block migrations'")
+            try:
+                if self.hostIdToCancelMaintenance is not None:
+                    self.cancel_host_maintenance(self.hostIdToCancelMaintenance)
+            except Exception as e:
+                self.logger.debug("Attempted host maintenance cancel but it threw exception. Skipping.")
 
-            if self.hostIdToCancelMaintenance is not None:
-                self.cancel_host_maintenance(self.hostIdToCancelMaintenance)
+            self.hostIdToCancelMaintenance = None
 
             # Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
@@ -166,27 +175,18 @@ class TestHostMaintenance(TestHostMaintenanceBase):
         self.cleanup.append(self.service_offering)
         return vms
 
-    def checkAllVmsRunningOnHost(self, data):
-        hostId = data["hostId"]
-        expectedNumVms = data["expected_vms"] if "expected_vms" in data else -1
+    def checkAllVmsRunningOnHost(self, hostId):
         listVms1 = VirtualMachine.list(
             self.apiclient,
             hostid=hostId
         )
 
-        runningVms = 0
         if (listVms1 is not None):
             self.logger.debug('Vms found to test all running = {} '.format(len(listVms1)))
             for vm in listVms1:
                 if (vm.state != "Running"):
                     self.logger.debug('VirtualMachine on Host with id = {} is in {}'.format(vm.id, vm.state))
                     return (False, None)
-                else:
-                    runningVms = runningVms + 1
-            if expectedNumVms != -1:
-                if expectedNumVms != runningVms:
-                    return (False, None)
-
 
         response = list_ssvms(
             self.apiclient,
@@ -246,27 +246,27 @@ class TestHostMaintenance(TestHostMaintenanceBase):
 
     def hostPrepareAndCancelMaintenance(self, target_host_id, other_host_id):
         # Wait for all VMs to complete any pending migrations.
-        if not wait_until(3, 100, self.checkAllVmsRunningOnHost, {"hostId" : target_host_id}) or \
-                not wait_until(3, 100, self.checkAllVmsRunningOnHost, {"hostId": other_host_id}):
+        if not wait_until(3, 100, self.checkAllVmsRunningOnHost, target_host_id) or \
+                not wait_until(3, 100, self.checkAllVmsRunningOnHost, other_host_id):
             raise Exception("Failed to wait for all VMs to reach running state to execute test")
 
         expected_vm_count_after_maintenance = self.noOfVMsOnHost(target_host_id) + self.noOfVMsOnHost(other_host_id)
 
+        self.prepare_host_for_maintenance(target_host_id)
+        migrations_finished = wait_until(5, 200, self.migrationsFinished, target_host_id)
+
+        self.wait_until_host_is_in_state(target_host_id, "Maintenance", 5, 200)
         self.hostIdToCancelMaintenance = target_host_id
 
-        self.prepare_host_for_maintenance(target_host_id)
-        migrations_finished = wait_until(3, 200, self.migrationsFinished, target_host_id)
-        wait_until(3, 200, self.checkAllVmsRunningOnHost, {
-            "hostId": other_host_id,
-            "expected_vms": expected_vm_count_after_maintenance
-        })
-        other_vm_count_after_maintenance = self.noOfVMsOnHost(other_host_id)
+        vm_count_after_maintenance = self.noOfVMsOnHost(target_host_id)
 
         self.cancel_host_maintenance(target_host_id)
-        self.hostIdToCancelMaintenance = None
+        host_reached_enabled = self.wait_until_host_is_in_state(target_host_id, "Enabled", 5, 200)
+        if host_reached_enabled:
+            self.hostIdToCancelMaintenance = None
 
-        if expected_vm_count_after_maintenance != other_vm_count_after_maintenance:
-            self.fail('All VMs not found on other host after maintenance. Other host VM counts expected {} but was {}'.format(expected_vm_count_after_maintenance, other_vm_count_after_maintenance))
+        if vm_count_after_maintenance != 0:
+            self.fail("Host to put to maintenance still has VMs running")
 
         return migrations_finished
 
@@ -403,14 +403,16 @@ class TestHostMaintenance(TestHostMaintenanceBase):
         self.ssh_client.execute("iptables -I OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 16509 -m comment --comment 'test block migrations'")
 
         self.needs_unblock_iptables = True
+
+        # Attempt putting host in maintenance and check if ErrorInMaintenance state is reached
+        self.prepare_host_for_maintenance(target_host_id)
+        error_in_maintenance_reached = self.wait_until_host_is_in_state(target_host_id, "ErrorInMaintenance", 5, 200)
         self.hostIdToCancelMaintenance = target_host_id
 
-        self.prepare_host_for_maintenance(target_host_id)
-
-        error_in_maintenance_reached = self.wait_until_host_is_in_state(target_host_id, "ErrorInMaintenance", 5, 200)
-
         self.cancel_host_maintenance(target_host_id)
-        self.hostIdToCancelMaintenance = None
+        host_reached_enabled = self.wait_until_host_is_in_state(target_host_id, "Enabled", 5, 200)
+        if host_reached_enabled:
+            self.hostIdToCancelMaintenance = None
 
         if error_in_maintenance_reached == False:
             self.fail("Error in maintenance state should have reached after ports block")

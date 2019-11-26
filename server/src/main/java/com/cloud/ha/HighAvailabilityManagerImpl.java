@@ -321,7 +321,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         if (vm.getHostId() != null) {
             final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.Migration, Step.Scheduled, vm.getHostId(), vm.getState(), 0, vm.getUpdated());
             _haDao.persist(work);
-            s_logger.info("Scheduled migration work of VM " + vm.getUuid() + " from host " + vm.getHostName() + " with HAWork " + work);
+            s_logger.info("Scheduled migration work of VM " + vm.getUuid() + " from host " + _hostDao.findById(vm.getHostId()) + " with HAWork " + work);
             wakeupWorkers();
         }
         return true;
@@ -1041,7 +1041,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     public boolean hasPendingMigrationsWork(long vmId) {
         List<HaWorkVO> haWorks = _haDao.listPendingMigrationsForVm(vmId);
         for (HaWorkVO work : haWorks) {
-            if (work.getTimesTried() < _maxRetries) {
+            if (work.getTimesTried() <= _maxRetries) {
                 return true;
             } else {
                 s_logger.warn("HAWork Job of migration type " + work + " found in database which has max " +

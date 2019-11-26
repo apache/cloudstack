@@ -1406,22 +1406,29 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final long hostId = host.getId();
 
         s_logger.info("Attempting maintenance for host " + host.getName());
-        // Step 1: If there are no VMs in migrating, running, starting, stopping, error or unknown state we can safely move the host to maintenance.
-        if (CollectionUtils.isEmpty(_vmDao.findByHostInStates(host.getId(),
-                State.Migrating, State.Running, State.Starting, State.Stopping, State.Error, State.Unknown))) {
-            return setHostIntoMaintenance(host);
-        }
 
-        // Step 2: Gather relevant VMs' states on the host and then based on them we can determine if
+        // Step 0: First gather if VMs have pending HAWork for migration with retries left.
         final List<VMInstanceVO> allVmsOnHost = _vmDao.listByHostId(hostId);
         boolean hasPendingMigrationRetries = false;
         for (VMInstanceVO vmInstanceVO : allVmsOnHost) {
             if (_haMgr.hasPendingMigrationsWork(vmInstanceVO.getId())) {
+                s_logger.info("Attempting maintenance for " + host + " found pending migration for VM " + vmInstanceVO);
                 hasPendingMigrationRetries = true;
                 break;
             }
         }
 
+        // Step 1: If there are no VMs in migrating, running, starting, stopping, error or unknown state we can safely move the host to maintenance.
+        if (CollectionUtils.isEmpty(_vmDao.findByHostInStates(host.getId(),
+                State.Migrating, State.Running, State.Starting, State.Stopping, State.Error, State.Unknown))) {
+            if (hasPendingMigrationRetries) {
+                s_logger.error("There should not be pending retries VMs for this host as there are no running, migrating," +
+                        "starting, stopping, error or unknown states on host " + host);
+            }
+            return setHostIntoMaintenance(host);
+        }
+
+        // Step 2: Gather relevant VMs' states on the host and then based on them we can determine if
         final List<VMInstanceVO> failedMigrations = new ArrayList<>(_vmDao.listNonMigratingVmsByHostEqualsLastHost(hostId));
         final List<VMInstanceVO> errorVms = new ArrayList<>(_vmDao.findByHostInStates(hostId, State.Unknown, State.Error));
         final boolean hasMigratingAwayVms = CollectionUtils.isNotEmpty(_vmDao.listVmsMigratingFromHost(hostId));
