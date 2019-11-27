@@ -340,8 +340,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         if (snapshotOnPrimary != null) {
             long volumeId = snapshotOnPrimary.getVolumeId();
             VolumeVO volumeVO = volumeDao.findById(volumeId);
-            boolean isVolumeOnPrimary = volumeVO != null && volumeVO.getRemoved() == null;
-            return isVolumeOnPrimary;
+            return volumeVO != null && volumeVO.getRemoved() == null;
         }
         return false;
     }
