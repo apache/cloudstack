@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_supported_version` (
     `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
     `uuid` varchar(40) DEFAULT NULL COMMENT 'uuid',
     `name` varchar(255) NOT NULL COMMENT 'kubernetes version name',
+    `kubernetes_version` varchar(32) NOT NULL COMMENT 'kubernetes semantic version',
     `iso_id` bigint unsigned NOT NULL COMMENT 'kubernetes version binary ISO id',
     `zone_id` bigint unsigned DEFAULT NULL COMMENT 'zone id in which kubernetes version is available',
     `created` datetime NOT NULL COMMENT 'date created',

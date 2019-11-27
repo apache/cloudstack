@@ -18,28 +18,29 @@
 
 
 echo "Params $#"
-if [ $# -lt 3 ]; then
-    echo "Invalid input. Valid usage: ./create-binaries-iso KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION, eg: ./create-binaries-iso 1.11.4 0.7.1 1.11.1"
+if [ $# -lt 5 ]; then
+    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION WEAVENET_NETWORK_YAML_CONFIG DASHBOARD_YAML_CONFIG"
+    echo "eg: ./create-kubernetes-binaries-iso 1.11.4 0.7.1 1.11.1 https://github.com/weaveworks/weave/releases/download/latest_release/weave-daemonset-k8s-1.11.yaml https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.0/src/deploy/recommended/kubernetes-dashboard.yaml"
     exit 1
 fi
 
 RELEASE="v${1}"
 start_dir="$PWD"
 iso_dir="${start_dir}/iso"
-working_dir="${iso_dir}/${RELEASE}"
+working_dir="${iso_dir}/"
 mkdir -p "${working_dir}"
 
 CNI_VERSION="v${2}"
 echo "Downloading CNI ${CNI_VERSION}..."
-cni_dir="${working_dir}/cni/${CNI_VERSION}"
+cni_dir="${working_dir}/cni/"
 mkdir -p "${cni_dir}"
-curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-amd64-${CNI_VERSION}.tgz"
+curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-amd64.tgz"
 
 CRICTL_VERSION="v${3}"
 echo "Downloading CRI tools ${CRICTL_VERSION}..."
-crictl_dir="${working_dir}/cri-tools/${CRICTL_VERSION}"
+crictl_dir="${working_dir}/cri-tools/"
 mkdir -p "${crictl_dir}"
-curl -L "https://github.com/kubernetes-incubator/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz" -o "${crictl_dir}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz"
+curl -L "https://github.com/kubernetes-incubator/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz" -o "${crictl_dir}/crictl-linux-amd64.tar.gz"
 
 echo "Downloading Kubernetes tools ${RELEASE}..."
 k8s_dir="${working_dir}/k8s"
@@ -54,10 +55,21 @@ cd $start_dir
 kubelet_service_file="${working_dir}/kubelet.service"
 touch "${kubelet_service_file}"
 curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > ${kubelet_service_file}
+
 echo "Downloading 10-kubeadm.conf ${RELEASE}..."
 kubeadm_conf_file="${working_dir}/10-kubeadm.conf"
 touch "${kubeadm_conf_file}"
 curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
+
+NETWORK_CONFIG_URL="${4}"
+echo "Downloading network config ${NETWORK_CONFIG_URL}"
+network_conf_file="${working_dir}/network.yaml"
+curl -sSL ${NETWORK_CONFIG_URL} -o ${network_conf_file}
+
+DASHBORAD_CONFIG_URL="${5}"
+echo "Downloading dashboard config ${DASHBORAD_CONFIG_URL}"
+dashboard_conf_file="${working_dir}/dashboard.yaml"
+curl -sSL ${DASHBORAD_CONFIG_URL} -o ${dashboard_conf_file}
 
 echo "Fetching k8s docker images..."
 docker -v

@@ -948,6 +948,9 @@
                             name: {
                                 label: 'label.name'
                             },
+                            kubernetesversion: {
+                                label: 'Kubernetes version'
+                            },
                             zonename: {
                                 label: 'label.zone.name'
                             },
@@ -997,6 +1000,13 @@
                                     fields: {
                                         name: {
                                             label: 'label.name',
+                                            //docID: 'Name of the cluster',
+                                            validation: {
+                                                required: true
+                                            }
+                                        },
+                                        version: {
+                                            label: 'Semantic version',
                                             //docID: 'Name of the cluster',
                                             validation: {
                                                 required: true
@@ -1103,6 +1113,7 @@
                                 action: function(args) {
                                     var data = {
                                         name: args.data.name,
+                                        kubernetesversion: args.data.version,
                                     };
                                     if (args.data.zone > 0) {
                                         $.extend(data, {
@@ -1181,28 +1192,38 @@
                             isMaximized: true,
                             actions: {
                                 destroy: {
-                                    label: 'Destroy Version',
-                                    compactLabel: 'label.destroy',
+                                    label: 'Delete Version',
+                                    compactLabel: 'label.delete',
                                     preFilter: function(args) { return isAdmin(); },
                                     createForm: {
-                                        title: 'Destroy Kubernetes Version',
-                                        desc: 'Destroy Kubernetes Version',
+                                        title: 'Delete Kubernetes Version',
+                                        desc: 'Delete Kubernetes Version',
                                         isWarning: true,
                                         fields: {
+                                            deleteiso: {
+                                                label: 'Delete ISO',
+                                                isBoolean: true,
+                                                isChecked: false
+                                            },
                                         }
                                     },
                                     messages: {
                                         confirm: function(args) {
-                                            return 'Please confirm that you want to destroy this Kubernetes version.';
+                                            return 'Please confirm that you want to delete this Kubernetes version.';
                                         },
                                         notification: function(args) {
-                                            return 'Destroyed Kubernetes version.';
+                                            return 'Deleted Kubernetes version.';
                                         }
                                     },
                                     action: function(args) {
                                         var data = {
                                             id: args.context.kubernetesversions[0].id
                                         };
+                                        if (args.data.deleteiso === 'on') {
+                                            $.extend(data, {
+                                                deleteiso: true
+                                            });
+                                        }
                                         $.ajax({
                                             url: createURL('deleteKubernetesSupportedVersion'),
                                             data: data,

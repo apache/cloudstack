@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 public interface KubernetesSupportedVersion extends InternalIdentity, Identity {
     long getId();
     String getName();
+    String getKubernetesVersion();
     long getIsoId();
     Long getZoneId();
 }

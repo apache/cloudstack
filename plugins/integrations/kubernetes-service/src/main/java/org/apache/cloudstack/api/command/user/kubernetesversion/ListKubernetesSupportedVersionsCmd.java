@@ -37,6 +37,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.kubernetesversion.KubernetesVersionService;
+import com.google.common.base.Strings;
 
 @APICommand(name = ListKubernetesSupportedVersionsCmd.APINAME,
         description = "Lists container clusters",
@@ -63,6 +64,10 @@ public class ListKubernetesSupportedVersionsCmd extends BaseListCmd {
             description = "the ID of the zone in which Kubernetes supported version will be available")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.MIN_KUBERNETES_VERSION, type = CommandType.STRING,
+            description = "the minimum Kubernetes version")
+    private String minimumKubernetesVersion;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -72,6 +77,14 @@ public class ListKubernetesSupportedVersionsCmd extends BaseListCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public String getMinimumKubernetesVersion() {
+        if(!Strings.isNullOrEmpty(minimumKubernetesVersion) &&
+                !minimumKubernetesVersion.matches("[0-9]+(\\.[0-9]+)*")) {
+            throw new IllegalArgumentException("Invalid version format");
+        }
+        return minimumKubernetesVersion;
     }
 
     @Override

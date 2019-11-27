@@ -75,6 +75,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         response.setObjectName("kubernetessupportedversion");
         response.setId(kubernetesSupportedVersion.getUuid());
         response.setName(kubernetesSupportedVersion.getName());
+        response.setKubernetesVersion(kubernetesSupportedVersion.getKubernetesVersion());
         DataCenterVO zone = ApiDBUtils.findZoneById(kubernetesSupportedVersion.getZoneId());
         if (zone != null) {
             response.setZoneId(zone.getUuid());
@@ -87,20 +88,67 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         return response;
     }
 
+    public static int compareKubernetesVersion(String v1, String v2) throws IllegalArgumentException {
+        if (Strings.isNullOrEmpty(v1) || Strings.isNullOrEmpty(v2)) {
+            throw new IllegalArgumentException(String.format("Invalid version comparision with versions %s, %s", v1, v2));
+        }
+        if(!v1.matches("[0-9]+(\\.[0-9]+)*")) {
+            throw new IllegalArgumentException(String.format("Invalid version format, %s", v1));
+        }
+        if(!v2.matches("[0-9]+(\\.[0-9]+)*")) {
+            throw new IllegalArgumentException(String.format("Invalid version format, %s", v2));
+        }
+        String[] thisParts = v1.split("\\.");
+        String[] thatParts = v2.split("\\.");
+        int length = Math.max(thisParts.length, thatParts.length);
+        for(int i = 0; i < length; i++) {
+            int thisPart = i < thisParts.length ?
+                    Integer.parseInt(thisParts[i]) : 0;
+            int thatPart = i < thatParts.length ?
+                    Integer.parseInt(thatParts[i]) : 0;
+            if(thisPart < thatPart)
+                return -1;
+            if(thisPart > thatPart)
+                return 1;
+        }
+        return 0;
+    }
+
     @Override
     public ListResponse<KubernetesSupportedVersionResponse> listKubernetesSupportedVersions(final ListKubernetesSupportedVersionsCmd cmd) {
         final Long versionId = cmd.getId();
+        final Long zoneId = cmd.getZoneId();
+        final String minimumKubernetesVersion = cmd.getMinimumKubernetesVersion();
         List<KubernetesSupportedVersionResponse> responseList = new ArrayList<>();
+        List <KubernetesSupportedVersionVO> versions = new ArrayList<>();
         if (versionId != null) {
             KubernetesSupportedVersionVO version = kubernetesSupportedVersionDao.findById(versionId);
-            if (version != null) {
-                responseList.add(createKubernetesSupportedVersionResponse(version));
+            if (version != null && (zoneId == null || version.getZoneId() == null || version.getZoneId().equals(zoneId))) {
+                versions.add(version);
             }
         } else {
-            List <KubernetesSupportedVersionVO> versions = kubernetesSupportedVersionDao.listAll();
-            for (KubernetesSupportedVersionVO version : versions) {
-                responseList.add(createKubernetesSupportedVersionResponse(version));
+            if (zoneId == null) {
+                versions = kubernetesSupportedVersionDao.listAll();
+            } else {
+                versions = kubernetesSupportedVersionDao.listAllInZone(zoneId);
             }
+        }
+        // Filter versions for minimum Kubernetes version
+        if (!Strings.isNullOrEmpty(minimumKubernetesVersion)) {
+            for (int i = versions.size() - 1; i >= 0; --i) {
+                KubernetesSupportedVersionVO version = versions.get(i);
+                try {
+                    if (compareKubernetesVersion(minimumKubernetesVersion, version.getKubernetesVersion()) > 0) {
+                        versions.remove(i);
+                    }
+                } catch (Exception e) {
+                    LOGGER.warn(String.format("Unable to compare Kubernetes version for supported version ID: %s with %s", version.getUuid(), minimumKubernetesVersion));
+                    versions.remove(i);
+                }
+            }
+        }
+        for (KubernetesSupportedVersionVO version : versions) {
+            responseList.add(createKubernetesSupportedVersionResponse(version));
         }
         ListResponse<KubernetesSupportedVersionResponse> response = new ListResponse<>();
         response.setResponses(responseList);
@@ -111,6 +159,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_ADD, eventDescription = "Adding Kubernetes supported version")
     public KubernetesSupportedVersionResponse addKubernetesSupportedVersion(final AddKubernetesSupportedVersionCmd cmd) {
         final String name = cmd.getName();
+        final String kubernetesVersion = cmd.getKubernetesVersion();
         final Long zoneId = cmd.getZoneId();
         final Long isoId = cmd.getIsoId();
         final String isoUrl = cmd.getUrl();
@@ -136,7 +185,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
                 String isoName = String.format("%s-Kubernetes-Binaries-ISO", name);
                 RegisterIsoCmd registerIsoCmd = new RegisterIsoCmd();
                 registerIsoCmd = ComponentContext.inject(registerIsoCmd);
-                Field f = registerIsoCmd.getClass().getDeclaredField("name");
+                Field f = registerIsoCmd.getClass().getDeclaredField("isoName");
                 f.setAccessible(true);
                 f.set(registerIsoCmd, isoName);
                 f = registerIsoCmd.getClass().getDeclaredField("displayText");
@@ -180,7 +229,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
                 }
             }
         }
-        KubernetesSupportedVersionVO supportedVersionVO = new KubernetesSupportedVersionVO(name, template.getId(), zoneId);
+        KubernetesSupportedVersionVO supportedVersionVO = new KubernetesSupportedVersionVO(name, kubernetesVersion, template.getId(), zoneId);
         supportedVersionVO = kubernetesSupportedVersionDao.persist(supportedVersionVO);
         return createKubernetesSupportedVersionResponse(supportedVersionVO);
     }
@@ -189,7 +238,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_DELETE, eventDescription = "Deleting Kubernetes supported version", async = true)
     public boolean deleteKubernetesSupportedVersion(final DeleteKubernetesSupportedVersionCmd cmd) {
         final Long versionId = cmd.getId();
-        final Boolean isDeleteIso = cmd.isDeleteIso();
+        final boolean isDeleteIso = cmd.isDeleteIso();
         KubernetesSupportedVersion version = kubernetesSupportedVersionDao.findById(versionId);
         if (version == null) {
             throw new InvalidParameterValueException("Invalid Kubernetes version id specified");
@@ -199,7 +248,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to delete Kubernetes version ID: %s. Exisiting clusters currently using the version.", version.getUuid()));
         }
 
-        VMTemplateVO template = templateDao.findById(version.getId());
+        VMTemplateVO template = templateDao.findById(version.getIsoId());
         if (template == null) {
             LOGGER.warn(String.format("Unable to find ISO associated with supported Kubernetes version ID: %s", version.getUuid()));
         }

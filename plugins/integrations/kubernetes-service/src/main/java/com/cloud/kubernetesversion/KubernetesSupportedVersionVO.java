@@ -43,6 +43,9 @@ public class KubernetesSupportedVersionVO implements KubernetesSupportedVersion 
     @Column(name = "name")
     private String name;
 
+    @Column(name = "kubernetes_version")
+    private String kubernetesVersion;
+
     @Column(name = "iso_id")
     private long isoId;
 
@@ -59,9 +62,10 @@ public class KubernetesSupportedVersionVO implements KubernetesSupportedVersion 
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public KubernetesSupportedVersionVO(String name, long isoId, Long zoneId) {
+    public KubernetesSupportedVersionVO(String name, String kubernetesVersion, long isoId, Long zoneId) {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
+        this.kubernetesVersion = kubernetesVersion;
         this.isoId = isoId;
         this.zoneId = zoneId;
     }
@@ -83,6 +87,15 @@ public class KubernetesSupportedVersionVO implements KubernetesSupportedVersion 
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public String getKubernetesVersion() {
+        return kubernetesVersion;
+    }
+
+    public void setKubernetesVersion(String kubernetesVersion) {
+        this.kubernetesVersion = kubernetesVersion;
     }
 
     @Override

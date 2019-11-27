@@ -36,6 +36,10 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
     @Param(description = "Name of the Kubernetes supported version")
     private String name;
 
+    @SerializedName(ApiConstants.KUBERNETES_VERSION)
+    @Param(description = "Semantic Kubernetes version")
+    private String kubernetesVersion;
+
     @SerializedName(ApiConstants.ISO_ID)
     @Param(description = "the id of the binaries ISO for Kubernetes supported version")
     private String isoId;
@@ -70,6 +74,14 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getKubernetesVersion() {
+        return kubernetesVersion;
+    }
+
+    public void setKubernetesVersion(String kubernetesVersion) {
+        this.kubernetesVersion = kubernetesVersion;
     }
 
     public String getIsoId() {

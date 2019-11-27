@@ -742,12 +742,15 @@ public class ApiConstants {
     public static final String TARGET_ID = "targetid";
     public static final String VOLUME_IDS = "volumeids";
 
-    public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
     public static final String CONSOLE_END_POINT = "consoleendpoint";
+    public static final String DELETE_ISO = "deleteiso";
     public static final String DOCKER_REGISTRY_USER_NAME = "dockerregistryusername";
     public static final String DOCKER_REGISTRY_PASSWORD = "dockerregistrypassword";
     public static final String DOCKER_REGISTRY_URL = "dockerregistryurl";
     public static final String DOCKER_REGISTRY_EMAIL = "dockerregistryemail";
+    public static final String KUBERNETES_VERSION = "kubernetesversion";
+    public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
+    public static final String MIN_KUBERNETES_VERSION = "minimumkubernetesversion";
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
 
     public enum HostDetails {

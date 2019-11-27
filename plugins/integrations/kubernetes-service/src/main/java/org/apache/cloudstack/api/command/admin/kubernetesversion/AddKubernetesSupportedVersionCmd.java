@@ -35,11 +35,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.kubernetesversion.KubernetesSupportedVersion;
 import com.cloud.kubernetesversion.KubernetesVersionService;
+import com.google.common.base.Strings;
 
 @APICommand(name = AddKubernetesSupportedVersionCmd.APINAME,
         description = "Add a supported Kubernetes version",
@@ -60,6 +62,10 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements UserCmd
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
             description = "the name of the Kubernetes supported version")
     private String name;
+
+    @Parameter(name = ApiConstants.KUBERNETES_VERSION, type = CommandType.STRING, required = true,
+            description = "the semantic version of the Kubernetes")
+    private String kubernetesVersion;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = ZoneResponse.class,
@@ -86,6 +92,16 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements UserCmd
 
     public String getName() {
         return name;
+    }
+
+    public String getKubernetesVersion() {
+        if(Strings.isNullOrEmpty(kubernetesVersion)) {
+            throw new InvalidParameterValueException("Version can not be null");
+        }
+        if(!kubernetesVersion.matches("[0-9]+(\\.[0-9]+)*")) {
+            throw new IllegalArgumentException("Invalid version format. Semantic version needed");
+        }
+        return kubernetesVersion;
     }
 
     public Long getZoneId() {
