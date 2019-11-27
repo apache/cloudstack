@@ -81,6 +81,13 @@ class TestHostMaintenanceBase(cloudstackTestCase):
         self.logger.debug("Host with id %s is cancelling maintenance" % hostid)
         return res
 
+    def revert_host_state_on_failure(self, hostId):
+        cmd = updateHost.updateHostCmd()
+        cmd.id = hostId
+        cmd.allocationstate = "Enable"
+        response = self.apiclient.updateHost(cmd)
+        self.assertEqual(response.resourcestate, "Enabled")
+
 
 class TestHostMaintenance(TestHostMaintenanceBase):
 
@@ -98,7 +105,6 @@ class TestHostMaintenance(TestHostMaintenanceBase):
         self.cleanup = []
         self.ssh_client = None
         self.needs_unblock_iptables = False
-        self.hostIdToCancelMaintenance = None
         self.hostConfig = self.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
 
 
@@ -107,13 +113,6 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             if self.ssh_client is not None and self.needs_unblock_iptables:
                 self.ssh_client.execute("iptables -D OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 49152:49215 -m comment --comment 'test block migrations'")
                 self.ssh_client.execute("iptables -D OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 16509 -m comment --comment 'test block migrations'")
-            try:
-                if self.hostIdToCancelMaintenance is not None:
-                    self.cancel_host_maintenance(self.hostIdToCancelMaintenance)
-            except Exception as e:
-                self.logger.debug("Attempted host maintenance cancel but it threw exception. Skipping.")
-
-            self.hostIdToCancelMaintenance = None
 
             # Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
@@ -254,14 +253,11 @@ class TestHostMaintenance(TestHostMaintenanceBase):
         migrations_finished = wait_until(5, 200, self.migrationsFinished, target_host_id)
 
         self.wait_until_host_is_in_state(target_host_id, "Maintenance", 5, 200)
-        self.hostIdToCancelMaintenance = target_host_id
 
         vm_count_after_maintenance = self.noOfVMsOnHost(target_host_id)
 
         self.cancel_host_maintenance(target_host_id)
-        host_reached_enabled = self.wait_until_host_is_in_state(target_host_id, "Enabled", 5, 200)
-        if host_reached_enabled:
-            self.hostIdToCancelMaintenance = None
+        self.wait_until_host_is_in_state(target_host_id, "Enabled", 5, 200)
 
         if vm_count_after_maintenance != 0:
             self.fail("Host to put to maintenance still has VMs running")
@@ -278,6 +274,13 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             "sg"],
         required_hardware="true")
     def test_01_cancel_host_maintenace_with_no_migration_jobs(self):
+        """
+        Tests if putting a host with no migrations (0 VMs) work back and forth
+
+        1) Verify if there are at least 2 hosts in enabled state.
+        2) Put the host into maintenance verify success
+        3) Put the other host into maintenance, verify success
+        """
         listHost = Host.list(
             self.apiclient,
             type='Routing',
@@ -294,22 +297,20 @@ class TestHostMaintenance(TestHostMaintenanceBase):
         if (len(listHost) < 2):
             raise unittest.SkipTest("Canceling tests for host maintenance as we need 2 or more hosts up and enabled")
 
-        migrations_finished = True
-
         try:
 
             migrations_finished = self.hostPrepareAndCancelMaintenance(listHost[0].id, listHost[1].id)
 
             if migrations_finished:
-                migrations_finished = self.hostPrepareAndCancelMaintenance(listHost[1].id, listHost[0].id)
+                self.hostPrepareAndCancelMaintenance(listHost[1].id, listHost[0].id)
+            else:
+                raise unittest.SkipTest("VMs are still migrating so reverse migration /maintenace skipped")
 
         except Exception as e:
+            self.revert_host_state_on_failure(listHost[0].id)
+            self.revert_host_state_on_failure(listHost[1].id)
             self.logger.debug("Exception {}".format(e))
-            self.fail("Cancel host maintenance failed {}".format(e[0]))
-
-
-        if not migrations_finished:
-            raise unittest.SkipTest("VMs are still migrating and the test will not be able to check the conditions the test is intended for")
+            self.fail("Host maintenance test failed {}".format(e[0]))
 
 
     @attr(
@@ -349,21 +350,19 @@ class TestHostMaintenance(TestHostMaintenanceBase):
                 self.logger.debug("Creating vms = {}".format(no_vm_req))
                 self.vmlist = self.createVMs(listHost[0].id, no_vm_req)
 
-        migrations_finished = True
-
         try:
             migrations_finished = self.hostPrepareAndCancelMaintenance(listHost[0].id, listHost[1].id)
 
             if migrations_finished:
-                migrations_finished = self.hostPrepareAndCancelMaintenance(listHost[1].id, listHost[0].id)
+                self.hostPrepareAndCancelMaintenance(listHost[1].id, listHost[0].id)
+            else:
+                raise unittest.SkipTest("VMs are still migrating so reverse migration /maintenace skipped")
 
         except Exception as e:
+            self.revert_host_state_on_failure(listHost[0].id)
+            self.revert_host_state_on_failure(listHost[1].id)
             self.logger.debug("Exception {}".format(e))
-            self.fail("Cancel host maintenance failed {}".format(e[0]))
-
-
-        if (migrations_finished == False):
-            raise unittest.SkipTest("VMs are still migrating and the test will not be able to check the conditions the test is intended for")
+            self.fail("Host maintenance test failed {}".format(e[0]))
 
     @attr(
         tags=[
@@ -375,6 +374,8 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             "sg"],
         required_hardware="true")
     def test_03_cancel_host_maintenace_with_migration_jobs_ports_blocked(self):
+        if self.hypervisor.lower() != 'kvm':
+            raise unittest.SkipTest("Skipping migration port blocked test as it's not KVM.")
 
         listHost = Host.list(
             self.apiclient,
@@ -405,24 +406,28 @@ class TestHostMaintenance(TestHostMaintenanceBase):
                 self.logger.debug("Creating vms = {}".format(no_vm_req))
                 self.vmlist = self.createVMs(listHost[0].id, no_vm_req)
 
-        self.ssh_client = self.get_ssh_client(listHost[0].ipaddress, self.hostConfig["username"], self.hostConfig["password"])
-        self.ssh_client.execute("iptables -I OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 49152:49215 -m comment --comment 'test block migrations'")
-        self.ssh_client.execute("iptables -I OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 16509 -m comment --comment 'test block migrations'")
+        try:
+            self.ssh_client = self.get_ssh_client(listHost[0].ipaddress, self.hostConfig["username"], self.hostConfig["password"])
+            self.ssh_client.execute("iptables -I OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 49152:49215 -m comment --comment 'test block migrations'")
+            self.ssh_client.execute("iptables -I OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 16509 -m comment --comment 'test block migrations'")
 
-        self.needs_unblock_iptables = True
+            self.needs_unblock_iptables = True
 
-        # Attempt putting host in maintenance and check if ErrorInMaintenance state is reached
-        self.prepare_host_for_maintenance(target_host_id)
-        error_in_maintenance_reached = self.wait_until_host_is_in_state(target_host_id, "ErrorInMaintenance", 5, 200)
-        self.hostIdToCancelMaintenance = target_host_id
+            # Attempt putting host in maintenance and check if ErrorInMaintenance state is reached
+            self.prepare_host_for_maintenance(target_host_id)
+            error_in_maintenance_reached = self.wait_until_host_is_in_state(target_host_id, "ErrorInMaintenance", 5, 200)
 
-        self.cancel_host_maintenance(target_host_id)
-        host_reached_enabled = self.wait_until_host_is_in_state(target_host_id, "Enabled", 5, 200)
-        if host_reached_enabled:
-            self.hostIdToCancelMaintenance = None
+            self.cancel_host_maintenance(target_host_id)
+            self.wait_until_host_is_in_state(target_host_id, "Enabled", 5, 200)
 
-        if error_in_maintenance_reached == False:
-            self.fail("Error in maintenance state should have reached after ports block")
+            if not error_in_maintenance_reached:
+                self.fail("Error in maintenance state should have reached after ports block")
+
+        except Exception as e:
+            self.revert_host_state_on_failure(listHost[0].id)
+            self.revert_host_state_on_failure(listHost[1].id)
+            self.logger.debug("Exception {}".format(e))
+            self.fail("Host maintenance test failed {}".format(e[0]))
 
 
 class TestHostMaintenanceAgents(TestHostMaintenanceBase):
@@ -573,13 +578,6 @@ class TestHostMaintenanceAgents(TestHostMaintenanceBase):
         )
         self.cleanup.append(vm)
 
-    def revert_host_state_on_failure(self, host):
-        cmd = updateHost.updateHostCmd()
-        cmd.id = host.id
-        cmd.allocationstate = "Enable"
-        response = self.apiclient.updateHost(cmd)
-        self.assertEqual(response.resourcestate, "Enabled")
-
     @skipTestIf("hypervisorNotSupported")
     @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="true")
     def test_01_cancel_host_maintenance_ssh_enabled_agent_connected(self):
@@ -602,7 +600,7 @@ class TestHostMaintenanceAgents(TestHostMaintenanceBase):
             self.wait_until_host_is_in_state(self.host.id, "Enabled")
             self.assert_host_is_functional_after_cancelling_maintenance(self.host.id)
         except Exception as e:
-            self.revert_host_state_on_failure(self.host)
+            self.revert_host_state_on_failure(self.host.id)
             self.fail(e)
 
     @skipTestIf("hypervisorNotSupported")
@@ -638,7 +636,7 @@ class TestHostMaintenanceAgents(TestHostMaintenanceBase):
 
             self.assert_host_is_functional_after_cancelling_maintenance(self.host.id)
         except Exception as e:
-            self.revert_host_state_on_failure(self.host)
+            self.revert_host_state_on_failure(self.host.id)
             self.fail(e)
 
     @skipTestIf("hypervisorNotSupported")
@@ -663,7 +661,7 @@ class TestHostMaintenanceAgents(TestHostMaintenanceBase):
             self.wait_until_host_is_in_state(self.host.id, "Enabled")
             self.assert_host_is_functional_after_cancelling_maintenance(self.host.id)
         except Exception as e:
-            self.revert_host_state_on_failure(self.host)
+            self.revert_host_state_on_failure(self.host.id)
             self.fail(e)
 
     @skipTestIf("hypervisorNotSupported")
@@ -694,7 +692,7 @@ class TestHostMaintenanceAgents(TestHostMaintenanceBase):
             ssh_client.execute("service cloudstack-agent stop")
             self.wait_until_agent_is_in_state(self.host.id, "Disconnected")
         except Exception as e:
-            self.revert_host_state_on_failure(self.host)
+            self.revert_host_state_on_failure(self.host.id)
             self.fail(e)
 
         self.assertRaises(Exception, self.cancel_host_maintenance, self.host.id)
@@ -709,5 +707,5 @@ class TestHostMaintenanceAgents(TestHostMaintenanceBase):
             self.wait_until_host_is_in_state(self.host.id, "Enabled")
             self.assert_host_is_functional_after_cancelling_maintenance(self.host.id)
         except Exception as e:
-            self.revert_host_state_on_failure(self.host)
+            self.revert_host_state_on_failure(self.host.id)
             self.fail(e)
