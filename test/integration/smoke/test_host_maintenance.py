@@ -103,17 +103,11 @@ class TestHostMaintenance(TestHostMaintenanceBase):
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.pod = get_pod(self.apiclient, self.zone.id)
         self.cleanup = []
-        self.ssh_client = None
-        self.needs_unblock_iptables = False
         self.hostConfig = self.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
 
 
     def tearDown(self):
         try:
-            if self.ssh_client is not None and self.needs_unblock_iptables:
-                self.ssh_client.execute("iptables -D OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 49152:49215 -m comment --comment 'test block migrations'")
-                self.ssh_client.execute("iptables -D OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 16509 -m comment --comment 'test block migrations'")
-
             # Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -122,7 +116,7 @@ class TestHostMaintenance(TestHostMaintenanceBase):
 
         return
     
-    def createVMs(self, hostId, number):
+    def createVMs(self, hostId, number, offering_key="tiny"):
         
         self.template = get_template(
             self.apiclient,
@@ -137,7 +131,7 @@ class TestHostMaintenance(TestHostMaintenanceBase):
                 
         self.service_offering = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offerings"]["tiny"]
+            self.services["service_offerings"][offering_key]
         )
         self.logger.debug("Using service offering %s " % self.service_offering.id)
         self.network_offering = NetworkOffering.create(
@@ -323,7 +317,14 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             "sg"],
         required_hardware="true")
     def test_02_cancel_host_maintenace_with_migration_jobs(self):
+        """
+        Tests if putting a host with migrations (3 VMs) work back and forth
 
+        1) Verify if there are at least 2 hosts in enabled state.
+        2) Deploy VMs if needed
+        3) Put the host into maintenance verify success -ensure existing host has zero running VMs
+        4) Put the other host into maintenance, verify success just as step 3
+        """
         listHost = Host.list(
             self.apiclient,
             type='Routing',
@@ -373,10 +374,14 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             "eip",
             "sg"],
         required_hardware="true")
-    def test_03_cancel_host_maintenace_with_migration_jobs_ports_blocked(self):
-        if self.hypervisor.lower() != 'kvm':
-            raise unittest.SkipTest("Skipping migration port blocked test as it's not KVM.")
+    def test_03_cancel_host_maintenace_with_migration_jobs_failure(self):
+        """
+        Tests if putting a host with impossible migrations (2 VMs) work pushes to ErrorInMaintenance state
 
+        1) Verify if there are at least 2 hosts in enabled state.
+        2) Tag the host and deploy tagged VMs which cannot be migrated to other host without tags
+        3) Put the host into maintenance verify it fails with it reaching ErrorInMaintenance
+        """
         listHost = Host.list(
             self.apiclient,
             type='Routing',
@@ -394,31 +399,30 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             raise unittest.SkipTest("Canceling tests for host maintenance as we need 2 or more hosts up and enabled")
 
         target_host_id = listHost[0].id
-        other_host_id = listHost[1].id
-
-        no_of_vms = self.noOfVMsOnHost(target_host_id)
-
-        # Need only 2 VMs for this case.
-        if no_of_vms < 2:
-            self.logger.debug("Create VMs as there are not enough vms to check host maintenance")
-            no_vm_req = 2 - no_of_vms
-            if (no_vm_req > 0):
-                self.logger.debug("Creating vms = {}".format(no_vm_req))
-                self.vmlist = self.createVMs(listHost[0].id, no_vm_req)
 
         try:
-            self.ssh_client = self.get_ssh_client(listHost[0].ipaddress, self.hostConfig["username"], self.hostConfig["password"])
-            self.ssh_client.execute("iptables -I OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 49152:49215 -m comment --comment 'test block migrations'")
-            self.ssh_client.execute("iptables -I OUTPUT -j REJECT -m state --state NEW -m tcp -p tcp --dport 16509 -m comment --comment 'test block migrations'")
+            Host.update(self.apiclient,
+                        id=target_host_id,
+                        hosttags=self.services["service_offerings"]["taggedsmall"]["hosttags"])
 
-            self.needs_unblock_iptables = True
+            no_of_vms = self.noOfVMsOnHost(target_host_id)
+
+            # Need only 2 VMs for this case.
+            if no_of_vms < 2:
+                self.logger.debug("Create VMs as there are not enough vms to check host maintenance")
+                no_vm_req = 2 - no_of_vms
+                if (no_vm_req > 0):
+                    self.logger.debug("Creating vms = {}".format(no_vm_req))
+                    self.vmlist = self.createVMs(listHost[0].id, no_vm_req, "taggedsmall")
 
             # Attempt putting host in maintenance and check if ErrorInMaintenance state is reached
             self.prepare_host_for_maintenance(target_host_id)
-            error_in_maintenance_reached = self.wait_until_host_is_in_state(target_host_id, "ErrorInMaintenance", 5, 200)
+            error_in_maintenance_reached = self.wait_until_host_is_in_state(target_host_id, "ErrorInMaintenance", 5, 300)
 
             self.cancel_host_maintenance(target_host_id)
             self.wait_until_host_is_in_state(target_host_id, "Enabled", 5, 200)
+
+            Host.update(self.apiclient, id=target_host_id, hosttags="")
 
             if not error_in_maintenance_reached:
                 self.fail("Error in maintenance state should have reached after ports block")
@@ -426,6 +430,7 @@ class TestHostMaintenance(TestHostMaintenanceBase):
         except Exception as e:
             self.revert_host_state_on_failure(listHost[0].id)
             self.revert_host_state_on_failure(listHost[1].id)
+            Host.update(self.apiclient, id=target_host_id, hosttags="")
             self.logger.debug("Exception {}".format(e))
             self.fail("Host maintenance test failed {}".format(e[0]))
 
