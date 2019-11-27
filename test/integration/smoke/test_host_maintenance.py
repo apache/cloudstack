@@ -250,8 +250,6 @@ class TestHostMaintenance(TestHostMaintenanceBase):
                 not wait_until(3, 100, self.checkAllVmsRunningOnHost, other_host_id):
             raise Exception("Failed to wait for all VMs to reach running state to execute test")
 
-        expected_vm_count_after_maintenance = self.noOfVMsOnHost(target_host_id) + self.noOfVMsOnHost(other_host_id)
-
         self.prepare_host_for_maintenance(target_host_id)
         migrations_finished = wait_until(5, 200, self.migrationsFinished, target_host_id)
 
@@ -285,13 +283,16 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             type='Routing',
             zoneid=self.zone.id,
             podid=self.pod.id,
+            hypervisor=self.hypervisor,
+            resourcestate='Enabled',
+            state='Up'
         )
         for host in listHost:
-            self.logger.debug('1 Hypervisor = {}'.format(host.id))
+            self.logger.debug('Found Host = {}'.format(host.id))
 
 
         if (len(listHost) < 2):
-            raise unittest.SkipTest("Cancel host maintenance when VMs are migrating should be tested for 2 or more hosts")
+            raise unittest.SkipTest("Canceling tests for host maintenance as we need 2 or more hosts up and enabled")
 
         migrations_finished = True
 
@@ -327,12 +328,15 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             type='Routing',
             zoneid=self.zone.id,
             podid=self.pod.id,
+            hypervisor=self.hypervisor,
+            resourcestate='Enabled',
+            state='Up'
         )
         for host in listHost:
-            self.logger.debug('2 Hypervisor = {}'.format(host.id))
+            self.logger.debug('Found Host = {}'.format(host.id))
 
         if (len(listHost) < 2):
-            raise unittest.SkipTest("Cancel host maintenance when VMs are migrating can only be tested with 2 hosts")
+            raise unittest.SkipTest("Canceling tests for host maintenance as we need 2 or more hosts up and enabled")
 
         no_of_vms = self.noOfVMsOnHost(listHost[0].id)
 
@@ -377,13 +381,16 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             type='Routing',
             zoneid=self.zone.id,
             podid=self.pod.id,
+            hypervisor=self.hypervisor,
+            resourcestate='Enabled',
+            state='Up'
         )
+
         for host in listHost:
-            self.logger.debug('2 Hypervisor = {}'.format(host.id))
+            self.logger.debug('Found Host = {}'.format(host.id))
 
         if (len(listHost) < 2):
-            raise unittest.SkipTest("Cancel host maintenance when VMs are migrating can only be tested with 2 hosts");
-            return
+            raise unittest.SkipTest("Canceling tests for host maintenance as we need 2 or more hosts up and enabled")
 
         target_host_id = listHost[0].id
         other_host_id = listHost[1].id
@@ -543,7 +550,7 @@ class TestHostMaintenanceAgents(TestHostMaintenanceBase):
             state='Up'
         )
         if len(hosts) < 2:
-            raise unittest.SkipTest("Cancel host maintenance must be tested for 2 or more hosts")
+            raise unittest.SkipTest("Host maintenance tests must be tested for 2 or more hosts")
         return hosts[0]
 
     def deploy_vm_on_host(self, hostid):
