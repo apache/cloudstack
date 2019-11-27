@@ -113,8 +113,12 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             description = "name of the ssh key pair used to login to the virtual machines")
     private String sshKeyPairName;
 
+    @Parameter(name=ApiConstants.MASTER_NODES, type = CommandType.LONG,
+            description = "number of Kubernetes cluster master nodes, default is 1")
+    private Long masterNodes;
+
     @Parameter(name=ApiConstants.SIZE, type = CommandType.LONG,
-            required = true, description = "number of Kubernetes cluster nodes")
+            required = true, description = "number of Kubernetes cluster worker nodes")
     private Long clusterSize;
 
     @Parameter(name = ApiConstants.DOCKER_REGISTRY_USER_NAME, type = CommandType.STRING,
@@ -179,6 +183,13 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     public String getSSHKeyPairName() {
         return sshKeyPairName;
+    }
+
+    public Long getMasterNodes() {
+        if (masterNodes == null) {
+            return 1L;
+        }
+        return masterNodes;
     }
 
     public Long getClusterSize() {

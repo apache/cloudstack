@@ -140,7 +140,10 @@
                                 label: 'Add Kubernetes cluster',
                                 createForm: {
                                     title: 'Add Kubernetes cluster',
-                                    preFilter: cloudStack.preFilter.createTemplate,
+                                    preFilter: function(args) {
+                                        args.$form.find('.form-item[rel=masternodes]').find('input[name=masternodes]').val('1');
+                                        args.$form.find('.form-item[rel=size]').find('input[name=size]').val('1');
+                                    },
                                     fields: {
                                         name: {
                                             label: 'label.name',
@@ -184,15 +187,16 @@
                                         },
                                         kubernetesversion: {
                                             label: 'Kubernetes version',
-                                            dependsOn: 'zone',
+                                            dependsOn: ['zone'],
                                             //docID: 'helpKubernetesClusterZone',
                                             validation: {
                                                 required: true
                                             },
                                             select: function(args) {
+                                                var filterData = { zoneid: args.zone };
                                                 $.ajax({
                                                     url: createURL("listKubernetesSupportedVersions"),
-                                                    data: { zoneid: args.zone },
+                                                    data: filterData,
                                                     dataType: "json",
                                                     async: true,
                                                     url: createURL("listKubernetesSupportedVersions"),
@@ -284,12 +288,27 @@
                                                 });
                                             }
                                         },
-                                        size: {
-                                            label: 'Cluster size',
+                                        multimaster: {
+                                            label: "HA (Multi-master)",
+                                            isBoolean: true,
+                                            isChecked: false,
+                                        },
+                                        masternodes: {
+                                            label: 'Master nodes',
                                             //docID: 'helpKubernetesClusterSize',
                                             validation: {
                                                 required: true,
-                                                number: true
+                                                naturalnumber: true
+                                            },
+                                            dependsOn: "multimaster",
+                                            isHidden: true,
+                                        },
+                                        size: {
+                                            label: 'Cluster size (Worker nodes)',
+                                            //docID: 'helpKubernetesClusterSize',
+                                            validation: {
+                                                required: true,
+                                                naturalnumber: true
                                             },
                                         },
                                         sshkeypair: {
@@ -379,6 +398,14 @@
                                             noderootdisksize: args.data.noderootdisksize
                                         });
                                     }
+
+                                    var masterNodes = 1;
+                                    if (args.data.multimaster === 'on') {
+                                        masterNodes = args.data.masternodes;
+                                    }
+                                    $.extend(data, {
+                                        masternodes: masterNodes
+                                    });
 
                                     if (args.data.supportPrivateRegistry) {
                                         $.extend(data, {
@@ -805,7 +832,7 @@
                                                         }
                                                     }
                                                 });
-                                                return jQuery('<br><p>').html("Access Kubernetes cluster<br>Download Config File<br><br>Use kubectl<br><code>kubectl --kubeconfig /custom/path/kube.config {COMMAND}</code><br><br>List pods<br><code>kubectl --kubeconfig /custom/path/kube.config get pods --all-namespaces</code><br>Access dashboard web UI<br>Run proxy locally<br><code>kubectl --kubeconfig /custom/path/kube.config proxy</code><br>Open URL in browser<br><code>http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/</code>");
+                                                return jQuery('<br><p>').html("Access Kubernetes cluster<br>Download Config File<br><br>Use kubectl<br><code>kubectl --kubeconfig /custom/path/kube.config {COMMAND}</code><br><br>List pods<br><code>kubectl --kubeconfig /custom/path/kube.config get pods --all-namespaces</code><br>Access dashboard web UI<br>Run proxy locally<br><code>kubectl --kubeconfig /custom/path/kube.config proxy</code><br>Open URL in browser<br><code>http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/</code>");
                                                 // return jQuery('<br><p>').html("Access Kubernetes cluster<br>Download Config File<br><br>How to do this<br><code>kubectl --kubeconfig /custom/path/kube.config get pods</code>");
                                             }
 

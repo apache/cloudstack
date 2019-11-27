@@ -84,7 +84,6 @@ public class GetKubernetesClusterConfigCmd extends BaseCmd {
 
     @Override
     public void execute() {
-
         KubernetesClusterConfigResponse response = kubernetesClusterService.getKubernetesClusterConfig(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);

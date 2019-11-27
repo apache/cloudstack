@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster` (
     `service_offering_id` bigint unsigned COMMENT 'service offering id for the cluster VM',
     `template_id` bigint unsigned COMMENT 'vm_template.id',
     `network_id` bigint unsigned COMMENT 'network this kubernetes cluster uses',
+    `master_node_count` bigint NOT NULL default '0',
     `node_count` bigint NOT NULL default '0',
     `account_id` bigint unsigned NOT NULL COMMENT 'owner of this cluster',
     `domain_id` bigint unsigned NOT NULL COMMENT 'owner of this cluster',

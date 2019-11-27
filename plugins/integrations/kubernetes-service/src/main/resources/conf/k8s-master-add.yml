@@ -155,7 +155,7 @@ write-files:
       modprobe ip_vs_sh
       modprobe nf_conntrack_ipv4
       export PATH=$PATH:/opt/bin
-      kubeadm join {{ k8s_master.join_ip }}:6443 --token {{ k8s_master.cluster.token }} --discovery-token-unsafe-skip-ca-verification
+      kubeadm join {{ k8s_master.join_ip }}:6443 --token {{ k8s_master.cluster.token }} --control-plane --certificate-key {{ k8s_master.cluster.ha.certificate.key }} --discovery-token-unsafe-skip-ca-verification
 
 coreos:
   units:

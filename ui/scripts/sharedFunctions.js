@@ -2709,12 +2709,24 @@ jQuery.validator.addMethod("ipv6CustomJqueryValidator", function(value, element)
 
 $.validator.addMethod("allzonesonly", function(value, element){
 
-    if ((value.indexOf("-1") != -1) &&(value.length > 1))
+    if ((value.indexOf("-1") != -1) && (value.length > 1))
         return false;
     return true;
 
 },
 "All Zones cannot be combined with any other zone");
+
+
+$.validator.addMethod("naturalnumber", function(value, element){
+    if (this.optional(element) && value.length == 0)
+        return true;
+    if (isNaN(value))
+        return false;
+    value = parseInt(value);
+    return (typeof value === 'number') && (value > 0.0) && (Math.floor(value) === value) && value !== Infinity;
+
+},
+"Please enter a valid number, 1 or greater");
 
 cloudStack.createTemplateMethod = function (isSnapshot){
 	return {
