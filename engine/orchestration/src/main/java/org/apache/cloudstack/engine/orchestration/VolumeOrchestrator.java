@@ -1656,9 +1656,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         if (template != null) {
-            if (template.getFormat() == ImageFormat.ISO) {
+            if (ImageFormat.ISO.equals(template.getFormat())) {
                 vol.setIsoId(template.getId());
-            } else if (template.getTemplateType().equals(Storage.TemplateType.DATADISK)) {
+            } else if (Storage.TemplateType.DATADISK.equals(template.getTemplateType())) {
                 vol.setTemplateId(template.getId());
             }
             if (type == Type.ROOT) {
@@ -1667,7 +1667,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         // display flag matters only for the User vms
-        if (vm.getType() == VirtualMachine.Type.User) {
+        if (VirtualMachine.Type.User.equals(vm.getType())) {
             UserVmVO userVm = _userVmDao.findById(vm.getId());
             vol.setDisplayVolume(userVm.isDisplayVm());
         }
