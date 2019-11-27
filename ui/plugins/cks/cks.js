@@ -740,6 +740,9 @@
                                         zonename: {
                                             label: 'label.zone.name'
                                         },
+                                        masternodes : {
+                                            label: 'Master nodes'
+                                        },
                                         size : {
                                             label: 'Cluster Size'
                                         },

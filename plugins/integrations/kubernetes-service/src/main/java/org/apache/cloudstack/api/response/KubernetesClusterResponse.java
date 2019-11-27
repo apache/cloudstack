@@ -29,6 +29,89 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 @EntityReference(value = {KubernetesCluster.class})
 public class KubernetesClusterResponse extends BaseResponse implements ControlledEntityResponse {
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the id of the Kubernetes cluster")
+    private String id;
+
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "Name of the Kubernetes cluster")
+    private String name;
+
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "Description of the Kubernetes cluster")
+    private String description;
+
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "zone id")
+    private String zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "zone name")
+    private String zoneName;
+
+    @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
+    @Param(description = "Service Offering id")
+    private String serviceOfferingId;
+
+    @SerializedName("serviceofferingname")
+    @Param(description = "the name of the service offering of the virtual machine")
+    private String serviceOfferingName;
+
+    @SerializedName(ApiConstants.TEMPLATE_ID)
+    @Param(description = "template id")
+    private String templateId;
+
+    @SerializedName(ApiConstants.NETWORK_ID)
+    @Param(description = "network id details")
+    private String networkId;
+
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_NAME)
+    @Param(description = "the name of the Network associated with the IP address")
+    private String associatedNetworkName;
+
+    @SerializedName(ApiConstants.SSH_KEYPAIR)
+    @Param(description = "keypair details")
+    private String keypair;
+
+    @SerializedName(ApiConstants.MASTER_NODES)
+    @Param(description = "master nodes count")
+    private Long masterNodes;
+
+    @SerializedName(ApiConstants.SIZE)
+    @Param(description = "cluster size")
+    private Long clusterSize;
+
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "state of the cluster")
+    private String state;
+
+    @SerializedName(ApiConstants.CPU_NUMBER)
+    @Param(description = "cluster cpu cores")
+    private String cores;
+
+    @SerializedName(ApiConstants.MEMORY)
+    @Param(description = "cluster size")
+    private String memory;
+
+    @SerializedName(ApiConstants.END_POINT)
+    @Param(description = "URL end point for the cluster")
+    private String endpoint;
+
+    @SerializedName(ApiConstants.CONSOLE_END_POINT)
+    @Param(description = "URL end point for the cluster UI")
+    private String consoleEndpoint;
+
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_IDS)
+    @Param(description = "the list of virtualmachine ids associated with this Kubernetes cluster")
+    private List<String> virtualMachineIds;
+
+    @SerializedName(ApiConstants.USERNAME)
+    @Param(description = "Username with which Kubernetes cluster is setup")
+    private String username;
+
+    @SerializedName(ApiConstants.PASSWORD)
+    @Param(description = "Password with which Kubernetes cluster is setup")
+    private String password;
 
     public String getName() {
         return name;
@@ -94,11 +177,19 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
         this.keypair = keypair;
     }
 
-    public String getClusterSize() {
+    public Long getMasterNodes() {
+        return masterNodes;
+    }
+
+    public void setMasterNodes(Long masterNodes) {
+        this.masterNodes = masterNodes;
+    }
+
+    public Long getClusterSize() {
         return clusterSize;
     }
 
-    public void setClusterSize(String clusterSize) {
+    public void setClusterSize(Long clusterSize) {
         this.clusterSize = clusterSize;
     }
 
@@ -126,9 +217,9 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
 
     public void setEndpoint(String endpoint) {this.endpoint = endpoint;}
 
-    public String getConsoleEndpoint() { return  consoleendpoint;}
+    public String getConsoleEndpoint() { return consoleEndpoint;}
 
-    public void setConsoleEndpoint(String consoleendpoint) {this.consoleendpoint = consoleendpoint;}
+    public void setConsoleEndpoint(String consoleEndpoint) {this.consoleEndpoint = consoleEndpoint;}
 
     public String getId() {
         return this.id;
@@ -164,50 +255,6 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
         return virtualMachineIds;
     }
 
-    public String getConsoleendpoint() {
-        return consoleendpoint;
-    }
-
-    @SerializedName(ApiConstants.ID)
-    @Param(description = "the id of the Kubernetes cluster")
-    private String id;
-
-    @SerializedName(ApiConstants.NAME)
-    @Param(description = "Name of the Kubernetes cluster")
-    private String name;
-
-    @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "Description of the Kubernetes cluster")
-    private String description;
-
-    @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "zone id")
-    private String zoneId;
-
-    @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "zone name")
-    private String zoneName;
-
-    @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
-    @Param(description = "Service Offering id")
-    private String serviceOfferingId;
-
-    @SerializedName("serviceofferingname")
-    @Param(description = "the name of the service offering of the virtual machine")
-    private String serviceOfferingName;
-
-    @SerializedName(ApiConstants.TEMPLATE_ID)
-    @Param(description = "template id")
-    private String templateId;
-
-    @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "network id details")
-    private String networkId;
-
-    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_NAME)
-    @Param(description = "the name of the Network associated with the IP address")
-    private String associatedNetworkName;
-
     public String getAssociatedNetworkName() {
         return associatedNetworkName;
     }
@@ -215,46 +262,6 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     public void setAssociatedNetworkName(String associatedNetworkName) {
         this.associatedNetworkName = associatedNetworkName;
     }
-
-    @SerializedName(ApiConstants.SSH_KEYPAIR)
-    @Param(description = "keypair details")
-    private String keypair;
-
-    @SerializedName(ApiConstants.SIZE)
-    @Param(description = "cluster size")
-    private String clusterSize;
-
-    @SerializedName(ApiConstants.STATE)
-    @Param(description = "state of the cluster")
-    private String state;
-
-    @SerializedName(ApiConstants.CPU_NUMBER)
-    @Param(description = "cluster cpu cores")
-    private String cores;
-
-    @SerializedName(ApiConstants.MEMORY)
-    @Param(description = "cluster size")
-    private String memory;
-
-    @SerializedName(ApiConstants.END_POINT)
-    @Param(description = "URL end point for the cluster")
-    private String endpoint;
-
-    @SerializedName(ApiConstants.CONSOLE_END_POINT)
-    @Param(description = "URL end point for the cluster UI")
-    private String consoleendpoint;
-
-    @SerializedName(ApiConstants.VIRTUAL_MACHINE_IDS)
-    @Param(description = "the list of virtualmachine ids associated with this Kubernetes cluster")
-    private List<String> virtualMachineIds;
-
-    @SerializedName(ApiConstants.USERNAME)
-    @Param(description = "Username with which Kubernetes cluster is setup")
-    private String username;
-
-    @SerializedName(ApiConstants.PASSWORD)
-    @Param(description = "Password with which Kubernetes cluster is setup")
-    private String password;
 
     public KubernetesClusterResponse() {
 

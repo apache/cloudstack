@@ -2262,14 +2262,15 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     public KubernetesClusterResponse createKubernetesClusterResponse(long kubernetesClusterId) {
         KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(kubernetesClusterId);
         KubernetesClusterResponse response = new KubernetesClusterResponse();
-        response.setObjectName("kubernetescluster");
+        response.setObjectName(KubernetesCluster.class.getSimpleName().toLowerCase());
         response.setId(kubernetesCluster.getUuid());
         response.setName(kubernetesCluster.getName());
         response.setDescription(kubernetesCluster.getDescription());
         DataCenterVO zone = ApiDBUtils.findZoneById(kubernetesCluster.getZoneId());
         response.setZoneId(zone.getUuid());
         response.setZoneName(zone.getName());
-        response.setClusterSize(String.valueOf(kubernetesCluster.getNodeCount()));
+        response.setMasterNodes(kubernetesCluster.getMasterNodeCount());
+        response.setClusterSize(kubernetesCluster.getNodeCount());
         VMTemplateVO template = ApiDBUtils.findTemplateById(kubernetesCluster.getTemplateId());
         response.setTemplateId(template.getUuid());
         ServiceOfferingVO offering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
