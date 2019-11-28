@@ -909,9 +909,6 @@
                                                             json.getkubernetesclusterconfigresponse.clusterconfig.configdata != null ) {
                                                             jsonObj = json.getkubernetesclusterconfigresponse.clusterconfig;
                                                             clusterKubeConfig = jsonObj.configdata ;
-                                                            args.response.success({
-                                                                data: jsonObj
-                                                            });
                                                         }
                                                     }
                                                 });
