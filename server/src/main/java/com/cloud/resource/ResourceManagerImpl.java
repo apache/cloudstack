@@ -1409,6 +1409,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         // Step 0: First gather if VMs have pending HAWork for migration with retries left.
         final List<VMInstanceVO> allVmsOnHost = _vmDao.listByHostId(hostId);
+        final boolean hasMigratingAwayVms = CollectionUtils.isNotEmpty(_vmDao.listVmsMigratingFromHost(hostId));
         boolean hasPendingMigrationRetries = false;
         for (VMInstanceVO vmInstanceVO : allVmsOnHost) {
             if (_haMgr.hasPendingMigrationsWork(vmInstanceVO.getId())) {
@@ -1419,7 +1420,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         // Step 1: If there are no VMs in migrating, running, starting, stopping, error or unknown state we can safely move the host to maintenance.
-        if (CollectionUtils.isEmpty(_vmDao.findByHostInStates(host.getId(),
+        if (!hasMigratingAwayVms && CollectionUtils.isEmpty(_vmDao.findByHostInStates(host.getId(),
                 State.Migrating, State.Running, State.Starting, State.Stopping, State.Error, State.Unknown))) {
             if (hasPendingMigrationRetries) {
                 s_logger.error("There should not be pending retries VMs for this host as there are no running, migrating," +
@@ -1431,7 +1432,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // Step 2: Gather relevant VMs' states on the host and then based on them we can determine if
         final List<VMInstanceVO> failedMigrations = new ArrayList<>(_vmDao.listNonMigratingVmsByHostEqualsLastHost(hostId));
         final List<VMInstanceVO> errorVms = new ArrayList<>(_vmDao.findByHostInStates(hostId, State.Unknown, State.Error));
-        final boolean hasMigratingAwayVms = CollectionUtils.isNotEmpty(_vmDao.listVmsMigratingFromHost(hostId));
         final boolean hasRunningVms = CollectionUtils.isNotEmpty(_vmDao.findByHostInStates(hostId, State.Running));
         final boolean hasFailedMigrations = CollectionUtils.isNotEmpty(failedMigrations);
         final boolean hasVmsInFailureStates = CollectionUtils.isNotEmpty(errorVms);
