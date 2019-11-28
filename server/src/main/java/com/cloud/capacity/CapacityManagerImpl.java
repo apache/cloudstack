@@ -590,6 +590,12 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             s_logger.debug("Found " + vms.size() + " VMs on host " + host.getId());
         }
 
+        final List<VMInstanceVO> vosMigrating = _vmDao.listVmsMigratingFromHost(host.getId());
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Found " + vosMigrating.size() + " VMs are Migrating from host " + host.getId());
+        }
+        vms.addAll(vosMigrating);
+
         ClusterVO cluster = _clusterDao.findById(host.getClusterId());
         ClusterDetailsVO clusterDetailCpu = _clusterDetailsDao.findDetail(cluster.getId(), "cpuOvercommitRatio");
         ClusterDetailsVO clusterDetailRam = _clusterDetailsDao.findDetail(cluster.getId(), "memoryOvercommitRatio");

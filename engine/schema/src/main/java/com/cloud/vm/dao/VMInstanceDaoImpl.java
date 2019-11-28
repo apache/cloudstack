@@ -416,7 +416,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     public List<VMInstanceVO> listUpByHostId(Long hostId) {
         SearchCriteria<VMInstanceVO> sc = HostUpSearch.create();
         sc.setParameters("host", hostId);
-        sc.setParameters("states", new Object[] {State.Starting, State.Running});
+        sc.setParameters("states", new Object[] {State.Starting, State.Running, State.Stopping, State.Migrating});
         return listBy(sc);
     }
 
