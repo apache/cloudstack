@@ -2841,6 +2841,7 @@ cloudStack.createTemplateMethod = function (isSnapshot){
                     isChecked: false
                 }
             }
+
         },
         action: function(args) {
             var data = {
@@ -2887,6 +2888,107 @@ cloudStack.createTemplateMethod = function (isSnapshot){
                             },
                             getActionFilter: function() {
                                 return volumeActionfilter;
+                            }
+                        }
+                    });
+                }
+            });
+        },
+        notification: {
+            poll: pollAsyncJobResult
+        }
+    };
+};
+cloudStack.createTemplateFromSnapshotMethod = function (){
+    return {
+        label: 'label.create.template',
+        messages: {
+            confirm: function(args) {
+                return 'message.create.template';
+            },
+            notification: function(args) {
+                return 'label.create.template';
+            }
+        },
+        createForm: {
+            title: 'label.create.template',
+            desc: '',
+
+
+            fields: {
+                name: {
+                    label: 'label.name',
+                    validation: {
+                        required: true
+                    }
+                },
+                displayText: {
+                    label: 'label.description',
+                    validation: {
+                        required: true
+                    }
+                },
+                osTypeId: {
+                    label: 'label.os.type',
+                    select: function(args) {
+                        $.ajax({
+                            url: createURL("listOsTypes"),
+                            dataType: "json",
+                            async: true,
+                            success: function(json) {
+                                var ostypes = json.listostypesresponse.ostype;
+                                var items = [];
+                                $(ostypes).each(function() {
+                                    items.push({
+                                        id: this.id,
+                                        description: this.description
+                                    });
+                                });
+                                args.response.success({
+                                    data: items
+                                });
+                            }
+                        });
+                    }
+                },
+                isPublic: {
+                    label: 'label.public',
+                    isBoolean: true
+                },
+                isPasswordEnabled: {
+                    label: 'label.password.enabled',
+                    isBoolean: true
+                },
+                isdynamicallyscalable: {
+                    label: 'label.dynamically.scalable',
+                    isBoolean: true
+                }
+            }
+        },
+        action: function(args) {
+            var data = {
+                snapshotid: args.context.snapshots[0].id,
+                name: args.data.name,
+                displayText: args.data.displayText,
+                osTypeId: args.data.osTypeId,
+                isPublic: (args.data.isPublic == "on"),
+                passwordEnabled: (args.data.isPasswordEnabled == "on"),
+                isdynamicallyscalable: (args.data.isdynamicallyscalable == "on")
+            };
+
+            $.ajax({
+                url: createURL('createTemplate'),
+                data: data,
+                success: function(json) {
+                    var jid = json.createtemplateresponse.jobid;
+                    args.response.success({
+                        _custom: {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {
+                                return {}; //nothing in this snapshot needs to be updated
+                            },
+                            getActionFilter: function() {
+                                return snapshotActionfilter;
                             }
                         }
                     });
