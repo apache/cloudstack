@@ -19,7 +19,7 @@
   <a-row :gutter="24">
     <a-col :md="18">
       <a-card>
-      <breadcrumb />
+        <breadcrumb />
       </a-card>
     </a-col>
     <a-col
