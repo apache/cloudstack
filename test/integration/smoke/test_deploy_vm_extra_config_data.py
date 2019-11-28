@@ -26,7 +26,8 @@ from marvin.cloudstackAPI import (updateVirtualMachine,
                                   destroyVirtualMachine,
                                   stopVirtualMachine,
                                   startVirtualMachine,
-                                  updateConfiguration)
+                                  updateConfiguration,
+                                  listVirtualMachines)
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (Account,
@@ -146,6 +147,11 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
         cmd.serviceofferingid = self.service_offering.id
         return self.apiclient.deployVirtualMachine(cmd)
 
+    def list_vm(self):
+        cmd = listVirtualMachines.listVirtualMachinesCmd()
+        cmd.hypervisor = self.hypervisor
+        return self.apiclient.listVirtualMachines(cmd)[0]
+
     def update_vm(self, id, extra_config):
         cmd = updateVirtualMachine.updateVirtualMachineCmd()
         cmd.id = id
@@ -213,6 +219,8 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
                               "Exception was not thrown, check kvm global configuration")
         except Exception as e:
             logging.debug(e)
+        finally:
+            self.destroy_vm(self.list_vm().id)
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_02_deploy_vm_with_extraconfig_kvm(self):
@@ -390,6 +398,8 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
                               "Exception was not thrown, check VMWARE global configuration")
         except Exception as e:
             logging.debug(e)
+        finally:
+            self.destroy_vm(self.list_vm().id)
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_05_deploy_vm_with_extraconfig_vmware(self):
@@ -472,8 +482,11 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
             self.assertRaises(Exception,
                               self.deploy_vm(hypervisor, extraconfig),
                               "Exception was not thrown, check XenServer global configuration")
+
         except Exception as e:
             logging.debug(e)
+        finally:
+            self.destroy_vm(self.list_vm().id)
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_07_deploy_vm_with_extraconfig_xenserver(self):
