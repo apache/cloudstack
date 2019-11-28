@@ -99,6 +99,11 @@ public enum ResourceState {
                 ResourceState.PrepareForMaintenance, ResourceState.ErrorInPrepareForMaintenance).contains(state);
     }
 
+    public static boolean canAttemptMaintenance(ResourceState state) {
+        return !Arrays.asList(ResourceState.Maintenance, ResourceState.PrepareForMaintenance,
+                ResourceState.ErrorInPrepareForMaintenance).contains(state);
+    }
+
     protected static final StateMachine<ResourceState, Event> s_fsm = new StateMachine<ResourceState, Event>();
     static {
         s_fsm.addTransition(null, Event.InternalCreated, ResourceState.Enabled);
@@ -129,9 +134,9 @@ public enum ResourceState {
         s_fsm.addTransition(ResourceState.ErrorInPrepareForMaintenance, Event.UnableToMaintain, ResourceState.ErrorInMaintenance);
         s_fsm.addTransition(ResourceState.ErrorInPrepareForMaintenance, Event.ErrorsCorrected, ResourceState.PrepareForMaintenance);
         s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.InternalCreated, ResourceState.ErrorInMaintenance);
+        s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.AdminAskMaintenance, ResourceState.PrepareForMaintenance);
         s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.Disable, ResourceState.Disabled);
         s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.DeleteHost, ResourceState.Disabled);
-        s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.InternalEnterMaintenance, ResourceState.Maintenance);
         s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.AdminCancelMaintenance, ResourceState.Enabled);
         s_fsm.addTransition(ResourceState.Error, Event.InternalCreated, ResourceState.Error);
         s_fsm.addTransition(ResourceState.Disabled, Event.DeleteHost, ResourceState.Disabled);

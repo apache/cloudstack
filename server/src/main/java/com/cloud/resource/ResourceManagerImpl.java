@@ -20,7 +20,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1216,7 +1215,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final HostVO host = _hostDao.findById(hostId);
         s_logger.info("Maintenance: attempting maintenance of host " + host.getUuid());
         ResourceState hostState = host.getResourceState();
-        if (ResourceState.isMaintenanceState(hostState)) {
+        if (!ResourceState.canAttemptMaintenance(hostState)) {
             throw new CloudRuntimeException("Cannot perform maintain when resource state is " + hostState + ", hostId = " + hostId);
         }
 
@@ -1284,7 +1283,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             s_logger.debug("Unable to find host " + hostId);
             throw new InvalidParameterValueException("Unable to find host with ID: " + hostId + ". Please specify a valid host ID.");
         }
-        if (Arrays.asList(ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.ErrorInPrepareForMaintenance).contains(host.getResourceState())) {
+        if (!ResourceState.canAttemptMaintenance(host.getResourceState())) {
             throw new CloudRuntimeException("Host is already in state " + host.getResourceState() + ". Cannot recall for maintenance until resolved.");
         }
 
@@ -2398,10 +2397,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
          * TODO: think twice about returning true or throwing out exception, I
          * really prefer to exception that always exposes bugs
          */
-        if (host.getResourceState() != ResourceState.PrepareForMaintenance &&
-                host.getResourceState() != ResourceState.ErrorInPrepareForMaintenance &&
-                host.getResourceState() != ResourceState.Maintenance &&
-                host.getResourceState() != ResourceState.ErrorInMaintenance) {
+        if (!ResourceState.isMaintenanceState(host.getResourceState())) {
             throw new CloudRuntimeException("Cannot perform cancelMaintenance when resource state is " + host.getResourceState() + ", hostId = " + hostId);
         }
 
