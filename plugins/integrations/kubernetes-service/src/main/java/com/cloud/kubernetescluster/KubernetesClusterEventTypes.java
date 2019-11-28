@@ -22,4 +22,5 @@ public class KubernetesClusterEventTypes {
     public static final String EVENT_KUBERNETES_CLUSTER_START = "KUBERNETES.CLUSTER.START";
     public static final String EVENT_KUBERNETES_CLUSTER_STOP = "KUBERNETES.CLUSTER.STOP";
     public static final String EVENT_KUBERNETES_CLUSTER_SCALE = "KUBERNETES.CLUSTER.SCALE";
+    public static final String EVENT_KUBERNETES_CLUSTER_UPGRADE = "KUBERNETES.CLUSTER.UPGRADE";
 }

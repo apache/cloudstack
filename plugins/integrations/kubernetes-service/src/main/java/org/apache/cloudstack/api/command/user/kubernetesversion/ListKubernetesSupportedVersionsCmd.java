@@ -68,6 +68,11 @@ public class ListKubernetesSupportedVersionsCmd extends BaseListCmd {
             description = "the minimum Kubernetes version")
     private String minimumKubernetesVersion;
 
+    @Parameter(name = ApiConstants.MIN_KUBERNETES_VERSION_ID, type = CommandType.UUID,
+            entityType = KubernetesSupportedVersionResponse.class,
+            description = "the ID of the minimum Kubernetes version")
+    private Long minimumKubernetesVersionId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -85,6 +90,10 @@ public class ListKubernetesSupportedVersionsCmd extends BaseListCmd {
             throw new IllegalArgumentException("Invalid version format");
         }
         return minimumKubernetesVersion;
+    }
+
+    public Long getMinimumKubernetesVersionId() {
+        return minimumKubernetesVersionId;
     }
 
     @Override

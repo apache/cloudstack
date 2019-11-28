@@ -724,7 +724,84 @@
                                     notification: {
                                         poll: pollAsyncJobResult
                                     }
-                                }
+                                },
+                                upgradeKubernetesCluster: {
+                                    label: 'Upgrade Kubernetes Cluster',
+                                    messages: {
+                                        notification: function(args) {
+                                            return 'Upgrade Kubernetes Cluster';
+                                        }
+                                    },
+                                    createForm: {
+                                        title: 'Upgrade Kubernetes Cluster',
+                                        desc: '',
+                                        preFilter: function(args) {},
+                                        fields: {
+                                            kubernetesversion: {
+                                                label: 'Kubernetes version',
+                                                //docID: 'helpKubernetesClusterZone',
+                                                validation: {
+                                                    required: true
+                                                },
+                                                select: function(args) {
+                                                    var filterData = { minimumkubernetesversionid: args.context.kubernetesclusters[0].kubernetesversionid };
+                                                    $.ajax({
+                                                        url: createURL("listKubernetesSupportedVersions"),
+                                                        data: filterData,
+                                                        dataType: "json",
+                                                        async: true,
+                                                        url: createURL("listKubernetesSupportedVersions"),
+                                                        dataType: "json",
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var items = [];
+                                                            var versionObjs = json.listkubernetessupportedversionsresponse.kubernetessupportedversion;
+                                                            if (versionObjs != null) {
+                                                                for (var i = 0; i < versionObjs.length; i++) {
+                                                                    if (versionObjs[i].id != args.context.kubernetesclusters[0].kubernetesversionid &&
+                                                                        versionObjs[i].isostate == 'Active') {
+                                                                        items.push({
+                                                                            id: versionObjs[i].id,
+                                                                            description: versionObjs[i].name
+                                                                        });
+                                                                    }
+                                                                }
+                                                            }
+                                                            args.response.success({
+                                                                data: items
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            },
+                                        }
+                                    },
+                                    action: function(args) {
+                                        var data = {
+                                            id: args.context.kubernetesclusters[0].id,
+                                            kubernetesversionid: args.data.kubernetesversion
+                                        };
+                                        $.ajax({
+                                            url: createURL('upgradeKubernetesCluster'),
+                                            data: data,
+                                            dataType: "json",
+                                            success: function (json) {
+                                                var jid = json.upgradekubernetesclusterresponse.jobid;
+                                                args.response.success({
+                                                    _custom: {
+                                                        jobId: jid,
+                                                        getActionFilter: function() {
+                                                            return cksActionfilter;
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        }); //end ajax
+                                    },
+                                    notification: {
+                                        poll: pollAsyncJobResult
+                                    }
+                                },
                             },
                             tabs: {
                                 // Details tab
@@ -739,6 +816,9 @@
                                         },
                                         zonename: {
                                             label: 'label.zone.name'
+                                        },
+                                        kubernetesversion: {
+                                            label: 'Kubernetes version'
                                         },
                                         masternodes : {
                                             label: 'Master nodes'
@@ -1338,6 +1418,7 @@
             }
             if (jsonObj.state == "Created" || jsonObj.state == "Running") {
                 allowedActions.push("scaleKubernetesCluster");
+                allowedActions.push("upgradeKubernetesCluster");
             }
             allowedActions.push("destroy");
         }

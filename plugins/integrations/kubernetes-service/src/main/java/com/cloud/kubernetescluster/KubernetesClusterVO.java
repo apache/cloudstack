@@ -310,6 +310,11 @@ public class KubernetesClusterVO implements KubernetesCluster {
         checkForGc = check;
     }
 
+    @Override
+    public Date getCreated() {
+        return created;
+    }
+
     public KubernetesClusterVO() {
 
     }

@@ -1,6 +1,9 @@
 #cloud-config
 
 ---
+ssh_authorized_keys:
+  {{ k8s.ssh.pub.key }}
+
 write-files:
   - path: /opt/bin/setup-kube-system
     permissions: 0700

@@ -20,6 +20,7 @@ import org.apache.cloudstack.api.command.user.kubernetescluster.CreateKubernetes
 import org.apache.cloudstack.api.command.user.kubernetescluster.GetKubernetesClusterConfigCmd;
 import org.apache.cloudstack.api.command.user.kubernetescluster.ListKubernetesClustersCmd;
 import org.apache.cloudstack.api.command.user.kubernetescluster.ScaleKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetescluster.UpgradeKubernetesClusterCmd;
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -53,4 +54,5 @@ public interface KubernetesClusterService extends PluggableService {
     boolean scaleKubernetesCluster(ScaleKubernetesClusterCmd cmd) throws ManagementServerException,
             ResourceAllocationException, ResourceUnavailableException, InsufficientCapacityException;
 
+    boolean upgradeKubernetesCluster(UpgradeKubernetesClusterCmd cmd) throws ManagementServerException;
 }

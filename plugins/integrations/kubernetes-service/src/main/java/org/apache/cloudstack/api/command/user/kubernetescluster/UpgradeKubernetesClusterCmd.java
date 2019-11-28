@@ -14,13 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package org.apache.cloudstack.api.command.user.kubernetescluster;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -29,31 +28,30 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
-import com.cloud.kubernetescluster.KubernetesClusterEventTypes;
-import com.cloud.kubernetescluster.KubernetesCluster;
-import com.cloud.kubernetescluster.KubernetesClusterService;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.kubernetescluster.KubernetesCluster;
+import com.cloud.kubernetescluster.KubernetesClusterEventTypes;
+import com.cloud.kubernetescluster.KubernetesClusterService;
 
-@APICommand(name = ScaleKubernetesClusterCmd.APINAME,
-        description = "Scales a created or running Kubernetes cluster",
+@APICommand(name = UpgradeKubernetesClusterCmd.APINAME, description = "Upgrades a running Kubernetes cluster",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {KubernetesCluster.class},
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
-    public static final Logger LOGGER = Logger.getLogger(StartKubernetesClusterCmd.class.getName());
-    public static final String APINAME = "scaleKubernetesCluster";
+public class UpgradeKubernetesClusterCmd extends BaseAsyncCmd {
+    public static final Logger LOGGER = Logger.getLogger(UpgradeKubernetesClusterCmd.class.getName());
+    public static final String APINAME = "upgradeKubernetesCluster";
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -62,18 +60,14 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
-            entityType = KubernetesClusterResponse.class,
+            entityType = KubernetesClusterResponse.class, required = true,
             description = "the ID of the Kubernetes cluster")
     private Long id;
 
-    @ACL(accessType = SecurityChecker.AccessType.UseEntry)
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class,
-            description = "the ID of the service offering for the virtual machines in the cluster.")
-    private Long serviceOfferingId;
-
-    @Parameter(name=ApiConstants.SIZE, type = CommandType.LONG,
-            description = "number of Kubernetes cluster nodes")
-    private Long clusterSize;
+    @Parameter(name = ApiConstants.KUBERNETES_VERSION_ID, type = CommandType.UUID,
+            entityType = KubernetesSupportedVersionResponse.class, required = true,
+            description = "the ID of the Kubernetes version for upgrade")
+    private Long kubernetesVersionId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -83,23 +77,19 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
         return id;
     }
 
-    public Long getServiceOfferingId() {
-        return serviceOfferingId;
-    }
-
-    public Long getClusterSize() {
-        return clusterSize;
+    public Long getKubernetesVersionId() {
+        return kubernetesVersionId;
     }
 
     @Override
     public String getEventType() {
-        return KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_SCALE;
+        return KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_UPGRADE;
     }
 
     @Override
     public String getEventDescription() {
         KubernetesCluster cluster = _entityMgr.findById(KubernetesCluster.class, getId());
-        return String.format("Scaling Kubernetes cluster ID: %s", cluster.getUuid());
+        return String.format("Upgrading Kubernetes cluster ID: %s", cluster.getUuid());
     }
 
     @Override
@@ -131,12 +121,12 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         final KubernetesCluster kubernetesCluster = validateRequest();
         try {
-            kubernetesClusterService.scaleKubernetesCluster(this);
+            kubernetesClusterService.upgradeKubernetesCluster(this);
             final KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(kubernetesCluster.getId());
             response.setResponseName(getCommandName());
             setResponseObject(response);
-        } catch (InsufficientCapacityException | ResourceUnavailableException | ManagementServerException ex) {
-            String msg = String.format("Failed to scale Kubernetes cluster ID: %s", kubernetesCluster.getUuid());
+        } catch (ManagementServerException ex) {
+            String msg = String.format("Failed to upgrade Kubernetes cluster ID: %s", kubernetesCluster.getUuid());
             LOGGER.error(msg, ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, msg, ex);
         }

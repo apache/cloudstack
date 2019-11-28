@@ -59,7 +59,7 @@ public class StopKubernetesClusterCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
-            entityType = KubernetesClusterResponse.class,
+            entityType = KubernetesClusterResponse.class, required = true,
             description = "the ID of the Kubernetes cluster")
     private Long id;
 
@@ -78,7 +78,8 @@ public class StopKubernetesClusterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Stopping Kubernetes cluster id: " + getId();
+        KubernetesCluster cluster = _entityMgr.findById(KubernetesCluster.class, getId());
+        return String.format("Stopping Kubernetes cluster ID: %s", cluster.getUuid());
     }
 
     @Override

@@ -118,7 +118,8 @@ public class DeleteKubernetesClusterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting Kubernetes cluster. Cluster Id: " + getId();
+        KubernetesCluster cluster = _entityMgr.findById(KubernetesCluster.class, getId());
+        return String.format("Deleting Kubernetes cluster ID: %s", cluster.getUuid());
     }
 
 }

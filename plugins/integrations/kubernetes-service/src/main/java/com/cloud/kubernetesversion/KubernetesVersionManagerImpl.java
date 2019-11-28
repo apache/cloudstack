@@ -114,11 +114,48 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         return 0;
     }
 
+    public static boolean canUpgradeKubernetesVersion(String currentVersion, String upgradeVersion) throws IllegalArgumentException {
+        if (Strings.isNullOrEmpty(currentVersion) || Strings.isNullOrEmpty(upgradeVersion)) {
+            throw new IllegalArgumentException(String.format("Invalid version comparision with versions %s, %s", currentVersion, upgradeVersion));
+        }
+        if(!currentVersion.matches("[0-9]+(\\.[0-9]+)*")) {
+            throw new IllegalArgumentException(String.format("Invalid version format, %s", currentVersion));
+        }
+        if(!upgradeVersion.matches("[0-9]+(\\.[0-9]+)*")) {
+            throw new IllegalArgumentException(String.format("Invalid version format, %s", upgradeVersion));
+        }
+        String[] thisParts = currentVersion.split("\\.");
+        if (thisParts.length < 3) {
+            throw new IllegalArgumentException(String.format("Invalid version format, %s", currentVersion));
+        }
+        String[] thatParts = upgradeVersion.split("\\.");
+        if (thatParts.length < 3) {
+            throw new IllegalArgumentException(String.format("Invalid version format, %s", upgradeVersion));
+        }
+        int majorVerDiff = Integer.parseInt(thatParts[0]) - Integer.parseInt(thisParts[0]);
+        int minorVerDiff = Integer.parseInt(thatParts[1]) - Integer.parseInt(thisParts[1]);
+        if (majorVerDiff != 0 || minorVerDiff != 1) {
+            throw new IllegalArgumentException(String.format("Kubernetes clusters can be upgraded between next minor or patch version releases, current version: %s, upgrade version: %s", currentVersion, upgradeVersion));
+        }
+        return true;
+    }
+
     @Override
     public ListResponse<KubernetesSupportedVersionResponse> listKubernetesSupportedVersions(final ListKubernetesSupportedVersionsCmd cmd) {
         final Long versionId = cmd.getId();
         final Long zoneId = cmd.getZoneId();
-        final String minimumKubernetesVersion = cmd.getMinimumKubernetesVersion();
+        String minimumKubernetesVersion = cmd.getMinimumKubernetesVersion();
+        final Long minimumKubernetesVersionId = cmd.getMinimumKubernetesVersionId();
+        if (!Strings.isNullOrEmpty(minimumKubernetesVersion) && minimumKubernetesVersionId != null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Both parameters %s and %s can not be passed together", ApiConstants.MIN_KUBERNETES_VERSION, ApiConstants.MIN_KUBERNETES_VERSION_ID));
+        }
+        if (minimumKubernetesVersionId != null) {
+            KubernetesSupportedVersionVO minVersion = kubernetesSupportedVersionDao.findById(minimumKubernetesVersionId);
+            if (minVersion == null) {
+                throw new InvalidParameterValueException(String.format("Invalid %s passed", ApiConstants.MIN_KUBERNETES_VERSION_ID));
+            }
+            minimumKubernetesVersion = minVersion.getKubernetesVersion();
+        }
         List<KubernetesSupportedVersionResponse> responseList = new ArrayList<>();
         List <KubernetesSupportedVersionVO> versions = new ArrayList<>();
         if (versionId != null) {

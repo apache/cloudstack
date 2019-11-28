@@ -69,6 +69,14 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     @Param(description = "the name of the Network associated with the IP address")
     private String associatedNetworkName;
 
+    @SerializedName(ApiConstants.KUBERNETES_VERSION_ID)
+    @Param(description = "the ID of the Kubernetes version for the cluster")
+    private String kubernetesVersionId;
+
+    @SerializedName(ApiConstants.KUBERNETES_VERSION)
+    @Param(description = "the name of the Kubernetes version for the cluster")
+    private String kubernetesVersionName;
+
     @SerializedName(ApiConstants.SSH_KEYPAIR)
     @Param(description = "keypair details")
     private String keypair;
@@ -261,6 +269,22 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
 
     public void setAssociatedNetworkName(String associatedNetworkName) {
         this.associatedNetworkName = associatedNetworkName;
+    }
+
+    public String getKubernetesVersionId() {
+        return kubernetesVersionId;
+    }
+
+    public void setKubernetesVersionId(String kubernetesVersionId) {
+        this.kubernetesVersionId = kubernetesVersionId;
+    }
+
+    public String getKubernetesVersionName() {
+        return kubernetesVersionName;
+    }
+
+    public void setKubernetesVersionName(String kubernetesVersionName) {
+        this.kubernetesVersionName = kubernetesVersionName;
     }
 
     public KubernetesClusterResponse() {

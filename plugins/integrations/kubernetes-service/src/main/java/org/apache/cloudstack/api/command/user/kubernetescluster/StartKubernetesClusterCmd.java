@@ -58,7 +58,7 @@ public class StartKubernetesClusterCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
-            entityType = KubernetesClusterResponse.class,
+            entityType = KubernetesClusterResponse.class, required = true,
             description = "the ID of the Kubernetes cluster")
     private Long id;
 
@@ -77,7 +77,8 @@ public class StartKubernetesClusterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Starting Kubernetes cluster id: " + getId();
+        KubernetesCluster cluster = _entityMgr.findById(KubernetesCluster.class, getId());
+        return String.format("Starting Kubernetes cluster ID: %s", cluster.getUuid());
     }
 
     @Override
@@ -109,14 +110,14 @@ public class StartKubernetesClusterCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         final KubernetesCluster kubernetesCluster = validateRequest();
         try {
-            kubernetesClusterService.startKubernetesCluster(getId().longValue(), false);
-            final KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(getId());
+            kubernetesClusterService.startKubernetesCluster(kubernetesCluster.getId(), false);
+            final KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(kubernetesCluster.getId());
             response.setResponseName(getCommandName());
             setResponseObject(response);
-        } catch (InsufficientCapacityException | ResourceUnavailableException | ManagementServerException  ex) {
-            LOGGER.warn("Failed to start Kubernetes cluster:" + kubernetesCluster.getUuid() + " due to " + ex.getMessage());
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
-                    "Failed to start Kubernetes cluster:" + kubernetesCluster.getUuid(), ex);
+        } catch (InsufficientCapacityException | ResourceUnavailableException | ManagementServerException ex) {
+            String msg = String.format("Failed to start Kubernetes cluster ID: %s", kubernetesCluster.getUuid());
+            LOGGER.error(msg, ex);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, msg, ex);
         }
     }
 

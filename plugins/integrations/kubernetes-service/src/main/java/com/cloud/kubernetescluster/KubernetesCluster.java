@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.kubernetescluster;
 
+import java.util.Date;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
@@ -24,7 +26,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.utils.fsm.StateMachine2;
 
 /**
- * KubernetesCluster describes the properties of kubernetes cluster
+ * KubernetesCluster describes the properties of Kubernetes cluster
  *
  */
 public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm.StateObject<KubernetesCluster.State>, Identity, InternalIdentity, Displayable {
@@ -36,6 +38,7 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
         RecoveryRequested,
         ScaleUpRequested,
         ScaleDownRequested,
+        UpgradeRequested,
         OperationSucceeded,
         OperationFailed,
         CreateFailed,
@@ -43,17 +46,18 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
     }
 
     enum State {
-        Created("Initial State of kubernetes cluster. At this state its just a logical/DB entry with no resources consumed"),
-        Starting("Resources needed for kubernetes cluster are being provisioned"),
-        Running("Necessary resources are provisioned and kubernetes cluster is in operational ready state to launch kubernetess"),
-        Stopping("Ephermal resources for the kubernetes cluster are being destroyed"),
-        Stopped("All ephermal resources for the kubernetes cluster are destroyed, Kubernetes cluster may still have ephermal resource like persistent volumens provisioned"),
-        Scaling("Transient state in which resoures are either getting scaled up/down"),
-        Alert("State to represent kubernetes clusters which are not in expected desired state (operationally in active control place, stopped cluster VM's etc)."),
-        Recovering("State in which kubernetes cluster is recovering from alert state"),
-        Destroyed("End state of kubernetes cluster in which all resources are destroyed, cluster will not be useable further"),
-        Destroying("State in which resources for the kubernetes cluster is getting cleaned up or yet to be cleaned up by garbage collector"),
-        Error("State of the failed to create kubernetes clusters");
+        Created("Initial State of Kubernetes cluster. At this state its just a logical/DB entry with no resources consumed"),
+        Starting("Resources needed for Kubernetes cluster are being provisioned"),
+        Running("Necessary resources are provisioned and Kubernetes cluster is in operational ready state to launch Kubernetes"),
+        Stopping("Resources for the Kubernetes cluster are being destroyed"),
+        Stopped("All resources for the Kubernetes cluster are destroyed, Kubernetes cluster may still have ephemeral resource like persistent volumes provisioned"),
+        Scaling("Transient state in which resources are either getting scaled up/down"),
+        Upgrading("Transient state in which cluster is getting upgraded"),
+        Alert("State to represent Kubernetes clusters which are not in expected desired state (operationally in active control place, stopped cluster VM's etc)."),
+        Recovering("State in which Kubernetes cluster is recovering from alert state"),
+        Destroyed("End state of Kubernetes cluster in which all resources are destroyed, cluster will not be usable further"),
+        Destroying("State in which resources for the Kubernetes cluster is getting cleaned up or yet to be cleaned up by garbage collector"),
+        Error("State of the failed to create Kubernetes clusters");
 
         protected static final StateMachine2<State, KubernetesCluster.Event, KubernetesCluster> s_fsm = new StateMachine2<State, KubernetesCluster.Event, KubernetesCluster>();
 
@@ -65,6 +69,7 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
             s_fsm.addTransition(State.Starting, Event.OperationSucceeded, State.Running);
             s_fsm.addTransition(State.Starting, Event.OperationFailed, State.Alert);
             s_fsm.addTransition(State.Starting, Event.CreateFailed, State.Error);
+            s_fsm.addTransition(State.Starting, Event.StopRequested, State.Stopping);
 
             s_fsm.addTransition(State.Running, Event.StopRequested, State.Stopping);
             s_fsm.addTransition(State.Stopping, Event.OperationSucceeded, State.Stopped);
@@ -78,6 +83,10 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
             s_fsm.addTransition(State.Running, Event.ScaleDownRequested, State.Scaling);
             s_fsm.addTransition(State.Scaling, Event.OperationSucceeded, State.Running);
             s_fsm.addTransition(State.Scaling, Event.OperationFailed, State.Alert);
+
+            s_fsm.addTransition(State.Running, Event.UpgradeRequested, State.Upgrading);
+            s_fsm.addTransition(State.Upgrading, Event.OperationSucceeded, State.Running);
+            s_fsm.addTransition(State.Upgrading, Event.OperationFailed, State.Alert);
 
             s_fsm.addTransition(State.Alert, Event.RecoveryRequested, State.Recovering);
             s_fsm.addTransition(State.Recovering, Event.OperationSucceeded, State.Running);
@@ -122,4 +131,5 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
     boolean isCheckForGc();
     @Override
     State getState();
+    Date getCreated();
 }
