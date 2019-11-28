@@ -278,8 +278,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Override
     public void allocateVmCapacity(VirtualMachine vm, final boolean fromLastHost) {
 
+        final long vmId = vm.getId();
         final long hostId = vm.getHostId();
-        HostVO host = _hostDao.findById(hostId);
+        final HostVO host = _hostDao.findById(hostId);
         final long clusterId = host.getClusterId();
         final float cpuOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, "cpuOvercommitRatio").getValue());
         final float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, "memoryOvercommitRatio").getValue());
@@ -296,6 +297,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
         final int cpu = svo.getCpu() * svo.getSpeed();
         final int cpucore = svo.getCpu();
+        final int cpuspeed = svo.getSpeed();
         final long ram = svo.getRamSize() * 1024L * 1024L;
 
         try {
@@ -366,6 +368,28 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                         totalMem + "; new used: " + capacityMem.getUsedCapacity() + ", reserved: " + capacityMem.getReservedCapacity() + "; requested mem: " + ram +
                         ",alloc_from_last:" + fromLastHost);
 
+                    long cluster_id = host.getClusterId();
+                    ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, "cpuOvercommitRatio");
+                    ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, "memoryOvercommitRatio");
+                    Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
+                    Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
+
+                    boolean hostHasCpuCapability, hostHasCapacity = false;
+                    hostHasCpuCapability = checkIfHostHasCpuCapability(host.getId(), cpucore, cpuspeed);
+
+                    if (hostHasCpuCapability) {
+                        // first check from reserved capacity
+                        hostHasCapacity = checkIfHostHasCapacity(host.getId(), cpu, ram, true, cpuOvercommitRatio, memoryOvercommitRatio, true);
+
+                        // if not reserved, check the free capacity
+                        if (!hostHasCapacity)
+                            hostHasCapacity = checkIfHostHasCapacity(host.getId(), cpu, ram, false, cpuOvercommitRatio, memoryOvercommitRatio, true);
+                    }
+
+                    if (!hostHasCapacity || !hostHasCpuCapability) {
+                        throw new CloudRuntimeException("Host does not have enough capacity for vm " + vmId);
+                    }
+
                     _capacityDao.update(capacityCpu.getId(), capacityCpu);
                     _capacityDao.update(capacityMem.getId(), capacityMem);
                     _capacityDao.update(capacityCpuCore.getId(), capacityCpuCore);
@@ -373,6 +397,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             });
         } catch (Exception e) {
             s_logger.error("Exception allocating VM capacity", e);
+            if (e instanceof CloudRuntimeException) {
+                throw e;
+            }
             return;
         }
     }
