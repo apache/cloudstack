@@ -3707,9 +3707,6 @@
             allowedActions.push("resetSSHKeyForVirtualMachine");
         } else if (jsonObj.state == 'Starting') {
             //  allowedActions.push("stop");
-            if (isAdmin()) {
-                allowedActions.push("viewConsole");
-            }
         } else if (jsonObj.state == 'Error') {
             allowedActions.push("destroy");
         } else if (jsonObj.state == 'Expunging') {
@@ -3717,6 +3714,11 @@
                 allowedActions.push("expunge");
             }
         }
+
+        if (jsonObj.state == 'Starting' || jsonObj.state == 'Stopping' || jsonObj.state == 'Migrating') {
+            allowedActions.push("viewConsole");
+        }
+
         return allowedActions;
     }
 
