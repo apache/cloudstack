@@ -220,6 +220,13 @@ export default {
       permission: ['listRoles'],
       columns: ['name', 'type', 'description'],
       details: ['name', 'id', 'type', 'description'],
+      tabs: [{
+        name: 'details',
+        component: () => import('@/components/view/DetailsTab.vue')
+      }, {
+        name: 'rules',
+        component: () => import('@/views/iam/RolePermissionTab.vue')
+      }],
       actions: [
         {
           api: 'createRole',

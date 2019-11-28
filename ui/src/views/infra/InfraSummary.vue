@@ -16,7 +16,39 @@
 // under the License.
 
 <template>
-  <a-row :gutter="24" style="margin: 6px">
+  <a-row :gutter="24">
+    <a-col :md="18">
+      <a-card>
+      <breadcrumb />
+      </a-card>
+    </a-col>
+    <a-col
+      :md="6" >
+      <a-card>
+        <a-button
+          style="margin-left: 10px; float: right"
+          @click="fetchData()"
+          icon="reload"
+          :loading="loading"
+          type="primary">
+          {{ $t('Refresh') }}
+        </a-button>
+        <a-button
+          style="margin-left: 10px; float: right"
+          @click="sslFormVisible = true"
+          icon="safety-certificate">
+          {{ $t('SSL Certificate') }}
+        </a-button>
+        <a-modal
+          :title="$t('SSL Certificate')"
+          v-model="sslFormVisible"
+          @ok="handle">
+          <p>Some contents...</p>
+          <p>Some contents...</p>
+          <p>Some contents...</p>
+        </a-modal>
+      </a-card>
+    </a-col>
     <a-col
       :md="6"
       :style="{ marginBottom: '12px', marginTop: '12px' }"
@@ -32,26 +64,6 @@
         </div>
       </chart-card>
     </a-col>
-    <!-- move refresh and ssl cert setup somewhere more friendly -->
-    <a-col
-      :md="6"
-      :style="{ marginBottom: '12px', marginTop: '12px' }">
-      <a-card>
-        <a-button
-          style="width: 100%"
-          icon="reload"
-          @click="fetchData()"
-          :loading="loading"
-          type="primary">
-          {{ $t('Refresh') }}
-        </a-button>
-        <a-button
-          style="width: 100%"
-          icon="safety-certificate">
-          {{ $t('SSL Certificate') }}
-        </a-button>
-      </a-card>
-    </a-col>
   </a-row>
 </template>
 
@@ -59,18 +71,21 @@
 import { api } from '@/api'
 import router from '@/router'
 
+import Breadcrumb from '@/components/widgets/Breadcrumb'
 import ChartCard from '@/components/widgets/ChartCard'
 
 export default {
   name: 'InfraSummary',
   components: {
+    Breadcrumb,
     ChartCard
   },
   data () {
     return {
       loading: true,
-      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts'],
       routes: {},
+      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts'],
+      sslFormVisible: false,
       stats: {}
     }
   },
@@ -99,6 +114,9 @@ export default {
       }).finally(f => {
         this.loading = false
       })
+    },
+    handleSslForm (e) {
+      console.log(e)
     }
   }
 }
