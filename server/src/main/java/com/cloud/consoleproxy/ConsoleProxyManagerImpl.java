@@ -401,9 +401,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             return null;
         }
 
-        if (vm != null && vm.getState() != State.Starting && vm.getState() != State.Running) {
+        if (vm != null && vm.getState() != State.Starting && vm.getState() != State.Running
+                && vm.getState() != State.Stopping && vm.getState() != State.Migrating) {
             if (s_logger.isInfoEnabled()) {
-                s_logger.info("Detected that vm : " + vmId + " is not currently in starting or running state, we will fail the proxy assignment for it");
+                s_logger.info("Detected that vm : " + vmId + " is not currently in starting or running or stopping or migrating state, we will fail the proxy assignment for it");
             }
             return null;
         }
