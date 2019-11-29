@@ -41,11 +41,11 @@
                                     data: data,
                                     success: function(json) {
                                         var item = json.updateconfigurationresponse.configuration;
-                                        if (item.category == "Usage")
+                                        if (item.category == "Usage" && item.isdynamic == false)
                                             cloudStack.dialog.notice({
                                                 message: _l('message.restart.mgmt.usage.server')
                                             });
-                                        else
+                                        else if (item.isdynamic == false)
                                             cloudStack.dialog.notice({
                                                 message: _l('message.restart.mgmt.server')
                                             });
