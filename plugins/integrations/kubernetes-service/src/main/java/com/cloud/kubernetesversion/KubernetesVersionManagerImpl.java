@@ -40,6 +40,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.kubernetescluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetescluster.KubernetesClusterVO;
 import com.cloud.kubernetescluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetesversion.dao.KubernetesSupportedVersionDao;
@@ -80,6 +81,12 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         if (zone != null) {
             response.setZoneId(zone.getUuid());
             response.setZoneName(zone.getName());
+        }
+        if (compareKubernetesVersion(kubernetesSupportedVersion.getKubernetesVersion(),
+                KubernetesClusterManagerImpl.MIN_KUBERNETES_VERSION_HA_SUPPORT)>=0) {
+            response.setSupportsHA(true);
+        } else {
+            response.setSupportsHA(false);
         }
         VMTemplateVO template = ApiDBUtils.findTemplateById(kubernetesSupportedVersion.getIsoId());
         response.setIsoId(template.getUuid());

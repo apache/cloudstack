@@ -60,6 +60,10 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
     @Param(description = "the name of the zone in which Kubernetes supported version is available")
     private String zoneName;
 
+    @SerializedName(ApiConstants.SUPPORTS_HA)
+    @Param(description = "whether Kubernetes supported version supports HA, multi-master")
+    private Boolean supportsHA;
+
     public String getId() {
         return id;
     }
@@ -122,5 +126,13 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
+    }
+
+    public Boolean isSupportsHA() {
+        return supportsHA;
+    }
+
+    public void setSupportsHA(Boolean supportsHA) {
+        this.supportsHA = supportsHA;
     }
 }

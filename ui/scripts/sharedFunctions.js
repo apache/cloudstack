@@ -2706,7 +2706,6 @@ jQuery.validator.addMethod("ipv6CustomJqueryValidator", function(value, element)
     return jQuery.validator.methods.ipv6.call(this, value, element);
 }, "The specified IPv6 address is invalid.");
 
-
 $.validator.addMethod("allzonesonly", function(value, element){
 
     if ((value.indexOf("-1") != -1) && (value.length > 1))
@@ -2716,17 +2715,27 @@ $.validator.addMethod("allzonesonly", function(value, element){
 },
 "All Zones cannot be combined with any other zone");
 
-
 $.validator.addMethod("naturalnumber", function(value, element){
     if (this.optional(element) && value.length == 0)
         return true;
     if (isNaN(value))
         return false;
     value = parseInt(value);
-    return (typeof value === 'number') && (value > 0.0) && (Math.floor(value) === value) && value !== Infinity;
+    return (typeof value === 'number') && (value > 0) && (Math.floor(value) === value) && value !== Infinity;
 
 },
 "Please enter a valid number, 1 or greater");
+
+$.validator.addMethod("multiplecountnumber", function(value, element){
+    if (this.optional(element) && value.length == 0)
+        return true;
+    if (isNaN(value))
+        return false;
+    value = parseInt(value);
+    return (typeof value === 'number') && (value > 1) && (Math.floor(value) === value) && value !== Infinity;
+
+},
+"Please enter a valid number, 2 or greater");
 
 cloudStack.createTemplateMethod = function (isSnapshot){
 	return {

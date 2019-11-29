@@ -141,7 +141,7 @@
                                 createForm: {
                                     title: 'Add Kubernetes cluster',
                                     preFilter: function(args) {
-                                        args.$form.find('.form-item[rel=masternodes]').find('input[name=masternodes]').val('1');
+                                        args.$form.find('.form-item[rel=masternodes]').find('input[name=masternodes]').val('2');
                                         args.$form.find('.form-item[rel=size]').find('input[name=size]').val('1');
                                     },
                                     fields: {
@@ -193,6 +193,7 @@
                                                 required: true
                                             },
                                             select: function(args) {
+                                                var versionObjs;
                                                 var filterData = { zoneid: args.zone };
                                                 $.ajax({
                                                     url: createURL("listKubernetesSupportedVersions"),
@@ -204,7 +205,7 @@
                                                     async: true,
                                                     success: function(json) {
                                                         var items = [];
-                                                        var versionObjs = json.listkubernetessupportedversionsresponse.kubernetessupportedversion;
+                                                        versionObjs = json.listkubernetessupportedversionsresponse.kubernetessupportedversion;
                                                         if (versionObjs != null) {
                                                             for (var i = 0; i < versionObjs.length; i++) {
                                                                 if (versionObjs[i].isostate == 'Active') {
@@ -218,6 +219,21 @@
                                                         args.response.success({
                                                             data: items
                                                         });
+                                                    }
+                                                });
+
+                                                args.$select.change(function() {
+                                                    var $form = $(this).closest("form");
+                                                    $form.find('.form-item[rel=multimaster]').find('input[name=multimaster]').prop('checked', false);
+                                                    $form.find('.form-item[rel=multimaster]').hide();
+                                                    $form.find('.form-item[rel=masternodes]').hide();
+                                                    var currentVersionId = $(this).val();
+                                                    if (currentVersionId != null  && versionObjs != null) {
+                                                        for (var i = 0; i < versionObjs.length; i++) {
+                                                            if (currentVersionId == versionObjs[i].id && versionObjs[i].supportsha === true) {
+                                                                $form.find('.form-item[rel=multimaster]').css('display', 'inline-block');
+                                                            }
+                                                        }
                                                     }
                                                 });
                                             }
@@ -290,6 +306,7 @@
                                         },
                                         multimaster: {
                                             label: "HA (Multi-master)",
+                                            dependsOn: 'kubernetesversion',
                                             isBoolean: true,
                                             isChecked: false,
                                         },
@@ -298,7 +315,7 @@
                                             //docID: 'helpKubernetesClusterSize',
                                             validation: {
                                                 required: true,
-                                                naturalnumber: true
+                                                multiplecountnumber: true
                                             },
                                             dependsOn: "multimaster",
                                             isHidden: true,
@@ -1169,7 +1186,7 @@
                                                     async: true,
                                                     success: function(json) {
                                                         var items = [];
-                                                        var isoObjs = json.listisosresponse.iso;;
+                                                        var isoObjs = json.listisosresponse.iso;
                                                         if (isoObjs != null) {
                                                             for (var i = 0; i < isoObjs.length; i++) {
                                                                 items.push({
