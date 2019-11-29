@@ -122,7 +122,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> findByPoolId(long poolId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("poolId", poolId);
-        sc.setParameters("notDestroyed", Volume.State.Destroy);
+        sc.setParameters("notDestroyed", Volume.State.Destroy, Volume.State.Expunged);
         sc.setParameters("vType", Volume.Type.ROOT.toString());
         return listBy(sc);
     }
@@ -132,7 +132,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", instanceId);
         sc.setParameters("poolId", poolId);
-        sc.setParameters("notDestroyed", Volume.State.Destroy);
+        sc.setParameters("notDestroyed", Volume.State.Destroy, Volume.State.Expunged);
         return listBy(sc);
     }
 
@@ -148,7 +148,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> findByPoolId(long poolId, Volume.Type volumeType) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("poolId", poolId);
-        sc.setParameters("notDestroyed", Volume.State.Destroy);
+        sc.setParameters("notDestroyed", Volume.State.Destroy, Volume.State.Expunged);
 
         if (volumeType != null) {
             sc.setParameters("vType", volumeType.toString());
@@ -349,7 +349,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("vType", AllFieldsSearch.entity().getVolumeType(), Op.EQ);
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("destroyed", AllFieldsSearch.entity().getState(), Op.EQ);
-        AllFieldsSearch.and("notDestroyed", AllFieldsSearch.entity().getState(), Op.NEQ);
+        AllFieldsSearch.and("notDestroyed", AllFieldsSearch.entity().getState(), Op.NIN);
         AllFieldsSearch.and("updateTime", AllFieldsSearch.entity().getUpdated(), SearchCriteria.Op.LT);
         AllFieldsSearch.and("updatedCount", AllFieldsSearch.entity().getUpdatedCount(), Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), Op.EQ);
@@ -410,6 +410,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         primaryStorageSearch.cp();
         primaryStorageSearch.and("displayVolume", primaryStorageSearch.entity().isDisplayVolume(), Op.EQ);
         primaryStorageSearch.and("isRemoved", primaryStorageSearch.entity().getRemoved(), Op.NULL);
+        primaryStorageSearch.and("NotCountStates", primaryStorageSearch.entity().getState(), Op.NIN);
         primaryStorageSearch.done();
 
         primaryStorageSearch2 = createSearchBuilder(SumCount.class);
@@ -423,6 +424,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         primaryStorageSearch2.cp();
         primaryStorageSearch2.and("displayVolume", primaryStorageSearch2.entity().isDisplayVolume(), Op.EQ);
         primaryStorageSearch2.and("isRemoved", primaryStorageSearch2.entity().getRemoved(), Op.NULL);
+        primaryStorageSearch2.and("NotCountStates", primaryStorageSearch2.entity().getState(), Op.NIN);
         primaryStorageSearch2.done();
 
         secondaryStorageSearch = createSearchBuilder(SumCount.class);
@@ -448,7 +450,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public Long countAllocatedVolumesForAccount(long accountId) {
         SearchCriteria<Long> sc = CountByAccount.create();
         sc.setParameters("account", accountId);
-        sc.setParameters("state", Volume.State.Destroy);
+        sc.setParameters("state", Volume.State.Destroy, Volume.State.Expunged);
         sc.setParameters("displayVolume", 1);
         return customSearch(sc, null).get(0);
     }
@@ -464,6 +466,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         }
         sc.setParameters("accountId", accountId);
         sc.setParameters("states", State.Allocated);
+        sc.setParameters("NotCountStates", State.Destroy, State.Expunged);
         sc.setParameters("displayVolume", 1);
         List<SumCount> storageSpace = customSearch(sc, null);
         if (storageSpace != null) {
