@@ -22071,10 +22071,6 @@
                 allowedActions.push("migrate");
                 allowedActions.push("diagnostics");
             }
-        } else if (jsonObj.state == 'Starting') {
-            if (isAdmin()) {
-                allowedActions.push("viewConsole");
-            }
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
 
@@ -22082,6 +22078,9 @@
             allowedActions.push("scaleUp");
 
             allowedActions.push("remove");
+        }
+        if (jsonObj.state == 'Starting' || jsonObj.state == 'Stopping' || jsonObj.state == 'Migrating') {
+            allowedActions.push("viewConsole");
         }
         return allowedActions;
     }
@@ -22095,12 +22094,11 @@
             allowedActions.push("viewConsole");
             if (isAdmin())
             allowedActions.push("migrate");
-        } else if (jsonObj.state == 'Starting') {
-            if (isAdmin()) {
-                allowedActions.push("viewConsole");
-            }
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
+        }
+        if (jsonObj.state == 'Starting' || jsonObj.state == 'Stopping' || jsonObj.state == 'Migrating') {
+            allowedActions.push("viewConsole");
         }
         return allowedActions;
     }
@@ -22124,10 +22122,6 @@
                 allowedActions.push("migrate");
                 allowedActions.push("diagnostics");
             }
-        } else if (jsonObj.state == 'Starting') {
-            if (isAdmin()) {
-                allowedActions.push("viewConsole");
-            }
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
 
@@ -22137,6 +22131,9 @@
             allowedActions.push("remove");
         } else if (jsonObj.state == 'Error') {
             allowedActions.push("remove");
+        }
+        if (jsonObj.state == 'Starting' || jsonObj.state == 'Stopping' || jsonObj.state == 'Migrating') {
+            allowedActions.push("viewConsole");
         }
         return allowedActions;
     }
