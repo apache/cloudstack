@@ -23,7 +23,6 @@ import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 
@@ -46,6 +45,13 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
             "backup.framework.sync.interval",
             "300",
             "The backup and recovery background sync task polling interval in seconds.", true);
+
+    /**
+     * List backup provider offerings
+     * @param zoneId zone id
+     */
+    List<BackupOffering> listBackupProviderOfferings(final Long zoneId);
+
     /**
      * Add a new Backup and Recovery policy to CloudStack by mapping an existing external backup offering to a name and description
      * @param zoneId zone id
@@ -63,27 +69,9 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     List<BackupOffering> listBackupOfferings(final ListBackupOfferingsCmd cmd);
 
     /**
-     * List backup provider offerings
-     * @param zoneId zone id
-     */
-    List<BackupOffering> listBackupProviderOfferings(final Long zoneId);
-
-    /**
      * Deletes a backup offering
      */
     boolean deleteBackupOffering(final Long policyId);
-
-    /**
-     * List existing backups for a VM
-     */
-    List<Backup> listBackups(final Long id, final Long vmId);
-
-    /**
-     * Lists restore points for a VM backup
-     * @param backupId
-     * @return
-     */
-    List<Backup.RestorePoint> listBackupRestorePoints(final Long backupId);
 
     /**
      * Assigns a VM to a backup offering
@@ -109,10 +97,16 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     Backup createBackup(final Long vmId);
 
     /**
-     * Deletes a backup
-     * @return returns operation success
+     * List existing backups for a VM
      */
-    boolean deleteBackup(final Long backupId);
+    List<Backup> listBackups(final Long id, final Long vmId);
+
+    /**
+     * Lists restore points for a VM backup
+     * @param backupId
+     * @return
+     */
+    List<Backup.RestorePoint> listBackupRestorePoints(final Long backupId);
 
     /**
      * Restore a full VM from backup
@@ -124,6 +118,9 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      */
     boolean restoreBackupVolumeAndAttachToVM(final String backedUpVolumeUuid, final Long vmId, final Long backupId, final String restorePointId) throws Exception;
 
-    boolean importVM(long zoneId, long domainId, long accountId, long userId,
-                     String vmInternalName, Hypervisor.HypervisorType hypervisorType, Backup backup);
+    /**
+     * Deletes a backup
+     * @return returns operation success
+     */
+    boolean deleteBackup(final Long backupId);
 }

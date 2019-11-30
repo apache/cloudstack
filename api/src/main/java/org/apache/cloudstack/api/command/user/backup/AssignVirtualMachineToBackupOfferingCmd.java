@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
@@ -39,9 +40,10 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = AssignVirtualMachineToBackupOfferingCmd.APINAME,
-        description = "Assigns a backup offering to a VM",
+        description = "Assigns a VM to a backup offering",
         responseObject = BackupResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
@@ -87,7 +89,14 @@ public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            // TODO implement API
+            Backup backup = backupManager.assignVMToBackupOffering(getVmId(), getOfferingId());
+            if (backup != null) {
+                BackupResponse response = _responseGenerator.createBackupResponse(backup);
+                response.setResponseName(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new CloudRuntimeException("Error while creating backup of VM");
+            }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }

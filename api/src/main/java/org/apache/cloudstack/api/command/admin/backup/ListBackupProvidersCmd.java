@@ -25,7 +25,6 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.BackupProviderResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -38,7 +37,7 @@ import com.cloud.user.Account;
         description = "Lists Backup and Recovery providers",
         responseObject = BackupProviderResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin})
-public class ListBackupProvidersCmd extends BaseListCmd {
+public class ListBackupProvidersCmd extends BaseCmd {
     public static final String APINAME = "listBackupProviders";
 
     @Inject

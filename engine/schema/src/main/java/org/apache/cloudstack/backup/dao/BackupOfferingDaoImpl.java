@@ -17,9 +17,6 @@
 
 package org.apache.cloudstack.backup.dao;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
@@ -68,15 +65,6 @@ public class BackupOfferingDaoImpl extends GenericDaoBase<BackupOfferingVO, Long
         response.setExternalId(policy.getExternalId());
         response.setObjectName("backupoffering");
         return response;
-    }
-
-    @Override
-    public List<BackupOffering> listByZone(Long zoneId) {
-        SearchCriteria<BackupOfferingVO> sc = backupPoliciesSearch.create();
-        if (zoneId != null) {
-            sc.setParameters("zone_id", zoneId);
-        }
-        return new ArrayList<>(listBy(sc));
     }
 
     @Override

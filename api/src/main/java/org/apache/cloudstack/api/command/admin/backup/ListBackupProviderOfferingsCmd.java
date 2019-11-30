@@ -68,6 +68,12 @@ public class ListBackupProviderOfferingsCmd extends BaseBackupListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    private void validateParameters() {
+        if (getZoneId() == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please provide a valid zone ID ");
+        }
+    }
+
     @Override
     public void execute() throws ResourceUnavailableException, ServerApiException, ConcurrentOperationException {
         validateParameters();
@@ -78,12 +84,6 @@ public class ListBackupProviderOfferingsCmd extends BaseBackupListCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
         } catch (CloudRuntimeException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
-        }
-    }
-
-    private void validateParameters() {
-        if (getZoneId() == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please provide a valid zone ID ");
         }
     }
 

@@ -57,7 +57,7 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
             description = "the name of the backup offering")
-    private String policyName;
+    private String name;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = true,
             description = "the description of the backup offering")
@@ -67,7 +67,7 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
             type = CommandType.STRING,
             required = true,
             description = "The backup offering ID (from backup provider side)")
-    private String policyExternalId;
+    private String externalId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
             description = "The zone ID", required = true)
@@ -77,12 +77,12 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getPolicyName() {
-        return policyName;
+    public String getName() {
+        return name;
     }
 
-    public String getPolicyExternalId() {
-        return policyExternalId;
+    public String getExternalId() {
+        return externalId;
     }
 
     public Long getZoneId() {
@@ -100,7 +100,7 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            BackupOffering policy = backupManager.importBackupOffering(getZoneId(), getPolicyExternalId(), getPolicyName(), getDescription());
+            BackupOffering policy = backupManager.importBackupOffering(getZoneId(), getExternalId(), getName(), getDescription());
             if (policy != null) {
                 BackupOfferingResponse response = _responseGenerator.createBackupOfferingResponse(policy);
                 response.setResponseName(getCommandName());
@@ -132,6 +132,6 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Importing backup offering: " + policyName + " (externalId=" + policyExternalId + ") on zone " + zoneId ;
+        return "Importing backup offering: " + name + " (external ID: " + externalId + ") on zone ID " + zoneId ;
     }
 }
