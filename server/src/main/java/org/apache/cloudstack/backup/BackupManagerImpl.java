@@ -76,6 +76,9 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -130,28 +133,48 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         final BackupProvider provider = getBackupProvider(zoneId);
         if (!provider.isBackupOffering(zoneId, offeringExternalId)) {
-            throw new CloudRuntimeException("Policy " + offeringExternalId + " does not exist on provider " + provider.getName() + " on zone " + zoneId);
+            throw new CloudRuntimeException("Backup offering '" + offeringExternalId + "' does not exist on provider " + provider.getName() + " on zone " + zoneId);
         }
 
-        final BackupOfferingVO policy = new BackupOfferingVO(zoneId, offeringExternalId, offeringName, offeringDescription);
-        final BackupOfferingVO savedPolicy = backupOfferingDao.persist(policy);
-        if (savedPolicy == null) {
+        final BackupOfferingVO offering = new BackupOfferingVO(zoneId, offeringExternalId, offeringName, offeringDescription);
+        final BackupOfferingVO savedOffering = backupOfferingDao.persist(offering);
+        if (savedOffering == null) {
             throw new CloudRuntimeException("Unable to create backup offering: " + offeringExternalId + ", name: " + offeringName);
         }
         LOG.debug("Successfully created backup offering " + offeringName + " mapped to backup provider offering " + offeringExternalId);
-        return savedPolicy;
+        return savedOffering;
     }
 
     @Override
-    public List<BackupOffering> listBackupOfferings(final Long zoneId, final Long offeringId) {
+    public List<BackupOffering> listBackupOfferings(final ListBackupOfferingsCmd cmd) {
+        final Long offeringId = cmd.getOfferingId();
+        final Long zoneId = cmd.getZoneId();
+        final String keyword = cmd.getKeyword();
+
         if (offeringId != null) {
-            BackupOfferingVO policy = backupOfferingDao.findById(offeringId);
-            if (policy == null) {
+            BackupOfferingVO offering = backupOfferingDao.findById(offeringId);
+            if (offering == null) {
                 throw new CloudRuntimeException("Offering ID " + offeringId + " does not exist");
             }
-            return Collections.singletonList(policy);
+            return Collections.singletonList(offering);
         }
-        return backupOfferingDao.listByZone(zoneId);
+
+        final Filter searchFilter = new Filter(BackupOfferingVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<BackupOfferingVO> sb = backupOfferingDao.createSearchBuilder();
+        sb.and("zone_id", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+
+        final SearchCriteria<BackupOfferingVO> sc = sb.create();
+
+        if (zoneId != null) {
+            sc.setParameters("zone_id", zoneId);
+        }
+
+        if (keyword != null) {
+            sc.setParameters("name", "%" + keyword + "%");
+        }
+        Pair<List<BackupOfferingVO>, Integer> result = backupOfferingDao.searchAndCount(sc, searchFilter);
+        return new ArrayList<>(result.first());
     }
 
     @Override
@@ -165,7 +188,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         final BackupProvider backupProvider = getBackupProvider(zoneId);
         LOG.debug("Listing external backup policies for the backup provider registered in zone " + zoneId);
-        return backupProvider.listBackupOfferings(zoneId);    }
+        return backupProvider.listBackupOfferings(zoneId);
+    }
 
     @Override
     public List<Backup> listBackups(final Long id, final Long vmId) {
@@ -490,15 +514,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public boolean deleteBackupOffering(final Long policyId) {
-        if (!backupDao.listByPolicyId(policyId).isEmpty()) {
+    public boolean deleteBackupOffering(final Long offeringId) {
+        if (!backupDao.listByOfferingId(offeringId).isEmpty()) {
             throw new CloudRuntimeException("Cannot allow deletion of backup offering due to use in existing VM backups, please delete the VM backups first");
         }
-        BackupOfferingVO policy = backupOfferingDao.findById(policyId);
-        if (policy == null) {
-            throw new CloudRuntimeException("Could not find a backup offering with id: " + policyId);
+        BackupOfferingVO offering = backupOfferingDao.findById(offeringId);
+        if (offering == null) {
+            throw new CloudRuntimeException("Could not find a backup offering with id: " + offeringId);
         }
-        return backupOfferingDao.expunge(policy.getId());
+        return backupOfferingDao.remove(offering.getId());
     }
 
     @Override

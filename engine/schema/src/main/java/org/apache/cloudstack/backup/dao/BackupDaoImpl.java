@@ -64,7 +64,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         backupSearch.and("account_id", backupSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         backupSearch.and("zone_id", backupSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
         backupSearch.and("external_id", backupSearch.entity().getExternalId(), SearchCriteria.Op.EQ);
-        backupSearch.and("policy_id", backupSearch.entity().getOfferingId(), SearchCriteria.Op.EQ);
+        backupSearch.and("offering_id", backupSearch.entity().getOfferingId(), SearchCriteria.Op.EQ);
         backupSearch.and("status", backupSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         backupSearch.done();
     }
@@ -99,9 +99,9 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     }
 
     @Override
-    public List<Backup> listByPolicyId(Long policyId) {
+    public List<Backup> listByOfferingId(Long offeringId) {
         SearchCriteria<BackupVO> sc = backupSearch.create();
-        sc.setParameters("policy_id", policyId);
+        sc.setParameters("offering_id", offeringId);
         return new ArrayList<>(listBy(sc));
     }
 

@@ -54,7 +54,7 @@ public class ListBackupOfferingsCmd extends BaseBackupListCmd {
 
     @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID, entityType = BackupOfferingResponse.class,
             description = "The backup offering ID")
-    private Long policyId;
+    private Long offeringId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
             description = "The zone ID")
@@ -68,8 +68,8 @@ public class ListBackupOfferingsCmd extends BaseBackupListCmd {
         return zoneId;
     }
 
-    public Long getPolicyId() {
-        return policyId;
+    public Long getOfferingId() {
+        return offeringId;
     }
 
     /////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ public class ListBackupOfferingsCmd extends BaseBackupListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, ServerApiException, ConcurrentOperationException {
         try {
-            final List<BackupOffering> backupOfferings = backupManager.listBackupOfferings(getZoneId(), getPolicyId());
+            final List<BackupOffering> backupOfferings = backupManager.listBackupOfferings(this);
             setupResponseBackupOfferingsList(backupOfferings);
         } catch (InvalidParameterValueException e) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());

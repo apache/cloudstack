@@ -19,6 +19,7 @@ package org.apache.cloudstack.backup;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -57,10 +58,9 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     /**
      * List backup offerings
-     * @param zoneId zone id
-     * @param policyId if not null, only the policy with this id is listed
+     * @param ListBackupOfferingsCmd API cmd
      */
-    List<BackupOffering> listBackupOfferings(final Long zoneId, final Long policyId);
+    List<BackupOffering> listBackupOfferings(final ListBackupOfferingsCmd cmd);
 
     /**
      * List backup provider offerings
