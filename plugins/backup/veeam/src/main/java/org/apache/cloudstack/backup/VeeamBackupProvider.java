@@ -56,19 +56,19 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
             "The Veeam backup and recovery URL.", true, ConfigKey.Scope.Zone);
 
     private ConfigKey<String> VeeamUsername = new ConfigKey<>("Advanced", String.class,
-            "backup.plugin.veeam.host.username",
+            "backup.plugin.veeam.username",
             "administrator",
             "The Veeam backup and recovery username.", true, ConfigKey.Scope.Zone);
 
     private ConfigKey<String> VeeamPassword = new ConfigKey<>("Advanced", String.class,
-            "backup.plugin.veeam.host.password",
+            "backup.plugin.veeam.password",
             "P@ssword123",
             "The Veeam backup and recovery password.", true, ConfigKey.Scope.Zone);
 
-    private ConfigKey<Boolean> VeeamValidateSSLSecurity = new ConfigKey<>("Advanced", Boolean.class, "backup.plugin.veeam.validate.ssl", "true",
+    private ConfigKey<Boolean> VeeamValidateSSLSecurity = new ConfigKey<>("Advanced", Boolean.class, "backup.plugin.veeam.validate.ssl", "false",
             "When set to true, this will validate the SSL certificate when connecting to https/ssl enabled Veeam API service.", true, ConfigKey.Scope.Zone);
 
-    private ConfigKey<Integer> VeeamApiRequestTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.request.timeout", "300",
+    private ConfigKey<Integer> VeeamApiRequestTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.request.timeout", "600",
             "The Veeam B&R API request timeout in seconds.", true, ConfigKey.Scope.Zone);
 
     @Inject
@@ -154,10 +154,6 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                         vmBackup.setStatus(Backup.Status.BackedUp);
                         vmBackup.setExternalId(job.getExternalId());
                         vmBackup.setCreated(new Date());
-                        if (!takeBackup(vmBackup)) {
-                            vmBackup.setStatus(Backup.Status.Failed);
-                            LOG.warn("Veeam provider failed to start backup job after creating a new backup for VM id: " + vm.getId());
-                        }
                         return vmBackup;
                     }
                 }

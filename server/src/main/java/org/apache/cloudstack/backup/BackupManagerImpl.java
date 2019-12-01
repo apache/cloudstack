@@ -234,10 +234,19 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Failed to persist VM backup object in database");
         }
 
-        backup = (BackupVO) backupProvider.assignVMToBackupOffering(vm, backup, offering);
+        try {
+            backup = (BackupVO) backupProvider.assignVMToBackupOffering(vm, backup, offering);
+        } catch (Exception e) {
+            LOG.error("Exception caught while assigning VM to backup offering by the backup provider", e);
+            backup.setStatus(Backup.Status.Error);
+            backupDao.update(backup.getId(), backup);
+            throw e;
+        }
+
         if (backup == null) {
             throw new CloudRuntimeException("Backup provider failed to assign VM to the backup offering, for VM: " + vm.getUuid());
         }
+
         if (backupDao.update(backup.getId(), backup)) {
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), backup.getId(),
                     vm.getUuid(), backup.getOfferingId(), backup.getVmId(), null,
@@ -258,7 +267,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         final Backup backup = backupDao.findByVmId(vmId);
         if (backup == null) {
-            LOG.debug("VM has no backups or backup offering configuration, skipping removal.");
+            LOG.debug("No backups or backup offering configuration found for the VM, skipping removal.");
             return true;
         }
 

@@ -95,7 +95,7 @@ public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new CloudRuntimeException("Error while creating backup of VM");
+                throw new CloudRuntimeException("Error while assigning VM to backup offering");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
