@@ -77,7 +77,6 @@ public class DeleteBackupCmd  extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
             boolean result = backupManager.deleteBackup(backupId);
-            // FIXME: the response type?
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

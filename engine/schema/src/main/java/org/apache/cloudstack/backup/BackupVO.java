@@ -225,7 +225,7 @@ public class BackupVO implements Backup {
         this.protectedSize = protectedSize;
     }
 
-    public void setScheduleType(short scheduleType) {
+    public void setScheduleType(Short scheduleType) {
         this.scheduleType = scheduleType;
     }
 

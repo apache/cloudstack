@@ -24,6 +24,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupVO;
 
@@ -169,5 +170,21 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         backupResponse.setCreatedDate(backup.getCreated());
         backupResponse.setObjectName("backup");
         return backupResponse;
+    }
+
+    @Override
+    public BackupScheduleResponse newBackupScheduleResponse(Backup backup) {
+        AccountVO account = accountDao.findById(backup.getAccountId());
+        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
+        DataCenterVO zone = dataCenterDao.findById(backup.getZoneId());
+
+        BackupScheduleResponse response = new BackupScheduleResponse();
+        response.setZoneId(zone.getUuid());
+        response.setId(backup.getUuid());
+        response.setAccountId(account.getUuid());
+        response.setVmId(vm.getUuid());
+        response.setVmName(vm.getHostName());
+        response.setObjectName("backupschedule");
+        return response;
     }
 }

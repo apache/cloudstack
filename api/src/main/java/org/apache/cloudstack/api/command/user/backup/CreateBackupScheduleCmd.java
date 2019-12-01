@@ -28,10 +28,14 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = CreateBackupScheduleCmd.APINAME,
         description = "Create a user-defined VM backup schedule",
@@ -47,12 +51,12 @@ public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.BACKUP_ID,
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
-            entityType = BackupResponse.class,
+            entityType = UserVmResponse.class,
             required = true,
-            description = "id of the backup for which custom schedule is to be defined")
-    private Long backupId;
+            description = "ID of the VM for which schedule is to be defined")
+    private Long vmId;
 
     @Parameter(name = ApiConstants.INTERVAL_TYPE, type = CommandType.STRING, required = true, description = "valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
     private String intervalType;
@@ -68,8 +72,8 @@ public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getBackupId() {
-        return backupId;
+    public Long getVmId() {
+        return vmId;
     }
 
     /////////////////////////////////////////////////////
@@ -79,7 +83,14 @@ public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException {
         try {
-            // TODO: ask service layer to do the magic
+            Backup backup = backupManager.createBackupSchedule(this);
+            if (backup != null) {
+                BackupScheduleResponse response = _responseGenerator.createBackupScheduleResponse(backup);
+                response.setResponseName(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new CloudRuntimeException("Error while creating backup schedule of VM");
+            }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
@@ -102,6 +113,6 @@ public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating user-defined backup schedule for backup " + backupId;
+        return "Creating user-defined backup schedule for backup for VM ID " + vmId;
     }
 }

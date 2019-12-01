@@ -51,6 +51,7 @@ import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.CapabilityResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -4233,6 +4234,11 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public BackupResponse createBackupResponse(Backup backup) {
         return ApiDBUtils.newBackupResponse(backup);
+    }
+
+    @Override
+    public BackupScheduleResponse createBackupScheduleResponse(Backup backup) {
+        return ApiDBUtils.newBackupScheduleResponse(backup);
     }
 
     @Override

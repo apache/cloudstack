@@ -27,8 +27,9 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
@@ -38,6 +39,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = UpdateBackupScheduleCmd.APINAME,
         description = "Updates backup schedule of a VM backup with an existing schedule",
@@ -53,19 +55,29 @@ public class UpdateBackupScheduleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.BACKUP_ID,
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
-            entityType = BackupResponse.class,
+            entityType = UserVmResponse.class,
             required = true,
-            description = "ID of the backup")
-    private Long backupId;
+            description = "ID of the VM for which schedule is to be defined")
+    private Long vmId;
+
+    @Parameter(name = ApiConstants.INTERVAL_TYPE, type = CommandType.STRING, required = true, description = "valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
+    private String intervalType;
+
+    @Parameter(name = ApiConstants.MAX_BACKUPS, type = CommandType.INTEGER, required = true, description = "maximum number of backup restore points to keep")
+    private Integer maxBackups;
+
+    @Parameter(name = ApiConstants.SCHEDULE, type = CommandType.STRING, required = true, description = "custom backup schedule, the format is:"
+            + "for HOURLY MM*, for DAILY MM:HH*, for WEEKLY MM:HH:DD (1-7)*, for MONTHLY MM:HH:DD (1-28)")
+    private String schedule;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getBackupId() {
-        return backupId;
+    public Long getVmId() {
+        return vmId;
     }
 
     /////////////////////////////////////////////////////
@@ -75,7 +87,14 @@ public class UpdateBackupScheduleCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            // TODO implement API
+            Backup backup = backupManager.updateBackupSchedule(this);
+            if (backup != null) {
+                BackupScheduleResponse response = _responseGenerator.createBackupScheduleResponse(backup);
+                response.setResponseName(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new CloudRuntimeException("Error while updating backup schedule of VM");
+            }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
@@ -98,6 +117,6 @@ public class UpdateBackupScheduleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating VM backup schedule for VM backup ID: " + backupId;
+        return "Updating VM backup schedule for VM ID: " + vmId;
     }
 }

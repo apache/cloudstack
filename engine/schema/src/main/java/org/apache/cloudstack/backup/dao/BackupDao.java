@@ -20,6 +20,7 @@ package org.apache.cloudstack.backup.dao;
 import java.util.List;
 
 import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupVO;
 
@@ -37,5 +38,7 @@ public interface BackupDao extends GenericDao<BackupVO, Long> {
     List<Backup> listByZoneAndState(Long zoneId, Backup.Status state);
 
     BackupResponse newBackupResponse(Backup backup);
+    BackupScheduleResponse newBackupScheduleResponse(Backup backup);
+
     BackupVO getBackupVO(Backup backup);
 }

@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConditionResponse;
@@ -470,6 +471,8 @@ public interface ResponseGenerator {
     SSHKeyPairResponse createSSHKeyPairResponse(SSHKeyPair sshkeyPair, boolean privatekey);
 
     BackupResponse createBackupResponse(Backup backup);
+
+    BackupScheduleResponse createBackupScheduleResponse(Backup backup);
 
     BackupOfferingResponse createBackupOfferingResponse(BackupOffering policy);
 

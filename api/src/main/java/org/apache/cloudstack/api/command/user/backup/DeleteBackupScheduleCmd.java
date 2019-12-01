@@ -27,8 +27,8 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
@@ -54,19 +54,19 @@ public class DeleteBackupScheduleCmd  extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID,
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
-            entityType = BackupResponse.class,
+            entityType = UserVmResponse.class,
             required = true,
-            description = "ID of the backup whose schedule needs to be deleted")
-    private Long backupId;
+            description = "ID of the VM")
+    private Long vmId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getId() {
-        return backupId;
+    public Long getVmId() {
+        return vmId;
     }
 
     /////////////////////////////////////////////////////
@@ -76,13 +76,13 @@ public class DeleteBackupScheduleCmd  extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = false; // TODO: use backupManager
+            boolean result = backupManager.deleteBackupSchedule(getVmId());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new CloudRuntimeException("Error while deleting backup of VM");
+                throw new CloudRuntimeException("Error while deleting backup schedule of VM");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
@@ -106,6 +106,6 @@ public class DeleteBackupScheduleCmd  extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting backup schedule for backup ID " + backupId;
+        return "Deleting backup schedule for VM ID " + vmId;
     }
 }

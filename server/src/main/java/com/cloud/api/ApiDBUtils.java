@@ -40,6 +40,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -2050,6 +2051,10 @@ public class ApiDBUtils {
 
     public static BackupResponse newBackupResponse(Backup backup) {
         return s_backupDao.newBackupResponse(backup);
+    }
+
+    public static BackupScheduleResponse newBackupScheduleResponse(Backup backup) {
+        return s_backupDao.newBackupScheduleResponse(backup);
     }
 
     public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering policy) {

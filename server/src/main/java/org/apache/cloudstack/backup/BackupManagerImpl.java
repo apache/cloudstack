@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
-import org.apache.cloudstack.api.command.user.backup.ListBackupSchedulesCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.api.command.user.backup.RemoveVirtualMachineFromBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.RestoreBackupCmd;
@@ -297,6 +297,88 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         return false;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_SCHEDULE_CREATE, eventDescription = "creating VM backup schedule", async = true)
+    public Backup createBackupSchedule(CreateBackupScheduleCmd cmd) {
+        final VMInstanceVO vm = vmInstanceDao.findById(cmd.getVmId());
+        if (vm == null) {
+            throw new CloudRuntimeException("Did not find VM by provided ID");
+        }
+
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+
+        final Backup backup = backupDao.findByVmId(vm.getId());
+        if (backup == null) {
+            throw new CloudRuntimeException("VM backup is not configured, please assign to an offering and/or define a custom schedule");
+        }
+
+        //TODO: handle create logic
+
+        return backup;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_SCHEDULE_UPDATE, eventDescription = "updating VM backup schedule", async = true)
+    public Backup updateBackupSchedule(UpdateBackupScheduleCmd cmd) {
+        final VMInstanceVO vm = vmInstanceDao.findById(cmd.getVmId());
+        if (vm == null) {
+            throw new CloudRuntimeException("Did not find VM by provided ID");
+        }
+
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+
+        final Backup backup = backupDao.findByVmId(vm.getId());
+        if (backup == null) {
+            throw new CloudRuntimeException("VM backup is not configured, please assign to an offering and/or define a custom schedule");
+        }
+
+        //TODO: handle update logic
+
+        return backup;
+    }
+
+    @Override
+    public Backup listBackupSchedule(final Long vmId) {
+        final VMInstanceVO vm = vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            throw new CloudRuntimeException("Did not find VM by provided ID");
+        }
+
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+
+        final Backup backup = backupDao.findByVmId(vm.getId());
+        if (backup == null) {
+            throw new CloudRuntimeException("VM backup is not configured, please assign to an offering and/or define a custom schedule");
+        }
+
+        return backup;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_SCHEDULE_DELETE, eventDescription = "deleting VM backup schedule", async = true)
+    public boolean deleteBackupSchedule(final Long vmId) {
+        final VMInstanceVO vm = vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            throw new CloudRuntimeException("Did not find VM by provided ID");
+        }
+
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+
+        final BackupVO backup = (BackupVO) backupDao.findByVmId(vm.getId());
+        if (backup == null) {
+            throw new CloudRuntimeException("VM backup is not configured, please assign to an offering and/or define a custom schedule.");
+        }
+
+        if (!backup.hasUserDefinedSchedule()) {
+            throw new CloudRuntimeException("VM has no backup schedule defined, no need to delete anything.");
+        }
+
+        backup.setSchedule(null);
+        backup.setScheduleType(null);
+        backup.setTimezone(null);
+        return backupDao.update(backup.getId(), backup);
     }
 
     @Override
@@ -584,7 +666,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(RestoreVolumeFromBackupAndAttachToVMCmd.class);
         // Schedule
         cmdList.add(CreateBackupScheduleCmd.class);
-        cmdList.add(ListBackupSchedulesCmd.class);
+        cmdList.add(ListBackupScheduleCmd.class);
         cmdList.add(UpdateBackupScheduleCmd.class);
         cmdList.add(DeleteBackupScheduleCmd.class);
         return cmdList;

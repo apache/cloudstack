@@ -19,7 +19,9 @@ package org.apache.cloudstack.backup;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
+import org.apache.cloudstack.api.command.user.backup.UpdateBackupScheduleCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -88,6 +90,14 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * @return
      */
     boolean removeVMFromBackupOffering(final Long vmId, final Long offeringId, final boolean forced);
+
+    Backup createBackupSchedule(CreateBackupScheduleCmd cmd);
+
+    Backup updateBackupSchedule(UpdateBackupScheduleCmd cmd);
+
+    Backup listBackupSchedule(Long vmId);
+
+    boolean deleteBackupSchedule(Long vmId);
 
     /**
      * Creates backup of a VM
