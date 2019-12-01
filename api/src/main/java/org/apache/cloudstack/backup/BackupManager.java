@@ -87,7 +87,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * @param offeringId
      * @return
      */
-    boolean removeVMFromBackupOffering(final Long vmId, final Long offeringId);
+    boolean removeVMFromBackupOffering(final Long vmId, final Long offeringId, final boolean forced);
 
     /**
      * Creates backup of a VM

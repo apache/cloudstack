@@ -163,6 +163,11 @@ public class BackupVO implements Backup {
     }
 
     @Override
+    public Boolean hasUserDefinedSchedule() {
+        return scheduleType != null;
+    }
+
+    @Override
     public DateUtil.IntervalType getScheduleType() {
         return scheduleType == null ? null : DateUtil.getIntervalType(scheduleType);
     }

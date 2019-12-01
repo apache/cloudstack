@@ -116,6 +116,11 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
+    public boolean willDeleteBackupsOnOfferingRemoval() {
+        return false;
+    }
+
+    @Override
     public boolean takeBackup(Backup backup) {
         s_logger.debug("Starting backup " + backup.getUuid() + " on Dummy provider");
         return true;

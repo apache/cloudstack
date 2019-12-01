@@ -68,6 +68,11 @@ public class RemoveVirtualMachineFromBackupOfferingCmd extends BaseAsyncCmd {
             description = "ID of the backup offering")
     private Long offeringId;
 
+    @Parameter(name = ApiConstants.FORCED,
+            type = CommandType.BOOLEAN,
+            description = "Whether to force remove VM from the backup offering that may also delete VM backups.")
+    private Boolean forced;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -80,6 +85,10 @@ public class RemoveVirtualMachineFromBackupOfferingCmd extends BaseAsyncCmd {
         return offeringId;
     }
 
+    public boolean getForced() {
+        return forced == null ? false : forced;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -87,7 +96,7 @@ public class RemoveVirtualMachineFromBackupOfferingCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.removeVMFromBackupOffering(getVmId(), getOfferingId());
+            boolean result = backupManager.removeVMFromBackupOffering(getVmId(), getOfferingId(), getForced());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);

@@ -65,6 +65,12 @@ public interface BackupProvider {
     boolean removeVMFromBackupOffering(VirtualMachine vm, Backup backup);
 
     /**
+     * Where removal of
+     * @return
+     */
+    boolean willDeleteBackupsOnOfferingRemoval();
+
+    /**
      * Starts and creates an adhoc backup process
      * for a previously registered VM backup
      * @param backup

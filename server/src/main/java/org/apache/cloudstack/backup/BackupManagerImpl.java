@@ -260,7 +260,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, eventDescription = "remove VM from backup offering", async = true)
-    public boolean removeVMFromBackupOffering(Long vmId, Long offeringId) {
+    public boolean removeVMFromBackupOffering(final Long vmId, final Long offeringId, final boolean forced) {
         final VMInstanceVO vm = vmInstanceDao.findById(vmId);
         if (vm == null) {
             throw new CloudRuntimeException("Did not find VM by provided ID");
@@ -268,8 +268,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         final Backup backup = backupDao.findByVmId(vmId);
         if (backup == null) {
-            LOG.debug("No backups or backup offering configuration found for the VM, skipping removal.");
-            return true;
+            throw new CloudRuntimeException("No backups or backup offering configuration found for the VM.");
         }
 
         if (!backup.getOfferingId().equals(offeringId)) {
@@ -282,6 +281,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+
+        if (!forced && backupProvider.willDeleteBackupsOnOfferingRemoval()) {
+            throw new CloudRuntimeException("The backend provider will only allow removal of VM from the offering if forced:true is provided " +
+                    "that will also delete the backups are removed.");
+        }
 
         boolean result = backupProvider.removeVMFromBackupOffering(vm, backup);
         if (result) {

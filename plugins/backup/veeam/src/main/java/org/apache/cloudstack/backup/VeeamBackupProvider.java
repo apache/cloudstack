@@ -180,8 +180,14 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         final String clonedJobName = getGuestBackupName(vm.getInstanceName(), backup.getUuid());
         if (!client.deleteJobAndBackup(clonedJobName)) {
             LOG.warn("Failed to remove Veeam job and backup for job: " + clonedJobName);
+            throw new CloudRuntimeException("Failed to delete Veeam B&R job and backup, an operation may be in progress. Please try again after some time.");
         }
         return client.listJob(clonedJobName) == null;
+    }
+
+    @Override
+    public boolean willDeleteBackupsOnOfferingRemoval() {
+        return true;
     }
 
     @Override

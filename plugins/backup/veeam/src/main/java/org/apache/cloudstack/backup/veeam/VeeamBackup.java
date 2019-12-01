@@ -50,6 +50,11 @@ public class VeeamBackup implements Backup {
     }
 
     @Override
+    public Boolean hasUserDefinedSchedule() {
+        return null;
+    }
+
+    @Override
     public DateUtil.IntervalType getScheduleType() {
         return null;
     }

@@ -142,6 +142,7 @@ public interface Backup extends InternalIdentity, Identity {
     Long getSize();
     Long getProtectedSize();
     String getExternalId();
+    Boolean hasUserDefinedSchedule();
     DateUtil.IntervalType getScheduleType();
     String getSchedule();
     String getTimezone();
