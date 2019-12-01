@@ -91,12 +91,32 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      */
     boolean removeVMFromBackupOffering(final Long vmId, final Long offeringId, final boolean forced);
 
+    /**
+     * Creates a VM backup schedule
+     * @param cmd
+     * @return
+     */
     Backup createBackupSchedule(CreateBackupScheduleCmd cmd);
 
+    /**
+     * Updates a VM backup schedule
+     * @param cmd
+     * @return
+     */
     Backup updateBackupSchedule(UpdateBackupScheduleCmd cmd);
 
+    /**
+     * Lists VM backup schedule for a VM
+     * @param vmId
+     * @return
+     */
     Backup listBackupSchedule(Long vmId);
 
+    /**
+     * Deletes VM backup schedule for a VM
+     * @param vmId
+     * @return
+     */
     boolean deleteBackupSchedule(Long vmId);
 
     /**
