@@ -18,6 +18,7 @@ package org.apache.cloudstack.backup;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -285,9 +286,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         boolean result = backupProvider.removeVMFromBackupOffering(vm, backup);
         if (result) {
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), backup.getId(),
-                    vm.getUuid(), backup.getOfferingId(), backup.getVmId(), null,
-                    Backup.class.getSimpleName(), backup.getUuid());
-            return true;
+                    vm.getUuid(), backup.getOfferingId(), backup.getVmId(), null, Backup.class.getSimpleName(), backup.getUuid());
+            ((BackupVO)backup).setStatus(Backup.Status.Expunged);
+            ((BackupVO)backup).setRemoved(new Date());
+            return backupDao.update(backup.getId(), (BackupVO)backup);
         }
 
         return false;
@@ -305,12 +307,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         final Backup backup = backupDao.findByVmId(vm.getId());
         if (backup == null) {
-            throw new CloudRuntimeException("VM backup is not configured, please assign to an offering or define a custom schedule");
+            throw new CloudRuntimeException("VM backup is not configured, please assign to an offering and/or define a custom schedule");
         }
 
         final BackupProvider backupProvider = getBackupProvider(backup.getZoneId());
         if (backupProvider != null && backupProvider.takeBackup(backup)) {
-            // TODO: handle update etc?
             return backup;
         }
         throw new CloudRuntimeException("Failed to create VM backup");
@@ -476,14 +477,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 return true;
             }
         }
-        // FIXME: fsm to deal with GC+deletion
+        // Let GC task handle removal
         backup.setStatus(Backup.Status.Removed);
-        if (backupDao.update(backup.getId(), backup)) {
-            backupDao.remove(backupId);
-            return true;
-        }
-
-        return result;
+        backup.setRemoved(new Date());
+        return backupDao.update(backup.getId(), backup);
     }
 
     /**

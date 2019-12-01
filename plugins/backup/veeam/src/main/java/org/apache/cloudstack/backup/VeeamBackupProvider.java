@@ -193,7 +193,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     @Override
     public boolean deleteBackup(Backup backup) {
         // Veeam does not support removal of a restore point or point-in-time backup
-        throw new CloudRuntimeException("Backend plugin does not allow removal of backup, to delete the backup chain remove VM from the backup offering");
+        throw new CloudRuntimeException("Veeam B&R plugin does not allow removal of backup restore point, to delete the backup chain remove VM from the backup offering");
     }
 
     @Override
