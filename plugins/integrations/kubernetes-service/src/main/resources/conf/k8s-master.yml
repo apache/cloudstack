@@ -31,6 +31,11 @@ write-files:
     content: |
       #!/bin/bash -e
 
+      if [[ -f "/home/core/success" ]]; then
+      echo "Already provisioned!"
+      exit 0
+      fi
+
       export PATH=$PATH:/opt/bin
 
       ISO_MOUNT_DIR=/mnt/k8sdisk
@@ -187,6 +192,11 @@ write-files:
     content: |
       #!/bin/bash -e
 
+      if [[ -f "/home/core/success" ]]; then
+      echo "Already provisioned!"
+      exit 0
+      fi
+
       ISO_MOUNT_DIR=/mnt/k8sdisk
       BINARIES_DIR=${ISO_MOUNT_DIR}/
 
@@ -215,6 +225,9 @@ write-files:
       kubectl create rolebinding admin-binding --role=admin --user=admin || true
       kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=admin || true
       kubectl create clusterrolebinding kubernetes-dashboard-ui --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:kubernetes-dashboard || true
+
+      sudo touch /home/core/success
+      echo "true" > /home/core/success
 
 coreos:
   units:

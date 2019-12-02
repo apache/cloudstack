@@ -1058,7 +1058,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
                 LOGGER.debug(String.format("Checking host ID: %s for capacity already reserved %d", h.getUuid(), reserved));
                 if (capacityManager.checkIfHostHasCapacity(h.getId(), cpu_requested * reserved, ram_requested * reserved, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
-                    LOGGER.debug(String.format("Found host ID: %s for with enough capacity, CPU=%d RAM=%d already reserved %d", cpu_requested * reserved, ram_requested * reserved));
+                    LOGGER.debug(String.format("Found host ID: %s for with enough capacity, CPU=%d RAM=%d", h.getUuid(), cpu_requested * reserved, ram_requested * reserved));
                     hostEntry.setValue(new Pair<HostVO, Integer>(h, reserved));
                     suitable_host_found = true;
                     break;
