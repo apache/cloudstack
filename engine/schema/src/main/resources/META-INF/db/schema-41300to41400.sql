@@ -35,6 +35,21 @@ UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=285 AND display_name=
 UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=286 AND display_name="Red Hat Enterprise Linux 8.0";
 
 -- Kubernetes service
+CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_supported_version` (
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `uuid` varchar(40) DEFAULT NULL COMMENT 'uuid',
+    `name` varchar(255) NOT NULL COMMENT 'kubernetes version name',
+    `kubernetes_version` varchar(32) NOT NULL COMMENT 'kubernetes semantic version',
+    `iso_id` bigint unsigned NOT NULL COMMENT 'kubernetes version binary ISO id',
+    `zone_id` bigint unsigned DEFAULT NULL COMMENT 'zone id in which kubernetes version is available',
+    `created` datetime NOT NULL COMMENT 'date created',
+    `removed` datetime COMMENT 'date removed if not null',
+
+    PRIMARY KEY(`id`),
+    CONSTRAINT `fk_kubernetes_supported_version__iso_id` FOREIGN KEY `fk_kubernetes_supported_version__iso_id`(`iso_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kubernetes_supported_version__zone_id` FOREIGN KEY `fk_kubernetes_supported_version__zone_id`(`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster` (
     `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
     `uuid` varchar(40) DEFAULT NULL,
@@ -86,21 +101,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster_details` (
 
     PRIMARY KEY(`id`),
     CONSTRAINT `fk_kubernetes_cluster_details__cluster_id` FOREIGN KEY `fk_kubernetes_cluster_details__cluster_id`(`cluster_id`) REFERENCES `kubernetes_cluster`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_supported_version` (
-    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-    `uuid` varchar(40) DEFAULT NULL COMMENT 'uuid',
-    `name` varchar(255) NOT NULL COMMENT 'kubernetes version name',
-    `kubernetes_version` varchar(32) NOT NULL COMMENT 'kubernetes semantic version',
-    `iso_id` bigint unsigned NOT NULL COMMENT 'kubernetes version binary ISO id',
-    `zone_id` bigint unsigned DEFAULT NULL COMMENT 'zone id in which kubernetes version is available',
-    `created` datetime NOT NULL COMMENT 'date created',
-    `removed` datetime COMMENT 'date removed if not null',
-
-    PRIMARY KEY(`id`),
-    CONSTRAINT `fk_kubernetes_supported_version__iso_id` FOREIGN KEY `fk_kubernetes_supported_version__iso_id`(`iso_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_kubernetes_supported_version__zone_id` FOREIGN KEY `fk_kubernetes_supported_version__zone_id`(`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server',
