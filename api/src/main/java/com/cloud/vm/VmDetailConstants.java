@@ -58,7 +58,7 @@ public interface VmDetailConstants {
     // VM import with nic, disk and custom params for custom compute offering
     String NIC = "nic";
     String NETWORK = "network";
-    String IP_ADDRESS = "ipAddress";
+    String IP4_ADDRESS = "ip4Address";
     String IP6_ADDRESS = "ip6Address";
     String DISK = "disk";
     String DISK_OFFERING = "diskOffering";

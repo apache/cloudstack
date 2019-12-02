@@ -142,7 +142,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.NIC_IP_ADDRESS_LIST,
             type = CommandType.MAP,
-            description = "VM nic to ip address mapping using keys nic, ipAddress")
+            description = "VM nic to ip address mapping using keys nic, ip4Address")
     private Map nicIpAddressList;
 
     @Parameter(name = ApiConstants.DATADISK_OFFERING_LIST,
@@ -224,7 +224,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
         if (MapUtils.isNotEmpty(nicIpAddressList)) {
             for (Map<String, String> entry : (Collection<Map<String, String>>)nicIpAddressList.values()) {
                 String nic = entry.get(VmDetailConstants.NIC);
-                String ipAddress = Strings.emptyToNull(entry.get(VmDetailConstants.IP_ADDRESS));
+                String ipAddress = Strings.emptyToNull(entry.get(VmDetailConstants.IP4_ADDRESS));
                 if (Strings.isNullOrEmpty(nic)) {
                     throw new InvalidParameterValueException(String.format("NIC ID: '%s' is invalid for IP address mapping", nic));
                 }
