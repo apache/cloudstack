@@ -19,10 +19,10 @@
 
 package org.apache.cloudstack.agent.directdownload;
 
+import java.util.Map;
+
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-
-import java.util.Map;
 
 public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
 
@@ -35,6 +35,9 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
     private PrimaryDataStoreTO destPool;
     private String checksum;
     private Map<String, String> headers;
+    private int connectTimeout;
+    private int soTimeout;
+    private int connectionRequestTimeout;
 
     protected DirectDownloadCommand (final String url, final Long templateId, final PrimaryDataStoreTO destPool, final String checksum, final Map<String, String> headers) {
         this.url = url;
@@ -62,6 +65,30 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
 
     public Map<String, String> getHeaders() {
         return headers;
+    }
+
+    public int getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public void setConnectTimeout(int connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public int getSoTimeout() {
+        return soTimeout;
+    }
+
+    public void setSoTimeout(int soTimeout) {
+        this.soTimeout = soTimeout;
+    }
+
+    public int getConnectionRequestTimeout() {
+        return connectionRequestTimeout;
+    }
+
+    public void setConnectionRequestTimeout(int connectionRequestTimeout) {
+        this.connectionRequestTimeout = connectionRequestTimeout;
     }
 
     @Override

@@ -18,14 +18,16 @@
  */
 package org.apache.cloudstack.agent.directdownload;
 
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-
 import java.util.Map;
+
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 public class HttpDirectDownloadCommand extends DirectDownloadCommand {
 
-    public HttpDirectDownloadCommand(String url, Long templateId, PrimaryDataStoreTO destPool, String checksum, Map<String, String> headers) {
+    public HttpDirectDownloadCommand(String url, Long templateId, PrimaryDataStoreTO destPool, String checksum, Map<String, String> headers, int connectTimeout, int soTimeout) {
         super(url, templateId, destPool, checksum, headers);
+        setConnectTimeout(connectTimeout);
+        setSoTimeout(soTimeout);
     }
 
 }
