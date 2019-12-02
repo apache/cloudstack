@@ -60,7 +60,7 @@ public class IscsiStorageCleanupMonitor implements Runnable{
 
                 // check if they belong to any VM
                 int[] domains = conn.listDomains();
-                s_logger.debug(String.format(" ********* FOUND %d DOMAINS ************", domains.length));
+                s_logger.debug(String.format("found %d domains", domains.length));
                 for (int domId : domains) {
                     Domain dm = conn.domainLookupByID(domId);
                     final String domXml = dm.getXMLDesc(0);
@@ -93,12 +93,11 @@ public class IscsiStorageCleanupMonitor implements Runnable{
                                 s_logger.warn("[ignored] Error cleaning up " + diskPath, e);
                             }
                         }
-                        diskStatusMap.remove(diskPath);
                     }
                 }
 
             } catch (LibvirtException e) {
-                s_logger.warn("[ignored] Error tryong to cleanup ", e);
+                s_logger.warn("[ignored] Error trying to cleanup ", e);
             }
         }
 
