@@ -16,29 +16,9 @@
 // under the License.
 package com.cloud.ha;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.managed.context.ManagedContext;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManagerListener;
-import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenterVO;
@@ -78,6 +58,27 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContext;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 /**
  * HighAvailabilityManagerImpl coordinates the HA process. VMs are registered with the HA Manager for HA. The request is stored
@@ -101,7 +102,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  *         ha.retry.wait | time to wait before retrying the work item | seconds | 120 || || stop.retry.wait | time to wait
  *         before retrying the stop | seconds | 120 || * }
  **/
-public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvailabilityManager, ClusterManagerListener {
+public class HighAvailabilityManagerImpl extends ManagerBase implements Configurable, HighAvailabilityManager, ClusterManagerListener {
 
     protected static final Logger s_logger = Logger.getLogger(HighAvailabilityManagerImpl.class);
     WorkerThread[] _workers;
@@ -844,16 +845,16 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         value = params.get("force.ha");
         _forceHA = Boolean.parseBoolean(value);
 
-        value = params.get("time.to.sleep");
+        value = params.get(TimeToSleep.key());
         _timeToSleep = (long)NumbersUtil.parseInt(value, 60) * 1000;
 
-        value = params.get("max.retries");
+        value = params.get(MaxRetries.key());
         _maxRetries = NumbersUtil.parseInt(value, 5);
 
-        value = params.get("time.between.failures");
+        value = params.get(TimeBetweenFailures.key());
         _timeBetweenFailures = NumbersUtil.parseLong(value, 3600) * 1000;
 
-        value = params.get("time.between.cleanup");
+        value = params.get(TimeBetweenCleanup.key());
         _timeBetweenCleanups = NumbersUtil.parseLong(value, 3600 * 24);
 
         value = params.get("stop.retry.interval");
@@ -1003,5 +1004,23 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     public boolean hasPendingHaWork(long vmId) {
         List<HaWorkVO> haWorks = _haDao.listPendingHaWorkForVm(vmId);
         return haWorks.size() > 0;
+    }
+
+    /**
+     * @return The name of the component that provided this configuration
+     * variable.  This value is saved in the database so someone can easily
+     * identify who provides this variable.
+     **/
+    @Override
+    public String getConfigComponentName() {
+        return HighAvailabilityManager.class.getSimpleName();
+    }
+
+    /**
+     * @return The list of config keys provided by this configuable.
+     */
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[] {TimeBetweenCleanup, MaxRetries, TimeToSleep, TimeBetweenFailures};
     }
 }
