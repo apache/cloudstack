@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.ha;
 
+import static java.lang.Long.parseLong;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManagerListener;
@@ -846,16 +848,16 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         _forceHA = Boolean.parseBoolean(value);
 
         value = params.get(TimeToSleep.key());
-        _timeToSleep = (long)NumbersUtil.parseInt(value, 60) * 1000;
+        _timeToSleep = NumbersUtil.parseLong(value, parseLong(TimeToSleep.defaultValue())) * 1000;
 
         value = params.get(MaxRetries.key());
         _maxRetries = NumbersUtil.parseInt(value, 5);
 
         value = params.get(TimeBetweenFailures.key());
-        _timeBetweenFailures = NumbersUtil.parseLong(value, 3600) * 1000;
+        _timeBetweenFailures = NumbersUtil.parseLong(value, parseLong(TimeBetweenFailures.defaultValue())) * 1000;
 
         value = params.get(TimeBetweenCleanup.key());
-        _timeBetweenCleanups = NumbersUtil.parseLong(value, 3600 * 24);
+        _timeBetweenCleanups = NumbersUtil.parseLong(value, parseLong(TimeBetweenCleanup.defaultValue()));
 
         value = params.get("stop.retry.interval");
         _stopRetryInterval = NumbersUtil.parseInt(value, 10 * 60);
