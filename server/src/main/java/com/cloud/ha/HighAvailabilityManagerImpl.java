@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.ha;
 
+import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
 
 import com.cloud.agent.AgentManager;
@@ -851,7 +852,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         _timeToSleep = NumbersUtil.parseLong(value, parseLong(TimeToSleep.defaultValue())) * 1000;
 
         value = params.get(MaxRetries.key());
-        _maxRetries = NumbersUtil.parseInt(value, 5);
+        _maxRetries = NumbersUtil.parseInt(value, parseInt(MaxRetries.defaultValue()));
 
         value = params.get(TimeBetweenFailures.key());
         _timeBetweenFailures = NumbersUtil.parseLong(value, parseLong(TimeBetweenFailures.defaultValue())) * 1000;
