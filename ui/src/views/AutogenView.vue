@@ -565,17 +565,17 @@ export default {
             }
           }
 
-          console.log(this.currentAction)
-
           if (this.currentAction.mapping) {
             for (const key in this.currentAction.mapping) {
               if (!this.currentAction.mapping[key].value) {
                 continue
               }
-              var keyName = this.currentAction.mapping[key].rename ? this.currentAction.mapping[key].rename : key
-              params[keyName] = this.currentAction.mapping[key].value(this.resource, params)
+              params[key] = this.currentAction.mapping[key].value(this.resource, params)
             }
           }
+
+          console.log(this.currentAction)
+          console.log(this.resource)
           console.log(params)
 
           var hasJobId = false
