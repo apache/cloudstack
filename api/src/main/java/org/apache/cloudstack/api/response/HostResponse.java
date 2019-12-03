@@ -116,7 +116,7 @@ public class HostResponse extends BaseResponse {
 
     @SerializedName("averageload")
     @Param(description = "the cpu average load on the host")
-    private Long averageLoad;
+    private Double averageLoad;
 
     @SerializedName("networkkbsread")
     @Param(description = "the incoming network traffic on the host")
@@ -337,7 +337,7 @@ public class HostResponse extends BaseResponse {
         this.cpuUsed = cpuUsed;
     }
 
-    public void setAverageLoad(Long averageLoad) {
+    public void setCpuAverageLoad(Double averageLoad) {
         this.averageLoad = averageLoad;
     }
 
@@ -570,7 +570,7 @@ public class HostResponse extends BaseResponse {
         return cpuUsed;
     }
 
-    public Long getAverageLoad() {
+    public Double getAverageLoad() {
         return averageLoad;
     }
 
