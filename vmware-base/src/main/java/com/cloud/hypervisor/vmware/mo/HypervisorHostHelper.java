@@ -38,6 +38,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
@@ -579,7 +580,7 @@ public class HypervisorHostHelper {
                 // First, if both vlan id and pvlan id are provided, we need to
                 // reconfigure the DVSwitch to have a tuple <vlan id, pvlan id> of
                 // type isolated.
-                String pvlanType = details.get(NetworkOffering.Detail.pvlanType);
+                String pvlanType = MapUtils.isNotEmpty(details) ? details.get(NetworkOffering.Detail.pvlanType) : null;
                 if (vid != null && spvlanid != null) {
                     setupPVlanPair(dvSwitchMo, morDvSwitch, vid, spvlanid, pvlanType);
                 }
