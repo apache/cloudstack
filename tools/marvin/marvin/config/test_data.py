@@ -202,6 +202,34 @@ test_data = {
         "name": "Test L2 Network",
         "displaytext": "Test L2 Network"
     },
+    "l2-network-pvlan-community-1": {
+        "name": "Test Network L2 PVLAN Community 1",
+        "displaytext": "Test Network L2 PVLAN Community 1",
+        "vlan": 900,
+        "isolatedpvlan": "901",
+        "isolatedpvlantype": "community"
+    },
+    "l2-network-pvlan-community-2": {
+        "name": "Test Network L2 PVLAN Community 2",
+        "displaytext": "Test Network L2 PVLAN Community 2",
+        "vlan": 900,
+        "isolatedpvlan": "902",
+        "isolatedpvlantype": "community"
+    },
+    "l2-network-pvlan-promiscuous": {
+        "name": "Test Network L2 PVLAN Promiscuous",
+        "displaytext": "Test Network L2 PVLAN Promiscuous",
+        "vlan": 900,
+        "isolatedpvlan" : "900",
+        "isolatedpvlantype": "promiscuous"
+    },
+    "l2-network-pvlan-isolated": {
+        "name": "Test Network L2 PVLAN Isolated",
+        "displaytext": "Test Network L2 PVLAN Isolated",
+        "vlan": 900,
+        "isolatedpvlan": "903",
+        "isolatedpvlantype": "isolated"
+    },
     "network2": {
         "name": "Test Network Shared",
         "displaytext": "Test Network Shared",
