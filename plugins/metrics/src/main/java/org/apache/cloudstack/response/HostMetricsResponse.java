@@ -43,7 +43,7 @@ public class HostMetricsResponse extends HostResponse {
     @Param(description = "the total cpu allocated in Ghz")
     private String cpuAllocated;
 
-    @SerializedName("loadAverage")
+    @SerializedName("cpuloadaverage")
     @Param(description = "the average cpu load the last minute")
     private String loadAverage;
 
