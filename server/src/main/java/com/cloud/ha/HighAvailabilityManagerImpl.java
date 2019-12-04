@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.ha;
 
-import static java.lang.Integer.parseInt;
-import static java.lang.Long.parseLong;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManagerListener;
@@ -106,6 +103,12 @@ import javax.naming.ConfigurationException;
  *         before retrying the stop | seconds | 120 || * }
  **/
 public class HighAvailabilityManagerImpl extends ManagerBase implements Configurable, HighAvailabilityManager, ClusterManagerListener {
+
+    private static final int MILLISECONDS_TO_SECONDS_FACTOR = 1000;
+    private static final int STOP_RETRY_INTERVAL_SECONDS = 600;
+    private static final int RESTART_RETRY_INTERVAL_SECONDS = 600;
+    private static final int INVESTIGATE_RETRY_INTERVAL_SECONDS = 60;
+    private static final int MIGRATE_RETRY_INTERVAL_SECONDS = 120;
 
     protected static final Logger s_logger = Logger.getLogger(HighAvailabilityManagerImpl.class);
     WorkerThread[] _workers;
@@ -849,28 +852,28 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         _forceHA = Boolean.parseBoolean(value);
 
         value = params.get(TimeToSleep.key());
-        _timeToSleep = NumbersUtil.parseLong(value, parseLong(TimeToSleep.defaultValue())) * 1000;
+        _timeToSleep = NumbersUtil.parseLong(value, TimeToSleep.value()) * MILLISECONDS_TO_SECONDS_FACTOR;
 
         value = params.get(MaxRetries.key());
-        _maxRetries = NumbersUtil.parseInt(value, parseInt(MaxRetries.defaultValue()));
+        _maxRetries = NumbersUtil.parseInt(value, MaxRetries.value());
 
         value = params.get(TimeBetweenFailures.key());
-        _timeBetweenFailures = NumbersUtil.parseLong(value, parseLong(TimeBetweenFailures.defaultValue())) * 1000;
+        _timeBetweenFailures = NumbersUtil.parseLong(value, TimeBetweenFailures.value()) * MILLISECONDS_TO_SECONDS_FACTOR;
 
         value = params.get(TimeBetweenCleanup.key());
-        _timeBetweenCleanups = NumbersUtil.parseLong(value, parseLong(TimeBetweenCleanup.defaultValue()));
+        _timeBetweenCleanups = NumbersUtil.parseLong(value, TimeBetweenCleanup.value());
 
         value = params.get("stop.retry.interval");
-        _stopRetryInterval = NumbersUtil.parseInt(value, 10 * 60);
+        _stopRetryInterval = NumbersUtil.parseInt(value, STOP_RETRY_INTERVAL_SECONDS);
 
         value = params.get("restart.retry.interval");
-        _restartRetryInterval = NumbersUtil.parseInt(value, 10 * 60);
+        _restartRetryInterval = NumbersUtil.parseInt(value, RESTART_RETRY_INTERVAL_SECONDS);
 
         value = params.get("investigate.retry.interval");
-        _investigateRetryInterval = NumbersUtil.parseInt(value, 1 * 60);
+        _investigateRetryInterval = NumbersUtil.parseInt(value, INVESTIGATE_RETRY_INTERVAL_SECONDS);
 
         value = params.get("migrate.retry.interval");
-        _migrateRetryInterval = NumbersUtil.parseInt(value, 2 * 60);
+        _migrateRetryInterval = NumbersUtil.parseInt(value, MIGRATE_RETRY_INTERVAL_SECONDS);
 
         _instance = params.get("instance");
         if (_instance == null) {
