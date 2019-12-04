@@ -1242,7 +1242,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             if (s_logger.isDebugEnabled()) {
                 if (cmd instanceof PingRoutingCommand) {
                     logD = false;
-                    s_logger.debug("Ping from " + hostId + "(" + hostName + ")");
+                    s_logger.debug("Ping from Routing host " + hostId + "(" + hostName + ")");
                     s_logger.trace("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request);
                 } else if (cmd instanceof PingCommand) {
                     logD = false;
