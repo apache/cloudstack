@@ -87,19 +87,14 @@ public interface BackupProvider {
     /**
      * Restore VM from backup
      */
-    boolean restoreVMFromBackup(VirtualMachine vm, String backupUuid, String restorePointId);
+    boolean restoreVMFromBackup(VirtualMachine vm, Backup backup);
 
     /**
      * Restore a volume from a backup
      */
-    Pair<Boolean, String> restoreBackedUpVolume(long zoneId, String restorePointId, String volumeUuid, String hostIp, String dataStoreUuid);
-
-    /**
-     * List VM Backups
-     */
-    List<Backup> listBackups(Long zoneId, VirtualMachine vm);
+    Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid);
 
     Map<Backup, Backup.Metric> getBackupMetrics(Long zoneId, List<Backup> backupList);
 
-    List<Backup.RestorePoint> listBackupRestorePoints(String backupUuid, VirtualMachine vm);
+    List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm);
 }

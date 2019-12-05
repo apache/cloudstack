@@ -1901,8 +1901,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     }
 
     private void createBackupEvent(final UsageEventVO event) {
-        Long backupId = event.getResourceId();
-        Long vmId = event.getTemplateId();
+        Long vmId = event.getResourceId();
         Long zoneId = event.getZoneId();
         Long accountId = event.getAccountId();
         Date created = event.getCreateDate();
@@ -1910,10 +1909,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         Long domainId = account.getDomainId();
 
         if (EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN.equals(event.getType())) {
-            final UsageBackupVO backupVO = new UsageBackupVO(zoneId, accountId, domainId, backupId, vmId, created);
+            final UsageBackupVO backupVO = new UsageBackupVO(zoneId, accountId, domainId, vmId, created);
             usageBackupDao.persist(backupVO);
         } else if (EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE.equals(event.getType())) {
-            usageBackupDao.removeUsage(accountId, zoneId, backupId);
+            usageBackupDao.removeUsage(accountId, zoneId, vmId);
         }
     }
 

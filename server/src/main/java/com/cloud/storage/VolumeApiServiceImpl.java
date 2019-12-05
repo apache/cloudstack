@@ -1559,7 +1559,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // if target VM has backups
-        if (vm.getBackupOfferingId() != null) {
+        if (vm.getBackupOfferingId() != null || vm.getBackupVolumes().size() > 0) {
             throw new InvalidParameterValueException("Unable to attach volume, please specify a VM that does not have any backups");
         }
 
@@ -1803,7 +1803,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Unable to detach volume, please specify a VM that does not have VM snapshots");
         }
 
-        if (vm.getBackupOfferingId() != null) {
+        if (vm.getBackupOfferingId() != null || vm.getBackupVolumes().size() > 0) {
             throw new InvalidParameterValueException("Unable to detach volume, cannot detach volume from a VM that has backups. First remove the VM from the backup offering.");
         }
 

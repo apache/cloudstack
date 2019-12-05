@@ -17,13 +17,14 @@
 
 package org.apache.cloudstack.backup;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.storage.Volume;
 import com.cloud.utils.StringUtils;
 
-public interface Backup extends InternalIdentity, Identity {
+public interface Backup extends ControlledEntity, InternalIdentity, Identity {
 
     enum Status {
         Allocated, Queued, BackingUp, BackedUp, Error, Failed, Restoring, Removed, Expunged
@@ -130,8 +131,12 @@ public interface Backup extends InternalIdentity, Identity {
         }
     }
 
+    long getVmId();
     String getExternalId();
-    Long getVmId();
+    String getType();
+    String getDate();
+    Backup.Status getStatus();
     Long getSize();
     Long getProtectedSize();
+    long getZoneId();
 }

@@ -15,27 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.backup.dao;
+package org.apache.cloudstack.api.command.user.backup;
 
-import java.util.List;
-
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.backup.BackupVO;
 
-import com.cloud.utils.db.GenericDao;
-
-public interface BackupDao extends GenericDao<BackupVO, Long> {
-
-    Backup findByVmId(Long vmId);
-    Backup findByVmIdIncludingRemoved(Long vmId);
-
-    List<Backup> listByVmId(Long zoneId, Long vmId);
-    List<Backup> listByAccountId(Long accountId);
-    List<Backup> listByOfferingId(Long offeringId);
-    List<Backup> syncBackups(Long zoneId, Long vmId, List<Backup> externalBackups);
-    List<Backup> listByZoneAndState(Long zoneId, Backup.Status state);
-    BackupVO getBackupVO(Backup backup);
-
-    BackupResponse newBackupResponse(Backup backup);
+@APICommand(name = UpdateBackupScheduleCmd.APINAME,
+        description = "Updates a user-defined VM backup schedule",
+        responseObject = BackupResponse.class, since = "4.14.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+public class UpdateBackupScheduleCmd extends CreateBackupScheduleCmd {
+    public static final String APINAME = "updateBackupSchedule";
 }

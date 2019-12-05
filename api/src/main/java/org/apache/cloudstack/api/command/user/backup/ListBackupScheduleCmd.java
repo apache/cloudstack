@@ -23,7 +23,6 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseBackupListCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -44,7 +43,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         description = "List backup schedule of a VM",
         responseObject = BackupScheduleResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListBackupScheduleCmd extends BaseBackupListCmd {
+public class ListBackupScheduleCmd extends BaseCmd {
     public static final String APINAME = "listBackupSchedule";
 
     @Inject

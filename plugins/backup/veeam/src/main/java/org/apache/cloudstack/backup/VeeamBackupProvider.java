@@ -199,21 +199,16 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public boolean restoreVMFromBackup(VirtualMachine vm, String backupUuid, String restorePointId) {
+    public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
+        String restorePointId = backup.getExternalId();
         return getClient(vm.getDataCenterId()).restoreFullVM(vm.getInstanceName(), restorePointId);
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(long zoneId, String restorePointId,
-                                                       String volumeUuid, String hostIp, String dataStoreUuid) {
-
+    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid) {
+        Long zoneId = backup.getZoneId();
+        String restorePointId = backup.getExternalId();
         return getClient(zoneId).restoreVMToDifferentLocation(restorePointId, hostIp, dataStoreUuid);
-    }
-
-    @Override
-    public List<Backup> listBackups(Long zoneId, VirtualMachine vm) {
-        //return getClient(zoneId).listAllBackups();
-        return null;
     }
 
     @Override
@@ -230,8 +225,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public List<Backup.RestorePoint> listBackupRestorePoints(String backupUuid, VirtualMachine vm) {
-        String backupName = getGuestBackupName(vm.getInstanceName(), backupUuid);
+    public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
+        String backupName = getGuestBackupName(vm.getInstanceName(), vm.getUuid());
         return getClient(vm.getDataCenterId()).listRestorePoints(backupName, vm.getInstanceName());
     }
 

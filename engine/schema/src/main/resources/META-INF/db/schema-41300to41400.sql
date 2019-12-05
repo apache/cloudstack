@@ -49,16 +49,22 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backups` (
   `vm_id` bigint(20) unsigned NOT NULL,
   `external_id` varchar(255) NOT NULL COMMENT 'external ID',
   `type` varchar(255) NOT NULL COMMENT 'backup type',
-  `size` bigint(20) DEFAULT 0,
+  `date` varchar(255) NOT NULL COMMENT 'backup date',
+  `size` bigint(20) DEFAULT 0 COMMENT 'size of the backup',
   `protected_size` bigint(20) DEFAULT 0,
-  `volumes` text
+  `status` varchar(32) DEFAULT NULL COMMENT 'backup status',
+  `backup_offering_id` bigint(20) unsigned NOT NULL COMMENT,
+  `account_id` bigint(20) unsigned NOT NULL COMMENT,
+  `domain_id` bigint(20) unsigned NOT NULL COMMENT,
+  `zone_id` bigint(20) unsigned NOT NULL,
+  `removed` datetime DEFAULT NULL COMMENT 'Date removed.  not null if removed',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_backup__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_backup__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_backup__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `cloud`.`backup_schedule` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `uuid` varchar(40) NOT NULL UNIQUE,
   `vm_id` bigint(20) unsigned NOT NULL UNIQUE,
   `schedule_type` int(4) DEFAULT NULL COMMENT 'backup schedulet type e.g. hourly, daily, etc.',
   `schedule` varchar(100) DEFAULT NULL COMMENT 'schedule time of execution',
@@ -74,12 +80,11 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_backup` (
   `zone_id` bigint(20) unsigned NOT NULL,
   `account_id` bigint(20) unsigned NOT NULL,
   `domain_id` bigint(20) unsigned NOT NULL,
-  `backup_id` bigint(20) unsigned NOT NULL,
   `vm_id` bigint(20) unsigned NOT NULL,
   `size` bigint(20) DEFAULT 0,
   `protected_size` bigint(20) DEFAULT 0,
   `created` datetime NOT NULL,
   `removed` datetime,
   PRIMARY KEY (`id`),
-  INDEX `i_usage_backup` (`zone_id`,`account_id`,`backup_id`,`vm_id`,`created`)
+  INDEX `i_usage_backup` (`zone_id`,`account_id`,`vm_id`,`created`)
 ) ENGINE=InnoDB CHARSET=utf8;

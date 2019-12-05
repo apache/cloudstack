@@ -22,10 +22,7 @@ import java.util.List;
 
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.api.response.BackupRestorePointResponse;
 import org.apache.cloudstack.backup.BackupOffering;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.context.CallContext;
 
 public abstract class BaseBackupListCmd extends BaseListCmd {
@@ -39,35 +36,6 @@ public abstract class BaseBackupListCmd extends BaseListCmd {
             }
             BackupOfferingResponse backupOfferingResponse = _responseGenerator.createBackupOfferingResponse(offering);
             responses.add(backupOfferingResponse);
-        }
-        response.setResponses(responses);
-        response.setResponseName(getCommandName());
-        setResponseObject(response);
-    }
-
-    protected void setupResponseBackupList(final List<Backup> backups, final List<Backup.RestorePoint> restorePoints) {
-        final ListResponse<BackupResponse> response = new ListResponse<>();
-        final List<BackupResponse> responses = new ArrayList<>();
-        for (Backup backup : backups) {
-            if (backup == null) {
-                continue;
-            }
-            BackupResponse backupResponse = _responseGenerator.createBackupResponse(backup);
-            if (restorePoints != null && !restorePoints.isEmpty()) {
-                final List<BackupRestorePointResponse> restorePointResponses = new ArrayList<>();
-                for (Backup.RestorePoint rp : restorePoints) {
-                    if (rp == null) {
-                        continue;
-                    }
-                    BackupRestorePointResponse rpResponse = new BackupRestorePointResponse();
-                    rpResponse.setId(rp.getId());
-                    rpResponse.setCreated(rp.getCreated());
-                    rpResponse.setType(rp.getType());
-                    restorePointResponses.add(rpResponse);
-                }
-                backupResponse.setRestorePoints(restorePointResponses);
-            }
-            responses.add(backupResponse);
         }
         response.setResponses(responses);
         response.setResponseName(getCommandName());

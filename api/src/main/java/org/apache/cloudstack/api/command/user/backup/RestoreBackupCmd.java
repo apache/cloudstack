@@ -61,22 +61,12 @@ public class RestoreBackupCmd extends BaseAsyncCmd {
             description = "id of the backup")
     private Long backupId;
 
-    @Parameter(name = ApiConstants.RESTORE_POINT_ID,
-            type = CommandType.STRING,
-            required = true,
-            description = "external id of the restore point")
-    private String restorePointId;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getBackupId() {
         return backupId;
-    }
-
-    public String getRestorePointId() {
-        return restorePointId;
     }
 
     /////////////////////////////////////////////////////
@@ -86,7 +76,7 @@ public class RestoreBackupCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.restoreBackup(backupId, restorePointId);
+            boolean result = backupManager.restoreBackup(backupId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
@@ -116,6 +106,6 @@ public class RestoreBackupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Restoring VM from restore point: " + restorePointId + " on backup: " + backupId;
+        return "Restoring VM from backup: " + backupId;
     }
 }

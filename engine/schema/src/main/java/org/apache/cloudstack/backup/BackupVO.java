@@ -21,6 +21,8 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -37,17 +39,39 @@ public class BackupVO implements Backup {
     @Column(name = "uuid")
     private String uuid;
 
+    @Column(name = "vm_id")
+    private long vmId;
+
     @Column(name = "external_id")
     private String externalId;
 
-    @Column(name = "vm_id")
-    private Long vmId;
+    @Column(name = "type")
+    private String backupType;
+
+    @Column(name = "date")
+    private String date;
 
     @Column(name = "size")
     private Long size;
 
     @Column(name = "protected_size")
     private Long protectedSize;
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "status")
+    private Backup.Status status;
+
+    @Column(name = "backup_offering_id")
+    private long backupOfferingId;
+
+    @Column(name = "account_id")
+    private long accountId;
+
+    @Column(name = "domain_id")
+    private long domainId;
+
+    @Column(name = "zone_id")
+    private long zoneId;
 
     public BackupVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -57,6 +81,7 @@ public class BackupVO implements Backup {
         this.uuid = UUID.randomUUID().toString();
         this.vmId = vmId;
         this.externalId = externalId;
+        this.status = Status.BackedUp;
     }
 
     @Override
@@ -70,6 +95,15 @@ public class BackupVO implements Backup {
     }
 
     @Override
+    public long getVmId() {
+        return vmId;
+    }
+
+    public void setVmId(long vmId) {
+        this.vmId = vmId;
+    }
+
+    @Override
     public String getExternalId() {
         return externalId;
     }
@@ -78,13 +112,21 @@ public class BackupVO implements Backup {
         this.externalId = externalId;
     }
 
-    @Override
-    public Long getVmId() {
-        return vmId;
+    public String getType() {
+        return backupType;
     }
 
-    public void setVmId(Long vmId) {
-        this.vmId = vmId;
+    public void setType(String type) {
+        this.backupType = type;
+    }
+
+    @Override
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
     }
 
     @Override
@@ -103,5 +145,53 @@ public class BackupVO implements Backup {
 
     public void setProtectedSize(Long protectedSize) {
         this.protectedSize = protectedSize;
+    }
+
+    @Override
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public long getBackupOfferingId() {
+        return backupOfferingId;
+    }
+
+    public void setBackupOfferingId(long backupOfferingId) {
+        this.backupOfferingId = backupOfferingId;
+    }
+
+    @Override
+    public long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
+
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(long domainId) {
+        this.domainId = domainId;
+    }
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return Backup.class;
     }
 }

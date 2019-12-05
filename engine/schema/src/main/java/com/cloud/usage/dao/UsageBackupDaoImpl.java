@@ -41,8 +41,8 @@ import com.cloud.utils.db.TransactionStatus;
 @Component
 public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> implements UsageBackupDao {
     public static final Logger LOGGER = Logger.getLogger(UsageBackupDaoImpl.class);
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, backup_id, vm_id, size, protected_size, created, removed FROM cloud_usage.usage_backup WHERE " +
-            " vm_id = ? AND ((removed IS NULL AND created <= ?) OR (created BETWEEN ? AND ?) OR (removed BETWEEN ? AND ?) " +
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, vm_id, size, protected_size, created, removed FROM cloud_usage.usage_backup WHERE " +
+            " account_id = ? AND ((removed IS NULL AND created <= ?) OR (created BETWEEN ? AND ?) OR (removed BETWEEN ? AND ?) " +
             " OR ((created <= ?) AND (removed >= ?)))";
 
     @Override
@@ -67,20 +67,20 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
     }
 
     @Override
-    public void removeUsage(Long accountId, Long zoneId, Long backupId) {
+    public void removeUsage(Long accountId, Long zoneId, Long vmId) {
         boolean result = Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(final TransactionStatus status) {
                 final QueryBuilder<UsageBackupVO> qb = QueryBuilder.create(UsageBackupVO.class);
                 qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
                 qb.and(qb.entity().getZoneId(), SearchCriteria.Op.EQ, zoneId);
-                qb.and(qb.entity().getBackupId(), SearchCriteria.Op.EQ, backupId);
+                qb.and(qb.entity().getVmId(), SearchCriteria.Op.EQ, vmId);
                 final UsageBackupVO entry = findOneBy(qb.create());
                 return remove(qb.create()) > 0;
             }
         });
         if (!result) {
-            LOGGER.warn("Failed to remove usage entry for backup id: " + backupId);
+            LOGGER.warn("Failed to remove usage entry for backup of VM ID: " + vmId);
         }
     }
 
@@ -109,14 +109,13 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
                 Long zoneId = Long.valueOf(rs.getLong(2));
                 Long acctId = Long.valueOf(rs.getLong(3));
                 Long domId = Long.valueOf(rs.getLong(4));
-                Long backupId = Long.valueOf(rs.getLong(5));
-                Long vmId = Long.valueOf(rs.getLong(6));
-                Long size = Long.valueOf(rs.getLong(7));
-                Long pSize = Long.valueOf(rs.getLong(8));
+                Long vmId = Long.valueOf(rs.getLong(5));
+                Long size = Long.valueOf(rs.getLong(6));
+                Long pSize = Long.valueOf(rs.getLong(7));
                 Date createdDate = null;
                 Date removedDate = null;
-                String createdTS = rs.getString(9);
-                String removedTS = rs.getString(10);
+                String createdTS = rs.getString(8);
+                String removedTS = rs.getString(9);
 
                 if (createdTS != null) {
                     createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
@@ -124,7 +123,7 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
                 if (removedTS != null) {
                     removedDate = DateUtil.parseDateString(s_gmtTimeZone, removedTS);
                 }
-                usageRecords.add(new UsageBackupVO(id, zoneId, acctId, domId, backupId, vmId, size, pSize, createdDate, removedDate));
+                usageRecords.add(new UsageBackupVO(id, zoneId, acctId, domId, vmId, size, pSize, createdDate, removedDate));
             }
         } catch (Exception e) {
             txn.rollback();

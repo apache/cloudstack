@@ -49,7 +49,7 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
     }
 
     @Override
-    public BackupSchedule findByVM(Long vmId) {
+    public BackupScheduleVO findByVM(Long vmId) {
         SearchCriteria<BackupScheduleVO> sc = backupScheduleSearch.create();
         sc.setParameters("vm_id", vmId);
         return findOneBy(sc);
@@ -58,9 +58,7 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
     @Override
     public BackupScheduleResponse newBackupScheduleResponse(BackupSchedule schedule) {
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(schedule.getVmId());
-
         BackupScheduleResponse response = new BackupScheduleResponse();
-        response.setId(vm.getUuid());
         response.setVmId(vm.getUuid());
         response.setVmName(vm.getHostName());
         response.setIntervalType(schedule.getScheduleType());

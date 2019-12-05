@@ -24,7 +24,7 @@ import org.apache.cloudstack.backup.BackupScheduleVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface BackupScheduleDao extends GenericDao<BackupScheduleVO, Long> {
-    BackupSchedule findByVM(Long vmId);
+    BackupScheduleVO findByVM(Long vmId);
 
     BackupScheduleResponse newBackupScheduleResponse(BackupSchedule schedule);
 }

@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -91,11 +92,11 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     boolean removeVMFromBackupOffering(final Long vmId, final boolean forced);
 
     /**
-     * Creates a VM backup schedule
+     * Creates or Updates a VM backup schedule
      * @param cmd
      * @return
      */
-    BackupSchedule createBackupSchedule(CreateBackupScheduleCmd cmd);
+    BackupSchedule configureBackupSchedule(CreateBackupScheduleCmd cmd);
 
     /**
      * Lists VM backup schedule for a VM
@@ -121,17 +122,17 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     /**
      * List existing backups for a VM
      */
-    List<Backup> listBackups(final Long id, final Long vmId);
+    List<Backup> listBackups(final ListBackupsCmd cmd);
 
     /**
      * Restore a full VM from backup
      */
-    boolean restoreBackup(final Long backupId, final String restorePointId);
+    boolean restoreBackup(final Long backupId);
 
     /**
      * Restore a backed up volume and attach it to a VM
      */
-    boolean restoreBackupVolumeAndAttachToVM(final String backedUpVolumeUuid, final Long vmId, final Long backupId, final String restorePointId) throws Exception;
+    boolean restoreBackupVolumeAndAttachToVM(final String backedUpVolumeUuid, final Long backupId, final Long vmId) throws Exception;
 
     /**
      * Deletes a backup

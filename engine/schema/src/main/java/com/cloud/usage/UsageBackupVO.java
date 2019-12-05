@@ -48,9 +48,6 @@ public class UsageBackupVO implements InternalIdentity {
     @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name = "backup_id")
-    private long backupId;
-
     @Column(name = "vm_id")
     private long vmId;
 
@@ -71,21 +68,19 @@ public class UsageBackupVO implements InternalIdentity {
     protected UsageBackupVO() {
     }
 
-    public UsageBackupVO(long zoneId, long accountId, long domainId, long backupId, long vmId, Date created) {
+    public UsageBackupVO(long zoneId, long accountId, long domainId, long vmId, Date created) {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
-        this.backupId = backupId;
         this.vmId = vmId;
         this.created = created;
     }
 
-    public UsageBackupVO(long id, long zoneId, long accountId, long domainId, long backupId, long vmId, long size, long protectedSize, Date created, Date removed) {
+    public UsageBackupVO(long id, long zoneId, long accountId, long domainId, long vmId, long size, long protectedSize, Date created, Date removed) {
         this.id = id;
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
-        this.backupId = backupId;
         this.vmId = vmId;
         this.size = size;
         this.protectedSize = protectedSize;
@@ -120,14 +115,6 @@ public class UsageBackupVO implements InternalIdentity {
 
     public void setDomainId(long domainId) {
         this.domainId = domainId;
-    }
-
-    public long getBackupId() {
-        return backupId;
-    }
-
-    public void setBackupId(long backupId) {
-        this.backupId = backupId;
     }
 
     public long getVmId() {

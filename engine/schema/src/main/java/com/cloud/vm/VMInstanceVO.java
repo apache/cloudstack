@@ -19,6 +19,7 @@ package com.cloud.vm;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
 import com.cloud.utils.fsm.FiniteStateObject;
 import com.cloud.vm.VirtualMachine.State;
+import com.google.common.base.Strings;
 import com.google.gson.Gson;
 
 @Entity
@@ -613,10 +615,17 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     @Override
     public List<Backup.VolumeInfo> getBackupVolumes() {
+        if (Strings.isNullOrEmpty(this.backupVolumes)) {
+            return Collections.emptyList();
+        }
         return Arrays.asList(new Gson().fromJson(this.backupVolumes, Backup.VolumeInfo[].class));
     }
 
     public void setBackupVolumes(List<Backup.VolumeInfo> backupVolumes) {
-        this.backupVolumes = new Gson().toJson(backupVolumes);
+        if (backupVolumes == null) {
+            this.backupVolumes = null;
+        } else {
+            this.backupVolumes = new Gson().toJson(backupVolumes);
+        }
     }
 }

@@ -40,7 +40,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = RemoveVirtualMachineFromBackupOfferingCmd.APINAME,
-        description = "Removes a VM from a backup offering",
+        description = "Removes a VM from any existing backup offering",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RemoveVirtualMachineFromBackupOfferingCmd extends BaseAsyncCmd {

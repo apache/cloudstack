@@ -17,9 +17,6 @@
 
 package org.apache.cloudstack.api.response;
 
-import java.util.Date;
-import java.util.List;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -35,10 +32,6 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "ID of the VM (backup)")
     private String id;
 
-    @SerializedName(ApiConstants.NAME)
-    @Param(description = "name of the VM")
-    private String name;
-
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
     @Param(description = "ID of the VM")
     private String vmId;
@@ -47,25 +40,17 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "name of the VM")
     private String vmName;
 
-    @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "zone id")
-    private String zoneId;
-
-    @SerializedName(ApiConstants.ACCOUNT_ID)
-    @Param(description = "account id")
-    private String accountId;
-
     @SerializedName(ApiConstants.EXTERNAL_ID)
     @Param(description = "external backup id")
     private String externalId;
 
-    @SerializedName(ApiConstants.VOLUMES)
-    @Param(description = "backup volumes")
-    private String volumes;
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "backup type")
+    private String type;
 
-    @SerializedName(ApiConstants.STATUS)
-    @Param(description = "backup volume ids")
-    private Backup.Status status;
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "backup date")
+    private String date;
 
     @SerializedName(ApiConstants.SIZE)
     @Param(description = "backup size in bytes")
@@ -75,13 +60,41 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "backup protected (virtual) size in bytes")
     private Long protectedSize;
 
-    @SerializedName(ApiConstants.RESTORE_POINTS)
-    @Param(description = "list of backup restore points")
-    private List<BackupRestorePointResponse> restorePoints;
+    @SerializedName(ApiConstants.STATUS)
+    @Param(description = "backup status")
+    private Backup.Status status;
 
-    @SerializedName(ApiConstants.CREATED)
-    @Param(description = "backup creation date")
-    private Date createdDate;
+    @SerializedName(ApiConstants.BACKUP_OFFERING_ID)
+    @Param(description = "backup offering id")
+    private String backupOfferingId;
+
+    @SerializedName(ApiConstants.BACKUP_OFFERING_ID)
+    @Param(description = "backup offering id")
+    private String backupOfferingName;
+
+    @SerializedName(ApiConstants.ACCOUNT_ID)
+    @Param(description = "account id")
+    private String accountId;
+
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "account name")
+    private String account;
+
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "domain id")
+    private String domainId;
+
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "domain name")
+    private String domain;
+
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "zone id")
+    private String zoneId;
+
+    @SerializedName(ApiConstants.ZONE)
+    @Param(description = "zone name")
+    private String zone;
 
     public String getId() {
         return id;
@@ -89,38 +102,6 @@ public class BackupResponse extends BaseResponse {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(String accountId) {
-        this.accountId = accountId;
-    }
-
-    public String getZoneId() {
-        return zoneId;
-    }
-
-    public void setZoneId(String zoneId) {
-        this.zoneId = zoneId;
-    }
-
-    public String getExternalId() {
-        return externalId;
-    }
-
-    public void setExternalId(String externalId) {
-        this.externalId = externalId;
     }
 
     public String getVmId() {
@@ -139,12 +120,28 @@ public class BackupResponse extends BaseResponse {
         this.vmName = vmName;
     }
 
-    public Backup.Status getStatus() {
-        return status;
+    public String getExternalId() {
+        return externalId;
     }
 
-    public void setStatus(Backup.Status status) {
-        this.status = status;
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
     }
 
     public Long getSize() {
@@ -163,27 +160,75 @@ public class BackupResponse extends BaseResponse {
         this.protectedSize = protectedSize;
     }
 
-    public String getVolumes() {
-        return volumes;
+    public Backup.Status getStatus() {
+        return status;
     }
 
-    public void setVolumes(String volumes) {
-        this.volumes = volumes;
+    public void setStatus(Backup.Status status) {
+        this.status = status;
     }
 
-    public List<BackupRestorePointResponse> getRestorePoints() {
-        return restorePoints;
+    public String getBackupOfferingId() {
+        return backupOfferingId;
     }
 
-    public void setRestorePoints(List<BackupRestorePointResponse> restorePoints) {
-        this.restorePoints = restorePoints;
+    public void setBackupOfferingId(String backupOfferingId) {
+        this.backupOfferingId = backupOfferingId;
     }
 
-    public Date getCreatedDate() {
-        return createdDate;
+    public String getBackupOffering() {
+        return backupOfferingName;
     }
 
-    public void setCreatedDate(Date createdDate) {
-        this.createdDate = createdDate;
+    public void setBackupOffering(String backupOfferingName) {
+        this.backupOfferingName = backupOfferingName;
+    }
+
+    public String getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
+    }
+
+    public String getAccount() {
+        return account;
+    }
+
+    public void setAccount(String account) {
+        this.account = account;
+    }
+
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZone() {
+        return zone;
+    }
+
+    public void setZone(String zone) {
+        this.zone = zone;
     }
 }

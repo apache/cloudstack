@@ -39,10 +39,10 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = CreateBackupScheduleCmd.APINAME,
-        description = "Create a user-defined VM backup schedule",
+        description = "Creates a user-defined VM backup schedule",
         responseObject = BackupResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
+public class CreateBackupScheduleCmd extends BaseAsyncCmd {
     public static final String APINAME = "createBackupSchedule";
 
     @Inject
@@ -105,7 +105,7 @@ public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException {
         try {
-            BackupSchedule schedule = backupManager.createBackupSchedule(this);
+            BackupSchedule schedule = backupManager.configureBackupSchedule(this);
             if (schedule != null) {
                 BackupScheduleResponse response = _responseGenerator.createBackupScheduleResponse(schedule);
                 response.setResponseName(getCommandName());
@@ -130,11 +130,11 @@ public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VM_BACKUP_SCHEDULE_CREATE;
+        return EventTypes.EVENT_VM_BACKUP_SCHEDULE_CONFIGURE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Creating user-defined backup schedule for backup for VM ID " + vmId;
+        return "Configuring user-defined backup schedule for backup for VM ID " + vmId;
     }
 }

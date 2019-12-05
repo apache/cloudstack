@@ -29,10 +29,6 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = BackupSchedule.class)
 public class BackupScheduleResponse extends BaseResponse {
 
-    @SerializedName(ApiConstants.ID)
-    @Param(description = "ID of the VM backup schedule")
-    private String id;
-
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
     @Param(description = "name of the VM")
     private String vmName;
@@ -52,14 +48,6 @@ public class BackupScheduleResponse extends BaseResponse {
     @SerializedName("timezone")
     @Param(description = "the time zone of the backup schedule")
     private String timezone;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getVmName() {
         return vmName;

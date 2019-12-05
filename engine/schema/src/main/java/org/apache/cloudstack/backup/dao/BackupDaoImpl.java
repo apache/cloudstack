@@ -25,11 +25,13 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupVO;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.storage.dao.VolumeDao;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GenericDaoBase;
@@ -37,12 +39,14 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.gson.Gson;
 
 public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements BackupDao {
 
     @Inject
     AccountDao accountDao;
+
+    @Inject
+    DomainDao domainDao;
 
     @Inject
     DataCenterDao dataCenterDao;
@@ -51,7 +55,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     VMInstanceDao vmInstanceDao;
 
     @Inject
-    VolumeDao volumeDao;
+    BackupOfferingDao backupOfferingDao;
 
     private SearchBuilder<BackupVO> backupSearch;
 
@@ -147,19 +151,28 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     public BackupResponse newBackupResponse(Backup backup) {
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         AccountVO account = accountDao.findById(vm.getAccountId());
+        DomainVO domain = domainDao.findById(vm.getDomainId());
         DataCenterVO zone = dataCenterDao.findById(vm.getDataCenterId());
+        BackupOffering offering = backupOfferingDao.findById(vm.getBackupOfferingId());
 
         BackupResponse response = new BackupResponse();
         response.setId(vm.getUuid());
         response.setVmId(vm.getUuid());
-        response.setName(vm.getHostName());
         response.setVmName(vm.getHostName());
-        response.setZoneId(zone.getUuid());
-        response.setAccountId(account.getUuid());
         response.setExternalId(backup.getExternalId());
-        response.setVolumes(new Gson().toJson(vm.getBackupVolumes()));
+        response.setType(backup.getType());
+        response.setDate(backup.getDate());
         response.setSize(backup.getSize());
         response.setProtectedSize(backup.getProtectedSize());
+        response.setStatus(backup.getStatus());
+        response.setBackupOfferingId(offering.getUuid());
+        response.setBackupOffering(offering.getName());
+        response.setAccountId(account.getUuid());
+        response.setAccount(account.getAccountName());
+        response.setDomainId(domain.getUuid());
+        response.setDomain(domain.getName());
+        response.setZoneId(zone.getUuid());
+        response.setZone(zone.getName());
         response.setObjectName("backup");
         return response;
     }

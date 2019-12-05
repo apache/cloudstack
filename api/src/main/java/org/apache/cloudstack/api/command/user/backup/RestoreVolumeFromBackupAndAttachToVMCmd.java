@@ -62,12 +62,6 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
             description = "id of the backup")
     private Long backupId;
 
-    @Parameter(name = ApiConstants.RESTORE_POINT_ID,
-            type = CommandType.STRING,
-            required = true,
-            description = "id of the backup restore point")
-    private String restorePointId;
-
     @Parameter(name = ApiConstants.VOLUME_ID,
             type = CommandType.STRING,
             required = true,
@@ -97,10 +91,6 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
         return backupId;
     }
 
-    public String getRestorePointId() {
-        return restorePointId;
-    }
-
     @Override
     public String getCommandName() {
         return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
@@ -118,7 +108,7 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.restoreBackupVolumeAndAttachToVM(volumeUuid, vmId, backupId, restorePointId);
+            boolean result = backupManager.restoreBackupVolumeAndAttachToVM(volumeUuid, backupId, vmId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
