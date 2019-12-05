@@ -18,7 +18,9 @@ package com.cloud.vm;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -37,6 +39,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.backup.Backup;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -46,6 +49,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
 import com.cloud.utils.fsm.FiniteStateObject;
 import com.cloud.vm.VirtualMachine.State;
+import com.google.gson.Gson;
 
 @Entity
 @Table(name = "vm_instance")
@@ -147,12 +151,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name = "service_offering_id")
     protected long serviceOfferingId;
 
-    @Column(name = "backup_offering_id")
-    protected Long backupOfferingId;
-
-    @Column(name = "backup_external_id")
-    private String backupExternalId;
-
     @Column(name = "reservation_id")
     protected String reservationId;
 
@@ -193,6 +191,15 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     @Column(name = "power_host", updatable = true)
     protected Long powerHostId;
+
+    @Column(name = "backup_offering_id")
+    protected Long backupOfferingId;
+
+    @Column(name = "backup_external_id")
+    private String backupExternalId;
+
+    @Column(name = "backup_volumes")
+    private String backupVolumes;
 
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
                         long domainId, long accountId, long userId, boolean haEnabled) {
@@ -602,5 +609,14 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     public void setBackupExternalId(String backupExternalId) {
         this.backupExternalId = backupExternalId;
+    }
+
+    @Override
+    public List<Backup.VolumeInfo> getBackupVolumes() {
+        return Arrays.asList(new Gson().fromJson(this.backupVolumes, Backup.VolumeInfo[].class));
+    }
+
+    public void setBackupVolumes(List<Backup.VolumeInfo> backupVolumes) {
+        this.backupVolumes = new Gson().toJson(backupVolumes);
     }
 }

@@ -17,8 +17,6 @@
 
 package org.apache.cloudstack.backup;
 
-import java.util.List;
-
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -136,14 +134,4 @@ public interface Backup extends InternalIdentity, Identity {
     Long getVmId();
     Long getSize();
     Long getProtectedSize();
-
-    default List<VolumeInfo> getBackedUpVolumes() {
-        return null;
-    }
-    default String getVolumes() {
-        return null;
-    }
-    default Status getStatus() {
-        return null;
-    }
 }

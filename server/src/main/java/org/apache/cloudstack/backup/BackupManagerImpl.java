@@ -207,6 +207,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return backupOfferingDao.remove(offering.getId());
     }
 
+    private List<Backup.VolumeInfo> createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
+        List<Backup.VolumeInfo> list = new ArrayList<>();
+        for (VolumeVO vol : vmVolumes) {
+            list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
+        }
+        return list;
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN, eventDescription = "assign VM to backup offering", async = true)
     public boolean assignVMToBackupOffering(Long vmId, Long offeringId) {
@@ -230,6 +238,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         boolean result = false;
         try {
             vm.setBackupOfferingId(offering.getId());
+            vm.setBackupVolumes(createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
             result = backupProvider.assignVMToBackupOffering(vm, offering);
         } catch (Exception e) {
             LOG.error("Exception caught while assigning VM to backup offering by the backup provider", e);
@@ -388,14 +397,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
     }
 
-    private List<Backup.VolumeInfo> createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
-        List<Backup.VolumeInfo> list = new ArrayList<>();
-        for (VolumeVO vol : vmVolumes) {
-            list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
-        }
-        return list;
-    }
-
     public boolean importRestoredVM(long zoneId, long domainId, long accountId, long userId,
                                     String vmInternalName, Hypervisor.HypervisorType hypervisorType, Backup backup) {
         VirtualMachine vm = null;
@@ -491,7 +492,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (!result.first()) {
             throw new CloudRuntimeException("Error restoring volume " + backedUpVolumeUuid);
         }
-        if (!attachVolumeToVM(vmFromBackup.getDataCenterId(), result.second(), backup.getBackedUpVolumes(),
+        if (!attachVolumeToVM(vmFromBackup.getDataCenterId(), result.second(), vmFromBackup.getBackupVolumes(),
                             backedUpVolumeUuid, vm, datastoreUuid, backup)) {
             throw new CloudRuntimeException("Error attaching volume " + backedUpVolumeUuid + " to VM " + vm.getUuid());
         }

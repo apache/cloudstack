@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup_offering` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `backup_offering_id` bigint unsigned DEFAULT NULL COMMENT 'ID of backup offering';
-ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `external_backup_id` varchar(255) DEFAULT NULL COMMENT 'ID of external backup job or container if any';
+ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `backup_external_id` varchar(255) DEFAULT NULL COMMENT 'ID of external backup job or container if any';
+ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `backup_volumes` text DEFAULT NULL COMMENT 'details of backedup volumes';
 
 CREATE TABLE IF NOT EXISTS `cloud`.`backups` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,

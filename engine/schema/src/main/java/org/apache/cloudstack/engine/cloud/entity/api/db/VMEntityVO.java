@@ -17,6 +17,7 @@
 package org.apache.cloudstack.engine.cloud.entity.api.db;
 
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.backup.Backup;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
@@ -44,6 +47,7 @@ import com.cloud.utils.db.StateMachine;
 import com.cloud.utils.fsm.FiniteStateObject;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.google.gson.Gson;
 
 @Entity
 @Table(name = "vm_instance")
@@ -138,12 +142,6 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Column(name = "service_offering_id")
     protected long serviceOfferingId;
 
-    @Column(name = "backup_offering_id")
-    protected Long backupOfferingId;
-
-    @Column(name = "backup_external_id")
-    private String backupExternalId;
-
     @Column(name = "reservation_id")
     protected String reservationId;
 
@@ -181,6 +179,15 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
 
     @Column(name = "display_vm", updatable = true, nullable = false)
     protected boolean display = true;
+
+    @Column(name = "backup_offering_id")
+    protected Long backupOfferingId;
+
+    @Column(name = "backup_external_id")
+    private String backupExternalId;
+
+    @Column(name = "backup_volumes")
+    private String backupVolumes;
 
     @Transient
     private VMReservationVO vmReservation;
@@ -571,5 +578,10 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Override
     public String getBackupExternalId() {
         return backupExternalId;
+    }
+
+    @Override
+    public List<Backup.VolumeInfo> getBackupVolumes() {
+        return Arrays.asList(new Gson().fromJson(this.backupVolumes, Backup.VolumeInfo[].class));
     }
 }

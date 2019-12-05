@@ -18,10 +18,12 @@ package com.cloud.vm;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Displayable;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.kernel.Partition;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -323,6 +325,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
     Long getBackupOfferingId();
 
     String getBackupExternalId();
+
+    List<Backup.VolumeInfo> getBackupVolumes();
 
     Type getType();
 

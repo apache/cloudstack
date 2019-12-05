@@ -849,7 +849,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         }
         VolumeVO volumeVO = disksMapping.get(disk);
         if (volumeVO == null) {
-            List<Backup.VolumeInfo> backedUpVolumes = backup.getBackedUpVolumes();
+            final VMInstanceVO vm = _vmDao.findByIdIncludingRemoved(backup.getVmId());
+            if (vm == null) {
+                throw new CloudRuntimeException("Failed to find the volumes details from the VM backup");
+            }
+            List<Backup.VolumeInfo> backedUpVolumes = vm.getBackupVolumes();
             for (Backup.VolumeInfo backedUpVolume : backedUpVolumes) {
                 if (backedUpVolume.getSize().equals(disk.getCapacityInBytes())) {
                     return backedUpVolume.getType().equals(Volume.Type.ROOT);
@@ -1138,9 +1142,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     private VolumeVO createVolume(VirtualDisk disk, VirtualMachineMO vmToImport, long domainId, long zoneId,
                                   long accountId, long instanceId, Long poolId, long templateId, Backup backup, boolean isImport) throws Exception {
-        Long size = disk.getCapacityInBytes();
-        List<Backup.VolumeInfo> backedUpVolumes = backup.getBackedUpVolumes();
+        VMInstanceVO vm = _vmDao.findByIdIncludingRemoved(backup.getVmId());
+        if (vm == null) {
+            throw new CloudRuntimeException("Failed to find the backup volume information from the VM backup");
+        }
+        List<Backup.VolumeInfo> backedUpVolumes = vm.getBackupVolumes();
         Volume.Type type = Volume.Type.DATADISK;
+        Long size = disk.getCapacityInBytes();
         if (isImport) {
             for (Backup.VolumeInfo volumeInfo : backedUpVolumes) {
                 if (volumeInfo.getSize().equals(disk.getCapacityInBytes())) {
@@ -1303,9 +1311,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     private Map<VirtualDisk, VolumeVO> getDisksMapping(Backup backup, List<VirtualDisk> virtualDisks) {
-        Map<VirtualDisk, VolumeVO> map = new HashMap<>();
-        List<Backup.VolumeInfo> backedUpVolumes = backup.getBackedUpVolumes();
+        final VMInstanceVO vm = _vmDao.findByIdIncludingRemoved(backup.getVmId());
+        if (vm == null) {
+            throw new CloudRuntimeException("Failed to find the volumes details from the VM backup");
+        }
+        List<Backup.VolumeInfo> backedUpVolumes = vm.getBackupVolumes();
         Map<String, Boolean> usedVols = new HashMap<>();
+        Map<VirtualDisk, VolumeVO> map = new HashMap<>();
+
         for (Backup.VolumeInfo backedUpVol : backedUpVolumes) {
             for (VirtualDisk disk : virtualDisks) {
                 if (!map.containsKey(disk) && backedUpVol.getSize().equals(disk.getCapacityInBytes())

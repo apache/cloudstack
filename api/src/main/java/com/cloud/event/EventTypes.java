@@ -482,7 +482,6 @@ public class EventTypes {
     public static final String EVENT_VM_BACKUP_DELETE = "BACKUP.DELETE";
     public static final String EVENT_VM_BACKUP_RESTORE_VOLUME_TO_VM = "BACKUP.RESTORE.VOLUME.TO.VM";
     public static final String EVENT_VM_BACKUP_SCHEDULE_CREATE = "BACKUP.SCHEDULE.CREATE";
-    public static final String EVENT_VM_BACKUP_SCHEDULE_UPDATE = "BACKUP.SCHEDULE.UPDATE";
     public static final String EVENT_VM_BACKUP_SCHEDULE_DELETE = "BACKUP.SCHEDULE.DELETE";
 
     // external network device events
