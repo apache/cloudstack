@@ -74,9 +74,9 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(long zoneId, String backupUuid, String restorePointId, String volumeUuid,
+    public Pair<Boolean, String> restoreBackedUpVolume(long zoneId, String restorePointId, String volumeUuid,
                                                        String hostIp, String dataStoreUuid) {
-        s_logger.debug("Restoring volume " + volumeUuid + "from backup " + backupUuid + " on the Dummy Backup Provider");
+        s_logger.debug("Restoring volume " + volumeUuid + "from backup " + restorePointId + " on the Dummy Backup Provider");
         return new Pair<>(true, null);
     }
 
@@ -114,8 +114,8 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public boolean takeBackup(Backup backup) {
-        s_logger.debug("Starting backup for VM ID " + backup.getVmId() + " on Dummy provider");
+    public boolean takeBackup(VirtualMachine vm) {
+        s_logger.debug("Starting backup for VM ID " + vm.getUuid() + " on Dummy provider");
         return true;
     }
 

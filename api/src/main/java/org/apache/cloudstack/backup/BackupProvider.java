@@ -75,7 +75,7 @@ public interface BackupProvider {
      * @param backup
      * @return
      */
-    boolean takeBackup(Backup backup);
+    boolean takeBackup(VirtualMachine vm);
 
     /**
      * Delete an existing backup
@@ -92,8 +92,7 @@ public interface BackupProvider {
     /**
      * Restore a volume from a backup
      */
-    Pair<Boolean, String> restoreBackedUpVolume(long zoneId, String backupUuid, String restorePointId, String volumeUuid,
-                                                String hostIp, String dataStoreUuid);
+    Pair<Boolean, String> restoreBackedUpVolume(long zoneId, String restorePointId, String volumeUuid, String hostIp, String dataStoreUuid);
 
     /**
      * List VM Backups

@@ -61,10 +61,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     protected void init() {
         backupSearch = createSearchBuilder();
         backupSearch.and("vm_id", backupSearch.entity().getVmId(), SearchCriteria.Op.EQ);
-        backupSearch.and("account_id", backupSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        backupSearch.and("zone_id", backupSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
         backupSearch.and("external_id", backupSearch.entity().getExternalId(), SearchCriteria.Op.EQ);
-        backupSearch.and("offering_id", backupSearch.entity().getOfferingId(), SearchCriteria.Op.EQ);
         backupSearch.and("status", backupSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         backupSearch.done();
     }
@@ -114,12 +111,8 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
 
     public BackupVO getBackupVO(Backup backup) {
         BackupVO backupVO = new BackupVO();
-        backupVO.setZoneId(backup.getZoneId());
-        backupVO.setAccountId(backup.getAccountId());
         backupVO.setExternalId(backup.getExternalId());
         backupVO.setVmId(backup.getVmId());
-        backupVO.setStatus(backup.getStatus());
-        backupVO.setCreated(backup.getCreated());
         return backupVO;
     }
 
@@ -152,9 +145,9 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
 
     @Override
     public BackupResponse newBackupResponse(Backup backup) {
-        AccountVO account = accountDao.findById(backup.getAccountId());
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
-        DataCenterVO zone = dataCenterDao.findById(backup.getZoneId());
+        AccountVO account = accountDao.findById(vm.getAccountId());
+        DataCenterVO zone = dataCenterDao.findById(vm.getDataCenterId());
 
         BackupResponse response = new BackupResponse();
         response.setId(vm.getUuid());
@@ -168,7 +161,6 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         response.setStatus(backup.getStatus());
         response.setSize(backup.getSize());
         response.setProtectedSize(backup.getProtectedSize());
-        response.setCreatedDate(backup.getCreated());
         response.setObjectName("backup");
         return response;
     }

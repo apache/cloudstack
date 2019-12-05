@@ -187,9 +187,9 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public boolean takeBackup(final Backup backup) {
-        final VeeamClient client = getClient(backup.getZoneId());
-        return client.startBackupJob(backup.getExternalId());
+    public boolean takeBackup(final VirtualMachine vm) {
+        final VeeamClient client = getClient(vm.getDataCenterId());
+        return client.startBackupJob(vm.getBackupExternalId());
     }
 
     @Override
@@ -204,7 +204,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(long zoneId, String backupUuid, String restorePointId,
+    public Pair<Boolean, String> restoreBackedUpVolume(long zoneId, String restorePointId,
                                                        String volumeUuid, String hostIp, String dataStoreUuid) {
 
         return getClient(zoneId).restoreVMToDifferentLocation(restorePointId, hostIp, dataStoreUuid);

@@ -3670,7 +3670,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                         .append(" (").append(vmInstance.getUuid()).append(")");
                 final Backup backup = backupDao.findByVmIdIncludingRemoved(vmInstance.getId());
                 if (backup != null) {
-                    final BackupOffering backupOffering = backupOfferingDao.findById(backup.getOfferingId());
+                    final BackupOffering backupOffering = backupOfferingDao.findById(vmInstance.getBackupOfferingId());
                     if (backupOffering != null) {
                         builder.append(" and backup offering ").append(backupOffering.getName())
                                 .append(" (").append(backupOffering.getUuid()).append(")");

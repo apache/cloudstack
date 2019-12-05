@@ -27,9 +27,8 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
@@ -43,7 +42,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = CreateBackupCmd.APINAME,
         description = "Create VM backup",
-        responseObject = BackupResponse.class, since = "4.14.0",
+        responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateBackupCmd extends BaseAsyncCmd {
     public static final String APINAME = "createBackup";
@@ -77,9 +76,9 @@ public class CreateBackupCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            Backup backup = backupManager.createBackup(getVmId());
-            if (backup != null) {
-                BackupResponse response = _responseGenerator.createBackupResponse(backup);
+            boolean result = backupManager.createBackup(getVmId());
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {

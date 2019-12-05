@@ -17,9 +17,7 @@
 
 package org.apache.cloudstack.backup;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -27,11 +25,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-
-import com.cloud.utils.DateUtil;
-import com.google.gson.Gson;
 
 @Entity
 @Table(name = "backups")
@@ -44,17 +37,11 @@ public class BackupVO implements Backup {
     @Column(name = "uuid")
     private String uuid;
 
-    @Column(name = "vm_id")
-    private Long vmId;
-
-    @Column(name = "offering_id")
-    private long offeringId;
-
     @Column(name = "external_id")
     private String externalId;
 
-    @Column(name = "volumes", length = 65535)
-    private String volumes;
+    @Column(name = "vm_id")
+    private Long vmId;
 
     @Column(name = "size")
     private Long size;
@@ -62,34 +49,14 @@ public class BackupVO implements Backup {
     @Column(name = "protected_size")
     private Long protectedSize;
 
-    @Column(name = "status")
-    private Status status;
-
-    @Column(name = "account_id")
-    private long accountId;
-
-    @Column(name = "zone_id")
-    private Long zoneId;
-
-    @Column(name = "created")
-    @Temporal(value = TemporalType.TIMESTAMP)
-    private Date created;
-
-    @Column(name = "removed")
-    @Temporal(value = TemporalType.TIMESTAMP)
-    private Date removed;
-
     public BackupVO() {
-        this.created = new Date();
+        this.uuid = UUID.randomUUID().toString();
     }
 
-    public BackupVO(final Long vmId, final long offeringId, final Status status, final long accountId, final Long zoneId) {
+    public BackupVO(final Long vmId, final String externalId) {
+        this.uuid = UUID.randomUUID().toString();
         this.vmId = vmId;
-        this.offeringId = offeringId;
-        this.status = status;
-        this.accountId = accountId;
-        this.zoneId = zoneId;
-        this.created = new Date();
+        this.externalId = externalId;
     }
 
     @Override
@@ -103,15 +70,6 @@ public class BackupVO implements Backup {
     }
 
     @Override
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-    public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
-    }
-
-    @Override
     public String getExternalId() {
         return externalId;
     }
@@ -121,92 +79,29 @@ public class BackupVO implements Backup {
     }
 
     @Override
-    public Long getAccountId() {
-        return accountId;
-    }
-
-    @Override
     public Long getVmId() {
         return vmId;
-    }
-
-    @Override
-    public Status getStatus() {
-        return status;
-    }
-
-    public Long getSize() {
-        return size;
-    }
-
-    public Long getProtectedSize() {
-        return protectedSize;
-    }
-
-    @Override
-    public Date getCreated() {
-        return created;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
     }
 
     public void setVmId(Long vmId) {
         this.vmId = vmId;
     }
 
-    public void setStatus(Status status) {
-        this.status = status;
+    @Override
+    public Long getSize() {
+        return size;
     }
 
     public void setSize(Long size) {
         this.size = size;
     }
 
+    @Override
+    public Long getProtectedSize() {
+        return protectedSize;
+    }
+
     public void setProtectedSize(Long protectedSize) {
         this.protectedSize = protectedSize;
-    }
-
-    public void setCreated(Date start) {
-        this.created = start;
-    }
-
-    @Override
-    public List<VolumeInfo> getBackedUpVolumes() {
-        return Arrays.asList(new Gson().fromJson(this.volumes, VolumeInfo[].class));
-    }
-
-    public void setBackedUpVolumes(List<VolumeInfo> volumes) {
-        this.volumes = new Gson().toJson(volumes);
-    }
-
-    public Date getRemoved() {
-        return removed;
-    }
-
-    public void setRemoved(Date removed) {
-        this.removed = removed;
-    }
-
-    public String getVolumes() {
-        return volumes;
-    }
-
-    protected void setVolumes(String volumes) {
-        this.volumes = volumes;
-    }
-
-    @Override
-    public Long getOfferingId() {
-        return offeringId;
-    }
-
-    public void setOfferingId(long offeringId) {
-        this.offeringId = offeringId;
     }
 }

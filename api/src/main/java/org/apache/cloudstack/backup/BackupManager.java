@@ -116,19 +116,12 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * @param vmId Virtual Machine ID
      * @return returns operation success
      */
-    Backup createBackup(final Long vmId);
+    boolean createBackup(final Long vmId);
 
     /**
      * List existing backups for a VM
      */
     List<Backup> listBackups(final Long id, final Long vmId);
-
-    /**
-     * Lists restore points for a VM backup
-     * @param backupId
-     * @return
-     */
-    List<Backup.RestorePoint> listBackupRestorePoints(final Long backupId);
 
     /**
      * Restore a full VM from backup

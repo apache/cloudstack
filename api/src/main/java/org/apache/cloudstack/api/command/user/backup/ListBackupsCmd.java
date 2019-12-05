@@ -90,10 +90,6 @@ public class ListBackupsCmd extends BaseBackupListCmd {
         try{
             List<Backup.RestorePoint> restorePoints = new ArrayList<>();
             List<Backup> backups = backupManager.listBackups(getId(), getVmId());
-            if (backups.size() > 0 && getVmId() != null) {
-                Backup backup = backups.get(0);
-                restorePoints = backupManager.listBackupRestorePoints(backup.getId());
-            }
             setupResponseBackupList(backups, restorePoints);
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());

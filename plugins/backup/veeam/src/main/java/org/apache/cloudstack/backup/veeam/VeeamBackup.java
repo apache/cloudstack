@@ -17,12 +17,7 @@
 
 package org.apache.cloudstack.backup.veeam;
 
-import java.util.Date;
-import java.util.List;
-
 import org.apache.cloudstack.backup.Backup;
-
-import com.cloud.utils.DateUtil;
 
 public class VeeamBackup implements Backup {
 
@@ -35,72 +30,12 @@ public class VeeamBackup implements Backup {
     }
 
     @Override
-    public Long getZoneId() {
-        return null;
-    }
-
-    @Override
-    public Long getAccountId() {
-        return null;
-    }
-
-    @Override
     public String getExternalId() {
-        return null;
-    }
-
-    @Override
-    public Boolean hasUserDefinedSchedule() {
-        return null;
-    }
-
-    @Override
-    public DateUtil.IntervalType getScheduleType() {
-        return null;
-    }
-
-    @Override
-    public String getSchedule() {
-        return null;
-    }
-
-    @Override
-    public String getTimezone() {
-        return null;
-    }
-
-    @Override
-    public Date getScheduledTimestamp() {
-        return null;
-    }
-
-    @Override
-    public Long getAsyncJobId() {
-        return null;
+        return uid;
     }
 
     @Override
     public Long getVmId() {
-        return null;
-    }
-
-    @Override
-    public Long getOfferingId() {
-        return null;
-    }
-
-    @Override
-    public List<VolumeInfo> getBackedUpVolumes() {
-        return null;
-    }
-
-    @Override
-    public String getVolumes() {
-        return null;
-    }
-
-    @Override
-    public Status getStatus() {
         return null;
     }
 
@@ -111,16 +46,6 @@ public class VeeamBackup implements Backup {
 
     @Override
     public Long getProtectedSize() {
-        return null;
-    }
-
-    @Override
-    public Date getCreated() {
-        return null;
-    }
-
-    @Override
-    public Date getRemoved() {
         return null;
     }
 

@@ -42,7 +42,7 @@ import com.cloud.utils.db.TransactionStatus;
 public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> implements UsageBackupDao {
     public static final Logger LOGGER = Logger.getLogger(UsageBackupDaoImpl.class);
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, backup_id, vm_id, size, protected_size, created, removed FROM cloud_usage.usage_backup WHERE " +
-            " account_id = ? AND ((removed IS NULL AND created <= ?) OR (created BETWEEN ? AND ?) OR (removed BETWEEN ? AND ?) " +
+            " vm_id = ? AND ((removed IS NULL AND created <= ?) OR (created BETWEEN ? AND ?) OR (removed BETWEEN ? AND ?) " +
             " OR ((created <= ?) AND (removed >= ?)))";
 
     @Override
@@ -51,9 +51,7 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
             @Override
             public Boolean doInTransaction(final TransactionStatus status) {
                 final QueryBuilder<UsageBackupVO> qb = QueryBuilder.create(UsageBackupVO.class);
-                qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, backup.getAccountId());
-                qb.and(qb.entity().getZoneId(), SearchCriteria.Op.EQ, backup.getZoneId());
-                qb.and(qb.entity().getBackupId(), SearchCriteria.Op.EQ, backup.getId());
+                qb.and(qb.entity().getVmId(), SearchCriteria.Op.EQ, backup.getVmId());
                 final UsageBackupVO entry = findOneBy(qb.create());
                 if (entry == null) {
                     return false;
