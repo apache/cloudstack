@@ -55,6 +55,11 @@ public class VeeamBackupOffering implements BackupOffering {
     }
 
     @Override
+    public String getProvider() {
+        return "veeam";
+    }
+
+    @Override
     public String getUuid() {
         return uid;
     }

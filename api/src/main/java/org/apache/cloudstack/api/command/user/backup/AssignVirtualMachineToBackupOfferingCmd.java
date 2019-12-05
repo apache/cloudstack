@@ -29,8 +29,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
@@ -40,7 +40,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = AssignVirtualMachineToBackupOfferingCmd.APINAME,
         description = "Assigns a VM to a backup offering",
@@ -89,13 +88,12 @@ public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            Backup backup = backupManager.assignVMToBackupOffering(getVmId(), getOfferingId());
-            if (backup != null) {
-                BackupResponse response = _responseGenerator.createBackupResponse(backup);
-                response.setResponseName(getCommandName());
-                setResponseObject(response);
+            boolean result = backupManager.assignVMToBackupOffering(getVmId(), getOfferingId());
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
+                this.setResponseObject(response);
             } else {
-                throw new CloudRuntimeException("Error while assigning VM to backup offering");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add VM to backup offering");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());

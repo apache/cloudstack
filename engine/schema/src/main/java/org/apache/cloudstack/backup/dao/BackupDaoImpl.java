@@ -24,7 +24,6 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupVO;
 
@@ -157,34 +156,20 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         DataCenterVO zone = dataCenterDao.findById(backup.getZoneId());
 
-        BackupResponse backupResponse = new BackupResponse();
-        backupResponse.setZoneId(zone.getUuid());
-        backupResponse.setId(backup.getUuid());
-        backupResponse.setAccountId(account.getUuid());
-        backupResponse.setExternalId(backup.getExternalId());
-        backupResponse.setVmId(vm.getUuid());
-        backupResponse.setVolumes(backup.getVolumes());
-        backupResponse.setStatus(backup.getStatus());
-        backupResponse.setSize(backup.getSize());
-        backupResponse.setProtectedSize(backup.getProtectedSize());
-        backupResponse.setCreatedDate(backup.getCreated());
-        backupResponse.setObjectName("backup");
-        return backupResponse;
-    }
-
-    @Override
-    public BackupScheduleResponse newBackupScheduleResponse(Backup backup) {
-        AccountVO account = accountDao.findById(backup.getAccountId());
-        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
-        DataCenterVO zone = dataCenterDao.findById(backup.getZoneId());
-
-        BackupScheduleResponse response = new BackupScheduleResponse();
-        response.setZoneId(zone.getUuid());
-        response.setId(backup.getUuid());
-        response.setAccountId(account.getUuid());
+        BackupResponse response = new BackupResponse();
+        response.setId(vm.getUuid());
         response.setVmId(vm.getUuid());
+        response.setName(vm.getHostName());
         response.setVmName(vm.getHostName());
-        response.setObjectName("backupschedule");
+        response.setZoneId(zone.getUuid());
+        response.setAccountId(account.getUuid());
+        response.setExternalId(backup.getExternalId());
+        response.setVolumes(backup.getVolumes());
+        response.setStatus(backup.getStatus());
+        response.setSize(backup.getSize());
+        response.setProtectedSize(backup.getProtectedSize());
+        response.setCreatedDate(backup.getCreated());
+        response.setObjectName("backup");
         return response;
     }
 }

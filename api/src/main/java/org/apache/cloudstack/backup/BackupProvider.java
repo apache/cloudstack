@@ -54,15 +54,14 @@ public interface BackupProvider {
      * @param policy
      * @return
      */
-    Backup assignVMToBackupOffering(VirtualMachine vm, Backup backup, BackupOffering backupOffering);
+    boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering);
 
     /**
-     * Removes a VM backup
+     * Removes a VM from a backup offering or policy
      * @param vm
-     * @param backup
      * @return
      */
-    boolean removeVMFromBackupOffering(VirtualMachine vm, Backup backup);
+    boolean removeVMFromBackupOffering(VirtualMachine vm);
 
     /**
      * Where removal of

@@ -82,5 +82,6 @@ public class BackupOfferingDaoImpl extends GenericDaoBase<BackupOfferingVO, Long
         SearchCriteria<BackupOfferingVO> sc = backupPoliciesSearch.create();
         sc.setParameters("name", name);
         sc.setParameters("zone_id", zoneId);
-        return findOneBy(sc);    }
+        return findOneBy(sc);
+    }
 }

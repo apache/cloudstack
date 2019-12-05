@@ -16,14 +16,11 @@
 // under the License.
 package com.cloud.vm;
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.utils.db.Encrypt;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.StateMachine;
-import com.cloud.utils.fsm.FiniteStateObject;
-import com.cloud.vm.VirtualMachine.State;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -39,11 +36,16 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
+
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.db.Encrypt;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.StateMachine;
+import com.cloud.utils.fsm.FiniteStateObject;
+import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name = "vm_instance")
@@ -144,6 +146,12 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     @Column(name = "service_offering_id")
     protected long serviceOfferingId;
+
+    @Column(name = "backup_offering_id")
+    protected Long backupOfferingId;
+
+    @Column(name = "backup_external_id")
+    private String backupExternalId;
 
     @Column(name = "reservation_id")
     protected String reservationId;
@@ -576,5 +584,23 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     public long getUserId() {
         return userId;
+    }
+
+    @Override
+    public Long getBackupOfferingId() {
+        return backupOfferingId;
+    }
+
+    public void setBackupOfferingId(Long backupOfferingId) {
+        this.backupOfferingId = backupOfferingId;
+    }
+
+    @Override
+    public String getBackupExternalId() {
+        return backupExternalId;
+    }
+
+    public void setBackupExternalId(String backupExternalId) {
+        this.backupExternalId = backupExternalId;
     }
 }

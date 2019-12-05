@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.backup.BackupManager;
@@ -61,13 +60,6 @@ public class RemoveVirtualMachineFromBackupOfferingCmd extends BaseAsyncCmd {
             description = "ID of the virtual machine")
     private Long vmId;
 
-    @Parameter(name = ApiConstants.BACKUP_OFFERING_ID,
-            type = CommandType.UUID,
-            entityType = BackupOfferingResponse.class,
-            required = true,
-            description = "ID of the backup offering")
-    private Long offeringId;
-
     @Parameter(name = ApiConstants.FORCED,
             type = CommandType.BOOLEAN,
             description = "Whether to force remove VM from the backup offering that may also delete VM backups.")
@@ -81,10 +73,6 @@ public class RemoveVirtualMachineFromBackupOfferingCmd extends BaseAsyncCmd {
         return vmId;
     }
 
-    public Long getOfferingId() {
-        return offeringId;
-    }
-
     public boolean getForced() {
         return forced == null ? false : forced;
     }
@@ -96,7 +84,7 @@ public class RemoveVirtualMachineFromBackupOfferingCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.removeVMFromBackupOffering(getVmId(), getOfferingId(), getForced());
+            boolean result = backupManager.removeVMFromBackupOffering(getVmId(), getForced());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);
@@ -125,6 +113,6 @@ public class RemoveVirtualMachineFromBackupOfferingCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Removing VM from backup offering ID: " + offeringId;
+        return "Removing VM ID" + vmId + " from backup offering";
     }
 }

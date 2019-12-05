@@ -212,7 +212,6 @@ public class ApiConstants {
     public static final String LBID = "lbruleid";
     public static final String MAX = "max";
     public static final String MAC_ADDRESS = "macaddress";
-    public static final String MAX_BACKUPS = "maxbackups";
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MAX_CPU_NUMBER = "maxcpunumber";
     public static final String MAX_MEMORY = "maxmemory";

@@ -41,7 +41,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = DeleteBackupScheduleCmd.APINAME,
-        description = "Deletes a VM backup schedule",
+        description = "Deletes the backup schedule of a VM",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteBackupScheduleCmd  extends BaseAsyncCmd {

@@ -122,6 +122,7 @@ import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
@@ -472,7 +473,7 @@ public interface ResponseGenerator {
 
     BackupResponse createBackupResponse(Backup backup);
 
-    BackupScheduleResponse createBackupScheduleResponse(Backup backup);
+    BackupScheduleResponse createBackupScheduleResponse(BackupSchedule backup);
 
     BackupOfferingResponse createBackupOfferingResponse(BackupOffering policy);
 

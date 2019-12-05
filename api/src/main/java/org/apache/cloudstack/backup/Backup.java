@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.storage.Volume;
-import com.cloud.utils.DateUtil;
 import com.cloud.utils.StringUtils;
 
 public interface Backup extends InternalIdentity, Identity {
@@ -142,12 +141,7 @@ public interface Backup extends InternalIdentity, Identity {
     Long getSize();
     Long getProtectedSize();
     String getExternalId();
-    Boolean hasUserDefinedSchedule();
-    DateUtil.IntervalType getScheduleType();
-    String getSchedule();
-    String getTimezone();
-    Date getScheduledTimestamp();
-    Long getAsyncJobId();
+
     Long getAccountId();
     Long getZoneId();
     Date getCreated();

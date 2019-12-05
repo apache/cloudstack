@@ -21,7 +21,6 @@ import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +42,7 @@ import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 
 public class VeeamBackupProvider extends AdapterBase implements BackupProvider, Configurable {
@@ -137,10 +137,10 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public Backup assignVMToBackupOffering(final VirtualMachine vm, final Backup backup, final BackupOffering backupOffering) {
+    public boolean assignVMToBackupOffering(final VirtualMachine vm, final BackupOffering backupOffering) {
         final VeeamClient client = getClient(vm.getDataCenterId());
         final Job parentJob = client.listJob(backupOffering.getExternalId());
-        final String clonedJobName = getGuestBackupName(vm.getInstanceName(), backup.getUuid());
+        final String clonedJobName = getGuestBackupName(vm.getInstanceName(), vm.getUuid());
         if (client.cloneVeeamJob(parentJob, clonedJobName)) {
             for (BackupOffering job : client.listJobs()) {
                 if (job.getName().equals(clonedJobName)) {
@@ -150,34 +150,30 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                     }
                     final VmwareDatacenter vmwareDC = findVmwareDatacenterForVM(vm);
                     if (client.addVMToVeeamJob(job.getExternalId(), vm.getInstanceName(), vmwareDC.getVcenterHost())) {
-                        BackupVO vmBackup = ((BackupVO) backup);
-                        vmBackup.setStatus(Backup.Status.BackedUp);
-                        vmBackup.setExternalId(job.getExternalId());
-                        vmBackup.setCreated(new Date());
-                        return vmBackup;
+                        ((VMInstanceVO) vm).setBackupExternalId(job.getExternalId());
+                        return true;
                     }
                 }
             }
         } else {
             LOG.error("Failed to clone pre-defined Veeam job (backup offering) for backup offering ID: " + backupOffering.getExternalId());
         }
-        ((BackupVO) backup).setStatus(Backup.Status.Error);
-        return backup;
+        return false;
     }
 
     @Override
-    public boolean removeVMFromBackupOffering(final VirtualMachine vm, final Backup backup) {
+    public boolean removeVMFromBackupOffering(final VirtualMachine vm) {
         final VeeamClient client = getClient(vm.getDataCenterId());
         final VmwareDatacenter vmwareDC = findVmwareDatacenterForVM(vm);
         try {
-            if (!client.removeVMFromVeeamJob(backup.getExternalId(), vm.getInstanceName(), vmwareDC.getVcenterHost())) {
-                LOG.warn("Failed to remove VM from Veeam Job id: " + backup.getExternalId());
+            if (!client.removeVMFromVeeamJob(vm.getBackupExternalId(), vm.getInstanceName(), vmwareDC.getVcenterHost())) {
+                LOG.warn("Failed to remove VM from Veeam Job id: " + vm.getBackupExternalId());
             }
         } catch (CloudRuntimeException e) {
             LOG.debug("VM was removed from the job so could not remove again, trying to delete the veeam job now.", e);
         }
 
-        final String clonedJobName = getGuestBackupName(vm.getInstanceName(), backup.getUuid());
+        final String clonedJobName = getGuestBackupName(vm.getInstanceName(), vm.getUuid());
         if (!client.deleteJobAndBackup(clonedJobName)) {
             LOG.warn("Failed to remove Veeam job and backup for job: " + clonedJobName);
             throw new CloudRuntimeException("Failed to delete Veeam B&R job and backup, an operation may be in progress. Please try again after some time.");
@@ -225,10 +221,10 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         final Map<Backup, Backup.Metric> metrics = new HashMap<>();
         final Map<String, Backup.Metric> backendMetrics = getClient(zoneId).getBackupMetrics();
         for (final Backup backup : backupList) {
-            if (!backendMetrics.containsKey(backup.getUuid())) {
+            if (!backendMetrics.containsKey(backup.getVmId())) {
                 continue;
             }
-            metrics.put(backup, backendMetrics.get(backup.getUuid()));
+            metrics.put(backup, backendMetrics.get(backup.getVmId()));
         }
         return metrics;
     }

@@ -29,8 +29,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -76,9 +76,9 @@ public class ListBackupScheduleCmd extends BaseBackupListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try{
-            Backup backup = backupManager.listBackupSchedule(getVmId());
-            if (backup != null) {
-                BackupScheduleResponse response = _responseGenerator.createBackupScheduleResponse(backup);
+            BackupSchedule schedule = backupManager.listBackupSchedule(getVmId());
+            if (schedule != null) {
+                BackupScheduleResponse response = _responseGenerator.createBackupScheduleResponse(schedule);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {

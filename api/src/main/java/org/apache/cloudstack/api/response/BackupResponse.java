@@ -32,16 +32,20 @@ import com.google.gson.annotations.SerializedName;
 public class BackupResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "internal id of the backup")
+    @Param(description = "ID of the VM (backup)")
     private String id;
+
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "name of the VM")
+    private String name;
+
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+    @Param(description = "ID of the VM")
+    private String vmId;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
     @Param(description = "name of the VM")
     private String vmName;
-
-    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "ID of the vm")
-    private String vmId;
 
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "zone id")
@@ -87,6 +91,14 @@ public class BackupResponse extends BaseResponse {
         this.id = id;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getAccountId() {
         return accountId;
     }
@@ -111,20 +123,20 @@ public class BackupResponse extends BaseResponse {
         this.externalId = externalId;
     }
 
-    public String getVmName() {
-        return vmName;
-    }
-
-    public void setVmName(String vmName) {
-        this.vmName = vmName;
-    }
-
     public String getVmId() {
         return vmId;
     }
 
     public void setVmId(String vmId) {
         this.vmId = vmId;
+    }
+
+    public String getVmName() {
+        return vmName;
+    }
+
+    public void setVmName(String vmName) {
+        this.vmName = vmName;
     }
 
     public Backup.Status getStatus() {

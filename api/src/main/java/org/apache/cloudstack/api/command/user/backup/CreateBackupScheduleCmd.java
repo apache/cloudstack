@@ -30,11 +30,12 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = CreateBackupScheduleCmd.APINAME,
@@ -58,15 +59,24 @@ public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
             description = "ID of the VM for which schedule is to be defined")
     private Long vmId;
 
-    @Parameter(name = ApiConstants.INTERVAL_TYPE, type = CommandType.STRING, required = true, description = "valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
+    @Parameter(name = ApiConstants.INTERVAL_TYPE,
+            type = CommandType.STRING,
+            required = true,
+            description = "valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
     private String intervalType;
 
-    @Parameter(name = ApiConstants.MAX_BACKUPS, type = CommandType.INTEGER, required = true, description = "maximum number of backup restore points to keep")
-    private Integer maxBackups;
-
-    @Parameter(name = ApiConstants.SCHEDULE, type = CommandType.STRING, required = true, description = "custom backup schedule, the format is:"
+    @Parameter(name = ApiConstants.SCHEDULE,
+            type = CommandType.STRING,
+            required = true,
+            description = "custom backup schedule, the format is:"
             + "for HOURLY MM*, for DAILY MM:HH*, for WEEKLY MM:HH:DD (1-7)*, for MONTHLY MM:HH:DD (1-28)")
     private String schedule;
+
+    @Parameter(name = ApiConstants.TIMEZONE,
+            type = CommandType.STRING,
+            required = true,
+            description = "Specifies a timezone for this command. For more information on the timezone parameter, see TimeZone Format.")
+    private String timezone;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -76,6 +86,18 @@ public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
         return vmId;
     }
 
+    public DateUtil.IntervalType getIntervalType() {
+        return DateUtil.IntervalType.getIntervalType(intervalType);
+    }
+
+    public String getSchedule() {
+        return schedule;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -83,9 +105,9 @@ public class CreateBackupScheduleCmd  extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException {
         try {
-            Backup backup = backupManager.createBackupSchedule(this);
-            if (backup != null) {
-                BackupScheduleResponse response = _responseGenerator.createBackupScheduleResponse(backup);
+            BackupSchedule schedule = backupManager.createBackupSchedule(this);
+            if (schedule != null) {
+                BackupScheduleResponse response = _responseGenerator.createBackupScheduleResponse(schedule);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {

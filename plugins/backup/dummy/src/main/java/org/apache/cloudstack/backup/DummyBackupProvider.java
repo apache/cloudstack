@@ -17,7 +17,6 @@
 package org.apache.cloudstack.backup;
 
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,8 +50,8 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Override
     public List<BackupOffering> listBackupOfferings(Long zoneId) {
         s_logger.debug("Listing backup policies on Dummy B&R Plugin");
-        BackupOffering policy1 = new BackupOfferingVO(1, "aaaa-aaaa", "Golden Policy", "Gold description");
-        BackupOffering policy2 = new BackupOfferingVO(1, "bbbb-bbbb", "Silver Policy", "Silver description");
+        BackupOffering policy1 = new BackupOfferingVO(1, "aaaa-aaaa", "dummy", "Golden Policy", "Gold description");
+        BackupOffering policy2 = new BackupOfferingVO(1, "bbbb-bbbb", "dummy", "Silver Policy", "Silver description");
         return Arrays.asList(policy1, policy2);
     }
 
@@ -63,15 +62,9 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public Backup assignVMToBackupOffering(VirtualMachine vm, Backup backup, BackupOffering backupOffering) {
+    public boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering) {
         s_logger.debug("Creating VM backup for VM " + vm.getInstanceName() + " from backup offering " + backupOffering.getName());
-
-        List<Backup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
-        BackupVO dummyBackup = (BackupVO) backup;
-        dummyBackup.setStatus(Backup.Status.BackedUp);
-        dummyBackup.setCreated(new Date());
-        backups.add(dummyBackup);
-        return dummyBackup;
+        return true;
     }
 
     @Override
@@ -104,11 +97,11 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public boolean removeVMFromBackupOffering(VirtualMachine vm, Backup vmBackup) {
-        s_logger.debug("Removing VM backup " + vmBackup.getUuid() + " for VM " + vm.getInstanceName() + " on the Dummy Backup Provider");
+    public boolean removeVMFromBackupOffering(VirtualMachine vm) {
+        s_logger.debug("Removing VM ID " + vm.getUuid() + " from backup offering by the Dummy Backup Provider");
         final List<Backup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
         for (final Backup backup : backups) {
-            if (backup.getExternalId().equals(vmBackup.getExternalId())) {
+            if (backup.getExternalId().equals(vm.getBackupExternalId())) {
                 return true;
             }
         }
@@ -122,7 +115,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public boolean takeBackup(Backup backup) {
-        s_logger.debug("Starting backup " + backup.getUuid() + " on Dummy provider");
+        s_logger.debug("Starting backup for VM ID " + backup.getVmId() + " on Dummy provider");
         return true;
     }
 

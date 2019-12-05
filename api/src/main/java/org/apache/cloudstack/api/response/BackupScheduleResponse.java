@@ -20,16 +20,17 @@ package org.apache.cloudstack.api.response;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupSchedule;
 
 import com.cloud.serializer.Param;
+import com.cloud.utils.DateUtil;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value = Backup.class)
+@EntityReference(value = BackupSchedule.class)
 public class BackupScheduleResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "internal id of the backup")
+    @Param(description = "ID of the VM backup schedule")
     private String id;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
@@ -37,18 +38,20 @@ public class BackupScheduleResponse extends BaseResponse {
     private String vmName;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "ID of the vm")
+    @Param(description = "ID of the VM")
     private String vmId;
 
-    @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "zone id")
-    private String zoneId;
+    @SerializedName("schedule")
+    @Param(description = "time the backup is scheduled to be taken.")
+    private String schedule;
 
-    @SerializedName(ApiConstants.ACCOUNT_ID)
-    @Param(description = "account id")
-    private String accountId;
+    @SerializedName("intervaltype")
+    @Param(description = "the interval type of the backup schedule")
+    private DateUtil.IntervalType intervalType;
 
-    // TODO: schedule related fields here
+    @SerializedName("timezone")
+    @Param(description = "the time zone of the backup schedule")
+    private String timezone;
 
     public String getId() {
         return id;
@@ -56,22 +59,6 @@ public class BackupScheduleResponse extends BaseResponse {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(String accountId) {
-        this.accountId = accountId;
-    }
-
-    public String getZoneId() {
-        return zoneId;
-    }
-
-    public void setZoneId(String zoneId) {
-        this.zoneId = zoneId;
     }
 
     public String getVmName() {
@@ -88,5 +75,29 @@ public class BackupScheduleResponse extends BaseResponse {
 
     public void setVmId(String vmId) {
         this.vmId = vmId;
+    }
+
+    public String getSchedule() {
+        return schedule;
+    }
+
+    public void setSchedule(String schedule) {
+        this.schedule = schedule;
+    }
+
+    public DateUtil.IntervalType getIntervalType() {
+        return intervalType;
+    }
+
+    public void setIntervalType(DateUtil.IntervalType intervalType) {
+        this.intervalType = intervalType;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
     }
 }

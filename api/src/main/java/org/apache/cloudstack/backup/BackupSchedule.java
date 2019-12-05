@@ -15,28 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.backup.dao;
+package org.apache.cloudstack.backup;
 
-import java.util.List;
+import java.util.Date;
 
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.DateUtil;
 
-public interface BackupDao extends GenericDao<BackupVO, Long> {
-
-    Backup findByVmId(Long vmId);
-    Backup findByVmIdIncludingRemoved(Long vmId);
-
-    List<Backup> listByVmId(Long zoneId, Long vmId);
-    List<Backup> listByAccountId(Long accountId);
-    List<Backup> listByOfferingId(Long offeringId);
-    List<Backup> syncBackups(Long zoneId, Long vmId, List<Backup> externalBackups);
-    List<Backup> listByZoneAndState(Long zoneId, Backup.Status state);
-
-    BackupResponse newBackupResponse(Backup backup);
-
-    BackupVO getBackupVO(Backup backup);
+public interface BackupSchedule extends InternalIdentity, Identity {
+    Long getVmId();
+    DateUtil.IntervalType getScheduleType();
+    String getSchedule();
+    String getTimezone();
+    Date getScheduledTimestamp();
+    Long getAsyncJobId();
 }

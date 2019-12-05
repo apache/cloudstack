@@ -145,6 +145,7 @@ import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.config.Configuration;
@@ -4237,8 +4238,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public BackupScheduleResponse createBackupScheduleResponse(Backup backup) {
-        return ApiDBUtils.newBackupScheduleResponse(backup);
+    public BackupScheduleResponse createBackupScheduleResponse(BackupSchedule schedule) {
+        return ApiDBUtils.newBackupScheduleResponse(schedule);
     }
 
     @Override

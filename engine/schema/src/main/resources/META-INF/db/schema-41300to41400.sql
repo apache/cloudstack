@@ -26,11 +26,12 @@ UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported` = 1 WHER
 
 CREATE TABLE IF NOT EXISTS `cloud`.`backup_offering` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `uuid` varchar(40) NOT NULL,
+  `uuid` varchar(40) NOT NULL UNIQUE,
   `name` varchar(255) NOT NULL COMMENT 'backup offering name',
   `description` varchar(255) NOT NULL COMMENT 'backup offering description',
-  `external_id` varchar(80) NOT NULL COMMENT 'external ID on provider side',
+  `external_id` varchar(255) NOT NULL COMMENT 'external ID on provider side',
   `zone_id` bigint(20) unsigned NOT NULL COMMENT 'zone id',
+  `provider` varchar(255) NOT NULL COMMENT 'backup provider',
   `created` datetime DEFAULT NULL,
   `removed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -38,28 +39,32 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup_offering` (
   CONSTRAINT `fk_backup_offering__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `backup_offering_id` bigint unsigned DEFAULT NULL COMMENT 'ID of backup offering';
+ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `external_backup_id` varchar(255) DEFAULT NULL COMMENT 'ID of external backup job or container if any';
+
 CREATE TABLE IF NOT EXISTS `cloud`.`backups` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `uuid` varchar(40) NOT NULL,
+  `uuid` varchar(40) NOT NULL UNIQUE,
   `vm_id` bigint(20) unsigned NOT NULL,
-  `offering_id` bigint(20) unsigned NOT NULL,
-  `external_id` varchar(80) COMMENT 'backup ID on provider side',
-  `volumes` text,
-  `status` varchar(20) NOT NULL,
+  `external_id` varchar(255) NOT NULL COMMENT 'external ID',
+  `type` varchar(255) NOT NULL COMMENT 'backup type',
   `size` bigint(20) DEFAULT 0,
   `protected_size` bigint(20) DEFAULT 0,
+  `volumes` text
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_backup__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`backup_schedule` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(40) NOT NULL UNIQUE,
+  `vm_id` bigint(20) unsigned NOT NULL UNIQUE,
   `schedule_type` int(4) DEFAULT NULL COMMENT 'backup schedulet type e.g. hourly, daily, etc.',
   `schedule` varchar(100) DEFAULT NULL COMMENT 'schedule time of execution',
   `timezone` varchar(100) DEFAULT NULL COMMENT 'the timezone in which the schedule time is specified',
   `scheduled_timestamp` datetime DEFAULT NULL COMMENT 'Time at which the backup was scheduled for execution',
   `async_job_id` bigint(20) unsigned DEFAULT NULL COMMENT 'If this schedule is being executed, it is the id of the create aysnc_job. Before that it is null',
-  `account_id` bigint(20) unsigned NOT NULL,
-  `zone_id` bigint(20) unsigned NOT NULL,
-  `created` datetime DEFAULT NULL,
-  `removed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_backup__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_backup__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_backup__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

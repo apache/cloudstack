@@ -52,6 +52,9 @@ public class BackupOfferingVO implements BackupOffering {
     @Column(name = "zone_id")
     private long zoneId;
 
+    @Column(name = "provider")
+    private String provider;
+
     @Column(name = "created")
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date created;
@@ -64,18 +67,12 @@ public class BackupOfferingVO implements BackupOffering {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public BackupOfferingVO(final long zoneId, final String externalId, final String name, final String description) {
+    public BackupOfferingVO(final long zoneId, final String externalId, final String provider, final String name, final String description) {
         this();
+        this.name = name;
+        this.description = description;
         this.zoneId = zoneId;
-        this.name = name;
-        this.description = description;
-        this.externalId = externalId;
-        this.created = new Date();
-    }
-
-    public BackupOfferingVO(final String externalId, final String name, final String description) {
-        this.name = name;
-        this.description = description;
+        this.provider = provider;
         this.externalId = externalId;
         this.created = new Date();
     }
@@ -104,6 +101,11 @@ public class BackupOfferingVO implements BackupOffering {
     @Override
     public long getZoneId() {
         return zoneId;
+    }
+
+    @Override
+    public String getProvider() {
+        return provider;
     }
 
     public String getDescription() {

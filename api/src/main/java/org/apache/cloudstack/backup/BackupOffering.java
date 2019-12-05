@@ -20,11 +20,10 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface BackupOffering extends InternalIdentity, Identity {
-
     String getExternalId();
     String getName();
     String getDescription();
     boolean isImported();
     long getZoneId();
-
+    String getProvider();
 }

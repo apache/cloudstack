@@ -40,6 +40,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -62,14 +63,15 @@ import org.apache.cloudstack.api.response.StorageTagResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -454,6 +456,7 @@ public class ApiDBUtils {
     static HostGpuGroupsDao s_hostGpuGroupsDao;
     static VGPUTypesDao s_vgpuTypesDao;
     static BackupDao s_backupDao;
+    static BackupScheduleDao s_backupScheduleDao;
     static BackupOfferingDao s_backupOfferingDao;
 
     @Inject
@@ -697,6 +700,8 @@ public class ApiDBUtils {
     private BackupDao backupDao;
     @Inject
     private BackupOfferingDao backupOfferingDao;
+    @Inject
+    private BackupScheduleDao backupScheduleDao;
 
     @PostConstruct
     void init() {
@@ -820,6 +825,7 @@ public class ApiDBUtils {
         s_hostGpuGroupsDao = hostGpuGroupsDao;
         s_vgpuTypesDao = vgpuTypesDao;
         s_backupDao = backupDao;
+        s_backupScheduleDao = backupScheduleDao;
         s_backupOfferingDao = backupOfferingDao;
     }
 
@@ -2053,8 +2059,8 @@ public class ApiDBUtils {
         return s_backupDao.newBackupResponse(backup);
     }
 
-    public static BackupScheduleResponse newBackupScheduleResponse(Backup backup) {
-        return s_backupDao.newBackupScheduleResponse(backup);
+    public static BackupScheduleResponse newBackupScheduleResponse(BackupSchedule schedule) {
+        return s_backupScheduleDao.newBackupScheduleResponse(schedule);
     }
 
     public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering policy) {

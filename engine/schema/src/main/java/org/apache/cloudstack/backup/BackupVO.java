@@ -20,7 +20,6 @@ package org.apache.cloudstack.backup;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -66,22 +65,6 @@ public class BackupVO implements Backup {
     @Column(name = "status")
     private Status status;
 
-    @Column(name = "schedule_type")
-    private Short scheduleType;
-
-    @Column(name = "schedule")
-    String schedule;
-
-    @Column(name = "timezone")
-    String timezone;
-
-    @Column(name = "scheduled_timestamp")
-    @Temporal(value = TemporalType.TIMESTAMP)
-    Date scheduledTimestamp;
-
-    @Column(name = "async_job_id")
-    Long asyncJobId;
-
     @Column(name = "account_id")
     private long accountId;
 
@@ -97,12 +80,10 @@ public class BackupVO implements Backup {
     private Date removed;
 
     public BackupVO() {
-        this.uuid = UUID.randomUUID().toString();
         this.created = new Date();
     }
 
     public BackupVO(final Long vmId, final long offeringId, final Status status, final long accountId, final Long zoneId) {
-        this.uuid = UUID.randomUUID().toString();
         this.vmId = vmId;
         this.offeringId = offeringId;
         this.status = status;
@@ -163,46 +144,12 @@ public class BackupVO implements Backup {
     }
 
     @Override
-    public Boolean hasUserDefinedSchedule() {
-        return scheduleType != null;
-    }
-
-    @Override
-    public DateUtil.IntervalType getScheduleType() {
-        return scheduleType == null ? null : DateUtil.getIntervalType(scheduleType);
-    }
-
-    @Override
-    public String getSchedule() {
-        return schedule;
-    }
-
-    @Override
-    public String getTimezone() {
-        return timezone;
-    }
-
-    @Override
-    public Date getScheduledTimestamp() {
-        return scheduledTimestamp;
-    }
-
-    @Override
-    public Long getAsyncJobId() {
-        return asyncJobId;
-    }
-
-    @Override
     public Date getCreated() {
         return created;
     }
 
     public void setId(long id) {
         this.id = id;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public void setAccountId(long accountId) {
@@ -223,26 +170,6 @@ public class BackupVO implements Backup {
 
     public void setProtectedSize(Long protectedSize) {
         this.protectedSize = protectedSize;
-    }
-
-    public void setScheduleType(Short scheduleType) {
-        this.scheduleType = scheduleType;
-    }
-
-    public void setSchedule(String schedule) {
-        this.schedule = schedule;
-    }
-
-    public void setTimezone(String timezone) {
-        this.timezone = timezone;
-    }
-
-    public void setScheduledTimestamp(Date scheduledTimestamp) {
-        this.scheduledTimestamp = scheduledTimestamp;
-    }
-
-    public void setAsyncJobId(Long asyncJobId) {
-        this.asyncJobId = asyncJobId;
     }
 
     public void setCreated(Date start) {
