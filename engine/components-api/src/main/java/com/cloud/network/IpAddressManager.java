@@ -175,6 +175,9 @@ public interface IpAddressManager {
     PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem)
             throws InsufficientAddressCapacityException;
 
+    PublicIp getAvailablePublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem)
+            throws InsufficientAddressCapacityException;
+
     @DB
     void allocateNicValues(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network, String requestedIpv4, String requestedIpv6)
             throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
