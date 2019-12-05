@@ -29,7 +29,7 @@ import com.google.gson.annotations.SerializedName;
 public class BackupResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "ID of the VM (backup)")
+    @Param(description = "ID of the VM backup")
     private String id;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
@@ -68,7 +68,7 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "backup offering id")
     private String backupOfferingId;
 
-    @SerializedName(ApiConstants.BACKUP_OFFERING_ID)
+    @SerializedName(ApiConstants.BACKUP_OFFERING)
     @Param(description = "backup offering id")
     private String backupOfferingName;
 

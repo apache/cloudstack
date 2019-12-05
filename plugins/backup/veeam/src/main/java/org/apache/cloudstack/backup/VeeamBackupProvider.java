@@ -255,6 +255,11 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                         if (restorePoint.getId().equals(backup.getExternalId())) {
                             backupExists = true;
                             removeList.remove(backup.getId());
+                            if (metric != null) {
+                                ((BackupVO) backup).setSize(metric.getBackupSize());
+                                ((BackupVO) backup).setProtectedSize(metric.getDataSize());
+                                backupDao.update(backup.getId(), ((BackupVO) backup));
+                            }
                             break;
                         }
                     }
