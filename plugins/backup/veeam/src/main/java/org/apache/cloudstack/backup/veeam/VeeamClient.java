@@ -627,10 +627,11 @@ public class VeeamClient {
                 String.format("Get-VBRRestorePoint -Backup:$backup -Name \"%s\"", vmInternalName)
         );
         Pair<Boolean, String> response = executePowerShellCommands(cmds);
-        if (response == null || !response.first()) {
-            throw new CloudRuntimeException("Failed to list restore points");
-        }
         final List<Backup.RestorePoint> restorePoints = new ArrayList<>();
+        if (response == null || !response.first()) {
+            LOG.debug("Veeam restore point listing failed due to: " + response.second());
+            return restorePoints;
+        }
         for (final String block : response.second().split("\r\n\r\n")) {
             if (block.isEmpty()) {
                 continue;

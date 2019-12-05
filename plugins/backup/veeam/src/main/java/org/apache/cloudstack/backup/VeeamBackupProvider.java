@@ -241,6 +241,9 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     @Override
     public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
         List<Backup.RestorePoint> restorePoints = listRestorePoints(vm);
+        if (restorePoints == null || restorePoints.isEmpty()) {
+            return;
+        }
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
