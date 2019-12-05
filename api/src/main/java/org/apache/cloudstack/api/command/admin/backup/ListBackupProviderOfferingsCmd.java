@@ -79,7 +79,7 @@ public class ListBackupProviderOfferingsCmd extends BaseBackupListCmd {
         validateParameters();
         try {
             final List<BackupOffering> backupOfferings = backupManager.listBackupProviderOfferings(getZoneId());
-            setupResponseBackupOfferingsList(backupOfferings);
+            setupResponseBackupOfferingsList(backupOfferings, backupOfferings.size());
         } catch (InvalidParameterValueException e) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
         } catch (CloudRuntimeException e) {

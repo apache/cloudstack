@@ -43,6 +43,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.Pair;
 
 @APICommand(name = ListBackupsCmd.APINAME,
         description = "Lists VM backups",
@@ -96,7 +97,7 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    protected void setupResponseBackupList(final List<Backup> backups) {
+    protected void setupResponseBackupList(final List<Backup> backups, final Integer count) {
         final List<BackupResponse> responses = new ArrayList<>();
         for (Backup backup : backups) {
             if (backup == null) {
@@ -106,7 +107,7 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
             responses.add(backupResponse);
         }
         final ListResponse<BackupResponse> response = new ListResponse<>();
-        response.setResponses(responses);
+        response.setResponses(responses, count);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
@@ -114,8 +115,8 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try{
-            List<Backup> backups = backupManager.listBackups(this);
-            setupResponseBackupList(backups);
+            Pair<List<Backup>, Integer> result = backupManager.listBackups(this);
+            setupResponseBackupList(result.first(), result.second());
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }

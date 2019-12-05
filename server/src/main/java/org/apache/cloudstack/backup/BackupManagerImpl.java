@@ -170,7 +170,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public List<BackupOffering> listBackupOfferings(final ListBackupOfferingsCmd cmd) {
+    public Pair<List<BackupOffering>, Integer> listBackupOfferings(final ListBackupOfferingsCmd cmd) {
         final Long offeringId = cmd.getOfferingId();
         final Long zoneId = cmd.getZoneId();
         final String keyword = cmd.getKeyword();
@@ -180,7 +180,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             if (offering == null) {
                 throw new CloudRuntimeException("Offering ID " + offeringId + " does not exist");
             }
-            return Collections.singletonList(offering);
+            return new Pair<>(Collections.singletonList(offering), 1);
         }
 
         final Filter searchFilter = new Filter(BackupOfferingVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -198,7 +198,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             sc.setParameters("name", "%" + keyword + "%");
         }
         Pair<List<BackupOfferingVO>, Integer> result = backupOfferingDao.searchAndCount(sc, searchFilter);
-        return new ArrayList<>(result.first());
+        return new Pair<>(new ArrayList<>(result.first()), result.second());
     }
 
     @Override
@@ -394,7 +394,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public List<Backup> listBackups(final ListBackupsCmd cmd) {
+    public Pair<List<Backup>, Integer> listBackups(final ListBackupsCmd cmd) {
         final Long id = cmd.getId();
         final Long vmId = cmd.getVmId();
         final Long zoneId = cmd.getZoneId();
@@ -440,7 +440,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         Pair<List<BackupVO>, Integer> result = backupDao.searchAndCount(sc, searchFilter);
-        return new ArrayList<>(result.first());
+        return new Pair<>(new ArrayList<>(result.first()), result.second());
     }
 
     public boolean importRestoredVM(long zoneId, long domainId, long accountId, long userId,

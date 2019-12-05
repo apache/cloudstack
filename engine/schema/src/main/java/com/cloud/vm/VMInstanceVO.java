@@ -198,10 +198,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     protected Long backupOfferingId;
 
     @Column(name = "backup_external_id")
-    private String backupExternalId;
+    protected String backupExternalId;
 
     @Column(name = "backup_volumes")
-    private String backupVolumes;
+    protected String backupVolumes;
 
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
                         long domainId, long accountId, long userId, boolean haEnabled) {
@@ -622,7 +622,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     public void setBackupVolumes(List<Backup.VolumeInfo> backupVolumes) {
-        if (backupVolumes == null) {
+        if (backupVolumes == null || backupVolumes.isEmpty()) {
             this.backupVolumes = null;
         } else {
             this.backupVolumes = new Gson().toJson(backupVolumes);

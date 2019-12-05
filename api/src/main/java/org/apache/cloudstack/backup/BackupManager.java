@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 
@@ -68,7 +69,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * List backup offerings
      * @param ListBackupOfferingsCmd API cmd
      */
-    List<BackupOffering> listBackupOfferings(final ListBackupOfferingsCmd cmd);
+    Pair<List<BackupOffering>, Integer> listBackupOfferings(final ListBackupOfferingsCmd cmd);
 
     /**
      * Deletes a backup offering
@@ -122,7 +123,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     /**
      * List existing backups for a VM
      */
-    List<Backup> listBackups(final ListBackupsCmd cmd);
+    Pair<List<Backup>, Integer> listBackups(final ListBackupsCmd cmd);
 
     /**
      * Restore a full VM from backup

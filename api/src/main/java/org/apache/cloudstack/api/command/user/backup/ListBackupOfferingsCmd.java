@@ -36,6 +36,7 @@ import org.apache.cloudstack.backup.BackupOffering;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = ListBackupOfferingsCmd.APINAME,
@@ -79,8 +80,8 @@ public class ListBackupOfferingsCmd extends BaseBackupListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, ServerApiException, ConcurrentOperationException {
         try {
-            final List<BackupOffering> backupOfferings = backupManager.listBackupOfferings(this);
-            setupResponseBackupOfferingsList(backupOfferings);
+            Pair<List<BackupOffering>, Integer> result = backupManager.listBackupOfferings(this);
+            setupResponseBackupOfferingsList(result.first(), result.second());
         } catch (InvalidParameterValueException e) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
         } catch (CloudRuntimeException e) {

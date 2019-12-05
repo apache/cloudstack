@@ -27,7 +27,7 @@ import org.apache.cloudstack.context.CallContext;
 
 public abstract class BaseBackupListCmd extends BaseListCmd {
 
-    protected void setupResponseBackupOfferingsList(final List<BackupOffering> offerings) {
+    protected void setupResponseBackupOfferingsList(final List<BackupOffering> offerings, final Integer count) {
         final ListResponse<BackupOfferingResponse> response = new ListResponse<>();
         final List<BackupOfferingResponse> responses = new ArrayList<>();
         for (final BackupOffering offering : offerings) {
@@ -37,7 +37,7 @@ public abstract class BaseBackupListCmd extends BaseListCmd {
             BackupOfferingResponse backupOfferingResponse = _responseGenerator.createBackupOfferingResponse(offering);
             responses.add(backupOfferingResponse);
         }
-        response.setResponses(responses);
+        response.setResponses(responses, count);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
