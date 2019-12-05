@@ -357,23 +357,20 @@ public class VeeamClient {
         return null;
     }
 
-    public List<VeeamBackup> listAllBackups() {
+    public void listAllBackups() {
         LOG.debug("Trying to list Veeam backups");
         try {
             final HttpResponse response = get("/backups");
             checkResponseOK(response);
             final ObjectMapper objectMapper = new XmlMapper();
             final EntityReferences entityReferences = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
-            final List<VeeamBackup> backups = new ArrayList<>();
             for (final Ref ref : entityReferences.getRefs()) {
-                backups.add(new VeeamBackup(ref.getName(), ref.getUid()));
+                LOG.debug("Veeam Backup found, name: " + ref.getName() + ", uid: " + ref.getUid() + ", type: " + ref.getType());
             }
-            return backups;
         } catch (final IOException e) {
             LOG.error("Failed to list Veeam backups due to:", e);
             checkResponseTimeOut(e);
         }
-        return new ArrayList<>();
     }
 
     public List<BackupOffering> listJobs() {
