@@ -186,7 +186,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
             LOG.warn("Failed to remove Veeam job and backup for job: " + clonedJobName);
             throw new CloudRuntimeException("Failed to delete Veeam B&R job and backup, an operation may be in progress. Please try again after some time.");
         }
-        return client.listJob(clonedJobName) == null;
+        return true;
     }
 
     @Override

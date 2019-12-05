@@ -92,6 +92,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
+import com.google.gson.Gson;
 
 @Component
 public class BackupManagerImpl extends ManagerBase implements BackupManager {
@@ -213,12 +214,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return backupOfferingDao.remove(offering.getId());
     }
 
-    private List<Backup.VolumeInfo> createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
+    private String createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
         List<Backup.VolumeInfo> list = new ArrayList<>();
         for (VolumeVO vol : vmVolumes) {
             list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
         }
-        return list;
+        return new Gson().toJson(list.toArray(), Backup.VolumeInfo[].class);
     }
 
     @Override

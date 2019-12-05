@@ -621,11 +621,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         return Arrays.asList(new Gson().fromJson(this.backupVolumes, Backup.VolumeInfo[].class));
     }
 
-    public void setBackupVolumes(List<Backup.VolumeInfo> backupVolumes) {
-        if (backupVolumes == null || backupVolumes.isEmpty()) {
-            this.backupVolumes = null;
-        } else {
-            this.backupVolumes = new Gson().toJson(backupVolumes);
-        }
+    public void setBackupVolumes(String backupVolumes) {
+        this.backupVolumes = backupVolumes;
     }
 }
