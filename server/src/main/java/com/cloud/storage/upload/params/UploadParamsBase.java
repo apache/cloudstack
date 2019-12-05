@@ -45,6 +45,7 @@ public abstract class UploadParamsBase implements UploadParams {
     private boolean isDynamicallyScalable;
     private boolean isRoutingType;
     private String type;
+    private boolean activateAfterUpload = false;
 
     UploadParamsBase(long userId, String name, String displayText,
                                Integer bits, boolean passwordEnabled, boolean requiresHVM,
@@ -53,7 +54,7 @@ public abstract class UploadParamsBase implements UploadParams {
                                Long zoneId, Hypervisor.HypervisorType hypervisorType, String checksum,
                                String templateTag, long templateOwnerId,
                                Map details, boolean sshkeyEnabled,
-                               boolean isDynamicallyScalable, boolean isRoutingType, String type) {
+                               boolean isDynamicallyScalable, boolean isRoutingType, String type, boolean activate) {
         this.userId = userId;
         this.name = name;
         this.displayText = displayText;
@@ -75,6 +76,7 @@ public abstract class UploadParamsBase implements UploadParams {
         this.isDynamicallyScalable = isDynamicallyScalable;
         this.isRoutingType = isRoutingType;
         this.type = type;
+        this.activateAfterUpload = activate;
     }
 
     UploadParamsBase(long userId, String name, String displayText, boolean isPublic, boolean isFeatured,
@@ -246,5 +248,14 @@ public abstract class UploadParamsBase implements UploadParams {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    @Override
+    public boolean isActivateAfterUpload() {
+        return activateAfterUpload;
+    }
+
+    public void setActivateAfterUpload(boolean activateAfterUpload) {
+        this.activateAfterUpload = activateAfterUpload;
     }
 }

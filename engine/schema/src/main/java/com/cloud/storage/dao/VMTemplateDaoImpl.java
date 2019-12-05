@@ -155,6 +155,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
+    public VMTemplateVO getSystemVMTemplateByHypervisorType(String hypervisorType) {
+        VMTemplateVO templateVo = findRoutingTemplate( HypervisorType.getType(hypervisorType), String.format("SystemVM Template (%s)", HypervisorType.getType(hypervisorType).toString()));
+        return templateVo;
+    }
+
+    @Override
     public List<VMTemplateVO> publicIsoSearch(Boolean bootable, boolean listRemoved, Map<String, String> tags) {
 
         SearchBuilder<VMTemplateVO> sb = null;

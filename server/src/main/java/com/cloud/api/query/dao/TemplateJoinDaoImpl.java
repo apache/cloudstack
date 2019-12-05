@@ -174,6 +174,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             if (templateStatus != null) {
                 templateResponse.setStatus(templateStatus);
             }
+            templateResponse.setState(template.getTemplateState().toString());
         }
 
         if (template.getDataCenterId() > 0) {

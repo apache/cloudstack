@@ -53,6 +53,7 @@ public class TemplateProfile {
     TemplateType templateType;
     Boolean directDownload;
     Long size;
+    boolean activateAfterUpload = false;
 
     public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
                            Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, List<Long> zoneIdList, HypervisorType hypervisorType,
@@ -330,5 +331,13 @@ public class TemplateProfile {
 
     public void setSize(Long size) {
         this.size = size;
+    }
+
+    public boolean isActivateAfterUpload() {
+        return activateAfterUpload;
+    }
+
+    public void setActivateAfterUpload(boolean activateAfterUpload) {
+        this.activateAfterUpload = activateAfterUpload;
     }
 }

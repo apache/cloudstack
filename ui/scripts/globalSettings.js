@@ -92,6 +92,12 @@
                             async: true,
                             success: function(json) {
                                 var items = json.listconfigurationsresponse.configuration;
+                                for (var i = 0; i < items.length; i++){
+                                    if (items[i].name.startsWith("router.template")){
+                                        items.splice(i,1);
+                                        i = i - 1;
+                                    }
+                                }
                                 args.response.success({
                                     data: items
                                 });

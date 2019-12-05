@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.template.TemplateApiService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -111,6 +112,8 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
     private TemplateDataFactory templateFactory;
     @Inject
     private TemplateService templateService;
+    @Inject
+    private TemplateApiService templateApiService;
 
     private long _nodeId;
     private ScheduledExecutorService _executor = null;
@@ -418,7 +421,14 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                                     break;
                                 }
                             }
-                            stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationSucceeded, null, _templateDao);
+                            if (template.getTemplateType() == Storage.TemplateType.SYSTEM && !template.isActivateAfterUpload()) {
+                                stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationSucceededSystem, null, _templateDao);
+                            } else {
+                                stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationSucceeded, null, _templateDao);
+                                if (template.getTemplateType() == Storage.TemplateType.SYSTEM) {
+                                    templateApiService.activateSystemVMTemplate(template.getId());
+                                }
+                            }
                             _resourceLimitMgr.incrementResourceCount(template.getAccountId(), Resource.ResourceType.secondary_storage, answer.getVirtualSize());
                             //publish usage event
                             String etype = EventTypes.EVENT_TEMPLATE_CREATE;

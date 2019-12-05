@@ -193,7 +193,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             Long templateSize = performDirectDownloadUrlValidation(url);
             profile.setSize(templateSize);
         }
-
+        profile.setActivateAfterUpload(cmd.isActivate());
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
@@ -219,11 +219,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
     @Override
     public VMTemplateVO create(TemplateProfile profile) {
-        if (profile.getTemplateType() == TemplateType.SYSTEM){
-            profile.setAccountId(1L); // System account
-        }
+        VMTemplateVO template;
         // persist entry in vm_template, vm_template_details and template_zone_ref tables, not that entry at template_store_ref is not created here, and created in createTemplateAsync.
-        VMTemplateVO template = persistTemplate(profile, State.Active);
+        if (profile.getTemplateType() == TemplateType.SYSTEM ){
+            profile.setAccountId(1L); // System account
+            template = persistTemplate(profile, State.Inactive);
+        } else {
+            template = persistTemplate(profile, State.Active);
+        }
 
         if (template == null) {
             throw new CloudRuntimeException("Unable to persist the template " + profile.getTemplate());

@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.storage.dao;
 
-
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;

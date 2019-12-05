@@ -1000,7 +1000,22 @@
                                         async: false,
                                         success: function(json){
                                             if(!$.isEmptyObject(json.listsystemvmsresponse)){
-                                                systemVMS = true;
+                                                for (var j = 0; j < json.listsystemvmsresponse.systemvm.length; j++){
+                                                    $.ajax({
+                                                        url: createURL('listHosts'),
+                                                        data: {
+                                                            'zoneid': zoneIds[i],
+                                                            'id': json.listsystemvmsresponse.systemvm[j].hostid,
+                                                            'state': 'up',
+                                                        },
+                                                        async: false,
+                                                        success: function(json){
+                                                            if(!$.isEmptyObject(json.listhostsresponse)){
+                                                                systemVMS = true;
+                                                            }
+                                                        }
+                                                    });
+                                                }
                                             }
                                         }
                                     });
@@ -1019,14 +1034,28 @@
                                 // Seed the template via api call
                                 $.ajax({
                                     url: createURL('seedSystemVMTemplate&id=' + data.zoneids + '&hypervisor=' + data.hypervisor + '&url=' + data.url + '&localfile=false&templateid=' + registerTemplateResponse[0].id),
+                                    async: false,
                                     data: data,
-                                    success: function(json){
-                                        $("#basic_search").click();
-                                        args.response.success({
-                                            data: {}
-                                        });
-                                    }
                                 });
+
+                                // activate template
+                                if (args.data.activate == "on"){
+                                    $.ajax({
+                                        url: createURL('activateSystemVMTemplate'),
+                                        data: {id: registerTemplateResponse[0].id},
+                                        async: false,
+                                        success: function(json){
+                                            $("#basic_search").click();
+                                            args.response.success({
+                                                data: {}
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    args.response.success({
+                                        data: {}
+                                    });
+                                }
                             },
 
                             notification: {
@@ -1062,6 +1091,7 @@
                                             isdynamicallyscalable: (args.data.isdynamicallyscalable == "on"),
                                             osTypeId: args.data.osTypeId,
                                             hypervisor: args.data.hypervisor,
+                                            activate: (args.data.activate == "on"),
                                             system: (args.data.templatetype == "system"),
                                         };
 
@@ -1136,7 +1166,22 @@
                                                 async: false,
                                                 success: function(json){
                                                     if(!$.isEmptyObject(json.listsystemvmsresponse)){
-                                                        systemVMS = true;
+                                                        for (var j = 0; j < json.listsystemvmsresponse.systemvm.length; j++){
+                                                            $.ajax({
+                                                                url: createURL('listHosts'),
+                                                                data: {
+                                                                    'zoneid': args.data.zone,
+                                                                    'id': json.listsystemvmsresponse.systemvm[j].hostid,
+                                                                    'state': 'up',
+                                                                },
+                                                                async: false,
+                                                                success: function(json){
+                                                                    if(!$.isEmptyObject(json.listhostsresponse)){
+                                                                        systemVMS = true;
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
                                                     }
                                                 },
                                                 error: function(XMLHttpResponse) {
@@ -1802,6 +1847,14 @@
                                         previousCollection.push(templateItem);
                                     }
                                 });
+                                if (args.filterBy.kind == "all"){
+                                    for (var i = 0; i < itemsView.length; i++){
+                                        if (itemsView[i].templatetype == "SYSTEM" && itemsView[i].state != "Active" ){
+                                            itemsView.splice(i, 1);
+                                            i--;
+                                        }
+                                    }
+                                }
 
                                 args.response.success({
                                     actionFilter: templateActionfilter,
@@ -4357,7 +4410,7 @@
             allowedActions.push("remove");
         }
 
-        if (isAdmin() && jsonObj.templatetype == "SYSTEM"){
+        if (isAdmin() && jsonObj.templatetype == "SYSTEM" && jsonObj.state == "Inactive"){
             allowedActions.push("activateTemplate");
         }
 
@@ -4374,7 +4427,6 @@
             //do nothing
         } else {
             allowedActions.push("edit");
-
             allowedActions.push("copyISO");
         }
 

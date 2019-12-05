@@ -91,7 +91,7 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     private Boolean isSystem;
 
     @Parameter(name = ApiConstants.ACTIVATE, type = CommandType.BOOLEAN, authorized = {RoleType.Admin}, description = "true if a system vm template should be activated.")
-    private Boolean activate;
+    private Boolean activate = false;
 
     public String getDisplayText() {
         return displayText;

@@ -113,6 +113,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the status of the template")
     private String status;
 
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the template state - active / inactive")
+    private String state;
+
     @SerializedName(ApiConstants.SIZE)
     @Param(description = "the size of the template")
     private Long size;
@@ -289,6 +293,14 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 
     public void setSize(Long size) {

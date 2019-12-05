@@ -152,6 +152,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name = "parent_template_id")
     private Long parentTemplateId;
 
+    @Column(name = "activate_after_upload")
+    private boolean activateAfterUpload;
+
     @Override
     public String getUniqueName() {
         return uniqueName;
@@ -633,4 +636,11 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         this.parentTemplateId = parentTemplateId;
     }
 
+    public boolean isActivateAfterUpload() {
+        return activateAfterUpload;
+    }
+
+    public void setActivateAfterUpload(boolean activateAfterUpload) {
+        this.activateAfterUpload = activateAfterUpload;
+    }
 }

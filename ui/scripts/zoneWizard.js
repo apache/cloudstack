@@ -466,9 +466,9 @@
                                     $form.find(".field[rel='file']").show();
                                 }
                             });
-                            // Check if we have other zones.
+                            // Check if we have a cluster with the same hypervisor.
                             $.ajax({
-                                url: createURL("listZones&available=true"),
+                                url: createURL("listClusters&hypervisor=" + args.context.zones[0].hypervisor),
                                 dataType: "json",
                                 async: true,
                                 success: function(json) {
@@ -479,7 +479,7 @@
                                         id: "official",
                                         description: "Official Cloudstack Template"
                                     }]
-                                    var items = json.listzonesresponse.zone;
+                                    var items = json.listclustersresponse.cluster;
                                     if (items != undefined && items.length > 0) {
                                         data.push({
                                             id: "copy",
@@ -513,6 +513,7 @@
                         label: "label.hypervisor",
                         dependsOn: "templateType",
                         select: function(args){
+                            args.$select.attr('disabled', 'disabled');
                             var selectedType = $('#selectSystemVm_label_action_create_template_source_type').val();
                             $.ajax({
                                 url: createURL("listHypervisors"),
@@ -530,6 +531,8 @@
                                     args.response.success({
                                         data: data
                                     });
+                                    args.$select.val(args.context.zones[0].hypervisor);
+                                    args.$select.change();
                                 }
                             });
                             args.$select.change(function() {
@@ -562,18 +565,19 @@
                         docID: 'helpRegisterTemplateFormat',
                         dependsOn: 'hypervisor',
                         select: function(args) {
+                            hypervisor = args.context.zones[0].hypervisor;
                             var items = [];
-                            if (args.hypervisor == "XenServer") {
+                            if (hypervisor == "XenServer") {
                                 items.push({
                                     id: 'VHD',
                                     description: 'VHD'
                                 });
-                            } else if (args.hypervisor == "VMware") {
+                            } else if (hypervisor == "VMware") {
                                 items.push({
                                     id: 'OVA',
                                     description: 'OVA'
                                 });
-                            } else if (args.hypervisor == "KVM") {
+                            } else if (hypervisor == "KVM") {
                                 items.push({
                                     id: 'QCOW2',
                                     description: 'QCOW2'
@@ -590,22 +594,22 @@
                                     id: 'VMDK',
                                     description: 'VMDK'
                                 });
-                            } else if (args.hypervisor == "BareMetal") {
+                            } else if (hypervisor == "BareMetal") {
                                 items.push({
                                     id: 'BareMetal',
                                     description: 'BareMetal'
                                 });
-                            } else if (args.hypervisor == "Ovm") {
+                            } else if (hypervisor == "Ovm") {
                                 items.push({
                                     id: 'RAW',
                                     description: 'RAW'
                                 });
-                            } else if (args.hypervisor == "LXC") {
+                            } else if (hypervisor == "LXC") {
                                 items.push({
                                     id: 'TAR',
                                     description: 'TAR'
                                 });
-                            } else if (args.hypervisor == "Hyperv") {
+                            } else if (hypervisor == "Hyperv") {
                                 items.push({
                                     id: 'VHD',
                                     description: 'VHD'

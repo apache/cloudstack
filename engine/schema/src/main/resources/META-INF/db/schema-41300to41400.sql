@@ -51,3 +51,6 @@ CREATE TABLE  `cloud`.`router_health_check` (
   UNIQUE `i_router_health_checks__router_id__check_name__check_type`(`router_id`, `check_name`, `check_type`),
   INDEX `i_router_health_checks__router_id`(`router_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`vm_template` ADD COLUMN `activate_after_upload` TINYINT(1) NULL DEFAULT '0' AFTER `direct_download`;
+

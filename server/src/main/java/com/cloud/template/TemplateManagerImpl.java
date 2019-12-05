@@ -479,9 +479,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         TemplateProfile profile = adapter.prepare(cmd);
         VMTemplateVO template = Optional.ofNullable(adapter.create(profile)).orElseThrow(() -> new CloudRuntimeException("Failed to create a template"));
 
-        if (cmd.isSystem() && cmd.isActivate()) {
-            return activateSystemVMTemplate(template.getId());
-        }
         return template;
     }
 
@@ -556,9 +553,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         TemplateProfile profile = adapter.prepare(cmd);
         GetUploadParamsResponse response = registerPostUploadInternal(adapter, profile);
         VMTemplateVO template = _tmpltDao.findByUuid(response.getId().toString());
-        if (cmd.getActivate() != null && cmd.getActivate()){
-            activateSystemVMTemplate(template.getId());
-        }
         return response;
     }
 
@@ -647,8 +641,35 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     public GetSystemVMTemplateDefaultURLResponse getSystemVMTemplateDefaultURL(GetSystemVMTemplateDefaultURLCmd cmd) {
         GetSystemVMTemplateDefaultURLResponse urlResponse = new GetSystemVMTemplateDefaultURLResponse();
         if (cmd.getHypervisor() != null && HypervisorType.getType(cmd.getHypervisor()) != null) {
-            urlResponse.setUrl(OfficialSystemVMTemplate.getNewTemplateUrl().get(HypervisorType.getType(cmd.getHypervisor())));
-            urlResponse.setType(OfficialSystemVMTemplate.getNewTemplateFiletype().get(HypervisorType.getType(cmd.getHypervisor())));
+
+            VMTemplateVO templateVO = null;
+
+            switch (HypervisorType.getType(cmd.getHypervisor())) {
+                case XenServer:
+                    templateVO = _tmpltDao.findById(1L);
+                    break;
+                case KVM:
+                    templateVO = _tmpltDao.findById(3L);
+                    break;
+                case VMware:
+                    templateVO = _tmpltDao.findById(8L);
+                    break;
+                case Hyperv:
+                    templateVO = _tmpltDao.findById(9L);
+                    break;
+                case LXC:
+                    templateVO = _tmpltDao.findById(10L);
+                    break;
+                case Ovm:
+                case Ovm3:
+                    templateVO = _tmpltDao.findById(12L);
+                    break;
+            }
+
+            if (templateVO != null){
+                urlResponse.setUrl(templateVO.getUrl());
+                urlResponse.setType(templateVO.getFormat().toString().toUpperCase());
+            }
         }
         return urlResponse;
     }
@@ -2313,6 +2334,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         templateStore.setErrorString(null);
         template.setState(VirtualMachineTemplate.State.Active);
         templateStore.setSize(size);
+        if (template.isActivateAfterUpload()){
+            template.setState(VirtualMachineTemplate.State.Active);
+        } else {
+            template.setState(VirtualMachineTemplate.State.Inactive);
+        }
         _tmplStoreDao.update(templateStore.getId(), templateStore);
         _tmpltDao.update(template.getId(), template);
     }
@@ -2327,7 +2353,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         // mount locally
         String mountPoint = "/tmp/nfsmount";
-        int result = Script.runSimpleBashScriptForExitValue("mkdir -p " + mountPoint);
+        int result = Script.runSimpleBashScriptForExitValue("mkdir -p " + mountPoint, 10000);
         if (result != 0){
             throw new CloudRuntimeException("Unable to create temporary mount folders.");
         }
@@ -2337,8 +2363,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             URI uri;
             try {
                 uri = new URI(imageStore);
-                // mount secondary storage
-                Script.runSimpleBashScriptForExitValue(String.format("sudo mount -t nfs %s:%s %s",  uri.getHost(), uri.getPath(), mountPoint)) ;
+                // try to unmount this path
+                Script.runSimpleBashScriptForExitValue("sudo umount " + mountPoint, 10000);
+                // mount secondary storage - have to use sudo, doesn't work otherwise
+                result = Script.runSimpleBashScriptForExitValue(String.format("sudo mount -t nfs %s:%s %s",  uri.getHost(), uri.getPath(), mountPoint), 10000);
+                if (result != 0){
+                    throw new CloudRuntimeException("Unable to mount secondary storage for system template.");
+                }
 
             } catch (URISyntaxException e) {
                 throw new CloudRuntimeException("Malformed URI " + imageStore);
@@ -2388,12 +2419,17 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             try {
                 // create folder
-                result = Script.runSimpleBashScriptForExitValue("mkdir -p " + mountPoint + "/template/tmpl/1/" + template.getId());
+                result = Script.runSimpleBashScriptForExitValue("mkdir -p " + mountPoint + "/template/tmpl/1/" + template.getId(), 10000);
                 if (result != 0){
                     throw new CloudRuntimeException("Unable to create temporary mount folders.");
                 }
                 // Copy template File to image store
-                Files.copy(new File("/tmp/"+ template.getUuid() + "." + fileExtension).toPath(), new File(finalDestination).toPath(), REPLACE_EXISTING);
+                if (cmd.getLocalFile()){
+                    Files.copy(new File(inputFile).toPath(), new File(finalDestination).toPath(), REPLACE_EXISTING);
+                } else {
+                    Files.copy(new File("/tmp/"+ template.getUuid() + "." + fileExtension).toPath(), new File(finalDestination).toPath(), REPLACE_EXISTING);
+                }
+
             } catch (IOException e) {
                 throw new CloudRuntimeException("Failure copying system VM template to image store");
             }
@@ -2419,7 +2455,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             updateTemplate(template.getId(), fileExtension, cmd.getId(), destinationFile.length());
 
-            Script.runSimpleBashScriptForExitValue("sudo umount " + mountPoint);
+            Script.runSimpleBashScriptForExitValue("sudo umount " + mountPoint, 10000);
         }
         return new SeedSystemVMTemplateResponse();
     }

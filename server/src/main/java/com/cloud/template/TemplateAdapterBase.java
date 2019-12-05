@@ -334,18 +334,24 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
         String templateType = TemplateType.USER.toString();
         long userId = CallContext.current().getCallingUserId();
+        long entityOwnerId = cmd.getEntityOwnerId();
         if (cmd.getSystem() != null && cmd.getSystem()){
             templateType = TemplateType.SYSTEM.toString();
             userId = 1L; //System account;
+            entityOwnerId = 1L;
         }
         UploadParams params = new TemplateUploadParams(userId, cmd.getName(),
                 cmd.getDisplayText(), cmd.getBits(), BooleanUtils.toBoolean(cmd.isPasswordEnabled()),
                 BooleanUtils.toBoolean(cmd.getRequiresHvm()), BooleanUtils.toBoolean(cmd.isPublic()),
                 BooleanUtils.toBoolean(cmd.isFeatured()), BooleanUtils.toBoolean(cmd.isExtractable()), cmd.getFormat(), cmd.getOsTypeId(),
                 cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(),
-                cmd.getTemplateTag(), cmd.getEntityOwnerId(), cmd.getDetails(), BooleanUtils.toBoolean(cmd.isSshKeyEnabled()),
-                BooleanUtils.toBoolean(cmd.isDynamicallyScalable()), BooleanUtils.toBoolean(cmd.isRoutingType()), templateType);
-        return prepareUploadParamsInternal(params);
+                cmd.getTemplateTag(), entityOwnerId, cmd.getDetails(), BooleanUtils.toBoolean(cmd.isSshKeyEnabled()),
+                BooleanUtils.toBoolean(cmd.isDynamicallyScalable()), BooleanUtils.toBoolean(cmd.isRoutingType()), templateType, cmd.getActivate());
+        TemplateProfile profile = prepareUploadParamsInternal(params);
+        if (cmd.getActivate()) {
+            profile.setActivateAfterUpload(cmd.getActivate());
+        }
+        return profile;
     }
 
     @Override
@@ -386,6 +392,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 profile.getDisplayText(), profile.isPasswordEnabled(), profile.getGuestOsId(), profile.isBootable(), profile.getHypervisorType(),
                 profile.getTemplateTag(), profile.getDetails(), profile.isSshKeyEnabled(), profile.IsDynamicallyScalable(), profile.isDirectDownload());
         template.setState(initialState);
+        template.setActivateAfterUpload(profile.isActivateAfterUpload());
 
         if (profile.isDirectDownload()) {
             template.setSize(profile.getSize());

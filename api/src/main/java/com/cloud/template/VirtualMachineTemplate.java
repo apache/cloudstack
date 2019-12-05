@@ -47,8 +47,10 @@ public interface VirtualMachineTemplate extends ControlledEntity, Identity, Inte
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(NotUploaded, Event.OperationTimeout, UploadAbandoned, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(NotUploaded, Event.UploadRequested, UploadInProgress, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(NotUploaded, Event.OperationSucceeded, Active, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(NotUploaded, Event.OperationSucceededSystem, Inactive, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(NotUploaded, Event.OperationFailed, UploadError, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadInProgress, Event.OperationSucceeded, Active, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadInProgress, Event.OperationSucceededSystem, Inactive, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadInProgress, Event.OperationFailed, UploadError, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadInProgress, Event.OperationTimeout, UploadError, null));
         }
@@ -57,6 +59,7 @@ public interface VirtualMachineTemplate extends ControlledEntity, Identity, Inte
     enum Event {
         OperationFailed,
         OperationSucceeded,
+        OperationSucceededSystem,
         UploadRequested,
         OperationTimeout;
     }
