@@ -17,11 +17,25 @@
 
 import { axios } from '@/utils/request'
 
-export function api (command, args = {}) {
+export function api (command, args = {}, method = 'GET', data = {}) {
+  let params = {}
   args.command = command
   args.response = 'json'
-  return axios.get('/', {
-    params: args
+
+  if (data) {
+    params = new URLSearchParams()
+    Object.entries(data).forEach(([key, value]) => {
+      params.append(key, value)
+    })
+  }
+
+  return axios({
+    params: {
+      ...args
+    },
+    url: '/',
+    method,
+    data: params || {}
   })
 }
 

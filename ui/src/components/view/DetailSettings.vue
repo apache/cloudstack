@@ -23,12 +23,14 @@
     <div v-show="showAddDetail">
       <a-auto-complete
         style="width: 100%"
+        :filterOption="filterOption"
         :value="newKey"
         :dataSource="Object.keys(detailOptions)"
         placeholder="Name"
         @change="e => onAddInputChange(e, 'newKey')" />
       <a-auto-complete
         style="width: 100%"
+        :filterOption="filterOption"
         :value="newValue"
         :dataSource="detailOptions[newKey]"
         placeholder="Value"
@@ -112,6 +114,11 @@ export default {
     this.updateResource(this.resource)
   },
   methods: {
+    filterOption (input, option) {
+      return (
+        option.componentOptions.children[0].text.toUpperCase().indexOf(input.toUpperCase()) >= 0
+      )
+    },
     updateResource (resource) {
       if (!resource) {
         return
