@@ -88,6 +88,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if users can see all accounts within the same domain, false otherwise")
     private boolean allowUserViewAllDomainAccounts;
 
+    @SerializedName("kubernetesserviceenabled")
+    @Param(description = "true if Kubernetes Service plugin is enabled, false otherwise")
+    private boolean kubernetesServiceEnabled;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -150,5 +154,9 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setAllowUserViewAllDomainAccounts(boolean allowUserViewAllDomainAccounts) {
         this.allowUserViewAllDomainAccounts = allowUserViewAllDomainAccounts;
+    }
+
+    public void setKubernetesServiceEnabled(boolean kubernetesServiceEnabled) {
+        this.kubernetesServiceEnabled = kubernetesServiceEnabled;
     }
 }

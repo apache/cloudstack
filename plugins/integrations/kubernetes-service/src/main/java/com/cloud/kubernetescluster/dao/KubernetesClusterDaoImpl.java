@@ -106,7 +106,7 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
 
     @Override
     public List<KubernetesClusterVO> listAllByKubernetesVersion(long kubernetesVersionId) {
-        SearchCriteria<KubernetesClusterVO> sc = SameNetworkSearch.create();
+        SearchCriteria<KubernetesClusterVO> sc = KubernetesVersionSearch.create();
         sc.setParameters("kubernetesVersionId", kubernetesVersionId);
         return this.listBy(sc);
     }

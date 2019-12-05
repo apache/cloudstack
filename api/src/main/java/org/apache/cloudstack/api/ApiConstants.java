@@ -745,6 +745,7 @@ public class ApiConstants {
 
     public static final String CONSOLE_END_POINT = "consoleendpoint";
     public static final String DELETE_ISO = "deleteiso";
+    public static final String EXTERNAL_LOAD_BALANCER_IP_ADDRESS = "externalloadbalanceripaddress";
     public static final String DOCKER_REGISTRY_USER_NAME = "dockerregistryusername";
     public static final String DOCKER_REGISTRY_PASSWORD = "dockerregistrypassword";
     public static final String DOCKER_REGISTRY_URL = "dockerregistryurl";

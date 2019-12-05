@@ -32,6 +32,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.component.PluggableService;
 
 public interface KubernetesClusterService extends PluggableService {
+    static final String MIN_KUBERNETES_VERSION_HA_SUPPORT = "1.16";
 
     KubernetesCluster findById(final Long id);
 

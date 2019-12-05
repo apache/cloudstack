@@ -35,6 +35,9 @@ UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=285 AND display_name=
 UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=286 AND display_name="Red Hat Enterprise Linux 8.0";
 
 -- Kubernetes service
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server',
+'cloud.kubernetes.service.enabled', 'false', 'Indicates whether Kubernetes Service plugin is enabled or not. Management server restart needed on change', 'false', NULL, NULL, 0);
+
 CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_supported_version` (
     `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
     `uuid` varchar(40) DEFAULT NULL COMMENT 'uuid',
@@ -105,15 +108,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster_details` (
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server',
 'cloud.kubernetes.cluster.template.name', "Kubernetes-Service-Template", 'Name of the template to be used for creating Kubernetes cluster nodes', 'Kubernetes-Service-Template', NULL, NULL, 0);
-
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server',
-'cloud.kubernetes.cluster.binaries.iso.name', 'Kubernetes-Service-Binaries-ISO' , 'Name of the ISO that contains Kubernetes binaries and docker images for offline installation.', 'Kubernetes-Service-Binaries-ISO', NULL , NULL, 0);
-
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server',
-'cloud.kubernetes.cluster.master.cloudconfig', '/etc/cloudstack/management/k8s-master.yml' , 'file location path of the cloud config used for creating kubernetes cluster master node', '/etc/cloudstack/management/k8s-master.yml', NULL , NULL, 0);
-
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server',
-'cloud.kubernetes.cluster.node.cloudconfig', '/etc/cloudstack/management/k8s-node.yml', 'file location path of the cloud config used for creating kubernetes cluster node', '/etc/cloudstack/management/k8s-node.yml', NULL , NULL, 0);
 
 INSERT IGNORE INTO `cloud`.`network_offerings` (name, uuid, unique_name, display_text, nw_rate, mc_rate, traffic_type, tags, system_only, specify_vlan, service_offering_id, conserve_mode, created,availability, dedicated_lb_service, shared_source_nat_service, sort_key, redundant_router_service, state, guest_type, elastic_ip_service, eip_associate_public_ip, elastic_lb_service, specify_ip_ranges, inline,is_persistent,internal_lb, public_lb, egress_default_policy, concurrent_connections, keep_alive_enabled, supports_streched_l2, `default`, removed) VALUES ('DefaultNetworkOfferingforKubernetesService', UUID(), 'DefaultNetworkOfferingforKubernetesService', 'Network Offering used for CloudStack kubernetes service', NULL,NULL,'Guest',NULL,0,0,NULL,1,now(),'Required',1,0,0,0,'Enabled','Isolated',0,1,0,0,0,0,0,1,1,NULL,0,0,0,NULL);
 

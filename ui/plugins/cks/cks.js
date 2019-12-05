@@ -49,9 +49,20 @@
     cloudStack.plugins.cks = function(plugin) {
         plugin.ui.addSection({
             id: 'cks',
-            title: 'Kubernetes Service',
+            title: 'label.kubernetes.service',
             preFilter: function(args) {
-                return true;
+                var pluginEnabled = false;
+                $.ajax({
+                    url: createURL('listCapabilities'),
+                    async: false,
+                    success: function(json) {
+                        pluginEnabled = json.listcapabilitiesresponse.capability.kubernetesserviceenabled;
+                    },
+                    error: function(XMLHttpResponse) {
+                        pluginEnabled = false;
+                    }
+                });
+                return pluginEnabled;
             },
             showOnNavigation: true,
             sectionSelect: {
@@ -64,7 +75,7 @@
                 kubernetesclusters: {
                     id: 'kubernetesclusters',
                     type: 'select',
-                    title: "Clusters",
+                    title: "label.clusters",
                     listView: {
                         filters: {
                             all: {
@@ -137,9 +148,9 @@
                         // List view actions
                         actions: {
                             add: {
-                                label: 'Add Kubernetes cluster',
+                                label: 'label.add.kubernetes.cluster',
                                 createForm: {
-                                    title: 'Add Kubernetes cluster',
+                                    title: 'label.add.kubernetes.cluster',
                                     preFilter: function(args) {
                                         args.$form.find('.form-item[rel=masternodes]').find('input[name=masternodes]').val('2');
                                         args.$form.find('.form-item[rel=size]').find('input[name=size]').val('1');
@@ -186,7 +197,7 @@
                                             }
                                         },
                                         kubernetesversion: {
-                                            label: 'Kubernetes version',
+                                            label: 'label.kubernetes.version',
                                             dependsOn: ['zone'],
                                             //docID: 'helpKubernetesClusterZone',
                                             validation: {
@@ -268,7 +279,7 @@
                                             }
                                         },
                                         noderootdisksize: {
-                                            label: 'Node root disk size (in GB)',
+                                            label: 'label.node.root.disk.size.gb',
                                             //docID: 'helpKubernetesClusterNodeRootDiskSize',
                                             validation: {
                                                 number: true
@@ -305,13 +316,13 @@
                                             }
                                         },
                                         multimaster: {
-                                            label: "HA (Multi-master)",
+                                            label: "label.ha.enabled",
                                             dependsOn: 'kubernetesversion',
                                             isBoolean: true,
                                             isChecked: false,
                                         },
                                         masternodes: {
-                                            label: 'Master nodes',
+                                            label: 'label.master.nodes',
                                             //docID: 'helpKubernetesClusterSize',
                                             validation: {
                                                 required: true,
@@ -320,8 +331,16 @@
                                             dependsOn: "multimaster",
                                             isHidden: true,
                                         },
+                                        externalloadbalanceripaddress: {
+                                            label: 'label.external.loadbalancer.ip.address',
+                                            validation: {
+                                                ipv4AndIpv6AddressValidator: true
+                                            },
+                                            dependsOn: "multimaster",
+                                            isHidden: true,
+                                        },
                                         size: {
-                                            label: 'Cluster size (Worker nodes)',
+                                            label: 'label.cluster.size.worker.nodes',
                                             //docID: 'helpKubernetesClusterSize',
                                             validation: {
                                                 required: true,
@@ -359,7 +378,7 @@
                                             }
                                         },
                                         supportPrivateRegistry: {
-                                            label: 'Private Registry',
+                                            label: 'label.private.registry',
                                             isBoolean: true,
                                             isChecked: false,
                                         },
@@ -419,6 +438,11 @@
                                     var masterNodes = 1;
                                     if (args.data.multimaster === 'on') {
                                         masterNodes = args.data.masternodes;
+                                        if (args.data.externalloadbalanceripaddress != null && args.data.externalloadbalanceripaddress != "") {
+                                            $.extend(data, {
+                                                externalloadbalanceripaddress: args.data.externalloadbalanceripaddress
+                                            });
+                                        }
                                     }
                                     $.extend(data, {
                                         masternodes: masterNodes
@@ -516,11 +540,11 @@
                         },
 
                         detailView: {
-                            name: 'Kubernetes cluster details',
+                            name: 'label.kubernetes.cluster.details',
                             isMaximized: true,
                             actions: {
                                 start: {
-                                    label: 'Start Kubernetes Cluster',
+                                    label: 'label.start.kuberentes.cluster',
                                     action: function(args) {
                                         $.ajax({
                                             url: createURL("startKubernetesCluster"),
@@ -539,7 +563,7 @@
                                     },
                                     messages: {
                                         confirm: function(args) {
-                                            return 'Please confirm that you want to start this Kubernetes cluster.';
+                                            return 'message.confirm.start.kubernetes.cluster';
                                         },
                                         notification: function(args) {
                                             return 'Started Kubernetes cluster.';
@@ -550,7 +574,7 @@
                                     }
                                 },
                                 stop: {
-                                    label: 'Stop Kubernetes Cluster',
+                                    label: 'label.stop.kuberentes.cluster',
                                     action: function(args) {
                                         $.ajax({
                                             url: createURL("stopKubernetesCluster"),
@@ -569,7 +593,7 @@
                                     },
                                     messages: {
                                         confirm: function(args) {
-                                            return 'Please confirm that you want to stop this Kubernetes cluster.';
+                                            return 'message.confirm.stop.kubernetes.cluster';
                                         },
                                         notification: function(args) {
                                             return 'Stopped Kubernetes cluster.';
@@ -580,18 +604,18 @@
                                     }
                                 },
                                 destroy: {
-                                    label: 'Destroy Cluster',
+                                    label: 'label.destroy.kubernetes.cluster',
                                     compactLabel: 'label.destroy',
                                     createForm: {
-                                        title: 'Destroy Kubernetes Cluster',
-                                        desc: 'Destroy Kubernetes Cluster',
+                                        title: 'label.destroy.kubernetes.cluster',
+                                        desc: 'label.destroy.kubernetes.cluster',
                                         isWarning: true,
                                         fields: {
                                         }
                                     },
                                     messages: {
                                         confirm: function(args) {
-                                            return 'Please confirm that you want to destroy this Kubernetes cluster.';
+                                            return 'message.confirm.destroy.kubernetes.cluster';
                                         },
                                         notification: function(args) {
                                             return 'Destroyed Kubernetes cluster.';
@@ -599,8 +623,7 @@
                                     },
                                     action: function(args) {
                                         var data = {
-                                            id: args.context.kubernetesclusters[0].id,
-                                            expunge: true
+                                            id: args.context.kubernetesclusters[0].id
                                         };
                                         $.ajax({
                                             url: createURL('deleteKubernetesCluster'),
@@ -624,10 +647,10 @@
                                     }
                                 },
                                 downloadKubernetesClusterKubeConfig: {
-                                    label: 'Download Kubernetes Cluster Config',
+                                    label: 'label.download.kubernetes.cluster.config',
                                     messages: {
                                         notification: function(args) {
-                                            return 'Download Kubernetes Cluster Config';
+                                            return 'label.download.kubernetes.cluster.config';
                                         }
                                     },
                                     action: function(args) {
@@ -658,14 +681,14 @@
                                     }
                                 },
                                 scaleKubernetesCluster: {
-                                    label: 'Scale Kubernetes Cluster',
+                                    label: 'label.scale.kubernetes.cluster',
                                     messages: {
                                         notification: function(args) {
-                                            return 'Scale Kubernetes Cluster';
+                                            return 'label.scale.kubernetes.cluster';
                                         }
                                     },
                                     createForm: {
-                                        title: 'Scale Kubernetes Cluster',
+                                        title: 'label.scale.kubernetes.cluster',
                                         desc: '',
                                         preFilter: function(args) {
                                             var options = args.$form.find('.form-item[rel=serviceoffering]').find('option');
@@ -706,7 +729,7 @@
                                                 }
                                             },
                                             size: {
-                                                label: 'Cluster size',
+                                                label: 'label.cluster.size',
                                                 //docID: 'helpKubernetesClusterSize',
                                                 validation: {
                                                     required: true,
@@ -743,19 +766,19 @@
                                     }
                                 },
                                 upgradeKubernetesCluster: {
-                                    label: 'Upgrade Kubernetes Cluster',
+                                    label: 'label.upgrade.kubernetes.cluster',
                                     messages: {
                                         notification: function(args) {
-                                            return 'Upgrade Kubernetes Cluster';
+                                            return 'label.upgrade.kubernetes.cluster';
                                         }
                                     },
                                     createForm: {
-                                        title: 'Upgrade Kubernetes Cluster',
+                                        title: 'label.upgrade.kubernetes.cluster',
                                         desc: '',
                                         preFilter: function(args) {},
                                         fields: {
                                             kubernetesversion: {
-                                                label: 'Kubernetes version',
+                                                label: 'label.kubernetes.version',
                                                 //docID: 'helpKubernetesClusterZone',
                                                 validation: {
                                                     required: true
@@ -835,13 +858,13 @@
                                             label: 'label.zone.name'
                                         },
                                         kubernetesversion: {
-                                            label: 'Kubernetes version'
+                                            label: 'label.kubernetes.version'
                                         },
                                         masternodes : {
-                                            label: 'Master nodes'
+                                            label: 'label.master.nodes'
                                         },
                                         size : {
-                                            label: 'Cluster Size'
+                                            label: 'label.cluster.size'
                                         },
                                         cpunumber: {
                                             label: 'label.num.cpu.cores'
@@ -861,12 +884,8 @@
                                         keypair: {
                                             label: 'label.ssh.key.pair'
                                         },
-                                        endpoint: {
-                                            label: 'API endpoint',
-                                            isCopyPaste: true
-                                        },
                                         consoleendpoint: {
-                                            label: 'Dashboard endpoint',
+                                            label: 'label.dashboard.endpoint',
                                             isCopyPaste: true
                                         },
                                         username: {
@@ -898,7 +917,7 @@
                                     }
                                 },
                                 console : {
-                                    title: 'Access',
+                                    title: 'label.access',
                                     custom : function (args) {
                                         var showDashboard = function() {
                                             var state = args.context.kubernetesclusters[0].state;
@@ -939,7 +958,7 @@
                                     }
                                 },
                                 clusterinstances: {
-                                    title: 'Instances',
+                                    title: 'label.instances',
                                     listView: {
                                         section: 'clusterinstances',
                                         fields: {
@@ -1066,23 +1085,23 @@
                 kubernetesversions: {
                     id: 'kubernetesversions',
                     type: 'select',
-                    title: "Versions",
+                    title: "label.versions",
                     listView: {
                         fields: {
                             name: {
                                 label: 'label.name'
                             },
                             kubernetesversion: {
-                                label: 'Kubernetes version'
+                                label: 'label.kubernetes.version'
                             },
                             zonename: {
                                 label: 'label.zone.name'
                             },
                             isoname: {
-                                label: 'ISO Name'
+                                label: 'label.iso.name'
                             },
                             isostate: {
-                                label: 'ISO State'
+                                label: 'label.iso.state'
                             }
                         },
                         advSearchFields: {
@@ -1116,10 +1135,10 @@
                         // List view actions
                         actions: {
                             add: {
-                                label: 'Add Kubernetes version',
+                                label: 'label.add.kubernetes.version',
                                 preFilter: function(args) { return isAdmin(); },
                                 createForm: {
-                                    title: 'Add Kubernetes version',
+                                    title: 'label.add.kubernetes.version',
                                     preFilter: cloudStack.preFilter.createTemplate,
                                     fields: {
                                         name: {
@@ -1130,7 +1149,7 @@
                                             }
                                         },
                                         version: {
-                                            label: 'Semantic version',
+                                            label: 'label.semantic.version',
                                             //docID: 'Name of the cluster',
                                             validation: {
                                                 required: true
@@ -1163,7 +1182,7 @@
                                                         });
                                                         items.unshift({
                                                             id: -1,
-                                                            description: "All Zones"
+                                                            description: 'label.all.zones'
                                                         });
                                                         args.response.success({
                                                             data: items
@@ -1200,7 +1219,7 @@
                                                         });
                                                         items.unshift({
                                                             id: -1,
-                                                            description: "Add new ISO"
+                                                            description: 'label.add.new.iso'
                                                         });
                                                         args.response.success({
                                                             data: items
@@ -1247,7 +1266,7 @@
                                     if (args.data.isoid < 0) {
                                         if (args.data.isourl == null || args.data.isourl == '') {
                                             cloudStack.dialog.notice({
-                                                message: 'ISO URL is required to a new ISO' //_l('')
+                                                message: 'ISO URL is required to a new ISO'
                                             });
                                             return;
                                         }
@@ -1312,20 +1331,20 @@
                         },
 
                         detailView: {
-                            name: 'Kubernetes version details',
+                            name: 'label.kubernetes.version.details',
                             isMaximized: true,
                             actions: {
                                 destroy: {
-                                    label: 'Delete Version',
+                                    label: 'label.delete.kubernetes.version',
                                     compactLabel: 'label.delete',
                                     preFilter: function(args) { return isAdmin(); },
                                     createForm: {
-                                        title: 'Delete Kubernetes Version',
-                                        desc: 'Delete Kubernetes Version',
+                                        title: 'label.delete.kubernetes.version',
+                                        desc: 'label.delete.kubernetes.version',
                                         isWarning: true,
                                         fields: {
                                             deleteiso: {
-                                                label: 'Delete ISO',
+                                                label: 'label.delete.iso',
                                                 isBoolean: true,
                                                 isChecked: false
                                             },
@@ -1333,7 +1352,7 @@
                                     },
                                     messages: {
                                         confirm: function(args) {
-                                            return 'Please confirm that you want to delete this Kubernetes version.';
+                                            return 'message.confirm.delete.kubernetes.version';
                                         },
                                         notification: function(args) {
                                             return 'Deleted Kubernetes version.';
@@ -1385,13 +1404,13 @@
                                             label: 'label.zone.name'
                                         },
                                         isoid: {
-                                            label: 'ISO ID'
+                                            label: 'label.iso.id'
                                         },
                                         isoname: {
-                                            label: 'ISO Name'
+                                            label: 'label.iso.name'
                                         },
                                         isostate: {
-                                            label: 'ISO State'
+                                            label: 'label.iso.name'
                                         }
                                     }],
 

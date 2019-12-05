@@ -117,6 +117,10 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             description = "number of Kubernetes cluster master nodes, default is 1")
     private Long masterNodes;
 
+    @Parameter(name=ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, type = CommandType.STRING,
+            description = "external load balancer IP address while using shared network with Kubernetes HA cluster")
+    private String externalLoadBalancerIpAddress;
+
     @Parameter(name=ApiConstants.SIZE, type = CommandType.LONG,
             required = true, description = "number of Kubernetes cluster worker nodes")
     private Long clusterSize;
@@ -190,6 +194,10 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             return 1L;
         }
         return masterNodes;
+    }
+
+    public String getExternalLoadBalancerIpAddress() {
+        return externalLoadBalancerIpAddress;
     }
 
     public Long getClusterSize() {

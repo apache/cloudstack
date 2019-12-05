@@ -3502,6 +3502,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final boolean allowUserViewAllDomainAccounts = (QueryService.AllowUserViewAllDomainAccounts.valueIn(caller.getDomainId()));
 
+        final boolean kubernetesServiceEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.service.enabled"));
+
         // check if region-wide secondary storage is used
         boolean regionSecondaryEnabled = false;
         final List<ImageStoreVO> imgStores = _imgStoreDao.findRegionImageStores();
@@ -3521,7 +3523,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("KVMSnapshotEnabled", KVMSnapshotEnabled);
         capabilities.put("allowUserViewDestroyedVM", allowUserViewDestroyedVM);
         capabilities.put("allowUserExpungeRecoverVM", allowUserExpungeRecoverVM);
-        capabilities.put("allowUserViewAllDomainAccounts", allowUserViewAllDomainAccounts);
+        capabilities.put("allowUserViewAllDomainAccounts", allowUserViewAllDomainAccounts);;
+        capabilities.put("kubernetesServiceEnabled", kubernetesServiceEnabled);
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);

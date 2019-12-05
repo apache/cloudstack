@@ -20,10 +20,9 @@ import com.cloud.server.ManagementServer;
 
 public enum KubernetesServiceConfig {
 
+    KubernetesServiceEnabled("Advanced", ManagementServer.class, Boolean.class, "cloud.kubernetes.service.enabled", "false", "Indicates whether Kubernetes Service plugin is enabled or not. Management server restart needed on change", null, null),
     KubernetesClusterTemplateName("Advanced", ManagementServer.class, String.class, "cloud.kubernetes.cluster.template.name", "Kubernetes-Service-Template", "Name of the template to be used for creating Kubernetes cluster nodes", null, null),
-    KubernetesClusterNetworkOffering("Advanced", ManagementServer.class, String.class, "cloud.kubernetes.cluster.network.offering", "DefaultNetworkOfferingforKubernetesService", "Name of the network offering that will be used to create isolated network in which Kubernetes cluster VMs will be launched.", null, null),
-    KubernetesClusterBinariesIsoName("Advanced", ManagementServer.class, String.class, "cloud.kubernetes.cluster.binaries.iso.name", "Kubernetes-Service-Binaries-ISO", "Name of the ISO that contains Kubernetes binaries and docker images for offline installation.", null, null);
-
+    KubernetesClusterNetworkOffering("Advanced", ManagementServer.class, String.class, "cloud.kubernetes.cluster.network.offering", "DefaultNetworkOfferingforKubernetesService", "Name of the network offering that will be used to create isolated network in which Kubernetes cluster VMs will be launched.", null, null);
 
     private final String _category;
     private final Class<?> _componentClass;

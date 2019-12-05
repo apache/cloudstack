@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.kubernetesversion.ListKubernetesSupportedVersionsCmd;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -40,8 +41,9 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.kubernetescluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetescluster.KubernetesClusterService;
 import com.cloud.kubernetescluster.KubernetesClusterVO;
+import com.cloud.kubernetescluster.KubernetesServiceConfig;
 import com.cloud.kubernetescluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetesversion.dao.KubernetesSupportedVersionDao;
 import com.cloud.storage.Storage;
@@ -70,6 +72,8 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     private DataCenterDao dataCenterDao;
     @Inject
     private TemplateApiService templateService;
+    @Inject
+    protected ConfigurationDao globalConfigDao;
 
     private KubernetesSupportedVersionResponse createKubernetesSupportedVersionResponse(final KubernetesSupportedVersion kubernetesSupportedVersion) {
         KubernetesSupportedVersionResponse response = new KubernetesSupportedVersionResponse();
@@ -83,7 +87,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             response.setZoneName(zone.getName());
         }
         if (compareKubernetesVersion(kubernetesSupportedVersion.getKubernetesVersion(),
-                KubernetesClusterManagerImpl.MIN_KUBERNETES_VERSION_HA_SUPPORT)>=0) {
+                KubernetesClusterService.MIN_KUBERNETES_VERSION_HA_SUPPORT)>=0) {
             response.setSupportsHA(true);
         } else {
             response.setSupportsHA(false);
@@ -149,6 +153,9 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
 
     @Override
     public ListResponse<KubernetesSupportedVersionResponse> listKubernetesSupportedVersions(final ListKubernetesSupportedVersionsCmd cmd) {
+        if (!Boolean.parseBoolean(globalConfigDao.getValue(KubernetesServiceConfig.KubernetesServiceEnabled.key()))) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Kubernetes Service plugin is disabled");
+        }
         final Long versionId = cmd.getId();
         final Long zoneId = cmd.getZoneId();
         String minimumKubernetesVersion = cmd.getMinimumKubernetesVersion();
@@ -202,6 +209,9 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     @Override
     @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_ADD, eventDescription = "Adding Kubernetes supported version")
     public KubernetesSupportedVersionResponse addKubernetesSupportedVersion(final AddKubernetesSupportedVersionCmd cmd) {
+        if (!Boolean.parseBoolean(globalConfigDao.getValue(KubernetesServiceConfig.KubernetesServiceEnabled.key()))) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Kubernetes Service plugin is disabled");
+        }
         final String name = cmd.getName();
         final String kubernetesVersion = cmd.getKubernetesVersion();
         final Long zoneId = cmd.getZoneId();
@@ -212,11 +222,13 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("Name cannot be empty to add a new supported Kubernetes version");
         }
         if (Strings.isNullOrEmpty(isoUrl) && (isoId == null || isoId <= 0)) {
-            throw new InvalidParameterValueException(String.format("Either %s or %s paramter must be passed to add a new supported Kubernetes version", "isourl", ApiConstants.ISO_ID));
+            throw new InvalidParameterValueException(String.format("Either %s or %s parameter must be passed to add a new supported Kubernetes version", "isourl", ApiConstants.ISO_ID));
         }
-
         if (!Strings.isNullOrEmpty(isoUrl) && isoId != null && isoId > 0) {
             throw new InvalidParameterValueException(String.format("Both %s and %s parameters can not be passed simultaneously to add a new supported Kubernetes version", "isourl", ApiConstants.ISO_ID));
+        }
+        if (compareKubernetesVersion(kubernetesVersion, MIN_KUBERNETES_VERSION) < 0) {
+            throw new InvalidParameterValueException(String.format("New supported Kubernetes version cannot be added as %s is minimum version supported by Kubernetes Service", MIN_KUBERNETES_VERSION));
         }
 
         VMTemplateVO template = null;
@@ -281,6 +293,9 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     @Override
     @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_DELETE, eventDescription = "Deleting Kubernetes supported version", async = true)
     public boolean deleteKubernetesSupportedVersion(final DeleteKubernetesSupportedVersionCmd cmd) {
+        if (!Boolean.parseBoolean(globalConfigDao.getValue(KubernetesServiceConfig.KubernetesServiceEnabled.key()))) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Kubernetes Service plugin is disabled");
+        }
         final Long versionId = cmd.getId();
         final boolean isDeleteIso = cmd.isDeleteIso();
         KubernetesSupportedVersion version = kubernetesSupportedVersionDao.findById(versionId);
@@ -289,7 +304,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         }
         List<KubernetesClusterVO> clusters = kubernetesClusterDao.listAllByKubernetesVersion(versionId);
         if (clusters.size() > 0) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to delete Kubernetes version ID: %s. Exisiting clusters currently using the version.", version.getUuid()));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to delete Kubernetes version ID: %s. Existing clusters currently using the version.", version.getUuid()));
         }
 
         VMTemplateVO template = templateDao.findById(version.getIsoId());
@@ -315,6 +330,9 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        if (!Boolean.parseBoolean(globalConfigDao.getValue(KubernetesServiceConfig.KubernetesServiceEnabled.key()))) {
+            return cmdList;
+        }
         cmdList.add(AddKubernetesSupportedVersionCmd.class);
         cmdList.add(ListKubernetesSupportedVersionsCmd.class);
         cmdList.add(DeleteKubernetesSupportedVersionCmd.class);
