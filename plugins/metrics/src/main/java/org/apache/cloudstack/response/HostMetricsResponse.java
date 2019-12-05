@@ -45,7 +45,7 @@ public class HostMetricsResponse extends HostResponse {
 
     @SerializedName("cpuloadaverage")
     @Param(description = "the average cpu load the last minute")
-    private String loadAverage;
+    private Double loadAverage;
 
     @SerializedName("memorytotalgb")
     @Param(description = "the total cpu capacity in GiB")
@@ -123,7 +123,7 @@ public class HostMetricsResponse extends HostResponse {
 
     public void setLoadAverage(final Double loadAverage) {
         if (loadAverage != null) {
-            this.loadAverage = String.format("%.2f", loadAverage);
+            this.loadAverage = loadAverage;
         }
     }
 
