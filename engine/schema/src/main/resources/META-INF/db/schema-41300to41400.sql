@@ -35,7 +35,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup_offering` (
   `created` datetime DEFAULT NULL,
   `removed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uuid` (`uuid`),
   CONSTRAINT `fk_backup_offering__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -52,12 +51,12 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backups` (
   `date` varchar(255) NOT NULL COMMENT 'backup date',
   `size` bigint(20) DEFAULT 0 COMMENT 'size of the backup',
   `protected_size` bigint(20) DEFAULT 0,
-  `status` varchar(32) DEFAULT NULL COMMENT 'backup status',
-  `backup_offering_id` bigint(20) unsigned NOT NULL COMMENT,
-  `account_id` bigint(20) unsigned NOT NULL COMMENT,
-  `domain_id` bigint(20) unsigned NOT NULL COMMENT,
+  `status` varchar(32) DEFAULT NULL,
+  `backup_offering_id` bigint(20) unsigned NOT NULL,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `domain_id` bigint(20) unsigned NOT NULL,
   `zone_id` bigint(20) unsigned NOT NULL,
-  `removed` datetime DEFAULT NULL COMMENT 'Date removed.  not null if removed',
+  `removed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_backup__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_backup__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
@@ -72,7 +71,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup_schedule` (
   `scheduled_timestamp` datetime DEFAULT NULL COMMENT 'Time at which the backup was scheduled for execution',
   `async_job_id` bigint(20) unsigned DEFAULT NULL COMMENT 'If this schedule is being executed, it is the id of the create aysnc_job. Before that it is null',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_backup__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_backup_schedule__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_backup` (

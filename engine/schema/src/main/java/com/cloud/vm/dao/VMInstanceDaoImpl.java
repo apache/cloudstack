@@ -94,6 +94,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> HostAndStateSearch;
     protected SearchBuilder<VMInstanceVO> StartingWithNoHostSearch;
     protected SearchBuilder<VMInstanceVO> NotMigratingSearch;
+    protected SearchBuilder<VMInstanceVO> BackupSearch;
 
     @Inject
     ResourceTagDao _tagsDao;
@@ -286,6 +287,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         NotMigratingSearch.and("lastHost", NotMigratingSearch.entity().getLastHostId(), Op.EQ);
         NotMigratingSearch.and("state", NotMigratingSearch.entity().getState(), Op.NEQ);
         NotMigratingSearch.done();
+
+        BackupSearch = createSearchBuilder();
+        BackupSearch.and("zone_id", BackupSearch.entity().getDataCenterId(), Op.EQ);
+        BackupSearch.and("backup_offering_id", BackupSearch.entity().getBackupOfferingId(), Op.NNULL);
+        BackupSearch.done();
     }
 
     @Override
@@ -574,6 +580,13 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = AllFieldsSearch.create();
         sc.setParameters("lastHost", hostId);
         sc.setParameters("state", State.Migrating);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VMInstanceVO> listByZoneWithBackups(Long zoneId) {
+        SearchCriteria<VMInstanceVO> sc = BackupSearch.create();
+        sc.setParameters("zone_id", zoneId);
         return listBy(sc);
     }
 

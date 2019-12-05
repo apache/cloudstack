@@ -77,13 +77,6 @@ public class BackupVO implements Backup {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public BackupVO(final Long vmId, final String externalId) {
-        this.uuid = UUID.randomUUID().toString();
-        this.vmId = vmId;
-        this.externalId = externalId;
-        this.status = Status.BackedUp;
-    }
-
     @Override
     public long getId() {
         return id;

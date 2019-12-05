@@ -67,6 +67,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.SnapshotVO;
@@ -83,6 +84,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -568,10 +570,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         boolean result = backupProvider.deleteBackup(backup);
         if (result) {
-            if (backupDao.update(backup.getId(), backup)) {
-                backupDao.remove(backup.getId());
-                return true;
-            }
+            return backupDao.remove(backup.getId());
         }
         throw new CloudRuntimeException("Failed to delete the backup");
     }
@@ -632,8 +631,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return true;
     }
 
-    public boolean isEnabled(final Long zoneId) {
-        return BackupFrameworkEnabled.valueIn(zoneId);
+    public boolean isDisabled(final DataCenter zone) {
+        return zone == null || Grouping.AllocationState.Disabled.equals(zone.getAllocationState()) || !BackupFrameworkEnabled.valueIn(zone.getId());
     }
 
     @Override
@@ -732,34 +731,52 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         @Override
         protected void runInContext() {
+            final int SYNC_INTERVAL = BackupSyncPollingInterval.value().intValue();
             try {
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("Backup sync background task is running...");
                 }
                 for (final DataCenter dataCenter : dataCenterDao.listAllZones()) {
-                    if (dataCenter == null || !isEnabled(dataCenter.getId())) {
+                    if (isDisabled(dataCenter)) {
                         continue;
                     }
 
-                    // TODO: Check and schedule backups per user-defined backup schedule
-
-                    // TODO: sync backups backupProvider.listBackupRestorePoints(vm.getUuid(), vm);
-
-
-                    // Sync backup size usages
-                    final List<Backup> backups = backupDao.listByZoneAndState(dataCenter.getId(), null);
-                    if (backups.isEmpty()) {
-                        continue;
-                    }
                     final BackupProvider backupProvider = getBackupProvider(dataCenter.getId());
-                    final Map<Backup, Backup.Metric> metrics = backupProvider.getBackupMetrics(dataCenter.getId(), backups);
-                    for (final Backup backup : metrics.keySet()) {
-                        final Backup.Metric metric = metrics.get(backup);
-                        final BackupVO backupVO = (BackupVO) backup;
-                        backupVO.setSize(metric.getBackupSize());
-                        backupVO.setProtectedSize(metric.getDataSize());
-                        if (backupDao.update(backupVO.getId(), backupVO)) {
-                            usageBackupDao.updateMetrics(backup);
+                    if (backupProvider == null) {
+                        LOG.warn("Backup provider not available or configured for zone ID " + dataCenter.getId());
+                        continue;
+                    }
+
+                    List<VMInstanceVO> vms = vmInstanceDao.listByZoneWithBackups(dataCenter.getId());
+                    if (vms == null || vms.isEmpty()) {
+                        continue;
+                    }
+
+                    // Sync backup usage metrics
+                    final Map<VirtualMachine, Backup.Metric> metrics = backupProvider.getBackupMetrics(dataCenter.getId(), new ArrayList<>(vms));
+                    final GlobalLock syncBackupMetricsLock = GlobalLock.getInternLock("BackupSyncTask_metrics_zone_" + dataCenter.getId());
+                    if (syncBackupMetricsLock.lock(SYNC_INTERVAL)) {
+                        try {
+                            for (final VirtualMachine vm : metrics.keySet()) {
+                                final Backup.Metric metric = metrics.get(vm);
+                                if (metric != null) {
+                                    usageBackupDao.updateMetrics(vm, metric);
+                                }
+                            }
+                        } finally {
+                            syncBackupMetricsLock.unlock();
+                        }
+                    }
+
+                    // Sync out-of-band backups
+                    for (final VirtualMachine vm : vms) {
+                        final GlobalLock syncBackupsLock = GlobalLock.getInternLock("BackupSyncTask_backup_vm_" + vm.getId());
+                        if (syncBackupsLock.lock(SYNC_INTERVAL)) {
+                            try {
+                                backupProvider.syncBackups(vm, metrics.get(vm));
+                            } finally {
+                                syncBackupsLock.unlock();
+                            }
                         }
                     }
                 }

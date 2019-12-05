@@ -17,6 +17,7 @@
 package org.apache.cloudstack.backup;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,11 +81,11 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public Map<Backup, Backup.Metric> getBackupMetrics(Long zoneId, List<Backup> backupList) {
-        final Map<Backup, Backup.Metric> metrics = new HashMap<>();
+    public Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms) {
+        final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
         final Backup.Metric metric = new Backup.Metric(1000L, 100L);
-        for (Backup backup : backupList) {
-            metrics.put(backup, metric);
+        for (VirtualMachine vm : vms) {
+            metrics.put(vm, metric);
         }
         return metrics;
     }
@@ -109,7 +110,19 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Override
     public boolean takeBackup(VirtualMachine vm) {
         s_logger.debug("Starting backup for VM ID " + vm.getUuid() + " on Dummy provider");
-        return true;
+
+        BackupVO backup = new BackupVO();
+        backup.setVmId(vm.getId());
+        backup.setType("FULL");
+        backup.setDate(new Date().toString());
+        backup.setStatus(Backup.Status.BackedUp);
+        backup.setSize(1024L);
+        backup.setProtectedSize(1024000L);
+        backup.setBackupOfferingId(vm.getBackupOfferingId());
+        backup.setAccountId(vm.getAccountId());
+        backup.setDomainId(vm.getDomainId());
+        backup.setZoneId(vm.getDataCenterId());
+        return backupDao.persist(backup) != null;
     }
 
     @Override
@@ -122,5 +135,10 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         return Arrays.asList(
                 new Backup.RestorePoint("aaaaaaaa", "22/08/2017", "Full"),
                 new Backup.RestorePoint("bbbbbbbb", "23/08/2017", "Incremental"));
+    }
+
+    @Override
+    public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
+
     }
 }

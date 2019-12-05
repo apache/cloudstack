@@ -24,9 +24,10 @@ import org.apache.cloudstack.backup.Backup;
 
 import com.cloud.usage.UsageBackupVO;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.VirtualMachine;
 
 public interface UsageBackupDao extends GenericDao<UsageBackupVO, Long> {
-    void updateMetrics(Backup backup);
+    void updateMetrics(VirtualMachine vm, Backup.Metric metric);
     void removeUsage(Long accountId, Long zoneId, Long backupId);
     List<UsageBackupVO> getUsageRecords(Long accountId, Date startDate, Date endDate);
 }

@@ -94,7 +94,9 @@ public interface BackupProvider {
      */
     Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid);
 
-    Map<Backup, Backup.Metric> getBackupMetrics(Long zoneId, List<Backup> backupList);
+    Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms);
 
     List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm);
+
+    void syncBackups(VirtualMachine vm, Backup.Metric metric);
 }

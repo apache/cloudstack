@@ -24,9 +24,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.veeam.VeeamClient;
 import org.apache.cloudstack.backup.veeam.api.Job;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -41,6 +44,9 @@ import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -75,6 +81,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private VmwareDatacenterZoneMapDao vmwareDatacenterZoneMapDao;
     @Inject
     private VmwareDatacenterDao vmwareDatacenterDao;
+    @Inject
+    private BackupDao backupDao;
 
     private VeeamClient getClient(final Long zoneId) {
         try {
@@ -212,14 +220,14 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public Map<Backup, Backup.Metric> getBackupMetrics(final Long zoneId, final List<Backup> backupList) {
-        final Map<Backup, Backup.Metric> metrics = new HashMap<>();
+    public Map<VirtualMachine, Backup.Metric> getBackupMetrics(final Long zoneId, final List<VirtualMachine> vms) {
+        final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
         final Map<String, Backup.Metric> backendMetrics = getClient(zoneId).getBackupMetrics();
-        for (final Backup backup : backupList) {
-            if (!backendMetrics.containsKey(backup.getVmId())) {
+        for (final VirtualMachine vm : vms) {
+            if (!backendMetrics.containsKey(vm.getUuid())) {
                 continue;
             }
-            metrics.put(backup, backendMetrics.get(backup.getVmId()));
+            metrics.put(vm, backendMetrics.get(vm.getUuid()));
         }
         return metrics;
     }
@@ -228,6 +236,49 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
         String backupName = getGuestBackupName(vm.getInstanceName(), vm.getUuid());
         return getClient(vm.getDataCenterId()).listRestorePoints(backupName, vm.getInstanceName());
+    }
+
+    @Override
+    public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
+        List<Backup.RestorePoint> restorePoints = listRestorePoints(vm);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                final List<Backup> backupsInDb = backupDao.listByVmId(null, vm.getId());
+                final List<Long> removeList = backupsInDb.stream().map(InternalIdentity::getId).collect(Collectors.toList());
+                for (final Backup.RestorePoint restorePoint : restorePoints) {
+                    boolean backupExists = false;
+                    for (final Backup backup : backupsInDb) {
+                        if (restorePoint.getId().equals(backup.getExternalId())) {
+                            backupExists = true;
+                            removeList.remove(backup.getId());
+                            break;
+                        }
+                    }
+                    if (backupExists) {
+                        continue;
+                    }
+                    BackupVO backup = new BackupVO();
+                    backup.setVmId(vm.getId());
+                    backup.setExternalId(restorePoint.getId());
+                    backup.setType(restorePoint.getType());
+                    backup.setDate(restorePoint.getCreated());
+                    backup.setStatus(Backup.Status.BackedUp);
+                    if (metric != null) {
+                        backup.setSize(metric.getBackupSize());
+                        backup.setProtectedSize(metric.getDataSize());
+                    }
+                    backup.setBackupOfferingId(vm.getBackupOfferingId());
+                    backup.setAccountId(vm.getAccountId());
+                    backup.setDomainId(vm.getDomainId());
+                    backup.setZoneId(vm.getDataCenterId());
+                    backupDao.persist(backup);
+                }
+                for (final Long backupIdToRemove : removeList) {
+                    backupDao.remove(backupIdToRemove);
+                }
+            }
+        });
     }
 
     @Override

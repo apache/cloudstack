@@ -37,6 +37,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.vm.VirtualMachine;
 
 @Component
 public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> implements UsageBackupDao {
@@ -46,23 +47,23 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
             " OR ((created <= ?) AND (removed >= ?)))";
 
     @Override
-    public void updateMetrics(final Backup backup) {
+    public void updateMetrics(final VirtualMachine vm, Backup.Metric metric) {
         boolean result = Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(final TransactionStatus status) {
                 final QueryBuilder<UsageBackupVO> qb = QueryBuilder.create(UsageBackupVO.class);
-                qb.and(qb.entity().getVmId(), SearchCriteria.Op.EQ, backup.getVmId());
+                qb.and(qb.entity().getVmId(), SearchCriteria.Op.EQ, vm.getId());
                 final UsageBackupVO entry = findOneBy(qb.create());
                 if (entry == null) {
                     return false;
                 }
-                entry.setSize(backup.getSize());
-                entry.setProtectedSize(backup.getProtectedSize());
+                entry.setSize(metric.getBackupSize());
+                entry.setProtectedSize(metric.getDataSize());
                 return update(entry.getId(), entry);
             }
         });
         if (!result) {
-            LOGGER.warn("Failed to update VM Backup metrics for backup id: " + backup.getId());
+            LOGGER.warn("Failed to update Backup metrics for VM ID: " + vm.getId());
         }
     }
 
