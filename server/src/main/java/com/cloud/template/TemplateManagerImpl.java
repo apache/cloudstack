@@ -668,7 +668,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             if (templateVO != null){
                 urlResponse.setUrl(templateVO.getUrl());
-                urlResponse.setType(templateVO.getFormat().toString().toUpperCase());
+                urlResponse.setType(templateVO.getFormat().toString().toLowerCase());
             }
         }
         return urlResponse;
