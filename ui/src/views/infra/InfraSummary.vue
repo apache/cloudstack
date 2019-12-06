@@ -17,36 +17,125 @@
 
 <template>
   <a-row :gutter="24">
-    <a-col :md="18">
-      <a-card>
-        <breadcrumb />
-      </a-card>
-    </a-col>
-    <a-col
-      :md="6" >
-      <a-card>
-        <a-button
-          style="margin-left: 10px; float: right"
-          @click="fetchData()"
-          icon="reload"
-          :loading="loading"
-          type="primary">
-          {{ $t('Refresh') }}
-        </a-button>
-        <a-button
-          style="margin-left: 10px; float: right"
-          @click="sslFormVisible = true"
-          icon="safety-certificate">
-          {{ $t('SSL Certificate') }}
-        </a-button>
-        <a-modal
-          :title="$t('SSL Certificate')"
-          v-model="sslFormVisible"
-          @ok="handle">
-          <p>Some contents...</p>
-          <p>Some contents...</p>
-          <p>Some contents...</p>
-        </a-modal>
+    <a-col :md="24">
+      <a-card class="breadcrumb-card">
+        <a-col :md="14">
+          <breadcrumb style="padding-top: 6px" />
+        </a-col>
+        <a-col :md="10">
+          <a-button
+            style="margin-left: 10px; float: right"
+            @click="fetchData()"
+            icon="reload"
+            :loading="loading"
+            type="primary">
+            {{ $t('Refresh') }}
+          </a-button>
+          <a-button
+            style="margin-left: 10px; float: right"
+            @click="sslFormVisible = true"
+            icon="safety-certificate">
+            {{ $t('SSL Certificate') }}
+          </a-button>
+          <a-modal
+            :title="$t('SSL Certificate')"
+            :visible="sslFormVisible"
+            :footer="null"
+            @cancel="sslModalClose">
+            <p>
+              Please submit a new X.509 compliant SSL certificate chain to be updated to each console proxy and secondary storage virtual instance:
+            </p>
+
+            <a-form @submit.prevent="handleSslFormSubmit" ref="sslForm" :form="form">
+              <a-form-item label="Root certificate" :required="true">
+                <a-textarea
+                  id="rootCert"
+                  rows="2"
+                  placeholder="Root certificate"
+                  :autoFocus="true"
+                  name="rootCert"
+                  v-decorator="[
+                    'root',
+                    {rules: [{ required: true, message: 'Required' }], validateTrigger:'change'}
+                  ]"
+                ></a-textarea>
+              </a-form-item>
+
+              <transition-group name="fadeInUp" tag="div">
+                <a-form-item
+                  v-for="(item, index) in intermediateCertificates"
+                  :key="`key-${index}`"
+                  class="intermediate-certificate"
+                  :label="`Intermediate certificate ${index + 1}`">
+                  <a-textarea
+                    :id="`intermediateCert${index}`"
+                    rows="2"
+                    :placeholder="`Intermediate certificate ${index + 1}`"
+                    :name="`intermediateCert${index}`"
+                    v-decorator="[
+                      `intermediate${index + 1}`,
+                      {validateTrigger:'change'}
+                    ]"
+                  ></a-textarea>
+                </a-form-item>
+              </transition-group>
+
+              <a-form-item>
+                <a-button @click="addIntermediateCert">
+                  <a-icon type="plus-circle" />
+                  Add intermediate certificate
+                </a-button>
+              </a-form-item>
+
+              <a-form-item label="Server certificate" :required="true">
+                <a-textarea
+                  id="serverCert"
+                  rows="2"
+                  placeholder="Server certificate"
+                  name="serverCert"
+                  v-decorator="[
+                    'server',
+                    {rules: [{ required: true, message: 'Required' }], validateTrigger:'change'}
+                  ]"
+                ></a-textarea>
+              </a-form-item>
+
+              <a-form-item label="PKCS#8 Private Key" :required="true">
+                <a-textarea
+                  id="pkcsKey"
+                  rows="2"
+                  placeholder="PKCS#8 Private Key"
+                  name="pkcsKey"
+                  v-decorator="[
+                    'pkcs',
+                    {rules: [{ required: true, message: 'Required' }], validateTrigger:'change'}
+                  ]"
+                ></a-textarea>
+              </a-form-item>
+
+              <a-form-item label="DNS Domain Suffix (i.e., xyz.com)" :required="true">
+                <a-input
+                  id="dnsSuffix"
+                  placeholder="DNS Domain Suffix (i.e., xyz.com)"
+                  name="dnsSuffix"
+                  v-decorator="[
+                    'dns',
+                    {rules: [{ required: true, message: 'Required' }], validateTrigger:'change'}
+                  ]"
+                ></a-input>
+              </a-form-item>
+
+              <a-form-item class="controls">
+                <a-button @click="this.sslModalClose" type="danger" class="close-button">
+                  Cancel
+                </a-button>
+                <a-button type="primary" htmlType="submit" :loading="sslFormSubmitting">
+                  Submit
+                </a-button>
+              </a-form-item>
+            </a-form>
+          </a-modal>
+        </a-col>
       </a-card>
     </a-col>
     <a-col
@@ -86,8 +175,14 @@ export default {
       routes: {},
       sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts'],
       sslFormVisible: false,
-      stats: {}
+      stats: {},
+      intermediateCertificates: [],
+      sslFormSubmitting: false,
+      maxCerts: 0
     }
+  },
+  beforeCreate () {
+    this.form = this.$form.createForm(this)
   },
   mounted () {
     this.fetchData()
@@ -115,17 +210,143 @@ export default {
         this.loading = false
       })
     },
-    handleSslForm (e) {
-      console.log(e)
+
+    resetSslFormData () {
+      this.form.resetFields()
+      this.intermediateCertificates = []
+      this.sslFormSubmitting = false
+      this.sslFormVisible = false
+    },
+
+    sslModalClose () {
+      this.resetSslFormData()
+    },
+
+    addIntermediateCert () {
+      this.intermediateCertificates.push('')
+    },
+
+    pollActionCompletion (jobId, count) {
+      api('queryAsyncJobResult', { jobid: jobId }).then(json => {
+        const result = json.queryasyncjobresultresponse
+        if (result.jobstatus === 1 && this.maxCerts === count) {
+          console.log(result)
+          console.log(this.maxCerts)
+          console.log(count)
+          this.$message.success('Certificate Uploaded: ' + result.jobresult.customcertificate.message)
+          this.$notification.success({
+            message: 'Certificate Uploaded',
+            description: result.jobresult.customcertificate.message || 'Certificate successfully uploaded'
+          })
+        } else if (result.jobstatus === 2) {
+          this.$notification.error({
+            message: 'Certificate Upload Failed',
+            description: result.jobresult.errortext || 'Failed to update SSL Certificate. Failed to pass certificate validation check',
+            duration: 0
+          })
+        } else if (result.jobstatus === 0) {
+          this.$message
+            .loading('Certificate upload in progress: ' + count, 2)
+            .then(() => this.pollActionCompletion(jobId, count))
+        }
+      }).catch(e => {
+        console.log('Error encountered while fetching async job result' + e)
+      })
+    },
+
+    handleSslFormSubmit () {
+      this.sslFormSubmitting = true
+
+      this.form.validateFields(errors => {
+        if (errors) {
+          this.sslFormSubmitting = false
+          return
+        }
+
+        const formValues = this.form.getFieldsValue()
+
+        this.maxCerts = 2 + Object.keys(formValues).length
+        let count = 1
+        let data = {
+          id: count,
+          certificate: formValues.root,
+          domainsuffix: formValues.dns,
+          name: 'root'
+        }
+        api('uploadCustomCertificate', {}, 'POST', data).then(response => {
+          this.pollActionCompletion(response.uploadcustomcertificateresponse.jobid, count)
+        }).then(() => {
+          this.sslModalClose()
+        })
+
+        Object.keys(formValues).forEach(key => {
+          if (key.includes('intermediate')) {
+            count = count + 1
+            const data = {
+              id: count,
+              certificate: formValues[key],
+              domainsuffix: formValues.dns,
+              name: key
+            }
+            api('uploadCustomCertificate', {}, 'POST', data).then(response => {
+              this.pollActionCompletion(response.uploadcustomcertificateresponse.jobid, count)
+            }).then(() => {
+              this.sslModalClose()
+            })
+          }
+        })
+
+        count = count <= 2 ? 3 : count + 1
+        data = {
+          id: count,
+          certificate: formValues.server,
+          domainsuffix: formValues.dns,
+          privatekey: formValues.pkcs
+        }
+        api('uploadCustomCertificate', {}, 'POST', data).then(response => {
+          this.pollActionCompletion(response.uploadcustomcertificateresponse.jobid, count)
+        }).then(() => {
+          this.sslModalClose()
+        })
+      })
     }
   }
 }
 </script>
 
-<style lang="less" scoped>
-.chart-card-inner {
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-}
+<style lang="scss" scoped>
+
+  .breadcrumb-card {
+    margin-left: -36px;
+    margin-right: -36px;
+    margin-top: -16px;
+    margin-bottom: 12px;
+  }
+
+  .chart-card-inner {
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .intermediate-certificate {
+    opacity: 1;
+    transform: none;
+    transition: opacity 0.2s ease 0s, transform 0.5s ease;
+    will-change: transform;
+  }
+  .intermediate-certificate.fadeInUp-enter-active {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: none;
+  }
+  .controls {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .close-button {
+    margin-right: 20px;
+  }
+  .ant-form-item {
+    margin-bottom: 10px;
+  }
 </style>

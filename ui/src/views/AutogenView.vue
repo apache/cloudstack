@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <a-card class="mobile-breadcrumb">
+    <a-card class="breadcrumb-card">
       <a-row>
         <a-col :span="14">
           <breadcrumb style="padding-top: 6px" />
@@ -402,7 +402,8 @@ export default {
         // handle error
         this.$notification.error({
           message: 'Request Failed',
-          description: error.response.headers['x-description']
+          description: error.response.headers['x-description'],
+          duration: 0
         })
         if (error.response.status === 431) {
           this.$router.push({ path: '/exception/404' })
@@ -514,7 +515,7 @@ export default {
           this.fetchData()
         } else if (result.jobstatus === 2) {
           this.fetchData()
-        } else {
+        } else if (result.jobstatus === 0) {
           this.$message
             .loading(this.$t(action.label) + ' in progress for ' + this.resource.name, 3)
             .then(() => this.pollActionCompletion(jobId, action))
@@ -636,7 +637,7 @@ export default {
 
 <style scoped>
 
-.mobile-breadcrumb {
+.breadcrumb-card {
   margin-left: -24px;
   margin-right: -24px;
   margin-top: -16px;

@@ -49,13 +49,13 @@ export function generateRouterMap (section) {
       var route = {
         name: child.name,
         path: '/' + child.name,
+        hidden: child.hidden,
         meta: {
           title: child.title,
           name: child.name,
           keepAlive: true,
           icon: child.icon,
           docHelp: child.docHelp,
-          hidden: child.hidden,
           permission: child.permission,
           resourceType: child.resourceType,
           params: child.params ? child.params : {},
@@ -69,13 +69,13 @@ export function generateRouterMap (section) {
         children: [
           {
             path: '/' + child.name + '/:id',
+            hidden: child.hidden,
             meta: {
               title: child.title,
               name: child.name,
               keepAlive: true,
               icon: child.icon,
               docHelp: child.docHelp,
-              hidden: child.hidden,
               permission: child.permission,
               resourceType: child.resourceType,
               params: child.params ? child.params : {},
@@ -96,6 +96,7 @@ export function generateRouterMap (section) {
           map.children.push({
             name: action.api,
             icon: child.icon,
+            hidden: true,
             path: '/action/' + action.api,
             meta: {
               title: child.title,
@@ -103,8 +104,7 @@ export function generateRouterMap (section) {
               keepAlive: true,
               permission: [action.api]
             },
-            component: action.component,
-            hidden: true
+            component: action.component
           })
         })
       }
