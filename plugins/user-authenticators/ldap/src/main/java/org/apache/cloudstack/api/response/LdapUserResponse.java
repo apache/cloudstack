@@ -49,8 +49,8 @@ public class LdapUserResponse extends BaseResponse {
     @Param(description = "The user's domain")
     private String domain;
 
-    @SerializedName(ApiConstants.USER_SOURCE)
-    @Param(description = "The authentication source for this user")
+    @SerializedName(ApiConstants.USER_CONFLICT_SOURCE)
+    @Param(description = "The authentication source for this user as known to the system or empty if the user is not yet in cloudstack.")
     private String userSource;
 
     public LdapUserResponse() {
@@ -178,7 +178,7 @@ public class LdapUserResponse extends BaseResponse {
         }
         if (this.getUserSource() != null) {
             if (hascontent) selfRepresentation.append(COMMA);
-            selfRepresentation.append(ApiConstants.USER_SOURCE);
+            selfRepresentation.append(ApiConstants.USER_CONFLICT_SOURCE);
             selfRepresentation.append(COLUMN);
             selfRepresentation.append(this.getUserSource());
         }
