@@ -148,7 +148,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
                 LOGGER.trace(String.format("User(%s) authenticated for domain(%s)", principal, domainId));
             }
             return true;
-        } catch (NamingException | IOException e) {
+        } catch (NamingException /* | AuthenticationException */ | IOException e) {
             LOGGER.debug("Exception while doing an LDAP bind for user "+" "+principal, e);
             LOGGER.info("Failed to authenticate user: " + principal + ". incorrect password.");
             return false;

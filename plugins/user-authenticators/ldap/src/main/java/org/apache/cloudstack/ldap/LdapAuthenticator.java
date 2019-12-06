@@ -72,6 +72,9 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                     LOGGER.trace("LDAP is enabled in the ldapManager");
                 }
                 final UserAccount user = _userAccountDao.getUserAccount(username, domainId);
+                if (user != null && ! User.Source.LDAP.equals(user.getSource())) {
+                    return rc;
+                }
                 List<LdapTrustMapVO> ldapTrustMapVOs = getLdapTrustMapVOS(domainId);
                 if(ldapTrustMapVOs != null && ldapTrustMapVOs.size() > 0) {
                     if(ldapTrustMapVOs.size() == 1 && ldapTrustMapVOs.get(0).getAccountId() == 0) {
@@ -113,7 +116,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
      * @param ldapTrustMapVOs the trust mappings of accounts in the domain to ldap groups
      * @return false if the ldap user object does not exist, is not mapped to an account, is mapped to multiple accounts or if authenitication fails
      */
-    private Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, UserAccount userAccount, List<LdapTrustMapVO> ldapTrustMapVOs) {
+    Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, UserAccount userAccount, List<LdapTrustMapVO> ldapTrustMapVOs) {
         Pair<Boolean, ActionOnFailedAuthentication> rc = new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         try {
             LdapUser ldapUser = _ldapManager.getUser(username, domainId);
@@ -137,10 +140,13 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                 // createUser in Account can only be done by account name not by account id;
                 Account account = _accountManager.getAccount(mapping.getAccountId());
                 if(null == account) {
-                    throw new CloudRuntimeException(String.format("account for user (%s) not found by id %l", username, mapping.getAccountId()));
+                    throw new CloudRuntimeException(String.format("account for user (%s) not found by id %d", username, mapping.getAccountId()));
                 }
                 String accountName = account.getAccountName();
                 rc.first(_ldapManager.canAuthenticate(ldapUser.getPrincipal(), password, domainId));
+                if (! rc.first()) {
+                    rc.second(ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
+                }
                 // for security reasons we keep processing on faulty login attempt to not give a way information on userid existence
                 if (userAccount == null) {
                     // new user that is in ldap; authenticate and create
@@ -200,7 +206,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
         }
     }
 
-    private List<String> getMappedGroups(List<LdapTrustMapVO> ldapTrustMapVOs) {
+    List<String> getMappedGroups(List<LdapTrustMapVO> ldapTrustMapVOs) {
         List<String> groups = new ArrayList<>();
         for (LdapTrustMapVO vo : ldapTrustMapVOs) {
             groups.add(vo.getName());
