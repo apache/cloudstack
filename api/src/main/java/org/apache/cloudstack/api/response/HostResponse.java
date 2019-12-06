@@ -114,7 +114,7 @@ public class HostResponse extends BaseResponse {
     @Param(description = "the amount of the host's CPU after applying the cpu.overprovisioning.factor ")
     private String cpuWithOverprovisioning;
 
-    @SerializedName("cpuloadaverage")
+    @SerializedName(ApiConstants.CPU_LOAD_AVERAGE)
     @Param(description = "the cpu average load on the host")
     private Double cpuloadaverage;
 
