@@ -22,6 +22,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainService;
 import com.cloud.user.User;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.LdapUserResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserResponse;
@@ -44,7 +45,9 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
@@ -265,7 +268,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         setHiddenField(ldapListUsersCmd, "userFilter", "NoFilter");
         ldapListUsersCmd.execute();
 
-        assertEquals(2, ((ListResponse)ldapListUsersCmd.getResponseObject()).getResponses().size());
+        assertEquals(3, ((ListResponse)ldapListUsersCmd.getResponseObject()).getResponses().size());
     }
 
     /**
@@ -279,11 +282,37 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         mockACSUserSearch();
         mockResponseCreation();
 
+        DomainVO domainVO = new DomainVO();
+        domainVO.setName(LOCAL_DOMAIN_NAME);
+        domainVO.setId(2l);
+        domainVO.setUuid(LOCAL_DOMAIN_ID);
+        when(domainService.getDomain(anyLong())).thenReturn(domainVO);
+
         setHiddenField(ldapListUsersCmd, "userFilter", "AnyDomain");
+        setHiddenField(ldapListUsersCmd, "domainId", 2l /* not root */);
         ldapListUsersCmd.execute();
 
-        // 'rmurphy' filtered out 'bob' still in
-        assertEquals(1, ((ListResponse)ldapListUsersCmd.getResponseObject()).getResponses().size());
+        // 'rmurphy' annotated with native
+        // 'bob' still in
+        // 'abhi' is filtered out
+        List<ResponseObject> responses = ((ListResponse)ldapListUsersCmd.getResponseObject()).getResponses();
+        assertEquals(2, responses.size());
+        for(ResponseObject response : responses) {
+            if(!(response instanceof LdapUserResponse)) {
+                fail("unexpected return-type from API backend method");
+            } else {
+                LdapUserResponse userResponse = (LdapUserResponse)response;
+                // further validate this user
+                if ("rmurphy".equals(userResponse.getUsername()) &&
+                        ! User.Source.NATIVE.toString().equalsIgnoreCase(userResponse.getUserSource())) {
+                    fail("expected murphy from ldap");
+                }
+                if ("bob".equals(userResponse.getUsername()) &&
+                        ! "".equals(userResponse.getUserSource())) {
+                    fail("expected bob from without usersource");
+                }
+            }
+        }
     }
 
     /**
@@ -429,8 +458,10 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         List<LdapUser> users = new ArrayList();
         LdapUser murphy = new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", "mythical", false, null);
         LdapUser bob = new LdapUser("bob", "bob@test.com", "Robert", "Young", "cn=bob,ou=engineering,dc=cloudstack,dc=org", LOCAL_DOMAIN_NAME, false, null);
+        LdapUser abhi = new LdapUser("abhi", "abhi@test.com", "Abhi", "YoungOrOld", "cn=abhi,ou=engineering,dc=cloudstack,dc=org", LOCAL_DOMAIN_NAME, false, null);
         users.add(murphy);
         users.add(bob);
+        users.add(abhi);
 
         doReturn(users).when(ldapManager).getUsers(any());
 
@@ -438,5 +469,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         doReturn(response).when(ldapManager).createLdapUserResponse(murphy);
         LdapUserResponse bobResponse = new LdapUserResponse("bob", "bob@test.com", "Robert", "Young", "cn=bob,ou=engineering,dc=cloudstack,dc=org", LOCAL_DOMAIN_NAME);
         doReturn(bobResponse).when(ldapManager).createLdapUserResponse(bob);
+        LdapUserResponse abhiResponse = new LdapUserResponse("abhi", "abhi@test.com", "Abhi", "YoungOrOld", "cn=abhi,ou=engineering,dc=cloudstack,dc=org", LOCAL_DOMAIN_NAME);
+        doReturn(abhiResponse).when(ldapManager).createLdapUserResponse(abhi);
     }
 }

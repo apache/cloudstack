@@ -353,13 +353,24 @@ public class LdapListUsersCmd extends BaseListCmd {
         }
         final List<LdapUserResponse> ldapResponses = new ArrayList<LdapUserResponse>();
         for (final LdapUserResponse user : input) {
-            if (!isACloudstackUser(user)) {
+
+            if (isNotAlreadyImportedInTheCurrentDomain(user)) {
                 ldapResponses.add(user);
             }
         }
         annotateUserListWithSources(ldapResponses);
 
         return ldapResponses;
+    }
+
+    private boolean isNotAlreadyImportedInTheCurrentDomain(LdapUserResponse user) {
+        UserResponse cloudstackUser = getCloudstackUser(user);
+        String domainId = getCurrentDomainId();
+
+        return cloudstackUser == null /*doesn't exist in cloudstack*/
+                || ! (
+                        cloudstackUser.getUserSource().equalsIgnoreCase(User.Source.LDAP.toString())
+                                && domainId.equals(cloudstackUser.getDomainId())); /* is from another source */
     }
 
     /**
