@@ -35,7 +35,8 @@
           <a-tab-pane
             v-for="tab in tabs"
             :tab="$t(tab.name)"
-            :key="tab.name">
+            :key="tab.name"
+            v-if="'show' in tab ? tab.show(resource, $route) : true">
             <component :is="tab.component" :resource="resource" :loading="loading" />
           </a-tab-pane>
         </a-tabs>

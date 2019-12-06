@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-card class="spin-content" :bordered="true" :title="title">
+    <a-card class="spin-content" :bordered="bordered" :title="title">
       <div>
         <div class="resource-details">
           <div class="avatar">
@@ -466,6 +466,10 @@ export default {
     title: {
       type: String,
       default: ''
+    },
+    bordered: {
+      type: Boolean,
+      default: true
     }
   },
   data () {

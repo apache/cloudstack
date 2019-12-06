@@ -167,7 +167,7 @@ export default {
       name: 'domain',
       title: 'Domains',
       icon: 'block',
-      permission: ['listDomains'],
+      permission: ['listDomains', 'listDomainChildren'],
       resourceType: 'Domain',
       columns: ['name', 'state', 'path', 'parentdomainname', 'level'],
       details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
@@ -176,18 +176,37 @@ export default {
         title: 'Accounts',
         param: 'domainid'
       }],
+      tabs: [
+        {
+          name: 'Domain',
+          component: () => import('@/components/view/InfoCard.vue'),
+          show: (record, route) => { return route.path === '/domain' }
+        },
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        }
+      ],
+      treeView: true,
       actions: [
         {
           api: 'createDomain',
           icon: 'plus',
           label: 'label.add.domain',
           listView: true,
-          args: ['parentdomainid', 'name', 'networkdomain', 'domainid']
+          dataView: true,
+          args: ['parentdomainid', 'name', 'networkdomain', 'domainid'],
+          mapping: {
+            parentdomainid: {
+              value: (record) => { return record.id }
+            }
+          }
         },
         {
           api: 'updateDomain',
           icon: 'edit',
           label: 'label.action.edit.domain',
+          listView: true,
           dataView: true,
           args: ['name', 'networkdomain']
         },
@@ -195,6 +214,7 @@ export default {
           api: 'updateResourceCount',
           icon: 'sync',
           label: 'label.action.update.resource.count',
+          listView: true,
           dataView: true,
           args: ['domainid'],
           mapping: {
@@ -207,6 +227,7 @@ export default {
           api: 'deleteDomain',
           icon: 'delete',
           label: 'label.delete.domain',
+          listView: true,
           dataView: true,
           show: (record) => { return record.level !== 0 },
           args: ['cleanup']

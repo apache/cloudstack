@@ -27,25 +27,19 @@
       </span>
       <a-menu slot="overlay" class="user-menu-wrapper">
         <a-menu-item class="user-menu-item" key="0">
-          <router-link :to="{ name: 'account' }">
+          <router-link :to="{ path: '/accountuser/' + $store.getters.userInfo.id }">
             <a-icon class="user-menu-item-icon" type="user"/>
-            <span class="user-menu-item-name">Account</span>
+            <span class="user-menu-item-name">Profile</span>
           </router-link>
         </a-menu-item>
-        <a-menu-item class="user-menu-item" key="2" disabled>
-          <router-link :to="{ name: 'account' }">
-            <a-icon class="user-menu-item-icon" type="setting"/>
-            <span class="user-menu-item-name">Settings</span>
-          </router-link>
-        </a-menu-item>
-        <a-menu-item class="user-menu-item" key="3" disabled>
+        <a-menu-item class="user-menu-item" key="1" disabled>
           <a :href="docBase" target="_blank">
             <a-icon class="user-menu-item-icon" type="question-circle-o"></a-icon>
             <span class="user-menu-item-name">Help</span>
           </a>
         </a-menu-item>
         <a-menu-divider/>
-        <a-menu-item class="user-menu-item" key="4">
+        <a-menu-item class="user-menu-item" key="2">
           <a href="javascript:;" @click="handleLogout">
             <a-icon class="user-menu-item-icon" type="logout"/>
             <span class="user-menu-item-name">Logout</span>
