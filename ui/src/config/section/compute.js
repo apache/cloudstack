@@ -184,6 +184,8 @@ export default {
           label: 'label.migrate.instance.to.host',
           dataView: true,
           show: (record) => { return ['Running'].includes(record.state) },
+          component: () => import('@/views/compute/MigrateWizard'),
+          popup: true,
           args: ['hostid', 'virtualmachineid'],
           mapping: {
             virtualmachineid: {
