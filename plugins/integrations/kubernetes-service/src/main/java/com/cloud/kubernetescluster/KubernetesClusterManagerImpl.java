@@ -666,7 +666,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         setupKubernetesClusterNetworkRules(kubernetesCluster, network, account, clusterVMIds);
         attachIsoKubernetesVMs(kubernetesCluster, clusterVMIds);
 
-        boolean k8sApiServerSetup = isKubernetesClusterServerRunning(kubernetesCluster, publicIpAddress,15, 30000);
+        boolean k8sApiServerSetup = isKubernetesClusterServerRunning(kubernetesCluster, publicIpAddress, 30, 30000);
         if (!k8sApiServerSetup) {
             String msg = String.format("Failed to setup Kubernetes cluster ID: %s in usable state as unable to provision API endpoint for the cluster", kubernetesCluster.getUuid());
             LOGGER.error(msg);
