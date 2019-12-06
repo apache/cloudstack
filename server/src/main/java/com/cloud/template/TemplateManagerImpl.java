@@ -2330,7 +2330,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = _tmpltDao.findById(templateId);
         templateStore.setDownloadState(Status.DOWNLOADED);
         templateStore.setState(ObjectInDataStoreStateMachine.State.Ready);
-        templateStore.setInstallPath("template/tmpl/1/" + templateId + "/" + template.getUuid() + "." + fileExtension);
+        templateStore.setInstallPath("template/tmpl/2/" + templateId + "/" + template.getUuid() + "." + fileExtension);
         templateStore.setErrorString(null);
         template.setState(VirtualMachineTemplate.State.Active);
         templateStore.setSize(size);
@@ -2413,24 +2413,21 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             startInstallTemplate(template.getId(), cmd.getId());
             // Decompress file
-            decompressFile(inputFile, "/tmp/" + template.getUuid() + "." + fileExtension);
+            boolean decompressed = decompressFile(inputFile, "/tmp/" + template.getUuid() + "." + fileExtension);
+            if (decompressed) {
+                inputFile = "/tmp/" + template.getUuid() + "." + fileExtension;
+            }
 
-            String finalDestination = mountPoint + "/template/tmpl/1/" + template.getId() + "/"+ template.getUuid() + "." + fileExtension;
+            String finalDestination = mountPoint + "/template/tmpl/2/" + template.getId() + "/"+ template.getUuid() + "." + fileExtension;
 
-            try {
-                // create folder
-                result = Script.runSimpleBashScriptForExitValue("mkdir -p " + mountPoint + "/template/tmpl/1/" + template.getId(), 10000);
-                if (result != 0){
-                    throw new CloudRuntimeException("Unable to create temporary mount folders.");
-                }
-                // Copy template File to image store
-                if (cmd.getLocalFile()){
-                    Files.copy(new File(inputFile).toPath(), new File(finalDestination).toPath(), REPLACE_EXISTING);
-                } else {
-                    Files.copy(new File("/tmp/"+ template.getUuid() + "." + fileExtension).toPath(), new File(finalDestination).toPath(), REPLACE_EXISTING);
-                }
-
-            } catch (IOException e) {
+            // create folder
+            result = Script.runSimpleBashScriptForExitValue("mkdir -p " + mountPoint + "/template/tmpl/2/" + template.getId(), 10000);
+            if (result != 0){
+                throw new CloudRuntimeException("Unable to create temporary mount folders.");
+            }
+            // Copy template File to image store
+            result = Script.runSimpleBashScriptForExitValue(String.format("sudo cp %s %s", inputFile, finalDestination ), 10000);
+            if (result != 0){
                 throw new CloudRuntimeException("Failure copying system VM template to image store");
             }
 
@@ -2438,7 +2435,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             // Create new template properties File
             PrintWriter writer = null;
             try {
-                writer = new PrintWriter(mountPoint + "/template/tmpl/1/" + template.getId() + "/template.properties", "UTF-8");
+                writer = new PrintWriter(mountPoint + "/template/tmpl/2/" + template.getId() + "/template.properties", "UTF-8");
             } catch (FileNotFoundException | UnsupportedEncodingException e) {
                 throw new CloudRuntimeException("Unable to create system VM template properties file");
             }
@@ -2470,10 +2467,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     // Unzip file
-    public void decompressFile(String fileIn, String outputFile)  {
+    public boolean decompressFile(String fileIn, String outputFile)  {
         FileInputStream fin = null;
         BufferedInputStream bis = null;
         CompressorInputStream input = null;
+        boolean decompressed = true;
         try {
             fin = new FileInputStream(fileIn);
             bis = new BufferedInputStream(fin, 1024 * 1024 * 128);
@@ -2483,6 +2481,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (e.getClass() == CompressorException.class &&
                     e.getMessage().equals("No Compressor found for the stream signature.")
             ) {
+                decompressed = false;
                 // This file is not in any known compressed format,
                 // we do nothing in this case and let execution continue
             } else {
@@ -2499,6 +2498,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new CloudRuntimeException("Error closing file io streams while decompressing system vm template.");
             }
         }
+        return decompressed;
     }
 
     private VMTemplateVO updateTemplateOrIso(BaseUpdateTemplateOrIsoCmd cmd) {
