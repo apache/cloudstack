@@ -581,6 +581,11 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     }
 
     @Override
+    public String getBackupVolumes() {
+        return this.backupVolumes;
+    }
+
+    @Override
     public List<Backup.VolumeInfo> getBackupVolumeList() {
         return Arrays.asList(new Gson().fromJson(this.backupVolumes, Backup.VolumeInfo[].class));
     }
