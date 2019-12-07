@@ -59,13 +59,13 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = BackupResponse.class,
             required = true,
-            description = "id of the backup")
+            description = "ID of the VM backup")
     private Long backupId;
 
     @Parameter(name = ApiConstants.VOLUME_ID,
             type = CommandType.STRING,
             required = true,
-            description = "id of the volume backed up")
+            description = "ID of the volume backed up")
     private String volumeUuid;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,

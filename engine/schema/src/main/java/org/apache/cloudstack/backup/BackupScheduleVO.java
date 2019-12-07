@@ -85,8 +85,8 @@ public class BackupScheduleVO implements BackupSchedule {
         return scheduleType == null ? null : DateUtil.getIntervalType(scheduleType);
     }
 
-    public void setScheduleType(DateUtil.IntervalType intervalType) {
-        this.scheduleType = (short) intervalType.ordinal();
+    public void setScheduleType(Short intervalType) {
+        this.scheduleType = intervalType;
     }
 
     public String getSchedule() {

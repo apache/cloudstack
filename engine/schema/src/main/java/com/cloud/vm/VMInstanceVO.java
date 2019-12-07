@@ -614,7 +614,12 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     @Override
-    public List<Backup.VolumeInfo> getBackupVolumes() {
+    public String getBackupVolumes() {
+        return this.backupVolumes;
+    }
+
+    @Override
+    public List<Backup.VolumeInfo> getBackupVolumeList() {
         if (Strings.isNullOrEmpty(this.backupVolumes)) {
             return Collections.emptyList();
         }

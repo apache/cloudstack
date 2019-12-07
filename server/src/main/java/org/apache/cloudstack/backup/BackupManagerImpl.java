@@ -231,6 +231,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
+        if (vm.getBackupOfferingId() != null) {
+            throw new CloudRuntimeException("VM already is assigned to a backup offering, please remove the VM from its previous offering");
+        }
+
         final BackupOfferingVO offering = backupOfferingDao.findById(offeringId);
         if (offering == null) {
             throw new CloudRuntimeException("Provided backup offering does not exist");
@@ -316,6 +320,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
+        if (vm.getBackupOfferingId() == null) {
+            throw new CloudRuntimeException("Cannot configure backup schedule for the VM without having any backup offering");
+        }
+
         final String timezoneId = timeZone.getID();
         if (!timezoneId.equals(cmd.getTimezone())) {
             LOG.warn("Using timezone: " + timezoneId + " for running this snapshot policy as an equivalent of " + cmd.getTimezone());
@@ -332,7 +340,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             return backupScheduleDao.persist(new BackupScheduleVO(vmId, intervalType, scheduleString, timezoneId));
         }
 
-        schedule.setScheduleType(intervalType);
+        schedule.setScheduleType((short) intervalType.ordinal());
         schedule.setSchedule(scheduleString);
         schedule.setTimezone(timezoneId);
         backupScheduleDao.update(schedule.getId(), schedule);
@@ -448,7 +456,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         VirtualMachine vm = null;
         HypervisorGuru guru = hypervisorGuruManager.getGuru(hypervisorType);
         try {
-            vm = guru.importVirtualMachine(zoneId, domainId, accountId, userId, vmInternalName, backup);
+            vm = guru.importVirtualMachineFromBackup(zoneId, domainId, accountId, userId, vmInternalName, backup);
         } catch (final Exception e) {
             LOG.error("Failed to import VM from backup restoration", e);
             throw new CloudRuntimeException("Error during vm backup restoration and import: " + e.getMessage());
@@ -480,11 +488,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(vm.getBackupOfferingId());
         if (offering == null) {
-            throw new CloudRuntimeException("Failed to find VM backup offering");
+            throw new CloudRuntimeException("Failed to find backup offering of the VM backup");
         }
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         if (!backupProvider.restoreVMFromBackup(vm, backup)) {
-            throw new CloudRuntimeException("Error restoring VM " + vm.getId() + " from backup " + backup.getId());
+            throw new CloudRuntimeException("Error restoring VM from backup ID " + backup.getId());
         }
         return importRestoredVM(vm.getDataCenterId(), vm.getDomainId(), vm.getAccountId(), vm.getUserId(),
                 vm.getInstanceName(), vm.getHypervisorType(), backup);
@@ -543,7 +551,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (!result.first()) {
             throw new CloudRuntimeException("Error restoring volume " + backedUpVolumeUuid);
         }
-        if (!attachVolumeToVM(vm.getDataCenterId(), result.second(), vmFromBackup.getBackupVolumes(),
+        if (!attachVolumeToVM(vm.getDataCenterId(), result.second(), vmFromBackup.getBackupVolumeList(),
                             backedUpVolumeUuid, vm, datastoreUuid, backup)) {
             throw new CloudRuntimeException("Error attaching volume " + backedUpVolumeUuid + " to VM " + vm.getUuid());
         }

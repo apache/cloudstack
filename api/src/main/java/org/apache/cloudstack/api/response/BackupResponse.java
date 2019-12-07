@@ -64,6 +64,10 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "backup status")
     private Backup.Status status;
 
+    @SerializedName(ApiConstants.VOLUMES)
+    @Param(description = "backed up volumes")
+    private String volumes;
+
     @SerializedName(ApiConstants.BACKUP_OFFERING_ID)
     @Param(description = "backup offering id")
     private String backupOfferingId;
@@ -166,6 +170,14 @@ public class BackupResponse extends BaseResponse {
 
     public void setStatus(Backup.Status status) {
         this.status = status;
+    }
+
+    public String getVolumes() {
+        return volumes;
+    }
+
+    public void setVolumes(String volumes) {
+        this.volumes = volumes;
     }
 
     public String getBackupOfferingId() {

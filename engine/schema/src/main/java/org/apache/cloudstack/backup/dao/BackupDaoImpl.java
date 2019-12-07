@@ -156,6 +156,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         response.setSize(backup.getSize());
         response.setProtectedSize(backup.getProtectedSize());
         response.setStatus(backup.getStatus());
+        response.setVolumes(vm.getBackupVolumes());
         response.setBackupOfferingId(offering.getUuid());
         response.setBackupOffering(offering.getName());
         response.setAccountId(account.getUuid());

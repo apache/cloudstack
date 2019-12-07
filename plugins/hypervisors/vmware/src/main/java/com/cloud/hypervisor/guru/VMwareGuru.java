@@ -853,7 +853,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             if (vm == null) {
                 throw new CloudRuntimeException("Failed to find the volumes details from the VM backup");
             }
-            List<Backup.VolumeInfo> backedUpVolumes = vm.getBackupVolumes();
+            List<Backup.VolumeInfo> backedUpVolumes = vm.getBackupVolumeList();
             for (Backup.VolumeInfo backedUpVolume : backedUpVolumes) {
                 if (backedUpVolume.getSize().equals(disk.getCapacityInBytes())) {
                     return backedUpVolume.getType().equals(Volume.Type.ROOT);
@@ -1146,7 +1146,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         if (vm == null) {
             throw new CloudRuntimeException("Failed to find the backup volume information from the VM backup");
         }
-        List<Backup.VolumeInfo> backedUpVolumes = vm.getBackupVolumes();
+        List<Backup.VolumeInfo> backedUpVolumes = vm.getBackupVolumeList();
         Volume.Type type = Volume.Type.DATADISK;
         Long size = disk.getCapacityInBytes();
         if (isImport) {
@@ -1315,7 +1315,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         if (vm == null) {
             throw new CloudRuntimeException("Failed to find the volumes details from the VM backup");
         }
-        List<Backup.VolumeInfo> backedUpVolumes = vm.getBackupVolumes();
+        List<Backup.VolumeInfo> backedUpVolumes = vm.getBackupVolumeList();
         Map<String, Boolean> usedVols = new HashMap<>();
         Map<VirtualDisk, VolumeVO> map = new HashMap<>();
 
@@ -1391,8 +1391,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     @Override
-    public VirtualMachine importVirtualMachine(long zoneId, long domainId, long accountId, long userId,
-                                               String vmInternalName, Backup backup) throws Exception {
+    public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId,
+                                                         String vmInternalName, Backup backup) throws Exception {
         DatacenterMO dcMo = getDatacenterMO(zoneId);
         VirtualMachineMO vmToImport = dcMo.findVm(vmInternalName);
         if (vmToImport == null) {

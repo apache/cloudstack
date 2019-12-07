@@ -261,8 +261,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     }
 
     @Override
-    public VirtualMachine importVirtualMachine(long zoneId, long domainId, long accountId, long userId,
-                                               String vmInternalName, Backup backup) throws Exception {
+    public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId,
+                                                         String vmInternalName, Backup backup) throws Exception {
         return null;
     }
 

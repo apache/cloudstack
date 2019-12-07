@@ -87,8 +87,8 @@ public interface HypervisorGuru extends Adapter {
 
     Map<String, String> getClusterSettings(long vmId);
 
-    VirtualMachine importVirtualMachine(long zoneId, long domainId, long accountId, long userId,
-                                        String vmInternalName, Backup backup) throws Exception;
+    VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId,
+                                                  String vmInternalName, Backup backup) throws Exception;
 
     boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo,
                                                  VirtualMachine vm, long poolId, Backup backup) throws Exception;
