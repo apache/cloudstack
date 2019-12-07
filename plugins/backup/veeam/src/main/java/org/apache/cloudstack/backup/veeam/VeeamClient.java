@@ -624,7 +624,7 @@ public class VeeamClient {
     public List<Backup.RestorePoint> listRestorePoints(String backupName, String vmInternalName) {
         final List<String> cmds = Arrays.asList(
                 String.format("$backup = Get-VBRBackup -Name \"%s\"", backupName),
-                String.format("Get-VBRRestorePoint -Backup:$backup -Name \"%s\"", vmInternalName)
+                String.format("if ($backup) { Get-VBRRestorePoint -Backup:$backup -Name \"%s\" }", vmInternalName)
         );
         Pair<Boolean, String> response = executePowerShellCommands(cmds);
         final List<Backup.RestorePoint> restorePoints = new ArrayList<>();

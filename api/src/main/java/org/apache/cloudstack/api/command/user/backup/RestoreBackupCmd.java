@@ -41,7 +41,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = RestoreBackupCmd.APINAME,
-        description = "Restore a VM from a VM backup",
+        description = "Restores an existing stopped or deleted VM using a VM backup",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RestoreBackupCmd extends BaseAsyncCmd {

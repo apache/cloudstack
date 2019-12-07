@@ -257,7 +257,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         if (result && vmInstanceDao.update(vm.getId(), vm)) {
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                    vm.getUuid(), vm.getBackupOfferingId(), vm.getId(), null,
+                    "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null,
                     Backup.class.getSimpleName(), vm.getUuid());
             return true;
         }
@@ -295,7 +295,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         boolean result = backupProvider.removeVMFromBackupOffering(vm);
         if (result && vmInstanceDao.update(vm.getId(), vm)) {
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                    vm.getUuid(), vm.getBackupOfferingId(), vm.getId(), null,
+                    "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null,
                     Backup.class.getSimpleName(), vm.getUuid());
             return true;
         }
