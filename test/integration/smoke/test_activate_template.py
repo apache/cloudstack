@@ -163,9 +163,10 @@ class TestActivateTemplate(cloudstackTestCase):
         self.assertEqual(response.seedsystemvmtemplateresponse.result, "Done")
         systemTemplateUuid = self.dbclient.execute("SELECT uuid FROM cloud.vm_template WHERE id = '%s';" % systemTemplateId[0])
         installPath = self.dbclient.execute("SELECT install_path FROM cloud.template_store_ref WHERE template_id = '%s';" % systemTemplateId[0])
+        testPath = "template/tmpl/2/%s/%s.%s" % (systemTemplateId[0][0], systemTemplateUuid[0][0], self.urlResponse.url.type)
         self.debug(installPath[0][0])
-        self.debug("template/tmpl/1/%s/%s.%s" % (systemTemplateId[0][0], systemTemplateUuid[0][0], self.urlResponse.url.type))
-        self.assertEqual(installPath[0][0], "template/tmpl/1/%s/%s.%s" % (systemTemplateId[0][0], systemTemplateUuid[0][0], self.urlResponse.url.type), "Unexpected install path for system vm template.")
+        self.debug(testPath)
+        self.assertEqual(installPath[0][0], testPath, "Unexpected install path for system vm template.")
 
     def registerTemplate(self, cmd):
         temp = self.apiclient.registerTemplate(cmd)[0]
