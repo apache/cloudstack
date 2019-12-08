@@ -17,6 +17,9 @@
 
 package org.apache.cloudstack.backup.dao;
 
+import java.util.Date;
+import java.util.List;
+
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
@@ -36,6 +39,7 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
     VMInstanceDao vmInstanceDao;
 
     private SearchBuilder<BackupScheduleVO> backupScheduleSearch;
+    private SearchBuilder<BackupScheduleVO> executableSchedulesSearch;
 
     public BackupScheduleDaoImpl() {
     }
@@ -46,6 +50,11 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
         backupScheduleSearch.and("vm_id", backupScheduleSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         backupScheduleSearch.and("async_job_id", backupScheduleSearch.entity().getAsyncJobId(), SearchCriteria.Op.EQ);
         backupScheduleSearch.done();
+
+        executableSchedulesSearch = createSearchBuilder();
+        executableSchedulesSearch.and("scheduledTimestamp", executableSchedulesSearch.entity().getScheduledTimestamp(), SearchCriteria.Op.LT);
+        executableSchedulesSearch.and("asyncJobId", executableSchedulesSearch.entity().getAsyncJobId(), SearchCriteria.Op.NULL);
+        executableSchedulesSearch.done();
     }
 
     @Override
@@ -53,6 +62,13 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
         SearchCriteria<BackupScheduleVO> sc = backupScheduleSearch.create();
         sc.setParameters("vm_id", vmId);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<BackupScheduleVO> getSchedulesToExecute(Date currentTimestamp) {
+        SearchCriteria<BackupScheduleVO> sc = executableSchedulesSearch.create();
+        sc.setParameters("scheduledTimestamp", currentTimestamp);
+        return listBy(sc);
     }
 
     @Override

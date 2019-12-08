@@ -60,11 +60,12 @@ public class BackupScheduleVO implements BackupSchedule {
     public BackupScheduleVO() {
     }
 
-    public BackupScheduleVO(Long vmId, DateUtil.IntervalType scheduleType, String schedule, String timezone) {
+    public BackupScheduleVO(Long vmId, DateUtil.IntervalType scheduleType, String schedule, String timezone, Date scheduledTimestamp) {
         this.vmId = vmId;
         this.scheduleType = (short) scheduleType.ordinal();
         this.schedule = schedule;
         this.timezone = timezone;
+        this.scheduledTimestamp = scheduledTimestamp;
     }
 
     @Override

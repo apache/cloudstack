@@ -303,6 +303,7 @@
 
     <bean id="backupManager" class="org.apache.cloudstack.backup.BackupManagerImpl">
         <property name="backupProviders" value="#{backupProvidersRegistry.registered}" />
+        <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
     </bean>
 
 </beans>

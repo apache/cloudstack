@@ -18,14 +18,18 @@ package org.apache.cloudstack.backup;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.backup.DeleteBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ListBackupProviderOfferingsCmd;
@@ -47,17 +51,23 @@ import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.poll.BackgroundPollManager;
 import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
+import com.cloud.api.ApiDispatcher;
+import com.cloud.api.ApiGsonHelper;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEvent;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
@@ -67,7 +77,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Volume;
@@ -78,14 +87,20 @@ import com.cloud.usage.dao.UsageBackupDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
+import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -93,7 +108,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 
-@Component
 public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private static final Logger LOG = Logger.getLogger(BackupManagerImpl.class);
 
@@ -125,15 +139,32 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private PrimaryDataStoreDao primaryDataStoreDao;
     @Inject
     private DiskOfferingDao diskOfferingDao;
+    @Inject
+    private ApiDispatcher apiDispatcher;
+    @Inject
+    private AsyncJobManager asyncJobManager;
+
+    private AsyncJobDispatcher asyncJobDispatcher;
+    private Timer backupTimer;
+    private Date currentTimestamp;
 
     private static Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
     private List<BackupProvider> backupProviders;
+
+    public AsyncJobDispatcher getAsyncJobDispatcher() {
+        return asyncJobDispatcher;
+    }
+
+    public void setAsyncJobDispatcher(final AsyncJobDispatcher dispatcher) {
+        asyncJobDispatcher = dispatcher;
+    }
 
     @Override
     public List<BackupOffering> listBackupProviderOfferings(final Long zoneId) {
         if (zoneId == null || zoneId < 1) {
             throw new CloudRuntimeException("Invalid zone ID passed");
         }
+        validateForZone(zoneId);
         final Account account = CallContext.current().getCallingAccount();
         if (!accountService.isRootAdmin(account.getId())) {
             throw new PermissionDeniedException("Parameter external can only be specified by a Root Admin, permission denied");
@@ -147,6 +178,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_IMPORT_OFFERING, eventDescription = "importing backup offering", async = true)
     public BackupOffering importBackupOffering(final Long zoneId, final String offeringExternalId,
                                                final String offeringName, final String offeringDescription) {
+        validateForZone(zoneId);
         final BackupOffering existingOffering = backupOfferingDao.findByExternalId(offeringExternalId, zoneId);
         if (existingOffering != null) {
             throw new CloudRuntimeException("A backup offering with external ID " + offeringExternalId + " already exists");
@@ -210,6 +242,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (offering == null) {
             throw new CloudRuntimeException("Could not find a backup offering with id: " + offeringId);
         }
+
+        if (vmInstanceDao.listByZoneWithBackups(offering.getZoneId(), offering.getId()).size() > 0) {
+            throw new CloudRuntimeException("Backup offering is assigned to VMs, remove the assignment(s) in order to remove the offering.");
+        }
+
+        validateForZone(offering.getZoneId());
         return backupOfferingDao.remove(offering.getId());
     }
 
@@ -228,6 +266,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm == null) {
             throw new CloudRuntimeException("Did not find VM by provided ID");
         }
+
+        validateForZone(vm.getDataCenterId());
 
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
@@ -272,6 +312,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Did not find VM by provided ID");
         }
 
+        validateForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
         final BackupOfferingVO offering = backupOfferingDao.findById(vm.getBackupOfferingId());
@@ -318,6 +359,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm == null) {
             throw new CloudRuntimeException("Did not find VM by provided ID");
         }
+        validateForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
         if (vm.getBackupOfferingId() == null) {
@@ -329,20 +371,22 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             LOG.warn("Using timezone: " + timezoneId + " for running this snapshot policy as an equivalent of " + cmd.getTimezone());
         }
 
+        Date nextDateTime = null;
         try {
-            DateUtil.getNextRunTime(intervalType, cmd.getSchedule(), timezoneId, null);
+            nextDateTime = DateUtil.getNextRunTime(intervalType, cmd.getSchedule(), timezoneId, null);
         } catch (Exception e) {
             throw new InvalidParameterValueException("Invalid schedule: " + cmd.getSchedule() + " for interval type: " + cmd.getIntervalType());
         }
 
         final BackupScheduleVO schedule = backupScheduleDao.findByVM(vmId);
         if (schedule == null) {
-            return backupScheduleDao.persist(new BackupScheduleVO(vmId, intervalType, scheduleString, timezoneId));
+            return backupScheduleDao.persist(new BackupScheduleVO(vmId, intervalType, scheduleString, timezoneId, nextDateTime));
         }
 
         schedule.setScheduleType((short) intervalType.ordinal());
         schedule.setSchedule(scheduleString);
         schedule.setTimezone(timezoneId);
+        schedule.setScheduledTimestamp(nextDateTime);
         backupScheduleDao.update(schedule.getId(), schedule);
         return backupScheduleDao.findByVM(vmId);
     }
@@ -353,6 +397,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm == null) {
             throw new CloudRuntimeException("Did not find VM by provided ID");
         }
+        validateForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
         return backupScheduleDao.findByVM(vmId);
@@ -365,7 +410,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm == null) {
             throw new CloudRuntimeException("Did not find VM by provided ID");
         }
-
+        validateForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
         final BackupSchedule schedule = backupScheduleDao.findByVM(vmId);
@@ -382,7 +427,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm == null) {
             throw new CloudRuntimeException("Did not find VM by provided ID");
         }
-
+        validateForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
         if (vm.getBackupOfferingId() == null) {
@@ -474,6 +519,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (backup == null) {
             throw new CloudRuntimeException("Backup " + backupId + " does not exist");
         }
+        validateForZone(backup.getZoneId());
 
         final VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         if (vm == null) {
@@ -517,6 +563,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (backup == null) {
             throw new CloudRuntimeException("Provided backup not found");
         }
+        validateForZone(backup.getZoneId());
 
         final VMInstanceVO vm = vmInstanceDao.findById(vmId);
         if (vm == null) {
@@ -570,6 +617,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm == null) {
             throw new CloudRuntimeException("VM " + vmId + " does not exist");
         }
+        validateForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
         final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(vm.getBackupOfferingId());
         if (offering == null) {
@@ -639,8 +687,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return true;
     }
 
-    public boolean isDisabled(final DataCenter zone) {
-        return zone == null || Grouping.AllocationState.Disabled.equals(zone.getAllocationState()) || !BackupFrameworkEnabled.valueIn(zone.getId());
+    public boolean isDisabled(final Long zoneId) {
+        return !BackupFrameworkEnabled.valueIn(zoneId);
+    }
+
+    private void validateForZone(final Long zoneId) {
+        if (zoneId == null || isDisabled(zoneId)) {
+            throw new CloudRuntimeException("Backup and Recovery feature is disabled for the zone");
+        }
     }
 
     @Override
@@ -708,18 +762,170 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         this.backupProviders = backupProviders;
     }
 
-    @Override
-    public boolean start() {
-        initializeBackupProviderMap();
-        return true;
-    }
-
     private void initializeBackupProviderMap() {
         if (backupProviders != null) {
             for (final BackupProvider backupProvider : backupProviders) {
                 backupProvidersMap.put(backupProvider.getName().toLowerCase(), backupProvider);
             }
         }
+    }
+
+    public void poll(final Date timestamp) {
+        currentTimestamp = timestamp;
+        GlobalLock scanLock = GlobalLock.getInternLock("backup.poll");
+        try {
+            if (scanLock.lock(5)) {
+                try {
+                    checkStatusOfCurrentlyExecutingBackups();
+                } finally {
+                    scanLock.unlock();
+                }
+            }
+        } finally {
+            scanLock.releaseRef();
+        }
+
+        scanLock = GlobalLock.getInternLock("backup.poll");
+        try {
+            if (scanLock.lock(5)) {
+                try {
+                    scheduleBackups();
+                } finally {
+                    scanLock.unlock();
+                }
+            }
+        } finally {
+            scanLock.releaseRef();
+        }
+    }
+
+    @DB
+    private Date scheduleNextBackupJob(final BackupScheduleVO backupSchedule) {
+        final Date nextTimestamp = DateUtil.getNextRunTime(backupSchedule.getScheduleType(), backupSchedule.getSchedule(),
+                backupSchedule.getTimezone(), currentTimestamp);
+        return Transaction.execute(new TransactionCallback<Date>() {
+            @Override
+            public Date doInTransaction(TransactionStatus status) {
+                backupSchedule.setScheduledTimestamp(nextTimestamp);
+                backupSchedule.setAsyncJobId(null);
+                backupScheduleDao.update(backupSchedule.getId(), backupSchedule);
+                return nextTimestamp;
+            }
+        });
+    }
+
+    private void checkStatusOfCurrentlyExecutingBackups() {
+        final SearchCriteria<BackupScheduleVO> sc = backupScheduleDao.createSearchCriteria();
+        sc.addAnd("asyncJobId", SearchCriteria.Op.NNULL);
+        final List<BackupScheduleVO> backupSchedules = backupScheduleDao.search(sc, null);
+        for (final BackupScheduleVO backupSchedule : backupSchedules) {
+            final Long asyncJobId = backupSchedule.getAsyncJobId();
+            final AsyncJobVO asyncJob = asyncJobManager.getAsyncJob(asyncJobId);
+            switch (asyncJob.getStatus()) {
+                case SUCCEEDED:
+                case FAILED:
+                    final Date nextDateTime = scheduleNextBackupJob(backupSchedule);
+                    final String nextScheduledTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, nextDateTime);
+                    LOG.debug("Next backup scheduled time for VM ID " + backupSchedule.getVmId() + " is " + nextScheduledTime);
+                    break;
+            }
+        }
+    }
+
+    @DB
+    public void scheduleBackups() {
+        String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, currentTimestamp);
+        LOG.debug("Backup backup.poll is being called at " + displayTime);
+
+        final List<BackupScheduleVO> backupsToBeExecuted = backupScheduleDao.getSchedulesToExecute(currentTimestamp);
+        for (final BackupScheduleVO backupSchedule: backupsToBeExecuted) {
+            final Long backupScheduleId = backupSchedule.getId();
+            final Long vmId = backupSchedule.getVmId();
+
+            final VMInstanceVO vm = vmInstanceDao.findById(vmId);
+            if (vm == null || vm.getBackupOfferingId() == null) {
+                backupScheduleDao.remove(backupScheduleId);
+                continue;
+            }
+
+            if (isDisabled(vm.getDataCenterId())) {
+                continue;
+            }
+
+            final Account backupAccount = accountService.getAccount(vm.getAccountId());
+            if (backupAccount == null || backupAccount.getState() == Account.State.disabled) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Skip backup for VM " + vm.getUuid() + " since its account has been removed or disabled");
+                }
+                continue;
+            }
+
+            if (LOG.isDebugEnabled()) {
+                final Date scheduledTimestamp = backupSchedule.getScheduledTimestamp();
+                displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);
+                LOG.debug("Scheduling 1 backup for VM ID " + vm.getId() + " (VM name:" + vm.getHostName() +
+                        ") for backup schedule id: " + backupSchedule.getId() + " at " + displayTime);
+            }
+
+            BackupScheduleVO tmpBackupScheduleVO = null;
+
+            try {
+                tmpBackupScheduleVO = backupScheduleDao.acquireInLockTable(backupScheduleId);
+
+                final Long eventId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vm.getAccountId(),
+                        EventTypes.EVENT_VM_BACKUP_CREATE, "creating backup for VM ID:" + vm.getUuid(), true, 0);
+                final Map<String, String> params = new HashMap<String, String>();
+                params.put(ApiConstants.VIRTUAL_MACHINE_ID, "" + vmId);
+                params.put("ctxUserId", "1");
+                params.put("ctxAccountId", "" + vm.getAccountId());
+                params.put("ctxStartEventId", String.valueOf(eventId));
+
+                final CreateBackupCmd cmd = new CreateBackupCmd();
+                ComponentContext.inject(cmd);
+                apiDispatcher.dispatchCreateCmd(cmd, params);
+                params.put("id", "" + vmId);
+                params.put("ctxStartEventId", "1");
+
+                AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vm.getAccountId(), CreateBackupCmd.class.getName(),
+                        ApiGsonHelper.getBuilder().create().toJson(params), vmId,
+                        cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null, null);
+                job.setDispatcher(asyncJobDispatcher.getName());
+
+                final long jobId = asyncJobManager.submitAsyncJob(job);
+                tmpBackupScheduleVO.setAsyncJobId(jobId);
+                backupScheduleDao.update(backupScheduleId, tmpBackupScheduleVO);
+            } catch (Exception e) {
+                LOG.warn("Scheduling backup failed due to ", e);
+            } finally {
+                if (tmpBackupScheduleVO != null) {
+                    backupScheduleDao.releaseFromLockTable(backupScheduleId);
+                }
+            }
+        }
+    }
+
+    @Override
+    public boolean start() {
+        initializeBackupProviderMap();
+
+        currentTimestamp = new Date();
+        for (final BackupScheduleVO backupSchedule : backupScheduleDao.listAll()) {
+            scheduleNextBackupJob(backupSchedule);
+        }
+        final TimerTask backupPollTask = new ManagedContextTimerTask() {
+            @Override
+            protected void runInContext() {
+            try {
+                poll(new Date());
+            } catch (final Throwable t) {
+                LOG.warn("Catch throwable in backup scheduler ", t);
+            }
+            }
+        };
+
+        backupTimer = new Timer("BackupPollTask");
+        backupTimer.schedule(backupPollTask, BackupSyncPollingInterval.value() * 1000L, BackupSyncPollingInterval.value() * 1000L);
+        return true;
     }
 
     ////////////////////////////////////////////////////
@@ -745,7 +951,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     LOG.trace("Backup sync background task is running...");
                 }
                 for (final DataCenter dataCenter : dataCenterDao.listAllZones()) {
-                    if (isDisabled(dataCenter)) {
+                    if (dataCenter == null || isDisabled(dataCenter.getId())) {
                         continue;
                     }
 
@@ -755,7 +961,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                         continue;
                     }
 
-                    List<VMInstanceVO> vms = vmInstanceDao.listByZoneWithBackups(dataCenter.getId());
+                    List<VMInstanceVO> vms = vmInstanceDao.listByZoneWithBackups(dataCenter.getId(), null);
                     if (vms == null || vms.isEmpty()) {
                         continue;
                     }

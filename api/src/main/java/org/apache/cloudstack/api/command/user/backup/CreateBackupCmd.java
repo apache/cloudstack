@@ -21,9 +21,10 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -44,7 +45,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         description = "Create VM backup",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class CreateBackupCmd extends BaseAsyncCmd {
+public class CreateBackupCmd extends BaseAsyncCreateCmd {
     public static final String APINAME = "createBackup";
 
     @Inject
@@ -95,6 +96,11 @@ public class CreateBackupCmd extends BaseAsyncCmd {
     }
 
     @Override
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Backup;
+    }
+
+    @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
     }
@@ -107,5 +113,9 @@ public class CreateBackupCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "Creating backup for VM " + vmId;
+    }
+
+    @Override
+    public void create() throws ResourceAllocationException {
     }
 }

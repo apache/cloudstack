@@ -290,7 +290,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
         BackupSearch = createSearchBuilder();
         BackupSearch.and("zone_id", BackupSearch.entity().getDataCenterId(), Op.EQ);
-        BackupSearch.and("backup_offering_id", BackupSearch.entity().getBackupOfferingId(), Op.NNULL);
+        BackupSearch.and("backup_offering_not_null", BackupSearch.entity().getBackupOfferingId(), Op.NNULL);
+        BackupSearch.and("backup_offering_id", BackupSearch.entity().getBackupOfferingId(), Op.EQ);
         BackupSearch.done();
     }
 
@@ -584,9 +585,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public List<VMInstanceVO> listByZoneWithBackups(Long zoneId) {
+    public List<VMInstanceVO> listByZoneWithBackups(Long zoneId, Long backupOfferingId) {
         SearchCriteria<VMInstanceVO> sc = BackupSearch.create();
         sc.setParameters("zone_id", zoneId);
+        if (backupOfferingId != null) {
+            sc.setParameters("backup_offering_id", backupOfferingId);
+        }
         return listBy(sc);
     }
 
