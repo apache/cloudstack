@@ -1832,6 +1832,7 @@ var dictionary = {
 "label.backup.offering":"Backup Offering",
 "label.backup.offering.assign":"Assign VM to backup offering",
 "label.backup.offering.remove":"Remove VM from backup offering",
+"label.backup.restore":"Restore VM Backup",
 "label.vmsnapshot":"VM Snapshots",
 "label.vmsnapshot.current":"isCurrent",
 "label.vmsnapshot.memory":"Snapshot memory",

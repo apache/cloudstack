@@ -2659,8 +2659,8 @@
                     id: 'backups',
                     isMaximized: true,
                     fields: {
-                        name: {
-                            label: 'label.name'
+                        virtualmachinename: {
+                            label: 'label.vm.name'
                         },
                         status: {
                             label: 'label.state',
@@ -2670,7 +2670,10 @@
                                 'Error': 'off'
                             }
                         },
-                        zoneid: {
+                        account: {
+                            label: 'label.account'
+                        },
+                        zone: {
                             label: 'label.zone'
                         }
                     },
@@ -2713,8 +2716,11 @@
                                     id: {
                                         label: 'label.id'
                                     },
-                                    name: {
-                                        label: 'label.name'
+                                    virtualmachinename: {
+                                        label: 'label.vm.name'
+                                    },
+                                    virtualmachineid: {
+                                        label: 'label.vm.id'
                                     },
                                     status: {
                                         label: 'label.state'
@@ -2731,15 +2737,15 @@
                                     volumes: {
                                         label: 'label.volumes'
                                     },
-				    virtualmachineid: {
-					label: 'label.vm.id'
-				    },
-				    accountid: {
-					label: 'label.account'
-				    },
-				    zoneid: {
-					label: 'label.zone'
-				    },
+                                    account: {
+                                        label: 'label.account'
+                                    },
+                                    domain: {
+                                        label: 'label.domain'
+                                    },
+                                    zone: {
+                                        label: 'label.zone'
+                                    },
                                     created: {
                                         label: 'label.date',
                                         converter: cloudStack.converters.toLocalDate
@@ -2797,82 +2803,18 @@
                                 }
                             },
 
-                            startBackup: {
-                                label: 'Start Ad-hoc Backup',
-                                messages: {
-                                    confirm: function(args) {
-                                        return 'Please confirm that you want to start an ad-hoc backup of the VM?';
-                                    },
-                                    notification: function(args) {
-                                        return 'Ad-hoc VM Backup';
-                                    }
-                                },
-                                action: function(args) {
-                                    $.ajax({
-                                        url: createURL("startBackup&id=" + args.context.backups[0].id),
-                                        dataType: "json",
-                                        async: true,
-                                        success: function(json) {
-                                            var jid = json.startbackupresponse.jobid;
-                                            args.response.success({
-                                                _custom: {
-                                                    jobId: jid
-                                                }
-                                            });
-                                        }
-                                    });
-                                },
-                                notification: {
-                                    poll: pollAsyncJobResult
-                                }
-                            },
-
                             restoreBackup: {
-                                label: 'Restore Backup',
+                                label: 'label.backup.restore',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Please confirm that you want to restore the vm backup on the stopped VM?';
+                                        return 'Please confirm that you want to restore the vm backup?';
                                     },
                                     notification: function(args) {
-                                        return 'Backup restored for the VM';
+                                        return 'label.backup.restore';
                                     }
-                                },
-                                createForm: {
-                                    title: 'Restore Backup',
-                                    desc: 'Please confirm that you want to restore the VM backup on the stopped VM?',
-                                    fields: {
-					restorepoint: {
-					    label: 'Restore Point',
-					    validation: {
-						required: true
-					    },
-					    select: function(args) {
-						$.ajax({
-						    url: createURL("listRestorePoints&backupid=" + args.context.backups[0].id),
-						    dataType: "json",
-						    async: true,
-						    success: function(json) {
-							var rps = json.listrestorepointsresponse.restorepoint;
-							var items = [];
-							$(rps).each(function() {
-							    items.push({
-								id: this.id,
-								description: this.created + " (" + this.type + ")"
-							    });
-							});
-							args.response.success({
-							    data: items
-							});
-
-						    }
-						});
-					    }
-					}
-			    }
                                 },
                                 action: function(args) {
                                     var data = {
-                                        restorepointid: args.data.restorepoint,
                                         backupid: args.context.backups[0].id
                                     };
                                     $.ajax({
