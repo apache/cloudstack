@@ -2815,7 +2815,7 @@
                                 },
                                 action: function(args) {
                                     var data = {
-                                        backupid: args.context.backups[0].id
+                                        id: args.context.backups[0].id
                                     };
                                     $.ajax({
                                         url: createURL("restoreBackup"),

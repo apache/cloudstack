@@ -54,11 +54,11 @@ public class RestoreBackupCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.BACKUP_ID,
+    @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
             entityType = BackupResponse.class,
             required = true,
-            description = "id of the backup")
+            description = "ID of the backup")
     private Long backupId;
 
     /////////////////////////////////////////////////////
