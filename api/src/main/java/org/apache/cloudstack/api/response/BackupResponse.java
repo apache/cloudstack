@@ -72,8 +72,8 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "backup offering id")
     private String backupOfferingId;
 
-    @SerializedName(ApiConstants.BACKUP_OFFERING)
-    @Param(description = "backup offering id")
+    @SerializedName(ApiConstants.BACKUP_OFFERING_NAME)
+    @Param(description = "backup offering name")
     private String backupOfferingName;
 
     @SerializedName(ApiConstants.ACCOUNT_ID)

@@ -33,7 +33,7 @@ public class ApiConstants {
     public static final String LIST_LB_VMIPS = "lbvmips";
     public static final String AVAILABLE = "available";
     public static final String BACKUP_ID = "backupid";
-    public static final String BACKUP_OFFERING = "backupoffering";
+    public static final String BACKUP_OFFERING_NAME = "backupofferingname";
     public static final String BACKUP_OFFERING_ID = "backupofferingid";
     public static final String BITS = "bits";
     public static final String BOOTABLE = "bootable";
@@ -753,7 +753,7 @@ public class ApiConstants {
     }
 
     public enum VMDetails {
-        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, iso, volume, min, affgrp;
+        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp;
     }
 
     public enum DomainDetails {
