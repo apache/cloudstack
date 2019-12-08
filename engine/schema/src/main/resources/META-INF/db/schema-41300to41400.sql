@@ -73,7 +73,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster` (
     `memory` bigint unsigned NOT NULL COMMENT 'total memory',
     `node_root_disk_size` bigint(20) unsigned DEFAULT 0 COMMENT 'root disk size of root disk for each node',
     `endpoint` varchar(255) COMMENT 'url endpoint of the kubernetes cluster manager api access',
-    `console_endpoint` varchar(255) COMMENT 'url for the kubernetes cluster manager dashbaord',
     `created` datetime NOT NULL COMMENT 'date created',
     `removed` datetime COMMENT 'date removed if not null',
     `gc` tinyint unsigned NOT NULL DEFAULT 1 COMMENT 'gc this kubernetes cluster or not',
