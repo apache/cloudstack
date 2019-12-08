@@ -118,4 +118,9 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException {
     }
+
+    @Override
+    public Long getEntityId() {
+        return vmId;
+    }
 }

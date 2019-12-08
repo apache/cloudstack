@@ -1263,60 +1263,136 @@
 
                     createBackup: {
                       messages: {
+                        confirm: function(args) {
+                            return 'label.create.backup';
+                        },
                         notification: function() {
-                          return 'Create VM Backup';
+                            return 'label.create.backup';
                         }
                       },
-                      label: 'Create VM Backup',
-                      createForm: {
-                        title: 'Create VM Backup',
-                        desc: 'Please select a backup offering for the VM backup with a name and description',
-                        fields: {
-                          name: {
-                            label: 'label.name',
-                          },
-                          description: {
-                            label: 'label.description'
-                          },
-                          policy: {
-                            label: 'Backup Offering',
-                            select: function(args) {
-                              var items = [];
-                              $.ajax({
-                                url: createURL('listBackupOfferings'),
-                                dataType: 'json',
-                                async: false,
-                                success: function(json) {
-                                  var policies = json.listbackupofferingsresponse.backupoffering;
-                                  $(policies).each(function(index, policy) {
-                                    items.push({
-                                      id: policy.id,
-                                      description: policy.name
-                                    });
-                                  });
-                                  args.response.success({
-                                    data: items
-                                  });
-                                }
-                              });
-                            }
-                          }
-                        }
-                      },
+                      label: 'label.create.backup',
                       action: function(args) {
                         var data = {
-                          virtualmachineid: args.context.instances[0].id,
-                          name: args.data.name,
-                          description: args.data.description,
-                          policyid: args.data.policy
+                          virtualmachineid: args.context.instances[0].id
                         };
                         $.ajax({
                           url: createURL('createBackup'),
                           data: data,
                           dataType: 'json',
-                          async: true,
                           success: function(json) {
                             var jid = json.createbackupresponse.jobid;
+                            args.response.success({
+                              _custom: {
+                                jobId: jid
+                              }
+                            });
+                          }
+                        });
+                      },
+                      notification: {
+                        poll: pollAsyncJobResult
+                      }
+                    },
+
+                    assignToBackupOffering: {
+                      messages: {
+                        confirm: function(args) {
+                            return 'label.backup.offering.assign';
+                        },
+                        notification: function() {
+                            return 'label.backup.offering.assign';
+                        }
+                      },
+                      label: 'label.backup.offering.assign',
+                      createForm: {
+                          title: 'label.backup.offering.assign',
+                          fields: {
+                              backupofferingid: {
+                                  label: 'label.backup.offering',
+                                  select: function(args) {
+                                      var data = {
+                                          zoneid: args.context.instances[0].zoneid
+                                      };
+                                      $.ajax({
+                                          url: createURL('listBackupOfferings'),
+                                          data: data,
+                                          async: false,
+                                          success: function(json) {
+                                              var offerings = json.listbackupofferingsresponse.backupoffering;
+                                              var items = [{
+                                                  id: -1,
+                                                  description: ''
+                                              }];
+                                              $(offerings).each(function() {
+                                                  items.push({
+                                                      id: this.id,
+                                                      description: this.name
+                                                  });
+                                              });
+                                              args.response.success({
+                                                  data: items
+                                              });
+                                          }
+                                      });
+                                  }
+                              }
+                          }
+                      },
+                      action: function(args) {
+                        var data = {
+                          virtualmachineid: args.context.instances[0].id,
+                          backupofferingid: args.data.backupofferingid
+                        };
+                        $.ajax({
+                          url: createURL('assignVirtualMachineToBackupOffering'),
+                          data: data,
+                          dataType: 'json',
+                          success: function(json) {
+                            var jid = json.assignvirtualmachinetobackupofferingresponse.jobid;
+                            args.response.success({
+                              _custom: {
+                                jobId: jid
+                              }
+                            });
+                          }
+                        });
+                      },
+                      notification: {
+                        poll: pollAsyncJobResult
+                      }
+                    },
+
+                    removeFromBackupOffering: {
+                      messages: {
+                        confirm: function(args) {
+                            return 'label.backup.offering.remove';
+                        },
+                        notification: function() {
+                            return 'label.backup.offering.remove';
+                        }
+                      },
+                      label: 'label.backup.offering.remove',
+                      createForm: {
+                          title: 'label.backup.offering.remove',
+                          fields: {
+                              forced: {
+                                  label: 'force.remove',
+                                  isBoolean: true,
+                                  isChecked: false
+                              }
+                          }
+                      },
+                      action: function(args) {
+                        var data = {
+                          virtualmachineid: args.context.instances[0].id,
+                          forced: args.data.forced === "on"
+                        };
+                        $.ajax({
+                          url: createURL('removeVirtualMachineFromBackupOffering'),
+                          data: data,
+                          dataType: 'json',
+                          success: function(json) {
+                            var jid = json.removevirtualmachinefrombackupofferingresponse.jobid;
                             args.response.success({
                               _custom: {
                                 jobId: jid
@@ -3791,7 +3867,12 @@
                 allowedActions.push("expunge");
             }
         }
-        allowedActions.push("createBackup");
+        if (jsonObj.backupofferingid) {
+            allowedActions.push("createBackup");
+            allowedActions.push("removeFromBackupOffering");
+        } else {
+            allowedActions.push("assignToBackupOffering");
+        }
 
         if (jsonObj.state == 'Starting' || jsonObj.state == 'Stopping' || jsonObj.state == 'Migrating') {
             allowedActions.push("viewConsole");

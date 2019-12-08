@@ -12498,6 +12498,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .createTemplate .icon,
 .enableSwift .icon,
 .addVM .icon,
+.assignToBackupOffering .icon,
 .dedicateZone .icon,
 .dedicate .icon {
   background-position: -69px -63px;
@@ -12507,6 +12508,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .createTemplate:hover .icon,
 .enableSwift:hover .icon,
 .addVM:hover .icon,
+.assignToBackupOffering:hover .icon,
 .dedicateZone:hover .icon {
   background-position: -69px -645px;
 }
@@ -12625,11 +12627,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -138px -647px;
 }
 
-.cancelMaintenanceMode .icon {
+.cancelMaintenanceMode .icon,
+.removeFromBackupOffering .icon {
   background-position: -138px -123px;
 }
 
-.cancelMaintenanceMode:hover .icon {
+.cancelMaintenanceMode:hover .icon,
+.removeFromBackupOffering .icon {
   background-position: -138px -705px;
 }
 
