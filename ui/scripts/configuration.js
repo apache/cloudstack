@@ -2940,12 +2940,133 @@
                         description: {
                             label: 'label.description'
                         },
-			zoneid: {
+                        zoneid: {
                             label: 'label.zone',
                         }
                     },
 
                     actions: {
+                        add: {
+                            label: 'label.import.backup.offering',
+                            createForm: {
+                                title: 'label.import.backup.offering',
+                                fields: {
+                                    name: {
+                                        label: 'label.name',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    description: {
+                                        label: 'label.description',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    zoneid: {
+                                        label: 'label.zone',
+                                        validation: {
+                                            required: true
+                                        },
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listZones"),
+                                                data: {available: 'true'},
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var items = [];
+                                                    var zoneObjs = json.listzonesresponse.zone;
+                                                    $(zoneObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.name
+                                                        });
+                                                    });
+                                                    items.sort(function(a, b) {
+                                                        return a.description.localeCompare(b.description);
+                                                    });
+                                                    items.unshift({
+                                                      id: -1,
+                                                      description: ''
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                    args.$select.change(function() {
+                                                        var $form = $(this).closest('form');
+                                                        var zoneId = $form.find('select#label_zone').val();
+                                                        var extSelect = $form.find('select#label_external_id');
+                                                        extSelect.empty();
+                                                        if (zoneId === -1) {
+                                                          return;
+                                                        }
+                                                        $.ajax({
+                                                            url: createURL("listBackupProviderOfferings"),
+                                                            data: {zoneid: zoneId},
+                                                            dataType: "json",
+                                                            success: function(json) {
+                                                                var items = [];
+                                                                var offerings = json.listbackupproviderofferingsresponse.backupoffering;
+                                                                $(offerings).each(function() {
+                                                                    extSelect.append(new Option(this.name, this.externalid))
+                                                                });
+                                                            }
+                                                        });
+                                                    })
+                                                }
+                                            });
+                                        }
+                                    },
+                                    externalid: {
+                                        label: 'label.external.id',
+                                        select: function(args) {
+                                            args.response.success({
+                                                data: []
+                                            });
+                                        }
+                                    }
+                                }//end of fields
+                            }, //end of createForm
+
+                            action: function(args) {
+                                $.ajax({
+                                    url: createURL('importBackupOffering'),
+                                    data: {
+                                      name: args.data.name,
+                                      description: args.data.description,
+                                      zoneid: args.data.zoneid,
+                                      externalid: args.data.externalid
+                                    },
+                                    dataType: 'json',
+                                    success: function(json) {
+                                        var jid = json.importbackupofferingresponse.jobid;
+                                        args.response.success({
+                                            _custom: {
+                                                jobId: jid,
+                                                getActionFilter: function() {
+                                                    return backupOfferingActionfilter;
+                                                }
+                                            }
+
+                                        });
+                                    },
+                                    error: function(data) {
+                                        args.response.error(parseXMLHttpResponse(data));
+                                    }
+                                });
+                            },
+
+                            notification: {
+                                poll: pollAsyncJobResult
+                            },
+
+                            messages: {
+                                notification: function(args) {
+                                    return 'label.import.backup.offering';
+                                }
+                            }
+                        }
                     },
 
                     dataProvider: function(args) {

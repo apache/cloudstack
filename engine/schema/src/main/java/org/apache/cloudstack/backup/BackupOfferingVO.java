@@ -111,4 +111,8 @@ public class BackupOfferingVO implements BackupOffering {
     public String getDescription() {
         return description;
     }
+
+    public Date getCreated() {
+        return created;
+    }
 }

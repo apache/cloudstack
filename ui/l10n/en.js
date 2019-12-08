@@ -58,6 +58,7 @@ var dictionary = {
 "label.ESP.hash":"ESP Hash",
 "label.ESP.lifetime":"ESP Lifetime (second)",
 "label.ESP.policy":"ESP policy",
+"label.import.backup.offering":"Import Backup Offering",
 "label.IKE.DH":"IKE DH",
 "label.IKE.encryption":"IKE Encryption",
 "label.IKE.hash":"IKE Hash",

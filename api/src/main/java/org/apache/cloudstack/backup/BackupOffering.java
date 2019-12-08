@@ -16,6 +16,8 @@
 //under the License.
 package org.apache.cloudstack.backup;
 
+import java.util.Date;
+
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -26,4 +28,5 @@ public interface BackupOffering extends InternalIdentity, Identity {
     boolean isImported();
     long getZoneId();
     String getProvider();
+    Date getCreated();
 }

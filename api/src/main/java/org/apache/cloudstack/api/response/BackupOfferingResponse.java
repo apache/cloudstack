@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Date;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -47,6 +49,10 @@ public class BackupOfferingResponse extends BaseResponse {
     @Param(description = "zone ID")
     private String zoneId;
 
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "the date this backup offering was created")
+    private Date created;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -65,5 +71,9 @@ public class BackupOfferingResponse extends BaseResponse {
 
     public void setZoneId(String zoneId) {
         this.zoneId = zoneId;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
     }
 }

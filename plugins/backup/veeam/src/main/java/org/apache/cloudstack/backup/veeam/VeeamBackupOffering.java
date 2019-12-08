@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.backup.veeam;
 
+import java.util.Date;
+
 import org.apache.cloudstack.backup.BackupOffering;
 
 public class VeeamBackupOffering implements BackupOffering {
@@ -57,6 +59,11 @@ public class VeeamBackupOffering implements BackupOffering {
     @Override
     public String getProvider() {
         return "veeam";
+    }
+
+    @Override
+    public Date getCreated() {
+        return null;
     }
 
     @Override

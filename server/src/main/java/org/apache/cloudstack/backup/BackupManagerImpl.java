@@ -235,9 +235,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     public boolean deleteBackupOffering(final Long offeringId) {
-        if (!backupDao.listByOfferingId(offeringId).isEmpty()) {
-            throw new CloudRuntimeException("Cannot allow deletion of backup offering due to use in existing VM backups, please delete the VM backups using the offering first.");
-        }
         final BackupOfferingVO offering = backupOfferingDao.findById(offeringId);
         if (offering == null) {
             throw new CloudRuntimeException("Could not find a backup offering with id: " + offeringId);

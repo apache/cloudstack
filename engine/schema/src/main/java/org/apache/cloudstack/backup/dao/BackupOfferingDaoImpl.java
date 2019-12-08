@@ -50,19 +50,20 @@ public class BackupOfferingDaoImpl extends GenericDaoBase<BackupOfferingVO, Long
     }
 
     @Override
-    public BackupOfferingResponse newBackupOfferingResponse(BackupOffering policy) {
-        DataCenterVO zone = dataCenterDao.findById(policy.getZoneId());
+    public BackupOfferingResponse newBackupOfferingResponse(BackupOffering offering) {
+        DataCenterVO zone = dataCenterDao.findById(offering.getZoneId());
 
         BackupOfferingResponse response = new BackupOfferingResponse();
-        if (policy.isImported()) {
-            response.setId(policy.getUuid());
+        if (offering.isImported()) {
+            response.setId(offering.getUuid());
             if (zone != null) {
                 response.setZoneId(zone.getUuid());
             }
         }
-        response.setName(policy.getName());
-        response.setDescription(policy.getDescription());
-        response.setExternalId(policy.getExternalId());
+        response.setName(offering.getName());
+        response.setDescription(offering.getDescription());
+        response.setExternalId(offering.getExternalId());
+        response.setCreated(offering.getCreated());
         response.setObjectName("backupoffering");
         return response;
     }
