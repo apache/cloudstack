@@ -752,6 +752,7 @@ public class ApiConstants {
     public static final String DOCKER_REGISTRY_EMAIL = "dockerregistryemail";
     public static final String KUBERNETES_VERSION = "kubernetesversion";
     public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
+    public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";
     public static final String MIN_KUBERNETES_VERSION = "minimumkubernetesversion";
     public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
