@@ -73,7 +73,7 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     @Param(description = "the ID of the Kubernetes version for the cluster")
     private String kubernetesVersionId;
 
-    @SerializedName(ApiConstants.KUBERNETES_VERSION)
+    @SerializedName(ApiConstants.KUBERNETES_VERSION_NAME)
     @Param(description = "the name of the Kubernetes version for the cluster")
     private String kubernetesVersionName;
 
@@ -224,10 +224,6 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     public String getEndpoint() { return  endpoint;}
 
     public void setEndpoint(String endpoint) {this.endpoint = endpoint;}
-
-    public String getConsoleEndpoint() { return consoleEndpoint;}
-
-    public void setConsoleEndpoint(String consoleEndpoint) {this.consoleEndpoint = consoleEndpoint;}
 
     public String getId() {
         return this.id;

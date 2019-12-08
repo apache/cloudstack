@@ -93,9 +93,6 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "endpoint")
     private String endpoint;
 
-    @Column(name = "console_endpoint")
-    private String consoleEndpoint;
-
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
@@ -281,15 +278,6 @@ public class KubernetesClusterVO implements KubernetesCluster {
     }
 
     @Override
-    public String getConsoleEndpoint() {
-        return consoleEndpoint;
-    }
-
-    public void setConsoleEndpoint(String consoleEndpoint) {
-        this.consoleEndpoint = consoleEndpoint;
-    }
-
-    @Override
     public boolean isDisplay() {
         return true;
     }
@@ -321,7 +309,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
 
     public KubernetesClusterVO(String name, String description, long zoneId, long kubernetesVersionId, long serviceOfferingId, long templateId,
                                long networkId, long domainId, long accountId, long masterNodeCount, long nodeCount, State state,
-                               String keyPair, long cores, long memory, Long nodeRootDiskSize, String endpoint, String consoleEndpoint) {
+                               String keyPair, long cores, long memory, Long nodeRootDiskSize, String endpoint) {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
         this.description = description;
@@ -342,7 +330,6 @@ public class KubernetesClusterVO implements KubernetesCluster {
             this.nodeRootDiskSize = nodeRootDiskSize;
         }
         this.endpoint = endpoint;
-        this.consoleEndpoint = consoleEndpoint;
         this.checkForGc = false;
     }
 
