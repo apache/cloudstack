@@ -6843,7 +6843,7 @@
             return [];
         }
 
-// make sure protocols are found in a script compatible way: i.e. "tcp,udp,tcp.proxy" , no minus sign or spaces
+        // make sure protocols are found in a script compatible way: i.e. "tcp,udp,tcp.proxy" , no minus sign or spaces
         var protocols = protocolCapabilities.value.replace(/\s/g,'').replace('-','.').split(',');
 
         if (!protocols) {
