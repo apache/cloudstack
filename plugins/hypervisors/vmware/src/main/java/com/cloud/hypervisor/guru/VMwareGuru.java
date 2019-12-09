@@ -19,6 +19,7 @@ package com.cloud.hypervisor.guru;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1027,7 +1028,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             existingVM.setTemplateId(templateId);
             existingVM.setGuestOSId(guestOsId);
             existingVM.setServiceOfferingId(serviceOfferingId);
-            return _vmDao.persist(existingVM);
+            _vmDao.update(existingVM.getId(), existingVM);
+            return _vmDao.findById(existingVM.getId());
         } else {
             long id = userVmDao.getNextInSequence(Long.class, "id");
             UserVmVO vmInstanceVO = new UserVmVO(id, vmInternalName, vmInternalName, templateId, HypervisorType.VMware,
@@ -1087,13 +1089,17 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 diskOfferingDao.findByUniqueName("Cloud.Com-Custom").getId();
     }
 
-    protected VolumeVO updateVolume(VirtualDisk disk, Map<VirtualDisk, VolumeVO> disksMapping, VirtualMachineMO vmToImport, Long poolId) throws Exception {
+    protected VolumeVO updateVolume(VirtualDisk disk, Map<VirtualDisk, VolumeVO> disksMapping, VirtualMachineMO vmToImport, Long poolId, Long instanceId) throws Exception {
         VolumeVO volumeVO = disksMapping.get(disk);
         String volumeName = getVolumeName(disk, vmToImport);
         volumeVO.setPath(volumeName);
         volumeVO.setPoolId(poolId);
         VirtualMachineDiskInfo diskInfo = getDiskInfo(vmToImport, poolId, volumeName);
         volumeVO.setChainInfo(new Gson().toJson(diskInfo));
+        volumeVO.setState(Volume.State.Ready);
+        volumeVO.setInstanceId(instanceId);
+        volumeVO.setAttached(new Date());
+        volumeVO.setRemoved(null);
         _volumeDao.update(volumeVO.getId(), volumeVO);
         return volumeVO;
     }
@@ -1113,8 +1119,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         for (VirtualDisk disk : virtualDisks) {
             Long poolId = getPoolId(disk);
             VolumeVO volumeVO;
-            if (disksMapping.containsKey(disk) && disksMapping.get(disk) != null) {
-                volumeVO = updateVolume(disk, disksMapping, vmToImport, poolId);
+            if (disksMapping.containsKey(disk) && disksMapping.get(disk) != null && disksMapping.get(disk).getRemoved() == null) {
+                volumeVO = updateVolume(disk, disksMapping, vmToImport, poolId, instanceId);
             } else {
                 volumeVO = createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId, backup, true);
             }
