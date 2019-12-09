@@ -1324,7 +1324,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 if (!map.containsKey(disk) && backedUpVol.getSize().equals(disk.getCapacityInBytes())
                         && !usedVols.containsKey(backedUpVol.getUuid())) {
                     String volId = backedUpVol.getUuid();
-                    VolumeVO vol = _volumeDao.findByUuid(volId);
+                    VolumeVO vol = _volumeDao.findByUuidIncludingRemoved(volId);
                     usedVols.put(backedUpVol.getUuid(), true);
                     map.put(disk, vol);
                 }
