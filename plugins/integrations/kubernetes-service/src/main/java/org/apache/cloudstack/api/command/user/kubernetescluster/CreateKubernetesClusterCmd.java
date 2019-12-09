@@ -78,7 +78,6 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             description = "availability zone in which Kubernetes cluster to be launched")
     private Long zoneId;
 
-    @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.KUBERNETES_VERSION_ID, type = CommandType.UUID, entityType = KubernetesSupportedVersionResponse.class, required = true,
             description = "Kubernetes version with which cluster to be launched")
     private Long kubernetesVersionId;
