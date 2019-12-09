@@ -56,9 +56,18 @@ public class CephSnapshotStrategy extends StorageSystemSnapshotStrategy {
             return StrategyPriority.CANT_HANDLE;
         }
 
-        if (SnapshotOperation.REVERT.equals(op) && isSnapshotStoredOnRbdStoragePool(snapshot)) {
+        if (!isSnapshotStoredOnRbdStoragePool(snapshot)) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        if (SnapshotOperation.REVERT.equals(op)) {
             return StrategyPriority.HIGHEST;
         }
+
+        if (SnapshotOperation.DELETE.equals(op)) {
+            return StrategyPriority.HIGHEST;
+        }
+
         return StrategyPriority.CANT_HANDLE;
     }
 

@@ -863,9 +863,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 userVm.setPassword(password);
                 //update the encrypted password in vm_details table too
                 encryptAndStorePassword(userVm, password);
-            } else {
-                _vmDao.saveDetails(userVm);
             }
+            _vmDao.saveDetails(userVm);
 
             if (vmInstance.getState() == State.Stopped) {
                 s_logger.debug("Vm " + vmInstance + " is stopped, not rebooting it as a part of SSH Key reset");
