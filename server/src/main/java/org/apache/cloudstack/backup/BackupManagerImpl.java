@@ -304,7 +304,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, eventDescription = "remove VM from backup offering", async = true)
     public boolean removeVMFromBackupOffering(final Long vmId, final boolean forced) {
-        final VMInstanceVO vm = vmInstanceDao.findById(vmId);
+        final VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
         if (vm == null) {
             throw new CloudRuntimeException("Did not find VM by provided ID");
         }
