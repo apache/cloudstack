@@ -594,7 +594,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         LOG.debug("Asking provider to restore volume " + backedUpVolumeUuid + " from backup " + backupId +
                 " (with external ID " + backup.getExternalId() + ") and attach it to VM: " + vm.getUuid());
 
-        final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(vm.getBackupOfferingId());
+        final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
         if (offering == null) {
             throw new CloudRuntimeException("Failed to find VM backup offering");
         }

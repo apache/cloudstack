@@ -3033,6 +3033,9 @@
                             keypair: {
                                 label: 'label.ssh.key.pair'
                             },
+                            backupofferingname: {
+                                label: 'label.backup.offering'
+                            },
                             domain: {
                                 label: 'label.domain'
                             },

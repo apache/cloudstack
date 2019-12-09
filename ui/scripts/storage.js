@@ -2670,6 +2670,12 @@
                                 'Error': 'off'
                             }
                         },
+                        type: {
+                            label: 'label.type'
+                        },
+                        created: {
+                            label: 'label.date'
+                        },
                         account: {
                             label: 'label.account'
                         },
@@ -2728,6 +2734,9 @@
                                     externalid: {
                                         label: 'label.external.id'
                                     },
+                                    type: {
+                                        label: 'label.type'
+                                    },
                                     size: {
                                         label: 'label.size'
                                     },
@@ -2765,11 +2774,7 @@
                                             });
                                         }
                                     });
-                                },
-                                tags: cloudStack.api.tags({
-                                    resourceType: 'Backup',
-                                    contextId: 'backups'
-                                })
+                                }
                             }
                         },
                         actions: {

@@ -81,7 +81,7 @@ public class ListBackupScheduleCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new CloudRuntimeException("Error while listing backup schedule of VM");
+                throw new CloudRuntimeException("No backup schedule exists for the VM");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
