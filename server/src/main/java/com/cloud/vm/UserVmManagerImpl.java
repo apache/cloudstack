@@ -3613,7 +3613,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         short defaultNetworkNumber = 0;
         boolean securityGroupEnabled = false;
-        boolean vpcNetwork = false;
         for (NetworkVO network : networkList) {
             if ((network.getDataCenterId() != zone.getId())) {
                 if (!network.isStrechedL2Network()) {
@@ -3682,14 +3681,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             if (_networkModel.isSecurityGroupSupportedInNetwork(network)) {
                 securityGroupEnabled = true;
-            }
-
-            // vm can't be a part of more than 1 VPC network
-            if (network.getVpcId() != null) {
-                if (vpcNetwork) {
-                    throw new InvalidParameterValueException("Vm can't be a part of more than 1 VPC network");
-                }
-                vpcNetwork = true;
             }
 
             networkNicMap.put(network.getUuid(), profile);
