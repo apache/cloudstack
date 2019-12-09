@@ -29,3 +29,11 @@
 .scaleKubernetesCluster:hover .icon {
   background-position: -263px -583px;
 }
+
+.upgradeKubernetesCluster .icon {
+  background-position: -264px -2px;
+}
+
+.upgradeKubernetesCluster:hover .icon {
+  background-position: -263px -583px;
+}
