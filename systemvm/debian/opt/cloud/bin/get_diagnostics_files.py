@@ -44,9 +44,16 @@ def zip_files(files):
 
     try:
         for f in fList:
+            f = f.strip()
+
             if f in ('iptables', 'ipaddr', 'iprule', 'iproute'):
                 f = execute_shell_script(f)
                 files_from_shell_commands.append(f)
+
+            if len(f) > 3 and f.startswith('[') and f.endswith(']'):
+                f = execute_shell_script(f[1:-1])
+                files_from_shell_commands.append(f)
+
             if os.path.isfile(f):
                 try:
                     zf.write(f, f[f.rfind('/') + 1:])
@@ -60,10 +67,17 @@ def zip_files(files):
         zf.close()
         print zf_name
 
+def get_log_file_name(script):
+    prefix = script
+    if script.find("."):
+        prefix = script.split('.')[0]
+
+    return prefix + '.log'
+
 
 def execute_shell_script(script):
-    # Ex. iptables.log
-    outputfile = script + '.log'
+    script = script.strip()
+    outputfile = get_log_file_name(script)
 
     if script == 'iptables':
         cmd = 'iptables-save'
@@ -74,7 +88,7 @@ def execute_shell_script(script):
     elif script == 'iproute':
         cmd = 'ip route show table all'
     else:
-        cmd = script
+        cmd = 'sh /opt/cloud/bin' + script
     with open(outputfile, 'wb', 0) as f:
         try:
             p = sp.Popen(shlex.split(cmd), stdout=sp.PIPE, stderr=sp.PIPE)
