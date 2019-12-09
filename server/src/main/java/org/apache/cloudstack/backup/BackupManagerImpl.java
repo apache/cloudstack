@@ -338,6 +338,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
                             "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null,
                             Backup.class.getSimpleName(), vm.getUuid());
+                    final BackupSchedule backupSchedule = backupScheduleDao.findByVM(vm.getId());
+                    if (backupSchedule != null) {
+                        backupScheduleDao.remove(backupSchedule.getId());
+                    }
                     return true;
                 }
                 return false;

@@ -30,7 +30,6 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.backup.dao.BackupDao;
-import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.backup.veeam.VeeamClient;
 import org.apache.cloudstack.backup.veeam.api.Job;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -84,8 +83,6 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private VmwareDatacenterDao vmwareDatacenterDao;
     @Inject
     private BackupDao backupDao;
-    @Inject
-    private BackupScheduleDao backupScheduleDao;
 
     private VeeamClient getClient(final Long zoneId) {
         try {
@@ -191,10 +188,6 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         }
         for (final Backup backup: backupDao.listByVmId(null, vm.getId())) {
             backupDao.remove(backup.getId());
-        }
-        final BackupSchedule backupSchedule = backupScheduleDao.findByVM(vm.getId());
-        if (backupSchedule != null) {
-            backupScheduleDao.remove(backupSchedule.getId());
         }
         return true;
     }
