@@ -2888,9 +2888,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 // run through Kubernetes clusters in 'Stopped' state and ensure all the VM's are Stopped in the cluster
                 List<KubernetesClusterVO> stoppedKubernetesClusters = kubernetesClusterDao.findKubernetesClustersInState(KubernetesCluster.State.Stopped);
                 for (KubernetesCluster kubernetesCluster : stoppedKubernetesClusters) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Running Kubernetes cluster state scanner on Kubernetes cluster name:" + kubernetesCluster.getName() + " for state " + KubernetesCluster.State.Stopped);
-                    }
+
+                    LOGGER.debug(String.format("Running Kubernetes cluster state scanner on Kubernetes cluster ID: %s for state: %s", kubernetesCluster.getUuid(), KubernetesCluster.State.Stopped.toString()));
                     try {
                         if (!isClusterVMsInDesiredState(kubernetesCluster, VirtualMachine.State.Stopped)) {
                             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.FaultsDetected);
@@ -2903,9 +2902,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 // run through Kubernetes clusters in 'Alert' state and reconcile state as 'Running' if the VM's are running
                 List<KubernetesClusterVO> alertKubernetesClusters = kubernetesClusterDao.findKubernetesClustersInState(KubernetesCluster.State.Alert);
                 for (KubernetesClusterVO kubernetesCluster : alertKubernetesClusters) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Running Kubernetes cluster state scanner on Kubernetes cluster name:" + kubernetesCluster.getName() + " for state " + KubernetesCluster.State.Alert);
-                    }
+                    LOGGER.debug(String.format("Running Kubernetes cluster state scanner on Kubernetes cluster ID: %s for state: %s", kubernetesCluster.getUuid(), KubernetesCluster.State.Alert.toString()));
                     try {
                         if (isClusterVMsInDesiredState(kubernetesCluster, VirtualMachine.State.Running) &&
                                 kubernetesCluster.getTotalNodeCount() == getKubernetesClusterReadyNodesCount(kubernetesCluster)) {
