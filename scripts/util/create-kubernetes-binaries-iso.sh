@@ -22,19 +22,20 @@ if [ $# -lt 6 ]; then
     exit 1
 fi
 
-RELEASE="v${1}"
+RELEASE="v${2}"
+output_dir="${1}"
 start_dir="$PWD"
-iso_dir="${start_dir}/iso"
+iso_dir="/tmp/iso"
 working_dir="${iso_dir}/"
 mkdir -p "${working_dir}"
 
-CNI_VERSION="v${2}"
+CNI_VERSION="v${3}"
 echo "Downloading CNI ${CNI_VERSION}..."
 cni_dir="${working_dir}/cni/"
 mkdir -p "${cni_dir}"
 curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-amd64.tgz"
 
-CRICTL_VERSION="v${3}"
+CRICTL_VERSION="v${4}"
 echo "Downloading CRI tools ${CRICTL_VERSION}..."
 crictl_dir="${working_dir}/cri-tools/"
 mkdir -p "${crictl_dir}"
@@ -59,12 +60,12 @@ kubeadm_conf_file="${working_dir}/10-kubeadm.conf"
 touch "${kubeadm_conf_file}"
 curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
 
-NETWORK_CONFIG_URL="${4}"
+NETWORK_CONFIG_URL="${5}"
 echo "Downloading network config ${NETWORK_CONFIG_URL}"
 network_conf_file="${working_dir}/network.yaml"
 curl -sSL ${NETWORK_CONFIG_URL} -o ${network_conf_file}
 
-DASHBORAD_CONFIG_URL="${5}"
+DASHBORAD_CONFIG_URL="${6}"
 echo "Downloading dashboard config ${DASHBORAD_CONFIG_URL}"
 dashboard_conf_file="${working_dir}/dashboard.yaml"
 curl -sSL ${DASHBORAD_CONFIG_URL} -o ${dashboard_conf_file}
@@ -91,6 +92,6 @@ if [ "${kubeadm_file_permissions}" -eq "" ]; then
 fi
 chmod ${kubeadm_file_permissions} "${working_dir}/k8s/kubeadm"
 
-mkisofs -o "setup-${RELEASE}.iso" -J -R -l "${iso_dir}"
+mkisofs -o "${output_dir}/setup-${RELEASE}.iso" -J -R -l "${iso_dir}"
 
 rm -rf "${iso_dir}"
