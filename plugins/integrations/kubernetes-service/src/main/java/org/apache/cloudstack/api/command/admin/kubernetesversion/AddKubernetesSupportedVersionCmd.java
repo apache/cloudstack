@@ -67,7 +67,7 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements UserCmd
             description = "the semantic version of the Kubernetes")
     private String kubernetesVersion;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID,
             entityType = ZoneResponse.class,
             description = "the ID of the zone in which Kubernetes supported version will be available")
     private Long zoneId;
