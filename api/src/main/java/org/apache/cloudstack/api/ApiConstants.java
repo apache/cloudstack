@@ -208,7 +208,6 @@ public class ApiConstants {
     public static final String LUN = "lun";
     public static final String LBID = "lbruleid";
     public static final String MAC_ADDRESS = "macaddress";
-    public static final String MASTER_NODES = "masternodes";
     public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MAX_CPU_NUMBER = "maxcpunumber";
@@ -753,6 +752,7 @@ public class ApiConstants {
     public static final String KUBERNETES_VERSION = "kubernetesversion";
     public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
     public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";
+    public static final String MASTER_NODES = "masternodes";
     public static final String MIN_KUBERNETES_VERSION = "minimumkubernetesversion";
     public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
