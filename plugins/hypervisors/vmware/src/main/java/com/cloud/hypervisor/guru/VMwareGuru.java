@@ -1043,7 +1043,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Create and persist volume
      */
-    private void createVolumeRecord(Volume.Type type, String volumeName, long zoneId, long domainId,
+    private VolumeVO createVolumeRecord(Volume.Type type, String volumeName, long zoneId, long domainId,
                                         long accountId, long diskOfferingId, Storage.ProvisioningType provisioningType,
                                         Long size, long instanceId, Long poolId, long templateId, Integer unitNumber, VirtualMachineDiskInfo diskInfo) {
         VolumeVO volumeVO = new VolumeVO(type, volumeName, zoneId, domainId, accountId, diskOfferingId,
@@ -1054,11 +1054,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         volumeVO.setInstanceId(instanceId);
         volumeVO.setPoolId(poolId);
         volumeVO.setTemplateId(templateId);
+        volumeVO.setAttached(new Date());
+        volumeVO.setRemoved(null);
         volumeVO.setChainInfo(new Gson().toJson(diskInfo));
         if (unitNumber != null) {
             volumeVO.setDeviceId(unitNumber.longValue());
         }
-        _volumeDao.persist(volumeVO);
+        return _volumeDao.persist(volumeVO);
     }
 
     /**
@@ -1089,7 +1091,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 diskOfferingDao.findByUniqueName("Cloud.Com-Custom").getId();
     }
 
-    protected void updateVolume(VirtualDisk disk, Map<VirtualDisk, VolumeVO> disksMapping, VirtualMachineMO vmToImport, Long poolId, Long instanceId) throws Exception {
+    protected VolumeVO updateVolume(VirtualDisk disk, Map<VirtualDisk, VolumeVO> disksMapping, VirtualMachineMO vmToImport, Long poolId, Long instanceId) throws Exception {
         VolumeVO volumeVO = disksMapping.get(disk);
         String volumeName = getVolumeName(disk, vmToImport);
         volumeVO.setPath(volumeName);
@@ -1099,8 +1101,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         volumeVO.setState(Volume.State.Ready);
         volumeVO.setInstanceId(instanceId);
         volumeVO.setAttached(new Date());
-        volumeVO.setRemoved(null);
         _volumeDao.update(volumeVO.getId(), volumeVO);
+        return volumeVO;
     }
 
     /**
@@ -1114,17 +1116,15 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         long templateId = vmInstanceVO.getTemplateId();
         long instanceId = vmInstanceVO.getId();
 
-        for (final VolumeVO existingVol : _volumeDao.findByInstance(vmInstanceVO.getId())) {
-            _volumeDao.remove(existingVol.getId());
-        }
-
         for (VirtualDisk disk : virtualDisks) {
             Long poolId = getPoolId(disk);
+            Volume volume = null;
             if (disksMapping.containsKey(disk) && disksMapping.get(disk) != null && disksMapping.get(disk).getRemoved() == null) {
-                updateVolume(disk, disksMapping, vmToImport, poolId, instanceId);
+                volume = updateVolume(disk, disksMapping, vmToImport, poolId, instanceId);
             } else {
-                createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId, backup, true);
+                volume = createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId, backup, true);
             }
+            s_logger.debug("VM backup restored (updated/created) volume id:" + volume.getId() + " for VM id:" + instanceId);
         }
     }
 
@@ -1134,7 +1134,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumeName, poolName);
     }
 
-    private void createVolume(VirtualDisk disk, VirtualMachineMO vmToImport, long domainId, long zoneId,
+    private VolumeVO createVolume(VirtualDisk disk, VirtualMachineMO vmToImport, long domainId, long zoneId,
                                   long accountId, long instanceId, Long poolId, long templateId, Backup backup, boolean isImport) throws Exception {
         VMInstanceVO vm = _vmDao.findByIdIncludingRemoved(backup.getVmId());
         if (vm == null) {
@@ -1158,7 +1158,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         long diskOfferingId = getDiskOfferingId(size, provisioningType);
         Integer unitNumber = disk.getUnitNumber();
         VirtualMachineDiskInfo diskInfo = getDiskInfo(vmToImport, poolId, volumeName);
-        createVolumeRecord(type, volumeName, zoneId, domainId, accountId, diskOfferingId,
+        return createVolumeRecord(type, volumeName, zoneId, domainId, accountId, diskOfferingId,
                 provisioningType, size, instanceId, poolId, templateId, unitNumber, diskInfo);
     }
 
@@ -1278,7 +1278,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private void importVMNics(VirtualDevice[] nicDevices, DatacenterMO dcMo, Map<String, NetworkVO> networksMapping,
                               VMInstanceVO vmInstanceVO) throws Exception {
         VmwareContext context = dcMo.getContext();
-        List<NicVO> nics = new ArrayList<>();
+        List<Long> existingNics = _nicDao.listByVmId(vmInstanceVO.getId())
+                                            .stream()
+                                            .map(NicVO::getId)
+                                            .collect(Collectors.toList());
         for (VirtualDevice nicDevice : nicDevices) {
             Pair<String, String> pair = getNicMacAddressAndNetworkName(nicDevice, context);
             String macAddress = pair.first();
@@ -1288,19 +1291,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             if (nicVO == null) {
                 nicVO = createNicRecord(macAddress, networkVO.getId(), vmInstanceVO);
             }
-            nics.add(nicVO);
-        }
-        removeUnusedNics(nics, vmInstanceVO);
-    }
-
-    private void removeUnusedNics(List<NicVO> nics, VMInstanceVO vmInstanceVO) {
-        List<NicVO> existingVMNics = _nicDao.listByVmId(vmInstanceVO.getId());
-        if (nics.size() != existingVMNics.size()) {
-            for (NicVO existingNic : existingVMNics) {
-                if (!nics.contains(existingNic)) {
-                    _nicDao.remove(existingNic.getId());
-                }
+            if (nicVO != null) {
+                existingNics.remove(nicVO.getId());
             }
+        }
+        for (final Long unusedNic : existingNics) {
+            _nicDao.removeNicsForInstance(unusedNic);
         }
     }
 
@@ -1321,6 +1317,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                     VolumeVO vol = _volumeDao.findByUuidIncludingRemoved(volId);
                     usedVols.put(backedUpVol.getUuid(), true);
                     map.put(disk, vol);
+                    s_logger.debug("VM restore mapping for disk " + disk.getBacking() +
+                            " (capacity: " + disk.getCapacityInBytes() + ") with volume ID" + vol.getId());
                 }
             }
         }

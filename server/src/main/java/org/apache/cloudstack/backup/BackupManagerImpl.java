@@ -529,7 +529,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         final VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         if (vm == null) {
-            throw new CloudRuntimeException("VM " + backup.getVmId() + " couldn't be found on existing or removed VMs");
+            throw new CloudRuntimeException("VM ID " + backup.getVmId() + " couldn't be found on existing or removed VMs");
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
