@@ -32,6 +32,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.router.VirtualRouter;
@@ -249,7 +250,7 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     }
 
     @Override
-    public Map<String, String> getRouterHealthCheckResults(long routerId, boolean runChecks) {
+    public List<RouterHealthCheckResult> fetchRouterHealthCheckResults(long routerId, boolean runChecks) {
         return null;
     }
 

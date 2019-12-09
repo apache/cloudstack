@@ -17,37 +17,38 @@
 
 package org.apache.cloudstack.api.command.admin.router;
 
-import java.util.Map;
+import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.DomainRouterHealthCheckResultsResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.RouterHealthCheckResultsResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = GetRouterHealthCheckResultsCmd.APINAME,
-        responseObject = DomainRouterHealthCheckResultsResponse.class,
+@APICommand(name = ListRouterHealthCheckResultsCmd.APINAME,
+        responseObject = RouterHealthCheckResultsResponse.class,
         description = "Starts a router.",
         entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         since = "4.13.1")
-public class GetRouterHealthCheckResultsCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(GetRouterHealthCheckResultsCmd.class.getName());
-    public static final String APINAME = "getRouterHealthCheckResults";
+public class ListRouterHealthCheckResultsCmd extends BaseListCmd {
+    public static final Logger s_logger = Logger.getLogger(ListRouterHealthCheckResultsCmd.class.getName());
+    public static final String APINAME = "listRouterHealthCheckResults";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -93,18 +94,18 @@ public class GetRouterHealthCheckResultsCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public void execute() throws ResourceUnavailableException, InvalidParameterValueException, ServerApiException {
         CallContext.current().setEventDetails("Router Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
         VirtualRouter router = _routerService.findRouter(getId());
-        Map<String, String> result = null;
         if (router == null || router.getRole() != VirtualRouter.Role.VIRTUAL_ROUTER) {
             throw new InvalidParameterValueException("Can't find router by id");
-        } else {
-            result = _routerService.getRouterHealthCheckResults(getId(), shouldPerformFreshChecks());
         }
 
+        List<RouterHealthCheckResult> result = _routerService.fetchRouterHealthCheckResults(getId(), shouldPerformFreshChecks());
         if (result != null) {
-            DomainRouterHealthCheckResultsResponse routerResponse = _responseGenerator.createHealthCheckResponse(router, result);
+            List<RouterHealthCheckResultsResponse> healthChecks = _responseGenerator.createHealthCheckResponse(router, result);
+            ListResponse<RouterHealthCheckResultsResponse> routerResponse = new ListResponse<>();
+            routerResponse.setResponses(healthChecks);
             routerResponse.setResponseName(getCommandName());
             setResponseObject(routerResponse);
         } else {

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.cloudstack.api.response.DomainRouterHealthCheckResultsResponse;
+import org.apache.cloudstack.api.response.RouterHealthCheckResultsResponse;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -147,6 +147,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
@@ -468,5 +469,5 @@ public interface ResponseGenerator {
 
     ManagementServerResponse createManagementResponse(ManagementServerHost mgmt);
 
-    DomainRouterHealthCheckResultsResponse createHealthCheckResponse(VirtualMachine router, Map<String, String> healthCheckResults);
+    List<RouterHealthCheckResultsResponse> createHealthCheckResponse(VirtualMachine router, List<RouterHealthCheckResult> healthCheckResults);
 }

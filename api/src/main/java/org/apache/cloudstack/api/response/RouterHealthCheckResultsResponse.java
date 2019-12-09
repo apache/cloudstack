@@ -17,59 +17,81 @@
 
 package org.apache.cloudstack.api.response;
 
+import java.util.Date;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class DomainRouterHealthCheckResultsResponse extends BaseResponse {
+public class RouterHealthCheckResultsResponse extends BaseResponse {
     @SerializedName("routerId")
     @Param(description = "the id of the router")
     private String routerId;
 
-    @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the router")
-    private String name;
+    @SerializedName("checkName")
+    @Param(description = "the name of the health check on the router")
+    private String checkName;
+
+    @SerializedName("checkType")
+    @Param(description = "the type of the health check - basic or advance")
+    private String checkType;
 
     @SerializedName(ApiConstants.RESULT)
-    @Param(description = "result of management server's attempt to fetch data.")
-    private String result;
+    @Param(description = "result of the health check")
+    private boolean result;
+
+    @SerializedName("lastUpdated")
+    @Param(description = "the date this VPC was created")
+    private Date lastUpdated;
 
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "detailed data fetched from management server")
+    @Param(description = "detailed response generated on running health check")
     private String details;
-
-    public DomainRouterHealthCheckResultsResponse(String objectName) {
-        super(objectName);
-    }
 
     public String getRouterId() {
         return routerId;
     }
 
-    public String getName() {
-        return name;
+    public String getCheckName() {
+        return checkName;
     }
 
-    public String getResult() {
+    public String getCheckType() {
+        return checkType;
+    }
+
+    public boolean getResult() {
         return result;
+    }
+
+    public Date getLastUpdated() {
+        return lastUpdated;
     }
 
     public String getDetails() {
         return details;
     }
 
-    public void setRouterId(String id) {
-        this.routerId = id;
+    public void setRouterId(String routerId) {
+        this.routerId = routerId;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setCheckName(String checkName) {
+        this.checkName = checkName;
     }
 
-    public void setResult(String result) {
+    public void setCheckType(String checkType) {
+        this.checkType = checkType;
+    }
+
+    public void setResult(boolean result) {
         this.result = result;
+    }
+
+    public void setLastUpdated(Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
     }
 
     public void setDetails(String details) {

@@ -253,6 +253,7 @@ def monitProcess( processes_info ):
     """
     Monitors the processes which got from the config file
     """
+    checkStartTime = time.time()
     service_status = {}
     failing_services = []
     if len( processes_info ) == 0:
@@ -283,7 +284,13 @@ def monitProcess( processes_info ):
                 ts = dict_unmonit[process]
 
                 if checkPsTimeStampForMonitor (csec, ts, properties) == False:
-                    service_status[serviceName] = {"success": "False", "message": "down since" + str(ts)}
+                    checkEndTime = time.time()
+                    service_status[serviceName] = {
+                        "success": "false",
+                        "lastUpdate": str(int(checkStartTime)),
+                        "lastRunDuration": str(checkEndTime - checkStartTime),
+                        "message": "down since" + str(ts)
+                    }
                     failing_services.append(serviceName)
                     unMonitPs = True
                     continue
@@ -293,14 +300,20 @@ def monitProcess( processes_info ):
             #add this process into unmonit list
             printd ("updating the service for unmonit %s\n" %process)
             umonit_update[process]=csec
+            checkEndTime = time.time()
             service_status[serviceName] = {
-                "success": "False",
+                "success": "false",
+                "lastUpdate": str(int(checkStartTime)),
+                "lastRunDuration": str(checkEndTime - checkStartTime),
                 "message": "down since" + str(csec)
             }
             failing_services.append(serviceName)
         else:
+            checkEndTime = time.time()
             service_status[serviceName] = {
-                "success": "True",
+                "success": "true",
+                "lastUpdate": str(int(checkStartTime)),
+                "lastRunDuration": str(checkEndTime - checkStartTime),
                 "message": "service is running" + (", was restarted" if wasRestarted else "")
             }
 
@@ -383,24 +396,36 @@ def is_emtpy(struct):
         return True
 
 def execute(script, checkType = "basic"):
+    checkStartTime = time.time()
     cmd = "./" + script + " " + checkType
     printd ("Executing health check script command: " + cmd)
 
     pout = Popen(cmd, shell=True, stdout=PIPE)
     exitStatus = pout.wait()
     output = pout.communicate()[0].strip()
+    checkEndTime = time.time()
 
     if exitStatus == 0:
         if len(output) > 0:
             printd("Successful execution of " + script)
-            return {"success": "True", "message": output}
+            return {
+                "success": "true",
+                "lastUpdate": str(int(checkStartTime)),
+                "lastRunDuration": str(checkEndTime - checkStartTime),
+                "message": output
+            }
         return {} #Skip script if no output is received
     else:
         printd("Script execution failed " + script)
-        return {"success": "False", "message": output}
+        return {
+            "success": "false",
+            "lastUpdate": str(int(checkStartTime)),
+            "lastRunDuration": str(checkEndTime - checkStartTime),
+            "message": output
+        }
 
 def main(checkType = "basic"):
-    startTime = int(time.time())
+    startTime = time.time()
     '''
     Step1 : Get Services Config
     '''
@@ -438,7 +463,7 @@ def main(checkType = "basic"):
     Step4: Write results to the json file for admins/management server to read
     '''
 
-    endTime = int(time.time())
+    endTime = time.time()
     monitResult["lastRun"] = {
         "start": str(datetime.fromtimestamp(startTime)),
         "end": str(datetime.fromtimestamp(endTime)),

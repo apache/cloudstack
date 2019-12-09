@@ -49,6 +49,7 @@ import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
+import org.apache.cloudstack.api.command.admin.router.ListRouterHealthCheckResultsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
@@ -96,6 +97,7 @@ import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceDetailResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.RouterHealthCheckResultsResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -182,6 +184,7 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
+import com.cloud.network.dao.RouterHealthCheckResultDao;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.org.Grouping;
@@ -402,6 +405,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private ResponseGenerator responseGenerator;
+
+    @Inject
+    private RouterHealthCheckResultDao routerHealthCheckResultDao;
 
     /*
      * (non-Javadoc)
@@ -1168,10 +1174,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
-        if (cmd.shouldIncludeHealthCheckResults()) {
-            for (DomainRouterResponse res : routerResponses) {
-                DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
-                res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter, routerService.getRouterHealthCheckResults(resRouter.getId(), false)));
+        for (DomainRouterResponse res : routerResponses) {
+            DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
+            res.setHealthChecksFailed(routerHealthCheckResultDao.hasFailingChecks(resRouter.getId()));
+            if (cmd.shouldIncludeHealthCheckResults()) {
+                res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter,
+                        new ArrayList<>(routerHealthCheckResultDao.getHealthCheckResults(resRouter.getId()))));
             }
         }
         response.setResponses(routerResponses, result.second());
@@ -1185,10 +1193,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
-        if (cmd.shouldIncludeHealthCheckResults()) {
-            for (DomainRouterResponse res : routerResponses) {
-                DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
-                res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter, routerService.getRouterHealthCheckResults(resRouter.getId(), false)));
+        for (DomainRouterResponse res : routerResponses) {
+            DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
+            res.setHealthChecksFailed(routerHealthCheckResultDao.hasFailingChecks(resRouter.getId()));
+            if (cmd.shouldIncludeHealthCheckResults()) {
+                res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter,
+                        new ArrayList<>(routerHealthCheckResultDao.getHealthCheckResults(resRouter.getId()))));
             }
         }
         response.setResponses(routerResponses, result.second());
@@ -3883,6 +3893,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         response.setResponses(result);
         return response;
+    }
+
+    @Override
+    public ListResponse<RouterHealthCheckResultsResponse> listRouterHealthChecks(ListRouterHealthCheckResultsCmd cmd) {
+        return null;
     }
 
     @Override

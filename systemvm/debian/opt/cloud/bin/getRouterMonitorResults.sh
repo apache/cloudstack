@@ -30,19 +30,19 @@ then
 fi
 
 printf "MONITOR RESULTS:\n"
-echo "{\"basic\":"
+echo "{\n\"basic\":"
 if [ -f /root/basic_monitor_results.json ]
 then
     echo `cat /root/basic_monitor_results.json`
 else
-    echo "\"Not available yet\""
+    echo "{{}}"
 fi
-echo ", \"advance\":"
+echo ",\n\"advance\":"
 if [ -f /root/advance_monitor_results.json ]
 then
     echo `cat /root/advance_monitor_results.json`
 else
-    echo "\"Not available yet\""
+    echo "{{}}"
 fi
 
 echo "}"
