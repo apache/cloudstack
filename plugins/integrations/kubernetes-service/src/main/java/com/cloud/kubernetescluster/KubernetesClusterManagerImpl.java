@@ -2013,6 +2013,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new ManagementServerException("Kubernetes service has not been configured properly to provision Kubernetes clusters");
         }
 
+        if (nodeRootDiskSize <= 0) {
+            throw new ManagementServerException(String.format("Invalid value for %s", ApiConstants.NODE_ROOT_DISK_SIZE));
+        }
+
         VMTemplateVO template = templateDao.findByTemplateName(globalConfigDao.getValue(KubernetesServiceConfig.KubernetesClusterTemplateName.key()));
         List<VMTemplateZoneVO> listZoneTemplate = templateZoneDao.listByZoneTemplate(zone.getId(), template.getId());
         if (listZoneTemplate == null || listZoneTemplate.isEmpty()) {
