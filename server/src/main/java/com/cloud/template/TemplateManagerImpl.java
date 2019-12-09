@@ -1187,6 +1187,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to find an ISO with id " + isoId);
         }
 
+        long dcId = vm.getDataCenterId();
+        VMTemplateZoneVO exists = _tmpltZoneDao.findByZoneTemplate(dcId, isoId);
+        if (null == exists) {
+            throw new InvalidParameterValueException("ISO is not available in the zone the VM is in.");
+        }
+
         // check permissions
         // check if caller has access to VM and ISO
         // and also check if the VM's owner has access to the ISO.
