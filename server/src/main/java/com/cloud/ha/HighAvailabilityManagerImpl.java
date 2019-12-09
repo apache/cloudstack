@@ -104,7 +104,7 @@ import javax.naming.ConfigurationException;
  **/
 public class HighAvailabilityManagerImpl extends ManagerBase implements Configurable, HighAvailabilityManager, ClusterManagerListener {
 
-    private static final int MILLISECONDS_TO_SECONDS_FACTOR = 1000;
+    private static final int SECONDS_TO_MILLISECONDS_FACTOR = 1000;
     private static final int STOP_RETRY_INTERVAL_SECONDS = 600;
     private static final int RESTART_RETRY_INTERVAL_SECONDS = 600;
     private static final int INVESTIGATE_RETRY_INTERVAL_SECONDS = 60;
@@ -851,17 +851,13 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         value = params.get("force.ha");
         _forceHA = Boolean.parseBoolean(value);
 
-        value = params.get(TimeToSleep.key());
-        _timeToSleep = NumbersUtil.parseLong(value, TimeToSleep.value()) * MILLISECONDS_TO_SECONDS_FACTOR;
+        _timeToSleep = TimeToSleep.value() * SECONDS_TO_MILLISECONDS_FACTOR;
 
-        value = params.get(MaxRetries.key());
-        _maxRetries = NumbersUtil.parseInt(value, MaxRetries.value());
+        _maxRetries = MaxRetries.value();
 
-        value = params.get(TimeBetweenFailures.key());
-        _timeBetweenFailures = NumbersUtil.parseLong(value, TimeBetweenFailures.value()) * MILLISECONDS_TO_SECONDS_FACTOR;
+        _timeBetweenFailures = TimeBetweenFailures.value() * SECONDS_TO_MILLISECONDS_FACTOR;
 
-        value = params.get(TimeBetweenCleanup.key());
-        _timeBetweenCleanups = NumbersUtil.parseLong(value, TimeBetweenCleanup.value());
+        _timeBetweenCleanups = TimeBetweenCleanup.value();
 
         value = params.get("stop.retry.interval");
         _stopRetryInterval = NumbersUtil.parseInt(value, STOP_RETRY_INTERVAL_SECONDS);
