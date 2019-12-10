@@ -2970,7 +2970,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         for (final VirtualRouter router : routers) {
             if (router.getState() == VirtualMachine.State.Stopped ||
                     router.getState() == VirtualMachine.State.Error ||
-                    router.getState() == VirtualMachine.State.Shutdowned ||
+                    router.getState() == VirtualMachine.State.Shutdown ||
                     router.getState() == VirtualMachine.State.Unknown) {
                 s_logger.debug("Destroying old router " + router);
                 _routerService.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId());

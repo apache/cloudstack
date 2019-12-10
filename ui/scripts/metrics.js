@@ -447,7 +447,7 @@
                         'Destroyed': 'off',
                         'Expunging': 'off',
                         'Stopping': 'warning',
-                        'Shutdowned': 'warning'
+                        'Shutdown': 'warning'
                     },
                     compact: true
                 },
