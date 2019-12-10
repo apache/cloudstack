@@ -235,8 +235,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         return metrics;
     }
 
-    @Override
-    public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
+    private List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
         String backupName = getGuestBackupName(vm.getInstanceName(), vm.getUuid());
         return getClient(vm.getDataCenterId()).listRestorePoints(backupName, vm.getInstanceName());
     }

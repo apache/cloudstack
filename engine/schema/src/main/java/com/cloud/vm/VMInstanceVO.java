@@ -500,6 +500,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.details = details;
     }
 
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
     transient String toString;
 
     @Override

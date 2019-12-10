@@ -96,7 +96,5 @@ public interface BackupProvider {
 
     Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms);
 
-    List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm);
-
     void syncBackups(VirtualMachine vm, Backup.Metric metric);
 }

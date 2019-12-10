@@ -458,6 +458,13 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
+    public VMInstanceVO findVMByInstanceNameIncludingRemoved(String name) {
+        SearchCriteria<VMInstanceVO> sc = InstanceNameSearch.create();
+        sc.setParameters("instanceName", name);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
     public VMInstanceVO findVMByHostName(String hostName) {
         SearchCriteria<VMInstanceVO> sc = HostNameSearch.create();
         sc.setParameters("hostName", hostName);

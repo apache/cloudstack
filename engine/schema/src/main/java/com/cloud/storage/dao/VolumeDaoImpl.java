@@ -194,7 +194,9 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> findIncludingRemovedByInstanceAndType(long id, Type vType) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", id);
-        sc.setParameters("vType", vType.toString());
+        if (vType != null) {
+            sc.setParameters("vType", vType.toString());
+        }
         return listIncludingRemovedBy(sc);
     }
 

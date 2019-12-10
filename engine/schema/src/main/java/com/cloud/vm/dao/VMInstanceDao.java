@@ -86,6 +86,8 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     VMInstanceVO findVMByInstanceName(String name);
 
+    VMInstanceVO findVMByInstanceNameIncludingRemoved(String name);
+
     VMInstanceVO findVMByHostName(String hostName);
 
     void updateProxyId(long id, Long proxyId, Date time);

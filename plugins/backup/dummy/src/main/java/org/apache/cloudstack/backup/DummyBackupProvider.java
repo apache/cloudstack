@@ -51,8 +51,8 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Override
     public List<BackupOffering> listBackupOfferings(Long zoneId) {
         s_logger.debug("Listing backup policies on Dummy B&R Plugin");
-        BackupOffering policy1 = new BackupOfferingVO(1, "aaaa-aaaa", "dummy", "Golden Policy", "Gold description");
-        BackupOffering policy2 = new BackupOfferingVO(1, "bbbb-bbbb", "dummy", "Silver Policy", "Silver description");
+        BackupOffering policy1 = new BackupOfferingVO(1, "gold-policy", "dummy", "Golden Policy", "Gold description");
+        BackupOffering policy2 = new BackupOfferingVO(1, "silver-policy", "dummy", "Silver Policy", "Silver description");
         return Arrays.asList(policy1, policy2);
     }
 
@@ -113,11 +113,12 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
         BackupVO backup = new BackupVO();
         backup.setVmId(vm.getId());
+        backup.setExternalId("dummy-external-id");
         backup.setType("FULL");
         backup.setDate(new Date().toString());
-        backup.setStatus(Backup.Status.BackedUp);
         backup.setSize(1024L);
         backup.setProtectedSize(1024000L);
+        backup.setStatus(Backup.Status.BackedUp);
         backup.setBackupOfferingId(vm.getBackupOfferingId());
         backup.setAccountId(vm.getAccountId());
         backup.setDomainId(vm.getDomainId());
@@ -131,14 +132,6 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
-        return Arrays.asList(
-                new Backup.RestorePoint("aaaaaaaa", "22/08/2017", "Full"),
-                new Backup.RestorePoint("bbbbbbbb", "23/08/2017", "Incremental"));
-    }
-
-    @Override
     public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
-
     }
 }
