@@ -88,7 +88,7 @@ def execute_shell_script(script):
     elif script == 'iproute':
         cmd = 'ip route show table all'
     else:
-        cmd = 'sh /opt/cloud/bin' + script
+        cmd = 'sh /opt/cloud/bin/' + script
     with open(outputfile, 'wb', 0) as f:
         try:
             p = sp.Popen(shlex.split(cmd), stdout=sp.PIPE, stderr=sp.PIPE)
