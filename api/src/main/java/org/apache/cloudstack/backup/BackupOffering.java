@@ -25,7 +25,6 @@ public interface BackupOffering extends InternalIdentity, Identity {
     String getExternalId();
     String getName();
     String getDescription();
-    boolean isImported();
     long getZoneId();
     String getProvider();
     Date getCreated();

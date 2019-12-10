@@ -47,11 +47,6 @@ public class VeeamBackupOffering implements BackupOffering {
     }
 
     @Override
-    public boolean isImported() {
-        return false;
-    }
-
-    @Override
     public long getZoneId() {
         return -1;
     }

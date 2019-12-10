@@ -577,6 +577,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
+        if (vm.getBackupOfferingId() != null) {
+            throw new CloudRuntimeException("The selected VM has backups, cannot restore and attach volume to the VM.");
+        }
+
         if (backup.getZoneId() != vm.getDataCenterId()) {
             throw new CloudRuntimeException("Cross zone backup restoration of volume is not allowed");
         }

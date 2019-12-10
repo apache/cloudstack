@@ -94,11 +94,6 @@ public class BackupOfferingVO implements BackupOffering {
     }
 
     @Override
-    public boolean isImported() {
-        return true;
-    }
-
-    @Override
     public long getZoneId() {
         return zoneId;
     }
