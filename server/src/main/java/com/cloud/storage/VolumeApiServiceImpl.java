@@ -1347,7 +1347,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * We will check if the given volume is in the primary storage. If it is, we will execute an asynchronous call to delete it there.
      * If the volume is not in the primary storage, we do nothing here.
      */
-    protected void expungeVolumesInPrimaryStorageIfNeeded(VolumeVO volume) throws InterruptedException, ExecutionException {
+    protected void expungeVolumesInPrimaryStorageIfNeeded(VolumeVO volume) throws InterruptedException, ExecutionException, NoTransitionException {
         VolumeInfo volOnPrimary = volFactory.getVolume(volume.getId(), DataStoreRole.Primary);
         if (volOnPrimary != null) {
             s_logger.info("Expunging volume " + volume.getId() + " from primary data store");

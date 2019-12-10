@@ -81,7 +81,7 @@ public class CephSnapshotStrategyTest {
         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
         Mockito.when(volumeVO.getRemoved()).thenReturn(removed);
         Mockito.when(volumeDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(volumeVO);
-        Mockito.doReturn(isSnapshotStoredOnRbdStoragePool).when(cephSnapshotStrategy).isSnapshotStoredOnRbdStoragePool(Mockito.any());
+        Mockito.lenient().doReturn(isSnapshotStoredOnRbdStoragePool).when(cephSnapshotStrategy).isSnapshotStoredOnRbdStoragePool(Mockito.any());
 
         for (int i = 0; i < snapshotOps.length - 1; i++) {
             StrategyPriority strategyPriority = cephSnapshotStrategy.canHandle(snapshot, snapshotOps[i]);
@@ -105,7 +105,7 @@ public class CephSnapshotStrategyTest {
             VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
             Mockito.when(snapshotInfo.getBaseVolume()).thenReturn(volumeInfo);
             Mockito.when(volumeInfo.getFormat()).thenReturn(imageFormatValues[i]);
-            Mockito.doNothing().when(cephSnapshotStrategy).executeRevertSnapshot(Mockito.any(), Mockito.any());
+            Mockito.lenient().doNothing().when(cephSnapshotStrategy).executeRevertSnapshot(Mockito.any(), Mockito.any());
 
             boolean revertResult = cephSnapshotStrategy.revertSnapshot(snapshotInfo);
 

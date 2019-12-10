@@ -48,6 +48,7 @@ import org.libvirt.StorageVol;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.w3c.dom.Document;
@@ -66,6 +67,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(value = {LibvirtConnection.class, LibvirtMigrateCommandWrapper.class, MemStat.class})
+@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
 public class LibvirtMigrateCommandWrapperTest {
     String fullfile =
 "<domain type='kvm' id='4'>\n" +

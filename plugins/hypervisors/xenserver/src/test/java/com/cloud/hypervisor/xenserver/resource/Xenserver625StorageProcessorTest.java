@@ -21,6 +21,7 @@ package com.cloud.hypervisor.xenserver.resource;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.times;
 
 import java.util.HashSet;
@@ -337,7 +338,7 @@ public class Xenserver625StorageProcessorTest {
         SR sr = xenserver625StorageProcessor.createNewFileSr(connectionMock, pathMock);
 
         assertNull(sr);
-        Mockito.verify(xenserver625StorageProcessor).removeSrAndPbdIfPossible(Mockito.eq(connectionMock), Mockito.any(SR.class), Mockito.any(PBD.class));
+        Mockito.verify(xenserver625StorageProcessor).removeSrAndPbdIfPossible(Mockito.eq(connectionMock), nullable(SR.class), nullable(PBD.class));
     }
 
     @Test

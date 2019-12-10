@@ -102,16 +102,16 @@ public class KVMFencerTest {
         Mockito.when(host.getClusterId()).thenReturn(1l);
         Mockito.when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
         Mockito.when(host.getStatus()).thenReturn(Status.Up);
-        Mockito.when(host.getDataCenterId()).thenReturn(1l);
-        Mockito.when(host.getPodId()).thenReturn(1l);
+        Mockito.lenient().when(host.getDataCenterId()).thenReturn(1l);
+        Mockito.lenient().when(host.getPodId()).thenReturn(1l);
         Mockito.when(host.getId()).thenReturn(1l);
 
         HostVO secondHost = Mockito.mock(HostVO.class);
-        Mockito.when(secondHost.getClusterId()).thenReturn(1l);
+        Mockito.lenient().when(secondHost.getClusterId()).thenReturn(1l);
         Mockito.when(secondHost.getHypervisorType()).thenReturn(HypervisorType.KVM);
         Mockito.when(secondHost.getStatus()).thenReturn(Status.Up);
-        Mockito.when(secondHost.getDataCenterId()).thenReturn(1l);
-        Mockito.when(secondHost.getPodId()).thenReturn(1l);
+        Mockito.lenient().when(secondHost.getDataCenterId()).thenReturn(1l);
+        Mockito.lenient().when(secondHost.getPodId()).thenReturn(1l);
         Mockito.when(host.getId()).thenReturn(2l);
 
         VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
@@ -135,11 +135,11 @@ public class KVMFencerTest {
         Mockito.when(host.getId()).thenReturn(1l);
 
         HostVO secondHost = Mockito.mock(HostVO.class);
-        Mockito.when(secondHost.getClusterId()).thenReturn(1l);
+        Mockito.lenient().when(secondHost.getClusterId()).thenReturn(1l);
         Mockito.when(secondHost.getHypervisorType()).thenReturn(HypervisorType.KVM);
         Mockito.when(secondHost.getStatus()).thenReturn(Status.Up);
-        Mockito.when(secondHost.getDataCenterId()).thenReturn(1l);
-        Mockito.when(secondHost.getPodId()).thenReturn(1l);
+        Mockito.lenient().when(secondHost.getDataCenterId()).thenReturn(1l);
+        Mockito.lenient().when(secondHost.getPodId()).thenReturn(1l);
         Mockito.when(host.getId()).thenReturn(2l);
 
         VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
@@ -162,11 +162,11 @@ public class KVMFencerTest {
         Mockito.when(host.getId()).thenReturn(1l);
 
         HostVO secondHost = Mockito.mock(HostVO.class);
-        Mockito.when(secondHost.getClusterId()).thenReturn(1l);
+        Mockito.lenient().when(secondHost.getClusterId()).thenReturn(1l);
         Mockito.when(secondHost.getHypervisorType()).thenReturn(HypervisorType.KVM);
         Mockito.when(secondHost.getStatus()).thenReturn(Status.Up);
-        Mockito.when(secondHost.getDataCenterId()).thenReturn(1l);
-        Mockito.when(secondHost.getPodId()).thenReturn(1l);
+        Mockito.lenient().when(secondHost.getDataCenterId()).thenReturn(1l);
+        Mockito.lenient().when(secondHost.getPodId()).thenReturn(1l);
         Mockito.when(host.getId()).thenReturn(2l);
 
         VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
@@ -181,15 +181,15 @@ public class KVMFencerTest {
     @Test
     public void testWithSingleNotKVM() {
         HostVO host = Mockito.mock(HostVO.class);
-        Mockito.when(host.getClusterId()).thenReturn(1l);
+        Mockito.lenient().when(host.getClusterId()).thenReturn(1l);
         Mockito.when(host.getHypervisorType()).thenReturn(HypervisorType.Any);
-        Mockito.when(host.getStatus()).thenReturn(Status.Down);
-        Mockito.when(host.getId()).thenReturn(1l);
-        Mockito.when(host.getDataCenterId()).thenReturn(1l);
-        Mockito.when(host.getPodId()).thenReturn(1l);
+        Mockito.lenient().when(host.getStatus()).thenReturn(Status.Down);
+        Mockito.lenient().when(host.getId()).thenReturn(1l);
+        Mockito.lenient().when(host.getDataCenterId()).thenReturn(1l);
+        Mockito.lenient().when(host.getPodId()).thenReturn(1l);
         VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
 
-        Mockito.when(resourceManager.listAllHostsInCluster(1l)).thenReturn(Collections.singletonList(host));
+        Mockito.lenient().when(resourceManager.listAllHostsInCluster(1l)).thenReturn(Collections.singletonList(host));
         Assert.assertNull(fencer.fenceOff(virtualMachine, host));
     }
 

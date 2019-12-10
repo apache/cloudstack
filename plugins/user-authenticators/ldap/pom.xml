@@ -35,6 +35,7 @@
                 <version>1.3</version>
                 <configuration>
                     <providerSelection>1.7</providerSelection>
+                    <source/>
                 </configuration>
                 <executions>
                     <execution>

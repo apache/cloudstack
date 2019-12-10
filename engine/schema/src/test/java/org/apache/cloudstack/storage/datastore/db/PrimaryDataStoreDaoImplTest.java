@@ -16,9 +16,12 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.db;
 
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -29,9 +32,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.storage.ScopeType;
@@ -41,6 +44,7 @@ import com.cloud.storage.dao.StoragePoolTagsDao;
 import junit.framework.TestCase;
 
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore("javax.management.*")
 public class PrimaryDataStoreDaoImplTest extends TestCase {
 
     @Mock
@@ -77,12 +81,13 @@ public class PrimaryDataStoreDaoImplTest extends TestCase {
     private static final Long CLUSTER_ID = null;
     private static final ScopeType SCOPE = ScopeType.ZONE;
 
+
     @Before
-    public void setup() {
+    public void setup() throws IOException, ClassNotFoundException, SQLException {
         STORAGE_POOL_DETAILS.put(DETAIL_KEY, DETAIL_VALUE);
         doReturn(Arrays.asList(storagePoolVO)).when(primaryDataStoreDao).
-        searchStoragePoolsPreparedStatement(Matchers.anyString(), Matchers.anyLong(), Matchers.anyLong(), Matchers.anyLong(),
-                Matchers.any(ScopeType.class), Matchers.anyInt());
+                searchStoragePoolsPreparedStatement(nullable(String.class), nullable(Long.class), nullable(Long.class), nullable(Long.class),
+                        nullable(ScopeType.class), nullable(Integer.class));
     }
 
     @Test

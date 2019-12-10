@@ -19,24 +19,25 @@
 
 package org.apache.cloudstack;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.cloudstack.saml.SAML2UserAuthenticator;
+import org.apache.cloudstack.saml.SAMLPluginConstants;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import com.cloud.server.auth.UserAuthenticator.ActionOnFailedAuthentication;
 import com.cloud.user.UserAccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
-import org.apache.cloudstack.saml.SAMLPluginConstants;
-import org.apache.cloudstack.saml.SAML2UserAuthenticator;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SAML2UserAuthenticatorTest {
@@ -69,7 +70,7 @@ public class SAML2UserAuthenticatorTest {
 
         UserVO user = new UserVO();
         Mockito.when(userAccountDao.getUserAccount(Mockito.anyString(), Mockito.anyLong())).thenReturn(account);
-        Mockito.when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
+        Mockito.lenient().when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
 
         Pair<Boolean, ActionOnFailedAuthentication> pair;
         Map<String, Object[]> params = new HashMap<String, Object[]>();

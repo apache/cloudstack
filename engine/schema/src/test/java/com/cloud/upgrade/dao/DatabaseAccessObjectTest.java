@@ -53,7 +53,7 @@ public class DatabaseAccessObjectTest {
 
     @Before
     public void setup() {
-        Whitebox.setInternalState(dao, "s_logger", loggerMock);
+        Whitebox.setInternalState(dao.getClass(), "s_logger", loggerMock);
     }
 
     @Test
