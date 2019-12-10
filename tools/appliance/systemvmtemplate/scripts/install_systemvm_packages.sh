@@ -41,27 +41,26 @@ function install_packages() {
   local arch=`dpkg --print-architecture`
 
   debconf_packages
-  install_vhd_util
 
   local apt_get="apt-get --no-install-recommends -q -y"
 
   ${apt_get} install grub-legacy \
-    rsyslog logrotate cron net-tools ifupdown tmux vim-tiny htop netbase iptables \
-    openssh-server e2fsprogs tcpdump iftop socat wget \
+    rsyslog logrotate cron net-tools ifupdown tmux vim-tiny htop netbase iptables nftables \
+    openssh-server e2fsprogs tcpdump iftop socat wget coreutils systemd \
     python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps \
     inetutils-ping iputils-arping httping curl \
-    dnsutils zip unzip ethtool uuid file iproute acpid sudo \
+    dnsutils zip unzip ethtool uuid file iproute2 acpid sudo \
     sysstat python-netaddr \
     apache2 ssl-cert \
     dnsmasq dnsmasq-utils \
     nfs-common \
     samba-common cifs-utils \
-    xl2tpd bcrelay ppp ipsec-tools tdb-tools \
+    xl2tpd bcrelay ppp tdb-tools \
     xenstore-utils libxenstore3.0 \
     ipvsadm conntrackd libnetfilter-conntrack3 \
     keepalived irqbalance \
     ipcalc \
-    openjdk-8-jre-headless \
+    openjdk-11-jre-headless \
     ipset \
     iptables-persistent \
     libtcnative-1 libssl-dev libapr1-dev \
@@ -70,10 +69,8 @@ function install_packages() {
     haveged \
     radvd \
     sharutils genisoimage aria2 \
-    strongswan libcharon-extra-plugins libstrongswan-extra-plugins \
+    strongswan libcharon-extra-plugins libstrongswan-extra-plugins strongswan-charon strongswan-starter \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons
-
-  apt-get -q -y -t stretch-backports install nftables
 
   apt-get -y autoremove --purge
   apt-get clean
@@ -88,6 +85,7 @@ function install_packages() {
     ${apt_get} install libuuid1:i386 libc6:i386
   fi
 
+  install_vhd_util
   # Install xenserver guest utilities as debian repos don't have it
   wget https://mirrors.kernel.org/ubuntu/pool/main/x/xe-guest-utilities/xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
   dpkg -i xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb

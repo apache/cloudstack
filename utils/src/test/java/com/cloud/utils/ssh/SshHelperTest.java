@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -35,6 +36,8 @@ import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
 
 @PrepareForTest({ Thread.class, SshHelper.class })
+@PowerMockIgnore({ "javax.management.*", "com.sun.org.apache.xerces.*", "javax.xml.*",
+        "org.xml.*", "org.w3c.dom.*", "com.sun.org.apache.xalan.*", "javax.activation.*" })
 @RunWith(PowerMockRunner.class)
 public class SshHelperTest {
 
@@ -49,7 +52,7 @@ public class SshHelperTest {
 
         SshHelper.canEndTheSshConnection(1, mockedSession, 0);
 
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(SshHelper.class);
         SshHelper.isChannelConditionEof(Mockito.anyInt());
         SshHelper.throwSshExceptionIfConditionsTimeout(Mockito.anyInt());
 
@@ -144,8 +147,5 @@ public class SshHelperTest {
         SshHelper.openConnectionSession(conn);
 
         Mockito.verify(conn).openSession();
-
-        PowerMockito.verifyStatic();
-
     }
 }

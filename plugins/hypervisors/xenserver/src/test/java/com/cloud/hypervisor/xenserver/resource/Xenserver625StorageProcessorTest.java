@@ -177,7 +177,7 @@ public class Xenserver625StorageProcessorTest {
 
         SR sr = xenserver625StorageProcessor.retrieveAlreadyConfiguredSr(connectionMock, pathMock);
 
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(SR.class);
         SR.getByNameLabel(connectionMock, pathMock);
         Assert.assertNull(sr);
     }
@@ -403,7 +403,7 @@ public class Xenserver625StorageProcessorTest {
         Mockito.verify(srMock).scan(connectionMock);
         Mockito.verify(pbdMock).plug(connectionMock);
 
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(PBD.class);
         SR.introduce(Mockito.eq(connectionMock), Mockito.eq(srUuid), Mockito.eq(pathMock), Mockito.eq(pathMock), Mockito.eq("file"), Mockito.eq("file"), Mockito.eq(false),
                 Mockito.anyMapOf(String.class, String.class));
         PBD.create(Mockito.eq(connectionMock), Mockito.any(Record.class));

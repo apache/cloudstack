@@ -53,7 +53,7 @@ public class ConfigDriveBuilderTest {
 
         ConfigDriveBuilder.writeFile(new File("folder"), "subfolder", "content");
 
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(FileUtils.class);
         FileUtils.write(Mockito.any(File.class), Mockito.anyString(), Mockito.any(Charset.class), Mockito.eq(false));
     }
 
@@ -165,7 +165,7 @@ public class ConfigDriveBuilderTest {
 
         Assert.assertEquals("mockIsoDataBase64", returnedIsoData);
 
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(ConfigDriveBuilder.class);
         ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(Mockito.any(File.class));
         ConfigDriveBuilder.writeVmMetadata(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.any(File.class));
         ConfigDriveBuilder.linkUserData(Mockito.anyString());
@@ -211,7 +211,7 @@ public class ConfigDriveBuilderTest {
         Mockito.verify(folderFileMock).exists();
         Mockito.verify(folderFileMock).mkdirs();
 
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(ConfigDriveBuilder.class);
         ConfigDriveBuilder.writeFile(Mockito.any(File.class), Mockito.eq("vendor_data.json"), Mockito.eq("{}"));
         ConfigDriveBuilder.writeFile(Mockito.any(File.class), Mockito.eq("network_data.json"), Mockito.eq("{}"));
     }
@@ -235,7 +235,7 @@ public class ConfigDriveBuilderTest {
 
         ConfigDriveBuilder.writeVmMetadata(new ArrayList<>(), "metadataFile", new File("folder"));
 
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(ConfigDriveBuilder.class);
         ConfigDriveBuilder.createJsonObjectWithVmData(Mockito.anyListOf(String[].class), Mockito.anyString());
         ConfigDriveBuilder.writeFile(Mockito.any(File.class), Mockito.eq("meta_data.json"), Mockito.eq("{}"));
     }
@@ -376,7 +376,7 @@ public class ConfigDriveBuilderTest {
         inOrder.verify(scriptMock).add("tempDirName");
         inOrder.verify(scriptMock).execute();
 
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(ConfigDriveBuilder.class);
         ConfigDriveBuilder.fileToBase64String(Mockito.any(File.class));
 
     }
@@ -396,7 +396,7 @@ public class ConfigDriveBuilderTest {
 
         ConfigDriveBuilder.createJsonObjectWithVmData(vmData, "tempDirName");
 
-        PowerMockito.verifyStatic(Mockito.times(1));
+        PowerMockito.verifyStatic(ConfigDriveBuilder.class, Mockito.times(1));
         ConfigDriveBuilder.createFileInTempDirAnAppendOpenStackMetadataToJsonObject(Mockito.eq("tempDirName"), Mockito.any(JsonObject.class), Mockito.eq("dataType"), Mockito.eq("fileName"),
                 Mockito.eq("content"));
         ConfigDriveBuilder.createFileInTempDirAnAppendOpenStackMetadataToJsonObject(Mockito.eq("tempDirName"), Mockito.any(JsonObject.class), Mockito.eq("dataType2"), Mockito.eq("fileName2"),

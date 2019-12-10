@@ -415,7 +415,7 @@ public class NetworkACLServiceImplTest {
         Mockito.verify(entityManagerMock).findById(Vpc.class, networkMockVpcMockId);
         Mockito.verify(accountManagerMock).checkAccess(Mockito.any(Account.class), Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
 
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(CallContext.class);
         CallContext.current();
 
     }

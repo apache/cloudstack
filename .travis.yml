@@ -14,13 +14,16 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
 sudo: required
-dist: xenial
-group: edge
+dist: bionic
+group: stable
 
 language: java
+
 jdk:
-  - openjdk8
+  - openjdk11
+
 python:
   - "2.7"
 

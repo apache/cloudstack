@@ -41,7 +41,7 @@ dbHost="localhost"
 dbUser="root"
 dbPassword=
 dbPort=3306
-jasypt='/usr/share/cloudstack-common/lib/jasypt-1.9.2.jar'
+jasypt='/usr/share/cloudstack-common/lib/jasypt-1.9.3.jar'
 while getopts 'm:h:f:u:Ft:e:s:o:r:d:p:'# OPTION
 do
   case $OPTION in

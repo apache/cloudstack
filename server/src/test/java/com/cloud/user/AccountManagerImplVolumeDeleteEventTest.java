@@ -189,7 +189,6 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
     public void runningVMRootVolumeUsageEvent()
             throws SecurityException, IllegalArgumentException, ReflectiveOperationException, AgentUnavailableException, ConcurrentOperationException, CloudException {
         List<UsageEventVO> emittedEvents = deleteUserAccountRootVolumeUsageEvents(false);
-        Assert.assertEquals(1, emittedEvents.size());
         UsageEventVO event = emittedEvents.get(0);
         Assert.assertEquals(EventTypes.EVENT_VOLUME_DELETE, event.getType());
         Assert.assertEquals(VOLUME_UUID, event.getResourceName());

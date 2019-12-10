@@ -197,7 +197,7 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
 
         // SSO SAMLResponse verification test, this should throw ServerApiException for auth failure
         params.put(SAMLPluginConstants.SAML_RESPONSE, new String[]{"Some String"});
-        Mockito.stub(cmd.processSAMLResponse(Mockito.anyString())).toReturn(buildMockResponse());
+        Mockito.when(cmd.processSAMLResponse(Mockito.anyString())).thenReturn(buildMockResponse());
         boolean failing = true;
         try {
             cmd.authenticate("command", params, session, InetAddress.getByName("127.0.0.1"), HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
