@@ -287,8 +287,8 @@ def monitProcess( processes_info ):
                     checkEndTime = time.time()
                     service_status[serviceName] = {
                         "success": "false",
-                        "lastUpdate": str(int(checkStartTime)),
-                        "lastRunDuration": str(checkEndTime - checkStartTime),
+                        "lastUpdate": str(int(checkStartTime * 1000)),
+                        "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
                         "message": "down since" + str(ts)
                     }
                     failing_services.append(serviceName)
@@ -303,8 +303,8 @@ def monitProcess( processes_info ):
             checkEndTime = time.time()
             service_status[serviceName] = {
                 "success": "false",
-                "lastUpdate": str(int(checkStartTime)),
-                "lastRunDuration": str(checkEndTime - checkStartTime),
+                "lastUpdate": str(int(checkStartTime * 1000)),
+                "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
                 "message": "down since" + str(csec)
             }
             failing_services.append(serviceName)
@@ -312,8 +312,8 @@ def monitProcess( processes_info ):
             checkEndTime = time.time()
             service_status[serviceName] = {
                 "success": "true",
-                "lastUpdate": str(int(checkStartTime)),
-                "lastRunDuration": str(checkEndTime - checkStartTime),
+                "lastUpdate": str(int(checkStartTime * 1000)),
+                "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
                 "message": "service is running" + (", was restarted" if wasRestarted else "")
             }
 
@@ -410,8 +410,8 @@ def execute(script, checkType = "basic"):
             printd("Successful execution of " + script)
             return {
                 "success": "true",
-                "lastUpdate": str(int(checkStartTime)),
-                "lastRunDuration": str(checkEndTime - checkStartTime),
+                "lastUpdate": str(int(checkStartTime * 1000)),
+                "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
                 "message": output
             }
         return {} #Skip script if no output is received
@@ -419,8 +419,8 @@ def execute(script, checkType = "basic"):
         printd("Script execution failed " + script)
         return {
             "success": "false",
-            "lastUpdate": str(int(checkStartTime)),
-            "lastRunDuration": str(checkEndTime - checkStartTime),
+            "lastUpdate": str(int(checkStartTime * 1000)),
+            "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
             "message": output
         }
 

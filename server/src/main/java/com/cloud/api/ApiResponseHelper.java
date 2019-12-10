@@ -4219,7 +4219,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             healthCheckResponse.setCheckType(hcResult.getCheckType());
             healthCheckResponse.setResult(hcResult.getCheckResult());
             healthCheckResponse.setLastUpdated(hcResult.getLastUpdateTime());
-            healthCheckResponse.setDetails(hcResult.getCheckDetails());
+            healthCheckResponse.setDetails(hcResult.getParsedCheckDetails());
             responses.add(healthCheckResponse);
         }
         return responses;

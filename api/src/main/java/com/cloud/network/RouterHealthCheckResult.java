@@ -30,5 +30,5 @@ public interface RouterHealthCheckResult {
 
     Date getLastUpdateTime();
 
-    String getCheckDetails();
+    String getParsedCheckDetails();
 }

@@ -1295,7 +1295,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         connectivityVO.setCheckResult(connected);
         connectivityVO.setLastUpdateTime(new Date());
-        connectivityVO.setCheckDetails(message);
+        connectivityVO.setCheckDetails(StringUtils.isNotEmpty(message) ? message.getBytes(Charset.forName("US-ASCII")) : null);
 
         if (newEntry) {
             routerHealthCheckResultDao.persist(connectivityVO);
@@ -1314,7 +1314,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         try {
             s_logger.info("Parsing and updating DB health check data for router: " + routerId);
-            s_logger.debug("Retrieved data" + monitoringResult);
+            s_logger.info("Retrieved data" + monitoringResult);
             final Map<String, Map<String, RouterHealthCheckResultVO>> checksInDb = getHealthChecksFromDb(routerId);
             final Type t = new TypeToken<Map<String, Map<String, Map<String, String>>>>() {}.getType();
             final Map<String, Map<String, Map<String, String>>> checks = GsonHelper.getGson().fromJson(monitoringResult, t);
@@ -1348,14 +1348,14 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                         hcVo.setCheckResult(success);
                         hcVo.setLastUpdateTime(lastUpdate);
-                        hcVo.setCheckDetails(message);
+                        hcVo.setCheckDetails(StringUtils.isNotEmpty(message) ? message.getBytes(Charset.forName("US-ASCII")) : null);
                         if (newEntry) {
                             routerHealthCheckResultDao.persist(hcVo);
                         } else {
                             routerHealthCheckResultDao.update(hcVo.getId(), hcVo);
                         }
                         healthChecks.add(hcVo);
-                        s_logger.debug("Found health check " + hcVo + " which took running duration (secs) " + lastRunDuration);
+                        s_logger.info("Found health check " + hcVo + " which took running duration (secs) " + lastRunDuration);
                     } catch (Exception ex) {
                         s_logger.error("Skipping health check: Exception while parsing check result data for router id " + routerId +
                                 ", check type: " + checkType + ", check name: " + checkName + ":" + ex.getLocalizedMessage());
@@ -1477,7 +1477,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             try {
                 origAnswer = _agentMgr.easySend(router.getHostId(), command);
             } catch (final Exception e) {
-                s_logger.warn("Error while collecting alerts from router: " + router.getInstanceName(), e);
+                s_logger.warn("Error while sending update data for health check to router: " + router.getInstanceName(), e);
                 return false;
             }
 

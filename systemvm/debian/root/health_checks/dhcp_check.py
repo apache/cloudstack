@@ -30,12 +30,13 @@ def main():
             entry = vM["macAddress"] + "," + vM["ip"] + "," + vM["vmName"]
             foundEntry = False
             for host in allHosts:
-                if host.strip().find(entry) == 0:
+                host = host.strip()
+                if host.find(vM["macAddress"]) != -1 and host.find(vM["ip"]) != -1 and host.find(vM["vmName"]) != -1:
                     foundEntry = True
                     break
 
             if not foundEntry:
-                print "Missing entry in dhcphosts.txt - " + entry
+                print "Missing elements in dhcphosts.txt - " + entry
                 exit(1)
 
         print "All " + str(len(vMs)) + " VMs are present in dhcphosts.txt"

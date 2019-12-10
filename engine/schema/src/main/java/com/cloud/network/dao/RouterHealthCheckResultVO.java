@@ -29,8 +29,6 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.apache.commons.lang.StringUtils;
-
 import com.cloud.network.RouterHealthCheckResult;
 
 @Entity
@@ -51,7 +49,7 @@ public class RouterHealthCheckResultVO implements RouterHealthCheckResult {
     private String checkType;
 
     @Column(name = "check_result")
-    boolean checkResult;
+    private boolean checkResult;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "last_update", updatable = true, nullable = true)
@@ -99,8 +97,12 @@ public class RouterHealthCheckResultVO implements RouterHealthCheckResult {
     }
 
     @Override
-    public String getCheckDetails() {
-        return checkDetails != null ? new String(checkDetails, Charset.forName("US-ASCII")) : null;
+    public String getParsedCheckDetails() {
+        return checkDetails != null ? new String(checkDetails, Charset.forName("US-ASCII")) : "";
+    }
+
+    public byte[] getCheckDetails() {
+        return checkDetails;
     }
 
     public void setCheckResult(boolean checkResult) {
@@ -111,17 +113,17 @@ public class RouterHealthCheckResultVO implements RouterHealthCheckResult {
         this.lastUpdateTime = lastUpdateTime;
     }
 
-    public void setCheckDetails(String checkDetails) {
-        this.checkDetails = StringUtils.isNotEmpty(checkDetails) ? checkDetails.getBytes(Charset.forName("US-ASCII")) : null;
+    public void setCheckDetails(byte[] checkDetails) {
+        this.checkDetails = checkDetails;
     }
 
     @Override
     public String toString() {
         return super.toString() +
-                "- check type: " + checkType+
+                "- check type: " + checkType +
                 ",check name: " + checkName +
                 ", check result: " + checkResult +
                 ", check last update: " + lastUpdateTime +
-                ", details: " + checkDetails;
+                ", details: " + getParsedCheckDetails();
     }
 }
