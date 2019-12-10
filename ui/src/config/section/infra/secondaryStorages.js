@@ -22,6 +22,13 @@ export default {
   permission: ['listImageStores'],
   columns: ['name', 'url', 'protocol', 'scope', 'zonename'],
   details: ['name', 'id', 'url', 'protocol', 'provider', 'scope', 'zonename'],
+  tabs: [{
+    name: 'details',
+    component: () => import('@/components/view/DetailsTab.vue')
+  }, {
+    name: 'Settings',
+    component: () => import('@/components/view/SettingsTab.vue')
+  }],
   actions: [
     {
       api: 'addImageStore',

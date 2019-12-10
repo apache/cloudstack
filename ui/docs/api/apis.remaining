@@ -23,7 +23,6 @@ createPhysicalNetwork
 createPortableIpRange
 createPortForwardingRule
 createPrivateGateway
-createRolePermission
 createSecondaryStagingStore
 createSnapshotFromVMSnapshot
 createStaticRoute
@@ -50,7 +49,6 @@ deletePortableIpRange
 deletePortForwardingRule
 deletePrivateGateway
 deleteProjectInvitation
-deleteRolePermission
 deleteSecondaryStagingStore
 deleteSnapshotPolicies
 deleteSslCert
@@ -58,7 +56,6 @@ deleteStaticRoute
 deleteStorageNetworkIpRange
 deleteVlanIpRange
 deleteVpnConnection
-deleteVpnCustomerGateway
 deleteVpnGateway
 findHostsForMigration
 findStoragePoolsForMigration
@@ -74,8 +71,6 @@ listDedicatedHosts
 listDedicatedPods
 listDedicatedZones
 listDeploymentPlanners
-listDetailOptions
-listDomainChildren
 listEgressFirewallRules
 listFirewallRules
 listHostHAProviders
@@ -95,7 +90,6 @@ listNetworkACLs
 listNetworkServiceProviders
 listNics
 listOsCategories
-listPhysicalNetworks
 listPortableIpRanges
 listPortForwardingRules
 listPrivateGateways
@@ -104,7 +98,6 @@ listProjectInvitations
 listRegisteredServicePackages
 listRemoteAccessVpns
 listResourceLimits
-listRolePermissions
 listSamlAuthorization
 listSecondaryStagingStores
 listSnapshotPolicies
@@ -134,7 +127,6 @@ revokeSecurityGroupEgress
 revokeSecurityGroupIngress
 startInternalLoadBalancerVM
 stopInternalLoadBalancerVM
-updateConfiguration
 updateDefaultNicForVirtualMachine
 updateLoadBalancerRule
 updateNetworkACLItem
@@ -143,9 +135,7 @@ updateNetworkServiceProvider
 updatePhysicalNetwork
 updateProjectInvitation
 updateResourceLimit
-updateRolePermission
 updateTrafficType
 updateVmNicIp
 updateVpnCustomerGateway
-uploadCustomCertificate
 uploadSslCert

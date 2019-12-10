@@ -27,6 +27,13 @@ export default {
     title: 'Hosts',
     param: 'clusterid'
   }],
+  tabs: [{
+    name: 'details',
+    component: () => import('@/components/view/DetailsTab.vue')
+  }, {
+    name: 'Settings',
+    component: () => import('@/components/view/SettingsTab.vue')
+  }],
   actions: [
     {
       api: 'addCluster',

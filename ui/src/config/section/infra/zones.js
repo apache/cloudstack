@@ -51,6 +51,13 @@ export default {
     title: 'Secondary Storage',
     param: 'zoneid'
   }],
+  tabs: [{
+    name: 'details',
+    component: () => import('@/components/view/DetailsTab.vue')
+  }, {
+    name: 'Settings',
+    component: () => import('@/components/view/SettingsTab.vue')
+  }],
   actions: [
     {
       api: 'createZone',

@@ -50,18 +50,18 @@
                 :dataSource="detailOptions[item.name]"
                 @change="val => handleInputChange(val, index)"
                 @pressEnter="e => updateDetail(index)" />
-              <a-button shape="circle" size="small" @click="updateDetail(index)" style="margin: 2px">
-                <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" style="font-size: 24px"/>
-              </a-button>
-              <a-button shape="circle" size="small" @click="hideEditDetail(index)" style="margin: 2px">
-                <a-icon type="close-circle" theme="twoTone" twoToneColor="#f5222d" style="font-size: 24px"/>
-              </a-button>
             </span>
             <span v-else>{{ item.value }}</span>
           </span>
         </a-list-item-meta>
         <div slot="actions">
-          <a-button shape="circle" @click="showEditDetail(index)">
+          <a-button shape="circle" size="default" @click="updateDetail(index)" v-if="item.edit">
+            <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
+          </a-button>
+          <a-button shape="circle" size="default" @click="hideEditDetail(index)" v-if="item.edit">
+            <a-icon type="close-circle" theme="twoTone" twoToneColor="#f5222d" />
+          </a-button>
+          <a-button shape="circle" @click="showEditDetail(index)" v-if="!item.edit">
             <a-icon type="edit" />
           </a-button>
         </div>

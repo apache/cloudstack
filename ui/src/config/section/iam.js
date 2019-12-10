@@ -90,6 +90,13 @@ export default {
         title: 'Users',
         param: 'account'
       }],
+      tabs: [{
+        name: 'details',
+        component: () => import('@/components/view/DetailsTab.vue')
+      }, {
+        name: 'Settings',
+        component: () => import('@/components/view/SettingsTab.vue')
+      }],
       actions: [
         {
           api: 'createAccount',
@@ -185,6 +192,9 @@ export default {
         {
           name: 'details',
           component: () => import('@/components/view/DetailsTab.vue')
+        }, {
+          name: 'Settings',
+          component: () => import('@/components/view/SettingsTab.vue')
         }
       ],
       treeView: true,

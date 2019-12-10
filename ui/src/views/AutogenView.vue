@@ -202,6 +202,7 @@
         :loading="loading"
         :columns="columns"
         :items="items"
+        @refresh="this.fetchData"
         v-if="!treeView" />
       <a-pagination
         class="row-element"
@@ -287,6 +288,7 @@ export default {
     '$route' (to, from) {
       if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/')) {
         this.page = 1
+        this.searchQuery = ''
         this.fetchData()
       }
     },

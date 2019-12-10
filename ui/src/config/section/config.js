@@ -26,7 +26,7 @@ export default {
       title: 'Global Settings',
       icon: 'setting',
       permission: ['listConfigurations'],
-      columns: ['name', 'description', 'category', 'value'],
+      columns: ['name', 'description', 'category', 'value', 'actions'],
       details: ['name', 'category', 'description', 'value']
     },
     {

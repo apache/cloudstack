@@ -22,7 +22,6 @@
     :columns="columns"
     :dataSource="items"
     :rowKey="record => record.id || record.name"
-    :scroll="{ x: '100%' }"
     :pagination="false"
     :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
     :rowClassName="getRowClassName"
@@ -101,10 +100,44 @@
     <a slot="zonename" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
     </a>
+
+    <template slot="value" slot-scope="text, record">
+      <a-input
+        v-if="editableValueKey === record.key"
+        :defaultValue="record.value"
+        v-model="editableValue"
+        @keydown.esc="editableValueKey = null"
+        @pressEnter="saveValue(record)">
+      </a-input>
+      <div v-else style="width: 200px; word-break: break-all">
+        {{ text }}
+      </div>
+    </template>
+    <template slot="actions" slot-scope="text, record">
+      <a-button
+        shape="circle"
+        v-if="editableValueKey !== record.key"
+        icon="edit"
+        @click="editValue(record)" />
+      <a-button
+        shape="circle"
+        @click="saveValue(record)"
+        v-if="editableValueKey === record.key" >
+        <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
+      </a-button>
+      <a-button
+        shape="circle"
+        size="default"
+        @click="editableValueKey = null"
+        v-if="editableValueKey === record.key" >
+        <a-icon type="close-circle" theme="twoTone" twoToneColor="#f5222d" />
+      </a-button>
+    </template>
   </a-table>
 </template>
 
 <script>
+import { api } from '@/api'
 import Console from '@/components/widgets/Console'
 import Status from '@/components/widgets/Status'
 
@@ -130,7 +163,9 @@ export default {
   },
   data () {
     return {
-      selectedRowKeys: []
+      selectedRowKeys: [],
+      editableValueKey: null,
+      editableValue: ''
     }
   },
   computed: {
@@ -154,6 +189,30 @@ export default {
       this.$store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
       this.$message.success(`Switched to "${project.name}"`)
       this.$router.push({ name: 'dashboard' })
+    },
+    saveValue (record) {
+      api('updateConfiguration', {
+        name: record.name,
+        value: this.editableValue
+      }).then(() => {
+        this.editableValueKey = null
+
+        this.$message.success('Setting Updated: ' + record.name)
+        this.$notification.warning({
+          message: 'Status',
+          description: 'Please restart your management server(s) for your new settings to take effect.'
+        })
+      }).catch(error => {
+        console.error(error)
+        this.$message.error('There was an error saving this setting.')
+      })
+        .finally(() => {
+          this.$emit('refresh')
+        })
+    },
+    editValue (record) {
+      this.editableValueKey = record.key
+      this.editableValue = record.value
     }
   }
 }
