@@ -12269,12 +12269,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .stop .icon,
 .removeVmwareDc .icon,
+.removeBackupChain .icon,
 .release .icon {
   background-position: 0 -31px;
 }
 
 .stop:hover .icon,
 .removeVmwareDc:hover .icon,
+.removeBackupChain:hover .icon,
 .release:hover .icon {
   background-position: 0 -613px;
 }
@@ -12348,14 +12350,16 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .attach .icon,
 .attachISO .icon,
 .attachDisk .icon,
+.restoreBackupVolume .icon,
 .associateProfileToBlade .icon {
   background-position: -104px -3px;
 }
 
 .attach:hover .icon,
 .attachISO:hover .icon,
+.restoreBackupVolume:hover .icon,
 .attachDisk:hover .icon {
-  background-position: -101px -585px;
+  background-position: -104px -585px;
 }
 
 .detach .icon,

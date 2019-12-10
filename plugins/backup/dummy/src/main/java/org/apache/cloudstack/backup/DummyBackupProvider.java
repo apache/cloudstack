@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
 public class DummyBackupProvider extends AdapterBase implements BackupProvider {
@@ -77,7 +78,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Override
     public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid) {
         s_logger.debug("Restoring volume " + volumeUuid + "from backup " + backup.getUuid() + " on the Dummy Backup Provider");
-        return new Pair<>(true, null);
+        throw new CloudRuntimeException("Dummy plugin does not support this feature");
     }
 
     @Override
@@ -93,18 +94,16 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Override
     public boolean removeVMFromBackupOffering(VirtualMachine vm) {
         s_logger.debug("Removing VM ID " + vm.getUuid() + " from backup offering by the Dummy Backup Provider");
-        final List<Backup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+        final List<Backup> backups = backupDao.listByVmId(null, vm.getId());
         for (final Backup backup : backups) {
-            if (backup.getExternalId().equals(vm.getBackupExternalId())) {
-                return true;
-            }
+            backupDao.remove(backup.getId());
         }
-        return false;
+        return true;
     }
 
     @Override
     public boolean willDeleteBackupsOnOfferingRemoval() {
-        return false;
+        return true;
     }
 
     @Override

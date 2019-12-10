@@ -2756,8 +2756,7 @@
                                         label: 'label.zone'
                                     },
                                     created: {
-                                        label: 'label.date',
-                                        converter: cloudStack.converters.toLocalDate
+                                        label: 'label.date'
                                     }
                                 },
                                 dataProvider: function(args) {
@@ -2837,6 +2836,130 @@
                                         }
                                     });
 
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+
+                            restoreBackupVolume: {
+                                label: 'Restore and Attach Backup Volume',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'Please confirm that you want to restore and attach the volume from the backup?';
+                                    },
+                                    notification: function(args) {
+                                        return 'Restore and Attach Backup Volume';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'Restore and Attach Backup Volume',
+                                    desc: 'Please select the volume you want to restore and attach to the VM.',
+                                    fields: {
+                                        volume: {
+                                            label: 'label.volume',
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function(args) {
+                                                var volumes = JSON.parse(args.context.backups[0].volumes);
+                                                var items = [];
+                                                $(volumes).each(function() {
+                                                    items.push({
+                                                        id: this.uuid,
+                                                        description: '(' + this.type + ') ' + this.uuid
+                                                    });
+                                                });
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        },
+                                        virtualmachine: {
+                                            label: 'label.virtual.machine',
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL("listVirtualMachines"),
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var vms = json.listvirtualmachinesresponse.virtualmachine;
+                                                        var items = [];
+                                                        $(vms).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.name
+                                                            });
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                },
+                                action: function(args) {
+                                    console.log(args);
+                                    var data = {
+                                        backupid: args.context.backups[0].id,
+                                        volumeid: args.data.volume,
+                                        virtualmachineid: args.data.virtualmachine
+                                    };
+                                    $.ajax({
+                                        url: createURL("restoreVolumeFromBackupAndAttachToVM"),
+                                        data: data,
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.restorevolumefrombackupandattachtovmresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
+
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+
+                            removeBackupChain: {
+                                label: 'Delete Backup Chain',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'Are you sure you want to remove VM from backup offering and delete the backup chain?';
+                                    },
+                                    notification: function(args) {
+                                        return 'Delete Backup Chain';
+                                    }
+                                },
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("removeVirtualMachineFromBackupOffering"),
+                                        data: {
+                                          virtualmachineid: args.context.backups[0].virtualmachineid,
+                                          forced: true
+                                        },
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.removevirtualmachinefrombackupofferingresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
                                 },
                                 notification: {
                                     poll: pollAsyncJobResult
@@ -2973,6 +3096,8 @@
         allowedActions.push("remove");
         allowedActions.push("startBackup");
         allowedActions.push("restoreBackup");
+        allowedActions.push("restoreBackupVolume");
+        allowedActions.push("removeBackupChain");
 
         return allowedActions;
     };
