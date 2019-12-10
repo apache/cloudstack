@@ -2330,7 +2330,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = _tmpltDao.findById(templateId);
         templateStore.setDownloadState(Status.DOWNLOADED);
         templateStore.setState(ObjectInDataStoreStateMachine.State.Ready);
-        templateStore.setInstallPath("template/tmpl/2/" + templateId + "/" + template.getUuid() + "." + fileExtension);
+        Long userId = CallContext.current().getCallingUserId();
+        templateStore.setInstallPath(String.format("template/tmpl/%d/%d/%s.%s", userId, templateId, template.getUuid(), fileExtension));
         templateStore.setErrorString(null);
         template.setState(VirtualMachineTemplate.State.Active);
         templateStore.setSize(size);
@@ -2418,10 +2419,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 inputFile = "/tmp/" + template.getUuid() + "." + fileExtension;
             }
 
-            String finalDestination = mountPoint + "/template/tmpl/2/" + template.getId() + "/"+ template.getUuid() + "." + fileExtension;
+            Long userId = CallContext.current().getCallingUserId();
+            String finalDestination = String.format("%s/template/tmpl/%d/%d/%s.%s", mountPoint, userId, template.getId(), template.getUuid(), fileExtension);
 
             // create folder
-            result = Script.runSimpleBashScriptForExitValue("mkdir -p " + mountPoint + "/template/tmpl/2/" + template.getId(), 10000);
+            result = Script.runSimpleBashScriptForExitValue(String.format("mkdir -p %s/template/tmpl/%d/%d", mountPoint, userId, template.getId()), 10000);
             if (result != 0){
                 throw new CloudRuntimeException("Unable to create temporary mount folders.");
             }
@@ -2435,7 +2437,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             // Create new template properties File
             PrintWriter writer = null;
             try {
-                writer = new PrintWriter(mountPoint + "/template/tmpl/2/" + template.getId() + "/template.properties", "UTF-8");
+                writer = new PrintWriter(String.format("%s/template/tmpl/%d/%d/template.properties", mountPoint, userId, template.getId()), "UTF-8");
             } catch (FileNotFoundException | UnsupportedEncodingException e) {
                 throw new CloudRuntimeException("Unable to create system VM template properties file");
             }
