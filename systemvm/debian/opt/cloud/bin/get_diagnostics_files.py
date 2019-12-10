@@ -67,17 +67,10 @@ def zip_files(files):
         zf.close()
         print zf_name
 
-def get_log_file_name(script):
-    prefix = script
-    if script.find("."):
-        prefix = script.split('.')[0]
-
-    return prefix + '.log'
-
 
 def execute_shell_script(script):
     script = script.strip()
-    outputfile = get_log_file_name(script)
+    outputfile = script + '.log'
 
     if script == 'iptables':
         cmd = 'iptables-save'
