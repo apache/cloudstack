@@ -350,7 +350,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_SCHEDULE_CONFIGURE, eventDescription = "configuring VM backup schedule", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_SCHEDULE_CONFIGURE, eventDescription = "configuring VM backup schedule")
     public BackupSchedule configureBackupSchedule(CreateBackupScheduleCmd cmd) {
         final Long vmId = cmd.getVmId();
         final DateUtil.IntervalType intervalType = cmd.getIntervalType();
@@ -410,7 +410,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_SCHEDULE_DELETE, eventDescription = "deleting VM backup schedule", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_SCHEDULE_DELETE, eventDescription = "deleting VM backup schedule")
     public boolean deleteBackupSchedule(final Long vmId) {
         final VMInstanceVO vm = vmInstanceDao.findById(vmId);
         if (vm == null) {

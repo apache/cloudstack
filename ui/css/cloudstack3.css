@@ -12418,11 +12418,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -36px -673px;
 }
 
-.recurringSnapshot .icon {
+.recurringSnapshot .icon,
+.configureBackupSchedule .icon {
   background-position: -69px -95px;
 }
 
-.recurringSnapshot:hover .icon {
+.recurringSnapshot:hover .icon,
+.configureBackupSchedule:hover .icon {
   background-position: -69px -677px;
 }
 

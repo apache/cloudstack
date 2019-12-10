@@ -23,7 +23,6 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -34,7 +33,6 @@ import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.event.EventTypes;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -42,7 +40,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         description = "Creates a user-defined VM backup schedule",
         responseObject = BackupResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class CreateBackupScheduleCmd extends BaseAsyncCmd {
+public class CreateBackupScheduleCmd extends BaseCmd {
     public static final String APINAME = "createBackupSchedule";
 
     @Inject
@@ -126,15 +124,5 @@ public class CreateBackupScheduleCmd extends BaseAsyncCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_VM_BACKUP_SCHEDULE_CONFIGURE;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return "Configuring user-defined backup schedule for backup for VM ID " + vmId;
     }
 }

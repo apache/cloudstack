@@ -63,7 +63,7 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
             }
         });
         if (!result) {
-            LOGGER.warn("Failed to update Backup metrics for VM ID: " + vm.getId());
+            LOGGER.trace("Failed to update backup metrics for VM ID: " + vm.getId());
         }
     }
 
