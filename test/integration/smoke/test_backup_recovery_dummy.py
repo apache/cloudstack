@@ -46,7 +46,7 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
         cls.vm = VirtualMachine.create(cls.api_client, cls.services["small"], accountid=cls.account.name,
                                        domainid=cls.account.domainid, serviceofferingid=cls.offering.id,
                                        mode=cls.services["mode"])
-        cls._cleanup = [cls.offering, cls.account]
+        cls._cleanup = [cls.offering, cls.account, cls.vm]
 
         # Check backup configuration values, set them to enable the dummy provider
 
@@ -132,13 +132,12 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
         backups = Backup.list(self.apiclient, self.vm.id)
         self.assertEqual(backups, None, "There should not exist any backup for the VM")
 
-        # Create a VM backup
+        # Assign VM to offering and create ad-hoc backup
         self.offering.assignOffering(self.apiclient, self.vm.id)
         Backup.create(self.apiclient, self.vm.id)
 
         # Verify backup is created for the VM
         backups = Backup.list(self.apiclient, self.vm.id)
-        print backups
         self.assertEqual(len(backups), 1, "There should exist only one backup for the VM")
         backup = backups[0]
 

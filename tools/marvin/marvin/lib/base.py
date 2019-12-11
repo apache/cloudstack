@@ -5335,6 +5335,7 @@ class Backup:
 
         cmd = listBackups.listBackupsCmd()
         cmd.virtualmachineid = vmid
+        cmd.listall = True
         return (apiclient.listBackups(cmd))
 
     def restoreVM(self, apiclient):

@@ -85,7 +85,6 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_backup` (
   `size` bigint(20) DEFAULT 0,
   `protected_size` bigint(20) DEFAULT 0,
   `created` datetime NOT NULL,
-  `removed` datetime,
   PRIMARY KEY (`id`),
   INDEX `i_usage_backup` (`zone_id`,`account_id`,`vm_id`,`created`)
 ) ENGINE=InnoDB CHARSET=utf8;

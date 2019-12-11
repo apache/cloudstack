@@ -472,14 +472,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     public Pair<List<Backup>, Integer> listBackups(final ListBackupsCmd cmd) {
         final Long id = cmd.getId();
-        final String vmUuid = cmd.getVmId();
+        final Long vmId = cmd.getVmId();
         final Long zoneId = cmd.getZoneId();
         final Account caller = CallContext.current().getCallingAccount();
         final String keyword = cmd.getKeyword();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
-        if (vmUuid != null) {
-            VMInstanceVO vm = vmInstanceDao.findByUuidIncludingRemoved(vmUuid);
+        if (vmId != null) {
+            VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
             if (vm != null) {
                 accountManager.checkAccess(caller, null, true, vm);
             }
@@ -515,8 +515,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             sc.setParameters("id", id);
         }
 
-        if (vmUuid != null) {
-            sc.setParameters("vmId", vmUuid);
+        if (vmId != null) {
+            sc.setParameters("vmId", vmId);
         }
 
         if (zoneId != null) {
