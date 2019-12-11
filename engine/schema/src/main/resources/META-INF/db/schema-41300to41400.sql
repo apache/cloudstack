@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_backup` (
   `account_id` bigint(20) unsigned NOT NULL,
   `domain_id` bigint(20) unsigned NOT NULL,
   `vm_id` bigint(20) unsigned NOT NULL,
+  `backup_offering_id` bigint(20) unsigned NOT NULL,
   `size` bigint(20) DEFAULT 0,
   `protected_size` bigint(20) DEFAULT 0,
   `created` datetime NOT NULL,

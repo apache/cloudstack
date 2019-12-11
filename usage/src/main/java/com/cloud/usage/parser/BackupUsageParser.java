@@ -72,8 +72,9 @@ public class BackupUsageParser {
         for (final UsageBackupVO usageBackup : usageBackups) {
             final Long vmId = usageBackup.getVmId();
             final Long zoneId = usageBackup.getZoneId();
+            final Long offeringId = usageBackup.getBackupOfferingId();
             if (vmUsageMap.get(vmId) == null) {
-                vmUsageMap.put(vmId, new BackupUsageParser.BackupInfo(new Backup.Metric(0L, 0L), zoneId, vmId));
+                vmUsageMap.put(vmId, new BackupUsageParser.BackupInfo(new Backup.Metric(0L, 0L), zoneId, vmId, offeringId));
             }
             final Backup.Metric metric = vmUsageMap.get(vmId).getMetric();
             metric.setBackupSize(metric.getBackupSize() + usageBackup.getSize());
@@ -83,6 +84,7 @@ public class BackupUsageParser {
         for (final BackupInfo backupInfo : vmUsageMap.values()) {
             final Long vmId = backupInfo.getVmId();
             final Long zoneId = backupInfo.getZoneId();
+            final Long offeringId = backupInfo.getOfferingId();
             final Double rawUsage = (double) backupInfo.getMetric().getBackupSize();
             final Double sizeGib = rawUsage / (1024.0 * 1024.0 * 1024.0);
             final String description = String.format("Backup usage VM ID: %d", vmId);
@@ -90,7 +92,7 @@ public class BackupUsageParser {
 
             final UsageVO usageRecord =
                     new UsageVO(zoneId, account.getAccountId(), account.getDomainId(), description, usageDisplay,
-                            UsageTypes.BACKUP, rawUsage, vmId, null, null, null, vmId,
+                            UsageTypes.BACKUP, rawUsage, vmId, null, offeringId, null, vmId,
                             backupInfo.getMetric().getBackupSize(), backupInfo.getMetric().getDataSize(), startDate, endDate);
             s_usageDao.persist(usageRecord);
         }
@@ -102,11 +104,13 @@ public class BackupUsageParser {
         Backup.Metric metric;
         Long zoneId;
         Long vmId;
+        Long offeringId;
 
-        public BackupInfo(Backup.Metric metric, Long zoneId, Long vmId) {
+        public BackupInfo(Backup.Metric metric, Long zoneId, Long vmId, Long offeringId) {
             this.metric = metric;
             this.zoneId = zoneId;
             this.vmId = vmId;
+            this.offeringId = offeringId;
         }
 
         public Backup.Metric getMetric() {
@@ -119,6 +123,10 @@ public class BackupUsageParser {
 
         public Long getVmId() {
             return vmId;
+        }
+
+        public Long getOfferingId() {
+            return offeringId;
         }
     }
 }

@@ -51,6 +51,9 @@ public class UsageBackupVO implements InternalIdentity {
     @Column(name = "vm_id")
     private long vmId;
 
+    @Column(name = "backup_offering_id")
+    private long backupOfferingId;
+
     @Column(name = "size")
     private long size;
 
@@ -68,20 +71,22 @@ public class UsageBackupVO implements InternalIdentity {
     protected UsageBackupVO() {
     }
 
-    public UsageBackupVO(long zoneId, long accountId, long domainId, long vmId, Date created) {
+    public UsageBackupVO(long zoneId, long accountId, long domainId, long vmId, long backupOfferingId, Date created) {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
         this.vmId = vmId;
+        this.backupOfferingId = backupOfferingId;
         this.created = created;
     }
 
-    public UsageBackupVO(long id, long zoneId, long accountId, long domainId, long vmId, long size, long protectedSize, Date created, Date removed) {
+    public UsageBackupVO(long id, long zoneId, long accountId, long domainId, long vmId, long backupOfferingId, long size, long protectedSize, Date created, Date removed) {
         this.id = id;
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
         this.vmId = vmId;
+        this.backupOfferingId = backupOfferingId;
         this.size = size;
         this.protectedSize = protectedSize;
         this.created = created;
@@ -123,6 +128,14 @@ public class UsageBackupVO implements InternalIdentity {
 
     public void setVmId(long vmId) {
         this.vmId = vmId;
+    }
+
+    public long getBackupOfferingId() {
+        return backupOfferingId;
+    }
+
+    public void setBackupOfferingId(long backupOfferingId) {
+        this.backupOfferingId = backupOfferingId;
     }
 
     public long getSize() {

@@ -143,10 +143,9 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupSchedule;
-import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
@@ -384,8 +383,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     NetworkDetailsDao networkDetailsDao;
     @Inject
     private VMSnapshotDao vmSnapshotDao;
-    @Inject
-    private BackupDao backupDao;
     @Inject
     private BackupOfferingDao backupOfferingDao;
 
@@ -3668,15 +3665,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setUsageId(vmInstance.getUuid());
                 builder.append(" for VM ").append(vmInstance.getHostName())
                         .append(" (").append(vmInstance.getUuid()).append(")");
-                final Backup backup = backupDao.findByVmIdIncludingRemoved(vmInstance.getId());
-                if (backup != null) {
-                    final BackupOffering backupOffering = backupOfferingDao.findById(vmInstance.getBackupOfferingId());
-                    if (backupOffering != null) {
-                        builder.append(" and backup offering ").append(backupOffering.getName())
-                                .append(" (").append(backupOffering.getUuid()).append(", user ad-hoc/scheduled backup allowed: ")
-                                .append(backupOffering.isUserDrivenBackupAllowed()).append(")");
-                    }
+                final BackupOffering backupOffering = backupOfferingDao.findByIdIncludingRemoved(usageRecord.getOfferingId());
+                if (backupOffering != null) {
+                    builder.append(" and backup offering ").append(backupOffering.getName())
+                            .append(" (").append(backupOffering.getUuid()).append(", user ad-hoc/scheduled backup allowed: ")
+                            .append(backupOffering.isUserDrivenBackupAllowed()).append(")");
                 }
+
             }
             usageRecResponse.setDescription(builder.toString());
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {

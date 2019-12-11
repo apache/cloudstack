@@ -1904,12 +1904,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         Long vmId = event.getResourceId();
         Long zoneId = event.getZoneId();
         Long accountId = event.getAccountId();
+        Long backupOfferingId = event.getOfferingId();
         Account account = _accountDao.findByIdIncludingRemoved(event.getAccountId());
         Long domainId = account.getDomainId();
         Date created = event.getCreateDate();
 
         if (EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN.equals(event.getType())) {
-            final UsageBackupVO backupVO = new UsageBackupVO(zoneId, accountId, domainId, vmId, created);
+            final UsageBackupVO backupVO = new UsageBackupVO(zoneId, accountId, domainId, vmId, backupOfferingId, created);
             usageBackupDao.persist(backupVO);
         } else if (EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE.equals(event.getType())) {
             usageBackupDao.removeUsage(accountId, zoneId, vmId);

@@ -42,7 +42,7 @@ import com.cloud.vm.VirtualMachine;
 @Component
 public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> implements UsageBackupDao {
     public static final Logger LOGGER = Logger.getLogger(UsageBackupDaoImpl.class);
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, vm_id, size, protected_size, created, removed FROM cloud_usage.usage_backup WHERE " +
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, vm_id, backup_offering_id, size, protected_size, created, removed FROM cloud_usage.usage_backup WHERE " +
             " account_id = ? AND ((removed IS NULL AND created <= ?) OR (created BETWEEN ? AND ?) OR (removed BETWEEN ? AND ?) " +
             " OR ((created <= ?) AND (removed >= ?)))";
 
@@ -105,18 +105,19 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
 
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                //id, zone_id, account_id, domain_iVMSnapshotVOd, vm_id, disk_offering_id, size, created, processed
+                //id, zone_id, account_id, domain_id, vm_id, disk_offering_id, size, created, processed
                 Long id = Long.valueOf(rs.getLong(1));
                 Long zoneId = Long.valueOf(rs.getLong(2));
                 Long acctId = Long.valueOf(rs.getLong(3));
                 Long domId = Long.valueOf(rs.getLong(4));
                 Long vmId = Long.valueOf(rs.getLong(5));
-                Long size = Long.valueOf(rs.getLong(6));
-                Long pSize = Long.valueOf(rs.getLong(7));
+                Long backupOfferingId = Long.valueOf(rs.getLong(6));
+                Long size = Long.valueOf(rs.getLong(7));
+                Long pSize = Long.valueOf(rs.getLong(8));
                 Date createdDate = null;
                 Date removedDate = null;
-                String createdTS = rs.getString(8);
-                String removedTS = rs.getString(9);
+                String createdTS = rs.getString(9);
+                String removedTS = rs.getString(10);
 
                 if (createdTS != null) {
                     createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
@@ -124,7 +125,7 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
                 if (removedTS != null) {
                     removedDate = DateUtil.parseDateString(s_gmtTimeZone, removedTS);
                 }
-                usageRecords.add(new UsageBackupVO(id, zoneId, acctId, domId, vmId, size, pSize, createdDate, removedDate));
+                usageRecords.add(new UsageBackupVO(id, zoneId, acctId, domId, vmId, backupOfferingId, size, pSize, createdDate, removedDate));
             }
         } catch (Exception e) {
             txn.rollback();
