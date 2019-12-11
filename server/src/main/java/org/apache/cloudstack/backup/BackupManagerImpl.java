@@ -335,7 +335,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 vm.setBackupExternalId(null);
                 vm.setBackupVolumes(null);
                 boolean result = backupProvider.removeVMFromBackupOffering(vm);
-                if (result && vmInstanceDao.update(vm.getId(), vm)) {
+                if ((result || forced) && vmInstanceDao.update(vm.getId(), vm)) {
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
                             "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null,
                             Backup.class.getSimpleName(), vm.getUuid());
