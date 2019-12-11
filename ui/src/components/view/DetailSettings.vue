@@ -41,7 +41,7 @@
     <a-list size="large">
       <a-list-item :key="index" v-for="(item, index) in details">
         <a-list-item-meta>
-          <span slot="title">{{ item.name }}</span>
+          <span slot="title"><strong>{{ item.name }}</strong></span>
           <span slot="description" style="word-break: break-all">
             <span v-if="item.edit" style="display: flex">
               <a-auto-complete
@@ -51,7 +51,7 @@
                 @change="val => handleInputChange(val, index)"
                 @pressEnter="e => updateDetail(index)" />
             </span>
-            <span v-else>{{ item.value }}</span>
+            <span v-else @click="showEditDetail(index)">{{ item.value }}</span>
           </span>
         </a-list-item-meta>
         <div slot="actions">

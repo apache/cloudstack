@@ -37,7 +37,7 @@
             :tab="$t(tab.name)"
             :key="tab.name"
             v-if="'show' in tab ? tab.show(resource, $route) : true">
-            <component :is="tab.component" :resource="resource" :loading="loading" />
+            <component :is="tab.component" :resource="resource" :loading="loading" :tab="activeTab" />
           </a-tab-pane>
         </a-tabs>
       </a-card>
@@ -74,6 +74,11 @@ export default {
           component: DetailsTab
         }]
       }
+    }
+  },
+  data () {
+    return {
+      activeTab: ''
     }
   },
   methods: {

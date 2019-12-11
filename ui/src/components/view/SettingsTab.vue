@@ -1,5 +1,5 @@
 <template>
-  <a-list size="large" class="list" :loading="loading">
+  <a-list size="large" class="list" :loading="loading || tabLoading">
     <a-list-item :key="index" v-for="(item, index) in items" class="item">
       <a-list-item-meta>
         <span slot="title" style="word-break: break-all"><strong>{{ item.name }}</strong></span>
@@ -15,7 +15,7 @@
           @keydown.esc="editableValueKey = null"
           @pressEnter="updateData(item)">
         </a-input>
-        <span v-else class="value">
+        <span v-else class="value" @click="setEditableSetting(item, index)">
           {{ item.value }}
         </span>
       </div>
@@ -64,7 +64,8 @@ export default {
       items: [],
       scopeKey: '',
       editableValueKey: null,
-      editableValue: ''
+      editableValue: '',
+      tabLoading: false
     }
   },
   beforeMount () {
@@ -95,14 +96,15 @@ export default {
     this.fetchData()
   },
   watch: {
-    resource: newItem => {
+    resource: function (newItem, oldItem) {
       if (!newItem.id) return
+      this.resource = newItem
       this.fetchData()
     }
   },
   methods: {
     fetchData (callback) {
-      this.loading = true
+      this.tabLoading = true
       api('listConfigurations', {
         [this.scopeKey]: this.resource.id,
         listAll: true
@@ -112,13 +114,13 @@ export default {
         console.error(error)
         this.$message.error('There was an error loading these settings.')
       }).finally(() => {
-        this.loading = false
+        this.tabLoading = false
         if (!callback) return
         callback()
       })
     },
     updateData (item) {
-      this.loading = true
+      this.tabLoading = true
       api('updateConfiguration', {
         [this.scopeKey]: this.resource.id,
         name: item.name,
@@ -133,7 +135,7 @@ export default {
           description: 'There was an error saving this setting. Please try again later.'
         })
       }).finally(() => {
-        this.loading = false
+        this.tabLoading = false
         this.fetchData(() => {
           this.editableValueKey = null
         })
