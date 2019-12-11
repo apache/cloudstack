@@ -52,6 +52,11 @@ public class VeeamBackupOffering implements BackupOffering {
     }
 
     @Override
+    public boolean isUserDrivenBackupAllowed() {
+        return false;
+    }
+
+    @Override
     public String getProvider() {
         return "veeam";
     }
