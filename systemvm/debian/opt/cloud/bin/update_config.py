@@ -29,7 +29,8 @@ import json
 logging.basicConfig(filename='/var/log/cloud.log', level=logging.INFO, format='%(asctime)s  %(filename)s %(funcName)s:%(lineno)d %(message)s')
 
 # first commandline argument should be the file to process
-if (len(sys.argv) != 2):
+argc = len(sys.argv)
+if argc != 2 and argc != 3:
     logging.error("Invalid usage, args passed: %s" % sys.argv)
     sys.exit(1)
 

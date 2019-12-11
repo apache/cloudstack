@@ -22,7 +22,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import (stopVirtualMachine,
                                   stopRouter,
                                   startRouter,
-                                  getRouterHealthCheckResults)
+                                  listRouterHealthCheckResults)
 from marvin.lib.utils import (cleanup_resources,
                               get_process_status)
 from marvin.lib.base import (ServiceOffering,
@@ -635,7 +635,7 @@ class TestRouterServices(cloudstackTestCase):
         cmd = listRouterHealthCheckResults.listRouterHealthCheckResultsCmd()
         cmd.id = router.id
         cmd.performfreshchecks = True # Perform fresh checks as a newly created router may not have results
-        healthData = self.api_client.getRouterHealthCheckResults(cmd)
+        healthData = self.api_client.listRouterHealthCheckResults(cmd)
         self.info("Router ID: %s & Router state: %s" % (
             router.id, router.state
         ))

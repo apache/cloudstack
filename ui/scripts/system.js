@@ -10610,12 +10610,12 @@
                                                     'performfreshchecks': (args.data.performfreshchecks === 'on')
                                                 };
                                             $.ajax({
-                                                url: createURL('getRouterHealthCheckResults'),
+                                                url: createURL('listRouterHealthCheckResults'),
                                                 dataType: 'json',
                                                 data: data,
                                                 async: false,
                                                 success: function (json) {
-                                                    var hcdata = json.getrouterhealthcheckresultsresponse
+                                                    var hcdata = json.listrouterhealthcheckresultsresponse
                                                     $('div.overlay').remove()
                                                     $('.loading-overlay').remove()
                                                     $('div.loading-overlay').remove()
