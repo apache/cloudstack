@@ -3027,7 +3027,7 @@
                                         }
                                     },
                                     allowuserdrivenbackups: {
-                                        label: 'Allow User Driven Backups',
+                                        label: 'label.backup.user.driven',
                                         isBoolean: true,
                                         isChecked: true
                                     }
@@ -3155,6 +3155,9 @@
                                     },
                                     externalid: {
                                         label: 'label.external.id',
+                                    },
+                                    allowuserdrivenbackups: {
+                                        label: 'label.backup.user.driven'
                                     },
                                     zoneid: {
                                         label: 'label.zone.id'

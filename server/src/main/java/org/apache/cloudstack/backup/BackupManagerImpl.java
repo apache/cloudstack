@@ -96,6 +96,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -474,6 +475,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final Long vmId = cmd.getVmId();
         final Long zoneId = cmd.getZoneId();
         final Account caller = CallContext.current().getCallingAccount();
+        final String keyword = cmd.getKeyword();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         if (vmId != null) {
@@ -499,6 +501,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         sb.and("vmId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
 
+        if (keyword != null) {
+            SearchBuilder<VMInstanceVO> vmSearch = vmInstanceDao.createSearchBuilder();
+            vmSearch.and("name", vmSearch.entity().getHostName(), SearchCriteria.Op.LIKE);
+            sb.groupBy(sb.entity().getId());
+            sb.join("vmSearch", vmSearch, sb.entity().getVmId(), vmSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
         SearchCriteria<BackupVO> sc = sb.create();
         accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
@@ -512,6 +521,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
+        }
+
+        if (keyword != null) {
+            sc.setJoinParameters("vmSearch", "name", "%" + keyword + "%");
         }
 
         Pair<List<BackupVO>, Integer> result = backupDao.searchAndCount(sc, searchFilter);

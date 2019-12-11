@@ -45,6 +45,10 @@ public class BackupOfferingResponse extends BaseResponse {
     @Param(description = "external ID on the provider side")
     private String externalId;
 
+    @SerializedName(ApiConstants.ALLOW_USER_DRIVEN_BACKUPS)
+    @Param(description = "whether offering allows user driven ad-hoc/scheduled backups")
+    private Boolean userDrivenBackups;
+
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "zone ID")
     private String zoneId;
@@ -71,6 +75,10 @@ public class BackupOfferingResponse extends BaseResponse {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public void setUserDrivenBackups(Boolean userDrivenBackups) {
+        this.userDrivenBackups = userDrivenBackups;
     }
 
     public void setZoneId(String zoneId) {

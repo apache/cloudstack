@@ -58,6 +58,7 @@ public class BackupOfferingDaoImpl extends GenericDaoBase<BackupOfferingVO, Long
         response.setName(offering.getName());
         response.setDescription(offering.getDescription());
         response.setExternalId(offering.getExternalId());
+        response.setUserDrivenBackups(offering.isUserDrivenBackupAllowed());
         if (zone != null) {
             response.setZoneId(zone.getUuid());
             response.setZoneName(zone.getName());
