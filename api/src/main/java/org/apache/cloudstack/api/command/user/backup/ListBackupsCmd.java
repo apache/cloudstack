@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
@@ -62,14 +61,13 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
             entityType = BackupResponse.class,
-            description = "id of the backup")
+            description = "ID of the backup")
     private Long id;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
-            type = CommandType.UUID,
-            entityType = UserVmResponse.class,
-            description = "id of the VM")
-    private Long vmId;
+            type = CommandType.STRING,
+            description = "ID of the VM")
+    private String vmId;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
@@ -85,7 +83,7 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
         return id;
     }
 
-    public Long getVmId() {
+    public String getVmId() {
         return vmId;
     }
 

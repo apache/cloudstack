@@ -62,13 +62,11 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
 
         # Import a dummy backup offering to use on tests
 
-        cls.external_policies = BackupOffering.listExternal(cls.api_client, cls.zone.id)
-        cls.debug("Importing backup offering %s - %s" % (cls.external_policies[0].externalid, cls.external_policies[0].name))
-        cls.policy = BackupOffering.importExisting(cls.api_client, cls.zone.id, cls.external_policies[0].externalid,
-                                                 cls.external_policies[0].name, cls.external_policies[0].description)
-        cls._cleanup.append(cls.policy)
-
-        return
+        cls.provider_offerings = BackupOffering.listExternal(cls.api_client, cls.zone.id)
+        cls.debug("Importing backup offering %s - %s" % (cls.provider_offerings[0].externalid, cls.provider_offerings[0].name))
+        cls.offering = BackupOffering.importExisting(cls.api_client, cls.zone.id, cls.provider_offerings[0].externalid,
+                                                   cls.provider_offerings[0].name, cls.provider_offerings[0].description)
+        cls._cleanup.append(cls.offering)
 
     @classmethod
     def tearDownClass(cls):
@@ -83,85 +81,46 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
-        return
 
     def tearDown(self):
         try:
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     @attr(tags=["advanced", "backup"], required_hardware="false")
-    def test_import_backup_policies(self):
+    def test_import_backup_offering(self):
         """
-        Import existing backup policies from Dummy Backup and Recovery Provider
+        Import provider backup offering from Dummy Backup and Recovery Provider
         """
-
-        # Validate the following:
-        # 1. Import a backup offering from the dummy provider
-        # 2. List internal backup policies, policy id should be listed
-        # 3. Delete backup offering
-        # 4. List internal backup policies, policy id should not be listed
 
         # Import backup offering
-        ext_policy = self.external_policies[1]
-        self.debug("Importing backup offering %s - %s" % (ext_policy.externalid, ext_policy.name))
-        policy = BackupOffering.importExisting(self.apiclient, self.zone.id, ext_policy.externalid,
-                                             ext_policy.name, ext_policy.description)
+        provider_offering = self.provider_offerings[1]
+        self.debug("Importing backup offering %s - %s" % (provider_offering.externalid, provider_offering.name))
+        offering = BackupOffering.importExisting(self.apiclient, self.zone.id, provider_offering.externalid,
+                                             provider_offering.name, provider_offering.description)
 
-        # Verify policy is listed
-        imported_policies = BackupOffering.listInternal(self.apiclient, self.zone.id)
-        self.assertIsInstance(imported_policies, list, "List Backup Policies should return a valid response")
-        self.assertNotEqual(len(imported_policies), 0, "Check if the list API returns a non-empty response")
-        matching_policies = [x for x in imported_policies if x.id == policy.id]
-        self.assertNotEqual(len(matching_policies), 0, "Check if there is a matching policy")
+        # Verify offering is listed
+        imported_offering = BackupOffering.listByZone(self.apiclient, self.zone.id)
+        self.assertIsInstance(imported_offering, list, "List Backup Offerings should return a valid response")
+        self.assertNotEqual(len(imported_offering), 0, "Check if the list API returns a non-empty response")
+        matching_offerings = [x for x in imported_offering if x.id == offering.id]
+        self.assertNotEqual(len(matching_offerings), 0, "Check if there is a matching offering")
 
         # Delete backup offering
-        self.debug("Deleting backup offering %s" % policy.id)
-        policy.delete(self.apiclient)
+        self.debug("Deleting backup offering %s" % offering.id)
+        offering.delete(self.apiclient)
 
-        #  Verify policy is not listed
-        imported_policies = BackupOffering.listInternal(self.apiclient, self.zone.id)
-        self.assertIsInstance(imported_policies, list, "List Backup Policies should return a valid response")
-        matching_policies = [x for x in imported_policies if x.id == policy.id]
-        self.assertEqual(len(matching_policies), 0, "Check there is not a matching policy")
-
-    @attr(tags=["advanced", "backup"], required_hardware="false")
-    def test_add_vm_to_backup_Policy(self):
-        """
-        Assign a VM to a backup offering
-        """
-
-        # Validate the following:
-        # 1. Add VM to backup offering
-        # 2. Verify a mapping between the VM and the backup offering exists
-        # 3. Remove VM from backup offering
-        # 4. Verify there is no mapping between the VM and the backup offering
-
-        # Add VM to backup offering
-        self.debug("Adding VM %s to backup offering %s" % (self.vm.id, self.policy.id))
-        self.policy.addVM(self.apiclient, self.vm.id)
-
-        # Verify a mapping between backup offering and VM is created on DB
-        mappings = BackupOffering.listVMMappings(self.apiclient, self.policy.id, self.vm.id, self.zone.id)
-        self.assertNotEqual(len(mappings), 0, "A mapping between VM and backup offering should exist")
-        self.assertNotEqual(mappings[0], None, "A mapping between VM and backup offering should exist")
-
-        # Remove VM from backup offering
-        self.debug("Removing VM %s from backup offering %s" % (self.vm.id, self.policy.id))
-        self.policy.removeVM(self.apiclient, self.vm.id)
-
-        # Verify mapping is removed
-        zone_mappings = BackupOffering.listVMMappings(self.apiclient, zoneid=self.zone.id)
-        matching_mappings = [x for x in zone_mappings if x.policyid == self.policy.id and x.virtualmachineid == self.vm.id]
-        self.assertEqual(len(matching_mappings), 0, "The mapping between VM and backup offering should be removed")
+        #  Verify offering is not listed
+        imported_offering = BackupOffering.listByZone(self.apiclient, self.zone.id)
+        self.assertIsInstance(imported_offering, list, "List Backup Offerings should return a valid response")
+        matching_offerings = [x for x in imported_offering if x.id == offering.id]
+        self.assertEqual(len(matching_offerings), 0, "Check there is not a matching offering")
 
     @attr(tags=["advanced", "backup"], required_hardware="false")
     def test_vm_backup_lifecycle(self):
@@ -169,25 +128,17 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
         Test VM backup lifecycle
         """
 
-        # Validate the following:
-        # 1. List VM backups, verify no backups are created
-        # 2. Add VM to policy
-        # 3. Create VM backup
-        # 4. List VM backups, verify backup is created
-        # 5. Delete VM backup
-        # 6. List VM backups, verify backup is deleted
-        # 7. Remove VM from policy
-
         # Verify there are no backups for the VM
         backups = Backup.list(self.apiclient, self.vm.id)
         self.assertEqual(backups, None, "There should not exist any backup for the VM")
 
         # Create a VM backup
-        self.policy.addVM(self.apiclient, self.vm.id)
+        self.offering.assignOffering(self.apiclient, self.vm.id)
         Backup.create(self.apiclient, self.vm.id)
 
         # Verify backup is created for the VM
         backups = Backup.list(self.apiclient, self.vm.id)
+        print backups
         self.assertEqual(len(backups), 1, "There should exist only one backup for the VM")
         backup = backups[0]
 
@@ -198,5 +149,5 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
         backups = Backup.list(self.apiclient, self.vm.id)
         self.assertEqual(backups, None, "There should not exist any backup for the VM")
 
-        # Remove VM from policy
-        self.policy.removeVM(self.apiclient, self.vm.id)
+        # Remove VM from offering
+        self.offering.removeOffering(self.apiclient, self.vm.id)

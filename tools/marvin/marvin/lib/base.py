@@ -5250,7 +5250,7 @@ class BackupOffering:
         self.__dict__.update(items)
 
     @classmethod
-    def importExisting(self, apiclient, zoneid, externalid, name, description):
+    def importExisting(self, apiclient, zoneid, externalid, name, description, allowuserdrivenbackups=True):
         """Import existing backup offering from the provider"""
 
         cmd = importBackupOffering.importBackupOfferingCmd()
@@ -5258,32 +5258,32 @@ class BackupOffering:
         cmd.externalid = externalid
         cmd.name = name
         cmd.description = description
+        cmd.allowuserdrivenbackups = allowuserdrivenbackups
         return BackupOffering(apiclient.importBackupOffering(cmd).__dict__)
 
     @classmethod
-    def listInternalById(self, apiclient, id):
+    def listById(self, apiclient, id):
         """List imported backup policies by id"""
 
-        cmd = listBackupPolicies.listBackupPoliciesCmd()
+        cmd = listBackupOfferings.listBackupOfferingsCmd()
         cmd.id = id
-        return (apiclient.listBackupPolicies(cmd))
+        return (apiclient.listBackupOfferings(cmd))
 
     @classmethod
-    def listInternal(self, apiclient, zoneid):
+    def listByZone(self, apiclient, zoneid):
         """List imported backup policies"""
 
-        cmd = listBackupPolicies.listBackupPoliciesCmd()
+        cmd = listBackupOfferings.listBackupOfferingsCmd()
         cmd.zoneid = zoneid
-        return (apiclient.listBackupPolicies(cmd))
+        return (apiclient.listBackupOfferings(cmd))
 
     @classmethod
     def listExternal(self, apiclient, zoneid):
         """List external backup policies"""
 
-        cmd = listBackupPolicies.listBackupPoliciesCmd()
+        cmd = listBackupProviderOfferings.listBackupProviderOfferingsCmd()
         cmd.zoneid = zoneid
-        cmd.external = True
-        return (apiclient.listBackupPolicies(cmd))
+        return (apiclient.listBackupProviderOfferings(cmd))
 
     def delete(self, apiclient):
         """Delete an imported backup offering"""
@@ -5292,34 +5292,21 @@ class BackupOffering:
         cmd.id = self.id
         return (apiclient.deleteBackupOffering(cmd))
 
-    def addVM(self, apiclient, vmid):
+    def assignOffering(self, apiclient, vmid):
         """Add a VM to a backup offering"""
 
-        cmd = addVMToBackupOffering.addVMToBackupOfferingCmd()
-        cmd.policyid = self.id
+        cmd = assignVirtualMachineToBackupOffering.assignVirtualMachineToBackupOfferingCmd()
+        cmd.backupofferingid = self.id
         cmd.virtualmachineid = vmid
-        return (apiclient.addVMToBackupOffering(cmd))
+        return (apiclient.assignVirtualMachineToBackupOffering(cmd))
 
-    def removeVM(self, apiclient, vmid):
+    def removeOffering(self, apiclient, vmid, forced=True):
         """Remove a VM from a backup offering"""
 
-        cmd = removeVMFromBackupOffering.removeVMFromBackupOfferingCmd()
-        cmd.policyid = self.id
+        cmd = removeVirtualMachineFromBackupOffering.removeVirtualMachineFromBackupOfferingCmd()
         cmd.virtualmachineid = vmid
-        return (apiclient.removeVMFromBackupOffering(cmd))
-
-    @classmethod
-    def listVMMappings(self, apiclient, policyid=None, vmid=None, zoneid=None):
-        """List VM - Backup policies mappings"""
-
-        cmd = listBackupOfferingVMMappings.listBackupOfferingVMMappingsCmd()
-        if vmid:
-            cmd.virtualmachineid = vmid
-        if zoneid:
-            cmd.zoneid = zoneid
-        if policyid:
-            cmd.policyid = policyid
-        return (apiclient.listBackupOfferingVMMappings(cmd))
+        cmd.forced = forced
+        return (apiclient.removeVirtualMachineFromBackupOffering(cmd))
 
 class Backup:
 
@@ -5353,15 +5340,6 @@ class Backup:
     def restoreVM(self, apiclient):
         """Restore VM from backup"""
 
-        cmd = restoreVMFromBackup.restoreVMFromBackupCmd()
+        cmd = restoreBackup.restoreBackupCmd()
         cmd.id = self.id
-        return (apiclient.restoreVMFromBackup(cmd))
-
-    def restoreVolumeAndAttachToVM(self, apiclient, volumeid, vmid):
-        """Restore volume from backup and attach it to VM"""
-
-        cmd = restoreVolumeFromBackupAndAttachToVM.restoreVolumeFromBackupAndAttachToVMCmd()
-        cmd.id = self.id
-        cmd.volumeid = volumeid
-        cmd.virtualmachineid = vmid
-        return (apiclient.restoreVolumeFromBackupAndAttachToVM(cmd))
+        return (apiclient.restoreBackup(cmd))

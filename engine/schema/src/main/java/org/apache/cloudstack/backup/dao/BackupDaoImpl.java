@@ -141,10 +141,10 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     @Override
     public BackupResponse newBackupResponse(Backup backup) {
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
-        AccountVO account = accountDao.findById(vm.getAccountId());
-        DomainVO domain = domainDao.findById(vm.getDomainId());
-        DataCenterVO zone = dataCenterDao.findById(vm.getDataCenterId());
-        BackupOffering offering = backupOfferingDao.findById(vm.getBackupOfferingId());
+        AccountVO account = accountDao.findByIdIncludingRemoved(vm.getAccountId());
+        DomainVO domain = domainDao.findByIdIncludingRemoved(vm.getDomainId());
+        DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(vm.getDataCenterId());
+        BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(vm.getBackupOfferingId());
 
         BackupResponse response = new BackupResponse();
         response.setId(backup.getUuid());
