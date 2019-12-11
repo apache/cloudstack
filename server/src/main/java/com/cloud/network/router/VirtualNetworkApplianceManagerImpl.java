@@ -1472,6 +1472,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, RouterHealthChecksToExclude.valueIn(router.getDataCenterId()));
             command.setAdditionalData(getAdditionalDataForRouterHealthChecks(router));
             command.setReconfigureAfterUpdate(true);
+            command.setDeleteFromProcessedCache(true); // As part of updating
 
             Answer origAnswer = null;
             try {

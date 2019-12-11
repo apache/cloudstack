@@ -49,6 +49,9 @@ def finish_config():
 def process_file():
     logging.info("Processing JSON file %s" % sys.argv[1])
     qf = QueueFile()
+    if len(sys.argv) > 2 and sys.argv[2].lower() == "false":
+        qf.keep = False
+
     qf.setFile(sys.argv[1])
     qf.load(None)
     # These can be safely deferred, dramatically speeding up loading times

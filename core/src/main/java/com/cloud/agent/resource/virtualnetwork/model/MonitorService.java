@@ -95,4 +95,8 @@ public class MonitorService extends ConfigBase {
     public void setAdditionalData(Map<String, String> additionalData) {
         this.additionalData = additionalData;
     }
+
+    public void setDeleteFromProcessedCache(boolean deleteFromProcessedCache) {
+        this.deleteFromProcessedCache = deleteFromProcessedCache;
+    }
 }

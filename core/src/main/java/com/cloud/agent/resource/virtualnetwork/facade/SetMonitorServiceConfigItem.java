@@ -59,6 +59,7 @@ public class SetMonitorServiceConfigItem extends AbstractConfigItemFacade {
 
         monitorService.setExcludedHealthChecks(cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED));
         monitorService.setAdditionalData(command.getAdditionalData());
+        monitorService.setDeleteFromProcessedCache(command.shouldDeleteFromProcessedCache());
         List<ConfigItem> configItems = generateConfigItems(monitorService);
         if (configItems != null && command.shouldReconfigureAfterUpdate()) {
             configItems.add(new ScriptConfigItem(VRScripts.CONFIGURE, "monitor_service.json"));

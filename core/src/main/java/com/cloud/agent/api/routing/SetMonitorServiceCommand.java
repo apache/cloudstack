@@ -39,6 +39,7 @@ public class SetMonitorServiceCommand extends NetworkElementCommand {
     private MonitorServiceTO[] services;
     private Map<String, String> additionalData;
     private boolean reconfigureAfterUpdate;
+    private boolean deleteFromProcessedCache;
 
     public SetMonitorServiceCommand() {
     }
@@ -81,5 +82,13 @@ public class SetMonitorServiceCommand extends NetworkElementCommand {
 
     public void setReconfigureAfterUpdate(boolean reconfigureAfterUpdate) {
         this.reconfigureAfterUpdate = reconfigureAfterUpdate;
+    }
+
+    public boolean shouldDeleteFromProcessedCache() {
+        return deleteFromProcessedCache;
+    }
+
+    public void setDeleteFromProcessedCache(boolean deleteFromProcessedCache) {
+        this.deleteFromProcessedCache = deleteFromProcessedCache;
     }
 }
