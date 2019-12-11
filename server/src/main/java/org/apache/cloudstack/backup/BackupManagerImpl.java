@@ -328,26 +328,32 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     "that will also delete the backups.");
         }
 
-        return Transaction.execute(new TransactionCallback<Boolean>() {
-            @Override
-            public Boolean doInTransaction(TransactionStatus status) {
-                vm.setBackupOfferingId(null);
-                vm.setBackupExternalId(null);
-                vm.setBackupVolumes(null);
-                boolean result = backupProvider.removeVMFromBackupOffering(vm);
-                if ((result || forced) && vmInstanceDao.update(vm.getId(), vm)) {
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                            "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null,
-                            Backup.class.getSimpleName(), vm.getUuid());
-                    final BackupSchedule backupSchedule = backupScheduleDao.findByVM(vm.getId());
-                    if (backupSchedule != null) {
-                        backupScheduleDao.remove(backupSchedule.getId());
-                    }
-                    return true;
+        boolean result = false;
+        VMInstanceVO vmInstance = null;
+        try {
+            vmInstance = vmInstanceDao.acquireInLockTable(vm.getId());
+            vmInstance.setBackupOfferingId(null);
+            vmInstance.setBackupExternalId(null);
+            vmInstance.setBackupVolumes(null);
+            result = backupProvider.removeVMFromBackupOffering(vmInstance);
+            if ((result || forced) && vmInstanceDao.update(vmInstance.getId(), vmInstance)) {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
+                        "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null,
+                        Backup.class.getSimpleName(), vm.getUuid());
+                final BackupSchedule backupSchedule = backupScheduleDao.findByVM(vmInstance.getId());
+                if (backupSchedule != null) {
+                    backupScheduleDao.remove(backupSchedule.getId());
                 }
-                return false;
+                result = true;
             }
-        });
+        } catch (final Exception e) {
+            LOG.warn("Exception caught when trying to remove VM from the backup offering: ", e);
+        } finally {
+            if (vmInstance != null) {
+                vmInstanceDao.releaseFromLockTable(vmInstance.getId());
+            }
+        }
+        return result;
     }
 
     @Override
