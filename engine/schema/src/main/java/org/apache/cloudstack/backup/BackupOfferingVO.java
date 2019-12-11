@@ -52,6 +52,9 @@ public class BackupOfferingVO implements BackupOffering {
     @Column(name = "zone_id")
     private long zoneId;
 
+    @Column(name = "user_driven_backup")
+    private boolean userDrivenBackupAllowed;
+
     @Column(name = "provider")
     private String provider;
 
@@ -67,13 +70,14 @@ public class BackupOfferingVO implements BackupOffering {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public BackupOfferingVO(final long zoneId, final String externalId, final String provider, final String name, final String description) {
+    public BackupOfferingVO(final long zoneId, final String externalId, final String provider, final String name, final String description, final boolean userDrivenBackupAllowed) {
         this();
         this.name = name;
         this.description = description;
         this.zoneId = zoneId;
         this.provider = provider;
         this.externalId = externalId;
+        this.userDrivenBackupAllowed = userDrivenBackupAllowed;
         this.created = new Date();
     }
 
@@ -96,6 +100,15 @@ public class BackupOfferingVO implements BackupOffering {
     @Override
     public long getZoneId() {
         return zoneId;
+    }
+
+    @Override
+    public boolean isUserDrivenBackupAllowed() {
+        return userDrivenBackupAllowed;
+    }
+
+    public void setUserDrivenBackupAllowed(boolean userDrivenBackupAllowed) {
+        this.userDrivenBackupAllowed = userDrivenBackupAllowed;
     }
 
     @Override

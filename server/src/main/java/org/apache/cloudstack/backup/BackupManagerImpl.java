@@ -176,28 +176,29 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_IMPORT_OFFERING, eventDescription = "importing backup offering", async = true)
-    public BackupOffering importBackupOffering(final Long zoneId, final String offeringExternalId,
-                                               final String offeringName, final String offeringDescription) {
-        validateForZone(zoneId);
-        final BackupOffering existingOffering = backupOfferingDao.findByExternalId(offeringExternalId, zoneId);
+    public BackupOffering importBackupOffering(final ImportBackupOfferingCmd cmd) {
+        validateForZone(cmd.getZoneId());
+        final BackupOffering existingOffering = backupOfferingDao.findByExternalId(cmd.getExternalId(), cmd.getZoneId());
         if (existingOffering != null) {
-            throw new CloudRuntimeException("A backup offering with external ID " + offeringExternalId + " already exists");
+            throw new CloudRuntimeException("A backup offering with external ID " + cmd.getExternalId() + " already exists");
         }
-        if (backupOfferingDao.findByName(offeringName, zoneId) != null) {
+        if (backupOfferingDao.findByName(cmd.getName(), cmd.getZoneId()) != null) {
             throw new CloudRuntimeException("A backup offering with the same name already exists in this zone");
         }
 
-        final BackupProvider provider = getBackupProvider(zoneId);
-        if (!provider.isBackupOffering(zoneId, offeringExternalId)) {
-            throw new CloudRuntimeException("Backup offering '" + offeringExternalId + "' does not exist on provider " + provider.getName() + " on zone " + zoneId);
+        final BackupProvider provider = getBackupProvider(cmd.getZoneId());
+        if (!provider.isBackupOffering(cmd.getZoneId(), cmd.getExternalId())) {
+            throw new CloudRuntimeException("Backup offering '" + cmd.getExternalId() + "' does not exist on provider " + provider.getName() + " on zone " + cmd.getZoneId());
         }
 
-        final BackupOfferingVO offering = new BackupOfferingVO(zoneId, offeringExternalId, provider.getName(), offeringName, offeringDescription);
+        final BackupOfferingVO offering = new BackupOfferingVO(cmd.getZoneId(), cmd.getExternalId(), provider.getName(),
+                cmd.getName(), cmd.getDescription(), cmd.getUserDrivenBackups());
+
         final BackupOfferingVO savedOffering = backupOfferingDao.persist(offering);
         if (savedOffering == null) {
-            throw new CloudRuntimeException("Unable to create backup offering: " + offeringExternalId + ", name: " + offeringName);
+            throw new CloudRuntimeException("Unable to create backup offering: " + cmd.getExternalId() + ", name: " + cmd.getName());
         }
-        LOG.debug("Successfully created backup offering " + offeringName + " mapped to backup provider offering " + offeringExternalId);
+        LOG.debug("Successfully created backup offering " + cmd.getName() + " mapped to backup provider offering " + cmd.getExternalId());
         return savedOffering;
     }
 
@@ -372,6 +373,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Cannot configure backup schedule for the VM without having any backup offering");
         }
 
+        final BackupOffering offering = backupOfferingDao.findById(vm.getBackupOfferingId());
+        if (offering == null || !offering.isUserDrivenBackupAllowed()) {
+            throw new CloudRuntimeException("The selected backup offering does not allow user-defined backup schedule");
+        }
+
         final String timezoneId = timeZone.getID();
         if (!timezoneId.equals(cmd.getTimezone())) {
             LOG.warn("Using timezone: " + timezoneId + " for running this snapshot policy as an equivalent of " + cmd.getTimezone());
@@ -443,6 +449,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final BackupOffering offering = backupOfferingDao.findById(vm.getBackupOfferingId());
         if (offering == null) {
             throw new CloudRuntimeException("VM backup offering not found");
+        }
+
+        if (!offering.isUserDrivenBackupAllowed()) {
+            throw new CloudRuntimeException("The assigned backup offering does not allow ad-hoc user backup");
         }
 
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
@@ -855,6 +865,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             final VMInstanceVO vm = vmInstanceDao.findById(vmId);
             if (vm == null || vm.getBackupOfferingId() == null) {
                 backupScheduleDao.remove(backupScheduleId);
+                continue;
+            }
+
+            final BackupOffering offering = backupOfferingDao.findById(vm.getBackupOfferingId());
+            if (offering == null || !offering.isUserDrivenBackupAllowed()) {
                 continue;
             }
 

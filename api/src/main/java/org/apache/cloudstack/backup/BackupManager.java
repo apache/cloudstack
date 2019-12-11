@@ -19,6 +19,7 @@ package org.apache.cloudstack.backup;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
@@ -57,13 +58,9 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     /**
      * Add a new Backup and Recovery policy to CloudStack by mapping an existing external backup offering to a name and description
-     * @param zoneId zone id
-     * @param offeringExternalId backup offering external id
-     * @param offeringName name for the backup offering
-     * @param offeringDescription description for the backup offering
+     * @param cmd import backup offering cmd
      */
-    BackupOffering importBackupOffering(final Long zoneId, final String offeringExternalId,
-                                        final String offeringName, final String offeringDescription);
+    BackupOffering importBackupOffering(final ImportBackupOfferingCmd cmd);
 
     /**
      * List backup offerings

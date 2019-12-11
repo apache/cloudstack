@@ -73,6 +73,10 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
             description = "The zone ID", required = true)
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.ALLOW_USER_DRIVEN_BACKUPS, type = CommandType.BOOLEAN,
+            description = "Whether users are allowed to create adhoc backups and backup schedules", required = true)
+    private Boolean userDrivenBackups;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -93,6 +97,10 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
         return description;
     }
 
+    public Boolean getUserDrivenBackups() {
+        return userDrivenBackups == null ? false : userDrivenBackups;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -100,7 +108,7 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            BackupOffering policy = backupManager.importBackupOffering(getZoneId(), getExternalId(), getName(), getDescription());
+            BackupOffering policy = backupManager.importBackupOffering(this);
             if (policy != null) {
                 BackupOfferingResponse response = _responseGenerator.createBackupOfferingResponse(policy);
                 response.setResponseName(getCommandName());

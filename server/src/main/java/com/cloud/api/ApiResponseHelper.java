@@ -3673,7 +3673,8 @@ public class ApiResponseHelper implements ResponseGenerator {
                     final BackupOffering backupOffering = backupOfferingDao.findById(vmInstance.getBackupOfferingId());
                     if (backupOffering != null) {
                         builder.append(" and backup offering ").append(backupOffering.getName())
-                                .append(" (").append(backupOffering.getUuid()).append(")");
+                                .append(" (").append(backupOffering.getUuid()).append(", user ad-hoc/scheduled backup allowed: ")
+                                .append(backupOffering.isUserDrivenBackupAllowed()).append(")");
                     }
                 }
             }

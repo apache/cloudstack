@@ -52,8 +52,8 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Override
     public List<BackupOffering> listBackupOfferings(Long zoneId) {
         s_logger.debug("Listing backup policies on Dummy B&R Plugin");
-        BackupOffering policy1 = new BackupOfferingVO(1, "gold-policy", "dummy", "Golden Policy", "Gold description");
-        BackupOffering policy2 = new BackupOfferingVO(1, "silver-policy", "dummy", "Silver Policy", "Silver description");
+        BackupOffering policy1 = new BackupOfferingVO(1, "gold-policy", "dummy", "Golden Policy", "Gold description", true);
+        BackupOffering policy2 = new BackupOfferingVO(1, "silver-policy", "dummy", "Silver Policy", "Silver description", true);
         return Arrays.asList(policy1, policy2);
     }
 

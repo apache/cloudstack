@@ -54,9 +54,6 @@ public class BackupOfferingDaoImpl extends GenericDaoBase<BackupOfferingVO, Long
         DataCenterVO zone = dataCenterDao.findById(offering.getZoneId());
 
         BackupOfferingResponse response = new BackupOfferingResponse();
-        if (offering.isImported()) {
-
-        }
         response.setId(offering.getUuid());
         response.setName(offering.getName());
         response.setDescription(offering.getDescription());

@@ -3025,6 +3025,11 @@
                                                 data: []
                                             });
                                         }
+                                    },
+                                    allowuserdrivenbackups: {
+                                        label: 'Allow User Driven Backups',
+                                        isBoolean: true,
+                                        isChecked: true
                                     }
                                 }//end of fields
                             }, //end of createForm
@@ -3036,7 +3041,8 @@
                                       name: args.data.name,
                                       description: args.data.description,
                                       zoneid: args.data.zoneid,
-                                      externalid: args.data.externalid
+                                      externalid: args.data.externalid,
+                                      allowuserdrivenbackups: args.data.allowuserdrivenbackups === 'on'
                                     },
                                     dataType: 'json',
                                     success: function(json) {

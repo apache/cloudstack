@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup_offering` (
   `name` varchar(255) NOT NULL COMMENT 'backup offering name',
   `description` varchar(255) NOT NULL COMMENT 'backup offering description',
   `external_id` varchar(255) DEFAULT NULL COMMENT 'external ID on provider side',
+  `user_driven_backup` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'whether user can do adhoc backups and backup schedules allowed, default false',
   `zone_id` bigint(20) unsigned NOT NULL COMMENT 'zone id',
   `provider` varchar(255) NOT NULL COMMENT 'backup provider',
   `created` datetime DEFAULT NULL,
