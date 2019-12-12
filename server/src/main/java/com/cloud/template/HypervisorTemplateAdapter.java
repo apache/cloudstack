@@ -220,7 +220,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     @Override
     public VMTemplateVO create(TemplateProfile profile) {
         VMTemplateVO template;
-        // persist entry in vm_template, vm_template_details and template_zone_ref tables, not that entry at template_store_ref is not created here, and created in createTemplateAsync.
+        // persist entry in vm_template, vm_template_details and template_zone_ref tables, note that entry at template_store_ref is not created here, but created in createTemplateAsync.
         if (profile.getTemplateType() == TemplateType.SYSTEM ){
             profile.setAccountId(1L); // System account
             template = persistTemplate(profile, State.Inactive);
