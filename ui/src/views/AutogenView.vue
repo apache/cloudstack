@@ -313,7 +313,10 @@ export default {
   },
   methods: {
     fetchData () {
-      this.routeName = this.$route.name
+      if (this.routeName !== this.$route.name) {
+        this.routeName = this.$route.name
+        this.items = []
+      }
       if (!this.routeName) {
         this.routeName = this.$route.matched[this.$route.matched.length - 1].parent.name
       }
@@ -321,7 +324,6 @@ export default {
       this.actions = []
       this.columns = []
       this.columnKeys = []
-      this.items = []
       this.treeData = []
       this.treeSelected = {}
       var params = { listall: true }
