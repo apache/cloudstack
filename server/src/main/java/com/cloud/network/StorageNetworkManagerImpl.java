@@ -23,6 +23,12 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.PodIpRangeMapVO;
+import com.cloud.dc.StorageNetworkIpAddressVO;
+import com.cloud.dc.StorageNetworkIpRange;
+import com.cloud.dc.StorageNetworkIpRangeVO;
+import com.cloud.dc.dao.PodIpRangeMapDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -31,10 +37,6 @@ import org.apache.cloudstack.api.command.admin.network.DeleteStorageNetworkIpRan
 import org.apache.cloudstack.api.command.admin.network.ListStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateStorageNetworkIpRangeCmd;
 
-import com.cloud.dc.HostPodVO;
-import com.cloud.dc.StorageNetworkIpAddressVO;
-import com.cloud.dc.StorageNetworkIpRange;
-import com.cloud.dc.StorageNetworkIpRangeVO;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.StorageNetworkIpAddressDao;
 import com.cloud.dc.dao.StorageNetworkIpRangeDao;
@@ -70,27 +72,23 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
     @Inject
     HostPodDao _podDao;
     @Inject
+    PodIpRangeMapDao _podIpRangeDao;
+    @Inject
     SecondaryStorageVmDao _ssvmDao;
 
     private void checkOverlapPrivateIpRange(long podId, String startIp, String endIp) {
-        HostPodVO pod = _podDao.findById(podId);
-        if (pod == null) {
-            throw new CloudRuntimeException("Cannot find pod " + podId);
+        final List<PodIpRangeMapVO> podIpRangeMapVOList = _podIpRangeDao.listByPodId(podId);
+        if (podIpRangeMapVOList == null || podIpRangeMapVOList.size() == 0) {
+            throw new CloudRuntimeException("Cannot find private ip range for pod " + podId);
         }
 
-        final String[] existingPodIpRanges = pod.getDescription().split(",");
+        for(PodIpRangeMapVO podIpRangeMapVO: podIpRangeMapVOList) {
+            if (!NetUtils.isValidIp4(podIpRangeMapVO.getStartIp()) || !NetUtils.isValidIp4(podIpRangeMapVO.getEndIp())) {
+                continue;
+            }
 
-        for(String podIpRange: existingPodIpRanges) {
-            final String[] existingPodIpRange = podIpRange.split("-");
-
-            if (existingPodIpRange.length > 1) {
-                if (!NetUtils.isValidIp4(existingPodIpRange[0]) || !NetUtils.isValidIp4(existingPodIpRange[1])) {
-                    continue;
-                }
-
-                if (NetUtils.ipRangesOverlap(startIp, endIp, existingPodIpRange[0], existingPodIpRange[1])) {
-                    throw new InvalidParameterValueException("The Storage network Start IP and endIP address range overlap with private IP :" + existingPodIpRange[0] + ":" + existingPodIpRange[1]);
-                }
+            if (NetUtils.ipRangesOverlap(startIp, endIp, podIpRangeMapVO.getStartIp(), podIpRangeMapVO.getEndIp())) {
+                throw new InvalidParameterValueException("The Storage network Start IP and endIP address range overlap with private IP :" + podIpRangeMapVO.getStartIp() + ":" + podIpRangeMapVO.getEndIp());
             }
         }
     }

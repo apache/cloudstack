@@ -32,6 +32,20 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import com.cloud.resource.RollingMaintenanceManager;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
+import com.cloud.dc.PodIpRangeMapVO;
+import com.cloud.dc.StorageNetworkIpRange;
+import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.PodIpRangeMapDao;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -210,16 +224,7 @@ import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Pod;
-import com.cloud.dc.StorageNetworkIpRange;
-import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.Event;
@@ -390,7 +395,11 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Inject
     private VMSnapshotDao vmSnapshotDao;
     @Inject
+<<<<<<< HEAD
     private BackupOfferingDao backupOfferingDao;
+=======
+    private PodIpRangeMapDao _podIpRangeMapDao;
+>>>>>>> 251550343b... Refer pod_ip_range_map table instead of host_pod_ref.decription.
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -1011,24 +1020,21 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public PodResponse createPodResponse(Pod pod, Boolean showCapacities) {
-        String[] ipRange = new String[2];
         List<String> startIp = new ArrayList<String>();
         List<String> endIp = new ArrayList<String>();
         List<String> forSystemVms = new ArrayList<String>();
         List<String> vlanIds = new ArrayList<String>();
 
-        if (pod.getDescription() != null && pod.getDescription().length() > 0) {
-            final String[] existingPodIpRanges = pod.getDescription().split(",");
+        final List<PodIpRangeMapVO> listPodIpRangeMapVO = _podIpRangeMapDao.listByPodId(pod.getId());
+        if (listPodIpRangeMapVO != null && listPodIpRangeMapVO.size() > 0) {
+            for(PodIpRangeMapVO podIpRangeMapVO: listPodIpRangeMapVO) {
 
-            for(String podIpRange: existingPodIpRanges) {
-                final String[] existingPodIpRange = podIpRange.split("-");
-
-                startIp.add(((existingPodIpRange.length > 0) && (existingPodIpRange[0] != null)) ? existingPodIpRange[0] : "");
-                endIp.add(((existingPodIpRange.length > 1) && (existingPodIpRange[1] != null)) ? existingPodIpRange[1] : "");
-                forSystemVms.add((existingPodIpRange.length > 2) && (existingPodIpRange[2] != null) ? existingPodIpRange[2] : "0");
-                vlanIds.add((existingPodIpRange.length > 3) &&
-                        (existingPodIpRange[3] != null && !existingPodIpRange[3].equals("untagged")) ?
-                        BroadcastDomainType.Vlan.toUri(existingPodIpRange[3]).toString() :
+                startIp.add(podIpRangeMapVO.getStartIp() != null ? podIpRangeMapVO.getStartIp() : "");
+                endIp.add(podIpRangeMapVO.getEndIp() != null ? podIpRangeMapVO.getEndIp() : "");
+                forSystemVms.add(podIpRangeMapVO.getForSystemVms() ? "1" : "0");
+                vlanIds.add(
+                        (podIpRangeMapVO.getVlanId() != null && !podIpRangeMapVO.getVlanId().equals("untagged")) ?
+                        BroadcastDomainType.Vlan.toUri(podIpRangeMapVO.getVlanId()).toString() :
                         BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString());
             }
         }

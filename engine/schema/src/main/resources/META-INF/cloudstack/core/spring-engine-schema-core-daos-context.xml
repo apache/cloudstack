@@ -153,6 +153,7 @@
   <bean id="physicalNetworkServiceProviderDaoImpl" class="com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl" />
   <bean id="physicalNetworkTagDaoImpl" class="com.cloud.network.dao.PhysicalNetworkTagDaoImpl" />
   <bean id="physicalNetworkTrafficTypeDaoImpl" class="com.cloud.network.dao.PhysicalNetworkTrafficTypeDaoImpl" />
+  <bean id="podIpRangeMapDaoImpl" class="com.cloud.dc.dao.PodIpRangeMapDaoImpl" />
   <bean id="podVlanDaoImpl" class="com.cloud.dc.dao.PodVlanDaoImpl" />
   <bean id="podVlanMapDaoImpl" class="com.cloud.dc.dao.PodVlanMapDaoImpl" />
   <bean id="PortableIpDaoImpl" class="org.apache.cloudstack.region.PortableIpDaoImpl" />
