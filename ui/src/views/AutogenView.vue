@@ -77,6 +77,7 @@
           :confirmLoading="currentAction.loading"
           :footer="null"
           centered
+          width="auto"
         >
           <component :is="currentAction.component" :resource="resource" :loading="loading" v-bind="{currentAction}" />
         </a-modal>

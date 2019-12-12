@@ -629,7 +629,7 @@
 "memorytotalgb": "Total",
 "memoryused": "Used",
 "memoryusedgb": "Used",
-"memused": "Mem Usage",
+"memused": "Memory Usage",
 "message.edit.account": "Edit (\"-1\" indicates no limit to the amount of resources create)",
 "minCPUNumber": "Min CPU Cores",
 "minInstance": "Min Instances",
