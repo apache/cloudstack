@@ -55,10 +55,10 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
         cls.backup_enabled = backup_enabled_cfg[0].value
         cls.backup_provider = backup_provider_cfg[0].value
 
-        if not cls.backup_enabled:
-            Configurations.update(cls.api_client, 'backup.framework.enabled', 'true', zoneid=cls.zone.id)
-        if not cls.backup_provider == "dummy":
-            Configurations.update(cls.api_client, 'backup.framework.provider.plugin', 'dummy', zoneid=cls.zone.id)
+        if cls.backup_enabled == "false":
+            Configurations.update(cls.api_client, 'backup.framework.enabled', value='true', zoneid=cls.zone.id)
+        if cls.backup_provider != "dummy":
+            Configurations.update(cls.api_client, 'backup.framework.provider.plugin', value='dummy', zoneid=cls.zone.id)
 
         # Import a dummy backup offering to use on tests
 
@@ -71,14 +71,14 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            # Restore original backup framework values values
-            if not cls.backup_enabled:
-                Configurations.update(cls.api_client, 'backup.framework.enabled', cls.backup_enabled, zoneid=cls.zone.id)
-            if not cls.backup_provider == "dummy":
-                Configurations.update(cls.api_client, 'backup.framework.provider.plugin', cls.backup_provider, zoneid=cls.zone.id)
-
             # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
+
+            # Restore original backup framework values values
+            if cls.backup_enabled == "false":
+                Configurations.update(cls.api_client, 'backup.framework.enabled', value=cls.backup_enabled, zoneid=cls.zone.id)
+            if cls.backup_provider != "dummy":
+                Configurations.update(cls.api_client, 'backup.framework.provider.plugin', value=cls.backup_provider, zoneid=cls.zone.id)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
