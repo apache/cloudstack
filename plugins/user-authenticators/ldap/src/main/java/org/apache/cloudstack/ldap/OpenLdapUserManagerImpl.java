@@ -121,9 +121,11 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     private List<String> getMappedLdapGroups(Long domainId) {
         List <String> ldapGroups = new ArrayList<>();
         // first get the trustmaps
-        for (LdapTrustMapVO trustMap : _ldapTrustMapDao.searchByDomainId(domainId)) {
-            // then retrieve the string from it
-            ldapGroups.add(trustMap.getName());
+        if (null != domainId) {
+            for (LdapTrustMapVO trustMap : _ldapTrustMapDao.searchByDomainId(domainId)) {
+                // then retrieve the string from it
+                ldapGroups.add(trustMap.getName());
+            }
         }
         return ldapGroups;
     }
