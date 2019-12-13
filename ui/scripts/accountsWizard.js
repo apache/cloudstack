@@ -68,7 +68,14 @@
                     required: true
                 },
                 docID: 'helpAccountLastName'
-            }
+            },
+            conflictingusersource: {
+                 label: 'label.user.source',
+                 validation: {
+                     required: true
+                 },
+                 docID: 'helpConflictSource'
+             }
         },
 
         informationNotInLdap: {

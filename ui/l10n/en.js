@@ -1758,6 +1758,7 @@ var dictionary = {
 "label.user":"User",
 "label.user.data":"User Data",
 "label.user.details":"User details",
+"label.user.source":"source",
 "label.user.vm":"User VM",
 "label.username":"Username",
 "label.username.lower":"username",

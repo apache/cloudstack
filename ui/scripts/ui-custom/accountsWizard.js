@@ -155,7 +155,9 @@
                                         $('<td>').addClass('username').html(_s(this.username))
                                             .attr('title', this.username),
                                         $('<td>').addClass('email').html(_s(this.email))
-                                            .attr('title', _s(this.email))
+                                            .attr('title', _s(this.email)),
+                                        $('<td>').addClass('email').html(_s(this.conflictingusersource))
+                                            .attr('title', _s(this.conflictingusersource))
                                     )
 
                                     $table.append($result);
@@ -174,12 +176,16 @@
                     loadList();
 
                 } else {
+                    var informationWithinLdapFields = $.extend(true,{},args.informationWithinLdap);
+                    // we are not in ldap so
+                    delete informationWithinLdapFields.conflictingusersource;
+
                     var informationWithinLdap = cloudStack.dialog.createForm({
                         context: context,
                         noDialog: true,
                         form: {
                             title: '',
-                            fields: args.informationWithinLdap
+                            fields: informationWithinLdapFields
                         }
                     });
 
