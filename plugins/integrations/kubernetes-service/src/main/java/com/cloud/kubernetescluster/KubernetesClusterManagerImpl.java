@@ -74,6 +74,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -84,6 +85,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.TemplateJoinDao;
+import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
@@ -227,6 +230,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected TemplateApiService templateService;
     @Inject
     protected VMTemplateZoneDao templateZoneDao;
+    @Inject
+    protected TemplateJoinDao templateJoinDao;
     @Inject
     protected AccountService accountService;
     @Inject
@@ -787,7 +792,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         boolean masterVmRunning = false;
         long startTime = System.currentTimeMillis();
-        while (!masterVmRunning && System.currentTimeMillis() - startTime < 5 * 60 * 1000) {
+        while (!masterVmRunning && System.currentTimeMillis() - startTime < 10 * 60 * 1000) {
             try (Socket socket = new Socket()) {
                 socket.connect(new InetSocketAddress(publicIpAddress, publicIpSshPort.second()), 10000);
                 masterVmRunning = true;
@@ -1989,12 +1994,22 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     throw new InvalidParameterValueException(String.format("HA support is available only for Kubernetes version %s and above. Given version ID: %s is %s", MIN_KUBERNETES_VERSION_HA_SUPPORT, clusterKubernetesVersion.getUuid(), clusterKubernetesVersion.getKubernetesVersion()));
                 }
             } catch (Exception e) {
-                LOGGER.error(String.format("Unable to compare Kubernetes version for given version ID: %s with %s", clusterKubernetesVersion.getUuid(), MIN_KUBERNETES_VERSION_HA_SUPPORT), e);
+                String msg = String.format("Unable to compare Kubernetes version for given version ID: %s with %s", clusterKubernetesVersion.getUuid(), MIN_KUBERNETES_VERSION_HA_SUPPORT);
+                LOGGER.error(msg, e);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, msg, e);
             }
         }
 
         if (clusterKubernetesVersion.getZoneId() != null && clusterKubernetesVersion.getZoneId() != zone.getId()) {
             throw new InvalidParameterValueException(String.format("Kubernetes version ID: %s is not available for zone ID: %s", clusterKubernetesVersion.getUuid(), zone.getUuid()));
+        }
+
+        TemplateJoinVO iso = templateJoinDao.findById(clusterKubernetesVersion.getIsoId());
+        if (iso == null) {
+            throw new InvalidParameterValueException(String.format("Invalid ISO associated with version ID: %s",  clusterKubernetesVersion.getUuid()));
+        }
+        if (!ObjectInDataStoreStateMachine.State.Ready.equals(iso.getState())) {
+            throw new InvalidParameterValueException(String.format("ISO associated with version ID: %s is not in Ready state",  clusterKubernetesVersion.getUuid()));
         }
 
         ServiceOffering serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
@@ -2300,7 +2315,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
-    public boolean scaleKubernetesCluster(ScaleKubernetesClusterCmd cmd) throws ManagementServerException, ResourceAllocationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean scaleKubernetesCluster(ScaleKubernetesClusterCmd cmd) throws ResourceUnavailableException {
         if (!Boolean.parseBoolean(globalConfigDao.getValue(KubernetesServiceConfig.KubernetesServiceEnabled.key()))) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Kubernetes Service plugin is disabled");
         }
@@ -2738,7 +2753,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         KubernetesVersionManagerImpl.compareKubernetesVersion(upgradeVersion.getKubernetesVersion(), "1.15") < 0 ? "true" : "false");
                 result = SshHelper.sshExecute(publicIpAddress, nodeSshPort, CLUSTER_NODE_VM_USER, pkFile, null,
                         cmdStr,
-                        10000, 10000, 5 * 60 * 1000);
+                        10000, 10000, 10 * 60 * 1000);
             } catch (Exception e) {
                 String msg = String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to upgrade Kubernetes node on VM ID: %s", kubernetesCluster.getUuid(), vm.getUuid());
                 LOGGER.error(msg, e);

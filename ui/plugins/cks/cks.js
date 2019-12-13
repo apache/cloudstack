@@ -219,7 +219,7 @@
                                                         versionObjs = json.listkubernetessupportedversionsresponse.kubernetessupportedversion;
                                                         if (versionObjs != null) {
                                                             for (var i = 0; i < versionObjs.length; i++) {
-                                                                if (versionObjs[i].isostate == 'Active') {
+                                                                if (versionObjs[i].isostate == 'Ready') {
                                                                     items.push({
                                                                         id: versionObjs[i].id,
                                                                         description: versionObjs[i].name

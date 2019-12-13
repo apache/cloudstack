@@ -37,6 +37,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.TemplateJoinDao;
+import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEvent;
@@ -67,13 +69,15 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     @Inject
     private VMTemplateDao templateDao;
     @Inject
+    private TemplateJoinDao templateJoinDao;
+    @Inject
     private VMTemplateZoneDao templateZoneDao;
     @Inject
     private DataCenterDao dataCenterDao;
     @Inject
     private TemplateApiService templateService;
     @Inject
-    protected ConfigurationDao globalConfigDao;
+    private ConfigurationDao globalConfigDao;
 
     private KubernetesSupportedVersionResponse createKubernetesSupportedVersionResponse(final KubernetesSupportedVersion kubernetesSupportedVersion) {
         KubernetesSupportedVersionResponse response = new KubernetesSupportedVersionResponse();
@@ -92,7 +96,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         } else {
             response.setSupportsHA(false);
         }
-        VMTemplateVO template = ApiDBUtils.findTemplateById(kubernetesSupportedVersion.getIsoId());
+        TemplateJoinVO template = templateJoinDao.findById(kubernetesSupportedVersion.getIsoId());
         response.setIsoId(template.getUuid());
         response.setIsoName(template.getName());
         response.setIsoState(template.getState().toString());

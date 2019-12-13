@@ -44,11 +44,11 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
     @Param(description = "the id of the binaries ISO for Kubernetes supported version")
     private String isoId;
 
-    @SerializedName("isoname")
+    @SerializedName(ApiConstants.ISO_NAME)
     @Param(description = "the name of the binaries ISO for Kubernetes supported version")
     private String isoName;
 
-    @SerializedName("isostate")
+    @SerializedName(ApiConstants.ISO_STATE)
     @Param(description = "the state of the binaries ISO for Kubernetes supported version")
     private String isoState;
 
