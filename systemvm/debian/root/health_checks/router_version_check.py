@@ -21,7 +21,7 @@ from utility import getHealthChecksData
 
 
 def getFirstLine(file=None):
-    if file is not None:
+    if file is not None and path.isfile(file):
         ret = None
         with open(file, 'r') as oFile:
             lines = oFile.readlines()
@@ -30,6 +30,8 @@ def getFirstLine(file=None):
             oFile.close()
 
         return ret
+    else:
+        return None
 
 
 def main():
@@ -39,23 +41,31 @@ def main():
         data = entries[0]
 
     if len(data) == 0:
-        print "Missing routerVersion in health_checks_data"
-        exit(1)
+        print "Missing routerVersion in health_checks_data, skipping"
+        exit(0)
 
     templateVersionMatches = True
     scriptVersionMatches = True
 
     if "templateVersion" in data:
         expected = data["templateVersion"].strip()
-        found = getFirstLine("/etc/cloudstack-release")
-        if expected != found:
+        releaseFile = "/etc/cloudstack-release"
+        found = getFirstLine(releaseFile)
+        if found is None:
+            print "Release version not yet setup at " + releaseFile +\
+                  ", skipping."
+        elif expected != found:
             print "Template Version mismatch. Expected: " + \
                   expected + ", found: " + found
             templateVersionMatches = False
 
     if "scriptsVersion" in data:
         expected = data["scriptsVersion"].strip()
-        found = getFirstLine("/var/cache/cloud/cloud-scripts-signature")
+        sigFile = "/var/cache/cloud/cloud-scripts-signature"
+        found = getFirstLine(sigFile)
+        if found is None:
+            print "Scripts signature is not yet setup at " + sigFile +\
+                  ", skipping"
         if expected != found:
             print "Scripts Version mismatch. Expected: " + \
                   expected + ", found: " + found

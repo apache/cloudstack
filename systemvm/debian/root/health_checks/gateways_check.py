@@ -47,7 +47,7 @@ def main():
             print "Unreachable gateways found " + unreachableGateWays
             exit(1)
     else:
-        print "No gateways data available"
+        print "No gateways data available, skipping"
     exit(0)
 
 

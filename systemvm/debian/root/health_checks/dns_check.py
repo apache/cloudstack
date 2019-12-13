@@ -40,7 +40,7 @@ def main():
 
         print "All " + str(len(vMs)) + " VMs are present in /etc/hosts"
     else:
-        print "No VMs running data available"
+        print "No VMs running data available, skipping"
     exit(0)
 
 

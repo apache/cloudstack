@@ -74,7 +74,7 @@ def checkLoadBalance(haproxyData, haCfgSections):
 def main():
     haproxyData = getHealthChecksData("haproxyData")
     if haproxyData is None or len(haproxyData) == 0:
-        print "No data provided to check"
+        print "No data provided to check, skipping"
         exit(0)
 
     with open("/etc/haproxy/haproxy.cfg", 'r') as haCfgFile:

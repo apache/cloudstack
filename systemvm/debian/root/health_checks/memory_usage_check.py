@@ -45,8 +45,9 @@ def main():
             print "Failed to retrieve memory usage using " + cmd
             exit(1)
     else:
-        print "Missing maxMemoryUsage in health_checks_data systemThresholds"
-        exit(1)
+        print "Missing maxMemoryUsage in health_checks_data " +\
+              "systemThresholds, skipping"
+    exit(0)
 
 
 if __name__ == "__main__":

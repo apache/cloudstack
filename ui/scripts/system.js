@@ -10606,54 +10606,23 @@
                                         },
                                         action: function (args) {
                                             var data = {
-                                                    'id': args.context.routers[0].id,
-                                                    'performfreshchecks': (args.data.performfreshchecks === 'on')
-                                                };
+                                                'id': args.context.routers[0].id,
+                                                'performfreshchecks': (args.data.performfreshchecks === 'on')
+                                            };
                                             $.ajax({
                                                 url: createURL('listRouterHealthCheckResults'),
                                                 dataType: 'json',
                                                 data: data,
                                                 async: false,
                                                 success: function (json) {
-                                                    var hcdata = json.listrouterhealthcheckresultsresponse
-                                                    $('div.overlay').remove()
-                                                    $('.loading-overlay').remove()
-                                                    $('div.loading-overlay').remove()
-                                                    var textArea = $('<textarea cols=60 rows=15 style="text-align: left;">')
-                                                    var originalDetails = hcdata.healthData.details
-                                                    try {
-                                                        hcdata.healthData.details = JSON.parse(originalDetails)
-                                                    } catch (e) {
-                                                        hcdata.healthData.details = originalDetails
-                                                    }
-                                                    textArea.val(JSON.stringify(hcdata, null, 2))
-                                                    cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton(
-                                                        textArea.dialog({
-                                                            title: _l('label.status'),
-                                                            dialogClass: 'notice',
-                                                            width: 566,
-                                                            closeOnEscape: false,
-                                                            buttons: [{
-                                                                text: _l('label.cancel'),
-                                                                'class': 'cancel',
-                                                                click: function() {
-                                                                    $(this).dialog('destroy');
-                                                                    $('div.overlay').remove();
-                                                                    $('.hovered-elem').hide();
-                                                                }
-                                                            }, {
-                                                                text: _l('label.copy.text'),
-                                                                'class': 'ok',
-                                                                click: function() {
-                                                                    textArea.select();
-                                                                    document.execCommand('copy');
-                                                                    $(this).dialog('destroy');
-                                                                    $('div.overlay').remove();
-                                                                    $('.hovered-elem').hide();
-                                                                }
-                                                            }]
-                                                        })
-                                                    )
+                                                    var numChecks = json.listrouterhealthcheckresultsresponse.count
+                                                    var failedChecks = 0
+                                                    $.each(json.listrouterhealthcheckresultsresponse.routerhealthchecks, function(idx, check) {
+                                                        if (!check.success) failedChecks = failedChecks + 1
+                                                    })
+                                                    cloudStack.dialog.notice({
+                                                        message: 'Found ' + numChecks + ' checks for router, with ' + failedChecks + ' failing checks. Please visit router > Health Checks tab to see details'
+                                                    })
                                                     args.response.success();
                                                 }
                                             });
@@ -10851,6 +10820,66 @@
                                                     });
                                                 }
                                             });
+                                        }
+                                    },
+                                    healthCheckResults: {
+                                        title: 'label.router.health.checks',
+                                        listView: {
+                                            id: 'routerHealthCheckResults',
+                                            label: 'label.router.health.checks',
+                                            hideToolbar: true,
+                                            fields: {
+                                                checkName: {
+                                                    label: 'label.router.health.check.name'
+                                                },
+                                                checkType: {
+                                                    label: 'label.router.health.check.type'
+                                                },
+                                                success: {
+                                                    label: 'label.router.health.check.success',
+                                                    converter: function (args) {
+                                                        if (args) {
+                                                            return _l('True');
+                                                        } else {
+                                                            return _l('False');
+                                                        }
+                                                    },
+                                                    indicator: {
+                                                        true: 'on',
+                                                        false: 'off'
+                                                    }
+                                                },
+                                                lastUpdated: {
+                                                    label: 'label.router.health.check.last.updated'
+                                                }
+                                            },
+                                            actions: {
+                                                details: {
+                                                    label: 'label.router.health.check.details',
+                                                    action: {
+                                                        custom: function (args) {
+                                                            cloudStack.dialog.notice({
+                                                                message: args.context.routerHealthCheckResults[0].details
+                                                            })
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            dataProvider: function(args) {
+                                                console.log(args)
+                                                $.ajax({
+                                                    url: createURL('listRouterHealthCheckResults'),
+                                                    data: {
+                                                        'id': args.context.routers[0].id
+                                                    },
+                                                    success: function (json) {
+                                                        var hcdata = json.listrouterhealthcheckresultsresponse.routerhealthchecks
+                                                        args.response.success({
+                                                            data: json.listrouterhealthcheckresultsresponse.routerhealthchecks
+                                                        });
+                                                    }
+                                                });
+                                            }
                                         }
                                     }
                                 }

@@ -47,8 +47,8 @@ def main():
             print "Failed to retrieve cpu usage using " + cmd
             exit(1)
     else:
-        print "Missing maxCpuUsage in health_checks_data systemThresholds"
-        exit(1)
+        print "Missing maxCpuUsage in health_checks_data systemThresholds, skipping"
+        exit(0)
 
 
 if __name__ == "__main__":

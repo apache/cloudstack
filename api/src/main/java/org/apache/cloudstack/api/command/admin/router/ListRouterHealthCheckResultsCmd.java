@@ -106,7 +106,6 @@ public class ListRouterHealthCheckResultsCmd extends BaseListCmd {
             List<RouterHealthCheckResultsResponse> healthChecks = _responseGenerator.createHealthCheckResponse(router, result);
             ListResponse<RouterHealthCheckResultsResponse> routerResponse = new ListResponse<>();
             routerResponse.setResponses(healthChecks);
-            routerResponse.setObjectName("routerhealthchecks");
             routerResponse.setResponseName(getCommandName());
             setResponseObject(routerResponse);
         } else {

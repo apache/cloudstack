@@ -72,7 +72,7 @@ def main():
         print "Found all entries (count " + \
               str(len(portForwards)) + ") in iptables"
     else:
-        print "No portforwarding rules provided to check"
+        print "No portforwarding rules provided to check, skipping"
 
     exit(0)
 

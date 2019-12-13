@@ -4214,6 +4214,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<RouterHealthCheckResultsResponse> responses = new ArrayList<>(healthCheckResults.size());
         for (RouterHealthCheckResult hcResult : healthCheckResults) {
             RouterHealthCheckResultsResponse healthCheckResponse = new RouterHealthCheckResultsResponse();
+            healthCheckResponse.setObjectName("routerhealthchecks");
             healthCheckResponse.setRouterId(router.getUuid());
             healthCheckResponse.setCheckName(hcResult.getCheckName());
             healthCheckResponse.setCheckType(hcResult.getCheckType());

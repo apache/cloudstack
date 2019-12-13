@@ -35,10 +35,9 @@ def main():
             exit(1)
         else:
             print "Sufficient free space is " + str(freeSpace/1024) + " MB"
-            exit(0)
     else:
-        print "Missing minDiskNeeded in health_checks_data systemThresholds"
-        exit(1)
+        print "Missing minDiskNeeded in health_checks_data systemThresholds, skipping"
+    exit(0)
 
 
 if __name__ == "__main__":
