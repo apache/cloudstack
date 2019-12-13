@@ -46,6 +46,7 @@ BuildRequires: glibc-devel
 BuildRequires: /usr/bin/mkisofs
 BuildRequires: mysql-connector-python
 BuildRequires: maven => 3.0.0
+BuildRequires: python-setuptools
 
 %description
 CloudStack is a highly-scalable elastic, open source,
@@ -57,12 +58,14 @@ Requires: java-1.8.0-openjdk
 Requires: python
 Requires: python3
 Requires: bash
+Requires: gawk
 Requires: bzip2
 Requires: gzip
 Requires: unzip
 Requires: /sbin/mount.nfs
 Requires: openssh-clients
 Requires: nfs-utils
+Requires: iproute
 Requires: wget
 Requires: mysql
 Requires: mysql-connector-java

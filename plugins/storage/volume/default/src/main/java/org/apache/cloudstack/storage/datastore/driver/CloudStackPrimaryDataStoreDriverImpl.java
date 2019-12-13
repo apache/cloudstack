@@ -82,7 +82,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     @Override
     public Map<String, String> getCapabilities() {
         Map<String, String> caps = new HashMap<String, String>();
-        caps.put(DataStoreCapabilities.VOLUME_SNAPSHOT_QUIESCEVM.toString(), "false");
+        caps.put(DataStoreCapabilities.VOLUME_SNAPSHOT_QUIESCEVM.toString(), Boolean.FALSE.toString());
         return caps;
     }
 

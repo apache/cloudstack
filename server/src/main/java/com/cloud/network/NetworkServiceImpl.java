@@ -732,11 +732,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             }
 
             try {
-                if (ipv4Address != null) {
-                    ipaddr = _ipAddrMgr.allocatePublicIpForGuestNic(network, podId, ipOwner, ipv4Address);
-                }
                 if (ipv6Address != null) {
                     ip6addr = ipv6AddrMgr.allocatePublicIp6ForGuestNic(network, podId, ipOwner, ipv6Address);
+                } else {
+                    ipaddr = _ipAddrMgr.allocatePublicIpForGuestNic(network, podId, ipOwner, ipv4Address);
                 }
                 if (ipaddr == null && ipv6Address == null) {
                     throw new InvalidParameterValueException("Allocating ip to guest nic " + nicId + " failed");
