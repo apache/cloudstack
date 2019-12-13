@@ -67,13 +67,23 @@ public interface OutOfBandManagement extends StateObject<OutOfBandManagement.Pow
         PASSWORD
     }
 
+    /**
+     * <ul>
+     *  <li> <b>on:</b> Power up chassis.
+     *  <li> <b>off:</b> Power down chassis into soft off (S4/S5 state). WARNING: This command does not initiate a clean shutdown of the operating system prior to powering down the system.
+     *  <li> <b>cycle:</b> Provides a power off interval of at least 1 second. No action should occur if chassis power is in S4/S5 state, but it is recommended to check power state first and only issue a power cycle command if the system power is on or in lower sleep state than S4/S5.
+     *  <li> <b>reset:</b> This command will perform a hard reset.
+     *  <li> <b>soft:</b> Initiate a soft-shutdown of OS via ACPI. This can be done in a number of ways, commonly by simulating an overtemperture or by simulating a power button press. It is necessary for there to be Operating System support for ACPI and some sort of daemon watching for events for this soft power to work.
+     *  <li> <b>status:</b> Show current chassis power status.
+     *  </ul>
+     */
     enum PowerOperation {
         ON,
         OFF,
         CYCLE,
         RESET,
         SOFT,
-        STATUS,
+        STATUS
     }
 
     enum PowerState {
