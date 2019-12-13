@@ -112,17 +112,17 @@ INSERT IGNORE INTO `cloud`.`network_offerings` (name, uuid, unique_name, display
 
 UPDATE `cloud`.`network_offerings` SET removed=NULL WHERE unique_name='DefaultNetworkOfferingforKubernetesService';
 
-SET @k8snetwork = (select id from network_offerings where name='DefaultNetworkOfferingforKubernetesService' and removed IS NULL);
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@k8snetwork, 'Dhcp','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@k8snetwork, 'Dns','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@k8snetwork, 'Firewall','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@k8snetwork, 'Gateway','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@k8snetwork, 'Lb','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@k8snetwork, 'PortForwarding','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@k8snetwork, 'SourceNat','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@k8snetwork, 'StaticNat','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@k8snetwork, 'UserData','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@k8snetwork, 'Vpn','VirtualRouter',now());
+SET @kubernetesnetwork = (select id from network_offerings where name='DefaultNetworkOfferingforKubernetesService' and removed IS NULL);
+INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'Dhcp','VirtualRouter',now());
+INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'Dns','VirtualRouter',now());
+INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'Firewall','VirtualRouter',now());
+INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'Gateway','VirtualRouter',now());
+INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'Lb','VirtualRouter',now());
+INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'PortForwarding','VirtualRouter',now());
+INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'SourceNat','VirtualRouter',now());
+INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'StaticNat','VirtualRouter',now());
+INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'UserData','VirtualRouter',now());
+INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'Vpn','VirtualRouter',now());
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server',
-'cloud.kubernetes.cluster.network.offering', 'DefaultNetworkOfferingforKubernetesService' , 'Network Offering used for CloudStack kubernetes service', 'DefaultNetworkOfferingforKubernetesService', NULL , NULL, 0);
+'cloud.kubernetes.cluster.network.offering', 'DefaultNetworkOfferingforKubernetesService', 'Network Offering used for CloudStack kubernetes service', 'DefaultNetworkOfferingforKubernetesService', NULL , NULL, 0);
