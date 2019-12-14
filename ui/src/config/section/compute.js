@@ -241,6 +241,8 @@ export default {
           icon: 'user-add',
           label: 'Assign Instance to Another Account',
           dataView: true,
+          component: () => import('@/views/compute/AssignInstance'),
+          popup: true,
           show: (record) => { return ['Stopped'].includes(record.state) },
           args: ['virtualmachineid', 'account', 'domainid'],
           mapping: {
