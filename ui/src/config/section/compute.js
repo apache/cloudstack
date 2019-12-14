@@ -194,13 +194,6 @@ export default {
           }
         },
         {
-          api: 'migrateVirtualMachineWithVolume',
-          icon: 'export',
-          label: 'Migrate VM with Volume(s)',
-          dataView: true,
-          show: (record) => { return ['Running'].includes(record.state) }
-        },
-        {
           api: 'migrateVirtualMachine',
           icon: 'drag',
           label: 'label.migrate.instance.to.ps',

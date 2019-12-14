@@ -112,8 +112,9 @@ export default {
     },
     submitForm () {
       this.loading = true
-      api('migrateVirtualMachine', {
-        hostid: this.hosts[this.selectedIndex].id,
+      const host = this.hosts[this.selectedIndex]
+      api(host.requiresStorageMotion ? 'migrateVirtualMachineWithVolume' : 'migrateVirtualMachine', {
+        hostid: host.id,
         virtualmachineid: this.resource.id
       }).then(response => {
         this.$store.dispatch('AddAsyncJob', {

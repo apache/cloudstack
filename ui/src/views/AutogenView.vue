@@ -518,7 +518,6 @@ export default {
           this.listUuidOpts(param)
         }
       }
-      console.log(this.currentAction.paramFields)
       this.currentAction.loading = false
     },
     listUuidOpts (param) {
