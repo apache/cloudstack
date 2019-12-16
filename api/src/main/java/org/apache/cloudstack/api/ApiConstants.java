@@ -746,6 +746,13 @@ public class ApiConstants {
     public static final String FILES = "files";
     public static final String VOLUME_IDS = "volumeids";
 
+    public static final String ROUTER_ID = "routerid";
+    public static final String ROUTER_HEALTH_CHECKS = "healthchecks";
+    public static final String ROUTER_CHECK_NAME = "checkname";
+    public static final String ROUTER_CHECK_TYPE = "checktype";
+    public static final String LAST_UPDATED = "lastupdated";
+    public static final String PERFORM_FRESH_CHECKS = "performfreshchecks";
+
     public enum HostDetails {
         all, capacity, events, stats, min;
     }

@@ -22,6 +22,8 @@ package com.cloud.agent.api.routing;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections.CollectionUtils;
+
 import com.cloud.agent.api.to.MonitorServiceTO;
 
 /**
@@ -45,7 +47,9 @@ public class SetMonitorServiceCommand extends NetworkElementCommand {
     }
 
     public SetMonitorServiceCommand(List<MonitorServiceTO> services) {
-        this.services = services.toArray(new MonitorServiceTO[services.size()]);
+        if (CollectionUtils.isNotEmpty(services)) {
+            this.services = services.toArray(new MonitorServiceTO[services.size()]);
+        }
     }
 
     public MonitorServiceTO[] getRules() {

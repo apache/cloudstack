@@ -67,12 +67,11 @@ public interface VirtualNetworkApplianceService {
     List<Long> upgradeRouterTemplate(UpgradeRouterTemplateCmd cmd);
 
     /**
-     * Returns the health check results from the router. It can re-run the health checks on demand if runChecks is true. Otherwise,
-     * it fetches the previously executed health checks from the router (NOT DB).
+     * Updates router with latest health checkdata, runs health checks and persists health checks on virtual router if feasible.
+     * Throws relevant exception if feature is disabled or failures occur.
      *
      * @param routerId id of the router
-     * @param runChecks
      * @return
      */
-    List<RouterHealthCheckResult> fetchRouterHealthCheckResults(long routerId, boolean runChecks);
+    boolean performRouterHealthChecks(long routerId);
 }

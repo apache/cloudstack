@@ -23,32 +23,32 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.RouterHealthCheckResultsResponse;
+import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
+import org.apache.cloudstack.api.response.RouterHealthCheckResultsListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = ListRouterHealthCheckResultsCmd.APINAME,
-        responseObject = RouterHealthCheckResultsResponse.class,
+@APICommand(name = GetRouterHealthCheckResultsCmd.APINAME,
+        responseObject = RouterHealthCheckResultsListResponse.class,
         description = "Starts a router.",
         entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
-        since = "4.13.1")
-public class ListRouterHealthCheckResultsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListRouterHealthCheckResultsCmd.class.getName());
-    public static final String APINAME = "listRouterHealthCheckResults";
+        since = "4.14.0")
+public class GetRouterHealthCheckResultsCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(GetRouterHealthCheckResultsCmd.class.getName());
+    public static final String APINAME = "getRouterHealthCheckResults";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -58,7 +58,7 @@ public class ListRouterHealthCheckResultsCmd extends BaseListCmd {
             required = true, description = "the ID of the router")
     private Long id;
 
-    @Parameter(name = "performfreshchecks", type = CommandType.BOOLEAN, description = "if true is passed for this parameter, " +
+    @Parameter(name = ApiConstants.PERFORM_FRESH_CHECKS, type = CommandType.BOOLEAN, description = "if true is passed for this parameter, " +
             "health checks are performed on the fly. Else last performed checks data is fetched")
     private Boolean performFreshChecks;
 
@@ -71,7 +71,7 @@ public class ListRouterHealthCheckResultsCmd extends BaseListCmd {
     }
 
     public boolean shouldPerformFreshChecks() {
-        return performFreshChecks == null ? false : performFreshChecks.booleanValue();
+        return BooleanUtils.isTrue(performFreshChecks);
     }
 
     /////////////////////////////////////////////////////
@@ -101,15 +101,17 @@ public class ListRouterHealthCheckResultsCmd extends BaseListCmd {
             throw new InvalidParameterValueException("Can't find router by id");
         }
 
-        List<RouterHealthCheckResult> result = _routerService.fetchRouterHealthCheckResults(getId(), shouldPerformFreshChecks());
-        if (result != null) {
-            List<RouterHealthCheckResultsResponse> healthChecks = _responseGenerator.createHealthCheckResponse(router, result);
-            ListResponse<RouterHealthCheckResultsResponse> routerResponse = new ListResponse<>();
-            routerResponse.setResponses(healthChecks);
+        try {
+            List<RouterHealthCheckResultResponse> healthChecks = _queryService.listRouterHealthChecks(this);
+            RouterHealthCheckResultsListResponse routerResponse = new RouterHealthCheckResultsListResponse();
+            routerResponse.setRouterId(router.getUuid());
+            routerResponse.setHealthChecks(healthChecks);
+            routerResponse.setObjectName("routerhealthchecks");
             routerResponse.setResponseName(getCommandName());
             setResponseObject(routerResponse);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start router");
+        } catch (CloudRuntimeException ex){
+            ex.printStackTrace();
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to execute command due to exception: " + ex.getLocalizedMessage());
         }
     }
 }

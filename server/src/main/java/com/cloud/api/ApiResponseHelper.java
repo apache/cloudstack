@@ -61,7 +61,7 @@ import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.CreateSSHKeyPairResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.RouterHealthCheckResultsResponse;
+import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
@@ -4210,12 +4210,11 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public List<RouterHealthCheckResultsResponse> createHealthCheckResponse(VirtualMachine router, List<RouterHealthCheckResult> healthCheckResults) {
-        List<RouterHealthCheckResultsResponse> responses = new ArrayList<>(healthCheckResults.size());
+    public List<RouterHealthCheckResultResponse> createHealthCheckResponse(VirtualMachine router, List<RouterHealthCheckResult> healthCheckResults) {
+        List<RouterHealthCheckResultResponse> responses = new ArrayList<>(healthCheckResults.size());
         for (RouterHealthCheckResult hcResult : healthCheckResults) {
-            RouterHealthCheckResultsResponse healthCheckResponse = new RouterHealthCheckResultsResponse();
+            RouterHealthCheckResultResponse healthCheckResponse = new RouterHealthCheckResultResponse();
             healthCheckResponse.setObjectName("routerhealthchecks");
-            healthCheckResponse.setRouterId(router.getUuid());
             healthCheckResponse.setCheckName(hcResult.getCheckName());
             healthCheckResponse.setCheckType(hcResult.getCheckType());
             healthCheckResponse.setResult(hcResult.getCheckResult());

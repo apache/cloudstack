@@ -1240,30 +1240,31 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 for (final DomainRouterVO router : routers) {
                     GetRouterMonitorResultsAnswer answer = fetchAndUpdateRouterHealthChecks(router, false);
                     String checkFailsToRestartVr = RouterHealthChecksFailuresToRestartVr.valueIn(router.getDataCenterId());
-                    if (answer != null) {
-                        if (answer.getResult()) {
-                            updateRouterConnectivityHealthCheck(router.getId(), true, "Successfully fetched data");
-                            parseAndMergeDbHealthChecks(router.getId(), answer.getMonitoringResults());
-                        } else {
-                            updateRouterConnectivityHealthCheck(router.getId(), false, "Failed to fetch results with details: " + answer.getDetails());
-                        }
+                    if (answer == null) {
+                        s_logger.warn("Unable to fetch monitor results for router " + router);
+                        updateRouterConnectivityHealthCheck(router.getId(), false, "Communication failed");
+                    } else if (!answer.getResult()) {
+                        s_logger.warn("Failed to fetch monitor results from router " + router + " with details: " + answer.getDetails());
+                        updateRouterConnectivityHealthCheck(router.getId(), false, "Failed to fetch results with details: " + answer.getDetails());
+                    } else {
+                        updateRouterConnectivityHealthCheck(router.getId(), true, "Successfully fetched data");
+                        parseAndMergeDbHealthChecks(router.getId(), answer.getMonitoringResults());
 
                         // Check failing tests and restart if needed
                         if (answer.getFailingChecks().size() > 0 && StringUtils.isNotBlank(checkFailsToRestartVr)) {
-                            s_logger.info("Checking failed health checks ");
+                            s_logger.info("Checking failed health checks to see if router needs reboot");
                             for (String failedCheck : answer.getFailingChecks()) {
                                 if (checkFailsToRestartVr.contains(failedCheck)) {
+                                    s_logger.info("Found failing health check " + failedCheck + " so restarting router.");
                                     rebootRouter(router.getId(), true);
                                 }
                             }
                         }
-                    } else {
-                        s_logger.warn("Unable to fetch monitor results for router " + router);
-                        updateRouterConnectivityHealthCheck(router.getId(), false, "Communication failed");
                     }
                 }
             } catch (final Exception ex) {
                 s_logger.error("Fail to complete the FetchRouterHealthChecksResultTask! ", ex);
+                ex.printStackTrace();
             }
         }
     }
@@ -1406,7 +1407,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     @Override
-    public List<RouterHealthCheckResult> fetchRouterHealthCheckResults(long routerId, boolean runChecks) {
+    public boolean performRouterHealthChecks(long routerId) {
         DomainRouterVO router = _routerDao.findById(routerId);
 
         if (router == null) {
@@ -1417,14 +1418,20 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             throw new CloudRuntimeException("Router health checks are not enabled in cluster router: " + router);
         }
 
-        s_logger.info("Getting router health check results for router " + router.getUuid());
-        if (runChecks) {
-            boolean successfullyUpdatedData = updateRouterHealthCheckData(router);
-            s_logger.info("Updating health check data for fresh run successfully: " + successfullyUpdatedData);
-        }
+        s_logger.info("Running health check results for router " + router.getUuid());
 
+        // Step 1: Update health check data on router.
+        if (!updateRouterHealthCheckData(router)) {
+            s_logger.warn("Unable to update health check data for fresh run successfully for router: " + router);
+            return false;
+        }
+        s_logger.info("Updated health check data for fresh run successfully for router: " + router);
+
+        // Step 2: Perform and retrieve health checks on router
         s_logger.info("Retrieving results for fresh health check execution for router " + router.getUuid());
-        GetRouterMonitorResultsAnswer answer = fetchAndUpdateRouterHealthChecks(router, runChecks);
+        GetRouterMonitorResultsAnswer answer = fetchAndUpdateRouterHealthChecks(router, true);
+
+        // Step 3: Update health checks values in database
         if (answer == null || !answer.getResult()) {
             updateRouterConnectivityHealthCheck(routerId, false,
                     answer == null ? "Communication failed " : "Failed to fetch results with details: " + answer.getDetails());
@@ -1433,7 +1440,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             parseAndMergeDbHealthChecks(routerId, answer.getMonitoringResults());
         }
 
-        return new ArrayList<>(routerHealthCheckResultDao.getHealthCheckResults(routerId));
+        return true;
     }
 
     protected class UpdateRouterHealthChecksConfigDataTask extends ManagedContextRunnable {
@@ -1455,54 +1462,133 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
     }
 
+    private SetMonitorServiceCommand createMonitorServiceCommand(DomainRouterVO router, List<MonitorServiceTO> services,
+                                                                 boolean reconfigure, boolean deleteFromProcessedCache) {
+        final SetMonitorServiceCommand command = new SetMonitorServiceCommand(services);
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIP(router));
+        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.valueIn(router.getDataCenterId()).toString());
+        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
+        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
+        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, RouterHealthChecksToExclude.valueIn(router.getDataCenterId()));
+        command.setAdditionalData(getAdditionalDataForRouterHealthChecks(router));
+        command.setReconfigureAfterUpdate(reconfigure);
+        command.setDeleteFromProcessedCache(deleteFromProcessedCache); // As part of updating
+        return command;
+    }
+
     private boolean updateRouterHealthCheckData(DomainRouterVO router) {
         if (!RouterHealthChecksEnabled.valueIn(router.getDataCenterId())) {
             return false;
         }
 
+        SetMonitorServiceCommand command = createMonitorServiceCommand(router, null,true, true);
         String controlIP = getRouterControlIP(router);
-        if (StringUtils.isNotBlank(controlIP) && !controlIP.equals("0.0.0.0")) {
-            s_logger.info("Updating data for router health checks for router " + router.getUuid());
-            final SetMonitorServiceCommand command = new SetMonitorServiceCommand();
-            command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIP(router));
-            command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-            command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.valueIn(router.getDataCenterId()).toString());
-            command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
-            command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
-            command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, RouterHealthChecksToExclude.valueIn(router.getDataCenterId()));
-            command.setAdditionalData(getAdditionalDataForRouterHealthChecks(router));
-            command.setReconfigureAfterUpdate(true);
-            command.setDeleteFromProcessedCache(true); // As part of updating
-
-            Answer origAnswer = null;
-            try {
-                origAnswer = _agentMgr.easySend(router.getHostId(), command);
-            } catch (final Exception e) {
-                s_logger.warn("Error while sending update data for health check to router: " + router.getInstanceName(), e);
-                return false;
-            }
-
-            if (origAnswer == null) {
-                s_logger.warn("Unable to update health checks data to router " + router.getHostName());
-                return false;
-            }
-
-            GroupAnswer answer = null;
-            if (origAnswer instanceof GroupAnswer) {
-                answer = (GroupAnswer) origAnswer;
-            } else {
-                s_logger.warn("Unable to update health checks data to router " + router.getHostName() + " Received answer " + origAnswer.getDetails());
-                return false;
-            }
-
-            if (!answer.getResult()) {
-                s_logger.warn("Unable to update health checks data to router " + router.getHostName() + ", details : " + answer.getDetails());
-            }
-
-            return answer.getResult();
+        if (StringUtils.isBlank(controlIP) || controlIP.equals("0.0.0.0")) {
+            s_logger.warn("Skipping update data on router " + router.getUuid() + " because controlIp is not correct.");
+            return false;
         }
-        s_logger.debug("Skipping update data on router " + router.getUuid() + " because controlIp is not correct.");
-        return false;
+
+        s_logger.info("Updating data for router health checks for router " + router.getUuid());
+        Answer origAnswer = null;
+        try {
+            origAnswer = _agentMgr.easySend(router.getHostId(), command);
+        } catch (final Exception e) {
+            s_logger.error("Error while sending update data for health check to router: " + router.getInstanceName(), e);
+            return false;
+        }
+
+        if (origAnswer == null) {
+            s_logger.error("Unable to update health checks data to router " + router.getHostName());
+            return false;
+        }
+
+        GroupAnswer answer = null;
+        if (origAnswer instanceof GroupAnswer) {
+            answer = (GroupAnswer) origAnswer;
+        } else {
+            s_logger.error("Unable to update health checks data to router " + router.getHostName() + " Received answer " + origAnswer.getDetails());
+            return false;
+        }
+
+        if (!answer.getResult()) {
+            s_logger.warn("Unable to update health checks data to router " + router.getHostName() + ", details : " + answer.getDetails());
+        }
+
+        return answer.getResult();
+    }
+
+    private String getSystemThresholdsHealthChecksData(final DomainRouterVO router) {
+        return new StringBuilder()
+                .append("minDiskNeeded=" + RouterHealthChecksFreeDiskSpaceThreshold.valueIn(router.getDataCenterId()))
+                .append(",maxCpuUsage=" + RouterHealthChecksMaxCpuUsageThreshold.valueIn(router.getDataCenterId()))
+                .append(",maxMemoryUsage=" + RouterHealthChecksMaxMemoryUsageThreshold.valueIn(router.getDataCenterId()) + ";")
+                .toString();
+    }
+
+    private String getRouterVersionHealthChecksData(final DomainRouterVO router) {
+        if (router.getTemplateVersion() != null && router.getScriptsVersion() != null) {
+            StringBuilder routerVersion = new StringBuilder()
+                    .append("templateVersion=" + router.getTemplateVersion())
+                    .append(",scriptsVersion=" + router.getScriptsVersion());
+            return routerVersion.toString();
+        }
+        return null;
+    }
+
+    private void updateWithPortForwardingRules(final DomainRouterJoinVO routerJoinVO, final UserVmJoinVO vm, final StringBuilder portData) {
+        SearchBuilder<PortForwardingRuleVO> sbpf = portForwardingDao.createSearchBuilder();
+        sbpf.and("networkId", sbpf.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        sbpf.and("instanceId", sbpf.entity().getVirtualMachineId(), SearchCriteria.Op.EQ);
+        SearchCriteria<PortForwardingRuleVO> scpf = sbpf.create();
+        scpf.setParameters("networkId", routerJoinVO.getNetworkId());
+        scpf.setParameters("instanceId", vm.getId());
+        List<PortForwardingRuleVO> portForwardingRules = portForwardingDao.search(scpf, null);
+        for (PortForwardingRuleVO portForwardingRule : portForwardingRules) {
+            portData.append("sourceIp=").append(_ipAddressDao.findById(portForwardingRule.getSourceIpAddressId()).getAddress().toString())
+                    .append(",sourcePortStart=").append(portForwardingRule.getSourcePortStart())
+                    .append(",sourcePortEnd=").append(portForwardingRule.getSourcePortEnd())
+                    .append(",destIp=").append(portForwardingRule.getDestinationIpAddress())
+                    .append(",destPortStart=").append(portForwardingRule.getDestinationPortStart())
+                    .append(",destPortEnd=").append(portForwardingRule.getDestinationPortEnd()).append(";");
+        }
+    }
+
+    private void updateWithLbRules(final DomainRouterJoinVO routerJoinVO, final StringBuilder loadBalancingData) {
+        List<? extends FirewallRuleVO> loadBalancerVOs = this.getLBRules(routerJoinVO);
+        for (FirewallRuleVO firewallRuleVO : loadBalancerVOs) {
+            List<LoadBalancerVMMapVO> vmMapVOs = _loadBalancerVMMapDao.listByLoadBalancerId(firewallRuleVO.getId(), false);
+            if (vmMapVOs.size() > 0) {
+
+                final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(routerJoinVO.getNetworkId()).getNetworkOfferingId());
+                if (offering.getConcurrentConnections() == null) {
+                    loadBalancingData.append("maxconn=").append(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
+                } else {
+                    loadBalancingData.append("maxconn=").append(offering.getConcurrentConnections().toString());
+                }
+
+                loadBalancingData.append(",sourcePortStart=").append(firewallRuleVO.getSourcePortStart())
+                        .append(",sourcePortEnd=").append(firewallRuleVO.getSourcePortEnd());
+                if (firewallRuleVO instanceof LoadBalancerVO) {
+                    LoadBalancerVO loadBalancerVO = (LoadBalancerVO) firewallRuleVO;
+                    loadBalancingData.append(",sourceIp=").append(_ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString())
+                            .append(",destPortStart=").append(loadBalancerVO.getDefaultPortStart())
+                            .append(",destPortEnd=").append(loadBalancerVO.getDefaultPortEnd())
+                            .append(",algorithm=").append(loadBalancerVO.getAlgorithm()).append(",vmIps=");
+                } else if (firewallRuleVO instanceof ApplicationLoadBalancerRuleVO) {
+                    ApplicationLoadBalancerRuleVO appLoadBalancerVO = (ApplicationLoadBalancerRuleVO) firewallRuleVO;
+                    loadBalancingData.append(",sourceIp=").append(appLoadBalancerVO.getSourceIp())
+                            .append(",destPortStart=").append(appLoadBalancerVO.getDefaultPortStart())
+                            .append(",destPortEnd=").append(appLoadBalancerVO.getDefaultPortEnd())
+                            .append(",algorithm=").append(appLoadBalancerVO.getAlgorithm()).append(",vmIps=");
+
+                }
+                for (LoadBalancerVMMapVO vmMapVO : vmMapVOs) {
+                    loadBalancingData.append(vmMapVO.getInstanceIp()).append(" ");
+                }
+                loadBalancingData.setCharAt(loadBalancingData.length() - 1, ';');
+            }
+        }
     }
 
     private Map<String, String> getAdditionalDataForRouterHealthChecks(final DomainRouterVO router) {
@@ -1530,77 +1616,20 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 vmsData.append("vmName=").append(vm.getName())
                         .append(",macAddress=").append(vm.getMacAddress())
                         .append(",ip=").append(vm.getIpAddress()).append(";");
-                SearchBuilder<PortForwardingRuleVO> sbpf = portForwardingDao.createSearchBuilder();
-                sbpf.and("networkId", sbpf.entity().getNetworkId(), SearchCriteria.Op.EQ);
-                sbpf.and("instanceId", sbpf.entity().getVirtualMachineId(), SearchCriteria.Op.EQ);
-                SearchCriteria<PortForwardingRuleVO> scpf = sbpf.create();
-                scpf.setParameters("networkId", routerJoinVO.getNetworkId());
-                scpf.setParameters("instanceId", vm.getId());
-                List<PortForwardingRuleVO> portForwardingRules = portForwardingDao.search(scpf, null);
-                for (PortForwardingRuleVO portForwardingRule : portForwardingRules) {
-                    portData.append("sourceIp=").append(_ipAddressDao.findById(portForwardingRule.getSourceIpAddressId()).getAddress().toString())
-                            .append(",sourcePortStart=").append(portForwardingRule.getSourcePortStart())
-                            .append(",sourcePortEnd=").append(portForwardingRule.getSourcePortEnd())
-                            .append(",destIp=").append(portForwardingRule.getDestinationIpAddress())
-                            .append(",destPortStart=").append(portForwardingRule.getDestinationPortStart())
-                            .append(",destPortEnd=").append(portForwardingRule.getDestinationPortEnd()).append(";");
-                }
+                updateWithPortForwardingRules(routerJoinVO, vm, portData);
             }
-
-            List<? extends FirewallRuleVO> loadBalancerVOs = this.getLBRules(routerJoinVO);
-            for (FirewallRuleVO firewallRuleVO : loadBalancerVOs) {
-                List<LoadBalancerVMMapVO> vmMapVOs = _loadBalancerVMMapDao.listByLoadBalancerId(firewallRuleVO.getId(), false);
-                if (vmMapVOs.size() > 0) {
-
-                    final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(routerJoinVO.getNetworkId()).getNetworkOfferingId());
-                    if (offering.getConcurrentConnections() == null) {
-                        loadBalancingData.append("maxconn=").append(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
-                    } else {
-                        loadBalancingData.append("maxconn=").append(offering.getConcurrentConnections().toString());
-                    }
-
-                    loadBalancingData.append(",sourcePortStart=").append(firewallRuleVO.getSourcePortStart())
-                            .append(",sourcePortEnd=").append(firewallRuleVO.getSourcePortEnd());
-                    if (firewallRuleVO instanceof LoadBalancerVO) {
-                        LoadBalancerVO loadBalancerVO = (LoadBalancerVO) firewallRuleVO;
-                        loadBalancingData.append(",sourceIp=").append(_ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString())
-                                .append(",destPortStart=").append(loadBalancerVO.getDefaultPortStart())
-                                .append(",destPortEnd=").append(loadBalancerVO.getDefaultPortEnd())
-                                .append(",algorithm=").append(loadBalancerVO.getAlgorithm()).append(",vmIps=");
-                    } else if (firewallRuleVO instanceof ApplicationLoadBalancerRuleVO) {
-                        ApplicationLoadBalancerRuleVO appLoadBalancerVO = (ApplicationLoadBalancerRuleVO) firewallRuleVO;
-                        loadBalancingData.append(",sourceIp=").append(appLoadBalancerVO.getSourceIp())
-                                .append(",destPortStart=").append(appLoadBalancerVO.getDefaultPortStart())
-                                .append(",destPortEnd=").append(appLoadBalancerVO.getDefaultPortEnd())
-                                .append(",algorithm=").append(appLoadBalancerVO.getAlgorithm()).append(",vmIps=");
-
-                    }
-                    for (LoadBalancerVMMapVO vmMapVO : vmMapVOs) {
-                        loadBalancingData.append(vmMapVO.getInstanceIp()).append(" ");
-                    }
-                    loadBalancingData.setCharAt(loadBalancingData.length() - 1, ';');
-                }
-            }
+            updateWithLbRules(routerJoinVO, loadBalancingData);
         }
 
+        String routerVersion = getRouterVersionHealthChecksData(router);
         data.put("virtualMachines", vmsData.toString());
         data.put("gateways", gateways.toString());
         data.put("portForwarding", portData.toString());
         data.put("haproxyData", loadBalancingData.toString());
-
-        StringBuilder systemThresholds = new StringBuilder()
-                .append("minDiskNeeded=" + RouterHealthChecksFreeDiskSpaceThreshold.valueIn(router.getDataCenterId()))
-                .append(",maxCpuUsage=" + RouterHealthChecksMaxCpuUsageThreshold.valueIn(router.getDataCenterId()))
-                .append(",maxMemoryUsage=" + RouterHealthChecksMaxMemoryUsageThreshold.valueIn(router.getDataCenterId()) + ";");
-        data.put("systemThresholds", systemThresholds.toString());
-
-        if (router.getTemplateVersion() != null && router.getScriptsVersion() != null) {
-            StringBuilder routerVersion = new StringBuilder()
-                    .append("templateVersion=" + router.getTemplateVersion())
-                    .append(",scriptsVersion=" + router.getScriptsVersion());
-            data.put("routerVersion", routerVersion.toString());
+        data.put("systemThresholds", getSystemThresholdsHealthChecksData(router));
+        if (routerVersion != null) {
+            data.put("routerVersion", routerVersion);
         }
-
         return data;
     }
 
@@ -2129,7 +2158,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     private void finalizeMonitorServiceOnStart(final Commands cmds, final VirtualMachineProfile profile, final DomainRouterVO router, final Provider provider,
-                                               final long networkId, final Boolean add) {
+                                               final long networkId, final Boolean isMonitoringServicesEnabled) {
 
         final NetworkVO network = _networkDao.findById(networkId);
 
@@ -2171,21 +2200,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             throw new CloudRuntimeException("VirtualMachine " + profile.getInstanceName() + " doesn't have a control interface");
         }
 
-        final SetMonitorServiceCommand command = new SetMonitorServiceCommand(servicesTO);
-        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlNic.getIPv4Address());
+        // As part of aggregate command we don't need to reconfigure and persist in processed cache. Subsequent updates are not needed.
+        SetMonitorServiceCommand command = createMonitorServiceCommand(router, servicesTO, false, false);
         command.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(networkId, router.getId()));
-        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-
-        if (!add) {
-            command.setAccessDetail(SetMonitorServiceCommand.ROUTER_MONITORING_ENABLED, add.toString());
+        if (!isMonitoringServicesEnabled) {
+            command.setAccessDetail(SetMonitorServiceCommand.ROUTER_MONITORING_ENABLED, isMonitoringServicesEnabled.toString());
         }
-
-        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.valueIn(router.getDataCenterId()).toString());
-        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
-        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
-        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, RouterHealthChecksToExclude.valueIn(router.getDataCenterId()));
-        command.setAdditionalData(getAdditionalDataForRouterHealthChecks(router));
-        command.setReconfigureAfterUpdate(false); // As part of aggregate command we don't need to reconfigure
 
         cmds.addCommand("monitor", command);
     }

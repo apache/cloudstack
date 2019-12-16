@@ -24,8 +24,6 @@ import java.util.Map;
  * Loads new and updates old configuration details on VR for health checks.
  */
 public class LoadRouterHealthChecksConfigCommand extends NetworkElementCommand {
-//    public static String CHECKS_RUN_INTERVAL = "checks_run_interval";
-//    public static String CHECKS_EXCLUDED = "checks_excluded";
 
     private Map<String, String> details;
 
@@ -39,10 +37,5 @@ public class LoadRouterHealthChecksConfigCommand extends NetworkElementCommand {
 
     public Map<String, String> getDetails() {
         return details;
-//        StringBuilder detailsBuilder = new StringBuilder();
-//        for (Map.Entry detail : details.entrySet()) {
-//            detailsBuilder.append(detail.getKey() + "::" + detail.getValue() + ";");
-//        }
-//        return detailsBuilder.toString();
     }
 }

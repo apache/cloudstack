@@ -275,50 +275,46 @@ public class VirtualRoutingResource {
     }
 
     private GetRouterMonitorResultsAnswer execute(GetRouterMonitorResultsCommand cmd) {
-
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String args = cmd.shouldPerformFreshChecks() ? "true" : "false";
         s_logger.debug("Fetching health check result for " + routerIp + " and executing fresh checks: " + args);
         ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.ROUTER_MONITOR_RESULTS, args);
-        if (result.isSuccess()) {
-            List<String> failingChecks = new ArrayList<>();
-            StringBuilder monitorResults = new StringBuilder();
-            if (!result.getDetails().isEmpty()) {
-                String[] lines = result.getDetails().trim().split("\n");
-                boolean readingFailedChecks = false, readingMonitorResults = false;
-                for (String line : lines) {
-                    line = line.trim();
-                    if (line.contains("FAILING CHECKS")) {
-                        readingFailedChecks = true;
-                        readingMonitorResults = false;
-                        continue;
-                    } else if (line.contains("MONITOR RESULTS")) {
-                        readingFailedChecks = false;
-                        readingMonitorResults = true;
-                        continue;
-                    }
-                    if (readingFailedChecks && !readingMonitorResults) {
-                        for (String w : line.split(",")) {
-                            if (!w.trim().isEmpty()) {
-                                failingChecks.add(w.trim());
-                            }
-                        }
-                    } else if (!readingFailedChecks && readingMonitorResults) {
-                        monitorResults.append(line);
-                    } else {
-                        s_logger.info("Unexpected state of lines reached while parsing response. Skipping line.");
-                    }
-                }
-            } else {
-                s_logger.warn("Received no results back in monitor results.");
-            }
-            if (monitorResults.length() == 0) {
-                monitorResults.append("No results available.");
-            }
-            return new GetRouterMonitorResultsAnswer(cmd, true, failingChecks, monitorResults.toString());
-        } else {
+
+        if (!result.isSuccess()) {
+            s_logger.warn("Result of " + cmd + " failed with details: " + result.getDetails());
             return new GetRouterMonitorResultsAnswer(cmd, false, null, result.getDetails());
         }
+
+        if (result.getDetails().isEmpty()) {
+            s_logger.warn("Result of " + cmd + " received no details.");
+            return new GetRouterMonitorResultsAnswer(cmd, false, null, "No results available.");
+        }
+
+        List<String> failingChecks = new ArrayList<>();
+        StringBuilder monitorResults = new StringBuilder();
+        String[] lines = result.getDetails().trim().split("\n");
+        boolean readingFailedChecks = false, readingMonitorResults = false;
+        for (String line : lines) {
+            line = line.trim();
+            if (line.contains("FAILING CHECKS")) {
+                readingFailedChecks = true;
+                readingMonitorResults = false;
+            } else if (line.contains("MONITOR RESULTS")) {
+                readingFailedChecks = false;
+                readingMonitorResults = true;
+            } else if (readingFailedChecks && !readingMonitorResults) {
+                for (String w : line.split(",")) {
+                    if (!w.trim().isEmpty()) {
+                        failingChecks.add(w.trim());
+                    }
+                }
+            } else if (!readingFailedChecks && readingMonitorResults) {
+                monitorResults.append(line);
+            } else {
+                s_logger.info("Unexpected state of lines reached while parsing response. Skipping line.");
+            }
+        }
+        return new GetRouterMonitorResultsAnswer(cmd, true, failingChecks, monitorResults.toString());
     }
 
     private GetRouterAlertsAnswer execute(GetRouterAlertsCommand cmd) {

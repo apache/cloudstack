@@ -25,16 +25,12 @@ import org.apache.cloudstack.api.BaseResponse;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class RouterHealthCheckResultsResponse extends BaseResponse {
-    @SerializedName("routerId")
-    @Param(description = "the id of the router")
-    private String routerId;
-
-    @SerializedName("checkName")
+public class RouterHealthCheckResultResponse extends BaseResponse {
+    @SerializedName(ApiConstants.ROUTER_CHECK_NAME)
     @Param(description = "the name of the health check on the router")
     private String checkName;
 
-    @SerializedName("checkType")
+    @SerializedName(ApiConstants.ROUTER_CHECK_TYPE)
     @Param(description = "the type of the health check - basic or advance")
     private String checkType;
 
@@ -42,17 +38,13 @@ public class RouterHealthCheckResultsResponse extends BaseResponse {
     @Param(description = "result of the health check")
     private boolean result;
 
-    @SerializedName("lastUpdated")
+    @SerializedName(ApiConstants.LAST_UPDATED)
     @Param(description = "the date this VPC was created")
     private Date lastUpdated;
 
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "detailed response generated on running health check")
     private String details;
-
-    public String getRouterId() {
-        return routerId;
-    }
 
     public String getCheckName() {
         return checkName;
@@ -72,10 +64,6 @@ public class RouterHealthCheckResultsResponse extends BaseResponse {
 
     public String getDetails() {
         return details;
-    }
-
-    public void setRouterId(String routerId) {
-        this.routerId = routerId;
     }
 
     public void setCheckName(String checkName) {

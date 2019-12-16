@@ -49,7 +49,7 @@ import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
-import org.apache.cloudstack.api.command.admin.router.ListRouterHealthCheckResultsCmd;
+import org.apache.cloudstack.api.command.admin.router.GetRouterHealthCheckResultsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
@@ -97,7 +97,7 @@ import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceDetailResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.RouterHealthCheckResultsResponse;
+import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -183,6 +183,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.dao.RouterHealthCheckResultDao;
 import com.cloud.network.security.SecurityGroupVMMapVO;
@@ -3896,8 +3897,20 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     @Override
-    public ListResponse<RouterHealthCheckResultsResponse> listRouterHealthChecks(ListRouterHealthCheckResultsCmd cmd) {
-        return null;
+    public List<RouterHealthCheckResultResponse> listRouterHealthChecks(GetRouterHealthCheckResultsCmd cmd) {
+        s_logger.info("Executing health check command " + cmd);
+        long routerId = cmd.getId();
+        if (cmd.shouldPerformFreshChecks() && !routerService.performRouterHealthChecks(routerId)) {
+            throw new CloudRuntimeException("Unable to perform fresh checks on router.");
+        }
+
+        List<RouterHealthCheckResult> result = new ArrayList<>(routerHealthCheckResultDao.getHealthCheckResults(routerId));
+        if (result == null || result.size() == 0) {
+            throw new CloudRuntimeException("Database had no entries for health checks for router. This could happen for " +
+                    "a newly created router. Please wait for periodic results to populate or manually call for checks to execute.");
+        }
+
+        return responseGenerator.createHealthCheckResponse(_routerDao.findById(routerId), result);
     }
 
     @Override

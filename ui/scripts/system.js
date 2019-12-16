@@ -9981,28 +9981,8 @@
                                         json.listroutersresponse.router:[];
 
                                         $(items).map(function (index, item) {
-                                            if (item.state && item.state === 'Running' && item.healthcheckresults && item.healthcheckresults.details) {
-                                                try {
-                                                    if (!item.healthcheckresults.success || item.healthcheckresults.success.toLowerCase() !== 'true') {
-                                                        item.state = 'Alert'
-                                                    } else {
-                                                        var hcData = JSON.parse(item.healthcheckresults.details)
-                                                        var checkTypes = ['basic', 'advance']
-                                                        $.each(checkTypes, function (cId, checkType) {
-                                                            if (hcData[checkType] && $.type(hcData[checkType]) === "object") {
-                                                                var checks = hcData[checkType]
-                                                                $.each(Object.keys(checks), function (idx, key) {
-                                                                    if (key !== 'lastRun' && (!checks[key].success || checks[key].success.toLowerCase() !== 'true')) {
-                                                                        item.state = 'Alert'
-                                                                    }
-                                                                })
-                                                            }
-                                                        })
-                                                    }
-                                                } catch (ex) {
-                                                    console.error('Unable to parse health check results')
-                                                    console.log(item)
-                                                }
+                                            if (item.healthchecksfailed) {
+                                                item.state = 'Alert'
                                             }
                                             routers.push(item);
                                         });
@@ -10610,14 +10590,15 @@
                                                 'performfreshchecks': (args.data.performfreshchecks === 'on')
                                             };
                                             $.ajax({
-                                                url: createURL('listRouterHealthCheckResults'),
+                                                url: createURL('getRouterHealthCheckResults'),
                                                 dataType: 'json',
                                                 data: data,
                                                 async: false,
                                                 success: function (json) {
-                                                    var numChecks = json.listrouterhealthcheckresultsresponse.count
+                                                    var healthChecks = json.getrouterhealthcheckresultsresponse.routerhealthchecks.healthchecks
+                                                    var numChecks = healthChecks.length
                                                     var failedChecks = 0
-                                                    $.each(json.listrouterhealthcheckresultsresponse.routerhealthchecks, function(idx, check) {
+                                                    $.each(healthChecks, function(idx, check) {
                                                         if (!check.success) failedChecks = failedChecks + 1
                                                     })
                                                     cloudStack.dialog.notice({
@@ -10829,10 +10810,10 @@
                                             label: 'label.router.health.checks',
                                             hideToolbar: true,
                                             fields: {
-                                                checkName: {
+                                                checkname: {
                                                     label: 'label.router.health.check.name'
                                                 },
-                                                checkType: {
+                                                checktype: {
                                                     label: 'label.router.health.check.type'
                                                 },
                                                 success: {
@@ -10849,7 +10830,7 @@
                                                         false: 'off'
                                                     }
                                                 },
-                                                lastUpdated: {
+                                                lastupdated: {
                                                     label: 'label.router.health.check.last.updated'
                                                 }
                                             },
@@ -10867,15 +10848,21 @@
                                             },
                                             dataProvider: function(args) {
                                                 console.log(args)
+                                                if (args.page > 1) {
+                                                    // Only one page is supported as it's not list command.
+                                                    args.response.success({});
+                                                    return
+                                                }
+
                                                 $.ajax({
-                                                    url: createURL('listRouterHealthCheckResults'),
+                                                    url: createURL('getRouterHealthCheckResults'),
                                                     data: {
                                                         'id': args.context.routers[0].id
                                                     },
                                                     success: function (json) {
-                                                        var hcdata = json.listrouterhealthcheckresultsresponse.routerhealthchecks
+                                                        var hcData = json.getrouterhealthcheckresultsresponse.routerhealthchecks.healthchecks
                                                         args.response.success({
-                                                            data: json.listrouterhealthcheckresultsresponse.routerhealthchecks
+                                                            data: hcData
                                                         });
                                                     }
                                                 });

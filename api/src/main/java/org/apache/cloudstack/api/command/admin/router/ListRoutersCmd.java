@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.router;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -137,7 +138,7 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     }
 
     public boolean shouldIncludeHealthCheckResults() {
-        return includeHealthCheckResults == null ? false : includeHealthCheckResults.booleanValue();
+        return BooleanUtils.isTrue(includeHealthCheckResults);
     }
 
 

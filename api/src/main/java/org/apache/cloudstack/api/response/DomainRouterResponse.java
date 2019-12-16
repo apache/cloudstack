@@ -222,8 +222,8 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     private boolean healthChecksFailed;
 
     @SerializedName("healthcheckresults")
-    @Param(description = "Last executed health check result for the router", responseObject = RouterHealthCheckResultsResponse.class, since = "4.14")
-    List<RouterHealthCheckResultsResponse> healthCheckResults;
+    @Param(description = "Last executed health check result for the router", responseObject = RouterHealthCheckResultResponse.class, since = "4.14")
+    List<RouterHealthCheckResultResponse> healthCheckResults;
 
     public DomainRouterResponse() {
         nics = new LinkedHashSet<NicResponse>();
@@ -286,7 +286,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
         return hypervisor;
     }
 
-    public List<RouterHealthCheckResultsResponse> getHealthCheckResults() {
+    public List<RouterHealthCheckResultResponse> getHealthCheckResults() {
         return healthCheckResults;
     }
 
@@ -467,7 +467,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
         this.healthChecksFailed = healthChecksFailed;
     }
 
-    public void setHealthCheckResults(List<RouterHealthCheckResultsResponse> healthCheckResults) {
+    public void setHealthCheckResults(List<RouterHealthCheckResultResponse> healthCheckResults) {
         this.healthCheckResults = healthCheckResults;
     }
 }
