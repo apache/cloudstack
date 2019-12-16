@@ -631,32 +631,33 @@ class TestRouterServices(cloudstackTestCase):
         self.info("Router ID: %s & Router state: %s" % (
             router.id, router.state
         ))
-        self.assertEqual(router.id, healthData.routerId,
+
+        self.assertEqual(router.id, healthData.routerid,
             "Router response should contain it's health check result so id should match"
         )
-        self.assertEqual(isinstance(healthData.healthChecks, list), True,
+        self.assertEqual(isinstance(healthData.healthchecks, list), True,
             "Router response should contain it's health check result as list"
         )
 
-        self.verifyCheckTypes(healthData.healthChecks)
-        self.verifyCheckNames(healthData.healthChecks)
+        self.verifyCheckTypes(healthData.healthchecks)
+        self.verifyCheckNames(healthData.healthchecks)
 
     def verifyCheckTypes(self, healthChecks):
         for checkType in ["basic", "advance"]:
             foundType = False
             for check in healthChecks:
-                if check.checkType == checkType:
+                if check.checktype == checkType:
                     foundType = True
                     break
             self.assertTrue(foundType,
-                "Router should contain health check results info for type" + checkType
+                "Router should contain health check results info for type: " + checkType
             )
 
     def verifyCheckNames(self, healthChecks):
-        for checkName in ["lastRun", "dns_check.py", "dhcp_check.py", "haproxy_check.py", "disk_space_check.py", "iptables_check.py", "gateways_check.py", "router_version_check.py"]:
+        for checkName in ["dns_check.py", "dhcp_check.py", "haproxy_check.py", "disk_space_check.py", "iptables_check.py", "gateways_check.py", "router_version_check.py"]:
             foundCheck = False
             for check in healthChecks:
-                if check.checkName == checkName:
+                if check.checkname == checkName:
                     foundCheck = True
                     break
             self.assertTrue(foundCheck,
