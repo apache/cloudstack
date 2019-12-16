@@ -649,7 +649,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         String.format("sudo kubectl uncordon %s", userVm.getHostName()),
                         10000, 10000, 30000);
                 if (result.first()) {
-                    break;
+                    return true;
                 }
             } catch (Exception e) {
                 LOGGER.warn(String.format("Failed to uncordon node: %s on VM ID: %s in Kubernetes cluster ID: %s", userVm.getHostName(), userVm.getUuid(), kubernetesCluster.getUuid()), e);
@@ -833,6 +833,19 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         kubernetesClusterDao.update(kubernetesCluster.getId(), kubernetesCluster);
 
         int sshPort = publicIpSshPort.second();
+        boolean readyNodesCountValid = validateKubernetesClusterReadyNodesCount(kubernetesCluster, publicIpAddress, sshPort, 30, 30000);
+
+        // Detach binaries ISO from new VMs
+        detachIsoKubernetesVMs(kubernetesCluster, clusterVMIds);
+
+        // Throw exception if nodes count for k8s cluster timed out
+        if (!readyNodesCountValid) { // Scaling failed
+            String msg = String.format("Failed to setup Kubernetes cluster ID: %s as it does not have desired number of nodes in ready state", kubernetesCluster.getUuid());
+            LOGGER.warn(msg);
+            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, msg);
+        }
+
         boolean k8sKubeConfigCopied = false;
         String kubeConfig = getKubernetesClusterConfig(kubernetesCluster, publicIpAddress, sshPort, 5);
         if (!Strings.isNullOrEmpty(kubeConfig)) {
@@ -842,7 +855,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             String msg = String.format("Failed to setup Kubernetes cluster ID: %s in usable state as unable to retrieve kube-config for the cluster", kubernetesCluster.getUuid());
             LOGGER.error(msg);
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
-            detachIsoKubernetesVMs(kubernetesCluster, clusterVMIds);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, msg);
         }
         kubeConfig = kubeConfig.replace(String.format("server: https://%s:%d", k8sMasterVM.getPrivateIpAddress(), CLUSTER_API_PORT),
@@ -854,11 +866,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             String msg = String.format("Failed to setup Kubernetes cluster ID: %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getUuid());
             LOGGER.error(msg);
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
-            detachIsoKubernetesVMs(kubernetesCluster, clusterVMIds);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, msg);
         }
         kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), "dashboardServiceRunning", String.valueOf(dashboardServiceRunning), false);
-        detachIsoKubernetesVMs(kubernetesCluster, clusterVMIds);
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;
     }
@@ -2617,7 +2627,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     attachIsoKubernetesVMs(kubernetesCluster, clusterVMIds);
 
                     // Check if new nodes are added in k8s cluster
-                    boolean readyNodesCountValid = validateKubernetesClusterReadyNodesCount(kubernetesCluster, publicIpAddress, sshPort, 20, 30000);
+                    boolean readyNodesCountValid = validateKubernetesClusterReadyNodesCount(kubernetesCluster, publicIpAddress, sshPort, 30, 30000);
 
                     // Detach binaries ISO from new VMs
                     detachIsoKubernetesVMs(kubernetesCluster, clusterVMIds);
@@ -2768,7 +2778,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, msg);
             }
-            if (!uncordonKubernetesClusterNode(kubernetesCluster, publicIpAddress, sshPort, vm, 3, 30000)) {
+            if (!uncordonKubernetesClusterNode(kubernetesCluster, publicIpAddress, sshPort, vm, 5, 30000)) {
                 String msg = String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to uncordon Kubernetes node on VM ID: %s", kubernetesCluster.getUuid(), vm.getUuid());
                 LOGGER.error(msg);
                 detachIsoKubernetesVMs(kubernetesCluster, vmIds);

@@ -799,7 +799,7 @@
                                                             if (versionObjs != null) {
                                                                 for (var i = 0; i < versionObjs.length; i++) {
                                                                     if (versionObjs[i].id != args.context.kubernetesclusters[0].kubernetesversionid &&
-                                                                        versionObjs[i].isostate == 'Active') {
+                                                                        versionObjs[i].isostate == 'Ready') {
                                                                         items.push({
                                                                             id: versionObjs[i].id,
                                                                             description: versionObjs[i].name

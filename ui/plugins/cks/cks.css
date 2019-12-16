@@ -31,9 +31,9 @@
 }
 
 .upgradeKubernetesCluster .icon {
-  background-position: -264px -2px;
+  background-position: -138px -65px;
 }
 
 .upgradeKubernetesCluster:hover .icon {
-  background-position: -263px -583px;
+  background-position: -138px -647px;
 }
