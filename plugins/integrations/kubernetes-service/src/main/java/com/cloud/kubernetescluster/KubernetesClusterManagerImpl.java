@@ -2743,6 +2743,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         for (int i = 0; i < vmIds.size(); ++i) {
             UserVm vm = userVmDao.findById(vmIds.get(i));
             result = null;
+            LOGGER.debug(String.format("Upgrading node on VM ID: %s in Kubernetes cluster ID: %s with Kubernetes version(%s) ID: %s",
+                    vm.getUuid(), kubernetesCluster.getUuid(), upgradeVersion.getKubernetesVersion(), upgradeVersion.getUuid()));
             try {
                 result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, pkFile, null,
                         String.format("sudo kubectl drain %s --ignore-daemonsets --delete-local-data", vm.getHostName()),
@@ -2802,6 +2804,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, msg);
                 }
             }
+            LOGGER.debug(String.format("Successfully upgraded node on VM ID: %s in Kubernetes cluster ID: %s with Kubernetes version(%s) ID: %s",
+                    vm.getUuid(), kubernetesCluster.getUuid(), upgradeVersion.getKubernetesVersion(), upgradeVersion.getUuid()));
         }
 
         // Detach ISO
