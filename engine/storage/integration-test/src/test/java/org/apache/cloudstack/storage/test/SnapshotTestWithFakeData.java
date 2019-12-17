@@ -318,7 +318,7 @@ public class SnapshotTestWithFakeData {
             final VolumeInfo volumeInfo = createVolume(1L, store);
             Assert.assertTrue(volumeInfo.getState() == Volume.State.Ready);
             vol = volumeInfo;
-            // final SnapshotPolicyVO policyVO = createSnapshotPolicy(vol.getRouterId());
+            // final SnapshotPolicyVO policyVO = createSnapshotPolicy(vol.getId());
 
             ExecutorService pool = Executors.newFixedThreadPool(2);
             boolean result = false;

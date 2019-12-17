@@ -230,12 +230,12 @@ public class VolumeTestVmware extends CloudStackTestNGBase {
         /*
          * TemplateDataStoreVO templateStore = new TemplateDataStoreVO();
          *
-         * templateStore.setDataStoreId(imageStore.getRouterId());
+         * templateStore.setDataStoreId(imageStore.getId());
          * templateStore.setDownloadPercent(100);
          * templateStore.setDownloadState(Status.DOWNLOADED);
          * templateStore.setDownloadUrl(imageStore.getUrl());
          * templateStore.setInstallPath(this.getImageInstallPath());
-         * templateStore.setTemplateId(image.getRouterId());
+         * templateStore.setTemplateId(image.getId());
          * templateStoreDao.persist(templateStore);
          */
 

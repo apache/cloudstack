@@ -604,7 +604,7 @@ class TestRouterServices(cloudstackTestCase):
             self.apiclient,
             account=self.account.name,
             domainid=self.account.domainid,
-            includehealthcheckresults=True
+            fetchhealthcheckresults=True
         )
 
         self.assertEqual(isinstance(routers, list), True,
@@ -643,7 +643,7 @@ class TestRouterServices(cloudstackTestCase):
         self.verifyCheckNames(healthData.healthchecks)
 
     def verifyCheckTypes(self, healthChecks):
-        for checkType in ["basic", "advance"]:
+        for checkType in ["basic", "advanced"]:
             foundType = False
             for check in healthChecks:
                 if check.checktype == checkType:

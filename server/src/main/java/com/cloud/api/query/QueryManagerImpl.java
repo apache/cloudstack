@@ -643,7 +643,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
              * _eventJoinDao.searchAllEvents(sc, searchFilter);
              * List<EventJoinVO> pendingEvents = new ArrayList<EventJoinVO>();
              * for (EventVO event : startedEvents) { EventVO completedEvent =
-             * _eventDao.findCompletedEvent(event.getRouterId()); if (completedEvent
+             * _eventDao.findCompletedEvent(event.getId()); if (completedEvent
              * == null) { pendingEvents.add(event); } } return pendingEvents;
              */
         } else {
@@ -1178,7 +1178,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         for (DomainRouterResponse res : routerResponses) {
             DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
             res.setHealthChecksFailed(routerHealthCheckResultDao.hasFailingChecks(resRouter.getId()));
-            if (cmd.shouldIncludeHealthCheckResults()) {
+            if (cmd.shouldFetchHealthCheckResults()) {
                 res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter,
                         new ArrayList<>(routerHealthCheckResultDao.getHealthCheckResults(resRouter.getId()))));
             }
@@ -1197,7 +1197,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         for (DomainRouterResponse res : routerResponses) {
             DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
             res.setHealthChecksFailed(routerHealthCheckResultDao.hasFailingChecks(resRouter.getId()));
-            if (cmd.shouldIncludeHealthCheckResults()) {
+            if (cmd.shouldFetchHealthCheckResults()) {
                 res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter,
                         new ArrayList<>(routerHealthCheckResultDao.getHealthCheckResults(resRouter.getId()))));
             }
@@ -2646,7 +2646,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
          * _domainDao.createSearchBuilder(); domainSearch.addAnd("path",
          * domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
          * sb.join("domainSearch", domainSearch, sb.entity().getDomainId(),
-         * domainSearch.entity().getRouterId()); }
+         * domainSearch.entity().getId()); }
          */
 
         // FIXME: disk offerings should search back up the hierarchy for
@@ -2810,10 +2810,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                         throw new CloudAuthenticationException("Could not find the domainId for account:" + caller.getAccountName());
                     }
                 }
-                domainIds.add(domainRecord.getRouterId());
+                domainIds.add(domainRecord.getId());
                 while (domainRecord.getParent() != null) {
                     domainRecord = _domainDao.findById(domainRecord.getParent());
-                    domainIds.add(domainRecord.getRouterId());
+                    domainIds.add(domainRecord.getId());
                 }
 
                 SearchCriteria<ServiceOfferingJoinVO> spc = _srvOfferingJoinDao.createSearchCriteria();

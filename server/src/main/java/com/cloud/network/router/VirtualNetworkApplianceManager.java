@@ -47,7 +47,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 
     static final String RouterHealthChecksEnabledCK = "router.health.checks.enabled";
     static final String RouterHealthChecksBasicIntervalCK = "router.health.checks.basic.interval";
-    static final String RouterHealthChecksAdvanceIntervalCK = "router.health.checks.advance.interval";
+    static final String RouterHealthChecksAdvancedIntervalCK = "router.health.checks.advanced.interval";
     static final String RouterHealthChecksConfigRefreshIntervalCK = "router.health.checks.config.refresh.interval";
     static final String RouterHealthChecksResultFetchIntervalCK = "router.health.checks.results.fetch.interval";
     static final String RouterHealthChecksFailuresToRestartVrCK = "router.health.checks.failures.to.restart.vr";
@@ -86,8 +86,8 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     static final ConfigKey<Integer> RouterHealthChecksBasicInterval = new ConfigKey<Integer>(Integer.class, RouterHealthChecksBasicIntervalCK, "Advanced", "3",
             "Interval at which basic router health checks are performed. If set to 0, no tests are scheduled.",
             true, ConfigKey.Scope.Global, null);
-    static final ConfigKey<Integer> RouterHealthChecksAdvanceInterval = new ConfigKey<Integer>(Integer.class, RouterHealthChecksAdvanceIntervalCK, "Advanced", "10",
-            "Interval at which advance router health checks are performed. If set to 0, no tests are scheduled.",
+    static final ConfigKey<Integer> RouterHealthChecksAdvancedInterval = new ConfigKey<Integer>(Integer.class, RouterHealthChecksAdvancedIntervalCK, "Advanced", "10",
+            "Interval at which advanced router health checks are performed. If set to 0, no tests are scheduled.",
             true, ConfigKey.Scope.Global, null);
     static final ConfigKey<Integer> RouterHealthChecksConfigRefreshInterval = new ConfigKey<Integer>(Integer.class, RouterHealthChecksConfigRefreshIntervalCK, "Advanced", "10",
             "Interval at which router health checks config - such as scheduling intervals, excluded checks, etc is updated on virtual routers by the management server.",

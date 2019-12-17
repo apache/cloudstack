@@ -3573,7 +3573,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             final String privateName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Management, hypervisorType);
             final String guestName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Guest, hypervisorType);
             final String storageName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Storage, hypervisorType);
-            // String controlName = _pNTrafficTypeDao._networkModel.getNetworkTag(pNtwk.getRouterId(), TrafficType.Control, hypervisorType);
+            // String controlName = _pNTrafficTypeDao._networkModel.getNetworkTag(pNtwk.getId(), TrafficType.Control, hypervisorType);
             final PhysicalNetworkSetupInfo info = new PhysicalNetworkSetupInfo();
             info.setPhysicalNetworkId(pNtwk.getId());
             info.setGuestNetworkName(guestName);

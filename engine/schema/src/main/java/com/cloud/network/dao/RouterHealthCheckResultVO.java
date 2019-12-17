@@ -17,7 +17,6 @@
 
 package com.cloud.network.dao;
 
-import java.nio.charset.Charset;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -30,6 +29,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.network.RouterHealthCheckResult;
+import com.cloud.utils.StringUtils;
 
 @Entity
 @Table(name = "router_health_check")
@@ -98,7 +98,7 @@ public class RouterHealthCheckResultVO implements RouterHealthCheckResult {
 
     @Override
     public String getParsedCheckDetails() {
-        return checkDetails != null ? new String(checkDetails, Charset.forName("US-ASCII")) : "";
+        return checkDetails != null ? new String(checkDetails, StringUtils.getPreferredCharset()) : "";
     }
 
     public byte[] getCheckDetails() {

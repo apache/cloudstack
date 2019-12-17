@@ -692,14 +692,14 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (routerHealthCheckConfigRefreshInterval > 0) {
             _checkExecutor.scheduleAtFixedRate(new UpdateRouterHealthChecksConfigTask(), routerHealthCheckConfigRefreshInterval, routerHealthCheckConfigRefreshInterval, TimeUnit.MINUTES);
         } else {
-            s_logger.debug(RouterHealthChecksConfigRefreshIntervalCK + "=" + routerAlertsCheckInterval + " so not scheduling the router health check data thread");
+            s_logger.debug(RouterHealthChecksConfigRefreshIntervalCK + "=" + routerHealthCheckConfigRefreshInterval + " so not scheduling the router health check data thread");
         }
 
         final int routerHealthChecksFetchInterval = RouterHealthChecksResultFetchInterval.value();
         if (routerHealthChecksFetchInterval > 0) {
             _checkExecutor.scheduleAtFixedRate(new FetchRouterHealthChecksResultTask(), routerHealthChecksFetchInterval, routerHealthChecksFetchInterval, TimeUnit.MINUTES);
         } else {
-            s_logger.debug(RouterHealthChecksResultFetchIntervalCK + "=" + routerAlertsCheckInterval + " so not scheduling the router checks fetching thread");
+            s_logger.debug(RouterHealthChecksResultFetchIntervalCK + "=" + routerHealthChecksFetchInterval + " so not scheduling the router checks fetching thread");
         }
 
         return true;
@@ -1235,7 +1235,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         protected void runInContext() {
             try {
                 final List<DomainRouterVO> routers = _routerDao.listByStateAndManagementServer(VirtualMachine.State.Running, mgmtSrvrId);
-                s_logger.debug("Found " + routers.size() + " running routers. ");
+                s_logger.info("Found " + routers.size() + " running routers. Fetching, analysing and updating DB for the health checks.");
 
                 for (final DomainRouterVO router : routers) {
                     GetRouterMonitorResultsAnswer answer = fetchAndUpdateRouterHealthChecks(router, false);
@@ -1248,14 +1248,16 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         updateRouterConnectivityHealthCheck(router.getId(), false, "Failed to fetch results with details: " + answer.getDetails());
                     } else {
                         updateRouterConnectivityHealthCheck(router.getId(), true, "Successfully fetched data");
-                        parseAndMergeDbHealthChecks(router.getId(), answer.getMonitoringResults());
+                        updateDbHealthChecksFromRouterResponse(router.getId(), answer.getMonitoringResults());
 
                         // Check failing tests and restart if needed
                         if (answer.getFailingChecks().size() > 0 && StringUtils.isNotBlank(checkFailsToRestartVr)) {
-                            s_logger.info("Checking failed health checks to see if router needs reboot");
+                            s_logger.warn("Found failing checks on router " + router + ". " +
+                                    "Checking failed health checks to see if router needs reboot");
                             for (String failedCheck : answer.getFailingChecks()) {
                                 if (checkFailsToRestartVr.contains(failedCheck)) {
-                                    s_logger.info("Found failing health check " + failedCheck + " so restarting router.");
+                                    s_logger.warn("Health Check Alert: Found failing check " + failedCheck + " in " +
+                                            RouterHealthChecksFailuresToRestartVrCK + " so restarting router.");
                                     rebootRouter(router.getId(), true);
                                 }
                             }
@@ -1296,7 +1298,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         connectivityVO.setCheckResult(connected);
         connectivityVO.setLastUpdateTime(new Date());
-        connectivityVO.setCheckDetails(StringUtils.isNotEmpty(message) ? message.getBytes(Charset.forName("US-ASCII")) : null);
+        if (StringUtils.isNotEmpty(message)) {
+            connectivityVO.setCheckDetails(message.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
+        }
 
         if (newEntry) {
             routerHealthCheckResultDao.persist(connectivityVO);
@@ -1307,73 +1311,102 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, "connectivity", "basic");
     }
 
-    private List<RouterHealthCheckResult> parseAndMergeDbHealthChecks(final long routerId, final String monitoringResult) {
+    private RouterHealthCheckResultVO parseHealthCheckVOFromJson(final long routerId,
+            final String checkName, final String checkType, final Map<String, String> checkData,
+            final Map<String, Map<String, RouterHealthCheckResultVO>> checksInDb) {
+        boolean success = Boolean.parseBoolean(checkData.get("success"));
+        Date lastUpdate = new Date(Long.parseLong(checkData.get("lastUpdate")));
+        double lastRunDuration = Double.parseDouble(checkData.get("lastRunDuration"));
+        String message = checkData.get("message");
+        final RouterHealthCheckResultVO hcVo;
+        boolean newEntry = false;
+        if (checksInDb.containsKey(checkType) && checksInDb.get(checkType).containsKey(checkName)) {
+            hcVo = checksInDb.get(checkType).get(checkName);
+        } else {
+            hcVo = new RouterHealthCheckResultVO(routerId, checkName, checkType);
+            newEntry = true;
+        }
+
+        hcVo.setCheckResult(success);
+        hcVo.setLastUpdateTime(lastUpdate);
+        if (StringUtils.isNotEmpty(message)) {
+            hcVo.setCheckDetails(message.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
+        }
+
+        if (newEntry) {
+            routerHealthCheckResultDao.persist(hcVo);
+        } else {
+            routerHealthCheckResultDao.update(hcVo.getId(), hcVo);
+        }
+        s_logger.info("Found health check " + hcVo + " which took running duration (secs) " + lastRunDuration);
+        return hcVo;
+    }
+
+    /**
+     *
+     * @param checksJson JSON expected is
+     *                   {
+     *                      checkType1: {
+     *                          checkName1: {
+     *                              success: true/false,
+     *                              lastUpdate: date string,
+     *                              lastRunDuration: ms spent on test,
+     *                              message: detailed message from check execution
+     *                          },
+     *                          checkType2: .....
+     *                      },
+     *                      checkType2: ......
+     *                   }
+     * @return converts the above JSON into list of RouterHealthCheckResult.
+     */
+    private List<RouterHealthCheckResult> parseHealthCheckResults(
+            final Map<String, Map<String, Map<String, String>>> checksJson, final long routerId) {
+        final Map<String, Map<String, RouterHealthCheckResultVO>> checksInDb = getHealthChecksFromDb(routerId);
+        List<RouterHealthCheckResult> healthChecks = new ArrayList<>();
+        final String lastRunKey = "lastRun";
+        for (String checkType : checksJson.keySet()) {
+            if (checksJson.get(checkType).containsKey(lastRunKey)) { // Log last run of this check type run info
+                Map<String, String> lastRun = checksJson.get(checkType).get(lastRunKey);
+                s_logger.info("Found check types executed on VR " + checkType + ", start: " + lastRun.get("start") +
+                        ", end: " + lastRun.get("end") + ", duration: " + lastRun.get("duration"));
+            }
+
+            for (String checkName : checksJson.get(checkType).keySet()) {
+                if (lastRunKey.equals(checkName)) {
+                    continue;
+                }
+
+                try {
+                    final RouterHealthCheckResultVO hcVo = parseHealthCheckVOFromJson(
+                            routerId, checkName, checkType, checksJson.get(checkType).get(checkName), checksInDb);
+                    healthChecks.add(hcVo);
+                } catch (Exception ex) {
+                    s_logger.error("Skipping health check: Exception while parsing check result data for router id " + routerId +
+                            ", check type: " + checkType + ", check name: " + checkName + ":" + ex.getLocalizedMessage(), ex);
+                }
+            }
+        }
+        return healthChecks;
+    }
+
+    private List<RouterHealthCheckResult> updateDbHealthChecksFromRouterResponse(final long routerId, final String monitoringResult) {
         if (StringUtils.isBlank(monitoringResult)) {
             s_logger.warn("Attempted parsing empty monitoring results string for router " + routerId);
             return Collections.emptyList();
         }
 
         try {
-            s_logger.info("Parsing and updating DB health check data for router: " + routerId);
-            s_logger.info("Retrieved data" + monitoringResult);
-            final Map<String, Map<String, RouterHealthCheckResultVO>> checksInDb = getHealthChecksFromDb(routerId);
+            s_logger.debug("Parsing and updating DB health check data for router: " + routerId + " with data: " + monitoringResult) ;
             final Type t = new TypeToken<Map<String, Map<String, Map<String, String>>>>() {}.getType();
             final Map<String, Map<String, Map<String, String>>> checks = GsonHelper.getGson().fromJson(monitoringResult, t);
-            final String lastRunKey = "lastRun";
-            List<RouterHealthCheckResult> healthChecks = new ArrayList<>();
-            for (String checkType : checks.keySet()) {
-                if (checks.get(checkType).containsKey(lastRunKey)) {
-                    Map<String, String> lastRun = checks.get(checkType).get(lastRunKey);
-                    s_logger.info("Found check types executed on VR " + checkType + ", start: " + lastRun.get("start") +
-                            ", end: " + lastRun.get("end") + ", duration: " + lastRun.get("duration"));
-                }
-
-                for (String checkName : checks.get(checkType).keySet()) {
-                    if (lastRunKey.equals(checkName)) {
-                        continue;
-                    }
-                    Map<String, String> checkData = checks.get(checkType).get(checkName);
-                    try {
-                        boolean success = Boolean.parseBoolean(checkData.get("success"));
-                        Date lastUpdate = new Date(Long.parseLong(checkData.get("lastUpdate")));
-                        double lastRunDuration = Double.parseDouble(checkData.get("lastRunDuration"));
-                        String message = checkData.get("message");
-                        final RouterHealthCheckResultVO hcVo;
-                        boolean newEntry = false;
-                        if (checksInDb.containsKey(checkType) && checksInDb.get(checkType).containsKey(checkName)) {
-                            hcVo = checksInDb.get(checkType).get(checkName);
-                        } else {
-                            hcVo = new RouterHealthCheckResultVO(routerId, checkName, checkType);
-                            newEntry = true;
-                        }
-
-                        hcVo.setCheckResult(success);
-                        hcVo.setLastUpdateTime(lastUpdate);
-                        hcVo.setCheckDetails(StringUtils.isNotEmpty(message) ? message.getBytes(Charset.forName("US-ASCII")) : null);
-                        if (newEntry) {
-                            routerHealthCheckResultDao.persist(hcVo);
-                        } else {
-                            routerHealthCheckResultDao.update(hcVo.getId(), hcVo);
-                        }
-                        healthChecks.add(hcVo);
-                        s_logger.info("Found health check " + hcVo + " which took running duration (secs) " + lastRunDuration);
-                    } catch (Exception ex) {
-                        s_logger.error("Skipping health check: Exception while parsing check result data for router id " + routerId +
-                                ", check type: " + checkType + ", check name: " + checkName + ":" + ex.getLocalizedMessage());
-                        ex.printStackTrace();
-                    }
-                }
-            }
-            return healthChecks;
+            return parseHealthCheckResults(checks, routerId);
         } catch (JsonSyntaxException ex) {
-            s_logger.error("Unable to parse the result of health checks due to " + ex.getLocalizedMessage());
-            ex.printStackTrace();
+            s_logger.error("Unable to parse the result of health checks due to " + ex.getLocalizedMessage(), ex);
         }
 
         return Collections.emptyList();
     }
 
-    // Returns null if health checks are not enabled
     private GetRouterMonitorResultsAnswer fetchAndUpdateRouterHealthChecks(DomainRouterVO router, boolean performFreshChecks) {
         if (!RouterHealthChecksEnabled.valueIn(router.getDataCenterId())) {
             return null;
@@ -1425,10 +1458,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             s_logger.warn("Unable to update health check data for fresh run successfully for router: " + router);
             return false;
         }
-        s_logger.info("Updated health check data for fresh run successfully for router: " + router);
 
         // Step 2: Perform and retrieve health checks on router
-        s_logger.info("Retrieving results for fresh health check execution for router " + router.getUuid());
         GetRouterMonitorResultsAnswer answer = fetchAndUpdateRouterHealthChecks(router, true);
 
         // Step 3: Update health checks values in database
@@ -1437,7 +1468,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     answer == null ? "Communication failed " : "Failed to fetch results with details: " + answer.getDetails());
         } else {
             updateRouterConnectivityHealthCheck(routerId, true, "Successfully fetched data");
-            parseAndMergeDbHealthChecks(routerId, answer.getMonitoringResults());
+            updateDbHealthChecksFromRouterResponse(routerId, answer.getMonitoringResults());
         }
 
         return true;
@@ -1469,7 +1500,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.valueIn(router.getDataCenterId()).toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
-        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCE_INTERVAL, RouterHealthChecksAdvanceInterval.value().toString());
+        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, RouterHealthChecksToExclude.valueIn(router.getDataCenterId()));
         command.setHealthChecksConfig(getRouterHealthChecksConfig(router));
         command.setReconfigureAfterUpdate(reconfigure);
@@ -1485,7 +1516,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         SetMonitorServiceCommand command = createMonitorServiceCommand(router, null,true, true);
         String controlIP = getRouterControlIP(router);
         if (StringUtils.isBlank(controlIP) || controlIP.equals("0.0.0.0")) {
-            s_logger.warn("Skipping update data on router " + router.getUuid() + " because controlIp is not correct.");
+            s_logger.debug("Skipping update data on router " + router.getUuid() + " because controlIp is not correct.");
             return false;
         }
 
@@ -1512,7 +1543,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
 
         if (!answer.getResult()) {
-            s_logger.warn("Unable to update health checks data to router " + router.getHostName() + ", details : " + answer.getDetails());
+            s_logger.error("Unable to update health checks data to router " + router.getHostName() + ", details : " + answer.getDetails());
         }
 
         return answer.getResult();
@@ -3071,7 +3102,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterAlertsCheckInterval,
                 RouterHealthChecksEnabled,
                 RouterHealthChecksBasicInterval,
-                RouterHealthChecksAdvanceInterval,
+                RouterHealthChecksAdvancedInterval,
                 RouterHealthChecksConfigRefreshInterval,
                 RouterHealthChecksResultFetchInterval,
                 RouterHealthChecksFailuresToRestartVr,

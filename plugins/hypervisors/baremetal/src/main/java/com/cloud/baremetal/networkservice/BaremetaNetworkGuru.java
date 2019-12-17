@@ -130,11 +130,11 @@ public class BaremetaNetworkGuru extends DirectPodBasedNetworkGuru {
 
         /*
          * Pod pod = dest.getPod(); Pair<String, Long> ip =
-         * _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getRouterId(),
-         * dest.getPod().getRouterId(), nic.getRouterId(), context.getReservationId(),
+         * _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(),
+         * dest.getPod().getId(), nic.getId(), context.getReservationId(),
          * intentIp); if (ip == null) { throw new
          * InsufficientAddressCapacityException
-         * ("Unable to get a management ip address", Pod.class, pod.getRouterId()); }
+         * ("Unable to get a management ip address", Pod.class, pod.getId()); }
          *
          * nic.setIp4Address(ip.first());
          * nic.setMacAddress(NetUtils.long2Mac(NetUtils

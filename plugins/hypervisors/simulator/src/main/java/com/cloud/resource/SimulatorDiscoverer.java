@@ -257,15 +257,15 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
         if ( Host.Type.SecondaryStorage == host.getType() ) {
             List<VMTemplateVO> tmplts = _vmTemplateDao.listAll();
             for( VMTemplateVO tmplt : tmplts ) {
-                VMTemplateHostVO vmTemplateHost = _vmTemplateHostDao.findByHostTemplate(host.getRouterId(), tmplt.getRouterId());
+                VMTemplateHostVO vmTemplateHost = _vmTemplateHostDao.findByHostTemplate(host.getId(), tmplt.getId());
                 if (vmTemplateHost == null) {
-                    vmTemplateHost = new VMTemplateHostVO(host.getRouterId(), tmplt.getRouterId(), new Date(), 100,
+                    vmTemplateHost = new VMTemplateHostVO(host.getId(), tmplt.getId(), new Date(), 100,
                             com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED, null, null, null, null, tmplt.getUrl());
                     _vmTemplateHostDao.persist(vmTemplateHost);
                 } else {
                     vmTemplateHost.setDownloadState(com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
                     vmTemplateHost.setDownloadPercent(100);
-                    _vmTemplateHostDao.update(vmTemplateHost.getRouterId(), vmTemplateHost);
+                    _vmTemplateHostDao.update(vmTemplateHost.getId(), vmTemplateHost);
                 }
             }
         }*/

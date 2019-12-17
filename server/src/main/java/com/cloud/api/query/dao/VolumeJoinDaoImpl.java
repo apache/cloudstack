@@ -132,7 +132,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         }
         if (volume.getState() == Volume.State.UploadOp) {
             // com.cloud.storage.VolumeHostVO volumeHostRef =
-            // ApiDBUtils.findVolumeHostRef(volume.getRouterId(),
+            // ApiDBUtils.findVolumeHostRef(volume.getId(),
             // volume.getDataCenterId());
             volResponse.setSize(volume.getVolumeStoreSize());
             volResponse.setCreated(volume.getCreatedOnStore());

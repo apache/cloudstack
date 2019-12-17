@@ -43,28 +43,34 @@ public class SetMonitorServiceConfigItem extends AbstractConfigItemFacade {
                 cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_MONITORING_ENABLED),
                 cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED));
 
-        try {
-            monitorService.setHealthChecksBasicRunInterval(Integer.parseInt(cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL)));
-        } catch (NumberFormatException exception) {
-            s_logger.error("Unexpected health check basic interval set" + cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL) +
-                    ". Exception: " + exception + "Will use default value");
-        }
+        setupHealthChecksRelatedInfo(monitorService, command);
 
-        try {
-            monitorService.setHealthChecksAdvanceRunInterval(Integer.parseInt(cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCE_INTERVAL)));
-        } catch (NumberFormatException exception) {
-            s_logger.error("Unexpected health check advance interval set" + cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCE_INTERVAL) +
-                    ". Exception: " + exception + "Will use default value");
-        }
-
-        monitorService.setExcludedHealthChecks(cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED));
-        monitorService.setHealthChecksConfig(command.getHealthChecksConfig());
         monitorService.setDeleteFromProcessedCache(command.shouldDeleteFromProcessedCache());
+
         List<ConfigItem> configItems = generateConfigItems(monitorService);
         if (configItems != null && command.shouldReconfigureAfterUpdate()) {
             configItems.add(new ScriptConfigItem(VRScripts.CONFIGURE, "monitor_service.json"));
         }
         return configItems;
+    }
+
+    private void setupHealthChecksRelatedInfo(MonitorService monitorService, SetMonitorServiceCommand command) {
+        try {
+            monitorService.setHealthChecksBasicRunInterval(Integer.parseInt(command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL)));
+        } catch (NumberFormatException exception) {
+            s_logger.error("Unexpected health check basic interval set" + command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL) +
+                    ". Exception: " + exception + "Will use default value");
+        }
+
+        try {
+            monitorService.setHealthChecksAdvancedRunInterval(Integer.parseInt(command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL)));
+        } catch (NumberFormatException exception) {
+            s_logger.error("Unexpected health check advanced interval set" + command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL) +
+                    ". Exception: " + exception + "Will use default value");
+        }
+
+        monitorService.setExcludedHealthChecks(command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED));
+        monitorService.setHealthChecksConfig(command.getHealthChecksConfig());
     }
 
     @Override

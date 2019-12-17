@@ -75,9 +75,9 @@ public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd 
     private Boolean forVpc;
 
 
-    @Parameter(name = ApiConstants.INCLUDE_ROUTER_HEALTH_CHECK_RESULTS, type = CommandType.BOOLEAN, since = "4.14",
+    @Parameter(name = ApiConstants.FETCH_ROUTER_HEALTH_CHECK_RESULTS, type = CommandType.BOOLEAN, since = "4.14",
             description = "if true is passed for this parameter, also fetch last executed health check results for the VM. Default is false")
-    private Boolean includeHealthCheckResults;
+    private Boolean fetchHealthCheckResults;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -123,8 +123,8 @@ public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd 
         return Role.INTERNAL_LB_VM.toString();
     }
 
-    public boolean shouldIncludeHealthCheckResults() {
-        return BooleanUtils.isTrue(includeHealthCheckResults);
+    public boolean shouldFetchHealthCheckResults() {
+        return BooleanUtils.isTrue(fetchHealthCheckResults);
     }
 
     /////////////////////////////////////////////////////

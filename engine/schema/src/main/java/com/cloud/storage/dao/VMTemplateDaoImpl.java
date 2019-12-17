@@ -397,7 +397,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         CountTemplatesByAccount.done();
 
         //        updateStateSearch = this.createSearchBuilder();
-        //        updateStateSearch.and("id", updateStateSearch.entity().getRouterId(), Op.EQ);
+        //        updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
         //        updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
         //        updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
         //        updateStateSearch.done();
@@ -607,12 +607,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
      *
      * if (!permittedAccounts.isEmpty()) { for (Account account :
      * permittedAccounts) { //accountType = account.getType(); //accountId =
-     * Long.toString(account.getRouterId()); DomainVO accountDomain =
+     * Long.toString(account.getId()); DomainVO accountDomain =
      * _domainDao.findById(account.getDomainId());
      *
      * // get all parent domain ID's all the way till root domain DomainVO
      * domainTreeNode = accountDomain; while (true) {
-     * relatedDomainIds.append(domainTreeNode.getRouterId());
+     * relatedDomainIds.append(domainTreeNode.getId());
      * relatedDomainIds.append(","); if (domainTreeNode.getParent() != null) {
      * domainTreeNode = _domainDao.findById(domainTreeNode.getParent()); } else
      * { break; } }
@@ -620,8 +620,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
      * // get all child domain ID's if (isAdmin(account.getType()) ) {
      * List<DomainVO> allChildDomains =
      * _domainDao.findAllChildren(accountDomain.getPath(),
-     * accountDomain.getRouterId()); for (DomainVO childDomain : allChildDomains) {
-     * relatedDomainIds.append(childDomain.getRouterId());
+     * accountDomain.getId()); for (DomainVO childDomain : allChildDomains) {
+     * relatedDomainIds.append(childDomain.getId());
      * relatedDomainIds.append(","); } }
      * relatedDomainIds.setLength(relatedDomainIds.length()-1); } }
      *
@@ -701,12 +701,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
      * for (; i < publicIsos.size(); i++) { if(templateZonePairList.size() >=
      * pageSize){ break; } else { if (keyword != null &&
      * publicIsos.get(i).getName().contains(keyword)) {
-     * templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getRouterId(),
+     * templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(),
      * null)); continue; } else if (name != null &&
      * publicIsos.get(i).getName().contains(name)) {
-     * templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getRouterId(),
+     * templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(),
      * null)); continue; } else if (keyword == null && name == null){
-     * templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getRouterId(),
+     * templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(),
      * null)); } } } } } catch (Exception e) {
      * s_logger.warn("Error listing templates", e); } finally { try { if (rs !=
      * null) { rs.close(); } if (pstmt != null) { pstmt.close(); } txn.commit();

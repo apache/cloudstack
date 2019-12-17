@@ -22,29 +22,44 @@ import json
 MON_CONFIG = "/etc/monitor.conf"
 HC_CONFIG = "/root/health_checks_data.json"
 
-
 class CsMonitor(CsDataBag):
-    """ Manage dhcp entries """
+    """ Manage Monitor script schedule and health checks for router """
 
-    def process(self):
+    def get_basic_check_interval(self):
+        return self.dbag["health_checks_basic_run_interval"] if "health_checks_basic_run_interval" in self.dbag else 3
+
+    def get_advanced_check_interval(self):
+        return self.dbag["health_checks_advanced_run_interval"] if "health_checks_advanced_run_interval" in self.dbag else 0
+
+    def setupMonitorConfigFile(self):
         if "config" in self.dbag:
-            procs = [x.strip() for x in self.dbag['config'].split(',')]
-            file = CsFile(MON_CONFIG)
-            for proc in procs:
-                bits = [x for x in proc.split(':')]
-                if len(bits) < 5:
-                    continue
-                for i in range(0, 4):
-                    file.add(bits[i], -1)
-            file.commit()
+        procs = [x.strip() for x in self.dbag['config'].split(',')]
+        file = CsFile(MON_CONFIG)
+        for proc in procs:
+            bits = [x for x in proc.split(':')]
+            if len(bits) < 5:
+                continue
+            for i in range(0, 4):
+                file.add(bits[i], -1)
+        file.commit()
 
+    def setupHealthCheckCronJobs(self):
+        cron_rep_basic = self.get_basic_check_interval()
+        cron_rep_advanced = self.get_advanced_check_interval()
+        cron = CsFile("/etc/cron.d/process")
+        cron.deleteLine("root /usr/bin/python /root/monitorServices.py")
+        cron.add("SHELL=/bin/bash", 0)
+        cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
+        if cron_rep_basic > 0:
+            cron.add("*/" + str(cron_rep_basic) + " * * * * root /usr/bin/python /root/monitorServices.py basic", -1)
+        if cron_rep_advanced > 0:
+            cron.add("*/" + str(cron_rep_advanced) + " * * * * root /usr/bin/python /root/monitorServices.py advanced", -1)
+        cron.commit()
+
+    def setupHealthChecksConfigFile(self):
         hc_data = {}
-
-        cron_rep_basic = self.dbag["health_checks_basic_run_interval"] if "health_checks_basic_run_interval" in self.dbag else 3
-        cron_rep_advance = self.dbag["health_checks_advance_run_interval"] if "health_checks_advance_run_interval" in self.dbag else 0
-        hc_data["health_checks_basic_run_interval"] = cron_rep_basic
-        hc_data["health_checks_advance_run_interval"] = cron_rep_advance
-
+        hc_data["health_checks_basic_run_interval"] = self.get_basic_check_interval()
+        hc_data["health_checks_advanced_run_interval"] = self.get_advanced_check_interval()
         hc_data["health_checks_enabled"] = self.dbag["health_checks_enabled"] if "health_checks_enabled" in self.dbag else False
 
         if "excluded_health_checks" in self.dbag:
@@ -52,20 +67,16 @@ class CsMonitor(CsDataBag):
             hc_data["excluded_health_checks"] = [ch.strip() for ch in excluded_checks.split(",")] if len(excluded_checks) > 0 else []
         else:
             hc_data["excluded_health_checks"] = []
+
         if "health_checks_config" in self.dbag:
             hc_data["health_checks_config"] = self.dbag["health_checks_config"]
         else:
             hc_data["health_checks_config"] = {}
 
-        cron = CsFile("/etc/cron.d/process")
-        cron.deleteLine("root /usr/bin/python /root/monitorServices.py")
-        cron.add("SHELL=/bin/bash", 0)
-        cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
-        if cron_rep_basic > 0:
-            cron.add("*/" + str(cron_rep_basic) + " * * * * root /usr/bin/python /root/monitorServices.py basic", -1)
-        if cron_rep_advance > 0:
-            cron.add("*/" + str(cron_rep_advance) + " * * * * root /usr/bin/python /root/monitorServices.py advance", -1)
-        cron.commit()
-
         with open(HC_CONFIG, 'w') as f:
             json.dump(hc_data, f, ensure_ascii=False, indent=4)
+
+    def process(self):
+        self.setupMonitorConfigFile()
+        self.setupHealthChecksConfigFile()
+        self.setupHealthCheckCronJobs()

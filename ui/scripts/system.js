@@ -9937,14 +9937,14 @@
                                 }
 
                                 var data2 = {
-                                    includehealthcheckresults: true
                                     // forvpc: false
                                 };
 
                                 if (args.context != undefined) {
                                     if ("routerGroupByZone" in args.context) {
                                         $.extend(data2, {
-                                            zoneid: args.context.routerGroupByZone[0].id
+                                            zoneid: args.co
+                                            ntext.routerGroupByZone[0].id
                                         })
                                     } else if ("routerGroupByPod" in args.context) {
                                         $.extend(data2, {
@@ -10012,29 +10012,12 @@
                                                     var items = json.listroutersresponse.router ?
                                                     json.listroutersresponse.router:[];
 
+                                                    var items = json.listroutersresponse.router ?
+                                                    json.listroutersresponse.router:[];
+
                                                     $(items).map(function (index, item) {
-                                                        if (item.state && item.state === 'Running' && item.healthcheckresults && item.healthcheckresults.details) {
-                                                            try {
-                                                                if (!item.healthcheckresults.success || item.healthcheckresults.success.toLowerCase() !== 'true') {
-                                                                    item.state = 'Alert'
-                                                                } else {
-                                                                    var hcData = JSON.parse(item.healthcheckresults.details)
-                                                                    var checkTypes = ['basic', 'advance']
-                                                                    $.each(checkTypes, function (cId, checkType) {
-                                                                        if (hcData[checkType] && $.type(hcData[checkType]) === "object") {
-                                                                            var checks = hcData[checkType]
-                                                                            $.each(Object.keys(checks), function (idx, key) {
-                                                                                if (key !== 'lastRun' && (!checks[key].success || checks[key].success.toLowerCase() !== 'true')) {
-                                                                                    item.state = 'Alert'
-                                                                                }
-                                                                            })
-                                                                        }
-                                                                    })
-                                                                }
-                                                            } catch (ex) {
-                                                                console.error('Unable to parse health check results')
-                                                                console.log(item)
-                                                            }
+                                                        if (item.healthchecksfailed) {
+                                                            item.state = 'Alert'
                                                         }
                                                         routers.push(item);
                                                     });

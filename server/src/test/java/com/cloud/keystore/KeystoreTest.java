@@ -16,16 +16,15 @@
 // under the License.
 package com.cloud.keystore;
 
-import junit.framework.TestCase;
-
+import org.apache.cloudstack.api.response.AlertResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 
-import org.apache.cloudstack.api.response.AlertResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-
 import com.cloud.api.ApiSerializerHelper;
+
+import junit.framework.TestCase;
 
 public class KeystoreTest extends TestCase {
     private final static Logger s_logger = Logger.getLogger(KeystoreTest.class);
@@ -95,7 +94,7 @@ public class KeystoreTest extends TestCase {
             assertTrue(ksVo.getKey().equals("KeyForCertificate Again"));
             assertTrue(ksVo.getDomainSuffix().equals("again.realhostip.com"));
 
-            ksDao.expunge(ksVo.getRouterId());
+            ksDao.expunge(ksVo.getId());
         }
 
         public void testStripeKey() throws Exception {
@@ -131,7 +130,7 @@ public class KeystoreTest extends TestCase {
 
             KeystoreDao ksDao = locator.getDao(KeystoreDao.class);
             KeystoreVO ksVo = ksDao.findByName("CPVMCertificate");
-            ksDao.expunge(ksVo.getRouterId());
+            ksDao.expunge(ksVo.getId());
         }
     */
     public void testUuid() {

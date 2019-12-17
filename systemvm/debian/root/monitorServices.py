@@ -487,12 +487,12 @@ def main(checkType = "basic"):
 if __name__ == "__main__":
     checkType = "basic"
     if len(sys.argv) == 2:
-        if sys.argv[1] == "advance":
-            main("advance")
+        if sys.argv[1] == "advanced":
+            main("advanced")
         elif sys.argv[1] == "basic":
             main("basic")
         else:
             printd("Error: Unknown type of test: " + sys.argv)
     else:
         main("basic")
-        main("advance")
+        main("advanced")

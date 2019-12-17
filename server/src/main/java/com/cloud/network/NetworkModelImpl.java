@@ -1319,7 +1319,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             String privateName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Management, hypervisorType);
             String guestName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Guest, hypervisorType);
             String storageName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Storage, hypervisorType);
-            // String controlName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getRouterId(), TrafficType.Control, hypervisorType);
+            // String controlName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Control, hypervisorType);
             PhysicalNetworkSetupInfo info = new PhysicalNetworkSetupInfo();
             info.setPhysicalNetworkId(pNtwk.getId());
             info.setGuestNetworkName(guestName);

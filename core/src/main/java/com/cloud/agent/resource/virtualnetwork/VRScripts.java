@@ -47,7 +47,7 @@ public class VRScripts {
 
     // New scripts for use with chef
     public static final String UPDATE_CONFIG = "update_config.py";
-    public static final String CONFIGURE = "configure.py"; // Typically needs to be called if only update_config.py is called
+    public static final String CONFIGURE = "configure.py";
 
 
     // Script still in use - mostly by HyperV

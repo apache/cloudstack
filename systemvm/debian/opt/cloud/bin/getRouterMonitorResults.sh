@@ -37,10 +37,10 @@ then
 else
     echo "{}"
 fi
-echo ",\"advance\":"
-if [ -f /root/advance_monitor_results.json ]
+echo ",\"advanced\":"
+if [ -f /root/advanced_monitor_results.json ]
 then
-    echo `cat /root/advance_monitor_results.json`
+    echo `cat /root/advanced_monitor_results.json`
 else
     echo "{}"
 fi

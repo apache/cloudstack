@@ -25,7 +25,7 @@ public class MonitorService extends ConfigBase {
     public String config, disableMonitoring;
     public Boolean healthChecksEnabled;
     public Integer healthChecksBasicRunInterval;
-    public Integer healthChecksAdvanceRunInterval;
+    public Integer healthChecksAdvancedRunInterval;
     public String excludedHealthChecks;
     public Map<String, String> healthChecksConfig;
 
@@ -56,8 +56,8 @@ public class MonitorService extends ConfigBase {
         return healthChecksBasicRunInterval;
     }
 
-    public Integer getHealthChecksAdvanceRunInterval() {
-        return healthChecksAdvanceRunInterval;
+    public Integer getHealthChecksAdvancedRunInterval() {
+        return healthChecksAdvancedRunInterval;
     }
 
     public String getExcludedHealthChecks() {
@@ -84,8 +84,8 @@ public class MonitorService extends ConfigBase {
         this.healthChecksBasicRunInterval = healthChecksBasicRunInterval;
     }
 
-    public void setHealthChecksAdvanceRunInterval(Integer healthChecksAdvanceRunInterval) {
-        this.healthChecksAdvanceRunInterval = healthChecksAdvanceRunInterval;
+    public void setHealthChecksAdvancedRunInterval(Integer healthChecksAdvancedRunInterval) {
+        this.healthChecksAdvancedRunInterval = healthChecksAdvancedRunInterval;
     }
 
     public void setExcludedHealthChecks(String excludedHealthChecks) {

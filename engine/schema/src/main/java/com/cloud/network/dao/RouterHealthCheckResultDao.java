@@ -35,8 +35,12 @@ public interface RouterHealthCheckResultDao extends GenericDao<RouterHealthCheck
     boolean hasFailingChecks(long routerId);
 
     /**
+     * For a router, we have only one (check name, check type) possible as we keep the most
+     * recent check result. This method finds that last check result.
+     *
      * @param routerId
      * @param checkName
+     * @param checkType
      * @return returns the check result for the routerId, check type and the check name.
      */
     RouterHealthCheckResultVO getRouterHealthCheckResult(long routerId, String checkName, String checkType);

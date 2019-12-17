@@ -43,7 +43,7 @@ public class NetworkDaoTest extends TestCase {
 //        updateTags.add("e");
 //        updateTags.add("f");
 //        retrieved.setTags(updateTags);
-//        dao.update(retrieved.getRouterId(), retrieved);
+//        dao.update(retrieved.getId(), retrieved);
 //
 //        retrieved = dao.findById(1001l);
 //        retrievedTags = retrieved.getTags();

@@ -31,7 +31,7 @@ public class RouterHealthCheckResultResponse extends BaseResponse {
     private String checkName;
 
     @SerializedName(ApiConstants.ROUTER_CHECK_TYPE)
-    @Param(description = "the type of the health check - basic or advance")
+    @Param(description = "the type of the health check - basic or advanced")
     private String checkType;
 
     @SerializedName(ApiConstants.RESULT)

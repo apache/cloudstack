@@ -274,10 +274,45 @@ public class VirtualRoutingResource {
         return new CheckS2SVpnConnectionsAnswer(cmd, result.isSuccess(), result.getDetails());
     }
 
+    private List<String> getFailingChecks(String line) {
+        List<String> failingChecks = new ArrayList<>();
+        for (String w : line.split(",")) {
+            if (!w.trim().isEmpty()) {
+                failingChecks.add(w.trim());
+            }
+        }
+        return failingChecks;
+    }
+
+    private GetRouterMonitorResultsAnswer parseLinesForHealthChecks(GetRouterMonitorResultsCommand cmd, String executionResult) {
+        List<String> failingChecks = new ArrayList<>();
+        StringBuilder monitorResults = new StringBuilder();
+        String[] lines = executionResult.trim().split("\n");
+        boolean readingFailedChecks = false, readingMonitorResults = false;
+        for (String line : lines) {
+            line = line.trim();
+            if (line.contains("FAILING CHECKS")) { // Toggle to reading failing checks from next line
+                readingFailedChecks = true;
+                readingMonitorResults = false;
+            } else if (line.contains("MONITOR RESULTS")) { // Toggle to reading monitor results from next line
+                readingFailedChecks = false;
+                readingMonitorResults = true;
+            } else if (readingFailedChecks && !readingMonitorResults) { // Reading failing checks section
+                failingChecks.addAll(getFailingChecks(line));
+            } else if (!readingFailedChecks && readingMonitorResults) { // Reading monitor checks result
+                monitorResults.append(line);
+            } else {
+                s_logger.error("Unexpected lines reached while parsing health check response. Skipping line:- " + line);
+            }
+        }
+
+        return new GetRouterMonitorResultsAnswer(cmd, true, failingChecks, monitorResults.toString());
+    }
+
     private GetRouterMonitorResultsAnswer execute(GetRouterMonitorResultsCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String args = cmd.shouldPerformFreshChecks() ? "true" : "false";
-        s_logger.debug("Fetching health check result for " + routerIp + " and executing fresh checks: " + args);
+        s_logger.info("Fetching health check result for " + routerIp + " and executing fresh checks: " + args);
         ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.ROUTER_MONITOR_RESULTS, args);
 
         if (!result.isSuccess()) {
@@ -290,31 +325,7 @@ public class VirtualRoutingResource {
             return new GetRouterMonitorResultsAnswer(cmd, false, null, "No results available.");
         }
 
-        List<String> failingChecks = new ArrayList<>();
-        StringBuilder monitorResults = new StringBuilder();
-        String[] lines = result.getDetails().trim().split("\n");
-        boolean readingFailedChecks = false, readingMonitorResults = false;
-        for (String line : lines) {
-            line = line.trim();
-            if (line.contains("FAILING CHECKS")) {
-                readingFailedChecks = true;
-                readingMonitorResults = false;
-            } else if (line.contains("MONITOR RESULTS")) {
-                readingFailedChecks = false;
-                readingMonitorResults = true;
-            } else if (readingFailedChecks && !readingMonitorResults) {
-                for (String w : line.split(",")) {
-                    if (!w.trim().isEmpty()) {
-                        failingChecks.add(w.trim());
-                    }
-                }
-            } else if (!readingFailedChecks && readingMonitorResults) {
-                monitorResults.append(line);
-            } else {
-                s_logger.info("Unexpected state of lines reached while parsing response. Skipping line.");
-            }
-        }
-        return new GetRouterMonitorResultsAnswer(cmd, true, failingChecks, monitorResults.toString());
+        return parseLinesForHealthChecks(cmd, result.getDetails());
     }
 
     private GetRouterAlertsAnswer execute(GetRouterAlertsCommand cmd) {
