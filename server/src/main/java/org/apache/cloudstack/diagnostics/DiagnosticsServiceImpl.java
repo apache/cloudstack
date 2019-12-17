@@ -161,7 +161,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             detailsMap = ((DiagnosticsAnswer) answer).getExecutionDetails();
             return detailsMap;
         } else {
-            throw new CloudRuntimeException("Failed to execute diagnostics command on remote host: " + vmInstance.getHostName());
+            throw new CloudRuntimeException("Failed to execute diagnostics command for system vm: " + vmInstance + ", on remote host: " + vmInstance.getHostName());
         }
     }
 
@@ -188,22 +188,13 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         }
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_SYSTEM_VM_DIAGNOSTICS, eventDescription = "getting diagnostics files on system vm", async = true)
-    public String getDiagnosticsDataCommand(GetDiagnosticsDataCmd cmd) {
-        Long vmId = cmd.getId();
-        List<String> optionalFilesList = cmd.getFilesList();
-        VMInstanceVO vmInstance = getSystemVMInstance(vmId);
-        long zoneId = vmInstance.getDataCenterId();
-
+    private String zipFilesInSystemVm(VMInstanceVO vmInstance, List<String> optionalFilesList) {
         List<String> fileList = getFileListToBeRetrieved(optionalFilesList, vmInstance);
 
         if (CollectionUtils.isEmpty(fileList)) {
             throw new CloudRuntimeException("Failed to generate diagnostics file list for retrieval.");
         }
 
-        final Long vmHostId = vmInstance.getHostId();
-        final DataStore store = getImageStore(vmInstance.getDataCenterId());
         final Answer zipFilesAnswer = prepareDiagnosticsFilesInSystemVm(vmInstance, fileList);
 
         if (zipFilesAnswer == null) {
@@ -214,28 +205,30 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             throw new CloudRuntimeException(String.format("Failed to generate diagnostics zip file in VM %s due to: %s", vmInstance.getUuid(), zipFilesAnswer.getDetails()));
         }
 
-        final String zipFileInSystemVm = zipFilesAnswer.getDetails().replace("\n", "");
-        Pair<Boolean, String> copyToSecondaryStorageResults = copyZipFileToSecondaryStorage(vmInstance, vmHostId, zipFileInSystemVm, store);
+        return zipFilesAnswer.getDetails().replace("\n", "");
+    }
 
-        if (!copyToSecondaryStorageResults.first()) {
-            throw new CloudRuntimeException(String.format("Failed to copy %s to secondary storage %s due to: %s.", zipFileInSystemVm, store.getUri(), copyToSecondaryStorageResults.second()));
-        }
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_SYSTEM_VM_DIAGNOSTICS, eventDescription = "getting diagnostics files on system vm", async = true)
+    public String getDiagnosticsDataCommand(GetDiagnosticsDataCmd cmd) {
+        final Long vmId = cmd.getId();
+        final List<String> optionalFilesList = cmd.getFilesList();
+        final VMInstanceVO vmInstance = getSystemVMInstance(vmId);
+        final DataStore store = getImageStore(vmInstance.getDataCenterId());
 
-        final Answer fileCleanupAnswer = deleteDiagnosticsZipFileInsystemVm(vmInstance, zipFileInSystemVm);
-        if (fileCleanupAnswer == null) {
-            LOGGER.error(String.format("Failed to cleanup diagnostics zip file on vm: %s", vmInstance.getUuid()));
-        } else {
-            if (!fileCleanupAnswer.getResult()) {
-                LOGGER.error(String.format("Zip file cleanup for vm %s has failed with: %s", vmInstance.getUuid(), fileCleanupAnswer.getDetails()));
-            }
-        }
+        final String zipFileInSystemVm = zipFilesInSystemVm(vmInstance, optionalFilesList);
+        final Long vmHostId = vmInstance.getHostId();
+        copyZipFileToSecondaryStorage(vmInstance, vmHostId, zipFileInSystemVm, store);
+        deleteDiagnosticsZipFileInsystemVm(vmInstance, zipFileInSystemVm);
 
         // Now we need to create the file download URL
         // Find ssvm of store
+        final long zoneId = vmInstance.getDataCenterId();
         VMInstanceVO ssvm = getSecondaryStorageVmInZone(zoneId);
         if (ssvm == null) {
             throw new CloudRuntimeException("No SSVM found in zone with ID: " + zoneId);
         }
+
         // Secondary Storage install path = "diagnostics_data/diagnostics_files_xxxx.tar
         String installPath = DIAGNOSTICS_DIRECTORY + File.separator + zipFileInSystemVm.replace("/root", "");
         return createFileDownloadUrl(store, ssvm.getHypervisorType(), installPath);
@@ -260,6 +253,11 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         } else {
             copyResult = orchestrateCopyToSecondaryStorageNonVMware(store, vmControlIp, fileToCopy, vmHostId);
         }
+
+        if (!copyResult.first()) {
+            throw new CloudRuntimeException(String.format("Failed to copy %s to secondary storage %s due to: %s.", fileToCopy, store.getUri(), copyResult.second()));
+        }
+
         return copyResult;
     }
 
@@ -281,7 +279,16 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     private Answer deleteDiagnosticsZipFileInsystemVm(VMInstanceVO vmInstance, String zipFileName) {
         final DeleteFileInVrCommand cmd = new DeleteFileInVrCommand(zipFileName);
         configureNetworkElementCommand(cmd, vmInstance);
-        return agentManager.easySend(vmInstance.getHostId(), cmd);
+        final Answer fileCleanupAnswer = agentManager.easySend(vmInstance.getHostId(), cmd);
+        if (fileCleanupAnswer == null) {
+            LOGGER.error(String.format("Failed to cleanup diagnostics zip file on vm: %s", vmInstance.getUuid()));
+        } else {
+            if (!fileCleanupAnswer.getResult()) {
+                LOGGER.error(String.format("Zip file cleanup for vm %s has failed with: %s", vmInstance.getUuid(), fileCleanupAnswer.getDetails()));
+            }
+        }
+
+        return fileCleanupAnswer;
     }
 
     /**

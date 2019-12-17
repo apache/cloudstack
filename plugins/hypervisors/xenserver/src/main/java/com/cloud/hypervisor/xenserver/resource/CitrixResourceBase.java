@@ -207,6 +207,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     private final static int BASE_TO_CONVERT_BYTES_INTO_KILOBYTES = 1024;
+    private final static String BASE_MOUNT_POINT_ON_REMOTE = "/var/cloud_mount/";
 
     private static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
     // static min values for guests on xenserver
@@ -5635,13 +5636,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         try {
             URI uri = new URI(secondaryStorageUrl);
             secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
-            localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
+            localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
             String mountPoint = mountNfs(conn, secondaryStorageMountPath, localDir);
             if (org.apache.commons.lang.StringUtils.isBlank(mountPoint)) {
                 return new CopyToSecondaryStorageAnswer(cmd, false, "Could not mount secondary storage " + secondaryStorageMountPath + " on host " + localDir);
             }
 
-            String dataDirectoryInSecondaryStore = localDir + "/" + DiagnosticsService.DIAGNOSTICS_DIRECTORY;
+            String dataDirectoryInSecondaryStore = localDir + File.separator + DiagnosticsService.DIAGNOSTICS_DIRECTORY;
             final CopyToSecondaryStorageAnswer answer;
             final String scpResult = callHostPlugin(conn, "vmops", "secureCopyToHost", "hostfilepath", dataDirectoryInSecondaryStore,
                     "srcip", vmIP, "srcfilepath", cmd.getFileName()).toLowerCase();
@@ -5657,6 +5658,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } catch (Exception e) {
             String msg = "Exception caught zip file copy to secondary storage URI: " + secondaryStorageUrl + "Exception : " + e;
             s_logger.error(msg);
+            e.printStackTrace();
             return new CopyToSecondaryStorageAnswer(cmd, false, msg);
         } finally {
             if (localDir != null) umountNfs(conn, secondaryStorageMountPath, localDir);
@@ -5665,7 +5667,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private String mountNfs(Connection conn, String remoteDir, String localDir) {
         if (localDir == null) {
-            localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(remoteDir.getBytes());
+            localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remoteDir.getBytes());
         }
         return callHostPlugin(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir);
     }
@@ -5673,7 +5675,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     // Unmount secondary storage from host
     private void umountNfs(Connection conn, String remoteDir, String localDir) {
         if (localDir == null) {
-            localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(remoteDir.getBytes());
+            localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remoteDir.getBytes());
         }
         String result = callHostPlugin(conn, "cloud-plugin-storage", "umountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir);
         if (org.apache.commons.lang.StringUtils.isBlank(result)) {

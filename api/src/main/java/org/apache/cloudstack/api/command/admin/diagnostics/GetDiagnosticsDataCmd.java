@@ -49,7 +49,7 @@ import com.cloud.vm.VirtualMachine;
         responseHasSensitiveInfo = false,
         requestHasSensitiveInfo = false,
         description = "Get diagnostics and files from system VMs",
-        since = "4.13.0.0",
+        since = "4.14.0.0",
         authorized = {RoleType.Admin})
 public class GetDiagnosticsDataCmd extends BaseAsyncCmd {
     public static final String APINAME = "getDiagnosticsData";
