@@ -16,18 +16,34 @@
 // under the License.
 package com.cloud.ha;
 
-import java.util.List;
-
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VMInstanceVO;
+import org.apache.cloudstack.framework.config.ConfigKey;
+
+import java.util.List;
 
 /**
  * HighAvailabilityManager checks to make sure the VMs are running fine.
  */
 public interface HighAvailabilityManager extends Manager {
+
+    ConfigKey<Long> TimeBetweenCleanup = new ConfigKey<>("Advanced", Long.class,
+        "time.between.cleanup", "86400", "Time in seconds to wait before the cleanup thread runs.",
+        false, null);
+
+    ConfigKey<Integer> MaxRetries = new ConfigKey<>("Advanced", Integer.class, "max.retries",
+        "5", "Number of times to retry start.", false, null);
+
+    ConfigKey<Long> TimeToSleep = new ConfigKey<>("Advanced", Long.class, "time.to.sleep",
+        "60", "Time in seconds to sleep if no work items are found.", false, null);
+
+    ConfigKey<Long> TimeBetweenFailures = new ConfigKey<>("Advanced", Long.class,
+        "time.between.failures", "3600", "Time in seconds before try to cleanup all the VMs"
+        + " which are registered for the HA event that were successful and are now ready to be purged.", false, null);
+
     public enum WorkType {
         Migration,  // Migrating VMs off of a host.
         Stop,       // Stops a VM for storage pool migration purposes.  This should be obsolete now.
