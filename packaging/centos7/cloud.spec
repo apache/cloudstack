@@ -78,6 +78,7 @@ Requires: mysql-connector-python
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
 Requires: iptables-services
+Requires: qemu-img
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
