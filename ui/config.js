@@ -17,7 +17,7 @@
 
 // Define custom options configurable by admins for UI
 cloudStackOptions = {
-    version: "4.11.3", // Cloudstack Version
+    version: "4.11.3", // Cloudstack Iso Version - Used by add system vm template input boxes. - Needs to be updated when iso version changes
     aboutText: "label.app.name", // This is the text shown in the 'About' box
     aboutTitle: "label.about.app", // This is the Application 'Title' shown in the 'About' box
     docTitle: "label.app.name", // This is the Application 'Title' shown on browser tab.

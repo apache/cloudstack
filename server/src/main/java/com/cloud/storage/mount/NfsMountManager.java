@@ -121,8 +121,8 @@ public class NfsMountManager implements MountManager {
 
     private String setupMountPoint(String parent) {
         String mountPoint = null;
+        String mntPt = parent + File.separator + String.valueOf(ManagementServerNode.getManagementServerId()) + "." + Integer.toHexString(rand.nextInt(Integer.MAX_VALUE));
         for (int i = 0; i < 10; i++) {
-            String mntPt = parent + File.separator + String.valueOf(ManagementServerNode.getManagementServerId()) + "." + Integer.toHexString(rand.nextInt(Integer.MAX_VALUE));
             File file = new File(mntPt);
             if (!file.exists()) {
                 if (storage.mkdir(mntPt)) {
@@ -130,6 +130,8 @@ public class NfsMountManager implements MountManager {
                     break;
                 }
             }
+        }
+        if (mountPoint == null){
             s_logger.error("Unable to create mount: " + mntPt);
         }
 
