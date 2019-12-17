@@ -5657,8 +5657,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return answer;
         } catch (Exception e) {
             String msg = "Exception caught zip file copy to secondary storage URI: " + secondaryStorageUrl + "Exception : " + e;
-            s_logger.error(msg);
-            e.printStackTrace();
+            s_logger.error(msg, e);
             return new CopyToSecondaryStorageAnswer(cmd, false, msg);
         } finally {
             if (localDir != null) umountNfs(conn, secondaryStorageMountPath, localDir);
