@@ -1353,5 +1353,3 @@ class TestCreateTemplateWithDirectDownload(cloudstackTestCase):
         self.cleanup.append(virtual_machine)
         self.cleanup.append(tmpl)
         return
-
-
