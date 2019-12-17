@@ -2681,11 +2681,19 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("Invalid Kubernetes version associated with cluster ID: %s",
                     kubernetesCluster.getUuid()));
         }
-        // Check upgradeVersion is either path upgrade or immediate minor upgrade
+        // Check upgradeVersion is either patch upgrade or immediate minor upgrade
         try {
             KubernetesVersionManagerImpl.canUpgradeKubernetesVersion(clusterVersion.getKubernetesVersion(), upgradeVersion.getKubernetesVersion());
         } catch (IllegalArgumentException e) {
             throw new InvalidParameterValueException(e.getMessage());
+        }
+
+        TemplateJoinVO iso = templateJoinDao.findById(upgradeVersion.getIsoId());
+        if (iso == null) {
+            throw new InvalidParameterValueException(String.format("Invalid ISO associated with version ID: %s",  upgradeVersion.getUuid()));
+        }
+        if (!ObjectInDataStoreStateMachine.State.Ready.equals(iso.getState())) {
+            throw new InvalidParameterValueException(String.format("ISO associated with version ID: %s is not in Ready state",  upgradeVersion.getUuid()));
         }
 
         // Get public IP
