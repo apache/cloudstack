@@ -87,7 +87,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
         this.maxIops = maxIops;
     }
 
-    //TODO use the method getRouterId() instead of this one.
+    //TODO use the method getId() instead of this one.
     public Long getEntityId() {
         return id;
     }

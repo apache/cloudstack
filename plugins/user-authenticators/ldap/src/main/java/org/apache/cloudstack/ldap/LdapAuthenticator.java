@@ -128,7 +128,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                      * caught in APIServlet: CloudRuntimeException("The domain " + domainId + " does not exist; unable to create user");
                      * caught in APIServlet: CloudRuntimeException("The user cannot be created as domain " + domain.getName() + " is being deleted");
                      * would have been thrown above: InvalidParameterValueException("Unable to find account " + accountName + " in domain id=" + domainId + " to create user");
-                     * we are system user: PermissionDeniedException("Account id : " + account.getRouterId() + " is a system account, can't add a user to it");
+                     * we are system user: PermissionDeniedException("Account id : " + account.getId() + " is a system account, can't add a user to it");
                      * serious and must be thrown: CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
                      * fatal system error and must be thrown: CloudRuntimeException("Failed to encode password");
                      */
