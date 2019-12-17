@@ -150,7 +150,7 @@ public class NfsMountManager implements MountManager {
             throw new CloudRuntimeException(errMsg);
         }
         deleteMountPath(localRootPath);
-        s_logger.debug("Successfully umounted " + localRootPath);
+        s_logger.info("Successfully umounted " + localRootPath);
     }
 
     private void deleteMountPath(String localRootPath) {

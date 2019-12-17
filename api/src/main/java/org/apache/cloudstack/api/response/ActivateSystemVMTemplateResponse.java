@@ -17,9 +17,11 @@
 
 package org.apache.cloudstack.api.response;
 
+import com.cloud.serializer.Param;
 import org.apache.cloudstack.api.BaseResponse;
 
 public class ActivateSystemVMTemplateResponse extends BaseResponse {
+    @Param(description = "The activation result")
     private String result;
 
     public String getResult() {

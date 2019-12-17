@@ -73,7 +73,7 @@ public class HttpSystemTemplateDownloader extends SystemTemplateDownloader {
                 s_logger.debug("downloadFromUrlToNfs:Exception:" + e.getMessage(), e);
             }
         } catch (IOException e) {
-            s_logger.debug("Failed to get url:" + getTemplate().getUrl() + ", due to " + e.toString());
+            s_logger.debug("Failed to get url:" + getTemplate().getUrl() + ", due to " + e.toString(), e);
             throw new CloudRuntimeException(e);
         }
         return true;

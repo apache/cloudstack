@@ -25,6 +25,14 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.SecondaryStorageVm;
+import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.dao.ConsoleProxyDao;
+import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
 import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
@@ -132,6 +140,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     VMTemplateDao templateDao;
     @Inject
     CapacityChecker capacityChecker;
+    @Inject
+    ConsoleProxyDao consoleProxyDao;
+    @Inject
+    DomainRouterDao domainRouterDao;
+    @Inject
+    SecondaryStorageVmDao secondaryStorageVmDao;
+    @Inject
+    ManagementServerHostDao managementServerHostDao;
 
     @Override
     public String getName() {
@@ -222,7 +238,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         VMTemplateVO template;
         // persist entry in vm_template, vm_template_details and template_zone_ref tables, note that entry at template_store_ref is not created here, but created in createTemplateAsync.
         if (profile.getTemplateType() == TemplateType.SYSTEM ){
-            profile.setAccountId(1L); // System account
             template = persistTemplate(profile, State.Inactive);
         } else {
             template = persistTemplate(profile, State.Active);
@@ -346,7 +361,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                         if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
                             s_logger.info("Zone " + zoneId_is +
                                     " is disabled, so uploading template to management server" + imageStore.getId());
-                            //continue;
                         }
 
                         // We want to download private template to one of the image store in a zone
@@ -617,7 +631,24 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateProfile profile = super.prepareDelete(cmd);
         VMTemplateVO template = profile.getTemplate();
         List<Long> zoneIdList = profile.getZoneIdList();
-        // TODO: Add a check to see if this template is used by console proxy, router or storagevm
+        List<SecondaryStorageVmVO> vms = secondaryStorageVmDao.listAll();
+        for (SecondaryStorageVm vm : vms){
+            if (vm.getTemplateId() == template.getId()){
+                throw new InvalidParameterValueException("The template cannot be deleted in use by secondary storage vm: " + vm.getInstanceName());
+            }
+        }
+        List<ConsoleProxyVO> consoleProxies = consoleProxyDao.listAll();
+        for (ConsoleProxyVO consoleProxy: consoleProxies){
+            if (consoleProxy.getTemplateId() == template.getId() ){
+                throw new InvalidParameterValueException("The template cannot be deleted in use by console proxy vm: " + consoleProxy.getInstanceName());
+            }
+        }
+        List<DomainRouterVO> domainRouters = domainRouterDao.listAll();
+        for (DomainRouterVO domainRouter: domainRouters){
+            if (domainRouter.getTemplateId() == template.getId()){
+                throw new InvalidParameterValueException("The template cannot be deleted in use by router vm: " + domainRouter.getInstanceName());
+            }
+        }
         if (CallContext.current().getCallingAccount().getRoleId() != RoleType.Admin.getId() && template.getTemplateType() == TemplateType.SYSTEM){
             throw new InvalidParameterValueException("The DomR template cannot be deleted.");
         }

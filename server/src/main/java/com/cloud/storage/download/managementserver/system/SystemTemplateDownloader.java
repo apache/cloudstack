@@ -76,7 +76,7 @@ public abstract class SystemTemplateDownloader implements TemplateDownloader {
         try {
             Files.createDirectories(Paths.get(path));
         } catch (IOException e) {
-            s_logger.error(String.format("Unable to create directory %s for template %s: %s%n", path, getTemplate().getUrl(), e.toString()));
+            s_logger.error(String.format("Unable to create directory %s for template %s: %s%n", path, getTemplate().getUrl(), e.toString()), e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -261,6 +261,7 @@ public abstract class SystemTemplateDownloader implements TemplateDownloader {
                 srcPath = uri.getPath();
             }
         } catch (URISyntaxException e) {
+            s_logger.error(String.format("Invalid NFS URL: %s", template.getUrl()), e);
             throw new CloudRuntimeException("Invalid NFS url " + template.getUrl() + " caused error: " + e.getMessage());
         }
     }

@@ -474,6 +474,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                         cmd.isSystem(), ApiConstants.SYSTEM));
             }
         }
+        if (cmd.isActivate() && !cmd.isSystem()){
+            throw new PermissionDeniedException("Parameter activate can only be specified with system templates, permission denied");
+        }
 
         TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
         TemplateProfile profile = adapter.prepare(cmd);

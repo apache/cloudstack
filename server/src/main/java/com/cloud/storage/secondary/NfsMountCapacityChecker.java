@@ -23,6 +23,7 @@ import java.util.Optional;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.ImageStoreDetailsUtil;
@@ -38,14 +39,23 @@ public class NfsMountCapacityChecker implements CapacityChecker {
     @Inject
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
 
+    private static final Logger s_logger = Logger.getLogger(NfsMountCapacityChecker.class);
+
     @Override
     public boolean hasEnoughCapacity(DataStore imageStore) {
         String[] capacityInfo = getCapacityInfo(imageStore);
-        Long capacity = parse(capacityInfo[0]);
-        Long used = parse(capacityInfo[1]);
-        if (used/(capacity * 1.0) <= CAPACITY_THRESHOLD) {
-            return true;
+
+        try {
+            Long capacity = Long.parseLong(capacityInfo[0]);
+            Long used = Long.parseLong(capacityInfo[1]);
+            if (used/(capacity * 1.0) <= CAPACITY_THRESHOLD) {
+                return true;
+            }
+        } catch (NumberFormatException e) {
+            s_logger.debug("Error parsing capacity info", e);
+            throw new CloudRuntimeException("Error parsing capacity info: " + e.getMessage());
         }
+
         return false;
     }
 

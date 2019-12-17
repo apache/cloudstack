@@ -31,6 +31,7 @@ public class GetSystemVMTemplateDefaultURLResponse extends BaseResponse {
     @Param(description = "The default URL of the System VM template.")
     private String url;
 
+    @Param(description = "The file extension")
     private String type;
 
     public String getType() {

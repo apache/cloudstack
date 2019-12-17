@@ -45,16 +45,17 @@ import com.cloud.utils.script.Script;
 @WebServlet(urlPatterns={"/client/upload"}, name="upload")
 public class UploadServlet extends HttpServlet {
 
+    final private String uploadPath = "${TMPDIR-/tmp}/upload";
+
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
-        Script.runSimpleBashScript("mkdir /tmp/upload");
+        Script.runSimpleBashScript(String.format("mkdir %s", uploadPath));
 
-        String location = "/tmp/upload";
         long maxFileSize = 1024 * 1024 * 1024;
         long maxRequestSize = 1024 * 1024 * 1024;
         int fileSizeThreshold = 64 * 1024;
 
-        MultipartConfigElement multipartConfig = new MultipartConfigElement(location, maxFileSize, maxRequestSize, fileSizeThreshold);
+        MultipartConfigElement multipartConfig = new MultipartConfigElement(uploadPath, maxFileSize, maxRequestSize, fileSizeThreshold);
         request.setAttribute(Request.__MULTIPART_CONFIG_ELEMENT, multipartConfig);
 
         response.setContentType("application/json;charset=UTF-8");
@@ -73,18 +74,12 @@ public class UploadServlet extends HttpServlet {
     }
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String location = "/tmp/upload";
-        String fileName = location + request.getPathInfo();
-        FileInputStream fis = null;
-
-        try {
-            fis = new FileInputStream(fileName);
+        String fileName = uploadPath + request.getPathInfo();
+        try (FileInputStream fis = new FileInputStream(fileName)){
             response.setContentType("application/octet-stream");
-            OutputStream out = response.getOutputStream();
-            IOUtils.copy(fis, out);
-        } finally {
-            IOUtils.closeQuietly(out);
-            IOUtils.closeQuietly(fis);
+            try (OutputStream out = response.getOutputStream()){
+                IOUtils.copy(fis, out);
+            }
         }
     }
 }

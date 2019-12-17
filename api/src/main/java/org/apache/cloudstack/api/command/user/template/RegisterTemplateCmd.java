@@ -161,7 +161,6 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name=ApiConstants.DIRECT_DOWNLOAD,
                 type = CommandType.BOOLEAN,
-                authorized = {RoleType.Admin},
                 description = "true if template should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
     private Boolean directDownload;
 

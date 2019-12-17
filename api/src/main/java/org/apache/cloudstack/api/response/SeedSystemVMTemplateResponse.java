@@ -17,9 +17,11 @@
 
 package org.apache.cloudstack.api.response;
 
+import com.cloud.serializer.Param;
 import org.apache.cloudstack.api.BaseResponse;
 
 public class SeedSystemVMTemplateResponse extends BaseResponse {
+    @Param(description="The process result indicating success.")
     private String result;
 
     public String getResult() {
