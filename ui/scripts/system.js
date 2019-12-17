@@ -10586,7 +10586,7 @@
                                         },
                                         action: function (args) {
                                             var data = {
-                                                'id': args.context.routers[0].id,
+                                                'routerid': args.context.routers[0].id,
                                                 'performfreshchecks': (args.data.performfreshchecks === 'on')
                                             };
                                             $.ajax({
@@ -10857,7 +10857,7 @@
                                                 $.ajax({
                                                     url: createURL('getRouterHealthCheckResults'),
                                                     data: {
-                                                        'id': args.context.routers[0].id
+                                                        'routerid': args.context.routers[0].id
                                                     },
                                                     success: function (json) {
                                                         var hcData = json.getrouterhealthcheckresultsresponse.routerhealthchecks.healthchecks

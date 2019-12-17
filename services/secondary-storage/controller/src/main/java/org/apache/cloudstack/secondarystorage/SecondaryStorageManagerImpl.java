@@ -357,7 +357,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             SecStorageSetupCommand setupCmd = new SecStorageSetupCommand(secUrl, null);
             for ( SecondaryStorageVmVO ssVm : alreadyRunning ) {
                 HostVO host = _resourceMgr.findHostByName(ssVm.getInstanceName());
-                Answer answer = _agentMgr.easySend(host.getId(), setupCmd);
+                Answer answer = _agentMgr.easySend(host.getRouterId(), setupCmd);
                 if (answer != null && answer.getResult()) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Successfully programmed secondary storage " + host.getName() + " in secondary storage VM " + ssVm.getInstanceName());

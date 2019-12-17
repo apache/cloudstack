@@ -28,7 +28,7 @@ def main():
         data = entries[0]
 
     if "maxMemoryUsage" in data:
-        maxMemoryUsage = float(data["maxMemoryUsage"]) * 1024
+        maxMemoryUsage = float(data["maxMemoryUsage"])
         cmd = "free | awk 'FNR == 2 { print $3 * 100 / $2 }'"
         pout = Popen(cmd, shell=True, stdout=PIPE)
 

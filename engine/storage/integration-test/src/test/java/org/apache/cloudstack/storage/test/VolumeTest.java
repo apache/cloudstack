@@ -226,12 +226,12 @@ public class VolumeTest extends CloudStackTestNGBase {
         /*
          * TemplateDataStoreVO templateStore = new TemplateDataStoreVO();
          *
-         * templateStore.setDataStoreId(imageStore.getId());
+         * templateStore.setDataStoreId(imageStore.getRouterId());
          * templateStore.setDownloadPercent(100);
          * templateStore.setDownloadState(Status.DOWNLOADED);
          * templateStore.setDownloadUrl(imageStore.getUrl());
          * templateStore.setInstallPath(this.getImageInstallPath());
-         * templateStore.setTemplateId(image.getId());
+         * templateStore.setTemplateId(image.getRouterId());
          * templateStoreDao.persist(templateStore);
          */
 

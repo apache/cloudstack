@@ -98,7 +98,7 @@ public class DateraHostListener implements HypervisorHostListener {
             handleXenServer(host.getClusterId(), host.getId(), storagePoolId);
         }
         else if (host.getHypervisorType().equals(HypervisorType.KVM)) {
-            //handleKVM(host.getClusterId(), host.getId(), storagePoolId);
+            //handleKVM(host.getClusterId(), host.getRouterId(), storagePoolId);
             handleKVM(hostId, storagePoolId);
         }
 

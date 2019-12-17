@@ -30,7 +30,7 @@ def merge(dbag, data):
         dbag["health_checks_advance_run_interval"] = data["health_checks_advance_run_interval"]
     if "excluded_health_checks" in data:
         dbag["excluded_health_checks"] = data["excluded_health_checks"]
-    if "additional_data" in data:
-        dbag["additional_data"] = data["additional_data"]
+    if "health_checks_config" in data:
+        dbag["health_checks_config"] = data["health_checks_config"]
 
     return dbag

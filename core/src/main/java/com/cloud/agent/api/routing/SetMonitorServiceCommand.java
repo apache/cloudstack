@@ -35,11 +35,11 @@ public class SetMonitorServiceCommand extends NetworkElementCommand {
     public static final String ROUTER_MONITORING_ENABLED = "router.monitor.enabled";
     public static final String ROUTER_HEALTH_CHECKS_ENABLED = "router.health.checks.enabled";
     public static final String ROUTER_HEALTH_CHECKS_BASIC_INTERVAL = "router.health.checks.basic.interval";
-    public static final String ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL = "router.health.checks.advanced.interval";
+    public static final String ROUTER_HEALTH_CHECKS_ADVANCE_INTERVAL = "router.health.checks.advance.interval";
     public static final String ROUTER_HEALTH_CHECKS_EXCLUDED = "router.health.checks.excluded";
 
     private MonitorServiceTO[] services;
-    private Map<String, String> additionalData;
+    private Map<String, String> healthChecksConfig;
     private boolean reconfigureAfterUpdate;
     private boolean deleteFromProcessedCache;
 
@@ -72,12 +72,12 @@ public class SetMonitorServiceCommand extends NetworkElementCommand {
         return sb.toString();
     }
 
-    public Map<String, String> getAdditionalData() {
-        return additionalData;
+    public Map<String, String> getHealthChecksConfig() {
+        return healthChecksConfig;
     }
 
-    public void setAdditionalData(Map<String, String> additionalData) {
-        this.additionalData = additionalData;
+    public void setHealthChecksConfig(Map<String, String> healthChecksConfig) {
+        this.healthChecksConfig = healthChecksConfig;
     }
 
     public boolean shouldReconfigureAfterUpdate() {

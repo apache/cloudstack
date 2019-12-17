@@ -455,7 +455,7 @@ def main(checkType = "basic"):
                 ret = execute(fpath, checkType)
                 if len(ret) == 0:
                     continue
-                if "success" in ret and not ret["success"]:
+                if "success" in ret and ret["success"].lower() == "false":
                     failingChecks.append(f)
                 monitResult[f] = ret
 
@@ -478,7 +478,7 @@ def main(checkType = "basic"):
         fcs = ""
         for fc in failingChecks:
             fcs = fcs + fc + ","
-        fcs = fcs[0, -1]
+        fcs = fcs[0:-1]
         with open(failChecksFile, 'w') as f:
             f.write(fcs)
     elif path.isfile(failChecksFile):

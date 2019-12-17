@@ -95,7 +95,7 @@ public class KeystoreTest extends TestCase {
             assertTrue(ksVo.getKey().equals("KeyForCertificate Again"));
             assertTrue(ksVo.getDomainSuffix().equals("again.realhostip.com"));
 
-            ksDao.expunge(ksVo.getId());
+            ksDao.expunge(ksVo.getRouterId());
         }
 
         public void testStripeKey() throws Exception {
@@ -131,7 +131,7 @@ public class KeystoreTest extends TestCase {
 
             KeystoreDao ksDao = locator.getDao(KeystoreDao.class);
             KeystoreVO ksVo = ksDao.findByName("CPVMCertificate");
-            ksDao.expunge(ksVo.getId());
+            ksDao.expunge(ksVo.getRouterId());
         }
     */
     public void testUuid() {

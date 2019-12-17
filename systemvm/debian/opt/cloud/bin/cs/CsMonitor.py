@@ -52,10 +52,10 @@ class CsMonitor(CsDataBag):
             hc_data["excluded_health_checks"] = [ch.strip() for ch in excluded_checks.split(",")] if len(excluded_checks) > 0 else []
         else:
             hc_data["excluded_health_checks"] = []
-        if "additional_data" in self.dbag:
-            hc_data["additional_data"] = self.dbag["additional_data"]
+        if "health_checks_config" in self.dbag:
+            hc_data["health_checks_config"] = self.dbag["health_checks_config"]
         else:
-            hc_data["additional_data"] = {}
+            hc_data["health_checks_config"] = {}
 
         cron = CsFile("/etc/cron.d/process")
         cron.deleteLine("root /usr/bin/python /root/monitorServices.py")

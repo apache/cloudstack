@@ -209,7 +209,7 @@ public class NetworkProviderTest extends TestCase {
         ManagementServerMock.setParameter(cmd, ApiConstants.GATEWAY, BaseCmd.CommandType.STRING, "10.0.1.254");
         ManagementServerMock.setParameter(cmd, ApiConstants.NETMASK, BaseCmd.CommandType.STRING, "255.255.255.0");
         // Physical network id can't be specified for Guest traffic type.
-        // SetParameter(cmd, "physicalNetworkId", BaseCmd.CommandType.LONG, _znet.getId());
+        // SetParameter(cmd, "physicalNetworkId", BaseCmd.CommandType.LONG, _znet.getRouterId());
 
         Network result = null;
         try {

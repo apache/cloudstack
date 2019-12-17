@@ -620,7 +620,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             /*        case NetworkACL:
             for (NetworkACLServiceProvider element: _networkAclElements) {
                 Network.Provider provider = element.getProvider();
-                boolean  isAclProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.NetworkACL, provider);
+                boolean  isAclProvider = _networkModel.isProviderSupportServiceInNetwork(network.getRouterId(), Service.NetworkACL, provider);
                 if (!isAclProvider) {
                     continue;
                 }

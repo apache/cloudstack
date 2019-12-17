@@ -28,7 +28,7 @@ def main():
         data = entries[0]
 
     if "maxCpuUsage" in data:
-        maxCpuUsage = float(data["maxCpuUsage"]) * 1024
+        maxCpuUsage = float(data["maxCpuUsage"])
         cmd = "top -b -n2 -p 1 | fgrep \"Cpu(s)\" | tail -1 | " \
               "awk -F 'id,' " \
               "'{ split($1, vs, \",\");  idle=vs[length(vs)]; " \

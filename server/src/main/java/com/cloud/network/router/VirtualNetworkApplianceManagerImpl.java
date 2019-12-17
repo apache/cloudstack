@@ -688,11 +688,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             s_logger.debug(RouterAlertsCheckIntervalCK + "=" + routerAlertsCheckInterval + " so not scheduling the router alerts checking thread");
         }
 
-        final int routerHealthCheckDataRefreshInterval = RouterHealthChecksDataRefreshInterval.value();
-        if (routerHealthCheckDataRefreshInterval > 0) {
-            _checkExecutor.scheduleAtFixedRate(new UpdateRouterHealthChecksConfigDataTask(), routerHealthCheckDataRefreshInterval, routerHealthCheckDataRefreshInterval, TimeUnit.MINUTES);
+        final int routerHealthCheckConfigRefreshInterval = RouterHealthChecksConfigRefreshInterval.value();
+        if (routerHealthCheckConfigRefreshInterval > 0) {
+            _checkExecutor.scheduleAtFixedRate(new UpdateRouterHealthChecksConfigTask(), routerHealthCheckConfigRefreshInterval, routerHealthCheckConfigRefreshInterval, TimeUnit.MINUTES);
         } else {
-            s_logger.debug(RouterHealthChecksDataRefreshIntervalCK + "=" + routerAlertsCheckInterval + " so not scheduling the router health check data thread");
+            s_logger.debug(RouterHealthChecksConfigRefreshIntervalCK + "=" + routerAlertsCheckInterval + " so not scheduling the router health check data thread");
         }
 
         final int routerHealthChecksFetchInterval = RouterHealthChecksResultFetchInterval.value();
@@ -1443,8 +1443,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return true;
     }
 
-    protected class UpdateRouterHealthChecksConfigDataTask extends ManagedContextRunnable {
-        public UpdateRouterHealthChecksConfigDataTask() {
+    protected class UpdateRouterHealthChecksConfigTask extends ManagedContextRunnable {
+        public UpdateRouterHealthChecksConfigTask() {
         }
 
         @Override
@@ -1457,7 +1457,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     updateRouterHealthCheckData(router);
                 }
             } catch (final Exception ex) {
-                s_logger.error("Fail to complete the UpdateRouterHealthChecksConfigDataTask! ", ex);
+                s_logger.error("Fail to complete the UpdateRouterHealthChecksConfigTask! ", ex);
             }
         }
     }
@@ -1469,9 +1469,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.valueIn(router.getDataCenterId()).toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
-        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
+        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCE_INTERVAL, RouterHealthChecksAdvanceInterval.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, RouterHealthChecksToExclude.valueIn(router.getDataCenterId()));
-        command.setAdditionalData(getAdditionalDataForRouterHealthChecks(router));
+        command.setHealthChecksConfig(getRouterHealthChecksConfig(router));
         command.setReconfigureAfterUpdate(reconfigure);
         command.setDeleteFromProcessedCache(deleteFromProcessedCache); // As part of updating
         return command;
@@ -1591,7 +1591,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
     }
 
-    private Map<String, String> getAdditionalDataForRouterHealthChecks(final DomainRouterVO router) {
+    private Map<String, String> getRouterHealthChecksConfig(final DomainRouterVO router) {
         Map<String, String> data = new HashMap<>();
         List<DomainRouterJoinVO> routerJoinVOs = domainRouterJoinDao.searchByIds(router.getId());
         StringBuilder vmsData = new StringBuilder();
@@ -3071,8 +3071,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterAlertsCheckInterval,
                 RouterHealthChecksEnabled,
                 RouterHealthChecksBasicInterval,
-                RouterHealthChecksAdvancedInterval,
-                RouterHealthChecksDataRefreshInterval,
+                RouterHealthChecksAdvanceInterval,
+                RouterHealthChecksConfigRefreshInterval,
                 RouterHealthChecksResultFetchInterval,
                 RouterHealthChecksFailuresToRestartVr,
                 RouterHealthChecksToExclude,

@@ -643,7 +643,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
              * _eventJoinDao.searchAllEvents(sc, searchFilter);
              * List<EventJoinVO> pendingEvents = new ArrayList<EventJoinVO>();
              * for (EventVO event : startedEvents) { EventVO completedEvent =
-             * _eventDao.findCompletedEvent(event.getId()); if (completedEvent
+             * _eventDao.findCompletedEvent(event.getRouterId()); if (completedEvent
              * == null) { pendingEvents.add(event); } } return pendingEvents;
              */
         } else {
@@ -2646,7 +2646,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
          * _domainDao.createSearchBuilder(); domainSearch.addAnd("path",
          * domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
          * sb.join("domainSearch", domainSearch, sb.entity().getDomainId(),
-         * domainSearch.entity().getId()); }
+         * domainSearch.entity().getRouterId()); }
          */
 
         // FIXME: disk offerings should search back up the hierarchy for
@@ -2810,10 +2810,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                         throw new CloudAuthenticationException("Could not find the domainId for account:" + caller.getAccountName());
                     }
                 }
-                domainIds.add(domainRecord.getId());
+                domainIds.add(domainRecord.getRouterId());
                 while (domainRecord.getParent() != null) {
                     domainRecord = _domainDao.findById(domainRecord.getParent());
-                    domainIds.add(domainRecord.getId());
+                    domainIds.add(domainRecord.getRouterId());
                 }
 
                 SearchCriteria<ServiceOfferingJoinVO> spc = _srvOfferingJoinDao.createSearchCriteria();
@@ -3899,7 +3899,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public List<RouterHealthCheckResultResponse> listRouterHealthChecks(GetRouterHealthCheckResultsCmd cmd) {
         s_logger.info("Executing health check command " + cmd);
-        long routerId = cmd.getId();
+        long routerId = cmd.getRouterId();
         if (cmd.shouldPerformFreshChecks() && !routerService.performRouterHealthChecks(routerId)) {
             throw new CloudRuntimeException("Unable to perform fresh checks on router.");
         }

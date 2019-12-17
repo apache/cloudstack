@@ -159,7 +159,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
         //for (HostVO host : hosts) {
         // Create a host details VO object and write it out for this hostid.
         //Long hostid = new Long(vsmId);
-        //DetailVO vsmDetail = new DetailVO(host.getId(), "vsmId", hostid.toString());
+        //DetailVO vsmDetail = new DetailVO(host.getRouterId(), "vsmId", hostid.toString());
         //Transaction tx = Transaction.currentTxn();
         //try {
         //tx.start();
@@ -176,7 +176,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
         //hostDetails.put(ApiConstants.IP_ADDRESS, ipaddress);
         //hostDetails.put(ApiConstants.USERNAME, username);
         //hostDetails.put(ApiConstants.PASSWORD, password);
-        //_agentMrg.send(host.getId(), )
+        //_agentMrg.send(host.getRouterId(), )
 
         return VSMObj;
 

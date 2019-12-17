@@ -109,7 +109,7 @@ public class AsyncJobManagerTest extends TestCase {
 
                 _jobMgr.submitAsyncJob(job, "fakequeue", i);
 
-                s_logger.info("Job submitted. job " + job.getId() + ", queue: " + i);
+                s_logger.info("Job submitted. job " + job.getRouterId() + ", queue: " + i);
             }
         }
 

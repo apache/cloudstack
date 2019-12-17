@@ -52,7 +52,7 @@ public class NetworkACLItemCidrsVO implements InternalIdentity {
     }
 
     /* (non-Javadoc)
-     * @see org.apache.cloudstack.api.InternalIdentity#getId()
+     * @see org.apache.cloudstack.api.InternalIdentity#getRouterId()
      */
     @Override
     public long getId() {

@@ -23,8 +23,8 @@ def getHealthChecksData(additionalDataKey=None):
         hc_data = json.load(hc_data_file)
     if additionalDataKey is None:
         return hc_data
-    if additionalDataKey in hc_data["additional_data"]:
-        data = hc_data["additional_data"][additionalDataKey].strip().split(";")
+    if additionalDataKey in hc_data["health_checks_config"]:
+        data = hc_data["health_checks_config"][additionalDataKey].strip().split(";")
         addData = []
         for line in data:
             line = line.strip()

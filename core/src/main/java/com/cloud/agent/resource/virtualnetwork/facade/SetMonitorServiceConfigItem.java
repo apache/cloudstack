@@ -51,14 +51,14 @@ public class SetMonitorServiceConfigItem extends AbstractConfigItemFacade {
         }
 
         try {
-            monitorService.setHealthChecksAdvanceRunInterval(Integer.parseInt(cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL)));
+            monitorService.setHealthChecksAdvanceRunInterval(Integer.parseInt(cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCE_INTERVAL)));
         } catch (NumberFormatException exception) {
-            s_logger.error("Unexpected health check advance interval set" + cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL) +
+            s_logger.error("Unexpected health check advance interval set" + cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCE_INTERVAL) +
                     ". Exception: " + exception + "Will use default value");
         }
 
         monitorService.setExcludedHealthChecks(cmd.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED));
-        monitorService.setAdditionalData(command.getAdditionalData());
+        monitorService.setHealthChecksConfig(command.getHealthChecksConfig());
         monitorService.setDeleteFromProcessedCache(command.shouldDeleteFromProcessedCache());
         List<ConfigItem> configItems = generateConfigItems(monitorService);
         if (configItems != null && command.shouldReconfigureAfterUpdate()) {

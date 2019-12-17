@@ -475,7 +475,7 @@ public class ParamProcessWorker implements DispatchWorker {
         }
 
         // Go through each entity which is an interface to a VO class and get a VO object
-        // Try to getId() for the object using reflection, break on first non-null value
+        // Try to getRouterId() for the object using reflection, break on first non-null value
         for (final Class<?> entity : entities) {
             // For backward compatibility, we search within removed entities and let service layer deal
             // with removed ones, return empty response or error
@@ -483,7 +483,7 @@ public class ParamProcessWorker implements DispatchWorker {
             if (objVO == null) {
                 continue;
             }
-            // Invoke the getId method, get the internal long ID
+            // Invoke the getRouterId method, get the internal long ID
             // If that fails hide exceptions as the uuid may not exist                                         s
             try {
                 internalId = ((InternalIdentity)objVO).getId();

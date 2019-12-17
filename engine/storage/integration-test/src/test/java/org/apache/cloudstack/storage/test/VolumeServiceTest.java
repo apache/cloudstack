@@ -244,9 +244,9 @@ public class VolumeServiceTest extends CloudStackTestNGBase {
              * defaultProvider.getLifeCycle(); ImageDataStore store =
              * lifeCycle.registerDataStore("defaultHttpStore", new
              * HashMap<String, String>());
-             * imageService.registerTemplate(image.getId(),
+             * imageService.registerTemplate(image.getRouterId(),
              * store.getImageDataStoreId()); TemplateEntity te =
-             * imageService.getTemplateEntity(image.getId()); return te;
+             * imageService.getTemplateEntity(image.getRouterId()); return te;
              */
             return template;
         } catch (Exception e) {
@@ -341,7 +341,7 @@ public class VolumeServiceTest extends CloudStackTestNGBase {
              * primaryStoreDao.findPoolByName(this.primaryName); if (ds.size()
              * >= 1) { PrimaryDataStoreVO store = ds.get(0); if
              * (store.getRemoved() == null) { return
-             * provider.getDataStore(store.getId()); } }
+             * provider.getDataStore(store.getRouterId()); } }
              *
              *
              * Map<String, String> params = new HashMap<String, String>();
@@ -373,7 +373,7 @@ public class VolumeServiceTest extends CloudStackTestNGBase {
         TemplateInfo te = createTemplate();
         VolumeVO volume = createVolume(te.getId(), primaryStore.getId());
         VolumeInfo vol = volumeFactory.getVolume(volume.getId(), primaryStore);
-        // ve.createVolumeFromTemplate(primaryStore.getId(), new VHD(), te);
+        // ve.createVolumeFromTemplate(primaryStore.getRouterId(), new VHD(), te);
         AsyncCallFuture<VolumeApiResult> future = volumeService.createVolumeFromTemplateAsync(vol, primaryStore.getId(), te);
         try {
             future.get();

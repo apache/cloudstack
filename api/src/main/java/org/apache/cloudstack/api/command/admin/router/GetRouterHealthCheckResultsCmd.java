@@ -54,9 +54,9 @@ public class GetRouterHealthCheckResultsCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class,
+    @Parameter(name = ApiConstants.ROUTER_ID, type = CommandType.UUID, entityType = DomainRouterResponse.class,
             required = true, description = "the ID of the router")
-    private Long id;
+    private Long routerId;
 
     @Parameter(name = ApiConstants.PERFORM_FRESH_CHECKS, type = CommandType.BOOLEAN, description = "if true is passed for this parameter, " +
             "health checks are performed on the fly. Else last performed checks data is fetched")
@@ -66,8 +66,8 @@ public class GetRouterHealthCheckResultsCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getId() {
-        return id;
+    public Long getRouterId() {
+        return routerId;
     }
 
     public boolean shouldPerformFreshChecks() {
@@ -85,7 +85,7 @@ public class GetRouterHealthCheckResultsCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        VirtualRouter router = _entityMgr.findById(VirtualRouter.class, getId());
+        VirtualRouter router = _entityMgr.findById(VirtualRouter.class, getRouterId());
         if (router != null) {
             return router.getAccountId();
         }
@@ -95,10 +95,10 @@ public class GetRouterHealthCheckResultsCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InvalidParameterValueException, ServerApiException {
-        CallContext.current().setEventDetails("Router Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
-        VirtualRouter router = _routerService.findRouter(getId());
+        CallContext.current().setEventDetails("Router Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getRouterId()));
+        VirtualRouter router = _routerService.findRouter(getRouterId());
         if (router == null || router.getRole() != VirtualRouter.Role.VIRTUAL_ROUTER) {
-            throw new InvalidParameterValueException("Can't find router by id");
+            throw new InvalidParameterValueException("Can't find router by routerId");
         }
 
         try {

@@ -338,7 +338,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                              * s_logger.info("Stop console proxy " +
                              * proxy.getName() +
                              * " VM because of that the agent running inside it has disconnected"
-                             * ); stopProxy(proxy.getId()); } });
+                             * ); stopProxy(proxy.getRouterId()); } });
                              */
                         } else {
                             if (s_logger.isInfoEnabled()) {
@@ -876,7 +876,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                          * if(s_logger.isInfoEnabled())
                          * s_logger.info("Stop console proxy " + proxy.getName() +
                          * " VM because of that the agent running inside it has disconnected" );
-                         * stopProxy(proxy.getId()); } });
+                         * stopProxy(proxy.getRouterId()); } });
                          */
                     } else {
                         if (s_logger.isInfoEnabled()) {

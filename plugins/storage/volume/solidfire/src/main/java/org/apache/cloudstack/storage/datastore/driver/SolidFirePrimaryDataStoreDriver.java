@@ -1550,7 +1550,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             for (SnapshotVO snapshotVo : lstSnapshots) {
                 // The CloudStack volume snapshot has not yet been set to the DESTROYED state, so check to make
-                // sure snapshotVo.getId() != csSnapshotId when determining if any volume snapshots remain for the given CloudStack volume.
+                // sure snapshotVo.getRouterId() != csSnapshotId when determining if any volume snapshots remain for the given CloudStack volume.
                 if (snapshotVo.getId() != csSnapshotId) {
                     snapshotDetails = snapshotDetailsDao.findDetail(snapshotVo.getId(), SolidFireUtil.SNAPSHOT_ID);
 

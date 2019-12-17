@@ -27,7 +27,7 @@ public class MonitorService extends ConfigBase {
     public Integer healthChecksBasicRunInterval;
     public Integer healthChecksAdvanceRunInterval;
     public String excludedHealthChecks;
-    public Map<String, String> additionalData;
+    public Map<String, String> healthChecksConfig;
 
     public MonitorService() {
         super(ConfigBase.MONITORSERVICE);
@@ -64,8 +64,8 @@ public class MonitorService extends ConfigBase {
         return excludedHealthChecks;
     }
 
-    public Map<String, String> getAdditionalData() {
-        return additionalData;
+    public Map<String, String> getHealthChecksConfig() {
+        return healthChecksConfig;
     }
 
     public void setConfig(String config) {
@@ -92,8 +92,8 @@ public class MonitorService extends ConfigBase {
         this.excludedHealthChecks = excludedHealthChecks;
     }
 
-    public void setAdditionalData(Map<String, String> additionalData) {
-        this.additionalData = additionalData;
+    public void setHealthChecksConfig(Map<String, String> healthChecksConfig) {
+        this.healthChecksConfig = healthChecksConfig;
     }
 
     public void setDeleteFromProcessedCache(boolean deleteFromProcessedCache) {
