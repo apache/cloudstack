@@ -70,6 +70,11 @@ public class GetHostStatsAnswer extends Answer implements HostStats {
     }
 
     @Override
+    public double getLoadAverage() {
+        return hostStats.getLoadAverage();
+    }
+
+    @Override
     public double getNetworkReadKBs() {
         return hostStats.getNetworkReadKBs();
     }
