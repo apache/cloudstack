@@ -32,17 +32,17 @@ public interface HighAvailabilityManager extends Manager {
 
     ConfigKey<Long> TimeBetweenCleanup = new ConfigKey<>("Advanced", Long.class,
         "time.between.cleanup", "86400", "Time in seconds to wait before the cleanup thread runs.",
-        false, null);
+        true, ConfigKey.Scope.Cluster);
 
     ConfigKey<Integer> MaxRetries = new ConfigKey<>("Advanced", Integer.class, "max.retries",
-        "5", "Number of times to retry start.", false, null);
+        "5", "Number of times to retry start.", true, ConfigKey.Scope.Cluster);
 
     ConfigKey<Long> TimeToSleep = new ConfigKey<>("Advanced", Long.class, "time.to.sleep",
-        "60", "Time in seconds to sleep if no work items are found.", false, null);
+        "60", "Time in seconds to sleep if no work items are found.", true, ConfigKey.Scope.Cluster);
 
     ConfigKey<Long> TimeBetweenFailures = new ConfigKey<>("Advanced", Long.class,
         "time.between.failures", "3600", "Time in seconds before try to cleanup all the VMs"
-        + " which are registered for the HA event that were successful and are now ready to be purged.", false, null);
+        + " which are registered for the HA event that were successful and are now ready to be purged.", true, ConfigKey.Scope.Cluster);
 
     public enum WorkType {
         Migration,  // Migrating VMs off of a host.
