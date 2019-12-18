@@ -9943,8 +9943,7 @@
                                 if (args.context != undefined) {
                                     if ("routerGroupByZone" in args.context) {
                                         $.extend(data2, {
-                                            zoneid: args.co
-                                            ntext.routerGroupByZone[0].id
+                                            zoneid: args.context.routerGroupByZone[0].id
                                         })
                                     } else if ("routerGroupByPod" in args.context) {
                                         $.extend(data2, {
