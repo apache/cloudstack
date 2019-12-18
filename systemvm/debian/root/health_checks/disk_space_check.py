@@ -23,7 +23,7 @@ from utility import getHealthChecksData
 def main():
     entries = getHealthChecksData("systemThresholds")
     data = {}
-    if len(entries) == 1:
+    if entries is not None and len(entries) == 1:
         data = entries[0]
 
     if "minDiskNeeded" in data:

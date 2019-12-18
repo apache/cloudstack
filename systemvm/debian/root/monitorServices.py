@@ -445,7 +445,7 @@ def main(checkType = "basic"):
     '''
     hc_data = getHealthChecksData()
 
-    if "health_checks_enabled" in hc_data and hc_data['health_checks_enabled']:
+    if hc_data is not None and "health_checks_enabled" in hc_data and hc_data['health_checks_enabled']:
         hc_exclude = hc_data["excluded_health_checks"] if "excluded_health_checks" in hc_data else []
         for f in os.listdir(Config.HEALTH_CHECKS_DIR):
             if f in hc_exclude:
