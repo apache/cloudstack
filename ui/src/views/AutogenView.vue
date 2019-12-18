@@ -265,7 +265,8 @@ export default {
   mixins: [mixinDevice],
   provide: function () {
     return {
-      parentFetchData: this.fetchData
+      parentFetchData: this.fetchData,
+      parentToggleLoading: this.toggleLoading
     }
   },
   data () {
@@ -718,6 +719,9 @@ export default {
     changeResource (resource) {
       this.treeSelected = resource
       this.resource = this.treeSelected
+    },
+    toggleLoading () {
+      this.loading = !this.loading
     }
   }
 }

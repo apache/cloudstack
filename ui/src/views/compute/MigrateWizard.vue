@@ -179,7 +179,6 @@ export default {
       display: flex;
       justify-content: flex-end;
     }
-
   }
 
   .host-item {
@@ -199,7 +198,6 @@ export default {
       @media (min-width: 760px) {
         flex-direction: row;
       }
-
     }
 
     &__value {
@@ -216,9 +214,7 @@ export default {
           margin-right: 40px;
           margin-left: 40px;
         }
-
       }
-
     }
 
     &__title {

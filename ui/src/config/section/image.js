@@ -140,7 +140,12 @@ export default {
           icon: 'cloud-download',
           label: 'Download ISO',
           dataView: true,
-          args: ['zoneid', 'mode']
+          args: ['zoneid', 'mode'],
+          mapping: {
+            mode: {
+              value: (record) => { return 'HTTP_DOWNLOAD' }
+            }
+          }
         },
         {
           api: 'updateIsoPermissions',

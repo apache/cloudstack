@@ -116,7 +116,9 @@ export default {
           label: 'Migrate Volume',
           args: ['volumeid', 'storageid', 'livemigrate'],
           dataView: true,
-          show: (record) => { return 'virtualmachineid' in record && record.virtualmachineid },
+          show: (record) => { return record && record.state === 'Ready' },
+          popup: true,
+          component: () => import('@/views/storage/MigrateVolume.vue'),
           mapping: {
             volumeid: {
               value: (record) => { return record.id }
