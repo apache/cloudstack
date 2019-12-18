@@ -58,6 +58,19 @@ export default {
           component: () => import('@/views/network/CreateNetwork.vue')
         },
         {
+          api: 'associateIpAddress',
+          icon: 'plus',
+          label: 'Acquire New IP',
+          dataView: true,
+          show: (record) => { return record && record.service && record.service.filter(x => x.name && ['StaticNat', 'SourceNat', 'Firewall', 'PortForwarding', 'Lb'].includes(x.name)).length > 0 },
+          args: ['networkid'],
+          mapping: {
+            networkid: {
+              value: (record) => { return record.id }
+            }
+          }
+        },
+        {
           api: 'updateNetwork',
           icon: 'edit',
           label: 'Update Network',
