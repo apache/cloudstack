@@ -22,6 +22,7 @@ import json
 MON_CONFIG = "/etc/monitor.conf"
 HC_CONFIG = "/root/health_checks_data.json"
 
+
 class CsMonitor(CsDataBag):
     """ Manage Monitor script schedule and health checks for router """
 
@@ -33,15 +34,15 @@ class CsMonitor(CsDataBag):
 
     def setupMonitorConfigFile(self):
         if "config" in self.dbag:
-        procs = [x.strip() for x in self.dbag['config'].split(',')]
-        file = CsFile(MON_CONFIG)
-        for proc in procs:
-            bits = [x for x in proc.split(':')]
-            if len(bits) < 5:
-                continue
-            for i in range(0, 4):
-                file.add(bits[i], -1)
-        file.commit()
+            procs = [x.strip() for x in self.dbag['config'].split(',')]
+            file = CsFile(MON_CONFIG)
+            for proc in procs:
+                bits = [x for x in proc.split(':')]
+                if len(bits) < 5:
+                    continue
+                for i in range(0, 4):
+                    file.add(bits[i], -1)
+            file.commit()
 
     def setupHealthCheckCronJobs(self):
         cron_rep_basic = self.get_basic_check_interval()
