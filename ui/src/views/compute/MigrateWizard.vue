@@ -74,7 +74,6 @@
 
 <script>
 import { api } from '@/api'
-import { pollActionCompletion } from '@/utils/methods'
 
 export default {
   name: 'VMMigrateWizard',
@@ -123,7 +122,7 @@ export default {
           description: this.resource.name,
           status: 'progress'
         })
-        pollActionCompletion({
+        this.$pollJob({
           jobId: response.migratevirtualmachineresponse.jobid,
           successMessage: `Migration completed successfully for ${this.resource.name}`,
           successMethod: () => {
