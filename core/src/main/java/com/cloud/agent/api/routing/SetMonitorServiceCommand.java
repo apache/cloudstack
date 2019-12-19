@@ -43,7 +43,7 @@ public class SetMonitorServiceCommand extends NetworkElementCommand {
     private boolean reconfigureAfterUpdate;
     private boolean deleteFromProcessedCache;
 
-    public SetMonitorServiceCommand() {
+    protected SetMonitorServiceCommand() {
     }
 
     public SetMonitorServiceCommand(List<MonitorServiceTO> services) {

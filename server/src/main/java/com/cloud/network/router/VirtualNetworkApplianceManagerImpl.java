@@ -1454,7 +1454,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         s_logger.info("Running health check results for router " + router.getUuid());
 
         // Step 1: Update health check data on router.
-        if (!updateRouterHealthCheckData(router)) {
+        if (!updateRouterHealthChecksConfig(router)) {
             s_logger.warn("Unable to update health check data for fresh run successfully for router: " + router);
             return false;
         }
@@ -1485,7 +1485,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 s_logger.debug("Found " + routers.size() + " running routers. ");
 
                 for (final DomainRouterVO router : routers) {
-                    updateRouterHealthCheckData(router);
+                    updateRouterHealthChecksConfig(router);
                 }
             } catch (final Exception ex) {
                 s_logger.error("Fail to complete the UpdateRouterHealthChecksConfigTask! ", ex);
@@ -1508,7 +1508,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return command;
     }
 
-    private boolean updateRouterHealthCheckData(DomainRouterVO router) {
+    /**
+     * Updates router health check config to the virtual router that it uses for health checks.
+     * @param router - the router ID that data needs to be sent to.
+     * @return success of whether data was sent or not
+     */
+    private boolean updateRouterHealthChecksConfig(DomainRouterVO router) {
         if (!RouterHealthChecksEnabled.valueIn(router.getDataCenterId())) {
             return false;
         }
