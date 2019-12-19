@@ -1,6 +1,4 @@
-addIpToNic
 addNetworkServiceProvider
-addNicToVirtualMachine
 addResourceDetail
 addTrafficType
 assignCertToLoadBalancer
@@ -56,7 +54,6 @@ deleteStorageNetworkIpRange
 deleteVlanIpRange
 deleteVpnConnection
 deleteVpnGateway
-findHostsForMigration
 findStoragePoolsForMigration
 importLdapUsers
 ldapCreateAccount
@@ -87,7 +84,6 @@ listLoadBalancers
 listNetworkACLLists
 listNetworkACLs
 listNetworkServiceProviders
-listNics
 listOsCategories
 listPortableIpRanges
 listPortForwardingRules
@@ -117,15 +113,12 @@ moveNetworkAclItem
 releaseDedicatedGuestVlanRange
 releasePublicIpRange
 removeFromLoadBalancerRule
-removeIpFromNic
-removeNicFromVirtualMachine
 replaceNetworkACLList
 resetVpnConnection
 revokeSecurityGroupEgress
 revokeSecurityGroupIngress
 startInternalLoadBalancerVM
 stopInternalLoadBalancerVM
-updateDefaultNicForVirtualMachine
 updateLoadBalancerRule
 updateNetworkACLItem
 updateNetworkACLList
@@ -134,5 +127,4 @@ updatePhysicalNetwork
 updateProjectInvitation
 updateResourceLimit
 updateTrafficType
-updateVmNicIp
 updateVpnCustomerGateway
