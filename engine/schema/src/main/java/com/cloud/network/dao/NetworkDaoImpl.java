@@ -397,7 +397,10 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     public List<NetworkVO> listByZoneAndUriAndGuestType(long zoneId, String broadcastUri, GuestType guestType) {
         final URI searchUri = BroadcastDomainType.fromString(broadcastUri);
         final String searchRange = BroadcastDomainType.getValue(searchUri);
-        final List<Integer> searchVlans = UriUtils.expandVlanUri(searchRange);
+        List<Integer> searchVlans = UriUtils.expandVlanUri(searchRange);
+        if (searchUri.getScheme().equalsIgnoreCase("pvlan")) {
+            searchVlans = UriUtils.expandPvlanUri(searchRange);
+        }
         final List<NetworkVO> overlappingNetworks = new ArrayList<>();
 
         final SearchCriteria<NetworkVO> sc = ZoneBroadcastUriSearch.create();
@@ -414,10 +417,20 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
             if (networkVlanRange == null || networkVlanRange.isEmpty()) {
                 continue;
             }
-            for (final Integer networkVlan : UriUtils.expandVlanUri(networkVlanRange)) {
-                if (searchVlans.contains(networkVlan)) {
+            if (searchUri.getScheme().equalsIgnoreCase("pvlan")) {
+                List<Integer> pvlans = UriUtils.expandPvlanUri(networkVlanRange);
+                Integer primaryVlan = searchVlans.get(0);
+                Integer secondaryVlan = searchVlans.get(1);
+                if ((pvlans.get(0).equals(primaryVlan) && pvlans.get(1).equals(secondaryVlan)) || pvlans.get(0).equals(secondaryVlan) || pvlans.get(1).equals(secondaryVlan)) {
                     overlappingNetworks.add(network);
                     break;
+                }
+            } else {
+                for (final Integer networkVlan : UriUtils.expandVlanUri(networkVlanRange)) {
+                    if (searchVlans.contains(networkVlan)) {
+                        overlappingNetworks.add(network);
+                        break;
+                    }
                 }
             }
         }
