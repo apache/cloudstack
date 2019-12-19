@@ -59,7 +59,7 @@ public class NetworkServiceImplTest {
 
     @Test
     public void testGetPrivateVlanPairPromiscuousTypeOnSecondaryVlanId() {
-        Pair<String, Network.PVlanType> pair = service.getPrivateVlanPair("p-" + VLAN_ID_900, null, VLAN_ID_900);
+        Pair<String, Network.PVlanType> pair = service.getPrivateVlanPair(VLAN_ID_900, "promiscuous", VLAN_ID_900);
         Assert.assertEquals(VLAN_ID_900, pair.first());
         Assert.assertEquals(Network.PVlanType.Promiscuous, pair.second());
     }
@@ -73,7 +73,7 @@ public class NetworkServiceImplTest {
 
     @Test
     public void testGetPrivateVlanPairIsolatedTypeOnSecondaryVlanId() {
-        Pair<String, Network.PVlanType> pair = service.getPrivateVlanPair("i-" + VLAN_ID_901, null, VLAN_ID_900);
+        Pair<String, Network.PVlanType> pair = service.getPrivateVlanPair(VLAN_ID_901, "isolated", VLAN_ID_900);
         Assert.assertEquals(VLAN_ID_901, pair.first());
         Assert.assertEquals(Network.PVlanType.Isolated, pair.second());
     }
@@ -87,7 +87,7 @@ public class NetworkServiceImplTest {
 
     @Test
     public void testGetPrivateVlanPairCommunityTypeOnSecondaryVlanId() {
-        Pair<String, Network.PVlanType> pair = service.getPrivateVlanPair("c-" + VLAN_ID_902, null, VLAN_ID_900);
+        Pair<String, Network.PVlanType> pair = service.getPrivateVlanPair(VLAN_ID_902, "community", VLAN_ID_900);
         Assert.assertEquals(VLAN_ID_902, pair.first());
         Assert.assertEquals(Network.PVlanType.Community, pair.second());
     }

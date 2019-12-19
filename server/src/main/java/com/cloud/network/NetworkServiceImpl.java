@@ -1401,15 +1401,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String secondaryVlanId = pvlanId;
         PVlanType type = null;
 
-        if (isNotBlank(secondaryVlanId) && (secondaryVlanId.startsWith("i") || secondaryVlanId.startsWith("c") || secondaryVlanId.startsWith("p"))) {
-            String[] parts = secondaryVlanId.split("-");
-            if (parts.length < 2) {
-                throw new CloudRuntimeException("Could not properly parse the secondary VLAN ID to format TYPE-SVLANID: " + secondaryVlanId);
-            }
-            secondaryVlanId = parts[1];
-            type = PVlanType.fromValue(parts[0]);
-        }
-
         if (isNotBlank(pvlanTypeStr)) {
             PVlanType providedType = PVlanType.fromValue(pvlanTypeStr);
             if (type != null && type != providedType) {
