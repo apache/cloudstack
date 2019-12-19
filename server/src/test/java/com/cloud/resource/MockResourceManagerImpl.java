@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -56,7 +57,6 @@ import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState.Event;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.fsm.NoTransitionException;
-import org.apache.cloudstack.framework.config.ConfigKey;
 
 public class MockResourceManagerImpl extends ManagerBase implements ResourceManager {
 
@@ -307,10 +307,10 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.resource.ResourceManager#maintenanceFailed(long)
+     * @see com.cloud.resource.ResourceManager#migrateAwayFailed(long)
      */
     @Override
-    public boolean maintenanceFailed(final long hostId) {
+    public boolean migrateAwayFailed(final long hostId, final long vmId) {
         // TODO Auto-generated method stub
         return false;
     }
