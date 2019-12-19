@@ -243,6 +243,7 @@
 <script>
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
+import { genericCompare } from '@/utils/sort.js'
 import config from '@/config/settings'
 import store from '@/store'
 
@@ -252,7 +253,6 @@ import Status from '@/components/widgets/Status'
 import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import TreeView from '@/components/view/TreeView'
-import { genericCompare } from '@/utils/sort.js'
 
 export default {
   name: 'Resource',
@@ -577,19 +577,25 @@ export default {
       })
     },
     pollActionCompletion (jobId, action) {
-      api('queryAsyncJobResult', { jobid: jobId }).then(json => {
-        var result = json.queryasyncjobresultresponse
-        if (result.jobstatus === 1) {
+      this.$pollJob({
+        jobId,
+        successMethod: result => {
           this.fetchData()
-        } else if (result.jobstatus === 2) {
-          this.fetchData()
-        } else if (result.jobstatus === 0) {
-          this.$message
-            .loading(this.$t(action.label) + ' in progress for ' + this.resource.name, 3)
-            .then(() => this.pollActionCompletion(jobId, action))
-        }
-      }).catch(function (e) {
-        console.log('Error encountered while fetching async job result' + e)
+          if (action.response) {
+            const description = action.response(result.jobresult)
+            if (description) {
+              this.$notification.info({
+                message: action.label,
+                description: (<span domPropsInnerHTML={description}></span>),
+                duration: 0
+              })
+            }
+          }
+        },
+        errorMethod: () => this.fetchData(),
+        loadingMessage: `${this.$t(action.label)} in progress for ${this.resource.name}`,
+        catchMessage: 'Error encountered while fetching async job result',
+        action
       })
     },
     handleSubmit (e) {

@@ -72,7 +72,17 @@ export default {
           icon: 'cloud-download',
           label: 'Download Template',
           dataView: true,
-          args: ['zoneid', 'mode']
+          show: (record) => { return record && record.isextractable },
+          args: ['zoneid', 'mode'],
+          mapping: {
+            zoneid: {
+              value: (record) => { return record.zoneid }
+            },
+            mode: {
+              value: (record) => { return 'HTTP_DOWNLOAD' }
+            }
+          },
+          response: (result) => { return `Please click <a href="${result.template.url}" target="_blank">${result.template.url}</a> to download.` }
         },
         {
           api: 'updateTemplatePermissions',
@@ -140,12 +150,17 @@ export default {
           icon: 'cloud-download',
           label: 'Download ISO',
           dataView: true,
+          show: (record) => { return record && record.isextractable },
           args: ['zoneid', 'mode'],
           mapping: {
+            zoneid: {
+              value: (record) => { return record.zoneid }
+            },
             mode: {
               value: (record) => { return 'HTTP_DOWNLOAD' }
             }
-          }
+          },
+          response: (result) => { return `Please click <a href="${result.iso.url}" target="_blank">${result.iso.url}</a> to download.` }
         },
         {
           api: 'updateIsoPermissions',

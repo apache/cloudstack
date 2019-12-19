@@ -32,6 +32,7 @@ export const pollJobPlugin = {
        * @param {String} [catchMessage=Error caught]
        * @param {Function} [catchMethod=() => {}]
        * @param {Number} [loadingDuration=3]
+       * @param {Object} [action=null]
        */
       const {
         jobId,
@@ -42,7 +43,8 @@ export const pollJobPlugin = {
         loadingMessage = 'Loading...',
         catchMessage = 'Error caught',
         catchMethod = () => {},
-        loadingDuration = 3
+        loadingDuration = 3,
+        action = null
       } = options
 
       api('queryAsyncJobResult', { jobId }).then(json => {
@@ -50,17 +52,17 @@ export const pollJobPlugin = {
 
         if (result.jobstatus === 1) {
           message.success(successMessage)
-          successMethod()
+          successMethod(result)
         } else if (result.jobstatus === 2) {
           notification.error({
             message: errorMessage,
             description: result.jobresult.errortext
           })
-          errorMethod()
+          errorMethod(result)
         } else if (result.jobstatus === 0) {
           message
             .loading(loadingMessage, loadingDuration)
-            .then(() => this.$pollJob(options))
+            .then(() => this.$pollJob(options, action))
         }
       }).catch(e => {
         console.error(`${catchMessage} - ${e}`)

@@ -81,7 +81,8 @@ export default {
           dataView: true,
           groupAction: true,
           show: (record) => { return ['Stopped'].includes(record.state) },
-          args: ['podid', 'clusterid', 'hostid']
+          args: ['podid', 'clusterid', 'hostid'],
+          response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `Password of the VM is ${result.virtualmachine.password}` : null }
         },
         {
           api: 'stopVirtualMachine',
@@ -214,7 +215,8 @@ export default {
           icon: 'key',
           label: 'Reset Instance Password',
           dataView: true,
-          show: (record) => { return ['Stopped'].includes(record.state) }
+          show: (record) => { return ['Stopped'].includes(record.state) },
+          response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `Password of the VM is ${result.virtualmachine.password}` : null }
         },
         {
           api: 'resetSSHKeyForVirtualMachine',
