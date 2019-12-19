@@ -17,13 +17,13 @@
 
 <template>
   <a-table
-    size="small"
+    size="middle"
     :loading="loading"
     :columns="columns"
     :dataSource="items"
     :rowKey="record => record.id || record.name"
     :pagination="false"
-    :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
+    :rowSelection="['vm', 'event', 'alert'].includes($route.name) ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
     :rowClassName="getRowClassName"
   >
     <template slot="footer">
@@ -33,7 +33,7 @@
     </template>
 
     <a slot="name" slot-scope="text, record" href="javascript:;">
-      <div>
+      <div style="min-width: 150px; padding-left: 5px">
         <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
           <a-button type="dashed" size="small" shape="circle" icon="login" @click="changeProject(record)" />
         </span>
@@ -41,7 +41,7 @@
         <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
         <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
       </div>
-      <div v-if="$route.meta.related" style="padding-top: 5px">
+      <div v-if="$route.meta.related" style="padding-top: 10px; padding-left: 5px; display: inline-flex">
         <span v-for="item in $route.meta.related" :key="item.path">
           <router-link
             v-if="$router.resolve('/' + item.name).route.name !== '404'"

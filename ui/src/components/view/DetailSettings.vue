@@ -35,13 +35,36 @@
         :dataSource="detailOptions[newKey]"
         placeholder="Value"
         @change="e => onAddInputChange(e, 'newValue')" />
-      <a-button type="dashed" style="width: 50%" icon="close" @click="showAddDetail = false">Cancel</a-button>
-      <a-button type="primary" style="width: 50%" icon="plus" @click="addDetail">Add Setting</a-button>
+      <a-button type="primary" style="width: 25%" icon="plus" @click="addDetail">Add Setting</a-button>
+      <a-button type="dashed" style="width: 25%" icon="close" @click="showAddDetail = false">Cancel</a-button>
     </div>
     <a-list size="large">
       <a-list-item :key="index" v-for="(item, index) in details">
         <a-list-item-meta>
-          <span slot="title"><strong>{{ item.name }}</strong></span>
+          <span slot="title">
+            {{ item.name }}
+            <a-button shape="circle" size="small" @click="updateDetail(index)" v-if="item.edit">
+              <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
+            </a-button>
+            <a-button shape="circle" size="small" @click="hideEditDetail(index)" v-if="item.edit" style="margin-left: 5px">
+              <a-icon type="close-circle" theme="twoTone" twoToneColor="#f5222d" />
+            </a-button>
+            <a-button shape="circle" size="small" @click="showEditDetail(index)" v-if="!item.edit">
+              <a-icon type="edit" />
+            </a-button>
+            <a-divider type="vertical" />
+            <a-popconfirm
+              title="Delete setting?"
+              @confirm="deleteDetail(index)"
+              okText="Yes"
+              cancelText="No"
+              placement="right"
+            >
+              <a-button shape="circle" size="small">
+                <a-icon type="delete" theme="twoTone" twoToneColor="#f5222d" />
+              </a-button>
+            </a-popconfirm>
+          </span>
           <span slot="description" style="word-break: break-all">
             <span v-if="item.edit" style="display: flex">
               <a-auto-complete
@@ -54,30 +77,6 @@
             <span v-else @click="showEditDetail(index)">{{ item.value }}</span>
           </span>
         </a-list-item-meta>
-        <div slot="actions">
-          <a-button shape="circle" size="default" @click="updateDetail(index)" v-if="item.edit">
-            <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
-          </a-button>
-          <a-button shape="circle" size="default" @click="hideEditDetail(index)" v-if="item.edit">
-            <a-icon type="close-circle" theme="twoTone" twoToneColor="#f5222d" />
-          </a-button>
-          <a-button shape="circle" @click="showEditDetail(index)" v-if="!item.edit">
-            <a-icon type="edit" />
-          </a-button>
-        </div>
-        <div slot="actions">
-          <a-popconfirm
-            title="Delete setting?"
-            @confirm="deleteDetail(index)"
-            okText="Yes"
-            cancelText="No"
-            placement="left"
-          >
-            <a-button shape="circle">
-              <a-icon type="delete" theme="twoTone" twoToneColor="#f5222d" />
-            </a-button>
-          </a-popconfirm>
-        </div>
       </a-list-item>
     </a-list>
   </a-spin>

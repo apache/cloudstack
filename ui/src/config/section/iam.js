@@ -173,8 +173,16 @@ export default {
           icon: 'safety-certificate',
           label: 'Add certificate',
           dataView: true,
-          args: ['name', 'certificate', 'privatekey', 'certchain', 'password'],
-          show: (record) => { return record.state === 'enabled' }
+          args: ['name', 'certificate', 'privatekey', 'certchain', 'password', 'account', 'domainid'],
+          show: (record) => { return record.state === 'enabled' },
+          mapping: {
+            account: {
+              value: (record) => { return record.name }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
+            }
+          }
         },
         {
           api: 'deleteAccount',

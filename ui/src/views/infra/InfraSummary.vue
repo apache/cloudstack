@@ -19,23 +19,24 @@
   <a-row :gutter="24">
     <a-col :md="24">
       <a-card class="breadcrumb-card">
-        <a-col :md="14">
+        <a-col :md="24" style="display: flex">
           <breadcrumb style="padding-top: 6px" />
-        </a-col>
-        <a-col :md="10">
           <a-button
-            style="margin-left: 10px; float: right"
-            @click="fetchData()"
-            icon="reload"
+            style="margin-left: 12px; margin-top: 4px"
             :loading="loading"
-            type="primary">
-            {{ $t('Refresh') }}
+            icon="reload"
+            size="small"
+            shape="round"
+            @click="fetchData()" >
+            {{ $t('refresh') }}
           </a-button>
           <a-button
-            style="margin-left: 10px; float: right"
-            @click="sslFormVisible = true"
-            icon="safety-certificate">
-            {{ $t('SSL Certificate') }}
+            style="margin-left: 12px; margin-top: 4px"
+            icon="safety-certificate"
+            size="small"
+            shape="round"
+            @click="sslFormVisible = true">
+            {{ $t('Setup SSL Certificate') }}
           </a-button>
           <a-modal
             :title="$t('SSL Certificate')"

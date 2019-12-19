@@ -2,7 +2,7 @@
   <a-list size="large" class="list" :loading="loading || tabLoading">
     <a-list-item :key="index" v-for="(item, index) in items" class="item">
       <a-list-item-meta>
-        <span slot="title" style="word-break: break-all"><strong>{{ item.name }}</strong></span>
+        <span slot="title" style="word-break: break-all">{{ item.name }}</span>
         <span slot="description" style="word-break: break-all">{{ item.description }}</span>
       </a-list-item-meta>
 

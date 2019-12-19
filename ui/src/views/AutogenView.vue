@@ -19,23 +19,25 @@
   <div>
     <a-card class="breadcrumb-card">
       <a-row>
-        <a-col :span="12">
-          <breadcrumb style="padding-top: 6px" />
+        <a-col :span="24" style="display: flex">
+          <breadcrumb />
+          <a-tooltip placement="bottom">
+            <template slot="title">
+              {{ "Refresh" }}
+            </template>
+            <a-button
+              style="margin-left: 8px"
+              :loading="loading"
+              shape="round"
+              size="small"
+              icon="sync"
+              @click="fetchData()">
+              {{ $t('refresh') }}
+            </a-button>
+          </a-tooltip>
         </a-col>
-        <a-col :span="12">
-          <span style="float: right">
-            <a-tooltip placement="bottom">
-              <template slot="title">
-                {{ "Refresh" }}
-              </template>
-              <a-button
-                :loading="loading"
-                shape="circle"
-                type="dashed"
-                icon="reload"
-                style="margin-right: 5px"
-                @click="fetchData()" />
-            </a-tooltip>
+        <a-col :span="24" style="padding-top: 12px; margin-bottom: -6px">
+          <span style="padding-left: 5px">
             <a-tooltip
               v-for="(action, actionIndex) in actions"
               :key="actionIndex"
@@ -56,7 +58,7 @@
               </a-button>
             </a-tooltip>
             <a-input-search
-              style="width: unset"
+              style="width: 50%; padding-left: 6px"
               placeholder="Search"
               v-model="searchQuery"
               v-if="!dataView && !treeView"
