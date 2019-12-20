@@ -5284,12 +5284,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 Document doc = builder.parse(src);
                 doc.getDocumentElement().normalize();
                 NodeList nodeList=doc.getElementsByTagName("*");
-                for (int i=1; i < nodeList.getLength(); i++) { // First element is config
+                for (int i = 1; i < nodeList.getLength(); i++) { // First element is config so skip it
                     Element element = (Element)nodeList.item(i);
                     boolean isValidConfig = false;
                     String currentConfig = element.getNodeName().trim();
                     for (String tag : allowedConfigOptionList) {
-                        if (tag.equals(currentConfig)) {
+                        if (currentConfig.equals(tag.trim())) {
                             isValidConfig = true;
                         }
                     }
