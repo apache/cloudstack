@@ -106,6 +106,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -2499,6 +2500,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         } else {
             if (MapUtils.isNotEmpty(details)) {
+                if (details.containsKey("extraconfig")) {
+                    throw new InvalidParameterValueException("'extraconfig' should not be included in details as key");
+                }
+
                 if (caller != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                     // Ensure blacklisted detail is not passed by non-root-admin user
                     for (final String detailName : details.keySet()) {
@@ -5278,11 +5283,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 src.setCharacterStream(new StringReader(String.format("<config>\n%s\n</config>", decodedUrl)));
                 Document doc = builder.parse(src);
                 doc.getDocumentElement().normalize();
-                for (String tag : allowedConfigOptionList) {
-                    NodeList nodeList = doc.getElementsByTagName(tag.trim());
-                    // Node list should not be empty to show that allowed command is contained in passed XML
-                    if (nodeList.getLength() == 0) {
-                        throw new CloudRuntimeException(String.format("Extra config %s is not on the list of allowed keys for KVM hypervisor hosts", tag));
+                NodeList nodeList=doc.getElementsByTagName("*");
+                for (int i=1; i < nodeList.getLength(); i++) { // First element is config
+                    Element element = (Element)nodeList.item(i);
+                    boolean isValidConfig = false;
+                    String currentConfig = element.getNodeName().trim();
+                    for (String tag : allowedConfigOptionList) {
+                        if (tag.equals(currentConfig)) {
+                            isValidConfig = true;
+                        }
+                    }
+                    if (!isValidConfig) {
+                        throw new CloudRuntimeException(String.format("Extra config %s is not on the list of allowed keys for KVM hypervisor hosts", currentConfig));
                     }
                 }
             } catch (ParserConfigurationException | IOException | SAXException e) {
@@ -5366,6 +5378,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             maxIops = details.get("maxIopsDo");
 
             verifyMinAndMaxIops(minIops, maxIops);
+
+            if (details.containsKey("extraconfig")) {
+                throw new InvalidParameterValueException("'extraconfig' should not be included in details as key");
+            }
         }
     }
 

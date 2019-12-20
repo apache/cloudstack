@@ -233,7 +233,7 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
             raise self.skipTest("Skipping test case for non-kvm hypervisor")
 
         name = 'allow.additional.vm.configuration.list.kvm'
-        value = 'memoryBacking, hugepages'
+        value = 'memoryBacking, hugepages, unsedConfigKey'
 
         add_config_response = self.add_global_config(name, value)
 
