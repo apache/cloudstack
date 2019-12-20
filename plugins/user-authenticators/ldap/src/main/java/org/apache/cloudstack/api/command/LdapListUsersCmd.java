@@ -49,6 +49,7 @@ import org.apache.cloudstack.query.QueryService;
 import com.cloud.user.Account;
 
 /**
+ * a short flow, use plantuml to view (see http://plantuml.com)
  * @startuml
  * start
  * :list ldap users request;
@@ -84,10 +85,6 @@ public class LdapListUsersCmd extends BaseListCmd {
     private static final String s_name = "ldapuserresponse";
     @Inject
     private LdapManager _ldapManager;
-
-    // TODO queryservice is already injected oin basecmd remove it here
-    @Inject
-    private QueryService _queryService;
 
     @Parameter(name = "listtype",
             type = CommandType.STRING,
@@ -170,19 +167,19 @@ public class LdapListUsersCmd extends BaseListCmd {
         if (cloudstackUsers == null) {
             ListResponse<UserResponse> cloudstackUsersresponse;
             switch (getUserFilter()) {
-            case ANY_DOMAIN:
-                // get the user domain so if the calling user is a root admin ....
-                cloudstackUsersresponse = _queryService.searchForUsers(CallContext.current().getCallingAccount().getDomainId(), true);
-                break;
-            case NO_FILTER:
-                cloudstackUsersresponse = _queryService.searchForUsers(this.domainId,true);
-                break;
-            case POTENTIAL_IMPORT:
-            case LOCAL_DOMAIN:
-                cloudstackUsersresponse = _queryService.searchForUsers(this.domainId,false);
-                break;
-            default:
-                throw new CloudRuntimeException("error in program login; we are not filtering but still querying users to filter???");
+                case ANY_DOMAIN:
+                    // get the user domain so if the calling user is a root admin ....
+                    cloudstackUsersresponse = _queryService.searchForUsers(CallContext.current().getCallingAccount().getDomainId(), true);
+                    break;
+                case NO_FILTER:
+                    cloudstackUsersresponse = _queryService.searchForUsers(this.domainId,true);
+                    break;
+                case POTENTIAL_IMPORT:
+                case LOCAL_DOMAIN:
+                    cloudstackUsersresponse = _queryService.searchForUsers(this.domainId,false);
+                    break;
+                default:
+                    throw new CloudRuntimeException("error in program login; we are not filtering but still querying users to filter???");
             }
             cloudstackUsers = cloudstackUsersresponse.getResponses();
             if(s_logger.isTraceEnabled()) {
@@ -353,7 +350,6 @@ public class LdapListUsersCmd extends BaseListCmd {
         }
         final List<LdapUserResponse> ldapResponses = new ArrayList<LdapUserResponse>();
         for (final LdapUserResponse user : input) {
-
             if (isNotAlreadyImportedInTheCurrentDomain(user)) {
                 ldapResponses.add(user);
             }
@@ -363,6 +359,9 @@ public class LdapListUsersCmd extends BaseListCmd {
         return ldapResponses;
     }
 
+    /**
+     * @return true unless the the user is imported in the specified cloudstack domain from LDAP
+     */
     private boolean isNotAlreadyImportedInTheCurrentDomain(LdapUserResponse user) {
         UserResponse cloudstackUser = getCloudstackUser(user);
         String domainId = getCurrentDomainId();
@@ -441,7 +440,6 @@ public class LdapListUsersCmd extends BaseListCmd {
         if (cloudstackUser != null) {
             user.setUserSource(cloudstackUser.getUserSource());
         } else {
-            // it makes more sense to make it User.Source.UNKNOWN.toString()
             user.setUserSource("");
         }
     }
