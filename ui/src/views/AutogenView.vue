@@ -36,8 +36,8 @@
             </a-button>
           </a-tooltip>
         </a-col>
-        <a-col :span="24" style="padding-top: 12px; margin-bottom: -6px">
-          <span style="padding-left: 5px">
+        <a-col :span="24" style="padding-top: 12px">
+          <span>
             <a-tooltip
               v-for="(action, actionIndex) in actions"
               :key="actionIndex"

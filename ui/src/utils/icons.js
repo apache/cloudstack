@@ -18,11 +18,12 @@
 import _ from 'lodash'
 
 const osMapping = {
-  centos: 'centos',
   ubuntu: 'ubuntu',
-  suse: 'suse',
+  debian: 'debian',
   redhat: 'redhat',
+  centos: 'centos',
   fedora: 'fedora',
+  suse: 'suse',
   linux: 'linux',
   bsd: 'freebsd',
   apple: 'apple',

@@ -20,15 +20,20 @@
     <template slot="title">
       {{ name }}
     </template>
-    <font-awesome-icon :icon="['fab', logo]" :size="size" style="color: #666;" />
+    <font-awesome-icon :icon="['fab', logo]" :size="size" style="color: #666;" v-if="logo !== 'debian'" />
+    <debian-icon v-else-if="logo === 'debian'" :style="{ height: size === '4x' ? '56px' : '18px', width: size === '4x' ? '56px' : '18px', marginBottom: '-4px' }" />
   </a-tooltip>
 </template>
 
 <script>
 import { api } from '@/api'
+import DebianIcon from '@/assets/icons/debian.svg?inline'
 
 export default {
   name: 'OsLogo',
+  components: {
+    DebianIcon
+  },
   props: {
     osId: {
       type: String,
@@ -89,6 +94,8 @@ export default {
       const osname = name.toLowerCase()
       if (osname.includes('centos')) {
         this.osLogo = 'centos'
+      } else if (osname.includes('debian')) {
+        this.osLogo = 'debian'
       } else if (osname.includes('ubuntu')) {
         this.osLogo = 'ubuntu'
       } else if (osname.includes('suse')) {
