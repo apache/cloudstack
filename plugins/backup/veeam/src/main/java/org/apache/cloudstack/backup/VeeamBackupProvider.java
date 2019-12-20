@@ -107,7 +107,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public boolean isBackupOffering(final Long zoneId, final String uuid) {
+    public boolean isValidProviderOffering(final Long zoneId, final String uuid) {
         List<BackupOffering> policies = listBackupOfferings(zoneId);
         if (CollectionUtils.isEmpty(policies)) {
             return false;

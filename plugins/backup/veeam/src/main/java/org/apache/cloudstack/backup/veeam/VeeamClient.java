@@ -99,7 +99,7 @@ public class VeeamClient {
     private final HttpClient httpClient;
     private final HttpClientContext httpContext = HttpClientContext.create();
     private final CookieStore httpCookieStore = new BasicCookieStore();
-    private final String RESTORE_VM_SUFFIX = "CS-RSTR-";
+    private static final String RESTORE_VM_SUFFIX = "CS-RSTR-";
 
     private String veeamServerIp;
     private String veeamServerUsername;
