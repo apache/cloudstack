@@ -5144,12 +5144,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 boolean validXenOrVmwareConfiguration = isValidXenOrVmwareConfiguration(cfg, allowedKeyList);
                 String[] paramArray = cfg.split("=");
                 if (validXenOrVmwareConfiguration && paramArray.length == 2) {
-                    try {
-                        userVmDetailsDao.addDetail(vm.getId(), paramArray[0].trim(), paramArray[1].trim(), true);
-                    } catch (ArrayIndexOutOfBoundsException e) {
-                        throw new CloudRuntimeException("Issue occurred during parsing of:" + cfg);
-                    }
-
+                    userVmDetailsDao.addDetail(vm.getId(), paramArray[0].trim(), paramArray[1].trim(), true);
                 } else {
                     throw new CloudRuntimeException("Extra config " + cfg + " is not on the list of allowed keys for VMware hypervisor hosts.");
                 }
