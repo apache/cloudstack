@@ -684,7 +684,7 @@ export default {
             console.log(error)
             this.$notification.error({
               message: 'Request Failed',
-              description: error.response.headers['x-description']
+              description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
             })
           }).finally(f => {
             this.closeAction()
