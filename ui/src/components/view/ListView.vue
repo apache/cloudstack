@@ -17,7 +17,7 @@
 
 <template>
   <a-table
-    size="middle"
+    size="small"
     :loading="loading"
     :columns="columns"
     :dataSource="items"
@@ -25,6 +25,7 @@
     :pagination="false"
     :rowSelection="['vm', 'event', 'alert'].includes($route.name) ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
     :rowClassName="getRowClassName"
+    style="overflow-y: auto"
   >
     <template slot="footer">
       <span v-if="hasSelected">
@@ -32,28 +33,41 @@
       </span>
     </template>
 
+    <div slot="expandedRowRender" slot-scope="resource">
+      <info-card :resource="resource" style="margin-right: 50px">
+        <div slot="actions" style="padding-top: 12px">
+          <a-tooltip
+            v-for="(action, actionIndex) in $route.meta.actions"
+            :key="actionIndex"
+            placement="bottom">
+            <template slot="title">
+              {{ $t(action.label) }}
+            </template>
+            <a-button
+              v-if="action.api in $store.getters.apis && action.dataView &&
+                ('show' in action ? action.show(resource) : true)"
+              :icon="action.icon"
+              :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
+              shape="round"
+              size="small"
+              style="margin-right: 5px; margin-top: 12px"
+              @click="$parent.execAction(action)"
+            >
+              {{ $t(action.label) }}
+            </a-button>
+          </a-tooltip>
+        </div>
+      </info-card>
+    </div>
+
     <a slot="name" slot-scope="text, record" href="javascript:;">
-      <div style="min-width: 150px; padding-left: 5px">
+      <div style="min-width: 120px">
         <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
           <a-button type="dashed" size="small" shape="circle" icon="login" @click="changeProject(record)" />
         </span>
         <console :resource="record" size="small" />
         <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
         <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
-      </div>
-      <div v-if="$route.meta.related" style="padding-top: 10px; padding-left: 5px; display: inline-flex">
-        <span v-for="item in $route.meta.related" :key="item.path">
-          <router-link
-            v-if="$router.resolve('/' + item.name).route.name !== '404'"
-            :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.param === 'account' ? record.name + '&domainid=' + record.domainid : record.id) }">
-            <a-tooltip placement="bottom">
-              <template slot="title">
-                View {{ $t(item.title) }}
-              </template>
-              <a-button size="small" shape="round" :icon="$router.resolve('/' + item.name).route.meta.icon" />
-            </a-tooltip>
-          </router-link>
-        </span>
       </div>
     </a>
     <a slot="displayname" slot-scope="text, record" href="javascript:;">
@@ -140,12 +154,14 @@
 import { api } from '@/api'
 import Console from '@/components/widgets/Console'
 import Status from '@/components/widgets/Status'
+import InfoCard from '@/components/view/InfoCard'
 
 export default {
   name: 'ListView',
   components: {
     Console,
-    Status
+    Status,
+    InfoCard
   },
   props: {
     columns: {
@@ -221,6 +237,10 @@ export default {
 <style scoped>
 /deep/ .ant-table-thead {
   background-color: #f9f9f9;
+}
+
+/deep/ .ant-table-small > .ant-table-content > .ant-table-body {
+  margin: 0;
 }
 
 /deep/ .light-row {

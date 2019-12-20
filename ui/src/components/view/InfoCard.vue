@@ -51,6 +51,8 @@
                 {{ $t('isdynamicallyscalable') }}
               </a-tag>
             </slot>
+            <slot name="actions">
+            </slot>
           </div>
         </div>
         <div class="resource-detail-item" style="margin-bottom: 4px" v-if="resource.state || resource.status">

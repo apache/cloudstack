@@ -52,19 +52,21 @@ export default {
         case 'Ready':
         case 'Up':
         case 'BackedUp':
-        case 'Allocated':
         case 'Implemented':
         case 'Enabled':
         case 'enabled':
         case 'Active':
         case 'Completed':
         case 'Started':
+        case 'Download Complete':
+        case 'Successfully Installed':
           status = 'success'
           break
         case 'Disabled':
         case 'Down':
         case 'Error':
         case 'Stopped':
+        case 'Disconnected':
           status = 'error'
           break
         case 'Migrating':
@@ -74,6 +76,7 @@ export default {
           status = 'processing'
           break
         case 'Alert':
+        case 'Allocated':
         case 'Created':
           status = 'warning'
           break
