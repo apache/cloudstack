@@ -99,6 +99,7 @@ public class VeeamClient {
     private final HttpClient httpClient;
     private final HttpClientContext httpContext = HttpClientContext.create();
     private final CookieStore httpCookieStore = new BasicCookieStore();
+    private final String RESTORE_VM_SUFFIX = "CS-RSTR-";
 
     private String veeamServerIp;
     private String veeamServerUsername;
@@ -279,7 +280,6 @@ public class VeeamClient {
         return objectMapper.readValue(response.getEntity().getContent(), RestoreSession.class);
     }
 
-    // FIXME: configure task timeout/limits
     private boolean checkTaskStatus(final HttpResponse response) throws IOException {
         final Task task = parseTaskResponse(response);
         for (int i = 0; i < 60; i++) {
@@ -531,7 +531,6 @@ public class VeeamClient {
      */
     protected Pair<Boolean, String> executePowerShellCommands(List<String> cmds) {
         try {
-            // FIXME: make ssh timeouts configurable
             Pair<Boolean, String> pairResult = SshHelper.sshExecute(veeamServerIp, veeamServerPort,
                     veeamServerUsername, null, veeamServerPassword,
                     transformPowerShellCommandList(cmds),
@@ -643,7 +642,7 @@ public class VeeamClient {
     }
 
     public Pair<Boolean, String> restoreVMToDifferentLocation(String restorePointId, String hostIp, String dataStoreUuid) {
-        final String restoreLocation = "CS-RSTR-" + UUID.randomUUID().toString();
+        final String restoreLocation = RESTORE_VM_SUFFIX + UUID.randomUUID().toString();
         final String datastoreId = dataStoreUuid.replace("-","");
         final List<String> cmds = Arrays.asList(
                 "$points = Get-VBRRestorePoint",

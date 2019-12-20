@@ -86,28 +86,4 @@ public class VeeamClientTest {
         Assert.assertEquals(policies.size(), 1);
         Assert.assertEquals(policies.get(0).getName(), "ZONE1-GOLD");
     }
-
-    public void testJob() throws Exception {
-        VeeamClient client = new VeeamClient("http://10.2.2.89:9399/api/", adminUsername, adminPassword, true, 30);
-        Job j = client.listJob("8acac50d-3711-4c99-bf7b-76fe9c7e39c3");
-        boolean result = client.cloneVeeamJob(j, "some-uuid-cloned");
-        client.deleteJobAndBackup("some-uuid-cloned");
-    }
-
-    public void testSetJobSchedule() throws Exception {
-        VeeamClient client = new VeeamClient("http://10.2.2.89:9399/api/", adminUsername, adminPassword, true, 30);
-        client.setJobSchedule("ZONE1-GOLD");
-    }
-
-    public void testVeeamPS() throws Exception {
-        VeeamClient client = new VeeamClient("http://10.2.2.89:9399/api/", adminUsername, adminPassword, true, 30);
-        Map<String, Backup.Metric> sizes = client.getBackupMetrics();
-        Job j = client.listJob("ZONE1-GOLD_clone1");
-    }
-
-    public void testRestoreVolume() {
-        client.setVeeamSshCredentials("10.2.2.89", "administrator", "P@ssword123");
-        Pair<Boolean, String> booleanStringPair = client.restoreVMToDifferentLocation("362fcba7-283b-4416-9763-55ec59bd1285", "10.2.2.9", "24abcb8f-4211-374f-a2e1-e5c0b7e88a2d");
-        booleanStringPair.first();
-    }
 }

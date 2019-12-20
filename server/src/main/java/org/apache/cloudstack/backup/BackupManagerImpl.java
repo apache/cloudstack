@@ -188,7 +188,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         final BackupProvider provider = getBackupProvider(cmd.getZoneId());
-        if (!provider.isBackupOffering(cmd.getZoneId(), cmd.getExternalId())) {
+        if (!provider.isValidProviderOffering(cmd.getZoneId(), cmd.getExternalId())) {
             throw new CloudRuntimeException("Backup offering '" + cmd.getExternalId() + "' does not exist on provider " + provider.getName() + " on zone " + cmd.getZoneId());
         }
 
@@ -337,6 +337,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             vmInstance.setBackupExternalId(null);
             vmInstance.setBackupVolumes(null);
             result = backupProvider.removeVMFromBackupOffering(vmInstance);
+            if (result && backupProvider.willDeleteBackupsOnOfferingRemoval()) {
+                final List<Backup> backups = backupDao.listByVmId(null, vm.getId());
+                for (final Backup backup : backups) {
+                    backupDao.remove(backup.getId());
+                }
+            }
             if ((result || forced) && vmInstanceDao.update(vmInstance.getId(), vmInstance)) {
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
                         "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null,

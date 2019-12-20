@@ -39,6 +39,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.gson.Gson;
 
 public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements BackupDao {
 
@@ -156,7 +157,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         response.setSize(backup.getSize());
         response.setProtectedSize(backup.getProtectedSize());
         response.setStatus(backup.getStatus());
-        response.setVolumes(vm.getBackupVolumes());
+        response.setVolumes(new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class));
         response.setBackupOfferingId(offering.getUuid());
         response.setBackupOffering(offering.getName());
         response.setAccountId(account.getUuid());

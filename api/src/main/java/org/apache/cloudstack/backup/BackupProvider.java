@@ -43,9 +43,9 @@ public interface BackupProvider {
     List<BackupOffering> listBackupOfferings(Long zoneId);
 
     /**
-     * True if policy with id uuid exists on the backup provider
+     * True if a backup offering exists on the backup provider
      */
-    boolean isBackupOffering(Long zoneId, String uuid);
+    boolean isValidProviderOffering(Long zoneId, String uuid);
 
     /**
      * Assign a VM to a backup offering or policy
@@ -64,8 +64,8 @@ public interface BackupProvider {
     boolean removeVMFromBackupOffering(VirtualMachine vm);
 
     /**
-     * Where removal of
-     * @return
+     * Whether the provide will delete backups on removal of VM from the offfering
+     * @return boolean result
      */
     boolean willDeleteBackupsOnOfferingRemoval();
 
@@ -94,7 +94,18 @@ public interface BackupProvider {
      */
     Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid);
 
+    /**
+     * Returns backup metrics for a list of VMs in a zone
+     * @param zoneId
+     * @param vms
+     * @return
+     */
     Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms);
 
+    /**
+     * This method should reconcile and create backup entries for any backups created out-of-band
+     * @param vm
+     * @param metric
+     */
     void syncBackups(VirtualMachine vm, Backup.Metric metric);
 }

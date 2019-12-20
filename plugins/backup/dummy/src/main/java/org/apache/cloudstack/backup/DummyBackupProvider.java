@@ -58,7 +58,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public boolean isBackupOffering(Long zoneId, String uuid) {
+    public boolean isValidProviderOffering(Long zoneId, String uuid) {
         s_logger.debug("Checking if backup offering exists on the Dummy Backup Provider");
         return true;
     }
@@ -94,10 +94,6 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Override
     public boolean removeVMFromBackupOffering(VirtualMachine vm) {
         s_logger.debug("Removing VM ID " + vm.getUuid() + " from backup offering by the Dummy Backup Provider");
-        final List<Backup> backups = backupDao.listByVmId(null, vm.getId());
-        for (final Backup backup : backups) {
-            backupDao.remove(backup.getId());
-        }
         return true;
     }
 

@@ -2940,7 +2940,7 @@
                         description: {
                             label: 'label.description'
                         },
-                        zoneid: {
+                        zonename: {
                             label: 'label.zone',
                         }
                     },

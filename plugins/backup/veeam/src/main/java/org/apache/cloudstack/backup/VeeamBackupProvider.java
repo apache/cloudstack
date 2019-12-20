@@ -135,11 +135,6 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         return vmwareDatacenter;
     }
 
-    public boolean addVMToBackupOffering(final BackupOffering policy, final VirtualMachine vm) {
-        final VmwareDatacenter vmwareDatacenter = findVmwareDatacenterForVM(vm);
-        return getClient(vm.getDataCenterId()).removeVMFromVeeamJob(policy.getExternalId(), vm.getInstanceName(), vmwareDatacenter.getVcenterHost());
-    }
-
     private String getGuestBackupName(final String instanceName, final String uuid) {
         return String.format("%s%s%s", instanceName, BACKUP_IDENTIFIER, uuid);
     }
@@ -185,9 +180,6 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         if (!client.deleteJobAndBackup(clonedJobName)) {
             LOG.warn("Failed to remove Veeam job and backup for job: " + clonedJobName);
             throw new CloudRuntimeException("Failed to delete Veeam B&R job and backup, an operation may be in progress. Please try again after some time.");
-        }
-        for (final Backup backup: backupDao.listByVmId(null, vm.getId())) {
-            backupDao.remove(backup.getId());
         }
         return true;
     }

@@ -147,9 +147,7 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         if (sizeInBytes < 0) {
             throw new CloudRuntimeException("Disk size should be greater than 0 bytes, received: " + sizeInBytes + " bytes");
         }
-        long div = sizeInBytes / GB_UNIT_BYTES;
-        long rest = sizeInBytes % GB_UNIT_BYTES;
-        return rest == 0L ? div : div + 1;
+        return (long) Math.ceil(1.0 * sizeInBytes / GB_UNIT_BYTES);
     }
 
     @Override
@@ -161,11 +159,11 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
             if(pstmt != null) {
                 pstmt.setLong(1, size);
                 pstmt.setString(2, provisioningType.toString());
-                try(ResultSet rs = pstmt.executeQuery();) {
+                try(ResultSet rs = pstmt.executeQuery()) {
                     while (rs.next()) {
                         offerings.add(toEntityBean(rs, false));
                     }
-                }catch (SQLException e) {
+                } catch (SQLException e) {
                     throw new CloudRuntimeException("Exception while listing disk offerings by size: " + e.getMessage(), e);
                 }
             }

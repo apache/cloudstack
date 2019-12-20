@@ -326,8 +326,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
 
     String getBackupExternalId();
 
-    String getBackupVolumes();
-
     List<Backup.VolumeInfo> getBackupVolumeList();
 
     Type getType();
