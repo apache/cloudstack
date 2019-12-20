@@ -2447,8 +2447,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             throw new InvalidParameterValueException("Cannot support pvlan with untagged primary vlan!");
                         }
                         URI uri = NetUtils.generateUriForPvlan(vlanIdFinal, isolatedPvlan);
-                        if (_networksDao.listByZoneAndUriAndGuestType(zoneId, uri.toString(), null).size() > 0) {
-                            throw new InvalidParameterValueException("Network with primart vlan " + vlanIdFinal + " and secondary vlan " + isolatedPvlan + " already exists or overlaps with other network vlans in zone " + zoneId);
+                        if (_networksDao.listByPhysicalNetworkPvlan(physicalNetworkId, uri.toString(), isolatedPvlanType).size() > 0) {
+                            throw new InvalidParameterValueException("Network with primary vlan " + vlanIdFinal +
+                                    " and secondary vlan " + isolatedPvlan + " type " + isolatedPvlanType +
+                                    " already exists or overlaps with other network pvlans in zone " + zoneId);
                         }
                         userNetwork.setBroadcastUri(uri);
                         userNetwork.setBroadcastDomainType(BroadcastDomainType.Pvlan);
