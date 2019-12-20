@@ -26,17 +26,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 
 import java.util.List;
-import java.util.Map;
 
 import org.apache.cloudstack.backup.BackupOffering;
-import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.backup.veeam.api.Job;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.cloud.utils.Pair;
 import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
