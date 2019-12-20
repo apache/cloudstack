@@ -18,6 +18,7 @@ package com.cloud.dc.dao;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.org.Cluster;
 import com.cloud.utils.db.GenericDao;
 
 import java.util.List;
@@ -47,4 +48,6 @@ public interface ClusterDao extends GenericDao<ClusterVO, Long> {
     List<Long> listAllClusters(Long zoneId);
 
     boolean getSupportsResigning(long clusterId);
+
+    List<ClusterVO> listByHypervisorAndCluster(final HypervisorType hypervisorType, final Cluster.ClusterType clusterType);
 }

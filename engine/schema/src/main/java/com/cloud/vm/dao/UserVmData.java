@@ -16,12 +16,12 @@
 // under the License.
 package com.cloud.vm.dao;
 
+import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
+
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 
 public class UserVmData {
     private Long id;
@@ -485,6 +485,7 @@ public class UserVmData {
         private String type;
         private Boolean isDefault;
         private String macAddress;
+        private int mtu;
 
         public String getObjectName() {
             return objectName;
@@ -580,6 +581,14 @@ public class UserVmData {
 
         public void setMacAddress(String macAddress) {
             this.macAddress = macAddress;
+        }
+
+        public int getMtu() {
+            return mtu;
+        }
+
+        public void setMtu(int mtu) {
+            this.mtu= mtu;
         }
 
         @Override

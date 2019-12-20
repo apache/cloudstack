@@ -19,25 +19,24 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
+import com.cloud.network.Networks;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.script.OutputInterpreter;
+import com.cloud.utils.script.Script;
+import org.apache.log4j.Logger;
+import org.libvirt.LibvirtException;
+
 import java.io.File;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.naming.ConfigurationException;
-
-import com.cloud.utils.StringUtils;
-import org.apache.log4j.Logger;
-import org.libvirt.LibvirtException;
-
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.exception.InternalErrorException;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
-import com.cloud.network.Networks;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.script.OutputInterpreter;
-import com.cloud.utils.script.Script;
 
 public class IvsVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger.getLogger(IvsVifDriver.class);
@@ -105,7 +104,7 @@ public class IvsVifDriver extends VifDriverBase {
                     !vlanId.equalsIgnoreCase("untagged")) {
                 if (trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
-                    intf.defEthernet("ivsnet-" + nic.getUuid().substring(0, 5), nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), _ivsIfUpPath, networkRateKBps);
+                    intf.defEthernet("ivsnet-" + nic.getUuid().substring(0, 5), nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), _ivsIfUpPath, networkRateKBps, nic.getMtu());
                 } else {
                     throw new InternalErrorException("no traffic label ");
                 }
@@ -113,28 +112,28 @@ public class IvsVifDriver extends VifDriverBase {
         } else if (nic.getType() == Networks.TrafficType.Control) {
             /* Make sure the network is still there */
             createControlNetwork();
-            intf.defBridgeNet(_bridges.get("linklocal"), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter));
+            intf.defBridgeNet(_bridges.get("linklocal"), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), nic.getMtu());
         } else if (nic.getType() == Networks.TrafficType.Public) {
             if ((nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan) && (vNetId != null) && (protocol != null) && (!vNetId.equalsIgnoreCase("untagged")) ||
                     (nic.getBroadcastType() == Networks.BroadcastDomainType.Vxlan)) {
                 if (trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vNet dev and bridge for public traffic per traffic label " + trafficLabel);
                     String brName = createVnetBr(vNetId, trafficLabel, protocol);
-                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
+                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps,null);
                 } else {
                     String brName = createVnetBr(vNetId, "public", protocol);
-                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
+                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps, null);
                 }
             } else {
-                intf.defBridgeNet(_bridges.get("public"), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
+                intf.defBridgeNet(_bridges.get("public"), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps, null);
             }
         } else if (nic.getType() == Networks.TrafficType.Management) {
-            intf.defBridgeNet(_bridges.get("private"), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter));
+            intf.defBridgeNet(_bridges.get("private"), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), nic.getMtu());
         } else if (nic.getType() == Networks.TrafficType.Storage) {
             String storageBrName = nic.getName() == null ? _bridges.get("private") : nic.getName();
-            intf.defBridgeNet(storageBrName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter));
+            intf.defBridgeNet(storageBrName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), nic.getMtu());
         }
-        if (nic.getPxeDisable() == true) {
+        if (nic.getPxeDisable()) {
             intf.setPxeDisable(true);
         }
         return intf;

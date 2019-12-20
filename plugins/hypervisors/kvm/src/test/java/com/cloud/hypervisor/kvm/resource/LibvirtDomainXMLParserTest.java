@@ -19,15 +19,13 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
-import java.io.File;
-import java.util.List;
-
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
-
+import java.io.File;
+import java.util.List;
 import junit.framework.TestCase;
 
 public class LibvirtDomainXMLParserTest extends TestCase {
@@ -111,6 +109,7 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>" +
                      "</controller>" +
                      "<interface type='" + ifType.toString() + "'>" +
+                     "<mtu size='1500'/>" +
                      "<mac address='0e:00:a9:fe:02:00'/>" +
                      "<source bridge='cloud0'/>" +
                      "<target dev='vnet0'/>" +
@@ -119,6 +118,7 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>" +
                      "</interface>" +
                      "<interface type='" + ifType.toString() + "'>" +
+                     "<mtu size='1500'/>" +
                      "<mac address='06:c5:94:00:05:65'/>" +
                      "<source bridge='cloudbr1'/>" +
                      "<target dev='vnet1'/>" +
@@ -127,6 +127,7 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>" +
                      "</interface>" +
                      "<interface type='" + ifType.toString() + "'>" +
+                     "<mtu size='1500'/>" +
                      "<mac address='06:c9:f4:00:04:40'/>" +
                      "<source bridge='cloudbr0'/>" +
                      "<target dev='vnet2'/>" +
@@ -135,6 +136,7 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x0'/>" +
                      "</interface>" +
                      "<interface type='" + ifType.toString() + "'>" +
+                     "<mtu size='1500'/>" +
                      "<mac address='06:7e:c6:00:05:68'/>" +
                      "<source bridge='cloudbr1'/>" +
                      "<target dev='vnet3'/>" +

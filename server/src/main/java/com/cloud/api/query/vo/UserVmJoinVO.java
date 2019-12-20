@@ -16,6 +16,15 @@
 // under the License.
 package com.cloud.api.query.vo;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network.GuestType;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Volume;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
+
 import java.net.URI;
 import java.util.Date;
 import java.util.Map;
@@ -28,15 +37,6 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
-
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.Network.GuestType;
-import com.cloud.network.Networks.TrafficType;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.Volume;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name = "user_vm_view")
@@ -269,6 +269,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     @Column(name = "is_default_nic")
     private boolean isDefaultNic;
+
+    @Column(name = "mtu")
+    private int mtu;
 
     @Column(name = "ip_address")
     private String ipAddress;
@@ -653,6 +656,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public boolean isDefaultNic() {
         return isDefaultNic;
+    }
+
+    public int getMtu() {
+        return mtu;
     }
 
     public String getIpAddress() {

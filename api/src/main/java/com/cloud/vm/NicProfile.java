@@ -16,17 +16,16 @@
 // under the License.
 package com.cloud.vm;
 
-import java.io.Serializable;
-import java.net.URI;
-
-import org.apache.cloudstack.api.InternalIdentity;
-
 import com.cloud.network.Network;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.vm.Nic.ReservationStrategy;
+import org.apache.cloudstack.api.InternalIdentity;
+
+import java.io.Serializable;
+import java.net.URI;
 
 public class NicProfile implements InternalIdentity, Serializable {
     private static final long serialVersionUID = 4997005771736090304L;
@@ -49,6 +48,7 @@ public class NicProfile implements InternalIdentity, Serializable {
     URI broadcastUri;
     ReservationStrategy strategy;
     boolean defaultNic;
+    private Integer mtu;
     Integer networkRate;
     boolean isSecurityGroupEnabled;
 
@@ -96,6 +96,7 @@ public class NicProfile implements InternalIdentity, Serializable {
         strategy = nic.getReservationStrategy();
         deviceId = nic.getDeviceId();
         defaultNic = nic.isDefaultNic();
+        mtu = nic.getMtu();
         this.broadcastUri = broadcastUri;
         this.isolationUri = isolationUri;
 
@@ -117,6 +118,11 @@ public class NicProfile implements InternalIdentity, Serializable {
     public NicProfile(String requestedIPv4, String requestedIPv6, String requestedMacAddress) {
         this(requestedIPv4, requestedIPv6);
         this.macAddress = requestedMacAddress;
+    }
+
+    public NicProfile(String requestedIPv4, String requestedIPv6, String requestedMacAddress, Integer mtu) {
+        this(requestedIPv4, requestedIPv6, requestedMacAddress);
+        this.mtu = mtu;
     }
 
     public NicProfile(ReservationStrategy strategy, String iPv4Address, String macAddress, String iPv4gateway, String iPv4netmask) {
@@ -259,6 +265,14 @@ public class NicProfile implements InternalIdentity, Serializable {
 
     public void setDefaultNic(boolean defaultNic) {
         this.defaultNic = defaultNic;
+    }
+
+    public Integer getMtu() {
+        return mtu;
+    }
+
+    public void setMtu(final Integer mtu) {
+        this.mtu = mtu;
     }
 
     public Integer getNetworkRate() {
@@ -423,6 +437,8 @@ public class NicProfile implements InternalIdentity, Serializable {
                 .append(iPv4Address)
                 .append("-")
                 .append(broadcastUri)
+                .append("-")
+                .append(mtu)
                 .toString();
     }
 }

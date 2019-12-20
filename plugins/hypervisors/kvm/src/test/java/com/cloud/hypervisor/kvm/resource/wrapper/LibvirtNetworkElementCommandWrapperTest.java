@@ -25,6 +25,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import com.cloud.agent.api.routing.IpAssocVpcCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.network.Networks;
+import com.cloud.utils.ExecutionResult;
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,13 +38,6 @@ import org.junit.runner.RunWith;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
-
-import com.cloud.agent.api.routing.IpAssocVpcCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.to.IpAddressTO;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.network.Networks;
-import com.cloud.utils.ExecutionResult;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;

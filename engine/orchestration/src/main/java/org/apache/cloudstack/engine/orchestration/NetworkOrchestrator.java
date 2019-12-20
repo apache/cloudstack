@@ -17,40 +17,8 @@
 package org.apache.cloudstack.engine.orchestration;
 
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
-import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigKey.Scope;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
+import static com.cloud.utils.NumbersUtil.parseInt;
+import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -67,6 +35,9 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -74,6 +45,7 @@ import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.PodVlanMapDao;
@@ -170,11 +142,11 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.org.Cluster;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UuidUtils;
@@ -221,12 +193,56 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
+import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
  */
 public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestrationService, Listener, Configurable {
     static final Logger s_logger = Logger.getLogger(NetworkOrchestrator.class);
+
+    public static final ConfigKey<Integer> NetworkGcWait = new ConfigKey<Integer>(Integer.class,
+        "network.gc.wait", "Advanced", "600",
+        "Time (in seconds) to wait before shutting down a network that's not in used", false,
+        Scope.Global, null);
+    public static final ConfigKey<Integer> NetworkGcInterval = new ConfigKey<Integer>(Integer.class,
+        "network.gc.interval", "Advanced", "600",
+        "Seconds to wait before checking for networks to shutdown", true, Scope.Global, null);
+
+    private Integer _kvmMtuSize = 0;
 
     @Inject
     EntityManager _entityMgr;
@@ -246,6 +262,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     AlertManager _alertMgr;
     @Inject
     ConfigurationManager _configMgr;
+    @Inject
+    private ClusterDao clusterDao;
+    @Inject
+    private ClusterDetailsDao clusterDetailsDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
     @Inject
@@ -563,6 +583,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
 
                 _networkOfferingDao.persistDefaultL2NetworkOfferings();
+
+                final List<ClusterVO> clusterVOs = clusterDao.listByHypervisorAndCluster(HypervisorType.KVM, Cluster.ClusterType.CloudManaged);
+
+                if (isNotEmpty(clusterVOs)) {
+                    final ClusterDetailsVO clusterDetails = clusterDetailsDao.findDetail(clusterVOs.get(0).getId(), KvmMtuSize.key());
+
+                    if ((clusterDetails != null) && (parseInt(clusterDetails.getValue(), 0) > 0)) {
+                        _kvmMtuSize = parseInt(clusterDetails.getValue(), 0);
+                    } else {
+                        _kvmMtuSize = parseInt(_configDao.getValue(KvmMtuSize.key()), 0);
+                    }
+                }
             }
         });
 
@@ -605,7 +637,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     public boolean start() {
-        final int netGcInterval = NumbersUtil.parseInt(_configDao.getValue(NetworkGcInterval.key()), 60);
+        final int netGcInterval = parseInt(_configDao.getValue(NetworkGcInterval.key()), 60);
         s_logger.info("Network Manager will run the NetworkGarbageCollector every '" + netGcInterval + "' seconds.");
 
         _executor.scheduleWithFixedDelay(new NetworkGarbageCollector(), netGcInterval, netGcInterval, TimeUnit.SECONDS);
@@ -865,6 +897,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             configureNicProfileBasedOnRequestedIp(requested, profile, network);
         }
 
+        if (profile.getMtu() == null) {
+            profile.setMtu(_kvmMtuSize);
+        }
+
         deviceId = applyProfileToNic(vo, profile, deviceId);
 
         vo = _nicDao.persist(vo);
@@ -967,6 +1003,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         vo.setDefaultNic(profile.isDefaultNic());
+        vo.setMtu(profile.getMtu());
 
         vo.setIPv4Address(profile.getIPv4Address());
         vo.setAddressFormat(profile.getFormat());
@@ -1005,6 +1042,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (profile.getReservationStrategy() != null) {
             vo.setReservationStrategy(profile.getReservationStrategy());
         }
+        vo.setMtu(profile.getMtu());
         vo.setBroadcastUri(profile.getBroadCastUri());
         vo.setIsolationUri(profile.getIsolationUri());
         vo.setIPv4Netmask(profile.getIPv4Netmask());
@@ -1036,6 +1074,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             to.setPxeDisable(true);
         }
         to.setDefaultNic(nic.isDefaultNic());
+        to.setMtu(nic.getMtu());
         to.setBroadcastUri(nic.getBroadcastUri());
         to.setIsolationuri(nic.getIsolationUri());
         if (profile != null) {
@@ -1684,6 +1723,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             nic.setMacAddress(profile.getMacAddress());
             nic.setIsolationUri(profile.getIsolationUri());
             nic.setBroadcastUri(profile.getBroadCastUri());
+            nic.setMtu(profile.getMtu());
             nic.setReserver(guru.getName());
             nic.setState(Nic.State.Reserved);
             nic.setIPv4Netmask(profile.getIPv4Netmask());
@@ -2014,15 +2054,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (final NicVO nic : nics) {
-            final NetworkVO network = _networksDao.findById(nic.getNetworkId());
-            if (network != null && network.getTrafficType() == TrafficType.Guest) {
-                final String nicIp = Strings.isNullOrEmpty(nic.getIPv4Address()) ? nic.getIPv6Address() : nic.getIPv4Address();
-                if (!Strings.isNullOrEmpty(nicIp)) {
-                    NicProfile nicProfile = new NicProfile(nic.getIPv4Address(), nic.getIPv6Address(), nic.getMacAddress());
-                    nicProfile.setId(nic.getId());
-                    cleanupNicDhcpDnsEntry(network, vm, nicProfile);
-                }
+          final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+          if (network != null && network.getTrafficType() == TrafficType.Guest) {
+            final String nicIp = Strings.isNullOrEmpty(nic.getIPv4Address()) ? nic.getIPv6Address()
+                : nic.getIPv4Address();
+            if (!Strings.isNullOrEmpty(nicIp)) {
+              NicProfile nicProfile = new NicProfile(nic.getIPv4Address(), nic.getIPv6Address(),
+                  nic.getMacAddress());
+              nicProfile.setId(nic.getId());
+              cleanupNicDhcpDnsEntry(network, vm, nicProfile);
             }
+          }
             removeNic(vm, nic);
         }
     }
@@ -2855,7 +2897,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 final HashMap<Long, Long> stillFree = new HashMap<Long, Long>();
 
                 final List<Long> networkIds = _networksDao.findNetworksToGarbageCollect();
-                final int netGcWait = NumbersUtil.parseInt(_configDao.getValue(NetworkGcWait.key()), 60);
+                final int netGcWait = parseInt(_configDao.getValue(NetworkGcWait.key()), 60);
                 s_logger.info("NetworkGarbageCollector uses '" + netGcWait + "' seconds for GC interval.");
 
                 for (final Long networkId : networkIds) {
@@ -3736,7 +3778,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final DeployDestination dest = new DeployDestination(dc, null, null, host);
 
         NicProfile nic = getNicProfileForVm(network, requested, vm);
-
         //1) allocate nic (if needed) Always allocate if it is a user vm
         if (nic == null || vmProfile.getType() == VirtualMachine.Type.User) {
             final int deviceId = _nicDao.getFreeDeviceId(vm.getId());
@@ -3955,15 +3996,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return NetworkOrchestrationService.class.getSimpleName();
     }
 
-    public static final ConfigKey<Integer> NetworkGcWait = new ConfigKey<Integer>(Integer.class, "network.gc.wait", "Advanced", "600",
-            "Time (in seconds) to wait before shutting down a network that's not in used", false, Scope.Global, null);
-    public static final ConfigKey<Integer> NetworkGcInterval = new ConfigKey<Integer>(Integer.class, "network.gc.interval", "Advanced", "600",
-            "Seconds to wait before checking for networks to shutdown", true, Scope.Global, null);
-
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {NetworkGcWait, NetworkGcInterval, NetworkLockTimeout,
-                GuestDomainSuffix, NetworkThrottlingRate, MinVRVersion,
-                PromiscuousMode, MacAddressChanges, ForgedTransmits, RollingRestartEnabled};
+            GuestDomainSuffix, NetworkThrottlingRate, MinVRVersion, PromiscuousMode,
+            MacAddressChanges, ForgedTransmits, RollingRestartEnabled, KvmMtuSize};
     }
 }

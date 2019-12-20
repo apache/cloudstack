@@ -16,16 +16,16 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.NicModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
+import com.google.common.base.Strings;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
@@ -35,17 +35,16 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.google.common.base.Strings;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.NicModel;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 public class LibvirtDomainXMLParser {
     private static final Logger s_logger = Logger.getLogger(LibvirtDomainXMLParser.class);
@@ -203,6 +202,12 @@ public class LibvirtDomainXMLParser {
                 String model = getAttrValue("model", "type", nic);
                 String slot = StringUtils.removeStart(getAttrValue("address", "slot", nic), "0x");
 
+                String mtuAttrValue = getAttrValue("mtu", "size", nic);
+                Integer mtu = null;
+                if (mtuAttrValue != null) {
+                    mtu = Integer.parseInt(mtuAttrValue);
+                }
+
                 InterfaceDef def = new InterfaceDef();
                 NodeList bandwidth = nic.getElementsByTagName("bandwidth");
                 Integer networkRateKBps = 0;
@@ -213,15 +218,16 @@ public class LibvirtDomainXMLParser {
                         networkRateKBps = inbound;
                     }
                 }
+
                 if (type.equalsIgnoreCase("network")) {
                     String network = getAttrValue("source", "network", nic);
-                    def.defPrivateNet(network, dev, mac, NicModel.valueOf(model.toUpperCase()), networkRateKBps);
+                    def.defPrivateNet(network, dev, mac, NicModel.valueOf(model.toUpperCase()), networkRateKBps, mtu);
                 } else if (type.equalsIgnoreCase("bridge")) {
                     String bridge = getAttrValue("source", "bridge", nic);
-                    def.defBridgeNet(bridge, dev, mac, NicModel.valueOf(model.toUpperCase()), networkRateKBps);
+                    def.defBridgeNet(bridge, dev, mac, NicModel.valueOf(model.toUpperCase()), networkRateKBps, mtu);
                 } else if (type.equalsIgnoreCase("ethernet")) {
                     String scriptPath = getAttrValue("script", "path", nic);
-                    def.defEthernet(dev, mac, NicModel.valueOf(model.toUpperCase()), scriptPath, networkRateKBps);
+                    def.defEthernet(dev, mac, NicModel.valueOf(model.toUpperCase()), scriptPath, networkRateKBps, mtu);
                 } else if (type.equals("vhostuser")) {
                     String sourcePort = getAttrValue("source", "path", nic);
                     String mode = getAttrValue("source", "mode", nic);

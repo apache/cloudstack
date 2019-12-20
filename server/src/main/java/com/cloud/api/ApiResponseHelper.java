@@ -3931,6 +3931,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         /*17: default*/
         response.setIsDefault(result.isDefaultNic());
+        /*18: mtu*/
+        response.setMtu(result.getMtu());
         if (result.getSecondaryIp()) {
             List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(result.getId());
             if (secondaryIps != null) {
