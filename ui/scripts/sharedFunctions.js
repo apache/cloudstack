@@ -563,6 +563,10 @@ var addGuestNetworkDialog = {
                             $.extend(data, {
                                 tags: selectedPhysicalNetworkObj.tags
                             });
+                        } else if (addGuestNetworkDialog.physicalNetworkObjs != null && addGuestNetworkDialog.physicalNetworkObjs.length > 1) {
+                            $.extend(data, {
+                                istagged: false
+                            });
                         }
 
                         //Network tab in Guest Traffic Type in Infrastructure menu is only available when it's under Advanced zone.

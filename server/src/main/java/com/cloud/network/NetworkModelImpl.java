@@ -1154,13 +1154,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         }
 
         if (pNtwks.size() > 1) {
-            if (tag == null) {
-                throw new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId +
-                    " and no tags are specified in order to make a choice");
-            }
-
             Long pNtwkId = null;
             for (PhysicalNetwork pNtwk : pNtwks) {
+                if (pNtwk.getTags().isEmpty() && tag == null) {
+                    s_logger.debug("Found physical network id=" + pNtwk.getId() + " with null tag");
+                    if (pNtwkId != null) {
+                        throw new CloudRuntimeException("There is more than 1 physical network with empty tag in the zone id=" + zoneId);
+                    }
+                    pNtwkId = pNtwk.getId();
+                }
                 if (pNtwk.getTags().contains(tag)) {
                     s_logger.debug("Found physical network id=" + pNtwk.getId() + " based on requested tags " + tag);
                     pNtwkId = pNtwk.getId();

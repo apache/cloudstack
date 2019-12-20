@@ -5463,6 +5463,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Boolean sourceNatSupported = cmd.getSourceNatSupported();
         final List<String> pNtwkTags = new ArrayList<String>();
         boolean checkForTags = false;
+        boolean allowNullTag = false;
         if (zone != null) {
             final List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, TrafficType.Guest);
             if (pNtwks.size() > 1) {
@@ -5471,9 +5472,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 for (final PhysicalNetworkVO pNtwk : pNtwks) {
                     final List<String> pNtwkTag = pNtwk.getTags();
                     if (pNtwkTag == null || pNtwkTag.isEmpty()) {
-                        throw new CloudRuntimeException("Tags are not defined for physical network in the zone id=" + zoneId);
+                        if (!allowNullTag) {
+                            allowNullTag = true;
+                        } else {
+                            throw new CloudRuntimeException("There are more than 1 physical network with empty tag in the zone id=" + zoneId);
+                        }
+                    } else {
+                        pNtwkTags.addAll(pNtwkTag);
                     }
-                    pNtwkTags.addAll(pNtwkTag);
                 }
             }
         }
@@ -5506,7 +5512,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 List<Service> checkForProviders = new ArrayList<Service>();
 
                 if (checkForTags) {
-                    if (!pNtwkTags.contains(offering.getTags())) {
+                    if (offering.getTags() == null && !allowNullTag) {
+                        continue;
+                    } else if (offering.getTags() != null && !pNtwkTags.contains(offering.getTags())) {
                         continue;
                     }
                 }
