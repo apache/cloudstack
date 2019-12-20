@@ -29,7 +29,13 @@
     </parent>
 
     <properties>
-        <ads.version>2.0.0.AM26-SNAPSHOT</ads.version>
+        <ads.version>2.0.0.AM25</ads.version>
+        <gmaven.version>1.5</gmaven.version>
+        <ldap-maven.version>1.1.3</ldap-maven.version>
+        <ldapunit.version>1.1.3</ldapunit.version>
+        <groovy.version>1.1-groovy-2.4</groovy.version>
+        <zapdot.version>0.7</zapdot.version>
+        <unboundedid.version>4.0.4</unboundedid.version>
     </properties>
 
     <build>
@@ -37,7 +43,7 @@
             <plugin>
                 <groupId>org.codehaus.gmaven</groupId>
                 <artifactId>gmaven-plugin</artifactId>
-                <version>1.3</version>
+                <version>${gmaven.version}</version>
                 <configuration>
                     <providerSelection>1.7</providerSelection>
                 </configuration>
@@ -63,7 +69,7 @@
                     <dependency>
                         <groupId>org.codehaus.gmaven.runtime</groupId>
                         <artifactId>gmaven-runtime-1.7</artifactId>
-                        <version>1.3</version>
+                        <version>${gmaven.version}</version>
                         <exclusions>
                             <exclusion>
                                 <groupId>org.codehaus.groovy</groupId>
@@ -96,7 +102,7 @@
             <plugin>
                 <groupId>com.btmatthews.maven.plugins</groupId>
                 <artifactId>ldap-maven-plugin</artifactId>
-                <version>1.1.3</version>
+                <version>${ldap-maven.version}</version>
                 <configuration>
                     <monitorPort>11389</monitorPort>
                     <monitorKey>ldap</monitorKey>
@@ -114,12 +120,12 @@
         <dependency>
             <groupId>com.btmatthews.ldapunit</groupId>
             <artifactId>ldapunit</artifactId>
-            <version>1.1.3</version>
+            <version>${ldapunit.version}</version>
         </dependency>
         <dependency>
             <groupId>org.spockframework</groupId>
             <artifactId>spock-core</artifactId>
-            <version>1.1-groovy-2.4</version>
+            <version>${groovy.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- Optional dependencies for using Spock -->
@@ -131,24 +137,24 @@
         <dependency>
             <groupId>org.zapodot</groupId>
             <artifactId>embedded-ldap-junit</artifactId>
-            <version>0.7</version>
+            <version>${zapdot.version}</version>
         </dependency>
         <dependency>
             <groupId>com.unboundid</groupId>
             <artifactId>unboundid-ldapsdk</artifactId>
-            <version>4.0.4</version>
+            <version>${unboundedid.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
-            <version>1.10.19</version>
+            <version>${cs.mockito.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>${cs.junit.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
