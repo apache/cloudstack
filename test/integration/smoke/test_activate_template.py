@@ -108,17 +108,17 @@ class TestActivateTemplate(cloudstackTestCase):
 
     def tearDown(self):
         try:
+            for temp in self.templates:
+                cmd = self.activateTemplateCmd
+                cmd.id = temp.id
+                self.apiclient.activateSystemVMTemplate(cmd)
+
             # Clean up the created templates
             for temp in self.cleanup:
                 cmd = deleteTemplate.deleteTemplateCmd()
                 cmd.id = temp.id
                 cmd.zoneid = self.zone.id
                 self.apiclient.deleteTemplate(cmd)
-
-            for temp in self.templates: 
-                cmd = self.activateTemplateCmd
-                cmd.id = temp.id
-                self.apiclient.activateSystemVMTemplate(cmd)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
