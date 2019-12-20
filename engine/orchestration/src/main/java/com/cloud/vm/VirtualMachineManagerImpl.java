@@ -41,6 +41,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.to.DpdkTO;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
@@ -320,6 +322,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private AsyncJobManager _jobMgr;
     @Inject
     private StorageManager storageMgr;
+    @Inject
+    private NetworkOfferingDetailsDao networkOfferingDetailsDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -3474,6 +3478,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             //3) Convert nicProfile to NicTO
             final NicTO nicTO = toNicTO(nic, vmProfile.getVirtualMachine().getHypervisorType());
+
+            if (network != null) {
+                final Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
+                if (details != null) {
+                    details.putIfAbsent(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
+                    details.putIfAbsent(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
+                    details.putIfAbsent(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
+                }
+                nicTO.setDetails(details);
+            }
 
             //4) plug the nic to the vm
             s_logger.debug("Plugging nic for vm " + vm + " in network " + network);
