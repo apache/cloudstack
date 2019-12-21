@@ -1403,13 +1403,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         if (isNotBlank(pvlanTypeStr)) {
             PVlanType providedType = PVlanType.fromValue(pvlanTypeStr);
-            if (type != null && type != providedType) {
-                throw new CloudRuntimeException("The type set in the secondary VLAN ID: " + secondaryVlanId + " does not match the provided Private VLAN type: " + providedType);
-            }
             type = providedType;
+        } else if (isNotBlank(vlanId) && isNotBlank(secondaryVlanId)) {
+            // Preserve the existing functionality
+            type = vlanId.equals(secondaryVlanId) ? PVlanType.Promiscuous : PVlanType.Isolated;
         }
 
-        if (isBlank(secondaryVlanId) && type != null && type == PVlanType.Promiscuous) {
+        if (isBlank(secondaryVlanId) && type == PVlanType.Promiscuous) {
             secondaryVlanId = vlanId;
         }
 
