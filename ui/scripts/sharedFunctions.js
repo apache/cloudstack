@@ -850,6 +850,9 @@ var addGuestNetworkDialog = {
             if (args.data.hideipaddressusage != null && args.data.hideipaddressusage) {
                 array1.push("&hideipaddressusage=true")
             }
+            if (args.$form.find('.form-item[rel=pvlanType]').css('display') != 'none' && args.data.pvlanType != 'none') {
+                array1.push("&isolatedpvlantype=" + args.data.pvlanType);
+            }
 
             $.ajax({
                 url: createURL("createNetwork" + array1.join("")),
