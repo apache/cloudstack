@@ -214,7 +214,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             if (offering.isSpecifyVlan()) {
                 network.setBroadcastUri(userSpecified.getBroadcastUri());
                 network.setState(State.Setup);
-                if (offering.getGuestType() == GuestType.L2 && userSpecified.getPvlanType() != null) {
+                if (userSpecified.getPvlanType() != null) {
                     network.setBroadcastDomainType(BroadcastDomainType.Pvlan);
                     network.setPvlanType(userSpecified.getPvlanType());
                 }
