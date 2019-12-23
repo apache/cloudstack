@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -201,31 +199,8 @@ public class LdapListUsersCmd extends BaseListCmd {
         if(s_logger.isTraceEnabled()) {
             s_logger.trace(String.format("applying filter: %s or %s.", this.getListTypeString(), this.getUserFilter()));
         }
-        Method filterMethod = getFilterMethod();
-        List<LdapUserResponse> responseList = ldapResponses;
-        if (filterMethod != null) {
-            if(s_logger.isTraceEnabled()) {
-                s_logger.trace("applying filter: " + filterMethod.getName());
-            }
-            try {
-                responseList = (List<LdapUserResponse>)filterMethod.invoke(this, ldapResponses);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new CloudRuntimeException("we're damned, the earth is screwed. we will now return to our maker",e);
-            }
-        }
+        List<LdapUserResponse> responseList = getUserFilter().filter(this,ldapResponses);
         return responseList;
-    }
-
-    Method getFilterMethod() {
-        Method method = null;
-        try {
-            method = this.getClass().getMethod("filter" + getUserFilter().toString(), java.util.List.class);
-            Type returnType = method.getGenericReturnType();
-            checkFilterMethodType(returnType);
-        } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException(String.format("filter method filter%s not found; not filtering ldap users", getUserFilter()));
-        }
-        return method;
     }
 
     @Override
@@ -296,12 +271,30 @@ public class LdapListUsersCmd extends BaseListCmd {
      * typecheck for userfilter values
      */
     enum UserFilter {
-        NO_FILTER("NoFilter"),
-        LOCAL_DOMAIN("LocalDomain"),
-        ANY_DOMAIN("AnyDomain"),
-        POTENTIAL_IMPORT("PotentialImport");
+        NO_FILTER("NoFilter"){
+            @Override public List<LdapUserResponse> filter(LdapListUsersCmd cmd, List<LdapUserResponse> input) {
+                return cmd.filterNoFilter(input);
+            }
+        },
+        LOCAL_DOMAIN("LocalDomain"){
+            @Override public List<LdapUserResponse> filter(LdapListUsersCmd cmd, List<LdapUserResponse> input) {
+                return cmd.filterLocalDomain(input);
+            }
+        },
+        ANY_DOMAIN("AnyDomain"){
+            @Override public List<LdapUserResponse> filter(LdapListUsersCmd cmd, List<LdapUserResponse> input) {
+                return cmd.filterAnyDomain(input);
+            }
+        },
+        POTENTIAL_IMPORT("PotentialImport"){
+            @Override public List<LdapUserResponse> filter(LdapListUsersCmd cmd, List<LdapUserResponse> input) {
+                return cmd.filterPotentialImport(input);
+            }
+        };
 
         private final String value;
+
+        public abstract List<LdapUserResponse> filter(LdapListUsersCmd cmd, List<LdapUserResponse> input);
 
         UserFilter(String val) {
             this.value = val;

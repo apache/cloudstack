@@ -129,11 +129,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
 
         mockResponseCreation();
 
-        DomainVO domainVO = new DomainVO();
-        domainVO.setName(LOCAL_DOMAIN_NAME);
-        domainVO.setId(2l);
-        domainVO.setUuid(LOCAL_DOMAIN_ID);
-        when(domainService.getDomain(anyLong())).thenReturn(domainVO);
+        useSubdomain();
 
         ldapListUsersCmd.execute();
 
@@ -258,11 +254,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         mockACSUserSearch();
         mockResponseCreation();
 
-        DomainVO domainVO = new DomainVO();
-        domainVO.setName(LOCAL_DOMAIN_NAME);
-        domainVO.setId(2l);
-        domainVO.setUuid(LOCAL_DOMAIN_ID);
-        when(domainService.getDomain(anyLong())).thenReturn(domainVO);
+        useSubdomain();
 
         setHiddenField(ldapListUsersCmd, "userFilter", "NoFilter");
         ldapListUsersCmd.execute();
@@ -281,11 +273,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         mockACSUserSearch();
         mockResponseCreation();
 
-        DomainVO domainVO = new DomainVO();
-        domainVO.setName(LOCAL_DOMAIN_NAME);
-        domainVO.setId(2l);
-        domainVO.setUuid(LOCAL_DOMAIN_ID);
-        when(domainService.getDomain(anyLong())).thenReturn(domainVO);
+        useSubdomain();
 
         setHiddenField(ldapListUsersCmd, "userFilter", "AnyDomain");
         setHiddenField(ldapListUsersCmd, "domainId", 2l /* not root */);
@@ -328,12 +316,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         setHiddenField(ldapListUsersCmd, "userFilter", "LocalDomain");
         setHiddenField(ldapListUsersCmd, "domainId", 2l /* not root */);
 
-        DomainVO domainVO = new DomainVO();
-        domainVO.setName(LOCAL_DOMAIN_NAME);
-        domainVO.setId(2l);
-        domainVO.setUuid(LOCAL_DOMAIN_ID);
-        when(domainService.getDomain(anyLong())).thenReturn(domainVO);
-        localDomain = domainVO;
+        localDomain = useSubdomain();
 
         ldapListUsersCmd.execute();
 
@@ -360,11 +343,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         setHiddenField(account, "domainId", 1l);
         final CallContext callContext = CallContext.current();
         setHiddenField(callContext, "account", account);
-        DomainVO domainVO = new DomainVO();
-        domainVO.setName("ROOT");
-        domainVO.setId(1l);
-        domainVO.setUuid(LOCAL_DOMAIN_ID);
-        when(domainService.getDomain(anyLong())).thenReturn(domainVO);
+        DomainVO domainVO = useDomain("ROOT", 1l);
         localDomain = domainVO;
 
         ldapListUsersCmd.execute();
@@ -385,11 +364,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         mockACSUserSearch();
         mockResponseCreation();
 
-        DomainVO domainVO = new DomainVO();
-        domainVO.setName(LOCAL_DOMAIN_NAME);
-        domainVO.setId(2l);
-        domainVO.setUuid(LOCAL_DOMAIN_ID);
-        when(domainService.getDomain(anyLong())).thenReturn(domainVO);
+        useSubdomain();
 
         setHiddenField(ldapListUsersCmd, "userFilter", "PotentialImport");
         ldapListUsersCmd.execute();
@@ -419,10 +394,27 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
      */
     @Test
     public void applyUnimplementedFilter() throws NoSuchFieldException, IllegalAccessException {
+        useSubdomain();
         for (LdapListUsersCmd.UserFilter UNIMPLEMENTED_FILTER : LdapListUsersCmd.UserFilter.values()) {
             setHiddenField(ldapListUsersCmd, "userFilter", UNIMPLEMENTED_FILTER.toString());
-            ldapListUsersCmd.getFilterMethod();
+            ldapListUsersCmd.getUserFilter().filter(ldapListUsersCmd,new ArrayList<LdapUserResponse>());
         }
+    }
+
+    // helper methods //
+    ////////////////////
+    private DomainVO useSubdomain() {
+        DomainVO domainVO = useDomain(LOCAL_DOMAIN_NAME, 2l);
+        return domainVO;
+    }
+
+    private DomainVO useDomain(String domainName, long domainId) {
+        DomainVO domainVO = new DomainVO();
+        domainVO.setName(domainName);
+        domainVO.setId(domainId);
+        domainVO.setUuid(LOCAL_DOMAIN_ID);
+        when(domainService.getDomain(anyLong())).thenReturn(domainVO);
+        return domainVO;
     }
 
     private void mockACSUserSearch() {
