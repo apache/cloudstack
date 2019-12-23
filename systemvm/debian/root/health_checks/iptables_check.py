@@ -25,7 +25,7 @@ def main():
     portForwards = getHealthChecksData("portForwarding")
     if portForwards is None or len(portForwards) == 0:
         print "No portforwarding rules provided to check, skipping"
-        exit (0)
+        exit(0)
 
     for portForward in portForwards:
         entriesExpected = []

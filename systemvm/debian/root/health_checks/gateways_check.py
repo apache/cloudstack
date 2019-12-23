@@ -25,7 +25,7 @@ def main():
     gws = getHealthChecksData("gateways")
     if gws is None and len(gws) == 0:
         print "No gateways data available, skipping"
-        exit (0)
+        exit(0)
 
     unreachableGateWays = []
     gwsList = gws[0]["gatewaysIps"].strip().split(' ')
