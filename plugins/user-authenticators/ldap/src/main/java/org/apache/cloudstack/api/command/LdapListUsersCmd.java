@@ -153,46 +153,33 @@ public class LdapListUsersCmd extends BaseListCmd {
         }
     }
 
+    /**
+     * get a list of relevant cloudstack users, depending on the userFilter
+     */
     private List<UserResponse> getCloudstackUsers() {
-        // get a list of relevant cloudstack users, meaning
-        // if we are filtering for local domain, only get users for the current domain
-        // if we are filtering for any domain, get recursive all users for the root domain
-        // if we are filtering for potential imports,
-        //    we are only looking for users in the linked domains/accounts,
-        //    which is only relevant if we ask ldap users for this domain.
-        //    So we are asking for all users in the current domain as well
-        // in case of no filter we should find all users in the current domain for annotation.
         if (cloudstackUsers == null) {
-            ListResponse<UserResponse> cloudstackUsersresponse;
-            switch (getUserFilter()) {
-                case ANY_DOMAIN:
-                    // get the user domain so if the calling user is a root admin ....
-                    cloudstackUsersresponse = _queryService.searchForUsers(CallContext.current().getCallingAccount().getDomainId(), true);
-                    break;
-                case NO_FILTER:
-                    cloudstackUsersresponse = _queryService.searchForUsers(this.domainId,true);
-                    break;
-                case POTENTIAL_IMPORT:
-                case LOCAL_DOMAIN:
-                    cloudstackUsersresponse = _queryService.searchForUsers(this.domainId,false);
-                    break;
-                default:
-                    throw new CloudRuntimeException("error in program login; we are not filtering but still querying users to filter???");
+            try {
+                cloudstackUsers = getUserFilter().getCloudstackUserList(this).getResponses();
+            } catch (IllegalArgumentException e) {
+                throw new CloudRuntimeException("error in program login; we are not filtering but still querying users to filter???", e);
             }
-            cloudstackUsers = cloudstackUsersresponse.getResponses();
-            if(s_logger.isTraceEnabled()) {
-                StringBuilder users = new StringBuilder();
-                for (UserResponse user : cloudstackUsers) {
-                    if (users.length()> 0) {
-                        users.append(", ");
-                    }
-                    users.append(user.getUsername());
-                }
-
-                s_logger.trace(String.format("checking against %d cloudstackusers: %s.", this.cloudstackUsers.size(), users.toString()));
-            }
+            traceUserList();
         }
         return cloudstackUsers;
+    }
+
+    private void traceUserList() {
+        if(s_logger.isTraceEnabled()) {
+            StringBuilder users = new StringBuilder();
+            for (UserResponse user : cloudstackUsers) {
+                if (users.length()> 0) {
+                    users.append(", ");
+                }
+                users.append(user.getUsername());
+            }
+
+            s_logger.trace(String.format("checking against %d cloudstackusers: %s.", this.cloudstackUsers.size(), users.toString()));
+        }
     }
 
     private List<LdapUserResponse> applyUserFilter(List<LdapUserResponse> ldapResponses) {
@@ -268,37 +255,73 @@ public class LdapListUsersCmd extends BaseListCmd {
         return false;
     }
     /**
-     * typecheck for userfilter values
+     * typecheck for userfilter values and filter type dependend functionalities.
+     * This could have been in two switch statements elsewhere in the code.
+     * Arguably this is a cleaner solution.
      */
     enum UserFilter {
         NO_FILTER("NoFilter"){
             @Override public List<LdapUserResponse> filter(LdapListUsersCmd cmd, List<LdapUserResponse> input) {
                 return cmd.filterNoFilter(input);
             }
+
+            /**
+             * in case of no filter we should find all users in the current domain for annotation.
+             */
+            @Override public ListResponse<UserResponse> getCloudstackUserList(LdapListUsersCmd cmd) {
+                return cmd._queryService.searchForUsers(cmd.domainId,true);
+
+            }
         },
         LOCAL_DOMAIN("LocalDomain"){
             @Override public List<LdapUserResponse> filter(LdapListUsersCmd cmd, List<LdapUserResponse> input) {
                 return cmd.filterLocalDomain(input);
+            }
+
+            /**
+             * if we are filtering for local domain, only get users for the current domain
+             */
+            @Override public ListResponse<UserResponse> getCloudstackUserList(LdapListUsersCmd cmd) {
+                return cmd._queryService.searchForUsers(cmd.domainId,false);
             }
         },
         ANY_DOMAIN("AnyDomain"){
             @Override public List<LdapUserResponse> filter(LdapListUsersCmd cmd, List<LdapUserResponse> input) {
                 return cmd.filterAnyDomain(input);
             }
+
+            /*
+             * if we are filtering for any domain, get recursive all users for the root domain
+             */
+            @Override public ListResponse<UserResponse> getCloudstackUserList(LdapListUsersCmd cmd) {
+                return cmd._queryService.searchForUsers(CallContext.current().getCallingAccount().getDomainId(), true);
+            }
         },
         POTENTIAL_IMPORT("PotentialImport"){
             @Override public List<LdapUserResponse> filter(LdapListUsersCmd cmd, List<LdapUserResponse> input) {
                 return cmd.filterPotentialImport(input);
             }
+
+            /**
+             * if we are filtering for potential imports,
+             *    we are only looking for users in the linked domains/accounts,
+             *    which is only relevant if we ask ldap users for this domain.
+             *    So we are asking for all users in the current domain as well
+             */
+            @Override public ListResponse<UserResponse> getCloudstackUserList(LdapListUsersCmd cmd) {
+                return cmd._queryService.searchForUsers(cmd.domainId,false);
+            }
         };
 
         private final String value;
 
-        public abstract List<LdapUserResponse> filter(LdapListUsersCmd cmd, List<LdapUserResponse> input);
-
         UserFilter(String val) {
             this.value = val;
         }
+
+        public abstract List<LdapUserResponse> filter(LdapListUsersCmd cmd, List<LdapUserResponse> input);
+
+        public abstract ListResponse<UserResponse> getCloudstackUserList(LdapListUsersCmd cmd);
 
         static UserFilter fromString(String val) {
             if(NO_FILTER.toString().equalsIgnoreCase(val)) {
