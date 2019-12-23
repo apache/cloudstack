@@ -26,18 +26,20 @@ def main():
     if entries is not None and len(entries) == 1:
         data = entries[0]
 
-    if "minDiskNeeded" in data:
-        minDiskNeeded = float(data["minDiskNeeded"]) * 1024
-        s = statvfs('/')
-        freeSpace = (s.f_bavail * s.f_frsize) / 1024
-        if (freeSpace < minDiskNeeded):
-            print "Insufficient free space is " + str(freeSpace/1024) + " MB"
-            exit(1)
-        else:
-            print "Sufficient free space is " + str(freeSpace/1024) + " MB"
-    else:
+    if "minDiskNeeded" not in data:
         print "Missing minDiskNeeded in health_checks_data systemThresholds, skipping"
-    exit(0)
+        exit(0)
+
+    minDiskNeeded = float(data["minDiskNeeded"]) * 1024
+    s = statvfs('/')
+    freeSpace = (s.f_bavail * s.f_frsize) / 1024
+
+    if (freeSpace < minDiskNeeded):
+        print "Insufficient free space is " + str(freeSpace/1024) + " MB"
+        exit(1)
+    else:
+        print "Sufficient free space is " + str(freeSpace/1024) + " MB"
+        exit(0)
 
 
 if __name__ == "__main__":

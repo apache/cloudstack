@@ -17,20 +17,16 @@
 # under the License.
 
 from os import sys, path
-from utility import getHealthChecksData
+from utility import getHealthChecksData, formatPort
 
 
 def checkMaxconn(haproxyData, haCfgSections):
     if "maxconn" in haproxyData and "maxconn" in haCfgSections["global"]:
-        if haproxyData["maxconn"] != haCfgSections["global"]["maxconn"]:
+        if haproxyData["maxconn"] != haCfgSections["global"]["maxconn"][0].strip():
             print "global maxconn mismatch occured"
             return False
 
     return True
-
-
-def formatPort(portStart, portEnd, delim="-"):
-    return portStart if portStart == portEnd else portStart + delim + portEnd
 
 
 def checkLoadBalance(haproxyData, haCfgSections):
@@ -108,7 +104,7 @@ def main():
             currSectionDict[lineSec[0]]\
                 .append(lineSec[1] if len(lineSec) > 1 else '')
 
-    if checkMaxconn(haproxyData, haCfgSections) and \
+    if checkMaxconn(haproxyData[0], haCfgSections) and \
             checkLoadBalance(haproxyData, haCfgSections):
         print "All checks pass"
         exit(0)

@@ -18,30 +18,25 @@
 
 from os import sys, path
 from subprocess import *
-from utility import getHealthChecksData
+from utility import getHealthChecksData, formatPort
 
 
 def main():
     portForwards = getHealthChecksData("portForwarding")
-    if portForwards is not None and len(portForwards) > 0:
+    if portForwards is None or len(portForwards) == 0:
+        print "No portforwarding rules provided to check, skipping"
+        exit (0)
+
+    for portForward in portForwards:
         entriesExpected = []
-        for portForward in portForwards:
-            srcIp = portForward["sourceIp"]
-            srcPortStart = portForward["sourcePortStart"]
-            srcPortEnd = portForward["sourcePortEnd"]
-            destIp = portForward["destIp"]
-            destPortStart = portForward["destPortStart"]
-            destPortEnd = portForward["destPortEnd"]
-            entriesExpected\
-                .append(["-d " + srcIp,
-                         "--dport " +
-                         (srcPortStart
-                          if (srcPortStart == srcPortEnd)
-                          else (srcPortStart + ":" + srcPortEnd)),
-                         "--to-destination " + destIp + ":" +
-                         (destPortStart
-                          if (destPortStart == destPortEnd)
-                          else (destPortStart + "-" + destPortEnd))])
+        destIp = portForward["destIp"]
+        srcIpText = "-d " + portForward["sourceIp"]
+        srcPortText = "--dport " + formatPort(portForward["sourcePortStart"], portForward["sourcePortEnd"], ":")
+        dstText = destIp + ":" + formatPort(portForward["destPortStart"], portForward["destPortEnd"], "-")
+        for algo in [["PREROUTING", "--to-destination"],
+                     ["OUTPUT", "--to-destination"],
+                     ["POSTROUTING", "--to-source"]]:
+            entriesExpected.append([algo[0], srcIpText, srcPortText, algo[1] + " " + dstText])
 
         pout = Popen("iptables-save | grep " + destIp, shell=True, stdout=PIPE)
         if pout.wait() != 0:
@@ -69,11 +64,7 @@ def main():
                 print pfEntryListExpected
                 exit(1)
 
-        print "Found all entries (count " + \
-              str(len(portForwards)) + ") in iptables"
-    else:
-        print "No portforwarding rules provided to check, skipping"
-
+    print "Found all entries (count " + str(len(portForwards)) + ") in iptables"
     exit(0)
 
 

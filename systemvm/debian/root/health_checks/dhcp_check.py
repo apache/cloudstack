@@ -22,26 +22,29 @@ from utility import getHealthChecksData
 
 def main():
     vMs = getHealthChecksData("virtualMachines")
-    if vMs is not None and len(vMs) > 0:
-        with open('/etc/dhcphosts.txt', 'r') as hostsFile:
-            allHosts = hostsFile.readlines()
-            hostsFile.close()
-        for vM in vMs:
-            entry = vM["macAddress"] + "," + vM["ip"] + "," + vM["vmName"]
-            foundEntry = False
-            for host in allHosts:
-                host = host.strip()
-                if host.find(vM["macAddress"]) != -1 and host.find(vM["ip"]) != -1 and host.find(vM["vmName"]) != -1:
-                    foundEntry = True
-                    break
 
-            if not foundEntry:
-                print "Missing elements in dhcphosts.txt - " + entry
-                exit(1)
-
-        print "All " + str(len(vMs)) + " VMs are present in dhcphosts.txt"
-    else:
+    if vMs is None or len(vMs) == 0:
         print "No VMs running data available, skipping"
+        exit(0)
+
+    with open('/etc/dhcphosts.txt', 'r') as hostsFile:
+        allHosts = hostsFile.readlines()
+        hostsFile.close()
+
+    for vM in vMs:
+        entry = vM["macAddress"] + "," + vM["ip"] + "," + vM["vmName"]
+        foundEntry = False
+        for host in allHosts:
+            host = host.strip()
+            if host.find(vM["macAddress"]) != -1 and host.find(vM["ip"]) != -1 and host.find(vM["vmName"]) != -1:
+                foundEntry = True
+                break
+
+        if not foundEntry:
+            print "Missing elements in dhcphosts.txt - " + entry
+            exit(1)
+
+    print "All " + str(len(vMs)) + " VMs are present in dhcphosts.txt"
     exit(0)
 
 

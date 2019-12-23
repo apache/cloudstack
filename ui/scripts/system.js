@@ -10575,7 +10575,7 @@
                                                 url: createURL('getRouterHealthCheckResults'),
                                                 dataType: 'json',
                                                 data: data,
-                                                async: false,
+                                                async: true,
                                                 success: function (json) {
                                                     var healthChecks = json.getrouterhealthcheckresultsresponse.routerhealthchecks.healthchecks
                                                     var numChecks = healthChecks.length

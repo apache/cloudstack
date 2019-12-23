@@ -23,32 +23,33 @@ from utility import getHealthChecksData
 
 def main():
     gws = getHealthChecksData("gateways")
-    if gws is not None and len(gws) > 0:
-        unreachableGateWays = []
-        gwsList = gws[0]["gatewaysIps"].strip().split(' ')
-        for gw in gwsList:
-            if len(gw) == 0:
-                continue
-            reachableGw = False
-            for i in range(3):
-                pingCmd = "ping " + gw + " -c " + str(i + 1)
-                pout = Popen(pingCmd, shell=True, stdout=PIPE)
-                if pout.wait() == 0:
-                    reachableGw = True
-                    break
-
-            if not reachableGw:
-                unreachableGateWays.append(gw)
-
-        if len(unreachableGateWays) == 0:
-            print "All " + str(len(gws)) + " gateways are reachable via ping"
-            exit(0)
-        else:
-            print "Unreachable gateways found " + unreachableGateWays
-            exit(1)
-    else:
+    if gws is None and len(gws) == 0:
         print "No gateways data available, skipping"
-    exit(0)
+        exit (0)
+
+    unreachableGateWays = []
+    gwsList = gws[0]["gatewaysIps"].strip().split(' ')
+    for gw in gwsList:
+        if len(gw) == 0:
+            continue
+        reachableGw = False
+        for i in range(20):
+            pingCmd = "ping " + gw + " -c " + str(i + 1)
+            pout = Popen(pingCmd, shell=True, stdout=PIPE)
+            if pout.wait() == 0:
+                reachableGw = True
+                break
+
+        if not reachableGw:
+            unreachableGateWays.append(gw)
+
+    if len(unreachableGateWays) == 0:
+        print "All " + str(len(gws)) + " gateways are reachable via ping"
+        exit(0)
+    else:
+        print "Unreachable gateways found-"
+        print unreachableGateWays
+        exit(1)
 
 
 if __name__ == "__main__":

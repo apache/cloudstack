@@ -22,25 +22,28 @@ from utility import getHealthChecksData
 
 def main():
     vMs = getHealthChecksData("virtualMachines")
-    if vMs is not None and len(vMs) > 0:
-        with open('/etc/hosts', 'r') as hostsFile:
-            allHosts = hostsFile.readlines()
-            hostsFile.close()
-        for vM in vMs:
-            foundEntry = False
-            for host in allHosts:
-                if host.find(vM["ip"]) != -1 and host.find(vM["vmName"]) != -1:
-                    foundEntry = True
-                    break
 
-            if not foundEntry:
-                print "Missing entry in /etc/hosts - " + vM["ip"] + \
-                      " " + vM["vmName"]
-                exit(1)
-
-        print "All " + str(len(vMs)) + " VMs are present in /etc/hosts"
-    else:
+    if vMs is None or len(vMs) == 0:
         print "No VMs running data available, skipping"
+        exit(0)
+
+    with open('/etc/hosts', 'r') as hostsFile:
+        allHosts = hostsFile.readlines()
+        hostsFile.close()
+
+    for vM in vMs:
+        foundEntry = False
+        for host in allHosts:
+            if host.find(vM["ip"]) != -1 and host.find(vM["vmName"]) != -1:
+                foundEntry = True
+                break
+
+        if not foundEntry:
+            print "Missing entry in /etc/hosts - " + vM["ip"] + \
+                  " " + vM["vmName"]
+            exit(1)
+
+    print "All " + str(len(vMs)) + " VMs are present in /etc/hosts"
     exit(0)
 
 
