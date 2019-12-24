@@ -27,9 +27,9 @@ set -e
 DIR=$(pwd)
 
 cd ~
-wget http://apachemirror.wuchna.com/maven/maven-3/3.6.2/binaries/apache-maven-3.6.2-bin.tar.gz
-tar zxvf apache-maven-3.6.2-bin.tar.gz
-export PATH=`pwd`/apache-maven-3.6.2/bin:$PATH
+wget https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz
+tar zxvf apache-maven-3.6.3-bin.tar.gz
+export PATH=`pwd`/apache-maven-3.6.3/bin:$PATH
 cd $DIR
 
 echo -e "\nJDK version"
