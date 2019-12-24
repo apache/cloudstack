@@ -325,30 +325,9 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
      */
     private DirectDownloadCommand getDirectDownloadCommandFromProtocol(DownloadProtocol protocol, String url, Long templateId, PrimaryDataStoreTO destPool,
                                                                        String checksum, Map<String, String> httpHeaders) {
-        int connectTimeout = DEFAULT_DIRECT_DOWNLOAD_CONNECT_TIMEOUT;
-        int soTimeout = DEFAULT_DIRECT_DOWNLOAD_SOCKET_TIMEOUT;
-        int connectionRequestTimeout = DEFAULT_DIRECT_DOWNLOAD_CONNECTION_REQUEST_TIMEOUT;
-        if (DownloadProtocol.HTTP.equals(protocol) ||
-                DownloadProtocol.HTTPS.equals(protocol) ||
-                DownloadProtocol.METALINK.equals(protocol)) {
-            try {
-                connectTimeout = Integer.parseInt(configDao.getValue(DirectDownloadConnectTimeout.key()));
-            } catch (NumberFormatException nfe) {
-                s_logger.warn(String.format("Unable to retrieve configuration: %s value", DirectDownloadConnectTimeout.key()), nfe);
-            }
-            try {
-                soTimeout = Integer.parseInt(configDao.getValue(DirectDownloadSocketTimeout.key()));
-            } catch (NumberFormatException nfe) {
-                s_logger.warn(String.format("Unable to retrieve configuration: %s value", DirectDownloadSocketTimeout.key()), nfe);
-            }
-        }
-        if (DownloadProtocol.HTTPS.equals(protocol)) {
-            try {
-                connectionRequestTimeout = Integer.parseInt(configDao.getValue(DirectDownloadConnectionRequestTimeout.key()));
-            } catch (NumberFormatException nfe) {
-                s_logger.warn(String.format("Unable to retrieve configuration: %s value", DirectDownloadConnectionRequestTimeout.key()), nfe);
-            }
-        }
+        int connectTimeout = DirectDownloadConnectTimeout.value();
+        int soTimeout = DirectDownloadSocketTimeout.value();
+        int connectionRequestTimeout = DirectDownloadConnectionRequestTimeout.value();
         if (protocol.equals(DownloadProtocol.HTTP)) {
             return new HttpDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout, soTimeout);
         } else if (protocol.equals(DownloadProtocol.HTTPS)) {
