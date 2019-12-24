@@ -68,10 +68,11 @@ def zip_files(files):
         print zf_name
 
 
-def execute_shell_script(script):
-    script = script.strip()
-    outputfile = script + '.log'
+def get_cmd(script):
+    if script is None or len(script) == 0:
+        return None
 
+    cmd = None
     if script == 'iptables':
         cmd = 'iptables-save'
     elif script == 'ipaddr':
@@ -81,8 +82,19 @@ def execute_shell_script(script):
     elif script == 'iproute':
         cmd = 'ip route show table all'
     else:
-        cmd = 'sh /opt/cloud/bin/' + script
+        cmd = '/opt/cloud/bin/' + script
+        if not os.path.isfile(cmd.split(' ')[0]):
+            cmd = None
+
+    return cmd
+
+
+def execute_shell_script(script):
+    script = script.strip()
+    outputfile = script + '.log'
+
     with open(outputfile, 'wb', 0) as f:
+        cmd = get_cmd(script)
         try:
             p = sp.Popen(shlex.split(cmd), stdout=sp.PIPE, stderr=sp.PIPE)
             stdout, stderr = p.communicate()
