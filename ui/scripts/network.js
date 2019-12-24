@@ -2121,6 +2121,50 @@
                                             });
                                         },
                                         isHidden: true
+                                    },
+                                    ipaddress: {
+                                        label: 'label.ip.address',
+                                        select: function(args) {
+                                            var data = {
+                                                forvirtualnetwork : true,
+                                                allocatedonly: false
+                                            };
+                                            if ('vpc' in args.context) { //from VPC section
+                                                $.extend(data, {
+                                                    zoneid: args.context.vpc[0].zoneid,
+                                                    domainid: args.context.vpc[0].domainid,
+                                                    account: args.context.vpc[0].account
+                                                });
+                                            } else if ('networks' in args.context) { //from Guest Network section
+                                                $.extend(data, {
+                                                    zoneid: args.context.networks[0].zoneid,
+                                                    domainid: args.context.networks[0].domainid,
+                                                    account: args.context.networks[0].account
+                                                });
+                                            }
+                                            $.ajax({
+                                                url: createURL('listPublicIpAddresses'),
+                                                data: data,
+                                                success: function(json) {
+                                                    var ips = json.listpublicipaddressesresponse.publicipaddress;
+                                                    var items = [{
+                                                        id: -1,
+                                                        description: ''
+                                                    }];
+                                                    $(ips).each(function() {
+                                                        if (this.state == "Free") {
+                                                            items.push({
+                                                                id: this.ipaddress,
+                                                                description: this.ipaddress
+                                                            });
+                                                        }
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            })
+                                        }
                                     }
                                 }
                             },
@@ -2149,6 +2193,11 @@
                                     }
                                 }
 
+                                if (args.data.ipaddress != null && args.data.ipaddress.length > 0) {
+                                    $.extend(dataObj, {
+                                        ipaddress: args.data.ipaddress
+                                    });
+                                }
                                 $.ajax({
                                     url: createURL('associateIpAddress'),
                                     data: dataObj,
