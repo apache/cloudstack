@@ -45,10 +45,10 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     protected GetMethod request;
     protected Map<String, String> reqHeaders = new HashMap<>();
 
-    public HttpDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers, int connectTimeout, int soTimeout) {
+    public HttpDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers, Integer connectTimeout, Integer soTimeout) {
         super(url, destPoolPath, templateId, checksum);
-        s_httpClientManager.getParams().setConnectionTimeout(connectTimeout);
-        s_httpClientManager.getParams().setSoTimeout(soTimeout);
+        s_httpClientManager.getParams().setConnectionTimeout(connectTimeout == null ? 5000 : connectTimeout);
+        s_httpClientManager.getParams().setSoTimeout(soTimeout == null ? 5000 : soTimeout);
         client = new HttpClient(s_httpClientManager);
         request = createRequest(url, headers);
         String downloadDir = getDirectDownloadTempPath(templateId);

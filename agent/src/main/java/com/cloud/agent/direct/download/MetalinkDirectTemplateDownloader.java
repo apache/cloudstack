@@ -38,7 +38,7 @@ public class MetalinkDirectTemplateDownloader extends HttpDirectTemplateDownload
     private Random random = new Random();
     private static final Logger s_logger = Logger.getLogger(MetalinkDirectTemplateDownloader.class.getName());
 
-    public MetalinkDirectTemplateDownloader(String url, String destPoolPath, Long templateId, String checksum, Map<String, String> headers, int connectTimeout, int soTimeout) {
+    public MetalinkDirectTemplateDownloader(String url, String destPoolPath, Long templateId, String checksum, Map<String, String> headers, Integer connectTimeout, Integer soTimeout) {
         super(url, templateId, destPoolPath, checksum, headers, connectTimeout, soTimeout);
         metalinkUrl = url;
         metalinkUrls = UriUtils.getMetalinkUrls(metalinkUrl);

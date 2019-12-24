@@ -55,7 +55,7 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
     private CloseableHttpClient httpsClient;
     private HttpUriRequest req;
 
-    public HttpsDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers, int connectTimeout, int soTimeout, int connectionRequestTimeout) {
+    public HttpsDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers, Integer connectTimeout, Integer soTimeout, Integer connectionRequestTimeout) {
         super(url, templateId, destPoolPath, checksum, headers, connectTimeout, soTimeout);
         SSLContext sslcontext = null;
         try {
@@ -65,9 +65,9 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
         }
         SSLConnectionSocketFactory factory = new SSLConnectionSocketFactory(sslcontext, SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
         RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout(connectTimeout)
-                .setConnectionRequestTimeout(connectionRequestTimeout)
-                .setSocketTimeout(soTimeout).build();
+                .setConnectTimeout(connectTimeout == null ? 5000 : connectTimeout)
+                .setConnectionRequestTimeout(connectionRequestTimeout == null ? 5000 : connectionRequestTimeout)
+                .setSocketTimeout(soTimeout == null ? 5000 : soTimeout).build();
         httpsClient = HttpClients.custom().setSSLSocketFactory(factory).setDefaultRequestConfig(config).build();
         createUriRequest(url, headers);
     }

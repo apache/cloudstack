@@ -35,16 +35,19 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
     private PrimaryDataStoreTO destPool;
     private String checksum;
     private Map<String, String> headers;
-    private int connectTimeout;
-    private int soTimeout;
-    private int connectionRequestTimeout;
+    private Integer connectTimeout;
+    private Integer soTimeout;
+    private Integer connectionRequestTimeout;
 
-    protected DirectDownloadCommand (final String url, final Long templateId, final PrimaryDataStoreTO destPool, final String checksum, final Map<String, String> headers) {
+    protected DirectDownloadCommand (final String url, final Long templateId, final PrimaryDataStoreTO destPool, final String checksum, final Map<String, String> headers, final Integer connectTimeout, final Integer soTimeout, final Integer connectionRequestTimeout) {
         this.url = url;
         this.templateId = templateId;
         this.destPool = destPool;
         this.checksum = checksum;
         this.headers = headers;
+        this.connectTimeout = connectTimeout;
+        this.soTimeout = soTimeout;
+        this.connectionRequestTimeout = connectionRequestTimeout;
     }
 
     public String getUrl() {
@@ -67,27 +70,27 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
         return headers;
     }
 
-    public int getConnectTimeout() {
+    public Integer getConnectTimeout() {
         return connectTimeout;
     }
 
-    public void setConnectTimeout(int connectTimeout) {
+    public void setConnectTimeout(Integer connectTimeout) {
         this.connectTimeout = connectTimeout;
     }
 
-    public int getSoTimeout() {
+    public Integer getSoTimeout() {
         return soTimeout;
     }
 
-    public void setSoTimeout(int soTimeout) {
+    public void setSoTimeout(Integer soTimeout) {
         this.soTimeout = soTimeout;
     }
 
-    public int getConnectionRequestTimeout() {
+    public Integer getConnectionRequestTimeout() {
         return connectionRequestTimeout;
     }
 
-    public void setConnectionRequestTimeout(int connectionRequestTimeout) {
+    public void setConnectionRequestTimeout(Integer connectionRequestTimeout) {
         this.connectionRequestTimeout = connectionRequestTimeout;
     }
 
