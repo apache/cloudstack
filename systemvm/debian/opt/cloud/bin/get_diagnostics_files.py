@@ -94,15 +94,18 @@ def execute_shell_script(script):
     outputfile = script + '.log'
 
     with open(outputfile, 'wb', 0) as f:
-        cmd = get_cmd(script)
         try:
-            p = sp.Popen(shlex.split(cmd), stdout=sp.PIPE, stderr=sp.PIPE)
-            stdout, stderr = p.communicate()
-            return_code = p.returncode
-            if return_code is 0:
-                f.write(stdout)
+            cmd = get_cmd(script)
+            if cmd is None:
+                f.write('Unable to generate command for ' + script + ', perhaps missing file')
             else:
-                f.write(stderr)
+                p = sp.Popen(shlex.split(cmd), stdout=sp.PIPE, stderr=sp.PIPE)
+                stdout, stderr = p.communicate()
+                return_code = p.returncode
+                if return_code is 0:
+                    f.write(stdout)
+                else:
+                    f.write(stderr)
         except OSError as ex:
             delete_tmp_file_cmd = 'rm -f %s' % outputfile
             sp.check_call(shlex.split(delete_tmp_file_cmd))
