@@ -29,6 +29,7 @@ import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OriginDeniedException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.RequestLimitException;
 import com.cloud.exception.ResourceAllocationException;
@@ -843,11 +844,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if (userId != null) {
                 final User user = ApiDBUtils.findUserById(userId);
 
-                if (!commandAvailable(remoteAddress, commandName, user)) {
-                    return false;
-                }
-
-                return true;
+                return commandAvailable(remoteAddress, commandName, user);
             } else {
                 // check against every available command to see if the command exists or not
                 if (!s_apiNameCmdClassMap.containsKey(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
@@ -989,7 +986,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, ex.getMessage());
         } catch (final PermissionDeniedException ex) {
             final String errorMessage = "The given command '" + commandName + "' either does not exist, is not available" +
-                    " for user, or not available from ip address '" + remoteAddress + "'.";
+                    " for user.";
+            throw new ServerApiException(ApiErrorCode.UNAUTHORIZED , errorMessage);
+        } catch (final OriginDeniedException ex) {
+            // in this case we can remove the session with extreme prejudice
+            final String errorMessage = "The user '" + user.getUsername() + "' is not allowed to execute commands from ip address '" + remoteAddress.getHostName() + "'.";
             s_logger.debug(errorMessage);
             return false;
         }
@@ -1163,7 +1164,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             s_logger.debug("CIDRs from which account '" + account.toString() + "' is allowed to perform API calls: " + accessAllowedCidrs);
             if (!NetUtils.isIpInCidrList(remoteAddress, accessAllowedCidrs.split(","))) {
                 s_logger.warn("Request by account '" + account.toString() + "' was denied since " + remoteAddress + " does not match " + accessAllowedCidrs);
-                throw new PermissionDeniedException("Calls for domain '" + account.getAccountName() + "' are not allowed from ip address '" + remoteAddress.getHostAddress());
+                throw new OriginDeniedException("Calls from disallowed origin", account, remoteAddress);
                 }
         }
 
