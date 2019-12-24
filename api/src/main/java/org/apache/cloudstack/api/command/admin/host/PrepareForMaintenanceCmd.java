@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.host;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,10 +25,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "prepareHostForMaintenance", description = "Prepares a host for maintenance.", responseObject = HostResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -99,13 +99,17 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        Host result = _resourceService.maintain(this);
-        if (result != null) {
-            HostResponse response = _responseGenerator.createHostResponse(result);
-            response.setResponseName("host");
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to prepare host for maintenance");
+        try {
+            Host result = _resourceService.maintain(this);
+            if (result != null) {
+                HostResponse response = _responseGenerator.createHostResponse(result);
+                response.setResponseName("host");
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to prepare host for maintenance");
+            }
+        } catch (CloudRuntimeException exception) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to prepare host for maintenance due to: " + exception.getMessage());
         }
     }
 }

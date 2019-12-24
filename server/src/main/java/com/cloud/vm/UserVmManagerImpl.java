@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.ScopeType;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -1941,12 +1942,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType, List<String> volumeLocators, int timeout) {
         List<HostVO> neighbors = _resourceMgr.listHostsInClusterByStatus(clusterId, Status.Up);
-        StoragePool storagePool = _storagePoolDao.findPoolByUUID(poolUuid);
+        StoragePoolVO storagePool = _storagePoolDao.findPoolByUUID(poolUuid);
         for (HostVO neighbor : neighbors) {
-            if (storagePool.isManaged()) {
+            // apply filters:
+            // - managed storage
+            // - local storage
+            if (storagePool.isManaged() || storagePool.isLocal()) {
 
                 volumeLocators = getVolumesByHost(neighbor, storagePool);
 
+            }
+
+            // - zone wide storage for specific hypervisortypes
+            if (ScopeType.ZONE.equals(storagePool.getScope()) && storagePool.getHypervisor() != neighbor.getHypervisorType()) {
+                // skip this neighbour if their hypervisor type is not the same as that of the store
+                continue;
             }
 
             GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocators);
@@ -3612,7 +3622,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         short defaultNetworkNumber = 0;
         boolean securityGroupEnabled = false;
-        boolean vpcNetwork = false;
         for (NetworkVO network : networkList) {
             if ((network.getDataCenterId() != zone.getId())) {
                 if (!network.isStrechedL2Network()) {
@@ -3681,14 +3690,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             if (_networkModel.isSecurityGroupSupportedInNetwork(network)) {
                 securityGroupEnabled = true;
-            }
-
-            // vm can't be a part of more than 1 VPC network
-            if (network.getVpcId() != null) {
-                if (vpcNetwork) {
-                    throw new InvalidParameterValueException("Vm can't be a part of more than 1 VPC network");
-                }
-                vpcNetwork = true;
             }
 
             networkNicMap.put(network.getUuid(), profile);
