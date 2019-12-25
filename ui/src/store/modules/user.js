@@ -29,6 +29,7 @@ const user = {
     avatar: '',
     info: {},
     apis: {},
+    features: {},
     project: {},
     asyncJobIds: []
   },
@@ -53,6 +54,9 @@ const user = {
     },
     SET_APIS: (state, apis) => {
       state.apis = apis
+    },
+    SET_FEATURES: (state, features) => {
+      state.features = features
     },
     SET_ASYNC_JOB_IDS: (state, jobsJsonArray) => {
       Vue.ls.set(ASYNC_JOB_IDS, jobsJsonArray)
@@ -86,7 +90,6 @@ const user = {
 
     GetInfo ({ commit }) {
       return new Promise((resolve, reject) => {
-        // Discover allowed APIs
         api('listApis').then(response => {
           const apis = {}
           const apiList = response.listapisresponse.api
@@ -104,7 +107,6 @@ const user = {
           reject(error)
         })
 
-        // Find user info
         api('listUsers').then(response => {
           const result = response.listusersresponse.user[0]
           commit('SET_INFO', result)
@@ -114,6 +116,13 @@ const user = {
           } else {
             commit('SET_AVATAR', 'https://www.gravatar.com/avatar/' + md5('dev@cloudstack.apache.org'))
           }
+        }).catch(error => {
+          reject(error)
+        })
+
+        api('listCapabilities').then(response => {
+          const result = response.listcapabilitiesresponse.capability
+          commit('SET_FEATURES', result)
         }).catch(error => {
           reject(error)
         })

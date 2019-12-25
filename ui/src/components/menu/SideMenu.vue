@@ -85,7 +85,23 @@ export default {
   height: auto;
 
   /deep/ .ant-layout-sider-children {
-    overflow-y: auto;
+    overflow-y: hidden;
+    &:hover {
+      overflow-y: auto;
+    }
+  }
+
+  /deep/ .ant-menu-vertical .ant-menu-item {
+    margin-top: 0px;
+    margin-bottom: 0px;
+  }
+
+  /deep/ .ant-menu-inline .ant-menu-item:not(:last-child) {
+    margin-bottom: 0px;
+  }
+
+  /deep/ .ant-menu-inline .ant-menu-item {
+    margin-top: 0px;
   }
 
   &.ant-fixed-sidemenu {
@@ -99,14 +115,14 @@ export default {
 
     .ant-menu-light {
       border-right-color: transparent;
-      padding: 10px 0;
+      padding: 14px 0;
     }
   }
 
   &.dark {
     .ant-menu-dark {
       border-right-color: transparent;
-      padding: 10px 0;
+      padding: 14px 0;
     }
   }
 }

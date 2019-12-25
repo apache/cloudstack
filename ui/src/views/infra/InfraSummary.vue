@@ -16,11 +16,11 @@
 // under the License.
 
 <template>
-  <a-row :gutter="24">
+  <a-row :gutter="12">
     <a-col :md="24">
       <a-card class="breadcrumb-card">
         <a-col :md="24" style="display: flex">
-          <breadcrumb style="padding-top: 6px" />
+          <breadcrumb style="padding-top: 6px; padding-left: 8px" />
           <a-button
             style="margin-left: 12px; margin-top: 4px"
             :loading="loading"
@@ -141,7 +141,7 @@
     </a-col>
     <a-col
       :md="6"
-      :style="{ marginBottom: '12px', marginTop: '12px' }"
+      style="margin-bottom: 12px"
       v-for="(section, index) in sections"
       v-if="routes[section]"
       :key="index">

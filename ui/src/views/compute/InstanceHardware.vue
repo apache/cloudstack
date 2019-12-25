@@ -665,8 +665,13 @@ export default {
   }
 </style>
 
-<style lang="scss">
-  .wide-modal {
-    min-width: 50vw;
-  }
+<style scoped>
+.wide-modal {
+  min-width: 50vw;
+}
+
+/deep/ .ant-list-item {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
 </style>

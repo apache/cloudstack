@@ -106,7 +106,7 @@ export default {
 <style lang="less" scoped>
 .project {
   &-select {
-    width: 40%;
+    width: 30vw;
   }
 
   &-icon {

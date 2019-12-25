@@ -167,7 +167,27 @@ export const asyncRouterMap = [
       {
         path: '/dashboard',
         name: 'dashboard',
-        meta: { title: 'Dashboard', keepAlive: true, icon: 'dashboard' },
+        meta: {
+          title: 'Dashboard',
+          keepAlive: true,
+          icon: 'dashboard',
+          tabs: [
+            {
+              name: 'Dashboard',
+              component: () => import('@/views/dashboard/UsageDashboardChart')
+            },
+            {
+              name: 'accounts',
+              show: (record, route, user) => { return record.account === user.account || ['Admin', 'DomainAdmin'].includes(user.roletype) },
+              component: () => import('@/views/project/AccountsTab')
+            },
+            {
+              name: 'resources',
+              show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
+              component: () => import('@/views/project/ResourcesTab.vue')
+            }
+          ]
+        },
         component: () => import('@/views/dashboard/Dashboard')
       },
 

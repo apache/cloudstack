@@ -66,6 +66,7 @@ export default {
         case 'Down':
         case 'Error':
         case 'Stopped':
+        case 'Declined':
         case 'Disconnected':
           status = 'error'
           break
@@ -78,6 +79,7 @@ export default {
         case 'Alert':
         case 'Allocated':
         case 'Created':
+        case 'Pending':
           status = 'warning'
           break
       }

@@ -16,49 +16,44 @@
 // under the License.
 
 <template>
-  <div class="footer">
-    <div class="links">
-      CloudStack Server {{ $store.getters.features.cloudstackversion }}
-      <a-divider type="vertical" />
-      <a href="https://github.com/apache/cloudstack-primate/issues/new/choose" target="_blank">
-        <a-icon type="github"/>
-        Report Bug
-      </a>
-    </div>
+  <div>
+    <a-col
+      class="usage-dashboard-chart-tile"
+      :xs="12"
+      :md="8"
+      v-for="stat in stats"
+      :key="stat.type">
+      <chart-card class="usage-dashboard-chart-card" :loading="loading">
+        <router-link :to="{ name: stat.path }">
+          <div class="usage-dashboard-chart-card-inner">
+            <h4>{{ stat.name }}</h4>
+            <h1>{{ stat.count == undefined ? 0 : stat.count }}</h1>
+          </div>
+        </router-link>
+      </chart-card>
+    </a-col>
   </div>
 </template>
 
 <script>
+import ChartCard from '@/components/widgets/ChartCard'
+
 export default {
-  name: 'LayoutFooter',
-  data () {
-    return {
+  name: 'UsageDashboardChart',
+  components: {
+    ChartCard
+  },
+  props: {
+    stats: {
+      type: Array,
+      default () {
+        return []
+      }
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   }
 }
 </script>
-
-<style lang="less" scoped>
-  .footer {
-    padding: 0 16px;
-    margin: 48px 0 24px;
-    text-align: center;
-
-    .links {
-      margin-bottom: 8px;
-
-      a {
-        color: rgba(0, 0, 0, .45);
-
-        &:hover {
-          color: rgba(0, 0, 0, .65);
-        }
-
-      }
-    }
-    .copyright {
-      color: rgba(0, 0, 0, .45);
-      font-size: 14px;
-    }
-  }
-</style>

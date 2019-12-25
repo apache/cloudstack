@@ -36,7 +36,7 @@
             v-for="tab in tabs"
             :tab="$t(tab.name)"
             :key="tab.name"
-            v-if="'show' in tab ? tab.show(resource, $route) : true">
+            v-if="'show' in tab ? tab.show(resource, $route, $store.getters.userInfo) : true">
             <component :is="tab.component" :resource="resource" :loading="loading" :tab="activeTab" />
           </a-tab-pane>
         </a-tabs>
@@ -46,7 +46,6 @@
 </template>
 
 <script>
-
 import DetailsTab from '@/components/view/DetailsTab'
 import InfoCard from '@/components/view/InfoCard'
 import ResourceLayout from '@/layouts/ResourceLayout'

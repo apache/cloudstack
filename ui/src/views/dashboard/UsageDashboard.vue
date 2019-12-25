@@ -17,24 +17,43 @@
 
 <template>
   <a-row class="usage-dashboard" :gutter="12">
-    <a-col
-      :xl="16">
-      <a-row :gutter="12">
-        <a-col
-          class="usage-dashboard-chart-tile"
-          :xs="12"
-          :md="8"
-          v-for="stat in stats"
-          :key="stat.type">
-          <chart-card class="usage-dashboard-chart-card" :loading="loading">
-            <router-link :to="{ name: stat.path }">
-              <div class="usage-dashboard-chart-card-inner">
-                <h4>{{ stat.name }}</h4>
-                <h1>{{ stat.count == undefined ? 0 : stat.count }}</h1>
-              </div>
-            </router-link>
-          </chart-card>
-        </a-col>
+    <a-col :xl="16">
+      <a-row>
+        <a-card>
+          <a-tabs
+            v-if="showProject"
+            :animated="false"
+            @change="onTabChange">
+            <a-tab-pane
+              v-for="tab in $route.meta.tabs"
+              :tab="$t(tab.name)"
+              :key="tab.name"
+              v-if="'show' in tab ? tab.show(project, $route, $store.getters.userInfo) : true">
+              <component
+                :is="tab.component"
+                :resource="project"
+                :loading="loading"
+                :bordered="false"
+                :stats="stats" />
+            </a-tab-pane>
+          </a-tabs>
+          <a-col
+            v-else
+            class="usage-dashboard-chart-tile"
+            :xs="12"
+            :md="8"
+            v-for="stat in stats"
+            :key="stat.type">
+            <chart-card class="usage-dashboard-chart-card" :loading="loading">
+              <router-link :to="{ name: stat.path }">
+                <div class="usage-dashboard-chart-card-inner">
+                  <h4>{{ stat.name }}</h4>
+                  <h1>{{ stat.count == undefined ? 0 : stat.count }}</h1>
+                </div>
+              </router-link>
+            </chart-card>
+          </a-col>
+        </a-card>
       </a-row>
     </a-col>
     <a-col
@@ -64,22 +83,44 @@
 
 <script>
 import { api } from '@/api'
+import store from '@/store'
 
 import ChartCard from '@/components/widgets/ChartCard'
+import UsageDashboardChart from '@/views/dashboard/UsageDashboardChart'
 
 export default {
   name: 'UsageDashboard',
   components: {
-    ChartCard
+    ChartCard,
+    UsageDashboardChart
+  },
+  props: {
+    resource: {
+      type: Object,
+      default () {
+        return []
+      }
+    },
+    showProject: {
+      type: Boolean,
+      default: false
+    }
   },
   data () {
     return {
       loading: false,
+      showAction: false,
+      showAddAccount: false,
       events: [],
-      stats: []
+      stats: [],
+      project: {}
     }
   },
+  beforeCreate () {
+    this.form = this.$form.createForm(this)
+  },
   mounted () {
+    this.project = store.getters.project
     this.fetchData()
   },
   watch: {
@@ -87,6 +128,9 @@ export default {
       if (to.name === 'dashboard') {
         this.fetchData()
       }
+    },
+    resource (newData, oldData) {
+      this.project = newData
     }
   },
   methods: {
@@ -159,6 +203,13 @@ export default {
         return 'green'
       }
       return 'blue'
+    },
+    onTabChange (key) {
+      this.showAddAccount = false
+
+      if (key !== 'Dashboard') {
+        this.showAddAccount = true
+      }
     }
   }
 }

@@ -34,7 +34,7 @@
     </template>
 
     <div slot="expandedRowRender" slot-scope="resource">
-      <info-card :resource="resource" style="margin-right: 50px">
+      <info-card :resource="resource" style="margin-left: 0px; width: 50%">
         <div slot="actions" style="padding-top: 12px">
           <a-tooltip
             v-for="(action, actionIndex) in $route.meta.actions"
@@ -48,12 +48,10 @@
                 ('show' in action ? action.show(resource, $store.getters.userInfo) : true)"
               :icon="action.icon"
               :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
-              shape="round"
-              size="small"
+              shape="circle"
               style="margin-right: 5px; margin-top: 12px"
               @click="$parent.execAction(action)"
             >
-              {{ $t(action.label) }}
             </a-button>
           </a-tooltip>
         </div>

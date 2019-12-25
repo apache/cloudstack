@@ -23,6 +23,22 @@ export default {
   resourceType: 'Project',
   columns: ['name', 'state', 'displaytext', 'account', 'domain'],
   details: ['name', 'id', 'displaytext', 'projectaccountname', 'vmtotal', 'cputotal', 'memorytotal', 'volumetotal', 'iptotal', 'vpctotal', 'templatetotal', 'primarystoragetotal', 'account', 'domain'],
+  tabs: [
+    {
+      name: 'details',
+      component: () => import('@/components/view/DetailsTab.vue')
+    },
+    {
+      name: 'accounts',
+      show: (record, route, user) => { return record.account === user.account || ['Admin', 'DomainAdmin'].includes(user.roletype) },
+      component: () => import('@/views/project/AccountsTab.vue')
+    },
+    {
+      name: 'resources',
+      show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
+      component: () => import('@/views/project/ResourcesTab.vue')
+    }
+  ],
   actions: [
     {
       api: 'createProject',
@@ -30,6 +46,27 @@ export default {
       label: 'New Project',
       listView: true,
       args: ['name', 'displaytext']
+    },
+    {
+      api: 'updateProjectInvitation',
+      icon: 'key',
+      label: 'label.enter.token',
+      listView: true,
+      popup: true,
+      component: () => import('@/views/project/InvitationTokenTemplate.vue')
+    },
+    {
+      api: 'listProjectInvitations',
+      icon: 'team',
+      label: 'label.project.invitation',
+      listView: true,
+      popup: true,
+      showBadge: true,
+      badgeNum: 0,
+      param: {
+        state: 'Pending'
+      },
+      component: () => import('@/views/project/InvitationsTemplate.vue')
     },
     {
       api: 'updateProject',
@@ -58,6 +95,7 @@ export default {
       label: 'Add Account to Project',
       dataView: true,
       args: ['projectid', 'account', 'email'],
+      show: (record, user) => { return record.account === user.account || ['Admin', 'DomainAdmin'].includes(user.roletype) },
       mapping: {
         projectid: {
           value: (record) => { return record.id }
