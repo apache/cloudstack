@@ -645,7 +645,7 @@ export default {
 <style lang="less" scoped>
 
 /deep/ .ant-card-body {
-  padding: 36px;
+  padding: 48px;
 }
 
 .resource-details {
@@ -655,6 +655,7 @@ export default {
     margin: 0 auto;
     width: 104px;
     //height: 104px;
+    margin-top: 20px;
     margin-bottom: 20px;
     border-radius: 50%;
     overflow: hidden;
