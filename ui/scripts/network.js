@@ -2147,10 +2147,7 @@
                                                 data: data,
                                                 success: function(json) {
                                                     var ips = json.listpublicipaddressesresponse.publicipaddress;
-                                                    var items = [{
-                                                        id: -1,
-                                                        description: ''
-                                                    }];
+                                                    var items = [];
                                                     $(ips).each(function() {
                                                         if (this.state == "Free") {
                                                             items.push({
