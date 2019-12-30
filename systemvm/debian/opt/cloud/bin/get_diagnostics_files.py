@@ -99,7 +99,7 @@ def execute_shell_script(script):
             if cmd is None:
                 f.write('Unable to generate command for ' + script + ', perhaps missing file')
             else:
-                p = sp.Popen(shlex.split(cmd), stdout=sp.PIPE, stderr=sp.PIPE)
+                p = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
                 stdout, stderr = p.communicate()
                 return_code = p.returncode
                 if return_code is 0:
