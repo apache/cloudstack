@@ -28,9 +28,14 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Upload;
-import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import com.cloud.storage.TemplateOVFPropertyVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.TemplateOVFPropertiesDao;
+import com.cloud.template.TemplateApiService;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -62,9 +67,6 @@ import com.cloud.agent.api.storage.GetDatadisksCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.alert.AlertManager;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
@@ -106,6 +108,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     ResourceLimitService _resourceLimitMgr;
     @Inject
     TemplateOVFPropertiesDao templateOvfPropertiesDao;
+    @Inject
+    TemplateApiService templateApiService;
 
     protected String _proxy = null;
 
@@ -246,6 +250,10 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 VMTemplateVO templateDaoBuilder = _templateDao.createForUpdate();
                 templateDaoBuilder.setChecksum(answer.getCheckSum());
                 _templateDao.update(obj.getId(), templateDaoBuilder);
+            }
+            if(_templateDao.findById(obj.getId()).getTemplateType() == Storage.TemplateType.SYSTEM &&
+                    _templateDao.findById(obj.getId()).isActivateAfterUpload()) {
+                templateApiService.activateSystemVMTemplate(obj.getId());
             }
             if (CollectionUtils.isNotEmpty(ovfProperties)) {
                 persistOVFProperties(ovfProperties, obj.getId());
