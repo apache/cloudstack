@@ -129,6 +129,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
@@ -2355,8 +2356,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new CloudRuntimeException("Unable to find template for seeding.");
         }
 
+        String tempFolder = FileUtils.getTempDirectory().getAbsolutePath();
         // mount locally
-        String mountPoint = "/tmp/nfsmount";
+        String mountPoint = tempFolder + "/nfsmount";
         int result = Script.runSimpleBashScriptForExitValue("mkdir -p " + mountPoint, 10000);
         if (result != 0){
             throw new CloudRuntimeException("Unable to create temporary mount folders.");
@@ -2396,7 +2398,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             String downloadedFileName = "";
             if (cmd.getLocalFile()){
                 // File location on management server
-                inputFile = "/tmp/upload/" + cmd.getTemplateId();
+                inputFile = tempFolder + "/upload/" + cmd.getTemplateId();
             } else {
 
                 URI downloadURI;
@@ -2410,16 +2412,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 downloadedFileName = downloadPath.substring(downloadPath.lastIndexOf("/"));
 
                 startDownloadTemplate(template.getId(), cmd.getId());
-                download(cmd.getUrl(), "/tmp" + downloadedFileName);
-
-                inputFile = "/tmp" + downloadedFileName;
+                download(cmd.getUrl(), tempFolder + downloadedFileName);
+                inputFile = tempFolder + downloadedFileName;
             }
 
             startInstallTemplate(template.getId(), cmd.getId());
             // Decompress file
-            boolean decompressed = decompressFile(inputFile, "/tmp/" + template.getUuid() + "." + fileExtension);
+            boolean decompressed = decompressFile(inputFile, tempFolder + "/" + template.getUuid() + "." + fileExtension);
             if (decompressed) {
-                inputFile = "/tmp/" + template.getUuid() + "." + fileExtension;
+                inputFile = tempFolder + "/" + template.getUuid() + "." + fileExtension;
             }
 
             Long userId = CallContext.current().getCallingUserId();
