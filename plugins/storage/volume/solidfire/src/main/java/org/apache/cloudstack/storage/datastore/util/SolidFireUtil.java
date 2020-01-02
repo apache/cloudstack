@@ -683,7 +683,7 @@ public class SolidFireUtil {
         return null;
     }
 
-    public static void placeVolumeInVolumeAccessGroups(SolidFireConnection sfConnection, long sfVolumeId, List<HostVO> hosts) {
+    public static void placeVolumeInVolumeAccessGroups(SolidFireConnection sfConnection, long sfVolumeId, List<HostVO> hosts, long clusterId) {
         if (!SolidFireUtil.hostsSupport_iScsi(hosts)) {
             String errMsg = "Not all hosts in the compute cluster support iSCSI.";
 
@@ -692,10 +692,39 @@ public class SolidFireUtil {
             throw new CloudRuntimeException(errMsg);
         }
 
+        //get list of VAGs from solidfire
         List<SolidFireUtil.SolidFireVag> sfVags = SolidFireUtil.getAllVags(sfConnection);
 
-        Map<SolidFireUtil.SolidFireVag, List<String>> sfVagToIqnsMap = new HashMap<>();
+        //check if VAG exists
+        Boolean clusterVagExists = false;
+        SolidFireUtil.SolidFireVag sfVagMatchingClusterId;
+        for (SolidFireUtil.SolidFireVag sfVag : sfVags) {
 
+            if(sfVag.getName() == "CloudStack-"+clusterId){
+                clusterVagExists = true;
+                sfVagMatchingClusterId = sfVag;
+            }
+        }
+        //use existing VAG
+        if (clusterVagExists) {
+            LOGGER.info("Using existing volume access group CloudStack-"+clusterId);
+            if (!SolidFireUtil.isVolumeIdInSfVag(sfVolumeId, sfVagMatchingClusterId)) {
+                SolidFireUtil.addVolumeIdsToSolidFireVag(sfConnection, sfVagMatchingClusterId.getId(), new Long[] { sfVolumeId });
+            }
+        } else {
+            LOGGER.info("Creating volume access group CloudStack-"+clusterId);
+            List<String> IQNsInCluster = new List<String>;
+            for (HostVO hostVO : hosts) {
+                String iqn = hostVO.getStorageUrl();
+                IQNsInCluster.add(iqn);
+            }
+            SolidFireUtil.createVag(sfConnection, "CloudStack-" + clusterId,
+                    IQNsInCluster.toArray(new String[0]), new long[] { sfVolumeId });
+        }
+
+        // legacy code
+        // populate vag to host(iqn) map
+        Map<SolidFireUtil.SolidFireVag, List<String>> sfVagToIqnsMap = new HashMap<>();
         for (HostVO hostVO : hosts) {
             String iqn = hostVO.getStorageUrl();
 
@@ -706,16 +735,19 @@ public class SolidFireUtil {
             iqnsInVag.add(iqn);
         }
 
+        // throw exception if more than 4 vags
         if (sfVagToIqnsMap.size() > MAX_NUM_VAGS_PER_VOLUME) {
             throw new CloudRuntimeException("A SolidFire volume can be in at most four volume access groups simultaneously.");
         }
 
+        // add volumeid to each vag if not already present
         for (SolidFireUtil.SolidFireVag sfVag : sfVagToIqnsMap.keySet()) {
             if (sfVag != null) {
                 if (!SolidFireUtil.isVolumeIdInSfVag(sfVolumeId, sfVag)) {
                     SolidFireUtil.addVolumeIdsToSolidFireVag(sfConnection, sfVag.getId(), new Long[] { sfVolumeId });
                 }
             }
+            // if no vags associated with hosts or iqns create a vag with random uuid
             else {
                 List<String> iqnsNotInVag = sfVagToIqnsMap.get(null);
 
@@ -1245,7 +1277,7 @@ public class SolidFireUtil {
 
         if (vags != null) {
             for (VolumeAccessGroup vag : vags) {
-                SolidFireVag sfVag = new SolidFireVag(vag.getVolumeAccessGroupID(), vag.getInitiators(), toPrimitive(vag.getVolumes()));
+                SolidFireVag sfVag = new SolidFireVag(vag.getVolumeAccessGroupID(), vag.getInitiators(), toPrimitive(vag.getVolumes()), vag.getName());
 
                 lstSolidFireVags.add(sfVag);
             }
@@ -1258,11 +1290,13 @@ public class SolidFireUtil {
         private final long _id;
         private final String[] _initiators;
         private final long[] _volumeIds;
+        private final String _name;
 
-        SolidFireVag(long id, String[] initiators, long[] volumeIds) {
+        SolidFireVag(long id, String[] initiators, long[] volumeIds, String name) {
             _id = id;
             _initiators = initiators;
             _volumeIds = volumeIds;
+            _name = name;
         }
 
         public long getId() {
@@ -1276,6 +1310,8 @@ public class SolidFireUtil {
         public long[] getVolumeIds() {
             return _volumeIds;
         }
+
+        public String getName() { return _name; }
 
         @Override
         public int hashCode() {

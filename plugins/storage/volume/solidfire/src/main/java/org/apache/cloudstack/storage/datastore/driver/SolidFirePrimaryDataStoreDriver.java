@@ -171,7 +171,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, storagePoolDetailsDao);
 
-            SolidFireUtil.placeVolumeInVolumeAccessGroups(sfConnection, sfVolumeId, hosts);
+            SolidFireUtil.placeVolumeInVolumeAccessGroups(sfConnection, sfVolumeId, hosts, clusterId);
 
             return true;
         }
