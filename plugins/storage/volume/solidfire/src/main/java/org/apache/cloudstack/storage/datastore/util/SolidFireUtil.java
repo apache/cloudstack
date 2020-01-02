@@ -1290,13 +1290,13 @@ public class SolidFireUtil {
         private final long _id;
         private final String[] _initiators;
         private final long[] _volumeIds;
-        private final String _name;
+        private final String _vagName;
 
         SolidFireVag(long id, String[] initiators, long[] volumeIds, String name) {
             _id = id;
             _initiators = initiators;
             _volumeIds = volumeIds;
-            _name = name;
+            _vagName = name;
         }
 
         public long getId() {
@@ -1311,7 +1311,7 @@ public class SolidFireUtil {
             return _volumeIds;
         }
 
-        public String getName() { return _name; }
+        public String getName() { return _vagName; }
 
         @Override
         public int hashCode() {
