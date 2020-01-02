@@ -223,9 +223,10 @@ def secureCopyToHost(session, args):
     txt=""
     try:
         txt = util.pread2(['scp','-P','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud', src_target, host_filepath])
+        util.pread2(['chmod', 'a+r', os.path.join(host_filepath, os.path.basename(src_filepath))])
         txt = 'success#' + txt
     except:
-        logging.debug("failed to scp source target " + src_target + " to host at file path " + host_filepath)
+        logging.error("failed to scp source target " + src_target + " to host at file path " + host_filepath)
         txt = 'fail#' + txt
     return txt
 

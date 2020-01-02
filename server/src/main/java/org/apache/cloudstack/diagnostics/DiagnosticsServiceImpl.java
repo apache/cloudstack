@@ -351,7 +351,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
                 success = fileInSecondaryStore.exists();
             } catch (Exception e) {
                 String msg = String.format("Exception caught during scp from %s to secondary store %s: ", vmSshIp, dataDirectoryInSecondaryStore);
-                LOGGER.error(msg);
+                LOGGER.error(msg, e);
                 return new Pair<>(false, msg);
             } finally {
                 // umount secondary storage
