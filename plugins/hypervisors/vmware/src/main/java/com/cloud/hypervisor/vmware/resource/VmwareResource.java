@@ -209,6 +209,7 @@ import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
+import com.cloud.hypervisor.vmware.mo.DistributedVirtualSwitchMO;
 import com.cloud.hypervisor.vmware.mo.FeatureKeyConstants;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
@@ -6966,7 +6967,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                     VmwareDistributedVirtualSwitchPvlanSpec pvlanSpec = (VmwareDistributedVirtualSwitchPvlanSpec) settings.getVlan();
                                     s_logger.trace("Found port " + dvPort.getKey() + " with pvlan " + pvlanSpec.getPvlanId());
                                     if (pvlanSpec.getPvlanId() > 0 && pvlanSpec.getPvlanId() < 4095) {
-                                        instanceNic.setVlan(pvlanSpec.getPvlanId());
+                                        DistributedVirtualSwitchMO dvSwitchMo = new DistributedVirtualSwitchMO(vmMo.getContext(), dvSwitch);
+                                        Pair<Integer, HypervisorHostHelper.PvlanType> vlanDetails = dvSwitchMo.retrieveVlanFromPvlan(pvlanSpec.getPvlanId(), dvSwitch);
+                                        if (vlanDetails != null && vlanDetails.first() != null && vlanDetails.second() != null) {
+                                            instanceNic.setVlan(vlanDetails.first());
+                                            instanceNic.setPvlan(pvlanSpec.getPvlanId());
+                                            instanceNic.setPvlanType(vlanDetails.second().toString());
+                                        }
                                     }
                                 }
                                 break;

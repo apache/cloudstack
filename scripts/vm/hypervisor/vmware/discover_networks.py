@@ -110,6 +110,8 @@ def get_vm_nics(vm, hostPgDict):
                 dev_backing = dev.backing
                 portGroup = None
                 vlanId = None
+                isolatedPvlan = None
+                isolatedPvlanType = None
                 vSwitch = None
                 if hasattr(dev_backing, 'port'):
                     portGroupKey = dev.backing.port.portgroupKey
@@ -117,16 +119,26 @@ def get_vm_nics(vm, hostPgDict):
                     try:
                         dvs = content.dvSwitchManager.QueryDvsByUuid(dvsUuid)
                     except:
-                        portGroup = "** Error: DVS not found **"
-                        vlanId = "NA"
-                        vSwitch = "NA"
+                        log_message('\tError: Unable retrieve details for distributed vSwitch ' + dvsUuid)
+                        portGroup = ''
+                        vlanId = ''
+                        vSwitch = ''
                     else:
                         pgObj = dvs.LookupDvPortGroup(portGroupKey)
                         portGroup = pgObj.config.name
                         try:
-                            vlanId = str(pgObj.config.defaultPortConfig.vlan.vlanId)
+                            if isinstance(pgObj.config.defaultPortConfig.vlan, vim.dvs.VmwareDistributedVirtualSwitch.PvlanSpec):
+                                for pvlanConfig in dvs.config.pvlanConfig:
+                                    if pvlanConfig.secondaryVlanId == pgObj.config.defaultPortConfig.vlan.pvlanId:
+                                        vlanId = str(pvlanConfig.primaryVlanId)
+                                        isolatedPvlanType = pvlanConfig.pvlanType
+                                        isolatedPvlan = str(pgObj.config.defaultPortConfig.vlan.pvlanId)
+                                        break
+                            else:
+                                vlanId = str(pgObj.config.defaultPortConfig.vlan.vlanId)
                         except AttributeError:
-                            vlanId = '0'
+                            log_message('\tError: Unable retrieve details for portgroup ' + portGroup)
+                            vlanId = ''
                         vSwitch = str(dvs.name)
                 else:
                     portGroup = dev.backing.network.name
@@ -138,11 +150,9 @@ def get_vm_nics(vm, hostPgDict):
                             vlanId = str(p.spec.vlanId)
                             vSwitch = str(p.spec.vswitchName)
                 if portGroup is None:
-                    portGroup = 'NA'
+                    portGroup = ''
                 if vlanId is None:
-                    vlanId = 'NA'
-                if vSwitch is None:
-                    vSwitch = 'NA'
+                    vlanId = ''
                 vmHostName = None
                 vmClusterName = None
                 try:
@@ -153,14 +163,14 @@ def get_vm_nics(vm, hostPgDict):
                     vmClusterName = vm.runtime.host.parent.name
                 except AttributeError:
                     vmClusterName = ''
-                add_network(portGroup, vlanId, vSwitch, vm.name, dev.deviceInfo.label, dev.macAddress, vmClusterName, vmHostName)
+                add_network(portGroup, vlanId, isolatedPvlanType, isolatedPvlan, vSwitch, vm.name, dev.deviceInfo.label, dev.macAddress, vmClusterName, vmHostName)
                 log_message('\t\t' + dev.deviceInfo.label + '->' + dev.macAddress +
                       ' @ ' + vSwitch + '->' + portGroup +
                       ' (VLAN ' + vlanId + ')')
     except AttributeError:
         log_message('\tError: Unable retrieve details for ' + vm.name)
 
-def add_network(portGroup, vlanId, vSwitch, vmName, vmDeviceLabel, vmMacAddress, vmClusterName, vmHostName):
+def add_network(portGroup, vlanId, isolatedPvlanType, isolatedPvlan, vSwitch, vmName, vmDeviceLabel, vmMacAddress, vmClusterName, vmHostName):
     key = vSwitch + '->' + portGroup + ' (VLAN ' + vlanId + ')'
     device = {"label": vmDeviceLabel, "macaddress": vmMacAddress}
     vm = {"name":vmName, "device": device}
@@ -179,7 +189,13 @@ def add_network(portGroup, vlanId, vSwitch, vmName, vmDeviceLabel, vmMacAddress,
         except KeyError:
             cluster = vmClusterName
         
-        network = {"portgroup": portGroup, "cluster": cluster, "host": host, "vlanid": vlanId, "switch": vSwitch, "virtualmachines": vms}
+        network = {"portgroup": portGroup, "cluster": cluster, "host": host, "switch": vSwitch, "virtualmachines": vms}
+        if vlanId != '':
+            network["vlanid"] = vlanId
+        if isolatedPvlan is not None:
+            network["isolatedpvlan"] = isolatedPvlan
+        if isolatedPvlanType is not None:
+            network["isolatedpvlantype"] = isolatedPvlanType
         networksDict[key] = network
 
 

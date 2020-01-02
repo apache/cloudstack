@@ -270,6 +270,10 @@ public class UnmanagedInstanceTO {
 
         private Integer vlan;
 
+        private Integer pvlan;
+
+        private String pvlanType;
+
         private List<String> ipAddress;
 
         private String pciSlot;
@@ -312,6 +316,22 @@ public class UnmanagedInstanceTO {
 
         public void setVlan(Integer vlan) {
             this.vlan = vlan;
+        }
+
+        public Integer getPvlan() {
+            return pvlan;
+        }
+
+        public void setPvlan(Integer pvlan) {
+            this.pvlan = pvlan;
+        }
+
+        public String getPvlanType() {
+            return pvlanType;
+        }
+
+        public void setPvlanType(String pvlanType) {
+            this.pvlanType = pvlanType;
         }
 
         public List<String> getIpAddress() {

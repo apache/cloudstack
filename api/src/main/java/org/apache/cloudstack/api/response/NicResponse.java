@@ -118,6 +118,14 @@ public class NicResponse extends BaseResponse {
     @Param(description = "ID of the VLAN/VNI if available", since="4.14.0")
     private Integer vlanId;
 
+    @SerializedName(ApiConstants.ISOLATED_PVLAN)
+    @Param(description = "the isolated private VLAN if available", since="4.14.0")
+    private Integer isolatedPvlanId;
+
+    @SerializedName(ApiConstants.ISOLATED_PVLAN_TYPE)
+    @Param(description = "the isolated private VLAN type if available", since="4.14.0")
+    private String isolatedPvlanType;
+
     @SerializedName(ApiConstants.ADAPTER_TYPE)
     @Param(description = "Type of adapter if available", since="4.14.0")
     private String adapterType;
@@ -323,6 +331,22 @@ public class NicResponse extends BaseResponse {
 
     public void setVlanId(Integer vlanId) {
         this.vlanId = vlanId;
+    }
+
+    public Integer getIsolatedPvlanId() {
+        return isolatedPvlanId;
+    }
+
+    public void setIsolatedPvlanId(Integer isolatedPvlanId) {
+        this.isolatedPvlanId = isolatedPvlanId;
+    }
+
+    public String getIsolatedPvlanType() {
+        return isolatedPvlanType;
+    }
+
+    public void setIsolatedPvlanType(String isolatedPvlanType) {
+        this.isolatedPvlanType = isolatedPvlanType;
     }
 
     public String getAdapterType() {
