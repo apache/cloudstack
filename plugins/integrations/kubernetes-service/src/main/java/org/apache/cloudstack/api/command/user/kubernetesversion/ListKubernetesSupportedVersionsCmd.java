@@ -64,13 +64,13 @@ public class ListKubernetesSupportedVersionsCmd extends BaseListCmd {
             description = "the ID of the zone in which Kubernetes supported version will be available")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.MIN_KUBERNETES_VERSION, type = CommandType.STRING,
-            description = "the minimum Kubernetes version")
-    private String minimumKubernetesVersion;
+    @Parameter(name = ApiConstants.MIN_SEMANTIC_VERSION, type = CommandType.STRING,
+            description = "the minimum semantic version for the Kubernetes supported version to be listed")
+    private String minimumSemanticVersion;
 
     @Parameter(name = ApiConstants.MIN_KUBERNETES_VERSION_ID, type = CommandType.UUID,
             entityType = KubernetesSupportedVersionResponse.class,
-            description = "the ID of the minimum Kubernetes version")
+            description = "the ID of the minimum Kubernetes supported version")
     private Long minimumKubernetesVersionId;
 
     /////////////////////////////////////////////////////
@@ -84,12 +84,12 @@ public class ListKubernetesSupportedVersionsCmd extends BaseListCmd {
         return zoneId;
     }
 
-    public String getMinimumKubernetesVersion() {
-        if(!Strings.isNullOrEmpty(minimumKubernetesVersion) &&
-                !minimumKubernetesVersion.matches("[0-9]+(\\.[0-9]+)*")) {
+    public String getMinimumSemanticVersion() {
+        if(!Strings.isNullOrEmpty(minimumSemanticVersion) &&
+                !minimumSemanticVersion.matches("[0-9]+(\\.[0-9]+)*")) {
             throw new IllegalArgumentException("Invalid version format");
         }
-        return minimumKubernetesVersion;
+        return minimumSemanticVersion;
     }
 
     public Long getMinimumKubernetesVersionId() {

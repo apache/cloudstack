@@ -35,18 +35,15 @@ UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=285 AND display_name=
 UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=286 AND display_name="Red Hat Enterprise Linux 8.0";
 
 -- Kubernetes service
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server',
-'cloud.kubernetes.service.enabled', 'false', 'Indicates whether Kubernetes Service plugin is enabled or not. Management server restart needed on change', 'false', NULL, NULL, 0);
-
 CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_supported_version` (
-    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-    `uuid` varchar(40) DEFAULT NULL COMMENT 'uuid',
-    `name` varchar(255) NOT NULL COMMENT 'kubernetes version name',
-    `kubernetes_version` varchar(32) NOT NULL COMMENT 'kubernetes semantic version',
-    `iso_id` bigint unsigned NOT NULL COMMENT 'kubernetes version binary ISO id',
-    `zone_id` bigint unsigned DEFAULT NULL COMMENT 'zone id in which kubernetes version is available',
+    `id` bigint unsigned NOT NULL auto_increment,
+    `uuid` varchar(40) DEFAULT NULL,
+    `name` varchar(255) NOT NULL COMMENT 'the name of this Kubernetes version',
+    `semantic_version` varchar(32) NOT NULL COMMENT 'the semantic version for this Kubernetes version',
+    `iso_id` bigint unsigned NOT NULL COMMENT 'the ID of the binaries ISO for this Kubernetes version',
+    `zone_id` bigint unsigned DEFAULT NULL COMMENT 'the ID of the zone for which this Kubernetes version is made available',
     `created` datetime NOT NULL COMMENT 'date created',
-    `removed` datetime COMMENT 'date removed if not null',
+    `removed` datetime COMMENT 'date removed or null, if still present',
 
     PRIMARY KEY(`id`),
     CONSTRAINT `fk_kubernetes_supported_version__iso_id` FOREIGN KEY `fk_kubernetes_supported_version__iso_id`(`iso_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE,
@@ -54,28 +51,28 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_supported_version` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster` (
-    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `id` bigint unsigned NOT NULL auto_increment,
     `uuid` varchar(40) DEFAULT NULL,
     `name` varchar(255) NOT NULL,
-    `description` varchar(4096) COMMENT 'display text for this kubernetes cluster',
-    `zone_id` bigint unsigned NOT NULL COMMENT 'zone id',
-    `kubernetes_version_id` bigint unsigned NOT NULL COMMENT 'kubernetes version id for the cluster',
+    `description` varchar(4096) COMMENT 'display text for this Kubernetes cluster',
+    `zone_id` bigint unsigned NOT NULL COMMENT 'the ID of the zone in which this Kubernetes cluster is deployed',
+    `kubernetes_version_id` bigint unsigned NOT NULL COMMENT 'the ID of the Kubernetes version of this Kubernetes cluster',
     `service_offering_id` bigint unsigned COMMENT 'service offering id for the cluster VM',
-    `template_id` bigint unsigned COMMENT 'vm_template.id',
-    `network_id` bigint unsigned COMMENT 'network this kubernetes cluster uses',
-    `master_node_count` bigint NOT NULL default '0',
-    `node_count` bigint NOT NULL default '0',
-    `account_id` bigint unsigned NOT NULL COMMENT 'owner of this cluster',
-    `domain_id` bigint unsigned NOT NULL COMMENT 'owner of this cluster',
-    `state` char(32) NOT NULL COMMENT 'current state of this cluster',
+    `template_id` bigint unsigned COMMENT 'the ID of the template used by this Kubernetes cluster',
+    `network_id` bigint unsigned COMMENT 'the ID of the network used by this Kubernetes cluster',
+    `master_node_count` bigint NOT NULL default '0' COMMENT 'the number of the master nodes deployed for this Kubernetes cluster',
+    `node_count` bigint NOT NULL default '0' COMMENT 'the number of the worker nodes deployed for this Kubernetes cluster',
+    `account_id` bigint unsigned NOT NULL COMMENT 'the ID of owner account of this Kubernetes cluster',
+    `domain_id` bigint unsigned NOT NULL COMMENT 'the ID of the domain of this cluster',
+    `state` char(32) NOT NULL COMMENT 'the current state of this Kubernetes cluster',
     `key_pair` varchar(40),
-    `cores` bigint unsigned NOT NULL COMMENT 'number of cores',
-    `memory` bigint unsigned NOT NULL COMMENT 'total memory',
+    `cores` bigint unsigned NOT NULL COMMENT 'total number of CPU cores used by this Kubernetes cluster',
+    `memory` bigint unsigned NOT NULL COMMENT 'total memory used by this Kubernetes cluster',
     `node_root_disk_size` bigint(20) unsigned DEFAULT 0 COMMENT 'root disk size of root disk for each node',
-    `endpoint` varchar(255) COMMENT 'url endpoint of the kubernetes cluster manager api access',
+    `endpoint` varchar(255) COMMENT 'url endpoint of the Kubernetes cluster manager api access',
     `created` datetime NOT NULL COMMENT 'date created',
-    `removed` datetime COMMENT 'date removed if not null',
-    `gc` tinyint unsigned NOT NULL DEFAULT 1 COMMENT 'gc this kubernetes cluster or not',
+    `removed` datetime COMMENT 'date removed or null, if still present',
+    `gc` tinyint unsigned NOT NULL DEFAULT 1 COMMENT 'gc this Kubernetes cluster or not',
 
     PRIMARY KEY(`id`),
     CONSTRAINT `fk_cluster__zone_id` FOREIGN KEY `fk_cluster__zone_id`(`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
@@ -86,29 +83,35 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster_vm_map` (
-    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-    `cluster_id` bigint unsigned NOT NULL COMMENT 'cluster id',
-    `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
+    `id` bigint unsigned NOT NULL auto_increment,
+    `cluster_id` bigint unsigned NOT NULL COMMENT 'the ID of the Kubernetes cluster',
+    `vm_id` bigint unsigned NOT NULL COMMENT 'the ID of the VM',
 
     PRIMARY KEY(`id`),
     CONSTRAINT `fk_kubernetes_cluster_vm_map__cluster_id` FOREIGN KEY `fk_kubernetes_cluster_vm_map__cluster_id`(`cluster_id`) REFERENCES `kubernetes_cluster`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster_details` (
-    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-    `cluster_id` bigint unsigned NOT NULL COMMENT 'kubernetes cluster id',
+    `id` bigint unsigned NOT NULL auto_increment,
+    `cluster_id` bigint unsigned NOT NULL COMMENT 'the ID of the Kubernetes cluster',
     `name` varchar(255) NOT NULL,
     `value` varchar(10240) NOT NULL,
-    `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+    `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user else false',
 
     PRIMARY KEY(`id`),
     CONSTRAINT `fk_kubernetes_cluster_details__cluster_id` FOREIGN KEY `fk_kubernetes_cluster_details__cluster_id`(`cluster_id`) REFERENCES `kubernetes_cluster`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server',
-'cloud.kubernetes.cluster.template.name', "Kubernetes-Service-Template", 'Name of the template to be used for creating Kubernetes cluster nodes', 'Kubernetes-Service-Template', NULL, NULL, 0);
-
-INSERT IGNORE INTO `cloud`.`network_offerings` (name, uuid, unique_name, display_text, nw_rate, mc_rate, traffic_type, tags, system_only, specify_vlan, service_offering_id, conserve_mode, created,availability, dedicated_lb_service, shared_source_nat_service, sort_key, redundant_router_service, state, guest_type, elastic_ip_service, eip_associate_public_ip, elastic_lb_service, specify_ip_ranges, inline,is_persistent,internal_lb, public_lb, egress_default_policy, concurrent_connections, keep_alive_enabled, supports_streched_l2, `default`, removed) VALUES ('DefaultNetworkOfferingforKubernetesService', UUID(), 'DefaultNetworkOfferingforKubernetesService', 'Network Offering used for CloudStack kubernetes service', NULL,NULL,'Guest',NULL,0,0,NULL,1,now(),'Required',1,0,0,0,'Enabled','Isolated',0,1,0,0,0,0,0,1,1,NULL,0,0,0,NULL);
+INSERT IGNORE INTO `cloud`.`network_offerings` (name, uuid, unique_name, display_text, nw_rate, mc_rate, traffic_type,
+    tags, system_only, specify_vlan, service_offering_id, conserve_mode, created, availability, dedicated_lb_service,
+    shared_source_nat_service, sort_key, redundant_router_service, state, guest_type, elastic_ip_service,
+    eip_associate_public_ip, elastic_lb_service, specify_ip_ranges, inline, is_persistent, internal_lb, public_lb,
+    egress_default_policy, concurrent_connections, keep_alive_enabled, supports_streched_l2, `default`, removed) VALUES (
+    'DefaultNetworkOfferingforKubernetesService', UUID(), 'DefaultNetworkOfferingforKubernetesService', 'Network Offering used for CloudStack Kubernetes service', NULL,NULL,'Guest',
+    NULL, 0, 0, NULL, 1, now(),'Required', 1,
+    0, 0, 0, 'Enabled', 'Isolated', 0,
+    1, 0, 0, 0, 0, 0, 1,
+    1, NULL, 0, 0, 0, NULL);
 
 UPDATE `cloud`.`network_offerings` SET removed=NULL WHERE unique_name='DefaultNetworkOfferingforKubernetesService';
 
@@ -123,6 +126,3 @@ INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, prov
 INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'StaticNat','VirtualRouter',now());
 INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'UserData','VirtualRouter',now());
 INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'Vpn','VirtualRouter',now());
-
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server',
-'cloud.kubernetes.cluster.network.offering', 'DefaultNetworkOfferingforKubernetesService', 'Network Offering used for CloudStack kubernetes service', 'DefaultNetworkOfferingforKubernetesService', NULL , NULL, 0);

@@ -18,7 +18,6 @@ package com.cloud.kubernetescluster;
 
 /**
  * VirtualMachine describes the properties held by a virtual machine
- *
  */
 public interface KubernetesClusterVmMap {
     long getId();

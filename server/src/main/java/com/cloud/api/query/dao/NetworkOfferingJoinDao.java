@@ -27,9 +27,9 @@ import com.cloud.utils.db.GenericDao;
 
 public interface NetworkOfferingJoinDao extends GenericDao<NetworkOfferingJoinVO, Long> {
 
-    List<NetworkOfferingJoinVO> findByDomainId(long domainId);
+    List<NetworkOfferingJoinVO> findByDomainId(long domainId, Boolean includeAllDomainOffering);
 
-    List<NetworkOfferingJoinVO> findByZoneId(long zoneId);
+    List<NetworkOfferingJoinVO> findByZoneId(long zoneId, Boolean includeAllZoneOffering);
 
     NetworkOfferingResponse newNetworkOfferingResponse(NetworkOffering nof);
 
