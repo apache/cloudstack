@@ -3315,14 +3315,7 @@
                                             $supportsstrechedl2subnet.hide();
                                         }
 
-                                        //PublicAccess checkbox should be displayed only when 'Connectivity' service is checked
-                                        if (args.$form.find('.form-item[rel=\"service.Connectivity.isEnabled\"]').find('input[type=checkbox]').is(':checked')
-                                            && $guestTypeField.val() == 'Shared'
-                                            && args.$form.find('.form-item[rel=\"service.Connectivity.provider\"]').find('select').val() == 'NuageVsp') {
-                                            $supportspublicaccess.css('display', 'inline-block');
-                                        } else {
-                                            $supportspublicaccess.hide();
-                                        }
+                                        $supportspublicaccess.hide();
                                     });
 
                                     args.$form.change();

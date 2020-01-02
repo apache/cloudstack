@@ -263,6 +263,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
         sc.and(sc.entity().getStatus(), Op.IN, Status.Up, Status.Connecting);
         sc.and(sc.entity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
+        sc.and(sc.entity().getRemoved(), Op.NULL);
         return sc.list();
     }
 

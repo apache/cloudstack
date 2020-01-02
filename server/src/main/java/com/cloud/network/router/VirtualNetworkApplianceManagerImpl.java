@@ -2057,6 +2057,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // Get guest networks info
         final List<Network> guestNetworks = new ArrayList<Network>();
 
+        final GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer) cmds.getAnswer("getDomRVersion");
+        router.setTemplateVersion(versionAnswer.getTemplateVersion());
+        router.setScriptsVersion(versionAnswer.getScriptsVersion());
+        _routerDao.persist(router, guestNetworks);
+
         final List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
         for (final Nic nic : routerNics) {
             final Network network = _networkModel.getNetwork(nic.getNetworkId());
@@ -2077,11 +2082,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 }
             }
         }
+
         if (result) {
-            final GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer) cmds.getAnswer("getDomRVersion");
-            router.setTemplateVersion(versionAnswer.getTemplateVersion());
-            router.setScriptsVersion(versionAnswer.getScriptsVersion());
-            _routerDao.persist(router, guestNetworks);
+            for (Network guestNetwork : guestNetworks) {
+                _routerDao.addRouterToGuestNetwork(router, guestNetwork);
+            }
         }
 
         return result;

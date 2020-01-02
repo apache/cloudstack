@@ -15,7 +15,7 @@ Description: A common package which contains files which are shared by several C
 
 Package: cloudstack-management
 Architecture: all
-Depends: ${python:Depends}, openjdk-8-jre-headless | java8-runtime-headless | java8-runtime | openjdk-9-jre-headless, cloudstack-common (= ${source:Version}), sudo, python-mysql.connector, libmysql-java, augeas-tools, mysql-client, adduser, bzip2, ipmitool, file, lsb-release, init-system-helpers (>= 1.14~)
+Depends: ${python:Depends}, openjdk-8-jre-headless | java8-runtime-headless | java8-runtime | openjdk-9-jre-headless, cloudstack-common (= ${source:Version}), sudo, python-mysql.connector, libmysql-java, augeas-tools, mysql-client, adduser, bzip2, ipmitool, file, gawk, iproute2, lsb-release, init-system-helpers (>= 1.14~), qemu-utils
 Conflicts: cloud-server, cloud-client, cloud-client-ui
 Description: CloudStack server library
  The CloudStack management server

@@ -136,7 +136,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         }
         final List <Host> agentBasedHosts = new ArrayList<>();
         for (final Host host : allHosts) {
-            if (host == null || host.getResourceState() != ResourceState.Enabled) {
+            if (host == null || host.getResourceState() == ResourceState.Creating || host.getResourceState() == ResourceState.Error) {
                 continue;
             }
             if (host.getType() == Host.Type.Routing || host.getType() == Host.Type.ConsoleProxy || host.getType() == Host.Type.SecondaryStorage || host.getType() == Host.Type.SecondaryStorageVM) {

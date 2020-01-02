@@ -2392,7 +2392,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             s_logger.trace("Trying to retrieve VNC port from agent about VM " + vm.getHostName());
         }
 
-        final GetVncPortAnswer answer = (GetVncPortAnswer)_agentMgr.easySend(vm.getHostId(), new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
+        GetVncPortAnswer answer = null;
+        if (vm.getState() == State.Migrating && vm.getLastHostId() != null) {
+            answer = (GetVncPortAnswer)_agentMgr.easySend(vm.getLastHostId(), new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
+        } else {
+            answer = (GetVncPortAnswer)_agentMgr.easySend(vm.getHostId(), new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
+        }
         if (answer != null && answer.getResult()) {
             return new Pair<String, Integer>(answer.getAddress(), answer.getPort());
         }

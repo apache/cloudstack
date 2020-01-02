@@ -80,6 +80,7 @@ public class ApiConstants {
     public static final String CPU_CORE_PER_SOCKET = "cpucorepersocket";
     public static final String CPU_NUMBER = "cpunumber";
     public static final String CPU_SPEED = "cpuspeed";
+    public static final String CPU_LOAD_AVERAGE = "cpuloadaverage";
     public static final String CREATED = "created";
     public static final String CTX_ACCOUNT_ID = "ctxaccountid";
     public static final String CTX_DETAILS = "ctxDetails";
@@ -199,6 +200,7 @@ public class ApiConstants {
     public static final String IP_LIMIT = "iplimit";
     public static final String IP_TOTAL = "iptotal";
     public static final String IS_CLEANUP_REQUIRED = "iscleanuprequired";
+    public static final String IS_DYNAMIC = "isdynamic";
     public static final String IS_EXTRACTABLE = "isextractable";
     public static final String IS_FEATURED = "isfeatured";
     public static final String IS_PORTABLE = "isportable";
