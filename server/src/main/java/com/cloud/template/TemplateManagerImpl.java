@@ -2427,7 +2427,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             String finalDestination = String.format("%s/template/tmpl/%d/%d/%s.%s", mountPoint, userId, template.getId(), template.getUuid(), fileExtension);
 
             // create folder
-            result = Script.runSimpleBashScriptForExitValue(String.format("mkdir -p %s/template/tmpl/%d/%d", mountPoint, userId, template.getId()), 10000);
+            result = Script.runSimpleBashScriptForExitValue(String.format("sudo mkdir -p %s/template/tmpl/%d/%d", mountPoint, userId, template.getId()), 10000);
             if (result != 0){
                 throw new CloudRuntimeException("Unable to create temporary mount folders.");
             }
@@ -2441,7 +2441,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             // Create new template properties File
             PrintWriter writer = null;
             try {
-                writer = new PrintWriter(String.format("%s/template/tmpl/%d/%d/template.properties", mountPoint, userId, template.getId()), "UTF-8");
+                writer = new PrintWriter(String.format("%s/template.properties", tempFolder), "UTF-8");
             } catch (FileNotFoundException | UnsupportedEncodingException e) {
                 throw new CloudRuntimeException("Unable to create system VM template properties file");
             }
@@ -2455,6 +2455,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             writer.println("virtualsize=" + destinationFile.length());
             writer.println(fileExtension + ".size=" + destinationFile.length());
             writer.close();
+
+            String propertiesFileLocation = String.format("%s/template/tmpl/%d/%d/template.properties", mountPoint, userId, template.getId());
+            // Copy template properties File to image store
+            result = Script.runSimpleBashScriptForExitValue(String.format("sudo cp %s/template.properties %s", tempFolder, propertiesFileLocation), 10000);
+            if (result != 0){
+                throw new CloudRuntimeException("Failure copying template properties to image store");
+            }
 
             updateTemplate(template.getId(), fileExtension, cmd.getId(), destinationFile.length());
 
