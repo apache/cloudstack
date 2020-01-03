@@ -5175,7 +5175,7 @@
                             zoneid: args.data.returnedZone.id,
                             format: args.data.selectSystemVm.format,
                             osTypeId: args.data.selectSystemVm.osTypeId,
-                            hypervisor: args.data.selectSystemVm.hypervisor,
+                            hypervisor: args.data.zone.hypervisor,
                             system: true,
                             activate: (args.data.selectSystemVm.activate == "on")
                         };
@@ -5220,7 +5220,7 @@
                                 $.ajax({
                                     url: createURL('seedSystemVMTemplate'),
                                     data: {
-                                        hypervisor: args.data.selectSystemVm.hypervisor,
+                                        hypervisor: args.data.zone.hypervisor,
                                         id: args.data.returnedZone.id,
                                         fileuuid: uploadparams.id,
                                         templateid: uploadparams.id,
