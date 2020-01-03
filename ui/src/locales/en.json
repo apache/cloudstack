@@ -464,6 +464,7 @@
 "label.add.vpc.offering": "Add VPC Offering",
 "label.add.vpn.customer.gateway": "Add VPN Customer Gateway",
 "label.add.zone": "Add Zone",
+"label.all.zone": "All Zone",
 "label.archive": "Archive",
 "label.archive.alerts": "Archive alerts",
 "label.archive.events": "Archive events",
