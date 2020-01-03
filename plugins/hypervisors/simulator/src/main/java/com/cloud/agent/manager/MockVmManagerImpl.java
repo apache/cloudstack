@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +76,8 @@ import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.simulator.MockHost;
 import com.cloud.simulator.MockSecurityRulesVO;
 import com.cloud.simulator.MockVMVO;
@@ -86,9 +88,14 @@ import com.cloud.simulator.dao.MockVMDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachine.PowerState;
+import com.cloud.vm.dao.DomainRouterDao;
 
 @Component
 public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
@@ -102,6 +109,10 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     MockHostDao _mockHostDao = null;
     @Inject
     MockSecurityRulesDao _mockSecurityDao = null;
+    @Inject
+    DomainRouterDao _routerDao = null;
+    @Inject
+    NetworkDao _networkDao = null;
     private final Map<String, Map<String, Ternary<String, Long, Long>>> _securityRules = new ConcurrentHashMap<String, Map<String, Ternary<String, Long, Long>>>();
 
     public MockVmManagerImpl() {
@@ -190,44 +201,51 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             }
         }
 
-        if (vm.getPowerState() == PowerState.PowerOn && vmName.startsWith("s-")) {
-            String prvIp = null;
-            String prvMac = null;
-            String prvNetMask = null;
+        if (vm.getPowerState() == PowerState.PowerOn) {
 
-            for (final NicTO nic : nics) {
-                if (nic.getType() == TrafficType.Management) {
-                    prvIp = nic.getIp();
-                    prvMac = nic.getMac();
-                    prvNetMask = nic.getNetmask();
+            if (vmName.startsWith("s-")) {
+                String prvIp = null;
+                String prvMac = null;
+                String prvNetMask = null;
+
+                for (final NicTO nic : nics) {
+                    if (nic.getType() == TrafficType.Management) {
+                        prvIp = nic.getIp();
+                        prvMac = nic.getMac();
+                        prvNetMask = nic.getNetmask();
+                    }
                 }
+                long dcId = 0;
+                long podId = 0;
+                String name = null;
+                String vmType = null;
+                String url = null;
+                final String[] args = bootArgs.trim().split(" ");
+                for (final String arg : args) {
+                    final String[] params = arg.split("=");
+                    if (params.length < 1) {
+                        continue;
+                    }
+
+                    if (params[0].equalsIgnoreCase("zone")) {
+                        dcId = Long.parseLong(params[1]);
+                    } else if (params[0].equalsIgnoreCase("name")) {
+                        name = params[1];
+                    } else if (params[0].equalsIgnoreCase("type")) {
+                        vmType = params[1];
+                    } else if (params[0].equalsIgnoreCase("url")) {
+                        url = params[1];
+                    } else if (params[0].equalsIgnoreCase("pod")) {
+                        podId = Long.parseLong(params[1]);
+                    }
+                }
+
+                _mockAgentMgr.handleSystemVMStart(vm.getId(), prvIp, prvMac, prvNetMask, dcId, podId, name, vmType, url);
             }
-            long dcId = 0;
-            long podId = 0;
-            String name = null;
-            String vmType = null;
-            String url = null;
-            final String[] args = bootArgs.trim().split(" ");
-            for (final String arg : args) {
-                final String[] params = arg.split("=");
-                if (params.length < 1) {
-                    continue;
-                }
 
-                if (params[0].equalsIgnoreCase("zone")) {
-                    dcId = Long.parseLong(params[1]);
-                } else if (params[0].equalsIgnoreCase("name")) {
-                    name = params[1];
-                } else if (params[0].equalsIgnoreCase("type")) {
-                    vmType = params[1];
-                } else if (params[0].equalsIgnoreCase("url")) {
-                    url = params[1];
-                } else if (params[0].equalsIgnoreCase("pod")) {
-                    podId = Long.parseLong(params[1]);
-                }
+            if (vmName.startsWith("r-") && bootArgs.indexOf("redundant_router=1") > 0) {
+                handleRouterStartStop(vmName, true);
             }
-
-            _mockAgentMgr.handleSystemVMStart(vm.getId(), prvIp, prvMac, prvNetMask, dcId, podId, name, vmType, url);
         }
 
         return null;
@@ -260,17 +278,14 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         final String router_name = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         final MockVm vm = _mockVmDao.findByVmName(router_name);
         final String args = vm.getBootargs();
-        if (args.indexOf("router_pr=100") > 0) {
-            s_logger.debug("Router priority is for MASTER");
-            final CheckRouterAnswer ans = new CheckRouterAnswer(cmd, "Status: MASTER", true);
-            ans.setState(VirtualRouter.RedundantState.MASTER);
-            return ans;
-        } else {
-            s_logger.debug("Router priority is for BACKUP");
-            final CheckRouterAnswer ans = new CheckRouterAnswer(cmd, "Status: BACKUP", true);
-            ans.setState(VirtualRouter.RedundantState.BACKUP);
-            return ans;
+
+        String state = "UNKNOWN";
+        if (args.indexOf("redundant_router=1") > 0) {
+            state = getRedundantState(vm);
         }
+
+        final CheckRouterAnswer ans = new CheckRouterAnswer(cmd, "Status: " + state, true);
+        return ans;
     }
 
     @Override
@@ -512,10 +527,10 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public StopAnswer stopVM(final StopCommand cmd) {
+        final String vmName = cmd.getVmName();
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
-            final String vmName = cmd.getVmName();
             final MockVm vm = _mockVmDao.findByVmName(vmName);
             if (vm != null) {
                 vm.setPowerState(PowerState.PowerOff);
@@ -525,7 +540,16 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             if (vmName.startsWith("s-")) {
                 _mockAgentMgr.handleSystemVMStop(vm.getId());
             }
+
             txn.commit();
+            txn.close();
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
+
+            if (vmName.startsWith("r-")) {
+                handleRouterStartStop(vmName, false);
+            }
+
             return new StopAnswer(cmd, null, true);
         } catch (final Exception ex) {
             txn.rollback();
@@ -539,6 +563,13 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public RebootAnswer rebootVM(final RebootCommand cmd) {
+
+        String vmName = cmd.getVmName();
+        if (vmName.startsWith("r-")) {
+            handleRouterStartStop(vmName, false);
+            handleRouterStartStop(vmName, true);
+        }
+
         return new RebootAnswer(cmd, "Rebooted " + cmd.getVmName(), true);
     }
 
@@ -653,5 +684,129 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     @Override
     public Answer fence(final FenceCommand cmd) {
         return new FenceAnswer(cmd);
+    }
+
+    private void handleRouterStartStop(String vrName, Boolean start) {
+        SearchBuilder<DomainRouterVO> sb = _routerDao.createSearchBuilder();
+        sb.select(null, Func.DISTINCT, sb.entity().getId());
+        sb.and("name", sb.entity().getInstanceName(), SearchCriteria.Op.EQ);
+        SearchCriteria<DomainRouterVO> sc = sb.create();
+        sc.setParameters("name", vrName);
+
+        DomainRouterVO router = _routerDao.findOneBy(sc);
+        List<Long> networkIds = _routerDao.getRouterNetworks(router.getId());
+        if (networkIds.size() == 0) {
+            throw new CloudRuntimeException("Could not find a network for VR " + vrName);
+        }
+
+        List<MockVm> vrs = getMockRouters(networkIds.get(0));
+        MockVm vm = vrs.stream().filter(v -> v.getName().equalsIgnoreCase(vrName)).findFirst().get();
+        String currentRedundantState = getRedundantState(vm);
+
+        if (start) {
+            // If no master found, make us the master
+            Boolean foundMaster = vrs.stream()
+                .filter(v -> !v.getName().equals(vrName)
+                    && v.getPowerState() == PowerState.PowerOn
+                    && getRedundantState(v).equalsIgnoreCase("MASTER"))
+                .findFirst()
+                .isPresent();
+
+            if (!foundMaster) {
+                if (!currentRedundantState.equalsIgnoreCase("MASTER")) {
+                    // There are no MASTER routers on this network - make this master instead
+                    updateRedundantState(vm, "MASTER");
+                    s_logger.debug("Promoted " + vm.getName() + " to MASTER");
+                }
+            } else if (!currentRedundantState.equals("BACKUP")) {
+                updateRedundantState(vm, "BACKUP");
+                s_logger.debug("Demoted " + vm.getName() + " to BACKUP");
+            }
+
+        } else {
+            // If we were master, make someone else
+            if (currentRedundantState.equals("MASTER")) {
+                // Need to make something else master..
+                MockVm backupVr = vrs.stream()
+                    .filter(v -> !v.getName().equals(vrName)
+                        && v.getPowerState() == PowerState.PowerOn
+                        && getRedundantState(v).equalsIgnoreCase("BACKUP"))
+                    .findFirst()
+                    .orElse(null);
+                if (backupVr != null) {
+                    updateRedundantState(backupVr, "MASTER");
+                    s_logger.debug("Promoted " + backupVr.getName() + " to MASTER");
+                }
+                updateRedundantState(vm, "BACKUP");
+                s_logger.debug("Demoted " + vm.getName() + " to BACKUP");
+            }
+        }
+    }
+
+    private List<MockVm> getMockRouters(Long networkId) {
+
+        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(networkId, Role.VIRTUAL_ROUTER);
+        if (routers.size() == 0) {
+            throw new CloudRuntimeException("Didn't find any Virtual Routers on " + networkId);
+        }
+
+        ArrayList<MockVm> vrs = new ArrayList<MockVm>();
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
+        try {
+            txn.close();
+
+            for (final DomainRouterVO router : routers) {
+                MockVm v = _mockVmDao.findByVmName(router.getInstanceName());
+                if (v != null) {
+                    vrs.add(v);
+                }
+            }
+        } finally {
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
+        }
+
+        return vrs;
+    }
+
+    private String getRedundantState(MockVm vm) {
+        String state = "UNKNOWN";
+        for (final String arg : vm.getBootargs().trim().split(" ")) {
+            final String[] params = arg.split("=");
+            if (params.length < 1) {
+                continue;
+            }
+            if (params[0].equalsIgnoreCase("redundant_state")) {
+                state = params[1];
+            }
+        }
+        return state;
+    }
+
+    private void updateRedundantState(MockVm vm, String newState) {
+        // Replace the current state
+        ArrayList<String> args = new ArrayList<String>();
+        for (final String arg : vm.getBootargs().trim().split(" ")) {
+            if (arg.startsWith("redundant_state=")) {
+                args.add("redundant_state=" + newState);
+            } else {
+                args.add(arg);
+            }
+        }
+        vm.setBootargs(" " + String.join(" ", args));
+
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
+        try {
+            txn.start();
+            _mockVmDao.update(vm.getId(), (MockVMVO)vm);
+            txn.commit();
+        } catch (final Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("unable to update vm " + vm.getName(), ex);
+        } finally {
+            txn.close();
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
+        }
     }
 }
