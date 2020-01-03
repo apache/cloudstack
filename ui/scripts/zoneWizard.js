@@ -544,6 +544,7 @@
                                 if ($form.find('#selectSystemVm_label_action_create_template_source_type').val() != "copy"){
                                     $.ajax({ 
                                         url: createURL("getSystemVMTemplateDefaultUrl"), 
+                                        async: false,
                                         data: {
                                             hypervisor: hypervisor,
                                         },
