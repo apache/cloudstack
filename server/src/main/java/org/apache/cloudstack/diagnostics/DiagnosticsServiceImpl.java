@@ -18,14 +18,11 @@
 package org.apache.cloudstack.diagnostics;
 
 import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.getTimeDifference;
-import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.setDirFilePermissions;
 import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.umountSecondaryStorage;
 import static org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesList.RouterDefaultSupportedFiles;
 import static org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesList.SystemVMDefaultSupportedFiles;
 
 import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -335,10 +332,6 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             try {
                 File dataDirectory = new File(dataDirectoryInSecondaryStore);
                 boolean existsInSecondaryStore = dataDirectory.exists() || dataDirectory.mkdir();
-
-                // Modify directory file permissions
-                Path path = Paths.get(dataDirectory.getAbsolutePath());
-                setDirFilePermissions(path);
 
                 if (existsInSecondaryStore) {
                     // scp from system VM to mounted sec storage directory
