@@ -2530,8 +2530,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 vmInstance.setDetails(details);
                 _vmDao.saveDetails(vmInstance);
             }
-            if (StringUtils.isNotBlank(extraConfig) && EnableAdditionalVmConfig.valueIn(accountId)) {
-                addExtraConfig(vmInstance, extraConfig);
+            if (StringUtils.isNotBlank(extraConfig)) {
+                if (EnableAdditionalVmConfig.valueIn(accountId)) {
+                    s_logger.info("Adding extra configuration to user vm: " + vmInstance.getUuid());
+                    addExtraConfig(vmInstance, extraConfig);
+                } else {
+                    throw new InvalidParameterValueException("attempted setting extraconfig but enable.additional.vm.configuration is disabled");
+                }
             }
         }
         return updateVirtualMachine(id, displayName, group, ha, isDisplayVm, osTypeId, userData, isDynamicallyScalable,
@@ -5110,9 +5115,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Account caller = CallContext.current().getCallingAccount();
         Long callerId = caller.getId();
         String extraConfig = cmd.getExtraConfig();
-        if (StringUtils.isNotBlank(extraConfig) && EnableAdditionalVmConfig.valueIn(callerId) ) {
-            s_logger.info("Adding extra configuration to user vm: " + vm.getId());
-            addExtraConfig(vm, extraConfig);
+        if (StringUtils.isNotBlank(extraConfig)) {
+            if (EnableAdditionalVmConfig.valueIn(callerId)) {
+                s_logger.info("Adding extra configuration to user vm: " + vm.getUuid());
+                addExtraConfig(vm, extraConfig);
+            } else {
+                throw new InvalidParameterValueException("attempted setting extraconfig but enable.additional.vm.configuration is disabled");
+            }
         }
 
         if (cmd.getCopyImageTags()) {
