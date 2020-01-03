@@ -177,12 +177,12 @@ export default {
       details: ['name', 'id', 'volumename', 'intervaltype', 'account', 'domain', 'created'],
       actions: [
         {
-          api: 'createVolume',
-          icon: 'plus',
-          label: 'Create volume',
+          api: 'createTemplate',
+          icon: 'picture',
+          label: 'Create Template',
           dataView: true,
           show: (record) => { return record.state === 'BackedUp' },
-          args: ['snapshotid', 'name'],
+          args: ['snapshotid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled', 'sshkeyenabled'],
           mapping: {
             snapshotid: {
               value: (record) => { return record.id }
@@ -190,12 +190,12 @@ export default {
           }
         },
         {
-          api: 'createTemplate',
-          icon: 'picture',
-          label: 'Create volume',
+          api: 'createVolume',
+          icon: 'hdd',
+          label: 'Create Volume',
           dataView: true,
           show: (record) => { return record.state === 'BackedUp' },
-          args: ['snapshotid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled', 'sshkeyenabled'],
+          args: ['snapshotid', 'name'],
           mapping: {
             snapshotid: {
               value: (record) => { return record.id }
