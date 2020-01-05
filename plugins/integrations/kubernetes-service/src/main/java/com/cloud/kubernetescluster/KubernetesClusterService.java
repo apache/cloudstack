@@ -33,7 +33,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.component.PluggableService;
 
 public interface KubernetesClusterService extends PluggableService, Configurable {
-    static final String MIN_KUBERNETES_VERSION_HA_SUPPORT = "1.16";
+    static final String MIN_KUBERNETES_VERSION_HA_SUPPORT = "1.16.0";
 
     static final ConfigKey<Boolean> KubernetesServiceEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
             "cloud.kubernetes.service.enabled",

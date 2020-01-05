@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.utils.component.PluggableService;
 
 public interface KubernetesVersionService extends PluggableService {
-    static final String MIN_KUBERNETES_VERSION = "1.11";
+    static final String MIN_KUBERNETES_VERSION = "1.11.0";
     ListResponse<KubernetesSupportedVersionResponse> listKubernetesSupportedVersions(ListKubernetesSupportedVersionsCmd cmd);
     KubernetesSupportedVersionResponse addKubernetesSupportedVersion(AddKubernetesSupportedVersionCmd cmd);
     boolean deleteKubernetesSupportedVersion(DeleteKubernetesSupportedVersionCmd cmd);

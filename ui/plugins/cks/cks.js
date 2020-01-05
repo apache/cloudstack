@@ -1136,19 +1136,16 @@
                                     title: 'label.add.kubernetes.version',
                                     preFilter: cloudStack.preFilter.createTemplate,
                                     fields: {
-                                        name: {
-                                            label: 'label.name',
-                                            //docID: 'Name of the cluster',
-                                            validation: {
-                                                required: true
-                                            }
-                                        },
                                         version: {
                                             label: 'label.semantic.version',
                                             //docID: 'Name of the cluster',
                                             validation: {
                                                 required: true
                                             }
+                                        },
+                                        name: {
+                                            label: 'label.name',
+                                            //docID: 'Name of the cluster',
                                         },
                                         zone: {
                                             label: 'label.zone',
@@ -1253,7 +1250,7 @@
                                         name: args.data.name,
                                         kubernetesversion: args.data.version,
                                     };
-                                    if (args.data.zone > 0) {
+                                    if (args.data.zone != null && args.data.zone != -1) {
                                         $.extend(data, {
                                             zoneid: args.data.zone
                                         });
