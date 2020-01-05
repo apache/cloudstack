@@ -939,7 +939,7 @@
                                                     success: function(json) {
                                                         var jsonObj;
                                                         if (json.listkubernetessupportedversionsresponse.kubernetessupportedversion != null) {
-                                                            version = json.listkubernetessupportedversionsresponse.kubernetessupportedversion[0].kubernetesversion;
+                                                            version = json.listkubernetessupportedversionsresponse.kubernetessupportedversion[0].semanticversion;
                                                         }
                                                     }
                                                 });
@@ -1086,7 +1086,7 @@
                             name: {
                                 label: 'label.name'
                             },
-                            kubernetesversion: {
+                            semanticversion: {
                                 label: 'label.kubernetes.version'
                             },
                             zonename: {
@@ -1248,7 +1248,7 @@
                                 action: function(args) {
                                     var data = {
                                         name: args.data.name,
-                                        kubernetesversion: args.data.version,
+                                        semanticversion: args.data.version,
                                     };
                                     if (args.data.zone != null && args.data.zone != -1) {
                                         $.extend(data, {

@@ -83,13 +83,13 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         response.setObjectName("kubernetessupportedversion");
         response.setId(kubernetesSupportedVersion.getUuid());
         response.setName(kubernetesSupportedVersion.getName());
-        response.setKubernetesVersion(kubernetesSupportedVersion.getSemanticVersion());
+        response.setSemanticVersion(kubernetesSupportedVersion.getSemanticVersion());
         DataCenterVO zone = ApiDBUtils.findZoneById(kubernetesSupportedVersion.getZoneId());
         if (zone != null) {
             response.setZoneId(zone.getUuid());
             response.setZoneName(zone.getName());
         }
-        if (compareKubernetesVersion(kubernetesSupportedVersion.getSemanticVersion(),
+        if (compareSemanticVersions(kubernetesSupportedVersion.getSemanticVersion(),
                 KubernetesClusterService.MIN_KUBERNETES_VERSION_HA_SUPPORT)>=0) {
             response.setSupportsHA(true);
         } else {
@@ -123,7 +123,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         return true;
     }
 
-    public static int compareKubernetesVersion(String v1, String v2) throws IllegalArgumentException {
+    public static int compareSemanticVersions(String v1, String v2) throws IllegalArgumentException {
         if (Strings.isNullOrEmpty(v1) || Strings.isNullOrEmpty(v2)) {
             throw new IllegalArgumentException(String.format("Invalid version comparision with versions %s, %s", v1, v2));
         }
@@ -177,7 +177,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             for (int i = versions.size() - 1; i >= 0; --i) {
                 KubernetesSupportedVersionVO version = versions.get(i);
                 try {
-                    if (compareKubernetesVersion(minimumSemanticVersion, version.getSemanticVersion()) > 0) {
+                    if (compareSemanticVersions(minimumSemanticVersion, version.getSemanticVersion()) > 0) {
                         versions.remove(i);
                     }
                 } catch (Exception e) {
@@ -292,25 +292,25 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             throw new CloudRuntimeException("Kubernetes Service plugin is disabled");
         }
         String name = cmd.getName();
-        final String kubernetesVersion = cmd.getKubernetesVersion();
+        final String semanticVersion = cmd.getSemanticVersion();
         final Long zoneId = cmd.getZoneId();
         final Long isoId = cmd.getIsoId();
         final String isoUrl = cmd.getUrl();
         final String isoChecksum = cmd.getChecksum();
-        if (compareKubernetesVersion(kubernetesVersion, MIN_KUBERNETES_VERSION) < 0) {
+        if (compareSemanticVersions(semanticVersion, MIN_KUBERNETES_VERSION) < 0) {
             throw new InvalidParameterValueException(String.format("New supported Kubernetes version cannot be added as %s is minimum version supported by Kubernetes Service", MIN_KUBERNETES_VERSION));
         }
         if (Strings.isNullOrEmpty(isoUrl) && (isoId == null || isoId <= 0)) {
             throw new InvalidParameterValueException(String.format("Either %s or %s parameter must be passed to add a new supported Kubernetes version", "isourl", ApiConstants.ISO_ID));
         }
         if (!Strings.isNullOrEmpty(isoUrl) && isoId != null && isoId > 0) {
-            throw new InvalidParameterValueException(String.format("Both %s and %s parameters can not be passed simultaneously to add a new supported Kubernetes version", "isourl", ApiConstants.ISO_ID));
+            throw new InvalidParameterValueException(String.format("Both %s and %s parameters can not be passed simultaneously to add a new supported Kubernetes version", ApiConstants.URL, ApiConstants.ISO_ID));
         }
         if (zoneId != null && dataCenterDao.findById(zoneId) == null) {
             throw new InvalidParameterValueException("Invalid zone specified");
         }
         if (Strings.isNullOrEmpty(name)) {
-            name = String.format("v%s", kubernetesVersion);
+            name = String.format("v%s", semanticVersion);
             if (zoneId != null) {
                 name = String.format("%s-%s", name, dataCenterDao.findById(zoneId).getName());
             }
@@ -333,7 +333,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             validateExistingTemplateForKubernetesVersionIso(template, zoneId);
         }
 
-        KubernetesSupportedVersionVO supportedVersionVO = new KubernetesSupportedVersionVO(name, kubernetesVersion, template.getId(), zoneId);
+        KubernetesSupportedVersionVO supportedVersionVO = new KubernetesSupportedVersionVO(name, semanticVersion, template.getId(), zoneId);
         supportedVersionVO = kubernetesSupportedVersionDao.persist(supportedVersionVO);
 
         return createKubernetesSupportedVersionResponse(supportedVersionVO);

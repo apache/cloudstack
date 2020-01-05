@@ -63,9 +63,9 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements UserCmd
             description = "the name of the Kubernetes supported version")
     private String name;
 
-    @Parameter(name = ApiConstants.KUBERNETES_VERSION, type = CommandType.STRING, required = true,
-            description = "the semantic version of the Kubernetes")
-    private String kubernetesVersion;
+    @Parameter(name = ApiConstants.SEMANTIC_VERSION, type = CommandType.STRING, required = true,
+            description = "the semantic version of the Kubernetes version")
+    private String semanticVersion;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID,
             entityType = ZoneResponse.class,
@@ -94,14 +94,14 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements UserCmd
         return name;
     }
 
-    public String getKubernetesVersion() {
-        if(Strings.isNullOrEmpty(kubernetesVersion)) {
+    public String getSemanticVersion() {
+        if(Strings.isNullOrEmpty(semanticVersion)) {
             throw new InvalidParameterValueException("Version can not be null");
         }
-        if(!kubernetesVersion.matches("[0-9]+(\\.[0-9]+)*")) {
+        if(!semanticVersion.matches("[0-9]+(\\.[0-9]+)*")) {
             throw new IllegalArgumentException("Invalid version format. Semantic version needed");
         }
-        return kubernetesVersion;
+        return semanticVersion;
     }
 
     public Long getZoneId() {

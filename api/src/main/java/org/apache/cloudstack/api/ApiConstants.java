@@ -751,7 +751,7 @@ public class ApiConstants {
     public static final String DOCKER_REGISTRY_EMAIL = "dockerregistryemail";
     public static final String ISO_NAME = "isoname";
     public static final String ISO_STATE = "isostate";
-    public static final String KUBERNETES_VERSION = "kubernetesversion";
+    public static final String SEMANTIC_VERSION = "semanticversion";
     public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
     public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";
     public static final String MASTER_NODES = "masternodes";

@@ -1615,7 +1615,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final KubernetesSupportedVersion version = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
         if (version != null) {
             try {
-                if (KubernetesVersionManagerImpl.compareKubernetesVersion(version.getSemanticVersion(), MIN_KUBERNETES_VERSION_HA_SUPPORT) >= 0) {
+                if (KubernetesVersionManagerImpl.compareSemanticVersions(version.getSemanticVersion(), MIN_KUBERNETES_VERSION_HA_SUPPORT) >= 0) {
                     haSupported = true;
                 }
             } catch (Exception e) {
@@ -1987,7 +1987,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         if (masterNodeCount > 1 ) {
             try {
-                if (KubernetesVersionManagerImpl.compareKubernetesVersion(clusterKubernetesVersion.getSemanticVersion(), MIN_KUBERNETES_VERSION_HA_SUPPORT) < 0) {
+                if (KubernetesVersionManagerImpl.compareSemanticVersions(clusterKubernetesVersion.getSemanticVersion(), MIN_KUBERNETES_VERSION_HA_SUPPORT) < 0) {
                     throw new InvalidParameterValueException(String.format("HA support is available only for Kubernetes version %s and above. Given version ID: %s is %s", MIN_KUBERNETES_VERSION_HA_SUPPORT, clusterKubernetesVersion.getUuid(), clusterKubernetesVersion.getSemanticVersion()));
                 }
             } catch (Exception e) {
@@ -2413,7 +2413,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("Invalid Kubernetes version associated with cluster ID: %s",
                     kubernetesCluster.getUuid()));
         }
-        if (KubernetesVersionManagerImpl.compareKubernetesVersion(
+        if (KubernetesVersionManagerImpl.compareSemanticVersions(
                 upgradeVersion.getSemanticVersion(), clusterVersion.getSemanticVersion()) <= 0) {
             throw new InvalidParameterValueException(String.format("Invalid Kubernetes version associated with cluster ID: %s",
                     kubernetesCluster.getUuid()));
@@ -2479,7 +2479,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         "~/", upgradeScriptFile.getAbsolutePath(), "0755");
                 String cmdStr = String.format("sudo ./%s %s %s %s", upgradeScriptFile.getName(),
                         upgradeVersion.getSemanticVersion(), i == 0 ? "true" : "false",
-                        KubernetesVersionManagerImpl.compareKubernetesVersion(upgradeVersion.getSemanticVersion(), "1.15") < 0 ? "true" : "false");
+                        KubernetesVersionManagerImpl.compareSemanticVersions(upgradeVersion.getSemanticVersion(), "1.15.0") < 0 ? "true" : "false");
                 result = SshHelper.sshExecute(publicIpAddress, nodeSshPort, CLUSTER_NODE_VM_USER, pkFile, null,
                         cmdStr,
                         10000, 10000, 10 * 60 * 1000);
