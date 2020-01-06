@@ -89,7 +89,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         }
 
         // just in case we have a host in creating state make sure it is in the list:
-        if (! hostIdList.contains(hostId)) {
+        if (null != hostId && ! hostIdList.contains(hostId)) {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("adding requested host to host list as it does not seem to be there; " + hostId);
             }
