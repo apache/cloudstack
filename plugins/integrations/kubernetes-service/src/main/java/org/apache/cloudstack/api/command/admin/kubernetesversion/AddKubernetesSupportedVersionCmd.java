@@ -59,7 +59,7 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements UserCmd
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING,
             description = "the name of the Kubernetes supported version")
     private String name;
 
