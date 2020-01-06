@@ -700,7 +700,7 @@ public class SolidFireUtil {
         SolidFireUtil.SolidFireVag sfVagMatchingClusterId;
         for (SolidFireUtil.SolidFireVag sfVag : sfVags) {
 
-            if(sfVag.getName() == "CloudStack-"+clusterId){
+            if(sfVag.getName().equals("CloudStack-"+clusterId)){
                 clusterVagExists = true;
                 sfVagMatchingClusterId = sfVag;
             }
