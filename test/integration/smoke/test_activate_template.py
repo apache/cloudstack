@@ -142,15 +142,7 @@ class TestActivateTemplate(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
-    def test_02_get_default_url(self):
-        response = self.apiclient.getSystemVMTemplateDefaultUrl(self.getDefaultURLCmd)
-        self.assertNotEqual(response.url.url, "", "Expected a value")
-        # This test will have to be updated for every official template version
-        if self.hypervisor == "kvm":
-            self.assertEqual(response.url.url, "https://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.3-kvm.qcow2.bz2", "Default url mismatch")
-
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
-    def test_03_seedSystemVMTemplate(self):
+    def test_02_seedSystemVMTemplate(self):
         activeTemplate = self.apiclient.listTemplates(self.listTemplatesCmd)[0]
         cmd = seedSystemVMTemplate.seedSystemVMTemplateCmd()
         cmd.id = self.zone.id
