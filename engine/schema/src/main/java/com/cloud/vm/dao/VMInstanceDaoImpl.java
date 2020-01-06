@@ -835,7 +835,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                 boolean needToUpdate = false;
                 VMInstanceVO instance = findById(instanceId);
                 if (instance != null
-                && instance.getPowerStateUpdateTime().before(wisdomEra)) {
+                &&  (null == instance.getPowerStateUpdateTime()
+                        || instance.getPowerStateUpdateTime().before(wisdomEra))) {
                     Long savedPowerHostId = instance.getPowerHostId();
                     if (instance.getPowerState() != powerState || savedPowerHostId == null
                             || savedPowerHostId.longValue() != powerHostId) {
