@@ -49,6 +49,8 @@ import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Strings;
 
+import static java.util.Arrays.binarySearch;
+
 public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implements IndirectAgentLB, Configurable {
     public static final Logger LOG = Logger.getLogger(IndirectAgentLBServiceImpl.class);
 
@@ -156,18 +158,22 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             }
             return;
         }
-        if (host.getResourceState() == ResourceState.Creating) {
+
+        ResourceState[] allowedStates = new ResourceState[]{
+                ResourceState.Enabled,
+                ResourceState.Maintenance,
+                ResourceState.Disabled,
+                ResourceState.ErrorInMaintenance,
+                ResourceState.PrepareForMaintenance
+        };
+        // so the remaining ResourceState[] disallowedStates = new ResourceState[]{ResourceState.Creating, ResourceState.Error};
+        if (binarySearch(allowedStates, host.getResourceState()) < 0) {
             if (LOG.isTraceEnabled()) {
-                LOG.trace(String.format("host is in creating state, not adding to the host list, (id = %s)", host.getUuid()));
+                LOG.trace(String.format("host is in '%s' state, not adding to the host list, (id = %s)", host.getResourceState(), host.getUuid()));
             }
             return;
         }
-        if (host.getResourceState() == ResourceState.Error) {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace(String.format("host is in error state, not adding to the host list, (id = %s)", host.getUuid()));
-            }
-            return;
-        }
+
         if (host.getType() != Host.Type.Routing
                 && host.getType() != Host.Type.ConsoleProxy
                 && host.getType() != Host.Type.SecondaryStorage
@@ -177,6 +183,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             }
             return;
         }
+
         if (host.getHypervisorType() != null
                 && ! (host.getHypervisorType() == Hypervisor.HypervisorType.KVM || host.getHypervisorType() == Hypervisor.HypervisorType.LXC)) {
 
@@ -185,6 +192,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             }
             return;
         }
+
         agentBasedHosts.add(host);
     }
 
