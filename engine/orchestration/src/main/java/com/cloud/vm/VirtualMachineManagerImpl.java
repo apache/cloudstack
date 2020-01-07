@@ -4226,7 +4226,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     break;
 
                 case PowerOff:
-                case PowerReportMissing:
+                case PowerReportMissing: // rigorously set to Migrating? or just do nothing until...? or create a missing state?
+                    // for now handle in line with legacy as power off
                     handlePowerOffReportWithNoPendingJobsOnVM(vm);
                     break;
 
@@ -4337,8 +4338,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         case Running:
         case Stopped:
         case Migrating:
-            s_logger.info("VM " + vm.getInstanceName() + " is at " + vm.getState() + " and we received a power-off report while there is no pending jobs on it");
-            if(vm.isHaEnabled() && vm.getState() == State.Running && HaVmRestartHostUp.value() && vm.getHypervisorType() != HypervisorType.VMware && vm.getHypervisorType() != HypervisorType.Hyperv) {
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info(
+                        String.format("VM %s is at %s and we received a %s report while there is no pending jobs on it"
+                                , vm.getInstanceName(), vm.getState(), vm.getPowerState()));
+            }
+            if(vm.isHaEnabled() && vm.getState() == State.Running
+                    && HaVmRestartHostUp.value()
+                    && vm.getHypervisorType() != HypervisorType.VMware
+                    && vm.getHypervisorType() != HypervisorType.Hyperv) {
                 s_logger.info("Detected out-of-band stop of a HA enabled VM " + vm.getInstanceName() + ", will schedule restart");
                 if(!_haMgr.hasPendingHaWork(vm.getId())) {
                     _haMgr.scheduleRestart(vm, true);
@@ -4348,11 +4356,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return;
             }
 
-            final VirtualMachineGuru vmGuru = getVmGuru(vm);
-            final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-            if (!sendStop(vmGuru, profile, true, true)) {
-                // In case StopCommand fails, don't proceed further
-                return;
+            // not when report is missing
+            if(PowerState.PowerOff.equals(vm.getPowerState())) {
+                final VirtualMachineGuru vmGuru = getVmGuru(vm);
+                final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+                if (!sendStop(vmGuru, profile, true, true)) {
+                    // In case StopCommand fails, don't proceed further
+                    return;
+                }
             }
 
             try {
