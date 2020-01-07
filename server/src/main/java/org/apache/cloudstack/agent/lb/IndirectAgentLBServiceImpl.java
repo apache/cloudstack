@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,8 +49,6 @@ import com.cloud.resource.ResourceState;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Strings;
-
-import static java.util.Arrays.binarySearch;
 
 public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implements IndirectAgentLB, Configurable {
     public static final Logger LOG = Logger.getLogger(IndirectAgentLBServiceImpl.class);
@@ -159,15 +158,15 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             return;
         }
 
-        ResourceState[] allowedStates = new ResourceState[]{
+        EnumSet<ResourceState> allowedStates = EnumSet.of(
                 ResourceState.Enabled,
                 ResourceState.Maintenance,
                 ResourceState.Disabled,
                 ResourceState.ErrorInMaintenance,
-                ResourceState.PrepareForMaintenance
-        };
-        // so the remaining ResourceState[] disallowedStates = new ResourceState[]{ResourceState.Creating, ResourceState.Error};
-        if (binarySearch(allowedStates, host.getResourceState()) < 0) {
+                ResourceState.PrepareForMaintenance);
+        // so the remaining EnumSet<ResourceState> disallowedStates = EnumSet.complementOf(allowedStates)
+        // would be {ResourceState.Creating, ResourceState.Error};
+        if (!allowedStates.contains(host.getResourceState())) {
             if (LOG.isTraceEnabled()) {
                 LOG.trace(String.format("host is in '%s' state, not adding to the host list, (id = %s)", host.getResourceState(), host.getUuid()));
             }
