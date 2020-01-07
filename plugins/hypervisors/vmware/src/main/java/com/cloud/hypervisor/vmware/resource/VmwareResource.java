@@ -3817,7 +3817,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             } else {
 
-                String msg = "VM " + cmd.getVmName() + " is no longer in vSphere";
+                String msg = "VM " + cmd.getVmName() + " is no longer on the expected host in vSphere";
                 s_logger.info(msg);
                 return new StopAnswer(cmd, msg, true);
             }

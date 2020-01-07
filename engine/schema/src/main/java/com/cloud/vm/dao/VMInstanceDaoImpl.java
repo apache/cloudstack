@@ -828,13 +828,15 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public boolean updatePowerState(final long instanceId, final long powerHostId, final VirtualMachine.PowerState powerState) {
+    public boolean updatePowerState(final long instanceId, final long powerHostId, final VirtualMachine.PowerState powerState, Date wisdomEra) {
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 boolean needToUpdate = false;
                 VMInstanceVO instance = findById(instanceId);
-                if (instance != null) {
+                if (instance != null
+                &&  (null == instance.getPowerStateUpdateTime()
+                        || instance.getPowerStateUpdateTime().before(wisdomEra))) {
                     Long savedPowerHostId = instance.getPowerHostId();
                     if (instance.getPowerState() != powerState || savedPowerHostId == null
                             || savedPowerHostId.longValue() != powerHostId) {
