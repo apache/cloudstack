@@ -246,9 +246,9 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         }
         Pair<Boolean, String> copyResult;
         if (vmInstance.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
-            copyResult = orchestrateCopyToSecondaryStorageVMware(store, vmControlIp, fileToCopy);
+            copyResult = copyToSecondaryStorageVMware(store, vmControlIp, fileToCopy);
         } else {
-            copyResult = orchestrateCopyToSecondaryStorageNonVMware(store, vmControlIp, fileToCopy, vmHostId);
+            copyResult = copyToSecondaryStorageNonVMware(store, vmControlIp, fileToCopy, vmHostId);
         }
 
         if (!copyResult.first()) {
@@ -306,7 +306,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         return fileList;
     }
 
-    private Pair<Boolean, String> orchestrateCopyToSecondaryStorageNonVMware(final DataStore store, final String vmControlIp, String fileToCopy, Long vmHostId) {
+    private Pair<Boolean, String> copyToSecondaryStorageNonVMware(final DataStore store, final String vmControlIp, String fileToCopy, Long vmHostId) {
         CopyToSecondaryStorageCommand toSecondaryStorageCommand = new CopyToSecondaryStorageCommand(store.getUri(), vmControlIp, fileToCopy);
         Answer copyToSecondaryAnswer = agentManager.easySend(vmHostId, toSecondaryStorageCommand);
         Pair<Boolean, String> copyAnswer;
@@ -318,41 +318,37 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         return copyAnswer;
     }
 
-    private Pair<Boolean, String> orchestrateCopyToSecondaryStorageVMware(final DataStore store, final String vmSshIp, String diagnosticsFile) {
-        String mountPoint;
-        boolean success;
-
-        Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
-        mountPoint = mountManager.getMountPoint(store.getUri(), nfsVersion);
-        if (StringUtils.isNotBlank(mountPoint)) {
-            LOGGER.info(String.format("Copying %s from %s to secondary store %s", diagnosticsFile, vmSshIp, store.getUri()));
-
-            // dirIn/mnt/SecStorage/uuid/diagnostics_data
-            String dataDirectoryInSecondaryStore = String.format("%s/%s", mountPoint, DIAGNOSTICS_DIRECTORY);
-            try {
-                File dataDirectory = new File(dataDirectoryInSecondaryStore);
-                boolean existsInSecondaryStore = dataDirectory.exists() || dataDirectory.mkdir();
-
-                if (existsInSecondaryStore) {
-                    // scp from system VM to mounted sec storage directory
-                    int port = 3922;
-                    File permKey = new File("/var/cloudstack/management/.ssh/id_rsa");
-                    SshHelper.scpFrom(vmSshIp, port, "root", permKey, dataDirectoryInSecondaryStore, diagnosticsFile);
-                }
-                // Verify File copy to Secondary Storage
-                File fileInSecondaryStore = new File(dataDirectoryInSecondaryStore + diagnosticsFile.replace("/root", ""));
-                success = fileInSecondaryStore.exists();
-            } catch (Exception e) {
-                String msg = String.format("Exception caught during scp from %s to secondary store %s: ", vmSshIp, dataDirectoryInSecondaryStore);
-                LOGGER.error(msg, e);
-                return new Pair<>(false, msg);
-            } finally {
-                // umount secondary storage
-                umountSecondaryStorage(mountPoint);
-            }
-        } else {
+    private Pair<Boolean, String> copyToSecondaryStorageVMware(final DataStore store, final String vmSshIp, String diagnosticsFile) {
+        LOGGER.info(String.format("Copying %s from %s to secondary store %s", diagnosticsFile, vmSshIp, store.getUri()));
+        boolean success = false;
+        String mountPoint = mountManager.getMountPoint(store.getUri(), imageStoreDetailsUtil.getNfsVersion(store.getId()));
+        if (StringUtils.isBlank(mountPoint)) {
+            LOGGER.error("Failed to generate mount point for copying to secondary storage for " + store.getName());
             return new Pair<>(false, "Failed to mount secondary storage:" + store.getName());
         }
+
+        // dirIn/mnt/SecStorage/uuid/diagnostics_data
+        String dataDirectoryInSecondaryStore = String.format("%s/%s", mountPoint, DIAGNOSTICS_DIRECTORY);
+        try {
+            File dataDirectory = new File(dataDirectoryInSecondaryStore);
+            boolean existsInSecondaryStore = dataDirectory.exists() || dataDirectory.mkdir();
+            if (existsInSecondaryStore) {
+                // scp from system VM to mounted sec storage directory
+                File permKey = new File("/var/cloudstack/management/.ssh/id_rsa");
+                SshHelper.scpFrom(vmSshIp, 3922, "root", permKey, dataDirectoryInSecondaryStore, diagnosticsFile);
+            }
+
+            // Verify File copy to Secondary Storage
+            File fileInSecondaryStore = new File(dataDirectoryInSecondaryStore + diagnosticsFile.replace("/root", ""));
+            success = fileInSecondaryStore.exists();
+        } catch (Exception e) {
+            String msg = String.format("Exception caught during scp from %s to secondary store %s: ", vmSshIp, dataDirectoryInSecondaryStore);
+            LOGGER.error(msg, e);
+            return new Pair<>(false, msg);
+        } finally {
+            umountSecondaryStorage(mountPoint);
+        }
+
         return new Pair<>(success, "File copied to secondary storage successfully");
     }
 
