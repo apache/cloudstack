@@ -446,11 +446,9 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
                 String msg = String.format("Found %s diagnostics files in store %s for garbage collection", fileList.length, storeName);
                 LOGGER.info(msg);
                 for (File file : fileList) {
-                    if (file.isFile()) {
-                        if (MaximumFileAgeforGarbageCollection.value() <= getTimeDifference(file)) {
-                            boolean success = file.delete();
-                            LOGGER.info(file.getName() + " delete status: " + success);
-                        }
+                    if (file.isFile() && MaximumFileAgeforGarbageCollection.value() <= getTimeDifference(file)) {
+                        boolean success = file.delete();
+                        LOGGER.info(file.getName() + " delete status: " + success);
                     }
                 }
             }
@@ -463,21 +461,8 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
                 // Get All Image Stores in current running Zone
                 List<DataStore> storeList = serviceImpl.storeMgr.getImageStoresByScope(new ZoneScope(vo.getId()));
                 for (DataStore store : storeList) {
-                    String mountPoint = null;
-                    try {
-                        mountPoint = serviceImpl.mountManager.getMountPoint(store.getUri(), null);
-                        if (StringUtils.isNotBlank(mountPoint)) {
-                            File directory = new File(mountPoint + "/" + DIAGNOSTICS_DIRECTORY);
-                            if (directory.isDirectory()) {
-                                deleteOldDiagnosticsFiles(directory, store.getName());
-                            }
-                        }
-                    } finally {
-                        // umount secondary storage
-                        umountSecondaryStorage(mountPoint);
-                    }
+                    cleanupOldDiagnosticFiles(store);
                 }
-
             }
         }
 
@@ -485,6 +470,23 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         public Long getDelay() {
             // In Milliseconds
             return GarbageCollectionInterval.value() * 1000L;
+        }
+
+        private void cleanupOldDiagnosticFiles(DataStore store) {
+            String mountPoint = null;
+            try {
+                mountPoint = serviceImpl.mountManager.getMountPoint(store.getUri(), null);
+                if (StringUtils.isNotBlank(mountPoint)) {
+                    File directory = new File(mountPoint + File.separator + DIAGNOSTICS_DIRECTORY);
+                    if (directory.isDirectory()) {
+                        deleteOldDiagnosticsFiles(directory, store.getName());
+                    }
+                }
+            } finally {
+                if (StringUtils.isNotBlank(mountPoint)) {
+                    umountSecondaryStorage(mountPoint);
+                }
+            }
         }
     }
 
