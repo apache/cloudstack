@@ -18,14 +18,17 @@
 
 #Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.cloudstackAPI import (listKubernetesSupportedVersions,
+from marvin.cloudstackAPI import (listInfrastructure,
+                                  listKubernetesSupportedVersions,
                                   addKubernetesSupportedVersion,
                                   deleteKubernetesSupportedVersion)
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.codes import FAILED
+from marvin.lib.base import Configurations
 from marvin.lib.utils import (cleanup_resources,
                               random_gen)
 from marvin.lib.common import get_zone
+from marvin.sshClient import SshClient
 from nose.plugins.attrib import attr
 
 import time
@@ -40,17 +43,64 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+        cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
         cls.kubernetes_version_iso_url = 'http://172.20.0.1/files/setup-1.16.3.iso'
+
+        cls.initial_configuration_cks_enabled = Configurations.list(cls.apiclient,
+                                                                    name="cloud.kubernetes.service.enabled")[0].value
+        if cls.initial_configuration_cks_enabled == False:
+            Configurations.update(cls.apiclient,
+                                  "cloud.kubernetes.service.enabled",
+                                  "true")
+            cls.restartServer()
+
         cls._cleanup = []
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
+            # Restore CKS enabled
+            if cls.initial_configuration_cks_enabled == False:
+                Configurations.update(cls.apiclient,
+                                      "cloud.kubernetes.service.enabled",
+                                      "false")
+                cls.restartServer()
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
+
+    @classmethod
+    def restartServer(cls):
+        """Restart management server"""
+
+        sshClient = SshClient(
+                    cls.mgtSvrDetails["mgtSvrIp"],
+            22,
+            cls.mgtSvrDetails["user"],
+            cls.mgtSvrDetails["passwd"]
+        )
+        command = "service cloudstack-management stop"
+        sshClient.execute(command)
+
+        command = "service cloudstack-management start"
+        sshClient.execute(command)
+
+        #Waits for management to come up in 5 mins, when it's up it will continue
+        timeout = time.time() + 300
+        while time.time() < timeout:
+            if cls.isManagementUp() is True: return
+            time.sleep(5)
+        return cls.fail("Management server did not come up, failing")
+
+    @classmethod
+    def isManagementUp(cls):
+        try:
+            cls.apiclient.listInfrastructure(listInfrastructure.listInfrastructureCmd())
+            return True
+        except Exception:
+            return False
 
     def setUp(self):
         self.services = self.testClient.getParsedTestDataConfig()
