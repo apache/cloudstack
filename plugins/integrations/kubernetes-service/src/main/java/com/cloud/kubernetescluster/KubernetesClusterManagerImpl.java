@@ -2417,8 +2417,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         if (KubernetesVersionManagerImpl.compareSemanticVersions(
                 upgradeVersion.getSemanticVersion(), clusterVersion.getSemanticVersion()) <= 0) {
-            throw new InvalidParameterValueException(String.format("Invalid Kubernetes version associated with cluster ID: %s",
-                    kubernetesCluster.getUuid()));
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s can not be upgraded from %s to %s",
+                    kubernetesCluster.getUuid(), clusterVersion.getSemanticVersion(), upgradeVersion.getSemanticVersion()));
         }
         // Check upgradeVersion is either patch upgrade or immediate minor upgrade
         try {
