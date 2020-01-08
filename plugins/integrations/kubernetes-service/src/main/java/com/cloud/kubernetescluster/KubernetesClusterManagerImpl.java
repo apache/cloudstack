@@ -633,7 +633,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private boolean isKubernetesClusterNodeReady(KubernetesCluster kubernetesCluster, String ipAddress, int port, String nodeName) throws Exception {
         Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port,
                 CLUSTER_NODE_VM_USER, getManagementServerSshPublicKeyFile(), null,
-                String.format("sudo kubectl get nodes | awk '{if ($1 == \"%s\" && $2 == \"Ready\") print $1}'", nodeName),
+                String.format("sudo kubectl get nodes | awk '{if ($1 == \"%s\" && $2 == \"Ready\") print $1}'", nodeName.toLowerCase()),
                 10000, 10000, 20000);
         if (result.first() && nodeName.equals(result.second().trim())) {
             return true;
@@ -705,33 +705,37 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private boolean removeKubernetesClusterNode(KubernetesCluster kubernetesCluster, String ipAddress, int port, UserVm userVm, int retries, int waitDuration) {
         File pkFile = getManagementServerSshPublicKeyFile();
         int retryCounter = 0;
+        String hostName = userVm.getHostName();
+        if (!Strings.isNullOrEmpty(hostName)) {
+            hostName = hostName.toLowerCase();
+        }
         while (retryCounter < retries) {
             retryCounter++;
             try {
                 Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port, CLUSTER_NODE_VM_USER,
-                        pkFile, null, String.format("sudo kubectl drain %s --ignore-daemonsets --delete-local-data", userVm.getHostName()),
+                        pkFile, null, String.format("sudo kubectl drain %s --ignore-daemonsets --delete-local-data", hostName),
                         10000, 10000, 60000);
                 if (!result.first()) {
-                    LOGGER.warn(String.format("Draining node: %s on VM ID: %s in Kubernetes cluster ID: %s unsuccessful", userVm.getHostName(), userVm.getUuid(), kubernetesCluster.getUuid()));
+                    LOGGER.warn(String.format("Draining node: %s on VM ID: %s in Kubernetes cluster ID: %s unsuccessful", hostName, userVm.getUuid(), kubernetesCluster.getUuid()));
                 } else {
                     result = SshHelper.sshExecute(ipAddress, port, CLUSTER_NODE_VM_USER,
-                            pkFile, null, String.format("sudo kubectl delete node %s", userVm.getHostName()),
+                            pkFile, null, String.format("sudo kubectl delete node %s", hostName),
                             10000, 10000, 30000);
                     if (result.first()) {
                         return true;
                     } else {
-                        LOGGER.warn(String.format("Deleting node: %s on VM ID: %s in Kubernetes cluster ID: %s unsuccessful", userVm.getHostName(), userVm.getUuid(), kubernetesCluster.getUuid()));
+                        LOGGER.warn(String.format("Deleting node: %s on VM ID: %s in Kubernetes cluster ID: %s unsuccessful", hostName, userVm.getUuid(), kubernetesCluster.getUuid()));
                     }
                 }
                 break;
             } catch (Exception e) {
-                String msg = String.format("Failed to remove Kubernetes cluster ID: %s node: %s on VM ID: %s", kubernetesCluster.getUuid(), userVm.getHostName(), userVm.getUuid());
+                String msg = String.format("Failed to remove Kubernetes cluster ID: %s node: %s on VM ID: %s", kubernetesCluster.getUuid(), hostName, userVm.getUuid());
                 LOGGER.warn(msg, e);
             }
             try {
                 Thread.sleep(waitDuration);
             } catch (InterruptedException ie) {
-                LOGGER.error(String.format("Error while waiting for Kubernetes cluster ID: %s node: %s on VM ID: %s removal", kubernetesCluster.getUuid(), userVm.getHostName(), userVm.getUuid()), ie);
+                LOGGER.error(String.format("Error while waiting for Kubernetes cluster ID: %s node: %s on VM ID: %s removal", kubernetesCluster.getUuid(), hostName, userVm.getUuid()), ie);
             }
             retryCounter++;
         }
@@ -740,22 +744,26 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     private boolean uncordonKubernetesClusterNode(KubernetesCluster kubernetesCluster, String ipAddress, int port, UserVm userVm, int retries, int waitDuration) {
         int retryCounter = 0;
+        String hostName = userVm.getHostName();
+        if (!Strings.isNullOrEmpty(hostName)) {
+            hostName = hostName.toLowerCase();
+        }
         while (retryCounter < retries) {
             Pair<Boolean, String> result = null;
             try {
                 result = SshHelper.sshExecute(ipAddress, port, CLUSTER_NODE_VM_USER, getManagementServerSshPublicKeyFile(), null,
-                        String.format("sudo kubectl uncordon %s", userVm.getHostName()),
+                        String.format("sudo kubectl uncordon %s", hostName),
                         10000, 10000, 30000);
                 if (result.first()) {
                     return true;
                 }
             } catch (Exception e) {
-                LOGGER.warn(String.format("Failed to uncordon node: %s on VM ID: %s in Kubernetes cluster ID: %s", userVm.getHostName(), userVm.getUuid(), kubernetesCluster.getUuid()), e);
+                LOGGER.warn(String.format("Failed to uncordon node: %s on VM ID: %s in Kubernetes cluster ID: %s", hostName, userVm.getUuid(), kubernetesCluster.getUuid()), e);
             }
             try {
                 Thread.sleep(waitDuration);
             } catch (InterruptedException ie) {
-                LOGGER.warn(String.format("Error while waiting for uncordon Kubernetes cluster ID: %s node: %s on VM ID: %s", kubernetesCluster.getUuid(), userVm.getHostName(), userVm.getUuid()), ie);
+                LOGGER.warn(String.format("Error while waiting for uncordon Kubernetes cluster ID: %s node: %s on VM ID: %s", kubernetesCluster.getUuid(), hostName, userVm.getUuid()), ie);
             }
             retryCounter++;
         }
@@ -2461,12 +2469,16 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         File pkFile = getManagementServerSshPublicKeyFile();
         for (int i = 0; i < vmIds.size(); ++i) {
             UserVm vm = userVmDao.findById(vmIds.get(i));
+            String hostName = vm.getHostName();
+            if (!Strings.isNullOrEmpty(hostName)) {
+                hostName = hostName.toLowerCase();
+            }
             result = null;
             LOGGER.debug(String.format("Upgrading node on VM ID: %s in Kubernetes cluster ID: %s with Kubernetes version(%s) ID: %s",
                     vm.getUuid(), kubernetesCluster.getUuid(), upgradeVersion.getSemanticVersion(), upgradeVersion.getUuid()));
             try {
                 result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, pkFile, null,
-                        String.format("sudo kubectl drain %s --ignore-daemonsets --delete-local-data", vm.getHostName()),
+                        String.format("sudo kubectl drain %s --ignore-daemonsets --delete-local-data", hostName),
                         10000, 10000, 60000);
             } catch (Exception e) {
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to drain Kubernetes node on VM ID: %s", kubernetesCluster.getUuid(), vm.getUuid()), kubernetesCluster, vmIds, KubernetesCluster.Event.OperationFailed, e);
@@ -2496,7 +2508,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to uncordon Kubernetes node on VM ID: %s", kubernetesCluster.getUuid(), vm.getUuid()), kubernetesCluster, vmIds, KubernetesCluster.Event.OperationFailed, null);
             }
             if (i == 0) { // Wait for master to get in Ready state
-                if (!isKubernetesClusterNodeReady(kubernetesCluster, publicIpAddress, sshPort, vm.getHostName(), 5, 20000)) {
+                if (!isKubernetesClusterNodeReady(kubernetesCluster, publicIpAddress, sshPort, hostName, 5, 20000)) {
                     logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to get master Kubernetes node on VM ID: %s in ready state", kubernetesCluster.getUuid(), vm.getUuid()), kubernetesCluster, vmIds, KubernetesCluster.Event.OperationFailed, null);
                 }
             }
