@@ -485,29 +485,6 @@ public class VirtualMachineMO extends BaseMO {
         return (VirtualMachineSnapshotInfo)_context.getVimClient().getDynamicProperty(_mor, "snapshot");
     }
 
-    /**
-     * This creates a snapshot task on a base template copied from secondary storage to primary storage and waits for the
-     * snapshot name upto 600 seconds
-     * @param snapshotName
-     * @param snapshotDescription
-     * @return true if snapshot task was created
-     * @throws Exception
-     */
-    public boolean createTemplateBaseSnapshot(String snapshotName, String snapshotDescription) throws Exception {
-        _context.getService().createSnapshotTask(_mor, snapshotName, snapshotDescription, false, false);
-        for (int count = 0; count < 600; count++) {
-            if (getSnapshotMor(snapshotName) != null) {
-                return true;
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interrupted while waiting for template base snapshot to be done.");
-            }
-        }
-        return false;
-    }
-
     public boolean createSnapshot(String snapshotName, String snapshotDescription, boolean dumpMemory, boolean quiesce) throws Exception {
         return createSnapshotGetReference(snapshotName, snapshotDescription, dumpMemory, quiesce) != null;
     }
@@ -515,7 +492,6 @@ public class VirtualMachineMO extends BaseMO {
     public ManagedObjectReference createSnapshotGetReference(String snapshotName, String snapshotDescription, boolean dumpMemory, boolean quiesce) throws Exception {
         long apiTimeout = _context.getVimClient().getVcenterSessionTimeout();
         ManagedObjectReference morTask = _context.getService().createSnapshotTask(_mor, snapshotName, snapshotDescription, dumpMemory, quiesce);
-
         boolean result = _context.getVimClient().waitForTask(morTask);
 
         if (result) {

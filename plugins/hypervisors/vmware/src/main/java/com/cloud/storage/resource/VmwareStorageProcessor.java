@@ -537,7 +537,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         long virtualSize = processor.getTemplateVirtualSize(secondaryMountPoint + "/" + templatePathAtSecondaryStorage, templateName);
 
         if (createSnapshot) {
-            if (vmMo.createTemplateBaseSnapshot("cloud.template.base", "Base snapshot")) {
+            if (vmMo.createSnapshot("cloud.template.base", "Base snapshot", false, false)) {
                 // the same template may be deployed with multiple copies at per-datastore per-host basis,
                 // save the original template name from CloudStack DB as the UUID to associate them.
                 vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, templateName);
