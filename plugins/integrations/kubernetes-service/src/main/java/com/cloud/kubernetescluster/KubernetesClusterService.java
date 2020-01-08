@@ -51,6 +51,10 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "Name of the network offering that will be used to create isolated network in which Kubernetes cluster VMs will be launched",
             false);
 
+    static boolean isKubernetesServiceEnabled() {
+        return KubernetesServiceEnabled.value();
+    }
+
     KubernetesCluster findById(final Long id);
 
     KubernetesCluster createKubernetesCluster(CreateKubernetesClusterCmd cmd) throws InsufficientCapacityException,

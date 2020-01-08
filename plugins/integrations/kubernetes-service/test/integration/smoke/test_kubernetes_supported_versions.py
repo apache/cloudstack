@@ -82,9 +82,9 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
 
         self.debug("Adding Kubernetes supported version with name: %s" % name)
 
-        version_response = self.addKubernetesSupportedVersionUsingDetails(version, name, self.zone.id, self.kubernetes_version_iso_url)
+        version_response = self.addKubernetesSupportedVersion(version, name, self.zone.id, self.kubernetes_version_iso_url)
 
-        list_versions_response = self.listKubernetesSupportedVersionId(version_response.id)
+        list_versions_response = self.listKubernetesSupportedVersion(version_response.id)
 
         self.assertEqual(
             list_versions_response.name,
@@ -113,11 +113,11 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
 
         self.debug("Added Kubernetes supported version with ID: %s. Waiting for its ISO to be Ready" % version_response.id)
 
-        self.checkKubernetesSupportedVersionIsoState(version_response.id)
+        self.waitForKubernetesSupportedVersionIsoReadyState(version_response.id)
 
         self.debug("Deleting Kubernetes supported version with ID: %s" % version_response.id)
 
-        delete_response = self.deleteKubernetesSupportedVersionId(version_response.id, True)
+        delete_response = self.deleteKubernetesSupportedVersion(version_response.id, True)
 
         self.assertEqual(
             delete_response.success,
@@ -146,7 +146,10 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         version = '1.1.1'
         name = 'v' + version + '-' + random_gen()
         try:
-            version_response = self.addKubernetesSupportedVersionUsingDetails(version, name, self.zone.id, self.kubernetes_version_iso_url)
+            version_response = self.addKubernetesSupportedVersion(version, name, self.zone.id, self.kubernetes_version_iso_url)
+            self.debug("Unsupported CKS Kubernetes supported added with ID: %s. Deleting it and failing test." % version_response.id)
+            self.waitForKubernetesSupportedVersionIsoReadyState(version_response.id)
+            self.deleteKubernetesSupportedVersion(version_response.id, True)
             self.fail("Kubernetes supported version below version 1.11.0 been added. Must be an error.")
         except CloudstackAPIException as e:
             self.debug("Unsupported version error check successful, API failure: %s" % e)
@@ -163,59 +166,49 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         version = 'invalid'
         name = 'v' + version + '-' + random_gen()
         try:
-            version_response = self.addKubernetesSupportedVersionUsingDetails(version, name, self.zone.id, self.kubernetes_version_iso_url)
-            self.fail("Kubernetes supported version below version 1.11.0 been added. Must be an error.")
+            version_response = self.addKubernetesSupportedVersion(version, name, self.zone.id, self.kubernetes_version_iso_url)
+            self.debug("Invalid Kubernetes supported added with ID: %s. Deleting it and failing test." % version_response.id)
+            self.waitForKubernetesSupportedVersionIsoReadyState(version_response.id)
+            self.deleteKubernetesSupportedVersion(version_response.id, True)
+            self.fail("Invalid Kubernetes supported version has been added. Must be an error.")
         except CloudstackAPIException as e:
             self.debug("Unsupported version error check successful, API failure: %s" % e)
         return
 
-    def addKubernetesSupportedVersion(self, cmd):
-        version = self.apiclient.addKubernetesSupportedVersion(cmd)
-        if not version:
-            self.cleanup.append(version)
-        return version
-
-    def addKubernetesSupportedVersionUsingDetails(self, version, name, zoneId, isoUrl):
+    def addKubernetesSupportedVersion(self, version, name, zoneId, isoUrl):
         addKubernetesSupportedVersionCmd = addKubernetesSupportedVersion.addKubernetesSupportedVersionCmd()
         addKubernetesSupportedVersionCmd.semanticversion = version
         addKubernetesSupportedVersionCmd.name = name
         addKubernetesSupportedVersionCmd.zoneid = zoneId
         addKubernetesSupportedVersionCmd.url = isoUrl        
-        versionResponse = self.addKubernetesSupportedVersion(addKubernetesSupportedVersionCmd)
+        versionResponse = self.apiclient.addKubernetesSupportedVersion(addKubernetesSupportedVersionCmd)
+        if not versionResponse:
+            self.cleanup.append(versionResponse)
         return versionResponse
 
-    def listKubernetesSupportedVersions(self, cmd):
-        versions = self.apiclient.listKubernetesSupportedVersions(cmd)
-        return versions
-
-    def listKubernetesSupportedVersionId(self, versionId):
+    def listKubernetesSupportedVersion(self, versionId):
         listKubernetesSupportedVersionsCmd = listKubernetesSupportedVersions.listKubernetesSupportedVersionsCmd()
         listKubernetesSupportedVersionsCmd.id = versionId
-        versionResponse = self.listKubernetesSupportedVersions(listKubernetesSupportedVersionsCmd)
+        versionResponse = self.apiclient.listKubernetesSupportedVersions(listKubernetesSupportedVersionsCmd)
         return versionResponse[0]
-
-    def listAllKubernetesSupportedVersions(self):
-        listKubernetesSupportedVersionsCmd = listKubernetesSupportedVersions.listKubernetesSupportedVersionsCmd()
-        versionResponse = self.listKubernetesSupportedVersionsCmd(listKubernetesSupportedVersionsCmd)
-        return versionResponse
 
     def deleteKubernetesSupportedVersion(self, cmd):
         response = self.apiclient.deleteKubernetesSupportedVersion(cmd)
         return response
 
-    def deleteKubernetesSupportedVersionId(self, versionId, deleteIso):
+    def deleteKubernetesSupportedVersion(self, versionId, deleteIso):
         deleteKubernetesSupportedVersionCmd = deleteKubernetesSupportedVersion.deleteKubernetesSupportedVersionCmd()
         deleteKubernetesSupportedVersionCmd.id = versionId
         deleteKubernetesSupportedVersionCmd.deleteiso = deleteIso
-        response = self.deleteKubernetesSupportedVersion(deleteKubernetesSupportedVersionCmd)
+        response = self.apiclient.deleteKubernetesSupportedVersion(deleteKubernetesSupportedVersionCmd)
         return response
 
-    def checkKubernetesSupportedVersionIsoState(self, version_id, retries=15, interval=15):
+    def waitForKubernetesSupportedVersionIsoReadyState(self, version_id, retries=15, interval=15):
         """Check if Kubernetes supported version ISO is in Ready state"""
 
         while retries > -1:
             time.sleep(interval)
-            list_versions_response = self.listKubernetesSupportedVersionId(version_id)
+            list_versions_response = self.listKubernetesSupportedVersion(version_id)
             if not hasattr(list_versions_response, 'isostate') or not list_versions_response or not list_versions_response.isostate:
                 retries = retries - 1
                 continue

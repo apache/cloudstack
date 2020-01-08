@@ -181,6 +181,7 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.Ip;
@@ -1618,7 +1619,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 if (KubernetesVersionManagerImpl.compareSemanticVersions(version.getSemanticVersion(), MIN_KUBERNETES_VERSION_HA_SUPPORT) >= 0) {
                     haSupported = true;
                 }
-            } catch (Exception e) {
+            } catch (IllegalArgumentException e) {
                 LOGGER.error(String.format("Unable to compare Kubernetes version for cluster version ID: %s with %s", version.getUuid(), MIN_KUBERNETES_VERSION_HA_SUPPORT), e);
             }
         }
@@ -1664,7 +1665,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
             initArgs += String.format("--apiserver-cert-extra-sans=%s", serverIp);
             k8sMasterConfig = k8sMasterConfig.replace(clusterInitArgsKey, initArgs);
-        } catch (Exception e) {
+        } catch (IOException e) {
             String msg = "Failed to read Kubernetes master configuration file";
             LOGGER.error(msg, e);
             throw new ManagementServerException(msg, e);
@@ -1713,7 +1714,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             k8sMasterConfig = k8sMasterConfig.replace(joinIpKey, joinIp);
             k8sMasterConfig = k8sMasterConfig.replace(clusterTokenKey, generateClusterToken(kubernetesCluster));
             k8sMasterConfig = k8sMasterConfig.replace(clusterHACertificateKey, generateClusterHACertificateKey(kubernetesCluster));
-        } catch (Exception e) {
+        } catch (IOException e) {
             String msg = "Failed to read Kubernetes master configuration file";
             LOGGER.error(msg, e);
             throw new ManagementServerException(msg, e);
@@ -1807,7 +1808,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 k8sNodeConfig = k8sNodeConfig.replace(dockerAuthKey, "\"" + base64Auth + "\"");
                 k8sNodeConfig = k8sNodeConfig.replace(dockerEmailKey, "\"" + dockerRegistryEmail + "\"");
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             String msg = "Failed to read Kubernetes node configuration file";
             LOGGER.error(msg, e);
             throw new ManagementServerException(msg, e);
@@ -1830,7 +1831,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             f.set(startVm, vm.getId());
             userVmService.startVirtualMachine(startVm);
             LOGGER.debug(String.format("Started VM ID: %s in the Kubernetes cluster ID: %s", vm.getUuid(), kubernetesCluster.getUuid()));
-        } catch (Exception ex) {
+        } catch (IllegalAccessException | NoSuchFieldException | ExecutionException |
+                ResourceUnavailableException | ResourceAllocationException | InsufficientCapacityException ex) {
             logAndThrow(Level.WARN, String.format("Failed to start VM in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), ex);
         }
 
@@ -1990,7 +1992,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 if (KubernetesVersionManagerImpl.compareSemanticVersions(clusterKubernetesVersion.getSemanticVersion(), MIN_KUBERNETES_VERSION_HA_SUPPORT) < 0) {
                     throw new InvalidParameterValueException(String.format("HA support is available only for Kubernetes version %s and above. Given version ID: %s is %s", MIN_KUBERNETES_VERSION_HA_SUPPORT, clusterKubernetesVersion.getUuid(), clusterKubernetesVersion.getSemanticVersion()));
                 }
-            } catch (Exception e) {
+            } catch (IllegalArgumentException e) {
                 logAndThrow(Level.WARN, String.format("Unable to compare Kubernetes version for given version ID: %s with %s", clusterKubernetesVersion.getUuid(), MIN_KUBERNETES_VERSION_HA_SUPPORT), e);
             }
         }
@@ -2707,10 +2709,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setId(kubernetesCluster.getUuid());
         response.setName(kubernetesCluster.getName());
         String configData = "";
-        try {
-            configData = new String(Base64.decodeBase64(kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), "kubeConfigData").getValue()));
-        } catch (Exception e) {
-            LOGGER.warn(String.format("Failed to retrieve Kubernetes config for cluster ID: %s", kubernetesCluster.getUuid()), e);
+        KubernetesClusterDetailsVO clusterDetailsVO = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), "kubeConfigData");
+        if (clusterDetailsVO != null && !Strings.isNullOrEmpty(clusterDetailsVO.getValue())) {
+            configData = new String(Base64.decodeBase64(clusterDetailsVO.getValue()));
         }
         response.setConfigData(configData);
         response.setObjectName("clusterconfig");
@@ -2889,7 +2890,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         } else {
                             LOGGER.warn(String.format("Garbage collection failed for Kubernetes cluster ID: %s, it will be attempted to garbage collected in next run", kubernetesCluster.getUuid()));
                         }
-                    } catch (Exception e) {
+                    } catch (ManagementServerException e) {
                         LOGGER.warn(String.format("Failed to destroy Kubernetes cluster ID: %s during GC", kubernetesCluster.getUuid()), e);
                         // proceed further with rest of the Kubernetes cluster garbage collection
                     }

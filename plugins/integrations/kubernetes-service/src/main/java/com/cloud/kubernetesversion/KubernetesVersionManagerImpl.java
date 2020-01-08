@@ -31,10 +31,8 @@ import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.kubernetesversion.ListKubernetesSupportedVersionsCmd;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.dc.DataCenterVO;
@@ -75,8 +73,6 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     private DataCenterDao dataCenterDao;
     @Inject
     private TemplateApiService templateService;
-    @Inject
-    private ConfigurationDao globalConfigDao;
 
     private KubernetesSupportedVersionResponse createKubernetesSupportedVersionResponse(final KubernetesSupportedVersion kubernetesSupportedVersion) {
         KubernetesSupportedVersionResponse response = new KubernetesSupportedVersionResponse();
@@ -84,7 +80,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         response.setId(kubernetesSupportedVersion.getUuid());
         response.setName(kubernetesSupportedVersion.getName());
         response.setSemanticVersion(kubernetesSupportedVersion.getSemanticVersion());
-        DataCenterVO zone = ApiDBUtils.findZoneById(kubernetesSupportedVersion.getZoneId());
+        DataCenterVO zone = dataCenterDao.findById(kubernetesSupportedVersion.getZoneId());
         if (zone != null) {
             response.setZoneId(zone.getUuid());
             response.setZoneName(zone.getName());
@@ -180,7 +176,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
                     if (compareSemanticVersions(minimumSemanticVersion, version.getSemanticVersion()) > 0) {
                         versions.remove(i);
                     }
-                } catch (Exception e) {
+                } catch (IllegalArgumentException e) {
                     LOGGER.warn(String.format("Unable to compare Kubernetes version for supported version ID: %s with %s", version.getUuid(), minimumSemanticVersion));
                     versions.remove(i);
                 }
@@ -209,7 +205,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         f = registerIsoCmd.getClass().getDeclaredField("url");
         f.setAccessible(true);
         f.set(registerIsoCmd, isoUrl);
-        if (Strings.isNullOrEmpty(isoChecksum)) {
+        if (!Strings.isNullOrEmpty(isoChecksum)) {
             f = registerIsoCmd.getClass().getDeclaredField("checksum");
             f.setAccessible(true);
             f.set(registerIsoCmd, isoChecksum);
@@ -248,7 +244,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
 
     @Override
     public ListResponse<KubernetesSupportedVersionResponse> listKubernetesSupportedVersions(final ListKubernetesSupportedVersionsCmd cmd) {
-        if (!KubernetesClusterService.KubernetesServiceEnabled.value()) {
+        if (!KubernetesClusterService.isKubernetesServiceEnabled()) {
             throw new CloudRuntimeException("Kubernetes Service plugin is disabled");
         }
         final Long versionId = cmd.getId();
@@ -265,7 +261,6 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             }
             minimumSemanticVersion = minVersion.getSemanticVersion();
         }
-
         List <KubernetesSupportedVersionVO> versions = new ArrayList<>();
         if (versionId != null) {
             KubernetesSupportedVersionVO version = kubernetesSupportedVersionDao.findById(versionId);
@@ -363,7 +358,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         if (isDeleteIso && template != null) { // Delete ISO
             try {
                 deleteKubernetesVersionIso(template.getId());
-            } catch (Exception ex) {
+            } catch (IllegalAccessException | NoSuchFieldException | IllegalArgumentException ex) {
                 LOGGER.error(String.format("Unable to delete binaries ISO ID: %s associated with supported kubernetes version ID: %s", template.getUuid(), version.getUuid()), ex);
                 throw new CloudRuntimeException(String.format("Unable to delete binaries ISO ID: %s associated with supported kubernetes version ID: %s", template.getUuid(), version.getUuid()));
             }
