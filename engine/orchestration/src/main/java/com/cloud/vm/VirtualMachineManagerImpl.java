@@ -39,11 +39,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.PrepareForMigrationAnswer;
-import com.cloud.agent.api.to.DpdkTO;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
@@ -97,6 +94,7 @@ import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
@@ -116,6 +114,7 @@ import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -166,7 +165,9 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
@@ -1123,6 +1124,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 
+                    // Get VM extraConfig from DB and set to VM TO
+                    addExtraConfig(vmTO);
+
                     work = _workDao.findById(work.getId());
                     if (work == null || work.getStep() != Step.Prepare) {
                         throw new ConcurrentOperationException("Work steps have been changed: " + work);
@@ -1284,6 +1288,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (startedVm == null) {
             throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName() + "' (" + vm.getUuid() + "), see management server log for details");
+        }
+    }
+
+    // Add extra config data to the vmTO as a Map
+    private void addExtraConfig(VirtualMachineTO vmTO) {
+        Map<String, String> details = vmTO.getDetails();
+        for (String key : details.keySet()) {
+            if (key.startsWith(ApiConstants.EXTRA_CONFIG)) {
+                vmTO.addExtraConfig(key, details.get(key));
+            }
         }
     }
 
