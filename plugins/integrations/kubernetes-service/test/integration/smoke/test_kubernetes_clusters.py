@@ -398,41 +398,41 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         return
 
-    # @attr(tags=["advanced", "smoke"], required_hardware="true")
-    # def test_06_deploy_and_invalid_upgrade_kubernetes_cluster(self):
-    #     """Test to deploy a new Kubernetes cluster and check for failure while tying to upgrade it to a lower version
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_06_deploy_and_invalid_upgrade_kubernetes_cluster(self):
+        """Test to deploy a new Kubernetes cluster and check for failure while tying to upgrade it to a lower version
 
-    #     # Validate the following:
-    #     # 1. createKubernetesCluster should return valid info for new cluster
-    #     # 2. The Cloud Database contains the valid information
-    #     # 3. upgradeKubernetesCluster should fail
-    #     """
-    #     if self.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
-    #         self.skipTest("CKS not supported for hypervisor: %s" % self.hypervisor.lower())
-    #     name = 'testcluster-' + random_gen()
-    #     self.debug("Creating for Kubernetes cluster with name %s" % name)
+        # Validate the following:
+        # 1. createKubernetesCluster should return valid info for new cluster
+        # 2. The Cloud Database contains the valid information
+        # 3. upgradeKubernetesCluster should fail
+        """
+        if self.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
+            self.skipTest("CKS not supported for hypervisor: %s" % self.hypervisor.lower())
+        name = 'testcluster-' + random_gen()
+        self.debug("Creating for Kubernetes cluster with name %s" % name)
 
-    #     cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_2.id)
+        cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_2.id)
 
-    #     self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_2.id)
+        self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_2.id)
 
-    #     self.debug("Kubernetes cluster with ID: %s successfully deployed, now scaling it" % cluster_response.id)
+        self.debug("Kubernetes cluster with ID: %s successfully deployed, now scaling it" % cluster_response.id)
 
-    #     try:
-    #         cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_1.id)
-    #         self.debug("Invalid CKS Kubernetes HA cluster deployed with ID: %s. Deleting it and failing test." % kuberetes_version_1.id)
-    #         self.deleteAndVerifyKubernetesCluster(cluster_response.id)
-    #         self.fail("Kubernetes cluster upgraded to a lower Kubernetes supported version. Must be an error.")
-    #     except CloudstackAPIException as e:
-    #         self.debug("Upgrading Kubernetes cluster with invalid Kubernetes supported version check successful, API failure: %s" % e)
+        try:
+            cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_1.id)
+            self.debug("Invalid CKS Kubernetes HA cluster deployed with ID: %s. Deleting it and failing test." % kuberetes_version_1.id)
+            self.deleteAndVerifyKubernetesCluster(cluster_response.id)
+            self.fail("Kubernetes cluster upgraded to a lower Kubernetes supported version. Must be an error.")
+        except Exception as e:
+            self.debug("Upgrading Kubernetes cluster with invalid Kubernetes supported version check successful, API failure: %s" % e)
 
-    #     self.debug("Deleting Kubernetes cluster with ID: %s" % cluster_response.id)
+        self.debug("Deleting Kubernetes cluster with ID: %s" % cluster_response.id)
 
-    #     self.deleteAndVerifyKubernetesCluster(cluster_response.id)
+        self.deleteAndVerifyKubernetesCluster(cluster_response.id)
 
-    #     self.debug("Kubernetes cluster with ID: %s successfully deleted" % cluster_response.id)
+        self.debug("Kubernetes cluster with ID: %s successfully deleted" % cluster_response.id)
 
-    #     return
+        return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     def test_07_deploy_and_scale_up_kubernetes_cluster(self):
