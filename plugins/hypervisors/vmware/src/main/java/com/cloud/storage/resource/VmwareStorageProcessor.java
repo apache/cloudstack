@@ -56,7 +56,6 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.springframework.util.CollectionUtils;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -538,16 +537,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
         long virtualSize = processor.getTemplateVirtualSize(secondaryMountPoint + "/" + templatePathAtSecondaryStorage, templateName);
 
         if (createSnapshot) {
-            if (vmMo.createSnapshot("cloud.template.base", "Base snapshot", false, false)) {
+            if (vmMo.createTemplateBaseSnapshot("cloud.template.base", "Base snapshot")) {
                 // the same template may be deployed with multiple copies at per-datastore per-host basis,
                 // save the original template name from CloudStack DB as the UUID to associate them.
                 vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, templateName);
-                if (vAppConfig == null || (
-                        CollectionUtils.isEmpty(vAppConfig.getOvfSection())) &&
-                        CollectionUtils.isEmpty(vAppConfig.getProduct()) &&
-                        CollectionUtils.isEmpty(vAppConfig.getProperty())
-                ) {
-                    s_logger.info("Marking as template " + templateName + " with uuid: " + templateUuid);
+                if (vAppConfig == null) {
                     vmMo.markAsTemplate();
                 }
             } else {
