@@ -244,7 +244,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
 
     @Override
     public ListResponse<KubernetesSupportedVersionResponse> listKubernetesSupportedVersions(final ListKubernetesSupportedVersionsCmd cmd) {
-        if (!KubernetesClusterService.isKubernetesServiceEnabled()) {
+        if (!KubernetesClusterService.KubernetesServiceEnabled.value()) {
             throw new CloudRuntimeException("Kubernetes Service plugin is disabled");
         }
         final Long versionId = cmd.getId();
