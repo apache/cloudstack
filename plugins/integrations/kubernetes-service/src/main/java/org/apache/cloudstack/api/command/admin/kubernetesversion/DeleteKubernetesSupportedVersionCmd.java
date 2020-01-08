@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -45,7 +46,7 @@ import com.cloud.kubernetesversion.KubernetesVersionService;
         responseObject = SuccessResponse.class,
         entityType = {KubernetesSupportedVersion.class},
         authorized = {RoleType.Admin})
-public class DeleteKubernetesSupportedVersionCmd extends BaseAsyncCmd {
+public class DeleteKubernetesSupportedVersionCmd extends BaseAsyncCmd implements AdminCmd {
     public static final Logger LOGGER = Logger.getLogger(DeleteKubernetesSupportedVersionCmd.class.getName());
     public static final String APINAME = "deleteKubernetesSupportedVersion";
 

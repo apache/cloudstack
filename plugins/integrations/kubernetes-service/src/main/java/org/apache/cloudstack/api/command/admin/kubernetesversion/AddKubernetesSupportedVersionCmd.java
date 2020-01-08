@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -49,7 +49,7 @@ import com.google.common.base.Strings;
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {KubernetesSupportedVersion.class},
         authorized = {RoleType.Admin})
-public class AddKubernetesSupportedVersionCmd extends BaseCmd implements UserCmd {
+public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCmd {
     public static final Logger LOGGER = Logger.getLogger(AddKubernetesSupportedVersionCmd.class.getName());
     public static final String APINAME = "addKubernetesSupportedVersion";
 
