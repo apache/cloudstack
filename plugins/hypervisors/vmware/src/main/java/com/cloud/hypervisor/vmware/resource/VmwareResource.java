@@ -3722,7 +3722,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                 VirtualMachineMO vmMo = dcMo.findVm(file.getDir());
                                 Pair<VirtualDisk, String> vds = vmMo.getDiskDevice(file.getFileName(), true);
                                 long virtualsize = vds.first().getCapacityInKB() * 1024;
-                                long physicalsize = primaryStorageDatastoreMo.fileDiskSize(file.getPath());
+                                long physicalsize = 0L;
+                                VirtualMachineFileLayoutEx fileLayout = vmMo.getFileLayout();
+                                List<VirtualMachineFileLayoutExFileInfo> files = fileLayout.getFile();
+                                for(VirtualMachineFileLayoutExFileInfo fileInfo: files){
+                                    if (fileInfo.getName().contains("ROOT")){
+                                        physicalsize += fileInfo.getSize();
+                                    }
+                                }
+
                                 if (statEntry.containsKey(chainInfo)) {
                                     VolumeStatsEntry vse = statEntry.get(chainInfo);
                                     if (vse != null) {
