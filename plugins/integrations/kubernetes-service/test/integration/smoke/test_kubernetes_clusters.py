@@ -335,70 +335,68 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         return
 
-    # @attr(tags=["advanced", "smoke"], required_hardware="true")
-    # def test_04_deploy_and_upgrade_kubernetes_cluster(self):
-    #     """Test to deploy a new Kubernetes cluster and upgrade it to newer version
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_04_deploy_and_upgrade_kubernetes_cluster(self):
+        """Test to deploy a new Kubernetes cluster and upgrade it to newer version
 
-    #     # Validate the following:
-    #     # 1. createKubernetesCluster should return valid info for new cluster
-    #     # 2. The Cloud Database contains the valid information
-    #     # 3. upgradeKubernetesCluster should return valid info for the cluster
-    #     """
-    #     if self.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
-    #         self.skipTest("CKS not supported for hypervisor: %s" % self.hypervisor.lower())
-    #     name = 'testcluster-' + random_gen()
-    #     self.debug("Creating for Kubernetes cluster with name %s" % name)
+        # Validate the following:
+        # 1. createKubernetesCluster should return valid info for new cluster
+        # 2. The Cloud Database contains the valid information
+        # 3. upgradeKubernetesCluster should return valid info for the cluster
+        """
+        if self.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
+            self.skipTest("CKS not supported for hypervisor: %s" % self.hypervisor.lower())
+        name = 'testcluster-' + random_gen()
+        self.debug("Creating for Kubernetes cluster with name %s" % name)
 
-    #     cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_2.id)
+        cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_2.id)
 
-    #     self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_2.id)
+        self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_2.id)
 
-    #     self.debug("Kubernetes cluster with ID: %s successfully deployed, now upgrading it" % cluster_response.id)
+        self.debug("Kubernetes cluster with ID: %s successfully deployed, now upgrading it" % cluster_response.id)
 
-    #     time.sleep(20)
+        cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_3.id)
 
-    #     cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_3.id)
+        self.verifyKubernetesClusterUpgrade(cluster_response, self.kuberetes_version_3.id)
 
-    #     self.verifyKubernetesClusterUpgrade(cluster_response, self.kuberetes_version_3.id)
+        self.debug("Kubernetes cluster with ID: %s successfully upgraded, now deleting it" % cluster_response.id)
 
-    #     self.debug("Kubernetes cluster with ID: %s successfully upgraded, now deleting it" % cluster_response.id)
+        self.deleteAndVerifyKubernetesCluster(cluster_response.id)
 
-    #     self.deleteAndVerifyKubernetesCluster(cluster_response.id)
+        self.debug("Kubernetes cluster with ID: %s successfully deleted" % cluster_response.id)
 
-    #     self.debug("Kubernetes cluster with ID: %s successfully deleted" % cluster_response.id)
+        return
 
-    #     return
+    def test_05_deploy_and_upgrade_kubernetes_ha_cluster(self):
+        """Test to deploy a new HA Kubernetes cluster and upgrade it to newer version
 
-    # def test_05_deploy_and_upgrade_kubernetes_ha_cluster(self):
-    #     """Test to deploy a new HA Kubernetes cluster and upgrade it to newer version
+        # Validate the following:
+        # 1. createKubernetesCluster should return valid info for new cluster
+        # 2. The Cloud Database contains the valid information
+        # 3. upgradeKubernetesCluster should return valid info for the cluster
+        """
+        if self.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
+            self.skipTest("CKS not supported for hypervisor: %s" % self.hypervisor.lower())
+        name = 'testcluster-' + random_gen()
+        self.debug("Creating for Kubernetes cluster with name %s" % name)
 
-    #     # Validate the following:
-    #     # 1. createKubernetesCluster should return valid info for new cluster
-    #     # 2. The Cloud Database contains the valid information
-    #     # 3. upgradeKubernetesCluster should return valid info for the cluster
-    #     """
-    #     if self.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
-    #         self.skipTest("CKS not supported for hypervisor: %s" % self.hypervisor.lower())
-    #     name = 'testcluster-' + random_gen()
-    #     self.debug("Creating for Kubernetes cluster with name %s" % name)
+        cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_2.id, 1, 2)
 
-    #     cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_2.id, 1, 2)
+        self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_2.id, 1, 2)
 
-    #     self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_2.id, 1, 2)
+        self.debug("Kubernetes cluster with ID: %s successfully deployed, now upgrading it" % cluster_response.id)
 
-    #     self.debug("Kubernetes cluster with ID: %s successfully deployed, now upgrading it" % cluster_response.id)
+        cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_3.id)
 
-    #     cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_3.id)
+        self.verifyKubernetesClusterUpgrade(cluster_response, self.kuberetes_version_3.id)
 
-    #     self.verifyKubernetesClusterUpgrade(cluster_response, self.kuberetes_version_3.id)
+        self.debug("Kubernetes cluster with ID: %s successfully upgraded, now deleting it" % cluster_response.id)
 
-    #     self.debug("Kubernetes cluster with ID: %s successfully upgraded, now deleting it" % cluster_response.id)
+        self.deleteAndVerifyKubernetesCluster(cluster_response.id)
 
-    #     self.deleteAndVerifyKubernetesCluster(cluster_response.id)
+        self.debug("Kubernetes cluster with ID: %s successfully deleted" % cluster_response.id)
 
-    #     self.debug("Kubernetes cluster with ID: %s successfully deleted" % cluster_response.id)
-
-    #     return
+        return
 
     # @attr(tags=["advanced", "smoke"], required_hardware="true")
     # def test_06_deploy_and_invalid_upgrade_kubernetes_cluster(self):
