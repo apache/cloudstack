@@ -17,7 +17,8 @@
 package com.cloud.kubernetescluster;
 
 /**
- * VirtualMachine describes the properties held by a virtual machine
+ * KubernetesClusterVmMap will store a map of ID of KubernetesCuster
+ * and ID of its VirtualMachine
  */
 public interface KubernetesClusterVmMap {
     long getId();
