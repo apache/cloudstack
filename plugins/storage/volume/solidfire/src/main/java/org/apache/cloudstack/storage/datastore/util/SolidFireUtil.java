@@ -703,7 +703,7 @@ public class SolidFireUtil {
 
             //Check if cluster VAG exists
             Boolean clusterVagExists = false;
-            SolidFireUtil.SolidFireVag sfVagMatchingClusterId;
+            SolidFireUtil.SolidFireVag sfVagMatchingClusterId = sfVags.get(0);
             for (SolidFireUtil.SolidFireVag sfVag : sfVags) {
 
                 if(sfVag.getName().equals("CloudStack-"+clusterId)){
@@ -720,7 +720,7 @@ public class SolidFireUtil {
             } else {
                 // Create cluster VAG
                 LOGGER.info("Creating volume access group CloudStack-"+clusterId);
-                List<String> IQNsInCluster = new List<String>;
+                List<String> IQNsInCluster = new ArrayList<>();
                 for (HostVO hostVO : hosts) {
                     String iqn = hostVO.getStorageUrl();
                     IQNsInCluster.add(iqn);
