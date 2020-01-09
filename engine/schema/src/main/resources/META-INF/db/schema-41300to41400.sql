@@ -22,6 +22,9 @@
 -- KVM: enable storage data motion on KVM hypervisor_capabilities
 UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported` = 1 WHERE `hypervisor_capabilities`.`hypervisor_type` = 'KVM';
 
+-- Use 'Other Linux 64-bit' as guest os for the default systemvmtemplate for XenServer
+UPDATE `cloud`.`vm_template` SET guest_os_id=99 WHERE id=1;
+
 -- Fix OS category for some Ubuntu and RedHat OS-es
 UPDATE `cloud`.`guest_os` SET `category_id`='10' WHERE `id`=277 AND display_name="Ubuntu 17.04";
 UPDATE `cloud`.`guest_os` SET `category_id`='10' WHERE `id`=278 AND display_name="Ubuntu 17.10";
