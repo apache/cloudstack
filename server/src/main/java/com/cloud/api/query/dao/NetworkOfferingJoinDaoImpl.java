@@ -47,7 +47,7 @@ public class NetworkOfferingJoinDaoImpl extends GenericDaoBase<NetworkOfferingJo
         SearchBuilder<NetworkOfferingJoinVO> sb = createSearchBuilder();
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.FIND_IN_SET);
         if (includeAllDomainOffering) {
-            sb.or("zId", sb.entity().getZoneId(), SearchCriteria.Op.NULL);
+            sb.or("dId", sb.entity().getDomainId(), SearchCriteria.Op.NULL);
         }
         sb.done();
 
