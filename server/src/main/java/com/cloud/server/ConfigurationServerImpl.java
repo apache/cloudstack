@@ -769,8 +769,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         final String result = command.execute();
         s_logger.info("The script injectkeys.sh was run with result : " + result);
         if (result != null) {
-            s_logger.warn("Failed to inject generated public key into systemvm iso " + result);
-            throw new CloudRuntimeException("Failed to inject generated public key into systemvm iso " + result);
+            s_logger.warn("The script injectkeys.sh failed to run sucessfully : " + result);
+            throw new CloudRuntimeException("The script injectkeys.sh failed to run sucessfully : " + result);
         }
     }
 
