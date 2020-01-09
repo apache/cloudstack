@@ -1202,10 +1202,23 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
+    /**
+     * To provision SSH port forwarding rules for the given Kubernetes cluster
+     * for its given virtual machines
+     * @param kubernetesCluster
+     * @param publicIp
+     * @param network
+     * @param account
+     * @param List<Long> clusterVMIds (when empty then method must be called while
+     *                  down-scaling of the KubernetesCluster therefore no new rules
+     *                  to be added)
+     * @param firewallRuleSourcePortStart
+     * @throws ResourceUnavailableException
+     * @throws NetworkRuleConflictException
+     */
     private void provisionSshPortForwardingRules(KubernetesCluster kubernetesCluster, IpAddress publicIp, Network network, Account account, List<Long> clusterVMIds, int firewallRuleSourcePortStart) throws ResourceUnavailableException,
             NetworkRuleConflictException {
-        if (!CollectionUtils.isEmpty(clusterVMIds)) { // Upscaling, add new port-forwarding rules
-            // Apply port forwarding only to new VMs
+        if (!CollectionUtils.isEmpty(clusterVMIds)) {
             final long publicIpId = publicIp.getId();
             final long networkId = network.getId();
             final long accountId = account.getId();
@@ -1257,10 +1270,19 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         lbService.assignToLoadBalancer(lb.getId(), null, vmIdIpMap);
     }
 
-    // Open up  firewall port CLUSTER_API_PORT, secure port on which Kubernetes API server is running. Also create port-forwarding
-    // rule to forward public IP traffic to master VM private IP
-    // Open up  firewall ports NODES_DEFAULT_START_SSH_PORT to NODES_DEFAULT_START_SSH_PORT+n for SSH access. Also create port-forwarding
-    // rule to forward public IP traffic to all node VM private IP
+    /**
+     * Setup network rules for Kubernetes cluster
+     * Open up firewall port CLUSTER_API_PORT, secure port on which Kubernetes
+     * API server is running. Also create load balancing rule to forward public
+     * IP traffic to master VMs' private IP.
+     * Open up  firewall ports NODES_DEFAULT_START_SSH_PORT to NODES_DEFAULT_START_SSH_PORT+n
+     * for SSH access. Also create port-forwarding rule to forward public IP traffic to all
+     * @param kubernetesCluster
+     * @param network
+     * @param account
+     * @param clusterVMIds
+     * @throws ManagementServerException
+     */
     private void setupKubernetesClusterNetworkRules(KubernetesCluster kubernetesCluster,
                                                     Network network, Account account,
                                                    List<Long> clusterVMIds) throws ManagementServerException {
@@ -1310,9 +1332,18 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
-    // Open up  firewall ports NODES_DEFAULT_START_SSH_PORT to NODES_DEFAULT_START_SSH_PORT+n for SSH access. Also create port-forwarding
-    // rule to forward public IP traffic to all node VM private IP. Existing node VMs before scaling
-    // will already be having these rules
+    /**
+     * Scale network rules for an existing Kubernetes cluster while scaling it
+     * Open up firewall for SSH access from port NODES_DEFAULT_START_SSH_PORT to NODES_DEFAULT_START_SSH_PORT+n.
+     * Also remove port forwarding rules for removed virtual machines and create port-forwarding rule
+     * to forward public IP traffic to all node VMs' private IP.
+     * @param kubernetesCluster
+     * @param network
+     * @param account
+     * @param clusterVMIds
+     * @param removedVMIds
+     * @throws ManagementServerException
+     */
     private void scaleKubernetesClusterNetworkRules(KubernetesCluster kubernetesCluster, Network network, Account account,
                                                     List<Long> clusterVMIds, List<Long> removedVMIds) throws ManagementServerException {
         if (!Network.GuestType.Isolated.equals(network.getGuestType())) {
