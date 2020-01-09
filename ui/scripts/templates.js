@@ -2489,6 +2489,13 @@
 								custom: cloudStack.uiCustom.granularDetails({
                                     resourceType: 'Template',
 									dataProvider: function(args) {
+									    // no paging for listTemplates details
+									    if (args.page > 1) {
+									        args.response.success({
+									            data: []
+									        });
+									        return;
+									    }
 										$.ajax({
 											url: createURL('listTemplates'),
 											data: {

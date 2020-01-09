@@ -48,6 +48,7 @@ env:
              smoke/test_async_job
              smoke/test_create_list_domain_account_project
              smoke/test_deploy_vgpu_enabled_vm
+             smoke/test_deploy_vm_extra_config_data
              smoke/test_deploy_vm_iso
              smoke/test_deploy_vm_root_resize
              smoke/test_deploy_vm_with_userdata
@@ -155,6 +156,7 @@ env:
              component/test_project_resources"
 
     - TESTS="component/test_project_usage
+             component/test_protocol_number_security_group
              component/test_resource_limits"
 
     - TESTS="component/test_regions_accounts
