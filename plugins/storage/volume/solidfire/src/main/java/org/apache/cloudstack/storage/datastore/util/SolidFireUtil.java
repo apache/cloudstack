@@ -556,6 +556,7 @@ public class SolidFireUtil {
                 throw new CloudRuntimeException("Can support at most four volume access groups per compute cluster (==)");
             }
 
+            // if MAX_NUM_INITIATORS_PER_VAG is reached create new random VAG
             if (numVags > 0) {
                 if (!hostSupports_iScsi(host)) {
                     String errMsg = "Host with ID " + host.getId() + " does not support iSCSI.";
@@ -728,7 +729,8 @@ public class SolidFireUtil {
                 SolidFireUtil.createVag(sfConnection, "CloudStack-" + clusterId, IQNsInCluster.toArray(new String[0]), new long[] { sfVolumeId });
             }
 
-            //rebuild (should no longer have null entry)
+            //refresh sf VAG list and rebuild sfVagToIqnsMap (should no longer have null entry)
+            sfVags = SolidFireUtil.getAllVags(sfConnection);
             sfVagToIqnsMap = buildVagtoIQNMap(hosts, sfVags);
         }
 
@@ -744,7 +746,7 @@ public class SolidFireUtil {
                     SolidFireUtil.addVolumeIdsToSolidFireVag(sfConnection, sfVag.getId(), new Long[] { sfVolumeId });
                 }
             }
-            // if no VAGs associated with hosts or IQNs create a vag with random uuid
+            // if no VAGs associated with hosts or IQNs create a vag with random uuid (should not happen)
             else {
                 List<String> iqnsNotInVag = sfVagToIqnsMap.get(null);
 
