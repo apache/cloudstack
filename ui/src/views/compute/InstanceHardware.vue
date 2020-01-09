@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <a-collapse v-model="activeKey" :bordered="false">
+    <a-collapse v-model="activeKey">
 
       <a-collapse-panel :header="'ISO: ' + vm.isoname" v-if="vm.isoid" key="1">
         <a-list
@@ -41,35 +41,49 @@
       <a-collapse-panel :header="'Disks: ' + volumes.length" key="2">
         <a-list
           size="small"
-          itemLayout="horizontal"
+          itemLayout="vertical"
           :dataSource="volumes"
         >
-          <a-list-item slot="renderItem" slot-scope="item">
+          <a-list-item slot="renderItem" slot-scope="item" class="list-item">
             <a-list-item-meta>
               <div slot="avatar">
                 <a-avatar>
                   <a-icon type="hdd" />
                 </a-avatar>
               </div>
-              <div slot="title">
+              <div slot="title" class="title">
                 <router-link :to="{ path: '/volume/' + item.id }">{{ item.name }} </router-link>
-                <a-tag v-if="item.type">
-                  {{ item.type }}
-                </a-tag>
-                <a-tag v-if="item.state">
-                  {{ item.state }}
-                </a-tag>
-                <a-tag v-if="item.provisioningtype">
-                  {{ item.provisioningtype }}
-                </a-tag>
-                <br/>
-                {{ $t('size') }}: {{ (item.size / (1024 * 1024 * 1024.0)).toFixed(2) }} GB<br/>
-                {{ $t('physicalsize') }}: {{ (item.physicalsize / (1024 * 1024 * 1024.0)).toFixed(4) }} GB<br/>
-                {{ $t('storagePool') }}: {{ item.storage }} ({{ item.storagetype }})<br/>
-                <a-icon type="barcode"/> {{ item.id }} <br/>
+                <div class="tags">
+                  <a-tag v-if="item.type">
+                    {{ item.type }}
+                  </a-tag>
+                  <a-tag v-if="item.state">
+                    {{ item.state }}
+                  </a-tag>
+                  <a-tag v-if="item.provisioningtype">
+                    {{ item.provisioningtype }}
+                  </a-tag>
+                </div>
               </div>
             </a-list-item-meta>
-            <div slot="actions" class="actions">
+            <div>
+              <a-divider class="divider-small" />
+              <div class="attribute">
+                <div class="label">{{ $t('size') }}</div>
+                <div>{{ (item.size / (1024 * 1024 * 1024.0)).toFixed(2) }} GB</div>
+              </div>
+              <div class="attribute">
+                <div class="label">{{ $t('physicalsize') }}</div>
+                <div>{{ (item.physicalsize / (1024 * 1024 * 1024.0)).toFixed(4) }} GB</div>
+              </div>
+              <div class="attribute">
+                <div class="label">{{ $t('storagePool') }}</div>
+                <div>{{ item.storage }} ({{ item.storagetype }})</div>
+              </div>
+              <div class="attribute">
+                <div class="label">{{ $t('id') }}</div>
+                <div><a-icon type="barcode"/> {{ item.id }}</div>
+              </div>
             </div>
           </a-list-item>
         </a-list>
@@ -79,107 +93,112 @@
         <a-button type="primary" @click="showAddModal" :loading="loadingNic">
           <a-icon type="plus"></a-icon> {{ $t('label.network.addVM') }}
         </a-button>
+        <a-divider class="divider-small" />
         <a-list
           size="small"
-          itemLayout="horizontal"
+          itemLayout="vertical"
           :dataSource="vm.nic"
           class="list"
           :loading="loadingNic"
         >
-          <a-list-item slot="renderItem" slot-scope="item" class="list__item">
+          <a-list-item slot="renderItem" slot-scope="item" class="list-item">
             <a-list-item-meta>
               <div slot="avatar">
                 <a-avatar slot="avatar">
                   <a-icon type="wifi" />
                 </a-avatar>
-                <br/>
-                <a-popconfirm
-                  title="Please confirm that you would like to make this NIC the default for this VM."
-                  @confirm="setAsDefault(item)"
-                  okText="Yes"
-                  cancelText="No"
-                >
-                  <a-button
-                    style="margin-top: 10px"
-                    icon="arrow-right"
-                    size="small"
-                    shape="round" />
-                </a-popconfirm>
-                <br/>
-                <a-tooltip placement="right" v-if="item.type !== 'L2'">
-                  <template slot="title">
-                    {{ "Change IP Address" }}
-                  </template>
-                  <a-button
-                    style="margin-top: 10px"
-                    icon="swap"
-                    size="small"
-                    shape="round"
-                    @click="editIpAddressNic = item.id; showUpdateIpModal = true" />
-                </a-tooltip>
-                <br/>
-                <a-tooltip placement="right" v-if="item.type !== 'L2'">
-                  <template slot="title">
-                    {{ "Manage Secondary IP Addresses" }}
-                  </template>
-                  <a-button
-                    style="margin-top: 10px"
-                    icon="environment"
-                    size="small"
-                    shape="round"
-                    @click="fetchSecondaryIPs(item.id)" />
-                </a-tooltip>
-                <br/>
-                <a-popconfirm
-                  :title="$t('message.network.removeNIC')"
-                  @confirm="removeNIC(item)"
-                  okText="Yes"
-                  cancelText="No"
-                  v-if="!item.isdefault"
-                >
-                  <a-button
-                    style="margin-top: 10px"
-                    type="danger"
-                    icon="delete"
-                    size="small"
-                    shape="round" />
-                </a-popconfirm>
               </div>
-              <div slot="title">
+              <div slot="title" class="title">
                 <router-link :to="{ path: '/guestnetwork/' + item.networkid }">{{ item.networkname }} </router-link>
-                <a-tag v-if="item.isdefault">
-                  {{ $t('default') }}
-                </a-tag>
-                <a-tag v-if="item.type">
-                  {{ item.type }}
-                </a-tag>
-                <a-tag v-if="item.broadcasturi">
-                  {{ item.broadcasturi }}
-                </a-tag>
-                <a-tag v-if="item.isolationuri">
-                  {{ item.isolationuri }}
-                </a-tag>
-                <br />
-                {{ $t('macaddress') }}: {{ item.macaddress }}<br/>
-                <span v-if="item.ipaddress">
-                  {{ $t('IP Address') }}: {{ item.ipaddress }}
-                  <br/>
-                </span>
-                <span v-if="item.secondaryip && item.type !== 'L2'">
-                  {{ $t('Secondary IPs') }}: {{ item.secondaryip.map(x => x.ipaddress).join(', ') }}
-                  <br/>
-                </span>
-                <span v-if="item.netmask">
-                  {{ $t('netmask') }}: {{ item.netmask }}
-                  <br/>
-                </span>
-                <span v-if="item.gateway">
-                  {{ $t('gateway') }}: {{ item.gateway }}
-                  <br/>
-                </span>
-                <a-icon type="barcode"/> {{ item.id }}
+                <div class="tags">
+                  <a-tag v-if="item.isdefault">
+                    {{ $t('default') }}
+                  </a-tag>
+                  <a-tag v-if="item.type">
+                    {{ item.type }}
+                  </a-tag>
+                  <a-tag v-if="item.broadcasturi">
+                    {{ item.broadcasturi }}
+                  </a-tag>
+                  <a-tag v-if="item.isolationuri">
+                    {{ item.isolationuri }}
+                  </a-tag>
+                </div>
               </div>
             </a-list-item-meta>
+            <div>
+              <a-divider class="divider-small" />
+              <div class="attribute">
+                <div class="label">{{ $t('macaddress') }}</div>
+                <div>{{ item.macaddress }}</div>
+              </div>
+              <div class="attribute" v-if="item.ipaddress">
+                <div class="label">{{ $t('IP Address') }}</div>
+                <div>{{ item.ipaddress }}</div>
+              </div>
+              <div class="attribute" v-if="item.secondaryip && item.type !== 'L2'">
+                <div class="label">{{ $t('Secondary IPs') }}</div>
+                <div>{{ item.secondaryip.map(x => x.ipaddress).join(', ') }}</div>
+              </div>
+              <div class="attribute" v-if="item.netmask">
+                <div class="label">{{ $t('netmask') }}</div>
+                <div>{{ item.netmask }}</div>
+              </div>
+              <div class="attribute" v-if="item.gateway">
+                <div class="label">{{ $t('gateway') }}</div>
+                <div>{{ item.gateway }}</div>
+              </div>
+              <div class="attribute">
+                <div class="label">{{ $t('id') }}</div>
+                <div><a-icon type="barcode"/> {{ item.id }}</div>
+              </div>
+            </div>
+            <div slot="actions" class="actions">
+              <a-popconfirm
+                title="Please confirm that you would like to make this NIC the default for this VM."
+                @confirm="setAsDefault(item)"
+                okText="Yes"
+                cancelText="No"
+              >
+                <a-button
+                  icon="arrow-right"
+                  size="small"
+                  shape="round" />
+              </a-popconfirm>
+              <a-tooltip placement="right" v-if="item.type !== 'L2'">
+                <template slot="title">
+                  {{ "Change IP Address" }}
+                </template>
+                <a-button
+                  icon="swap"
+                  size="small"
+                  shape="round"
+                  @click="editIpAddressNic = item.id; showUpdateIpModal = true" />
+              </a-tooltip>
+              <a-tooltip placement="right" v-if="item.type !== 'L2'">
+                <template slot="title">
+                  {{ "Manage Secondary IP Addresses" }}
+                </template>
+                <a-button
+                  icon="environment"
+                  size="small"
+                  shape="round"
+                  @click="fetchSecondaryIPs(item.id)" />
+              </a-tooltip>
+              <a-popconfirm
+                :title="$t('message.network.removeNIC')"
+                @confirm="removeNIC(item)"
+                okText="Yes"
+                cancelText="No"
+                v-if="!item.isdefault"
+              >
+                <a-button
+                  type="danger"
+                  icon="delete"
+                  size="small"
+                  shape="round" />
+              </a-popconfirm>
+            </div>
           </a-list-item>
         </a-list>
       </a-collapse-panel>
@@ -643,25 +662,64 @@ export default {
 
   .actions {
     display: flex;
-    margin-left: -24px;
 
     button {
+      padding: 5px;
+      height: auto;
+
       &:not(:last-child) {
         margin-right: 10px;
       }
     }
 
-    @media (min-width: 760px) {
-      flex-direction: column;
-      margin-left: 24px;
+  }
 
-      button {
-        &:not(:last-child) {
-          margin-bottom: 10px;
-          margin-right: 0;
-        }
-      }
+  .label {
+    font-weight: bold;
+  }
+
+  .attribute {
+    margin-bottom: 10px;
+  }
+
+  .ant-tag {
+    padding: 4px 10px;
+    height: auto;
+  }
+
+  .title {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+
+    a {
+      margin-right: 30px;
+      margin-bottom: 10px;
+      font-weight: bold;
     }
+
+    .ant-tag {
+      margin-bottom: 10px;
+    }
+
+  }
+
+  .ant-list-item-meta-title {
+    margin-bottom: -10px;
+  }
+
+  .divider-small {
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+
+  .list-item {
+
+    &:not(:first-child) {
+      padding-top: 25px;
+    }
+
   }
 </style>
 

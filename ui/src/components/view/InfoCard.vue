@@ -768,6 +768,7 @@ export default {
       margin-right: 20px;
       overflow: hidden;
       border-radius: 50%;
+      min-width: 50px;
 
       img {
         height: 100%;
@@ -788,7 +789,8 @@ export default {
   }
 }
 .resource-detail-item {
-  margin-bottom: 30px;
+  margin-bottom: 20px;
+  word-break: break-word;
 
   &__details {
     display: flex;
