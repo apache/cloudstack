@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
-import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.setDirFilePermissions;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -53,9 +51,8 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
-import org.apache.cloudstack.diagnostics.DiagnosticsHelper;
-import org.apache.cloudstack.hypervisor.xenserver.ExtraConfigurationUtility;
 import org.apache.cloudstack.diagnostics.DiagnosticsService;
+import org.apache.cloudstack.hypervisor.xenserver.ExtraConfigurationUtility;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
