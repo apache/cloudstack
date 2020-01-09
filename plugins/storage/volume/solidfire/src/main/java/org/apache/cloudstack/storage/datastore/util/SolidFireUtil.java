@@ -703,17 +703,9 @@ public class SolidFireUtil {
         if (sfVagToIqnsMap.containsKey(null)) {
 
             //Check if cluster VAG exists
-            Boolean clusterVagExists = false;
-            SolidFireUtil.SolidFireVag sfVagMatchingClusterId = sfVags.get(0);
-            for (SolidFireUtil.SolidFireVag sfVag : sfVags) {
-
-                if(sfVag.getName().equals("CloudStack-"+clusterId)){
-                    clusterVagExists = true;
-                    sfVagMatchingClusterId = sfVag;
-                }
-            }
+            SolidFireVag sfVagMatchingClusterId = sfVags.stream().filter(vag -> vag.getName().equals("CloudStack-"+clusterId)).findFirst().orElse(null);
             //Use existing cluster VAG
-            if (clusterVagExists) {
+            if (sfVagMatchingClusterId != null) {
                 LOGGER.info("Using existing volume access group CloudStack-"+clusterId);
                 if (!SolidFireUtil.isVolumeIdInSfVag(sfVolumeId, sfVagMatchingClusterId)) {
                     SolidFireUtil.addVolumeIdsToSolidFireVag(sfConnection, sfVagMatchingClusterId.getId(), new Long[] { sfVolumeId });
