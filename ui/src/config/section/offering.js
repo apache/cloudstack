@@ -48,6 +48,13 @@ export default {
         dataView: true,
         args: ['name', 'displaytext']
       }, {
+        api: 'updateServiceOffering',
+        icon: 'lock',
+        label: 'Update Offering Access',
+        dataView: true,
+        popup: true,
+        component: () => import('@/views/offering/UpdateOfferingAccess.vue')
+      }, {
         api: 'deleteServiceOffering',
         icon: 'delete',
         label: 'Delete Offering',
@@ -112,6 +119,13 @@ export default {
         dataView: true,
         args: ['name', 'displaytext']
       }, {
+        api: 'updateDiskOffering',
+        icon: 'lock',
+        label: 'Update Offering Access',
+        dataView: true,
+        popup: true,
+        component: () => import('@/views/offering/UpdateOfferingAccess.vue')
+      }, {
         api: 'deleteDiskOffering',
         icon: 'delete',
         label: 'Delete Offering',
@@ -163,6 +177,13 @@ export default {
             value: (record) => { return 'Disabled' }
           }
         }
+      }, {
+        api: 'updateNetworkOffering',
+        icon: 'lock',
+        label: 'Update Offering Access',
+        dataView: true,
+        popup: true,
+        component: () => import('@/views/offering/UpdateOfferingAccess.vue')
       }, {
         api: 'deleteNetworkOffering',
         icon: 'delete',
@@ -221,6 +242,13 @@ export default {
             value: (record) => { return 'Disabled' }
           }
         }
+      }, {
+        api: 'updateVPCOffering',
+        icon: 'lock',
+        label: 'Update Offering Access',
+        dataView: true,
+        popup: true,
+        component: () => import('@/views/offering/UpdateOfferingAccess.vue')
       }, {
         api: 'deleteVPCOffering',
         icon: 'delete',
