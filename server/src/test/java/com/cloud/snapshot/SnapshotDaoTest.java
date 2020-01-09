@@ -40,7 +40,6 @@ public class SnapshotDaoTest extends TestCase {
     @Inject
     SnapshotDaoImpl dao;
 
-
     @Before
     public void setup() throws Exception {
         ComponentContext.initComponentsLifeCycle();

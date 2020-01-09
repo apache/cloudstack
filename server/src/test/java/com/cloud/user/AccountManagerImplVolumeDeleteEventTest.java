@@ -73,7 +73,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
     private UserVmManagerImpl _vmMgr;
 
     @Mock
-   private UserVmManager userVmManager;
+    private UserVmManager userVmManager;
 
 
     Map<String, Object> oldFields = new HashMap<>();
