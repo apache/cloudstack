@@ -1693,9 +1693,6 @@ public class KVMStorageProcessor implements StorageProcessor {
     @Override
     public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
         final PrimaryDataStoreTO pool = cmd.getDestPool();
-        if (!pool.getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
-            return new DirectDownloadAnswer(false, "Unsupported pool type " + pool.getPoolType().toString(), true);
-        }
         KVMStoragePool destPool = storagePoolMgr.getStoragePool(pool.getPoolType(), pool.getUuid());
         DirectTemplateDownloader downloader;
 
