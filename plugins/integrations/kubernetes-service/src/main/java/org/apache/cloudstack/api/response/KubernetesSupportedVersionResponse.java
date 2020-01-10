@@ -21,7 +21,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-import com.cloud.kubernetesversion.KubernetesSupportedVersion;
+import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
