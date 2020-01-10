@@ -9,7 +9,7 @@ Homepage: http://www.cloudstack.org/
 
 Package: cloudstack-common
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, genisoimage, nfs-common, bsdtar
+Depends: ${misc:Depends}, ${python:Depends}, genisoimage, nfs-common
 Conflicts: cloud-scripts, cloud-utils, cloud-system-iso, cloud-console-proxy, cloud-daemonize, cloud-deps, cloud-python, cloud-setup
 Description: A common package which contains files which are shared by several CloudStack packages
 
