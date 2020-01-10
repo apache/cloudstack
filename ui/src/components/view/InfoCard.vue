@@ -25,6 +25,7 @@
               <slot name="avatar">
                 <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" />
                 <a-icon v-else style="font-size: 36px" :type="$route.meta.icon" />
+                <console style="margin-left: -15px" :resource="resource" size="default" v-if="resource.id" />
               </slot>
             </div>
             <slot name="name">
@@ -53,7 +54,6 @@
               <a-tag v-if="'isdynamicallyscalable' in resource" :color="resource.isdynamicallyscalable ? 'green': 'red'">
                 {{ $t('isdynamicallyscalable') }}
               </a-tag>
-              <console :resource="resource" size="default" v-if="resource.id" />
             </div>
           </slot>
         </div>
@@ -94,25 +94,25 @@
             <a-icon type="appstore" />
             <span v-if="resource.cpunumber && resource.cpuspeed">{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz</span>
             <span v-else-if="resource.cputotal">{{ resource.cputotal }}</span>
-            <span
-              v-if="resource.cpuused"
-              style="display: flex; padding-left: 25px">
-              {{ $t('cpuusedghz') }}
+          </div>
+          <div>
+            <span v-if="resource.cpuused">
               <a-progress
                 v-if="resource.cpuused"
-                style="padding-left: 10px"
+                style="width: 85%"
                 size="small"
                 status="active"
-                :percent="parseFloat(resource.cpuused)" />
+                :percent="parseFloat(resource.cpuused)"
+                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('cpuusedghz')"
+              />
             </span>
-            <span
-              v-if="resource.cpuallocated"
-              style="display: flex; padding-left: 25px">
-              {{ $t('cpuallocatedghz') }}
+            <span v-if="resource.cpuallocated">
               <a-progress
-                style="padding-left: 10px"
+                style="width: 85%"
                 size="small"
-                :percent="parseFloat(resource.cpuallocated)" />
+                :percent="parseFloat(resource.cpuallocated)"
+                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('cpuallocatedghz')"
+              />
             </span>
           </div>
         </div>
@@ -120,15 +120,16 @@
           <div class="resource-detail-item__label">{{ $t('memory') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="bulb" />{{ resource.memory }} MB Memory
-            <span
-              v-if="resource.memorykbs && resource.memoryintfreekbs"
-              style="display: flex; padding-left: 25px">
-              {{ $t('memoryusedgb') }}
+          </div>
+          <div>
+            <span v-if="resource.memorykbs && resource.memoryintfreekbs">
               <a-progress
-                style="padding-left: 10px"
+                style="width: 85%"
                 size="small"
                 status="active"
-                :percent="Number(parseFloat(100.0 * (resource.memorykbs - resource.memoryintfreekbs) / resource.memorykbs).toFixed(2))" />
+                :percent="Number(parseFloat(100.0 * (resource.memorykbs - resource.memoryintfreekbs) / resource.memorykbs).toFixed(2))"
+                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('memoryusedgb')"
+              />
             </span>
           </div>
         </div>
@@ -136,24 +137,24 @@
           <div class="resource-detail-item__label">{{ $t('memory') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="bulb" />{{ resource.memorytotalgb }} Memory
-            <span
-              v-if="resource.memoryusedgb"
-              style="display: flex; padding-left: 25px">
-              {{ $t('memoryusedgb') }}
+          </div>
+          <div>
+            <span v-if="resource.memoryusedgb">
               <a-progress
-                style="padding-left: 10px"
+                style="width: 85%"
                 size="small"
                 status="active"
-                :percent="Number(parseFloat(100.0 * parseFloat(resource.memoryusedgb) / parseFloat(resource.memorytotalgb)).toFixed(2))" />
+                :percent="Number(parseFloat(100.0 * parseFloat(resource.memoryusedgb) / parseFloat(resource.memorytotalgb)).toFixed(2))"
+                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('memoryusedgb')"
+              />
             </span>
-            <span
-              v-if="resource.memoryallocatedgb"
-              style="display: flex; padding-left: 25px">
-              {{ $t('memoryallocatedgb') }}
+            <span v-if="resource.memoryallocatedgb">
               <a-progress
-                style="padding-left: 10px"
+                style="width: 85%"
                 size="small"
-                :percent="Number(parseFloat(100.0 * parseFloat(resource.memoryallocatedgb) / parseFloat(resource.memorytotalgb)).toFixed(2))" />
+                :percent="Number(parseFloat(100.0 * parseFloat(resource.memoryallocatedgb) / parseFloat(resource.memorytotalgb)).toFixed(2))"
+                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('memoryallocatedgb')"
+              />
             </span>
           </div>
         </div>
@@ -767,21 +768,18 @@ export default {
     .avatar {
       margin-right: 20px;
       overflow: hidden;
-      border-radius: 50%;
       min-width: 50px;
 
       img {
         height: 100%;
         width: 100%;
       }
-
     }
 
     .name {
       margin-bottom: 0;
-      font-size: 16px;
+      font-size: 18px;
       line-height: 1;
-      font-weight: bold;
       word-wrap: break-word;
       text-align: left;
     }
@@ -869,7 +867,6 @@ export default {
   .ant-tag {
     margin-right: 10px;
     margin-bottom: 10px;
-    padding: 4px 10px;
     height: auto;
   }
 
