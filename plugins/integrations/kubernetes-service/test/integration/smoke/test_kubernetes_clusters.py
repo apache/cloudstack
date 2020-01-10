@@ -68,12 +68,13 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls.kubernetes_version_ids.append(cls.kuberetes_version_3.id)
 
         cks_offering_data = {
-            "name": "CKS Instance",
+            "name": "CKS-Instance",
             "displaytext": "CKS Instance",
             "cpunumber": 2,
             "cpuspeed": 1000,
             "memory": 2048,
         }
+        cks_offering_data["name"] = cks_offering_data["name"] + '-' + random_gen()
         cls.cks_service_offering = ServiceOffering.create(
                                                           cls.apiclient,
                                                           cks_offering_data
@@ -85,7 +86,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             "format": "qcow2",
             "hypervisor": "kvm",
             "ostype": "CoreOS",
-            "url": "http://172.20.0.1/files/coreos_production_cloudstack_image-kvm.qcow2.bz2",
+            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2",
             "requireshvm": "True",
             "ispublic": "True",
             "isextractable": "True"
@@ -232,6 +233,7 @@ class TestKubernetesCluster(cloudstackTestCase):
     def addKubernetesSupportedVersion(cls, semantic_version, iso_url):
         addKubernetesSupportedVersionCmd = addKubernetesSupportedVersion.addKubernetesSupportedVersionCmd()
         addKubernetesSupportedVersionCmd.semanticversion = semantic_version
+        addKubernetesSupportedVersionCmd.name = 'v' + semantic_version + '-' + random_gen()
         addKubernetesSupportedVersionCmd.url = iso_url 
         kubernetes_version = cls.apiclient.addKubernetesSupportedVersion(addKubernetesSupportedVersionCmd)
         cls.debug("Waiting for Kubernetes version with ID %s to be ready" % kubernetes_version.id)
@@ -328,7 +330,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         try:
             cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_2.id, 1, 2)
             self.debug("Invslid CKS Kubernetes HA cluster deployed with ID: %s. Deleting it and failing test." % cluster_response.id)
-            deleteAndVerifyKubernetesCluster(cluster_response.id)
+            self.deleteKubernetesCluster(cluster_response.id)
             self.fail("HA Kubernetes cluster deployed with Kubernetes supported version below version 1.16.0. Must be an error.")
         except CloudstackAPIException as e:
             self.debug("HA Kubernetes cluster with invalid Kubernetes supported version check successful, API failure: %s" % e)
@@ -355,7 +357,11 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         self.debug("Kubernetes cluster with ID: %s successfully deployed, now upgrading it" % cluster_response.id)
 
-        cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_3.id)
+        try:
+            cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_3.id)
+        except Exception as e:
+            self.deleteKubernetesCluster(cluster_response.id)
+            self.fail("Failed to upgrade Kubernetes cluster due to: %s" % e)
 
         self.verifyKubernetesClusterUpgrade(cluster_response, self.kuberetes_version_3.id)
 
@@ -386,7 +392,11 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         self.debug("Kubernetes cluster with ID: %s successfully deployed, now upgrading it" % cluster_response.id)
 
-        cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_3.id)
+        try:
+            cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_3.id)
+        except Exception as e:
+            self.deleteKubernetesCluster(cluster_response.id)
+            self.fail("Failed to upgrade Kubernetes HA cluster due to: %s" % e)
 
         self.verifyKubernetesClusterUpgrade(cluster_response, self.kuberetes_version_3.id)
 
@@ -421,7 +431,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         try:
             cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_1.id)
             self.debug("Invalid CKS Kubernetes HA cluster deployed with ID: %s. Deleting it and failing test." % kuberetes_version_1.id)
-            self.deleteAndVerifyKubernetesCluster(cluster_response.id)
+            self.deleteKubernetesCluster(cluster_response.id)
             self.fail("Kubernetes cluster upgraded to a lower Kubernetes supported version. Must be an error.")
         except Exception as e:
             self.debug("Upgrading Kubernetes cluster with invalid Kubernetes supported version check successful, API failure: %s" % e)
@@ -454,7 +464,11 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         self.debug("Kubernetes cluster with ID: %s successfully deployed, now upscaling it" % cluster_response.id)
 
-        cluster_response = self.scaleKubernetesCluster(cluster_response.id, 2)
+        try:
+            cluster_response = self.scaleKubernetesCluster(cluster_response.id, 2)
+        except Exception as e:
+            self.deleteKubernetesCluster(cluster_response.id)
+            self.fail("Failed to upscale Kubernetes cluster due to: %s" % e)
 
         self.verifyKubernetesClusterScale(cluster_response, 2)
 
@@ -484,7 +498,11 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         self.debug("Kubernetes cluster with ID: %s successfully deployed, now downscaling it" % cluster_response.id)
 
-        cluster_response = self.scaleKubernetesCluster(cluster_response.id, 1)
+        try:
+            cluster_response = self.scaleKubernetesCluster(cluster_response.id, 1)
+        except Exception as e:
+            self.deleteKubernetesCluster(cluster_response.id)
+            self.fail("Failed to downscale Kubernetes cluster due to: %s" % e)
 
         self.verifyKubernetesClusterScale(cluster_response)
 
