@@ -154,11 +154,11 @@ export default {
         name: 'details',
         component: () => import('@/components/view/DetailsTab.vue')
       }, {
-        name: 'ingress-rules',
-        component: () => import('@/views/network/IngressRuleConfigure.vue')
+        name: 'Ingress Rule',
+        component: () => import('@/views/network/IngressEgressRuleConfigure.vue')
       }, {
-        name: 'egress-rules',
-        component: () => import('@/views/network/EgressRuleConfigure.vue')
+        name: 'Egress Rule',
+        component: () => import('@/views/network/IngressEgressRuleConfigure.vue')
       }],
       actions: [
         {
