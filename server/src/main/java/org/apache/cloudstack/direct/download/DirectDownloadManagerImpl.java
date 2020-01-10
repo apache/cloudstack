@@ -252,6 +252,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
 
         DownloadProtocol protocol = getProtocolFromUrl(url);
         DirectDownloadCommand cmd = getDirectDownloadCommandFromProtocol(protocol, url, templateId, to, checksum, headers);
+        cmd.setTemplateSize(template.getSize());
 
         Answer answer = sendDirectDownloadCommand(cmd, template, poolId, host);
 

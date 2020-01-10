@@ -1703,6 +1703,11 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
 
         try {
+            s_logger.info("Checking for free space on the host for downloading the template");
+            if (!isEnoughSpaceForDownloadTemplateOnTemporaryLocation(cmd.getTemplateSize())) {
+                String msg = "Not enough space on the defined temporary location to download the template " + cmd.getTemplateId();
+                return new DirectDownloadAnswer(false, msg, true);
+            }
             s_logger.info("Trying to download template");
             if (!downloader.downloadTemplate()) {
                 s_logger.warn("Couldn't download template");
@@ -1723,5 +1728,27 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         DirectTemplateInformation info = downloader.getTemplateInformation();
         return new DirectDownloadAnswer(true, info.getSize(), info.getInstallPath());
+    }
+
+    /**
+     * Perform a free space check on the host for downloading the direct download templates
+     * @param templateSize template size obtained from remote server when registering the template
+     */
+    private boolean isEnoughSpaceForDownloadTemplateOnTemporaryLocation(Long templateSize) {
+        if (templateSize == null || templateSize == 0L) {
+            s_logger.info("The server did not provide the template size, assuming there is enough space to download it");
+            return true;
+        }
+        String cmd = String.format("df --output=avail %s | tail -1", resource.getDirectDownloadTemporaryDownloadPath());
+        String result = Script.runSimpleBashScript(cmd);
+        Long availableBytes;
+        try {
+            availableBytes = Long.parseLong(result);
+        } catch (NumberFormatException e) {
+            String msg = "Could not parse the output " + result + " as a number, therefore not able to check for free space";
+            s_logger.error(msg, e);
+            return false;
+        }
+        return availableBytes >= templateSize;
     }
 }
