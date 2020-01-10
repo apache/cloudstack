@@ -9886,6 +9886,7 @@
                         listView: {
                             id: 'routers',
                             label: 'label.virtual.appliances',
+                            horizontalOverflow: true,
                             fields: {
                                 name: {
                                     label: 'label.name'
@@ -9918,10 +9919,27 @@
                                         'Alert': 'warning'
                                     }
                                 },
+                                healthchecksfailed: {
+                                    converter: function (str) {
+                                        if (str) return 'Failed'
+                                        return 'Passed';
+                                    },
+                                    label: 'label.health.check',
+                                    indicator: {
+                                        false: 'on',
+                                        true: 'warning'
+                                    }
+                                },
                                 requiresupgrade: {
                                     label: 'label.requires.upgrade',
                                     converter: cloudStack.converters.toBooleanText
                                 }
+                            },
+                            preFilter: function () {
+                                if (!g_routerHealthChecksEnabled) {
+                                    return ['healthchecksfailed']
+                                }
+                                return []
                             },
                             dataProvider: function (args) {
                                 var array1 =[];
@@ -9980,9 +9998,6 @@
                                         json.listroutersresponse.router:[];
 
                                         $(items).map(function (index, item) {
-                                            if (item.healthchecksfailed) {
-                                                item.state = 'Alert'
-                                            }
                                             routers.push(item);
                                         });
 
@@ -10015,9 +10030,6 @@
                                                     json.listroutersresponse.router:[];
 
                                                     $(items).map(function (index, item) {
-                                                        if (item.healthchecksfailed) {
-                                                            item.state = 'Alert'
-                                                        }
                                                         routers.push(item);
                                                     });
                                                 }
@@ -10567,6 +10579,13 @@
                                             }
                                         },
                                         action: function (args) {
+                                            if (!g_routerHealthChecksEnabled) {
+                                                cloudStack.dialog.notice({
+                                                    message: 'Router health checks are disabled. Please enable router.health.checks.enabled to execute this action'
+                                                })
+                                                args.response.success()
+                                                return
+                                            }
                                             var data = {
                                                 'routerid': args.context.routers[0].id,
                                                 'performfreshchecks': (args.data.performfreshchecks === 'on')
@@ -10829,7 +10848,13 @@
                                                 }
                                             },
                                             dataProvider: function(args) {
-                                                console.log(args)
+                                                if (!g_routerHealthChecksEnabled) {
+                                                    cloudStack.dialog.notice({
+                                                        message: 'Router health checks are disabled. Please enable router.health.checks.enabled to get data'
+                                                    })
+                                                    args.response.success({})
+                                                    return
+                                                }
                                                 if (args.page > 1) {
                                                     // Only one page is supported as it's not list command.
                                                     args.response.success({});

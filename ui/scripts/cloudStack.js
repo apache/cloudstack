@@ -208,6 +208,25 @@
                     }
                 });
 
+                // Update global router health checks enabled
+                $.ajax({
+                    type: 'GET',
+                    url: createURL('listConfigurations'),
+                    data: {name: 'router.health.checks.enabled'},
+                    dataType: 'json',
+                    async: false,
+                    success: function(data, textStatus, xhr) {
+                        if (data && data.listconfigurationsresponse && data.listconfigurationsresponse.configuration) {
+                            var config = data.listconfigurationsresponse.configuration[0];
+                            if (config && config.name == 'router.health.checks.enabled') {
+                                g_routerHealthChecksEnabled = config.value == 'true';
+                            }
+                        }
+                    },
+                    error: function(xhr) { // ignore any errors, fallback to the default
+                    }
+                });
+
                 // Populate IDP list
                 $.ajax({
                     type: 'GET',

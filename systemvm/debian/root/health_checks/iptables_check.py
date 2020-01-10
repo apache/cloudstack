@@ -27,6 +27,8 @@ def main():
         print "No portforwarding rules provided to check, skipping"
         exit(0)
 
+    failedCheck = False
+    failureMessage = "Missing port forwarding rules in Iptables-\n "
     for portForward in portForwards:
         entriesExpected = []
         destIp = portForward["destIp"]
@@ -38,10 +40,13 @@ def main():
                      ["POSTROUTING", "--to-source"]]:
             entriesExpected.append([algo[0], srcIpText, srcPortText, algo[1] + " " + dstText])
 
-        pout = Popen("iptables-save | grep " + destIp, shell=True, stdout=PIPE)
+        fetchIpTableEntriesCmd = "iptables-save | grep " + destIp
+        pout = Popen(fetchIpTableEntriesCmd, shell=True, stdout=PIPE)
         if pout.wait() != 0:
-            print "Unable to execute iptables-save command for fetching rules"
-            exit(1)
+            failedCheck = True
+            failureMessage = failureMessage + "Unable to execute iptables-save command " \
+                                              "for fetching rules by " + fetchIpTableEntriesCmd + "\n"
+            continue
 
         ipTablesMatchingEntries = pout.communicate()[0].strip().split('\n')
         for pfEntryListExpected in entriesExpected:
@@ -60,12 +65,15 @@ def main():
                     break
 
             if not foundPfEntryList:
-                print "Missing port forwarding rules in Iptables - "
-                print pfEntryListExpected
-                exit(1)
+                failedCheck = True
+                failureMessage = failureMessage + str(pfEntryListExpected) + "\n"
 
-    print "Found all entries (count " + str(len(portForwards)) + ") in iptables"
-    exit(0)
+    if failedCheck:
+        print failureMessage
+        exit(1)
+    else:
+        print "Found all entries (count " + str(len(portForwards)) + ") in iptables"
+        exit(0)
 
 
 if __name__ == "__main__":

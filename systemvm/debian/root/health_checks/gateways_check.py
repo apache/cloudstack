@@ -33,8 +33,8 @@ def main():
         if len(gw) == 0:
             continue
         reachableGw = False
-        for i in range(20):
-            pingCmd = "ping " + gw + " -c " + str(i + 1)
+        for i in range(5):
+            pingCmd = "ping " + gw + " -c 5 -w 10"
             pout = Popen(pingCmd, shell=True, stdout=PIPE)
             if pout.wait() == 0:
                 reachableGw = True

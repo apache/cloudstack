@@ -1861,14 +1861,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
-    public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup, boolean makeRedundant) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        // This method restarts all network elements belonging to the network and re-applies all the rules
-        Long networkId = cmd.getNetworkId();
-
-        User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
-        Account callerAccount = _accountMgr.getActiveAccountById(callerUser.getAccountId());
-
-        // Check if network exists
+    public boolean restartNetwork(Long networkId, boolean cleanup, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
             throwInvalidIdException("Network with specified id doesn't exist", networkId.toString(), "networkId");
@@ -1888,8 +1881,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             throw new InvalidParameterException("Unable to restart a running SDN network.");
         }
 
+        Account callerAccount = _accountMgr.getActiveAccountById(user.getAccountId());
         _accountMgr.checkAccess(callerAccount, null, true, network);
-
         if (!network.isRedundant() && makeRedundant) {
             network.setRedundant(true);
             if (!_networksDao.update(network.getId(), network)) {
@@ -1898,8 +1891,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             cleanup = true;
         }
 
-        boolean success = _networkMgr.restartNetwork(networkId, callerAccount, callerUser, cleanup);
-
+        boolean success = _networkMgr.restartNetwork(networkId, callerAccount, user, cleanup);
         if (success) {
             s_logger.debug("Network id=" + networkId + " is restarted successfully.");
         } else {
@@ -1907,6 +1899,17 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         }
 
         return success;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
+    public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        // This method restarts all network elements belonging to the network and re-applies all the rules
+        Long networkId = cmd.getNetworkId();
+        boolean cleanup = cmd.getCleanup();
+        boolean makeRedundant = cmd.getMakeRedundant();
+        User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+        return restartNetwork(networkId, cleanup, makeRedundant, callerUser);
     }
 
     @Override

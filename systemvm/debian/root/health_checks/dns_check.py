@@ -31,6 +31,8 @@ def main():
         allHosts = hostsFile.readlines()
         hostsFile.close()
 
+    failedCheck = False
+    failureMessage = "Missing entries for VMs in /etc/hosts -\n"
     for vM in vMs:
         foundEntry = False
         for host in allHosts:
@@ -39,12 +41,15 @@ def main():
                 break
 
         if not foundEntry:
-            print "Missing entry in /etc/hosts - " + vM["ip"] + \
-                  " " + vM["vmName"]
-            exit(1)
+            failedCheck = True
+            failureMessage = failureMessage + vM["ip"] + " " + vM["vmName"] + "\n"
 
-    print "All " + str(len(vMs)) + " VMs are present in /etc/hosts"
-    exit(0)
+    if failedCheck:
+        print failureMessage
+        exit(1)
+    else:
+        print "All " + str(len(vMs)) + " VMs are present in /etc/hosts"
+        exit(0)
 
 
 if __name__ == "__main__":

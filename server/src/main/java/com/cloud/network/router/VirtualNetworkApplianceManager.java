@@ -75,7 +75,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     // Health checks
     static final ConfigKey<Boolean> RouterHealthChecksEnabled = new ConfigKey<Boolean>(Boolean.class, "router.health.checks.enabled", "Advanced", "true",
             "If true, router health checks are allowed to be executed and read. If false, all scheduled checks and API calls for on demand checks are disabled.",
-            true, ConfigKey.Scope.Zone, null);
+            true, ConfigKey.Scope.Global, null);
     static final ConfigKey<Integer> RouterHealthChecksBasicInterval = new ConfigKey<Integer>(Integer.class, "router.health.checks.basic.interval", "Advanced", "3",
             "Interval at which basic router health checks are performed. If set to 0, no tests are scheduled.",
             true, ConfigKey.Scope.Global, null);
@@ -84,10 +84,10 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
             true, ConfigKey.Scope.Global, null);
     static final ConfigKey<Integer> RouterHealthChecksConfigRefreshInterval = new ConfigKey<Integer>(Integer.class, RouterHealthChecksConfigRefreshIntervalCK, "Advanced", "10",
             "Interval at which router health checks config - such as scheduling intervals, excluded checks, etc is updated on virtual routers by the management server.",
-            true, ConfigKey.Scope.Global, null);
+            false, ConfigKey.Scope.Global, null);
     static final ConfigKey<Integer> RouterHealthChecksResultFetchInterval = new ConfigKey<Integer>(Integer.class, RouterHealthChecksResultFetchIntervalCK, "Advanced", "10",
             " Interval at which router health checks results are fetched by management server. On each result fetch, management server evaluates need to restart as per configuration of " + RouterHealthChecksFailuresToRestartVrCK,
-            true, ConfigKey.Scope.Global, null);
+            false, ConfigKey.Scope.Global, null);
     static final ConfigKey<String> RouterHealthChecksFailuresToRestartVr = new ConfigKey<String>(String.class, RouterHealthChecksFailuresToRestartVrCK, "Advanced", "",
             "Health checks failures defined by this config are the checks that should cause router to restart. If empty the restart never happens because of check failure. Possible values are comma separated script names " +
                     "from systemvm’s /root/health_scripts/ (namely - cpu_usage_check.py, dhcp_check.py, disk_space_check.py, dns_check.py, gateways_check.py, haproxy_check.py, iptables_check.py, memory_usage_check.py, router_version_check.py)," +

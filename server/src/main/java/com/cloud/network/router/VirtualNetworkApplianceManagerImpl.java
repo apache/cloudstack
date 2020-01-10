@@ -198,6 +198,7 @@ import com.cloud.network.rules.StaticNatImpl;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
@@ -337,6 +338,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject private PortForwardingRulesDao portForwardingDao;
     @Inject private ApplicationLoadBalancerRuleDao applicationLoadBalancerRuleDao;
     @Inject private RouterHealthCheckResultDao routerHealthCheckResultDao;
+
+    @Inject private NetworkService networkService;
+    @Inject private VpcService vpcService;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -1238,6 +1242,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 s_logger.info("Found " + routers.size() + " running routers. Fetching, analysing and updating DB for the health checks.");
 
                 for (final DomainRouterVO router : routers) {
+                    if (!RouterHealthChecksEnabled.valueIn(router.getDataCenterId())) {
+                        s_logger.debug("Skipping fetching of router health check results as its disabled for router " + router.getUuid());
+                        continue;
+                    }
+
                     GetRouterMonitorResultsAnswer answer = fetchAndUpdateRouterHealthChecks(router, false);
                     String checkFailsToRestartVr = RouterHealthChecksFailuresToRestartVr.valueIn(router.getDataCenterId());
                     if (answer == null) {
@@ -1257,8 +1266,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                             for (String failedCheck : answer.getFailingChecks()) {
                                 if (checkFailsToRestartVr.contains(failedCheck)) {
                                     s_logger.warn("Health Check Alert: Found failing check " + failedCheck + " in " +
-                                            RouterHealthChecksFailuresToRestartVrCK + " so restarting router.");
-                                    rebootRouter(router.getId(), true);
+                                            RouterHealthChecksFailuresToRestartVrCK + ", attempting restart of router.");
+                                    recreateRouter(router.getId());
                                 }
                             }
                         }
@@ -1268,6 +1277,43 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 s_logger.error("Fail to complete the FetchRouterHealthChecksResultTask! ", ex);
                 ex.printStackTrace();
             }
+        }
+    }
+
+    /**
+     * Attempts recreation of router by restarting with cleanup a VPC if any or a guest network associated in case no VPC.
+     * @param routerId - the id of the router to be recreated.
+     * @return true if successfully restart is attempted else false.
+     */
+    private boolean recreateRouter(long routerId) {
+        List<DomainRouterJoinVO> routerJoinVOs = domainRouterJoinDao.searchByIds(routerId);
+        DomainRouterJoinVO routerJoinToRestart = null;
+        User systemUser = _userDao.getUser(User.UID_SYSTEM);
+        for (DomainRouterJoinVO router : routerJoinVOs) {
+            if (router.getRemoved() == null && router.getTrafficType() == TrafficType.Guest) {
+                if (router.getVpcId() != 0) {
+                    try {
+                        s_logger.debug("Attempting restart VPC " + router.getVpcName() + " for router recreation " + router.getUuid());
+                        return vpcService.restartVpc(router.getVpcId(), true, false, systemUser);
+                    } catch (Exception e) {
+                        s_logger.error("Failed to restart VPC for router recreation " + router.getVpcName() + " ,router " + router.getUuid(), e);
+                    }
+                }
+                routerJoinToRestart = router;
+            }
+        }
+
+        if (routerJoinToRestart == null) {
+            s_logger.warn("Unable to find a valid guest network to restart for router recreation with id " + routerId);
+            return false;
+        }
+
+        try {
+            s_logger.info("Attempting restart network " + routerJoinToRestart.getNetworkName() + " for router recreation " + routerJoinToRestart.getUuid());
+            return networkService.restartNetwork(routerJoinToRestart.getNetworkId(), true, false, systemUser);
+        } catch (Exception e) {
+            s_logger.error("Failed to restart network " + routerJoinToRestart.getNetworkName() + " for router recreation " + routerJoinToRestart.getNetworkName(), e);
+            return false;
         }
     }
 
@@ -1290,9 +1336,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     private RouterHealthCheckResultVO updateRouterConnectivityHealthCheck(final long routerId, boolean connected, String message) {
         boolean newEntry = false;
-        RouterHealthCheckResultVO connectivityVO = routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, "connectivity", "basic");
+        RouterHealthCheckResultVO connectivityVO = routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, "connectivity.test", "basic");
         if (connectivityVO == null) {
-            connectivityVO = new RouterHealthCheckResultVO(routerId, "connectivity", "basic");
+            connectivityVO = new RouterHealthCheckResultVO(routerId, "connectivity.test", "basic");
             newEntry = true;
         }
 
@@ -1308,7 +1354,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             routerHealthCheckResultDao.update(connectivityVO.getId(), connectivityVO);
         }
 
-        return routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, "connectivity", "basic");
+        return routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, "connectivity.test", "basic");
     }
 
     private RouterHealthCheckResultVO parseHealthCheckVOFromJson(final long routerId,

@@ -41,12 +41,10 @@ class Log:
     NOTIF = 'NOTIF'
 
 class Config:
-    MONIT_AFTER_MINS = 30
     SLEEP_SEC = 1
     RETRY_ITERATIONS = 10
     RETRY_FOR_RESTART = 5
     MONITOR_LOG = '/var/log/monitor.log'
-    UNMONIT_PS_FILE = '/etc/unmonit_psList.txt'
     HEALTH_CHECKS_DIR = 'health_checks'
     MONITOR_RESULT_FILE_SUFFIX = 'monitor_results.json'
     FAILING_CHECKS_FILE = 'failing_health_checks'
@@ -262,50 +260,21 @@ def monitProcess( processes_info ):
 
     print "[Process Info] " + json.dumps(processes_info)
 
-    dict_unmonit={}
-    umonit_update={}
-    unMonitPs=False
-
-    if not path.isfile(Config.UNMONIT_PS_FILE):
-        printd('Unmonit File not exist')
-    else:
-        #load the dictionary with unmonit process list
-        dict_unmonit = loadPsFromUnMonitFile()
-
     #time for noting process down time
     csec = repr(time.time()).split('.')[0]
 
     for process,properties in processes_info.items():
-        serviceName = process + ".service"
-        #skip the process it its time stamp less than Config.MONIT_AFTER_MINS
         printd ("---------------------------\nchecking the service %s\n---------------------------- " %process)
-        if not is_emtpy(dict_unmonit):
-            if dict_unmonit.has_key(process):
-                ts = dict_unmonit[process]
-
-                if checkPsTimeStampForMonitor (csec, ts, properties) == False:
-                    checkEndTime = time.time()
-                    service_status[serviceName] = {
-                        "success": "false",
-                        "lastUpdate": str(int(checkStartTime * 1000)),
-                        "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
-                        "message": "down since" + str(ts)
-                    }
-                    failing_services.append(serviceName)
-                    unMonitPs = True
-                    continue
+        serviceName = process + ".service"
         processStatus, wasRestarted = checkProcessStatus(properties)
         if processStatus != StatusCodes.RUNNING:
             printd( "\n Service %s is not Running"%process)
-            #add this process into unmonit list
-            printd ("updating the service for unmonit %s\n" %process)
-            umonit_update[process]=csec
             checkEndTime = time.time()
             service_status[serviceName] = {
                 "success": "false",
                 "lastUpdate": str(int(checkStartTime * 1000)),
                 "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
-                "message": "down since" + str(csec)
+                "message": "service down at last check " + str(csec)
             }
             failing_services.append(serviceName)
         else:
@@ -317,83 +286,8 @@ def monitProcess( processes_info ):
                 "message": "service is running" + (", was restarted" if wasRestarted else "")
             }
 
-    #if dict is not empty write to file else delete it
-    if not is_emtpy(umonit_update):
-        writePsListToUnmonitFile(umonit_update)
-    else:
-        if is_emtpy(umonit_update) and unMonitPs == False:
-            #delete file it is there
-            removeFile(Config.UNMONIT_PS_FILE)
     return service_status, failing_services
 
-
-def checkPsTimeStampForMonitor(csec,ts, process):
-    printd("Time difference=%s" %str(int(csec) - int(ts)))
-    tmin = (int(csec) - int(ts) )/60
-
-    if ( int(csec) - int(ts) )/60 < Config.MONIT_AFTER_MINS:
-        raisealert(Log.ALERT, "The %s get monitor after %s minutes " %(process, Config.MONIT_AFTER_MINS))
-        printd('process will be monitored after %s min' %(str(int(Config.MONIT_AFTER_MINS) - tmin)))
-        return False
-
-    return  True
-
-def removeFile(fileName):
-    if path.isfile(fileName):
-        printd("Removing the file %s" %fileName)
-        os.remove(fileName)
-
-def loadPsFromUnMonitFile():
-
-    dict_unmonit = {}
-
-    try:
-        fd = open(Config.UNMONIT_PS_FILE)
-    except:
-        printd("Failed to open file %s " %(Config.UNMONIT_PS_FILE))
-        return StatusCodes.FAILED
-
-    ps = fd.read()
-
-    if not ps:
-        printd("File %s content is empty " %Config.UNMONIT_PS_FILE)
-        return StatusCodes.FAILED
-
-    printd(ps)
-    plist = ps.split(',')
-    plist.remove('')
-    for i in plist:
-        dict_unmonit[i.split(':')[0]] = i.split(':')[1]
-
-    fd.close()
-
-    return dict_unmonit
-
-
-def writePsListToUnmonitFile(umonit_update):
-    printd("Write updated unmonit list to file")
-    line=''
-    for i in umonit_update:
-        line+=str(i)+":"+str(umonit_update[i])+','
-    printd(line)
-    try:
-        fd=open(Config.UNMONIT_PS_FILE,'w')
-    except:
-        printd("Failed to open file %s " %Config.UNMONIT_PS_FILE)
-        return StatusCodes.FAILED
-
-    fd.write(line)
-    fd.close()
-
-
-def is_emtpy(struct):
-    """
-    Checks wether the given struct is empty or not
-    """
-    if struct:
-        return False
-    else:
-        return True
 
 def execute(script, checkType = "basic"):
     checkStartTime = time.time()

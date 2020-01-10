@@ -186,6 +186,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.dao.RouterHealthCheckResultDao;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.org.Grouping;
@@ -1177,6 +1178,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
         for (DomainRouterResponse res : routerResponses) {
             DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
+            if (!VirtualNetworkApplianceManager.RouterHealthChecksEnabled.valueIn(resRouter.getId())) {
+                s_logger.debug("Skipping health checks data in router as it's disabled for router " + resRouter.getUuid());
+                continue;
+            }
+
             res.setHealthChecksFailed(routerHealthCheckResultDao.hasFailingChecks(resRouter.getId()));
             if (cmd.shouldFetchHealthCheckResults()) {
                 res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter,
@@ -1196,6 +1202,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
         for (DomainRouterResponse res : routerResponses) {
             DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
+            if (!VirtualNetworkApplianceManager.RouterHealthChecksEnabled.valueIn(resRouter.getId())) {
+                s_logger.debug("Skipping health checks data in router as it's disabled for router " + resRouter.getUuid());
+                continue;
+            }
+
             res.setHealthChecksFailed(routerHealthCheckResultDao.hasFailingChecks(resRouter.getId()));
             if (cmd.shouldFetchHealthCheckResults()) {
                 res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter,
@@ -3900,6 +3911,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     public List<RouterHealthCheckResultResponse> listRouterHealthChecks(GetRouterHealthCheckResultsCmd cmd) {
         s_logger.info("Executing health check command " + cmd);
         long routerId = cmd.getRouterId();
+        if (!VirtualNetworkApplianceManager.RouterHealthChecksEnabled.valueIn(routerId)) {
+            throw new CloudRuntimeException("Router health checks are not enabled in cluster router: " + routerId);
+        }
+
         if (cmd.shouldPerformFreshChecks() && !routerService.performRouterHealthChecks(routerId)) {
             throw new CloudRuntimeException("Unable to perform fresh checks on router.");
         }
