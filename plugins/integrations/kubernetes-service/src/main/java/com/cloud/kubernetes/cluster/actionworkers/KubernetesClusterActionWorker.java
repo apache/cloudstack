@@ -274,8 +274,11 @@ public class KubernetesClusterActionWorker {
         return  new Pair<>(null, port);
     }
 
-    protected void attachIsoKubernetesVMs(List<UserVm> clusterVMs) throws CloudRuntimeException {
-        KubernetesSupportedVersion version = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
+    protected void attachIsoKubernetesVMs(List<UserVm> clusterVMs, final KubernetesSupportedVersion kubernetesSupportedVersion) throws CloudRuntimeException {
+        KubernetesSupportedVersion version = kubernetesSupportedVersion;
+        if (kubernetesSupportedVersion == null) {
+            version = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
+        }
         if (version == null) {
             logAndThrow(Level.ERROR, String .format("Unable to find Kubernetes version for cluster ID: %s", kubernetesCluster.getUuid()));
         }
@@ -299,6 +302,10 @@ public class KubernetesClusterActionWorker {
                 logAndThrow(Level.ERROR, String.format("Failed to attach binaries ISO for VM: %s in the Kubernetes cluster name: %s", vm.getDisplayName(), kubernetesCluster.getName()), ex);
             }
         }
+    }
+
+    protected void attachIsoKubernetesVMs(List<UserVm> clusterVMs) {
+        attachIsoKubernetesVMs(clusterVMs, null);
     }
 
     protected void detachIsoKubernetesVMs(List<UserVm> clusterVMs) throws CloudRuntimeException {
