@@ -312,15 +312,23 @@ export default {
       icon: 'lock',
       permission: ['listVpnCustomerGateways'],
       resourceType: 'VpnGateway',
-      columns: ['name', 'ipaddress', 'gateway', 'cidrlist', 'ipsecpsk', 'account', 'domain'],
-      details: ['name', 'id', 'ipaddress', 'gateway', 'cidrlist', 'ipsecpsk', 'account', 'domain'],
+      columns: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'account', 'domain'],
+      details: ['name', 'id', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'esppolicy', 'esplifetime', 'dpd', 'forceencap', 'account', 'domain'],
       actions: [
         {
           api: 'createVpnCustomerGateway',
           icon: 'plus',
           label: 'Add VPN Customer Gateway',
           listView: true,
-          args: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'ikelifetime', 'esplifetime', 'dpd', 'forceencap', 'ikepolicy', 'esppolicy']
+          popup: true,
+          component: () => import('@/views/network/CreateVpnCustomerGateway.vue')
+        },
+        {
+          api: 'updateVpnCustomerGateway',
+          icon: 'edit',
+          label: 'Edit VPN Customer Gateway',
+          dataView: true,
+          args: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'esppolicy', 'esplifetime', 'dpd', 'forceencap']
         },
         {
           api: 'deleteVpnCustomerGateway',
