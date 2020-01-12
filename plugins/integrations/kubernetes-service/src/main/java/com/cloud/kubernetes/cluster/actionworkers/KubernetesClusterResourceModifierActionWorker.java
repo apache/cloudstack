@@ -265,7 +265,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             startKubernetesVM(vm);
             nodes.add(vm);
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Provisioned node master VM ID: %s in to the Kubernetes cluster ID: %s", vm.getUuid(), kubernetesCluster.getUuid()));
+                LOGGER.info(String.format("Provisioned node VM ID: %s in to the Kubernetes cluster ID: %s", vm.getUuid(), kubernetesCluster.getUuid()));
             }
         }
         return nodes;

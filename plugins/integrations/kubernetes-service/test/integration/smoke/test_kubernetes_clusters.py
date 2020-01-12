@@ -445,13 +445,14 @@ class TestKubernetesCluster(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
-    def test_07_deploy_and_scale_up_kubernetes_cluster(self):
-        """Test to deploy a new Kubernetes cluster and check for failure while tying to upgrade it to a lower version
+    def test_07_deploy_and_scale_kubernetes_cluster(self):
+        """Test to deploy a new Kubernetes cluster and check for failure while tying to scale it
 
         # Validate the following:
         # 1. createKubernetesCluster should return valid info for new cluster
         # 2. The Cloud Database contains the valid information
-        # 3. scaleKubernetesCluster should return valid info for the cluster and it should be scaled up
+        # 3. scaleKubernetesCluster should return valid info for the cluster when it is scaled up
+        # 4. scaleKubernetesCluster should return valid info for the cluster when it is scaled down
         """
         if self.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
             self.skipTest("CKS not supported for hypervisor: %s" % self.hypervisor.lower())
@@ -472,31 +473,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         self.verifyKubernetesClusterScale(cluster_response, 2)
 
-        self.debug("Kubernetes cluster with ID: %s successfully upscaled, now deleting it" % cluster_response.id)
-
-        self.deleteAndVerifyKubernetesCluster(cluster_response.id)
-
-        self.debug("Kubernetes cluster with ID: %s successfully deleted" % cluster_response.id)
-
-        return
-
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
-    def test_08_deploy_and_scale_down_kubernetes_cluster(self):
-        """Test to deploy a new Kubernetes cluster and check for failure while tying to upgrade it to a lower version
-
-        # Validate the following:
-        # 1. createKubernetesCluster should return valid info for new cluster
-        # 2. The Cloud Database contains the valid information
-        # 3. scaleKubernetesCluster should return valid info for the cluster and it should be scaled down
-        """
-        name = 'testcluster-' + random_gen()
-        self.debug("Creating for Kubernetes cluster with name %s" % name)
-
-        cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_2.id, 2)
-
-        self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_2.id, 2)
-
-        self.debug("Kubernetes cluster with ID: %s successfully deployed, now downscaling it" % cluster_response.id)
+        self.debug("Kubernetes cluster with ID: %s successfully upscaled, now downscaling it" % cluster_response.id)
 
         try:
             cluster_response = self.scaleKubernetesCluster(cluster_response.id, 1)

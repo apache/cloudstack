@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -326,16 +325,18 @@ public class KubernetesClusterActionWorker {
         }
     }
 
-    protected List<UserVm> getKubernetesClusterVMs() {
-        List<UserVm> vmList = new ArrayList<>();
+    protected List<KubernetesClusterVmMapVO> getKubernetesClusterVMMaps() {
         List<KubernetesClusterVmMapVO> clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         if (!CollectionUtils.isEmpty(clusterVMs)) {
-            clusterVMs.sort(new Comparator<KubernetesClusterVmMapVO>() {
-                @Override
-                public int compare(KubernetesClusterVmMapVO t1, KubernetesClusterVmMapVO t2) {
-                    return (int)((t1.getId() - t2.getId())/Math.abs(t1.getId() - t2.getId()));
-                }
-            });
+            clusterVMs.sort((t1, t2) -> (int)((t1.getId() - t2.getId())/Math.abs(t1.getId() - t2.getId())));
+        }
+        return clusterVMs;
+    }
+
+    protected List<UserVm> getKubernetesClusterVMs() {
+        List<UserVm> vmList = new ArrayList<>();
+        List<KubernetesClusterVmMapVO> clusterVMs = getKubernetesClusterVMMaps();
+        if (!CollectionUtils.isEmpty(clusterVMs)) {
             for (KubernetesClusterVmMapVO vmMap : clusterVMs) {
                 vmList.add(userVmDao.findById(vmMap.getVmId()));
             }

@@ -263,7 +263,7 @@ public class KubernetesClusterUtil {
             }
             try {
                 int nodesCount = KubernetesClusterUtil.getKubernetesClusterReadyNodesCount(kubernetesCluster, ipAddress, port,
-                        user, sshKeyFile);;
+                        user, sshKeyFile);
                 if (nodesCount == kubernetesCluster.getTotalNodeCount()) {
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER.info(String.format("Kubernetes cluster ID: %s has %d ready nodes now", kubernetesCluster.getUuid(), kubernetesCluster.getTotalNodeCount()));

@@ -773,6 +773,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s cannot be scaled with service offering ID: %s, Kubernetes cluster template(CoreOS) needs minimum 2 vCPUs and 2 GB RAM", kubernetesCluster.getUuid(), serviceOffering.getUuid()));
                 }
             }
+            final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
+            if (serviceOffering.getRamSize() < existingServiceOffering.getRamSize() ||
+                    serviceOffering.getCpu() * serviceOffering.getSpeed() < existingServiceOffering.getCpu() * existingServiceOffering.getSpeed()) {
+                logAndThrow(Level.WARN, String.format("Kubernetes cluster cannot be scaled down for service offering. Service offering ID: %s offers lesser resources as compared to service offering ID: %s of Kubernetes cluster ID: %s",
+                        serviceOffering.getUuid(), existingServiceOffering.getUuid(), kubernetesCluster.getUuid()));
+            }
         }
 
         if (!(kubernetesCluster.getState().equals(KubernetesCluster.State.Created) ||
