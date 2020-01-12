@@ -50,7 +50,8 @@ public class KubernetesClusterStopWorker extends KubernetesClusterActionWorker {
                 LOGGER.warn(String.format("Failed to stop VM ID: %s in Kubernetes cluster ID: %s", vm.getUuid(), kubernetesCluster.getUuid()), ex);
             }
         }
-        for (final UserVm vm : clusterVMs) {
+        for (final UserVm userVm : clusterVMs) {
+            UserVm vm = userVmDao.findById(userVm.getId());
             if (vm == null || !vm.getState().equals(VirtualMachine.State.Stopped)) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Failed to stop all VMs in Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }

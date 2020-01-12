@@ -408,7 +408,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 // dont bail out here. proceed further to stop the reset of the VM's
             }
         }
-        for (final UserVm vm : clusterVms) {
+        for (final UserVm userVm : clusterVms) {
+            UserVm vm = userVmDao.findById(userVm.getId());
             if (vm == null || !vm.getState().equals(VirtualMachine.State.Running)) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Failed to start all VMs in Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }

@@ -1217,7 +1217,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     }
                 }
 
-                // run through Kubernetes clusters in 'Alert' state and reconcile state as 'Running' if the VM's are running
+                // run through Kubernetes clusters in 'Alert' state and reconcile state as 'Running' if the VM's are running or 'Stopped' if VM's are stopped
                 List<KubernetesClusterVO> alertKubernetesClusters = kubernetesClusterDao.findKubernetesClustersInState(KubernetesCluster.State.Alert);
                 for (KubernetesClusterVO kubernetesCluster : alertKubernetesClusters) {
                     if (LOGGER.isInfoEnabled()) {
@@ -1225,11 +1225,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     }
                     try {
                         if (isClusterVMsInDesiredState(kubernetesCluster, VirtualMachine.State.Running)) {
-
                             KubernetesClusterStartWorker startWorker =
                                     new KubernetesClusterStartWorker(kubernetesCluster, KubernetesClusterManagerImpl.this);
                             startWorker = ComponentContext.inject(startWorker);
                             startWorker.reconcileAlertCluster();
+                        } else if (isClusterVMsInDesiredState(kubernetesCluster, VirtualMachine.State.Stopped)) {
+                            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StopRequested);
+                            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
                         }
                     } catch (Exception e) {
                         LOGGER.warn(String.format("Failed to run Kubernetes cluster Alert state scanner on Kubernetes cluster ID: %s status scanner", kubernetesCluster.getUuid()), e);

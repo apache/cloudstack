@@ -73,6 +73,7 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
             s_fsm.addTransition(State.Starting, Event.StopRequested, State.Stopping);
 
             s_fsm.addTransition(State.Running, Event.StopRequested, State.Stopping);
+            s_fsm.addTransition(State.Alert, Event.StopRequested, State.Stopping);
             s_fsm.addTransition(State.Stopping, Event.OperationSucceeded, State.Stopped);
             s_fsm.addTransition(State.Stopping, Event.OperationFailed, State.Alert);
 
