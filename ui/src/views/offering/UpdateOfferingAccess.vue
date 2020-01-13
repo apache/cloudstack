@@ -163,6 +163,7 @@ export default {
         this.domains = this.domains.concat(listDomains)
       }).finally(() => {
         this.domainLoading = false
+        this.updateDomainSelection()
       })
     },
     fetchZoneData () {
@@ -174,6 +175,7 @@ export default {
         this.zones = this.zones.concat(listZones)
       }).finally(() => {
         this.zoneLoading = false
+        this.updateZoneSelection()
       })
     },
     updateDomainSelection () {
