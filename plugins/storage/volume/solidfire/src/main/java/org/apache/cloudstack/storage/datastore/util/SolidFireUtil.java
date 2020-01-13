@@ -548,6 +548,23 @@ public class SolidFireUtil {
 
                             return;
                         }
+                    } else {
+
+                        //Check if cluster VAG exists
+                        SolidFireVag sfVagMatchingClusterId = sfVags.stream().filter(vag -> vag.getName().equals("CloudStack-"+host.getClusterId())).findFirst().orElse(null);
+                        //Use existing cluster VAG
+                        if (sfVagMatchingClusterId != null) {
+                            LOGGER.info("Adding initiator to existing volume access group CloudStack-"+host.getClusterId());
+                            if (!SolidFireUtil.isInitiatorInSfVag(host.getStorageUrl(), sfVagMatchingClusterId)) {
+                                addInitiatorsToSolidFireVag(sfConnection, sfVagMatchingClusterId.getId(), new String[] { host.getStorageUrl() });
+                            }
+                        } else {
+                            // Create cluster VAG
+                            LOGGER.info("Creating volume access group CloudStack-"+host.getClusterId());
+                            SolidFireUtil.createVag(sfConnection, "CloudStack-"+host.getClusterId(), new String[] {  host.getStorageUrl() }, getVolumeIds(sfConnection, sfVags, host, hostDao));
+
+                        }
+
                     }
                 }
             }
@@ -811,6 +828,18 @@ public class SolidFireUtil {
 
         for (long sfVolumeId : sfVolumeIds) {
             if (sfVolumeId == sfVolumeIdToCheck) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean isInitiatorInSfVag(String initiatorName, SolidFireUtil.SolidFireVag sfVag) {
+        String[] initiatorsList = sfVag.getInitiators();
+
+        for (String initiator : initiatorsList) {
+            if (initiatorName.equals(initiator)) {
                 return true;
             }
         }
