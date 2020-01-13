@@ -556,7 +556,7 @@ public class SolidFireUtil {
                 throw new CloudRuntimeException("Can support at most four volume access groups per compute cluster (==)");
             }
 
-            // if MAX_NUM_INITIATORS_PER_VAG is reached create new random VAG
+            // if MAX_NUM_INITIATORS_PER_VAG is not yet reached but numVags is > 0 create new random VAG
             if (numVags > 0) {
                 if (!hostSupports_iScsi(host)) {
                     String errMsg = "Host with ID " + host.getId() + " does not support iSCSI.";
@@ -721,9 +721,9 @@ public class SolidFireUtil {
                 SolidFireUtil.createVag(sfConnection, "CloudStack-" + clusterId, IQNsInCluster.toArray(new String[0]), new long[] { sfVolumeId });
             }
 
-            //refresh sf VAG list and rebuild sfVagToIqnsMap (should no longer have null entry)
-            sfVags = SolidFireUtil.getAllVags(sfConnection);
-            sfVagToIqnsMap = buildVagtoIQNMap(hosts, sfVags);
+            //update null entry in vag to IQN Map
+            sfVagToIqnsMap.put(sfVagMatchingClusterId,sfVagToIqnsMap.get(null));
+            sfVagToIqnsMap.remove(null);
         }
 
         // throw exception if more than 4 VAGs
