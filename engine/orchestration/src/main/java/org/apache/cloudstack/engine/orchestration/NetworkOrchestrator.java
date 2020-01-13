@@ -2936,7 +2936,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     public boolean restartNetwork(final Long networkId, final Account callerAccount, final User callerUser, final boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
     InsufficientCapacityException {
-
+        boolean status = true;
+        boolean restartRequired = false;
         final NetworkVO network = _networksDao.findById(networkId);
 
         s_logger.debug("Restarting network " + networkId + "...");
@@ -2947,16 +2948,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         if (cleanup) {
             if (!rollingRestartRouters(network, offering, dest, context)) {
-                setRestartRequired(network, true);
-                return false;
+                status = false;
+                restartRequired = true;
             }
-            return true;
+            setRestartRequired(network, restartRequired);
+            return status;
         }
 
         s_logger.debug("Implementing the network " + network + " elements and resources as a part of network restart without cleanup");
         try {
             implementNetworkElementsAndResources(dest, context, network, offering);
-            setRestartRequired(network, true);
+            setRestartRequired(network, false);
             return true;
         } catch (final Exception ex) {
             s_logger.warn("Failed to implement network " + network + " elements and resources as a part of network restart due to ", ex);
