@@ -290,7 +290,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         // in order to revert the volume
         if (instanceId != null) {
             UserVmVO vm = _vmDao.findById(instanceId);
-            if (vm.getState() != State.Stopped && vm.getState() != State.Shutdowned) {
+            if (vm.getState() != State.Stopped && vm.getState() != State.Shutdown) {
                 throw new InvalidParameterValueException("The VM the specified disk is attached to is not in the shutdown state.");
             }
             // If target VM has associated VM snapshots then don't allow to revert from snapshot
