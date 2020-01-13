@@ -69,7 +69,7 @@ class CsDhcp(CsDataBag):
 
         if not self.cl.is_redundant() or self.cl.is_master():
             if restart_dnsmasq:
-                CsHelper.service("dnsmasq", "restart")
+                CsHelper.service("dnsmasq", "reload")
             else:
                 CsHelper.start_if_stopped("dnsmasq")
                 CsHelper.service("dnsmasq", "reload")
