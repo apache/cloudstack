@@ -2249,6 +2249,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDns2(profile.getDns2());
         // populate capability
         Map<Service, Map<Capability, String>> serviceCapabilitiesMap = ApiDBUtils.getNetworkCapabilities(network.getId(), network.getDataCenterId());
+        Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(network.getNetworkOfferingId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         if (serviceCapabilitiesMap != null) {
             for (Map.Entry<Service, Map<Capability, String>>entry : serviceCapabilitiesMap.entrySet()) {
@@ -2269,12 +2270,74 @@ public class ApiResponseHelper implements ResponseGenerator {
                         CapabilityResponse capabilityResponse = new CapabilityResponse();
                         String capabilityValue = ser_cap_entries.getValue();
                         capabilityResponse.setName(capability.getName());
-                        capabilityResponse.setValue(capabilityValue);
+                        if (Service.Lb == service && capability.getName().equals(Capability.SupportedLBIsolation.getName())) {
+                            // capabilityResponse.setValue(networkOffering.getDedicatedLB() ? "dedicated" : "shared");
+                        } else {
+                            capabilityResponse.setValue(capabilityValue);
+                        }
+                        if (capability.getName().equals(Capability.SupportedLBIsolation.getName()) || capability.getName().equals(Capability.SupportedSourceNatTypes.getName())
+                                || capability.getName().equals(Capability.RedundantRouter.getName())) {
+                            capabilityResponse.setCanChoose(true);
+                        } else {
+                            capabilityResponse.setCanChoose(false);
+                        }
                         capabilityResponse.setObjectName("capability");
                         capabilityResponses.add(capabilityResponse);
                     }
-                    serviceResponse.setCapabilities(capabilityResponses);
                 }
+
+                if (Service.SourceNat == service) {
+                    // overwrite
+                    capabilityResponses = new ArrayList<CapabilityResponse>();
+                    CapabilityResponse sharedSourceNat = new CapabilityResponse();
+                    sharedSourceNat.setName(Capability.SupportedSourceNatTypes.getName());
+                    sharedSourceNat.setValue(networkOffering.isSharedSourceNat() ? "perzone" : "peraccount");
+                    sharedSourceNat.setCanChoose(true);
+                    capabilityResponses.add(sharedSourceNat);
+
+                    CapabilityResponse redundantRouter = new CapabilityResponse();
+                    redundantRouter.setName(Capability.RedundantRouter.getName());
+                    redundantRouter.setValue(networkOffering.isRedundantRouter() ? "true" : "false");
+                    redundantRouter.setCanChoose(true);
+                    capabilityResponses.add(redundantRouter);
+
+                } else if (service == Service.StaticNat) {
+                    CapabilityResponse eIp = new CapabilityResponse();
+                    eIp.setName(Capability.ElasticIp.getName());
+                    eIp.setValue(networkOffering.isElasticIp() ? "true" : "false");
+                    eIp.setCanChoose(false);
+                    capabilityResponses.add(eIp);
+
+                    CapabilityResponse associatePublicIp = new CapabilityResponse();
+                    associatePublicIp.setName(Capability.AssociatePublicIP.getName());
+                    associatePublicIp.setValue(networkOffering.isAssociatePublicIP() ? "true" : "false");
+                    associatePublicIp.setCanChoose(false);
+                    capabilityResponses.add(associatePublicIp);
+
+                } else if (Service.Lb == service) {
+                    CapabilityResponse eLb = new CapabilityResponse();
+                    eLb.setName(Capability.ElasticLb.getName());
+                    eLb.setValue(networkOffering.isElasticLb() ? "true" : "false");
+                    eLb.setCanChoose(false);
+                    capabilityResponses.add(eLb);
+
+                    CapabilityResponse inline = new CapabilityResponse();
+                    inline.setName(Capability.InlineMode.getName());
+                    inline.setValue(networkOffering.isInline() ? "true" : "false");
+                    inline.setCanChoose(false);
+                    capabilityResponses.add(inline);
+                }
+                serviceResponse.setCapabilities(capabilityResponses);
+
+                List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
+                for (Provider provider : serviceProviderMap.get(service)) {
+                    if (provider != null) {
+                        ProviderResponse providerRsp = new ProviderResponse();
+                        providerRsp.setName(provider.getName());
+                        providers.add(providerRsp);
+                    }
+                }
+                serviceResponse.setProviders(providers);
 
                 serviceResponse.setObjectName("service");
                 serviceResponses.add(serviceResponse);
