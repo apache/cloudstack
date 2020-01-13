@@ -1734,7 +1734,7 @@ public class KVMStorageProcessor implements StorageProcessor {
      * Perform a free space check on the host for downloading the direct download templates
      * @param templateSize template size obtained from remote server when registering the template
      */
-    private boolean isEnoughSpaceForDownloadTemplateOnTemporaryLocation(Long templateSize) {
+    protected boolean isEnoughSpaceForDownloadTemplateOnTemporaryLocation(Long templateSize) {
         if (templateSize == null || templateSize == 0L) {
             s_logger.info("The server did not provide the template size, assuming there is enough space to download it");
             return true;
