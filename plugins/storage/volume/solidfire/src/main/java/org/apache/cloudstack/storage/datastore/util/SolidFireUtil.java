@@ -719,6 +719,8 @@ public class SolidFireUtil {
                     IQNsInCluster.add(iqn);
                 }
                 SolidFireUtil.createVag(sfConnection, "CloudStack-" + clusterId, IQNsInCluster.toArray(new String[0]), new long[] { sfVolumeId });
+                sfVags = SolidFireUtil.getAllVags(sfConnection);
+                sfVagMatchingClusterId = sfVags.stream().filter(vag -> vag.getName().equals("CloudStack-"+clusterId)).findFirst().orElse(null);
             }
 
             //update null entry in vag to IQN Map
