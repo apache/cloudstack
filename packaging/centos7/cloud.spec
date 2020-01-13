@@ -90,7 +90,6 @@ Requires: python
 Requires: python3
 Requires: python-argparse
 Requires: python-netaddr
-Requires: bsdtar
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
