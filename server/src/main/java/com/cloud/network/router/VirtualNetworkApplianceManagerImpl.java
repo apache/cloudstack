@@ -157,6 +157,8 @@ import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LBStickinessPolicyDao;
+import com.cloud.network.dao.LBStickinessPolicyVO;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.LoadBalancerVMMapVO;
@@ -338,6 +340,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject private PortForwardingRulesDao portForwardingDao;
     @Inject private ApplicationLoadBalancerRuleDao applicationLoadBalancerRuleDao;
     @Inject private RouterHealthCheckResultDao routerHealthCheckResultDao;
+    @Inject private LBStickinessPolicyDao lbStickinessPolicyDao;
 
     @Inject private NetworkService networkService;
     @Inject private VpcService vpcService;
@@ -1240,13 +1243,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             try {
                 final List<DomainRouterVO> routers = _routerDao.listByStateAndManagementServer(VirtualMachine.State.Running, mgmtSrvrId);
                 s_logger.info("Found " + routers.size() + " running routers. Fetching, analysing and updating DB for the health checks.");
+                if (!RouterHealthChecksEnabled.value()) {
+                    s_logger.debug("Skipping fetching of router health check results as router.health.checks.enabled is disabled");
+                    return;
+                }
 
                 for (final DomainRouterVO router : routers) {
-                    if (!RouterHealthChecksEnabled.valueIn(router.getDataCenterId())) {
-                        s_logger.debug("Skipping fetching of router health check results as its disabled for router " + router.getUuid());
-                        continue;
-                    }
-
                     GetRouterMonitorResultsAnswer answer = fetchAndUpdateRouterHealthChecks(router, false);
                     String checkFailsToRestartVr = RouterHealthChecksFailuresToRestartVr.valueIn(router.getDataCenterId());
                     if (answer == null) {
@@ -1454,7 +1456,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     private GetRouterMonitorResultsAnswer fetchAndUpdateRouterHealthChecks(DomainRouterVO router, boolean performFreshChecks) {
-        if (!RouterHealthChecksEnabled.valueIn(router.getDataCenterId())) {
+        if (!RouterHealthChecksEnabled.value()) {
             return null;
         }
 
@@ -1493,8 +1495,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             throw new CloudRuntimeException("Unable to find router with id " + routerId);
         }
 
-        if (!RouterHealthChecksEnabled.valueIn(router.getDataCenterId())) {
-            throw new CloudRuntimeException("Router health checks are not enabled in cluster router: " + router);
+        if (!RouterHealthChecksEnabled.value()) {
+            throw new CloudRuntimeException("Router health checks are not enabled for router: " + router);
         }
 
         s_logger.info("Running health check results for router " + router.getUuid());
@@ -1544,7 +1546,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final SetMonitorServiceCommand command = new SetMonitorServiceCommand(services);
         command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIP(router));
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.valueIn(router.getDataCenterId()).toString());
+        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, RouterHealthChecksToExclude.valueIn(router.getDataCenterId()));
@@ -1560,7 +1562,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
      * @return success of whether data was sent or not
      */
     private boolean updateRouterHealthChecksConfig(DomainRouterVO router) {
-        if (!RouterHealthChecksEnabled.valueIn(router.getDataCenterId())) {
+        if (!RouterHealthChecksEnabled.value()) {
             return false;
         }
 
@@ -1636,6 +1638,18 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
     }
 
+    private String getStickinessPolicies(long loadBalancingRuleId) {
+        List<LBStickinessPolicyVO> stickinessPolicyVOs = lbStickinessPolicyDao.listByLoadBalancerId(loadBalancingRuleId, false);
+        if (stickinessPolicyVOs != null && stickinessPolicyVOs.size() > 0) {
+            StringBuilder stickiness = new StringBuilder();
+            for (LBStickinessPolicyVO stickinessVO : stickinessPolicyVOs) {
+                stickiness.append(stickinessVO.getMethodName()).append(" ");
+            }
+            return stickiness.toString().trim();
+        }
+        return "None";
+    }
+
     private void updateWithLbRules(final DomainRouterJoinVO routerJoinVO, final StringBuilder loadBalancingData) {
         List<? extends FirewallRuleVO> loadBalancerVOs = this.getLBRules(routerJoinVO);
         for (FirewallRuleVO firewallRuleVO : loadBalancerVOs) {
@@ -1656,15 +1670,18 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     loadBalancingData.append(",sourceIp=").append(_ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString())
                             .append(",destPortStart=").append(loadBalancerVO.getDefaultPortStart())
                             .append(",destPortEnd=").append(loadBalancerVO.getDefaultPortEnd())
-                            .append(",algorithm=").append(loadBalancerVO.getAlgorithm()).append(",vmIps=");
+                            .append(",algorithm=").append(loadBalancerVO.getAlgorithm())
+                            .append(",protocol=").append(loadBalancerVO.getLbProtocol());
                 } else if (firewallRuleVO instanceof ApplicationLoadBalancerRuleVO) {
                     ApplicationLoadBalancerRuleVO appLoadBalancerVO = (ApplicationLoadBalancerRuleVO) firewallRuleVO;
                     loadBalancingData.append(",sourceIp=").append(appLoadBalancerVO.getSourceIp())
                             .append(",destPortStart=").append(appLoadBalancerVO.getDefaultPortStart())
                             .append(",destPortEnd=").append(appLoadBalancerVO.getDefaultPortEnd())
-                            .append(",algorithm=").append(appLoadBalancerVO.getAlgorithm()).append(",vmIps=");
-
+                            .append(",algorithm=").append(appLoadBalancerVO.getAlgorithm())
+                            .append(",protocol=").append(appLoadBalancerVO.getLbProtocol());
                 }
+                loadBalancingData.append(",stickiness=").append(getStickinessPolicies(firewallRuleVO.getId()));
+                loadBalancingData.append(",keepAliveEnabled=").append(offering.isKeepAliveEnabled()).append(",vmIps=");
                 for (LoadBalancerVMMapVO vmMapVO : vmMapVOs) {
                     loadBalancingData.append(vmMapVO.getInstanceIp()).append(" ");
                 }

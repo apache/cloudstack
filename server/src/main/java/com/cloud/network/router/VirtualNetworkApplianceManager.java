@@ -96,7 +96,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     static final ConfigKey<String> RouterHealthChecksToExclude = new ConfigKey<String>(String.class, "router.health.checks.to.exclude", "Advanced", "",
             "Health checks that should be excluded when executing scheduled checks on the router. This can be a comma separated list of script names placed in the '/root/health_checks/' folder. Currently the following scripts are " +
                     "placed in default systemvm template -  cpu_usage_check.py, disk_space_check.py, gateways_check.py, iptables_check.py, router_version_check.py, dhcp_check.py, dns_check.py, haproxy_check.py, memory_usage_check.py.",
-            true, ConfigKey.Scope.Cluster, null);
+            true, ConfigKey.Scope.Zone, null);
     static final ConfigKey<Double> RouterHealthChecksFreeDiskSpaceThreshold = new ConfigKey<Double>(Double.class, "router.health.checks.free.disk.space.threshold",
             "Advanced", "100", "Free disk space threshold (in MB) on VR below which the check is considered a failure.",
             true, ConfigKey.Scope.Zone, null);

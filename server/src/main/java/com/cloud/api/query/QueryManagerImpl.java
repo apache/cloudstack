@@ -1174,15 +1174,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getClusterId(),
                 cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getVersion());
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
+        if (!VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
+            s_logger.debug("Skipping health checks data in router as router.health.checks.enabled is false for router");
+            return response;
+        }
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
         for (DomainRouterResponse res : routerResponses) {
             DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
-            if (!VirtualNetworkApplianceManager.RouterHealthChecksEnabled.valueIn(resRouter.getId())) {
-                s_logger.debug("Skipping health checks data in router as it's disabled for router " + resRouter.getUuid());
-                continue;
-            }
-
             res.setHealthChecksFailed(routerHealthCheckResultDao.hasFailingChecks(resRouter.getId()));
             if (cmd.shouldFetchHealthCheckResults()) {
                 res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter,
@@ -1198,15 +1197,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), null, cmd.getHostId(),
                 cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), null);
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
+        if (!VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
+            s_logger.debug("Skipping health checks data for internal lbvms as it's router.health.checks.enabled is false");
+            return response;
+        }
+
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
         for (DomainRouterResponse res : routerResponses) {
             DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
-            if (!VirtualNetworkApplianceManager.RouterHealthChecksEnabled.valueIn(resRouter.getId())) {
-                s_logger.debug("Skipping health checks data in router as it's disabled for router " + resRouter.getUuid());
-                continue;
-            }
-
             res.setHealthChecksFailed(routerHealthCheckResultDao.hasFailingChecks(resRouter.getId()));
             if (cmd.shouldFetchHealthCheckResults()) {
                 res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter,
@@ -3911,8 +3910,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     public List<RouterHealthCheckResultResponse> listRouterHealthChecks(GetRouterHealthCheckResultsCmd cmd) {
         s_logger.info("Executing health check command " + cmd);
         long routerId = cmd.getRouterId();
-        if (!VirtualNetworkApplianceManager.RouterHealthChecksEnabled.valueIn(routerId)) {
-            throw new CloudRuntimeException("Router health checks are not enabled in cluster router: " + routerId);
+        if (!VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
+            throw new CloudRuntimeException("Router health checks are not enabled for router " + routerId);
         }
 
         if (cmd.shouldPerformFreshChecks() && !routerService.performRouterHealthChecks(routerId)) {
