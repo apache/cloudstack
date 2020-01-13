@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    TODO: VPC configure view
+    TODO: VPC tiers management
   </div>
 </template>
 

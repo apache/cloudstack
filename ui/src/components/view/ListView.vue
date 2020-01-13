@@ -81,6 +81,9 @@
         <a-tag>source-nat</a-tag>
       </span>
     </a>
+    <a slot="publicip" slot-scope="text, record" href="javascript:;">
+      <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+    </a>
     <a slot="vmname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
     </a>

@@ -85,6 +85,23 @@ export default {
           args: ['makeredundant', 'cleanup']
         },
         {
+          api: 'replaceNetworkACLList',
+          icon: 'swap',
+          label: 'Replace ACL List',
+          dataView: true,
+          show: (record) => { return record.vpcid },
+          args: ['aclid', 'networkid'],
+          mapping: {
+            aclid: {
+              api: 'listNetworkACLLists',
+              params: (record) => { return { vpcid: record.vpcid } }
+            },
+            networkid: {
+              value: (record) => { return record.id }
+            }
+          }
+        },
+        {
           api: 'deleteNetwork',
           icon: 'delete',
           label: 'Delete Network',
@@ -101,16 +118,40 @@ export default {
       columns: ['name', 'state', 'displaytext', 'cidr', 'account', 'zonename'],
       details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain'],
       related: [{
+        name: 'publicip',
+        title: 'Public IP Addresses',
+        param: 'vpcid'
+      }, {
+        name: 'privategw',
+        title: 'Private Gateways',
+        param: 'vpcid'
+      }, {
+        name: 's2svpn',
+        title: 'Site-to-Site VPN Gateways',
+        param: 'vpcid'
+      }, {
+        name: 's2svpnconn',
+        title: 'Site-to-Site VPN Connections',
+        param: 'vpcid'
+      }, {
+        name: 'acllist',
+        title: 'Network ACL Lists',
+        param: 'vpcid'
+      }, {
+        name: 'guestnetwork',
+        title: 'Networks',
+        param: 'vpcid'
+      }, {
         name: 'vm',
         title: 'Instances',
         param: 'vpcid'
       }],
       tabs: [{
-        name: 'configure',
-        component: () => import('@/views/network/VpcConfigure.vue')
-      }, {
         name: 'details',
         component: () => import('@/components/view/DetailsTab.vue')
+      }, {
+        name: 'Tiers',
+        component: () => import('@/views/network/VpcTiers.vue')
       }],
       actions: [
         {
@@ -272,6 +313,50 @@ export default {
       ]
     },
     {
+      name: 'privategw',
+      title: 'Private Gateway',
+      icon: 'branches',
+      hidden: true,
+      permission: ['listPrivateGateways'],
+      columns: ['ipaddress', 'state', 'gateway', 'netmask', 'account', 'domain'],
+      details: ['ipaddress', 'gateway', 'netmask', 'vlan', 'sourcenatsupported', 'aclid', 'account', 'domain', 'zone'],
+      actions: [
+      ]
+    },
+    {
+      name: 's2svpn',
+      title: 'Site-to-Site VPNs',
+      icon: 'lock',
+      hidden: true,
+      permission: ['listVpnGateways'],
+      columns: ['publicip', 'account', 'domain'],
+      details: ['publicip', 'account', 'domain'],
+      actions: [
+      ]
+    },
+    {
+      name: 's2svpnconn',
+      title: 'Site-to-Site VPN Connections',
+      icon: 'sync',
+      hidden: true,
+      permission: ['listVpnConnections'],
+      columns: ['publicip', 'state', 'gateway', 'ipsecpsk', 'ikepolicy', 'esppolicy'],
+      details: ['publicip', 'gateway', 'passive', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'esppolicy', 'ikelifetime', 'esplifetime', 'dpd', 'forceencap', 'created'],
+      actions: [
+      ]
+    },
+    {
+      name: 'acllist',
+      title: 'Network ACL Lists',
+      icon: 'bars',
+      hidden: true,
+      permission: ['listNetworkACLLists'],
+      columns: ['name', 'description', 'id'],
+      details: ['name', 'description', 'id'],
+      actions: [
+      ]
+    },
+    {
       name: 'vpnuser',
       title: 'VPN Users',
       icon: 'user',
@@ -307,8 +392,8 @@ export default {
       ]
     },
     {
-      name: 'vpngateway',
-      title: 'VPN Gateway',
+      name: 'vpncustomergateway',
+      title: 'VPN Customer Gateway',
       icon: 'lock',
       permission: ['listVpnCustomerGateways'],
       resourceType: 'VpnGateway',

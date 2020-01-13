@@ -57,6 +57,7 @@ export default {
         case 'enabled':
         case 'Active':
         case 'Completed':
+        case 'Connected':
         case 'Started':
         case 'Download Complete':
         case 'Successfully Installed':
