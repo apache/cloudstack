@@ -39,10 +39,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.PrepareForMigrationAnswer;
-import com.cloud.agent.api.to.DpdkTO;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
