@@ -287,7 +287,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId, hypervisorType, cmd.getChecksum(), true,
                 cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), templateType, cmd.isDirectDownload());
     }
-    
+
     private TemplateType getTemplateType(RegisterTemplateCmd cmd) {
         boolean isRouting = (cmd.isRoutingType() == null) ? false : cmd.isRoutingType();
 
