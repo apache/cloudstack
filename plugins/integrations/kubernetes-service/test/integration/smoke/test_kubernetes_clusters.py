@@ -23,6 +23,7 @@ from marvin.cloudstackAPI import (listInfrastructure,
                                   addKubernetesSupportedVersion,
                                   deleteKubernetesSupportedVersion,
                                   createKubernetesCluster,
+                                  stopKubernetesCluster,
                                   deleteKubernetesCluster,
                                   upgradeKubernetesCluster,
                                   scaleKubernetesCluster)
@@ -271,6 +272,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         # Validate the following:
         # 1. createKubernetesCluster should return valid info for new cluster
         # 2. The Cloud Database contains the valid information
+        # 3. stopKubernetesCluster should stop the cluster
         """
         if self.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
             self.skipTest("CKS not supported for hypervisor: %s" % self.hypervisor.lower())
@@ -281,7 +283,11 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_2.id)
 
-        self.debug("Kubernetes cluster with ID: %s successfully deployed, now deleting it" % cluster_response.id)
+        self.debug("Kubernetes cluster with ID: %s successfully deployed, now stopping it" % cluster_response.id)
+
+        self.stopAndVerifyKubernetesCluster(cluster_response.id)
+
+        self.debug("Kubernetes cluster with ID: %s successfully stopped, now deleting it" % cluster_response.id)
 
         self.deleteAndVerifyKubernetesCluster(cluster_response.id)
 
@@ -491,9 +497,9 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         return
 
-    def listKubernetesCluster(self, clusterId):
+    def listKubernetesCluster(self, cluster_id):
         listKubernetesClustersCmd = listKubernetesClusters.listKubernetesClustersCmd()
-        listKubernetesClustersCmd.id = clusterId
+        listKubernetesClustersCmd.id = cluster_id
         clusterResponse = self.apiclient.listKubernetesClusters(listKubernetesClustersCmd)
         return clusterResponse[0]
 
@@ -511,22 +517,28 @@ class TestKubernetesCluster(cloudstackTestCase):
             self.cleanup.append(clusterResponse)
         return clusterResponse
 
-    def deleteKubernetesCluster(self, clusterId):
+    def stopKubernetesCluster(self, cluster_id):
+        stopKubernetesClusterCmd = stopKubernetesCluster.stopKubernetesClusterCmd()
+        stopKubernetesClusterCmd.id = cluster_id
+        response = self.apiclient.stopKubernetesCluster(stopKubernetesClusterCmd)
+        return response
+
+    def deleteKubernetesCluster(self, cluster_id):
         deleteKubernetesClusterCmd = deleteKubernetesCluster.deleteKubernetesClusterCmd()
-        deleteKubernetesClusterCmd.id = clusterId
+        deleteKubernetesClusterCmd.id = cluster_id
         response = self.apiclient.deleteKubernetesCluster(deleteKubernetesClusterCmd)
         return response
 
-    def upgradeKubernetesCluster(self, clusterId, version_id):
+    def upgradeKubernetesCluster(self, cluster_id, version_id):
         upgradeKubernetesClusterCmd = upgradeKubernetesCluster.upgradeKubernetesClusterCmd()
-        upgradeKubernetesClusterCmd.id = clusterId
+        upgradeKubernetesClusterCmd.id = cluster_id
         upgradeKubernetesClusterCmd.kubernetesversionid = version_id
         response = self.apiclient.upgradeKubernetesCluster(upgradeKubernetesClusterCmd)
         return response
 
-    def scaleKubernetesCluster(self, clusterId, size):
+    def scaleKubernetesCluster(self, cluster_id, size):
         scaleKubernetesClusterCmd = scaleKubernetesCluster.scaleKubernetesClusterCmd()
-        scaleKubernetesClusterCmd.id = clusterId
+        scaleKubernetesClusterCmd.id = cluster_id
         scaleKubernetesClusterCmd.size = size
         response = self.apiclient.scaleKubernetesCluster(scaleKubernetesClusterCmd)
         return response
@@ -534,7 +546,7 @@ class TestKubernetesCluster(cloudstackTestCase):
     def verifyKubernetesCluster(self, cluster_response, name, version_id, size=1, master_nodes=1):
         """Check if Kubernetes cluster is valid"""
 
-        self.verifyKubernetesClusterState(cluster_response)
+        self.verifyKubernetesClusterState(cluster_response, 'Running')
 
         self.assertEqual(
             cluster_response.name,
@@ -560,13 +572,13 @@ class TestKubernetesCluster(cloudstackTestCase):
             "Check KubernetesCluster name in DB {}, {}".format(db_cluster_name, name)
         )
 
-    def verifyKubernetesClusterState(self, cluster_response):
+    def verifyKubernetesClusterState(self, cluster_response, state):
         """Check if Kubernetes cluster state is Running"""
 
         self.assertEqual(
             cluster_response.state,
             'Running',
-            "Check KubernetesCluster state {}, {}".format(cluster_response.state, 'Running')
+            "Check KubernetesCluster state {}, {}".format(cluster_response.state, state)
         )
 
     def verifyKubernetesClusterVersion(self, cluster_response, version_id):
@@ -596,30 +608,49 @@ class TestKubernetesCluster(cloudstackTestCase):
     def verifyKubernetesClusterUpgrade(self, cluster_response, version_id):
         """Check if Kubernetes cluster state and version are valid after upgrade"""
 
-        self.verifyKubernetesClusterState(cluster_response)
+        self.verifyKubernetesClusterState(cluster_response, 'Running')
         self.verifyKubernetesClusterVersion(cluster_response, version_id)
 
     def verifyKubernetesClusterScale(self, cluster_response, size=1, master_nodes=1):
         """Check if Kubernetes cluster state and node sizes are valid after upgrade"""
 
-        self.verifyKubernetesClusterState(cluster_response)
+        self.verifyKubernetesClusterState(cluster_response, 'Running')
         self.verifyKubernetesClusterSize(cluster_response, size, master_nodes)
 
-    def deleteAndVerifyKubernetesCluster(self, clusterId):
+    def stopAndVerifyKubernetesCluster(self, cluster_id):
+        """Stop Kubernetes cluster and check if it is really stopped"""
+
+        stop_response = self.stopKubernetesCluster(cluster_id)
+
+        self.assertEqual(
+            stop_response.success,
+            True,
+            "Check KubernetesCluster stop response {}, {}".format(stop_response.success, True)
+        )
+
+        db_cluster_state = self.dbclient.execute("select state from kubernetes_cluster where uuid = '%s';" % cluster_id)[0][0]
+
+        self.assertEqual(
+            db_cluster_state,
+            'Stopped',
+            "KubernetesCluster not stopped in DB, {}".format(db_cluster_state)
+        )
+
+    def deleteAndVerifyKubernetesCluster(self, cluster_id):
         """Delete Kubernetes cluster and check if it is really deleted"""
 
-        delete_response = self.deleteKubernetesCluster(clusterId)
+        delete_response = self.deleteKubernetesCluster(cluster_id)
 
         self.assertEqual(
             delete_response.success,
             True,
-            "Check KubernetesCluster deletion in DB {}, {}".format(delete_response.success, True)
+            "Check KubernetesCluster delete response {}, {}".format(delete_response.success, True)
         )
 
-        db_cluster_removed = self.dbclient.execute("select removed from kubernetes_cluster where uuid = '%s';" % clusterId)[0][0]
+        db_cluster_removed = self.dbclient.execute("select removed from kubernetes_cluster where uuid = '%s';" % cluster_id)[0][0]
 
         self.assertNotEqual(
             db_cluster_removed,
             None,
-            "KubernetesCluster not removed in DB"
+            "KubernetesCluster not removed in DB, {}".format(db_cluster_removed)
         )
