@@ -1584,6 +1584,34 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
             cls.services['mode'] = cls.zone.networktype
             cls.services["small"]["zoneid"] = cls.zone.id
             cls.services["small"]["template"] = cls.template.id
+            cls.services["l2-network-pvlan-community-1"] = {
+                "name": "Test Network L2 PVLAN Community 1",
+                "displaytext": "Test Network L2 PVLAN Community 1",
+                "vlan": 900,
+                "isolatedpvlan": "901",
+                "isolatedpvlantype": "community"
+            }
+            cls.services["l2-network-pvlan-community-2"] = {
+                "name": "Test Network L2 PVLAN Community 2",
+                "displaytext": "Test Network L2 PVLAN Community 2",
+                "vlan": 900,
+                "isolatedpvlan": "902",
+                "isolatedpvlantype": "community"
+            }
+            cls.services["l2-network-pvlan-promiscuous"] = {
+                "name": "Test Network L2 PVLAN Promiscuous",
+                "displaytext": "Test Network L2 PVLAN Promiscuous",
+                "vlan": 900,
+                "isolatedpvlan" : "900",
+                "isolatedpvlantype": "promiscuous"
+            }
+            cls.services["l2-network-pvlan-isolated"] = {
+                 "name": "Test Network L2 PVLAN Isolated",
+                 "displaytext": "Test Network L2 PVLAN Isolated",
+                 "vlan": 900,
+                 "isolatedpvlan": "903",
+                 "isolatedpvlantype": "isolated"
+             }
 
             cls.l2_network_offering = NetworkOffering.create(
                 cls.apiclient,
