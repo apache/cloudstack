@@ -27,9 +27,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ManagementServerException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -54,15 +51,13 @@ public interface KubernetesClusterService extends PluggableService, Configurable
 
     KubernetesCluster findById(final Long id);
 
-    KubernetesCluster createKubernetesCluster(CreateKubernetesClusterCmd cmd) throws InsufficientCapacityException,
-            ManagementServerException, CloudRuntimeException;
+    KubernetesCluster createKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
-    boolean startKubernetesCluster(long kubernetesClusterId, boolean onCreate) throws ManagementServerException,
-            ResourceUnavailableException, InsufficientCapacityException, CloudRuntimeException;
+    boolean startKubernetesCluster(long kubernetesClusterId, boolean onCreate) throws CloudRuntimeException;
 
     boolean stopKubernetesCluster(long kubernetesClusterId) throws CloudRuntimeException;
 
-    boolean deleteKubernetesCluster(Long kubernetesClusterId) throws ManagementServerException;
+    boolean deleteKubernetesCluster(Long kubernetesClusterId) throws CloudRuntimeException;
 
     ListResponse<KubernetesClusterResponse> listKubernetesClusters(ListKubernetesClustersCmd cmd);
 

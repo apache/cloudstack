@@ -32,10 +32,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.kubernetes.version.KubernetesVersionService;
 import com.google.common.base.Strings;
 
@@ -105,7 +101,7 @@ public class ListKubernetesSupportedVersionsCmd extends BaseListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ServerApiException, ConcurrentOperationException {
         ListResponse<KubernetesSupportedVersionResponse> response = kubernetesVersionService.listKubernetesSupportedVersions(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);

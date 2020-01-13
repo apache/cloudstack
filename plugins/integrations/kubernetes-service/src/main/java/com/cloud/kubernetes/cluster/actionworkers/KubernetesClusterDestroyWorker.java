@@ -36,6 +36,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmVO;
@@ -103,11 +104,11 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         return vmDestroyed;
     }
 
-    private void processFailedNetworkDelete(long kubernetesClusterId) {
+    private void processFailedNetworkDelete(final long kubernetesClusterId) {
         stateTransitTo(kubernetesClusterId, KubernetesCluster.Event.OperationFailed);
-        KubernetesClusterVO cluster = kubernetesClusterDao.findById(kubernetesClusterId);
-        cluster.setCheckForGc(true);
-        kubernetesClusterDao.update(cluster.getId(), cluster);
+        KubernetesClusterVO kubernetesClusterVO = kubernetesClusterDao.findById(kubernetesClusterId);
+        kubernetesClusterVO.setCheckForGc(true);
+        kubernetesClusterDao.update(kubernetesClusterId, kubernetesClusterVO);
     }
 
     private boolean updateKubernetesClusterEntryForGC() {
@@ -159,7 +160,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         }
     }
 
-    public boolean destroy() throws ManagementServerException, PermissionDeniedException {
+    public boolean destroy() throws CloudRuntimeException {
         init();
         validateClusterSate();
         if (LOGGER.isInfoEnabled()) {
@@ -183,7 +184,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                     String msg = String.format("Failed to destroy network of Kubernetes cluster ID: %s cleanup", kubernetesCluster.getUuid());
                     LOGGER.warn(msg, e);
                     processFailedNetworkDelete(kubernetesCluster.getId());
-                    throw new ManagementServerException(msg, e);
+                    throw new CloudRuntimeException(msg, e);
                 }
             }
         } else {
@@ -192,7 +193,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 LOGGER.info(msg);
             }
             processFailedNetworkDelete(kubernetesCluster.getId());
-            throw new ManagementServerException(msg);
+            throw new CloudRuntimeException(msg);
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         updateKubernetesClusterEntryForGC();

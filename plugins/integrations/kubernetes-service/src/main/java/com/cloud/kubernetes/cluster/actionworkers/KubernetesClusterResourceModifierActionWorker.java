@@ -107,7 +107,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         super(kubernetesCluster, clusterManager);
     }
 
-    private String getKubernetesNodeConfig(String joinIp) throws IOException {
+    private String getKubernetesNodeConfig(final String joinIp) throws IOException {
         String k8sNodeConfig = readResourceFile("/conf/k8s-node.yml");
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
         final String joinIpKey = "{{ k8s_master.join_ip }}";

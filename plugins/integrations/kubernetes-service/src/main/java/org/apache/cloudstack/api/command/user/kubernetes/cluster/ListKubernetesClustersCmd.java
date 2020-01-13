@@ -88,7 +88,7 @@ public class ListKubernetesClustersCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute() {
+    public void execute() throws ServerApiException {
         try {
             ListResponse<KubernetesClusterResponse> response = kubernetesClusterService.listKubernetesClusters(this);
             response.setResponseName(getCommandName());

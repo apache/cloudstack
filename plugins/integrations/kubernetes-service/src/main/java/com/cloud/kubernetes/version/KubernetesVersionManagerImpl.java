@@ -119,52 +119,6 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         return true;
     }
 
-    public static int compareSemanticVersions(String v1, String v2) throws IllegalArgumentException {
-        if (Strings.isNullOrEmpty(v1) || Strings.isNullOrEmpty(v2)) {
-            throw new IllegalArgumentException(String.format("Invalid version comparision with versions %s, %s", v1, v2));
-        }
-        if(!isSemanticVersion(v1)) {
-            throw new IllegalArgumentException(String.format("Invalid version format, %s", v1));
-        }
-        if(!isSemanticVersion(v2)) {
-            throw new IllegalArgumentException(String.format("Invalid version format, %s", v2));
-        }
-        String[] thisParts = v1.split("\\.");
-        String[] thatParts = v2.split("\\.");
-        int length = Math.max(thisParts.length, thatParts.length);
-        for(int i = 0; i < length; i++) {
-            int thisPart = i < thisParts.length ?
-                    Integer.parseInt(thisParts[i]) : 0;
-            int thatPart = i < thatParts.length ?
-                    Integer.parseInt(thatParts[i]) : 0;
-            if(thisPart < thatPart)
-                return -1;
-            if(thisPart > thatPart)
-                return 1;
-        }
-        return 0;
-    }
-
-    public static boolean canUpgradeKubernetesVersion(String currentVersion, String upgradeVersion) throws IllegalArgumentException {
-        int versionDiff = compareSemanticVersions(upgradeVersion, currentVersion);
-        if (versionDiff == 0) {
-            throw new IllegalArgumentException(String.format("Kubernetes clusters can not be upgraded, current version: %s, upgrade version: %s", currentVersion, upgradeVersion));
-        } else if (versionDiff < 0) {
-            throw new IllegalArgumentException(String.format("Kubernetes clusters can not be downgraded, current version: %s, upgrade version: %s", currentVersion, upgradeVersion));
-        }
-        String[] thisParts = currentVersion.split("\\.");
-        String[] thatParts = upgradeVersion.split("\\.");
-        int majorVerDiff = Integer.parseInt(thatParts[0]) - Integer.parseInt(thisParts[0]);
-        int minorVerDiff = Integer.parseInt(thatParts[1]) - Integer.parseInt(thisParts[1]);
-        // You only can upgrade from one MINOR version to the next MINOR version, or between PATCH versions of the same MINOR.
-        // That is, you cannot skip MINOR versions when you upgrade.
-        // For example, you can upgrade from 1.y to 1.y+1, but not from 1.y to 1.y+2
-        if (majorVerDiff != 0 || minorVerDiff != 1) {
-            throw new IllegalArgumentException(String.format("Kubernetes clusters can be upgraded between next minor or patch version releases, current version: %s, upgrade version: %s", currentVersion, upgradeVersion));
-        }
-        return true;
-    }
-
     private List <KubernetesSupportedVersionVO> filterKubernetesSupportedVersions(List <KubernetesSupportedVersionVO> versions, final String minimumSemanticVersion) {
         if (!Strings.isNullOrEmpty(minimumSemanticVersion)) {
             for (int i = versions.size() - 1; i >= 0; --i) {
@@ -210,7 +164,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         return templateService.registerIso(registerIsoCmd);
     }
 
-    private void validateExistingTemplateForKubernetesVersionIso(VirtualMachineTemplate template, Long zoneId) {
+    private void validateExistingTemplateForKubernetesVersionIso(final VirtualMachineTemplate template, final Long zoneId) {
         if (!template.getFormat().equals(Storage.ImageFormat.ISO)) {
             throw new InvalidParameterValueException(String.format("%s is not an ISO", template.getUuid()));
         }
@@ -229,6 +183,25 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
+    private VMTemplateVO registerKubernetesVersionIsoIfNeeded(final Long isoId, final Long zoneId, final String name, final String isoUrl, final String isoChecksum) throws CloudRuntimeException {
+        VMTemplateVO templateVO = null;
+        if (isoId != null) {
+            templateVO = templateDao.findById(isoId);
+        }
+        if (templateVO == null) {
+            try {
+                VirtualMachineTemplate vmTemplate = registerKubernetesVersionIso(name, isoUrl, isoChecksum);
+                templateVO = templateDao.findById(vmTemplate.getId());
+            } catch (IllegalAccessException | NoSuchFieldException | IllegalArgumentException | ResourceAllocationException ex) {
+                LOGGER.error(String.format("Unable to register binaries ISO for supported kubernetes version, %s", name), ex);
+                throw new CloudRuntimeException(String.format("Unable to register binaries ISO for supported kubernetes version, %s", name));
+            }
+        } else {
+            validateExistingTemplateForKubernetesVersionIso(templateVO, zoneId);
+        }
+        return templateVO;
+    }
+
     private void deleteKubernetesVersionIso(long templateId) throws IllegalAccessException, NoSuchFieldException,
             IllegalArgumentException {
         DeleteIsoCmd deleteIsoCmd = new DeleteIsoCmd();
@@ -237,6 +210,60 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         f.setAccessible(true);
         f.set(deleteIsoCmd, templateId);
         templateService.deleteIso(deleteIsoCmd);
+    }
+
+    public static int compareSemanticVersions(String v1, String v2) throws IllegalArgumentException {
+        if (Strings.isNullOrEmpty(v1) || Strings.isNullOrEmpty(v2)) {
+            throw new IllegalArgumentException(String.format("Invalid version comparision with versions %s, %s", v1, v2));
+        }
+        if(!isSemanticVersion(v1)) {
+            throw new IllegalArgumentException(String.format("Invalid version format, %s", v1));
+        }
+        if(!isSemanticVersion(v2)) {
+            throw new IllegalArgumentException(String.format("Invalid version format, %s", v2));
+        }
+        String[] thisParts = v1.split("\\.");
+        String[] thatParts = v2.split("\\.");
+        int length = Math.max(thisParts.length, thatParts.length);
+        for(int i = 0; i < length; i++) {
+            int thisPart = i < thisParts.length ?
+                    Integer.parseInt(thisParts[i]) : 0;
+            int thatPart = i < thatParts.length ?
+                    Integer.parseInt(thatParts[i]) : 0;
+            if(thisPart < thatPart)
+                return -1;
+            if(thisPart > thatPart)
+                return 1;
+        }
+        return 0;
+    }
+
+    /**
+     * Returns a boolean value whether Kubernetes cluster upgrade can be carried from a given currentVersion to upgradeVersion
+     * Kubernetes clusters can only be upgraded from one MINOR version to the next MINOR version, or between PATCH versions of the same MINOR.
+     * That is, MINOR versions cannot be skipped during upgrade.
+     * For example, you can upgrade from 1.y to 1.y+1, but not from 1.y to 1.y+2
+     * @param currentVersion
+     * @param upgradeVersion
+     * @return
+     * @throws IllegalArgumentException
+     */
+    public static boolean canUpgradeKubernetesVersion(final String currentVersion, final String upgradeVersion) throws IllegalArgumentException {
+        int versionDiff = compareSemanticVersions(upgradeVersion, currentVersion);
+        if (versionDiff == 0) {
+            throw new IllegalArgumentException(String.format("Kubernetes clusters can not be upgraded, current version: %s, upgrade version: %s", currentVersion, upgradeVersion));
+        } else if (versionDiff < 0) {
+            throw new IllegalArgumentException(String.format("Kubernetes clusters can not be downgraded, current version: %s, upgrade version: %s", currentVersion, upgradeVersion));
+        }
+        String[] thisParts = currentVersion.split("\\.");
+        String[] thatParts = upgradeVersion.split("\\.");
+        int majorVerDiff = Integer.parseInt(thatParts[0]) - Integer.parseInt(thisParts[0]);
+        int minorVerDiff = Integer.parseInt(thatParts[1]) - Integer.parseInt(thisParts[1]);
+
+        if (majorVerDiff != 0 || minorVerDiff != 1) {
+            throw new IllegalArgumentException(String.format("Kubernetes clusters can be upgraded between next minor or patch version releases, current version: %s, upgrade version: %s", currentVersion, upgradeVersion));
+        }
+        return true;
     }
 
     @Override
@@ -271,7 +298,6 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
                 versions = kubernetesSupportedVersionDao.listAllInZone(zoneId);
             }
         }
-        // Filter versions for minimum Kubernetes version
         versions = filterKubernetesSupportedVersions(versions, minimumSemanticVersion);
 
         return createKubernetesSupportedVersionListResponse(versions);
@@ -308,22 +334,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             }
         }
 
-        VMTemplateVO template = null;
-        if (isoId != null) {
-            template = templateDao.findById(isoId);
-        }
-        if (template == null) { // register new ISO
-            VirtualMachineTemplate vmTemplate = null;
-            try {
-                vmTemplate = registerKubernetesVersionIso(name, isoUrl, isoChecksum);
-            } catch (IllegalAccessException | NoSuchFieldException | IllegalArgumentException | ResourceAllocationException ex) {
-                LOGGER.error(String.format("Unable to register binaries ISO for supported kubernetes version, %s", name), ex);
-                throw new CloudRuntimeException(String.format("Unable to register binaries ISO for supported kubernetes version, %s", name));
-            }
-            template = templateDao.findById(vmTemplate.getId());
-        } else {
-            validateExistingTemplateForKubernetesVersionIso(template, zoneId);
-        }
+        VMTemplateVO template = registerKubernetesVersionIsoIfNeeded(isoId, zoneId, name, isoUrl, isoChecksum);
 
         KubernetesSupportedVersionVO supportedVersionVO = new KubernetesSupportedVersionVO(name, semanticVersion, template.getId(), zoneId);
         supportedVersionVO = kubernetesSupportedVersionDao.persist(supportedVersionVO);

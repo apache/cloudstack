@@ -33,10 +33,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.kubernetes.version.KubernetesVersionEventTypes;
 import com.cloud.kubernetes.version.KubernetesVersionService;
@@ -101,11 +97,12 @@ public class DeleteKubernetesSupportedVersionCmd extends BaseAsyncCmd implements
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ServerApiException, ConcurrentOperationException {
         try {
-            boolean result = kubernetesVersionService.deleteKubernetesSupportedVersion(this);
+            if (kubernetesVersionService.deleteKubernetesSupportedVersion(this)) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to delete Kubernetes supported version ID: %d", getId()));
+            }
             SuccessResponse response = new SuccessResponse(getCommandName());
-            response.setSuccess(result);
             setResponseObject(response);
         } catch (CloudRuntimeException ex) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());

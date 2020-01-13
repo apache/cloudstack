@@ -86,7 +86,7 @@ public class GetKubernetesClusterConfigCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() {
+    public void execute() throws ServerApiException {
         try {
             KubernetesClusterConfigResponse response = kubernetesClusterService.getKubernetesClusterConfig(this);
             response.setResponseName(getCommandName());

@@ -37,7 +37,7 @@ public class KubernetesClusterUtil {
 
     protected static final Logger LOGGER = Logger.getLogger(KubernetesClusterUtil.class);
 
-    public static boolean isKubernetesClusterNodeReady(KubernetesCluster kubernetesCluster, String ipAddress, int port,
+    public static boolean isKubernetesClusterNodeReady(final KubernetesCluster kubernetesCluster, String ipAddress, int port,
                                                        String user, File sshKeyFile, String nodeName) throws Exception {
         Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port,
                 user, sshKeyFile, null,
@@ -52,9 +52,9 @@ public class KubernetesClusterUtil {
         return false;
     }
 
-    public static boolean isKubernetesClusterNodeReady(KubernetesCluster kubernetesCluster, String ipAddress, int port,
-                                                       String user, File sshKeyFile, String nodeName, int retries,
-                                                       int waitDuration) {
+    public static boolean isKubernetesClusterNodeReady(final KubernetesCluster kubernetesCluster, final String ipAddress, final int port,
+                                                       final String user, final File sshKeyFile, final String nodeName, final int retries,
+                                                       final int waitDuration) {
         int retryCounter = 0;
         while (retryCounter < retries) {
             boolean ready = false;
@@ -76,8 +76,23 @@ public class KubernetesClusterUtil {
         return false;
     }
 
-    public static boolean uncordonKubernetesClusterNode(KubernetesCluster kubernetesCluster, String ipAddress, int port,
-                                                        String user, File sshKeyFile, UserVm userVm, int retries, int waitDuration) {
+    /**
+     * Mark a given node in a given Kubernetes cluster as schedulable.
+     * kubectl uncordon command will be called through SSH using IP address and port of the host virtual machine or load balancer.
+     * Multiple retries with a given delay can be used.
+     * uncordon is required when a particular node in Kubernetes cluster is drained (usually during upgrade)
+     * @param kubernetesCluster
+     * @param ipAddress
+     * @param port
+     * @param user
+     * @param sshKeyFile
+     * @param userVm
+     * @param retries
+     * @param waitDuration
+     * @return
+     */
+    public static boolean uncordonKubernetesClusterNode(final KubernetesCluster kubernetesCluster, final String ipAddress, final int port,
+                                                        final String user, final File sshKeyFile, final UserVm userVm, final int retries, final int waitDuration) {
         int retryCounter = 0;
         String hostName = userVm.getHostName();
         if (!Strings.isNullOrEmpty(hostName)) {
@@ -105,7 +120,7 @@ public class KubernetesClusterUtil {
         return false;
     }
 
-    public static boolean isKubernetesClusterAddOnServiceRunning(KubernetesCluster kubernetesCluster, final String ipAddress,
+    public static boolean isKubernetesClusterAddOnServiceRunning(final KubernetesCluster kubernetesCluster, final String ipAddress,
                                                                  final int port, final String user, final File sshKeyFile,
                                                                  final String namespace, String serviceName) {
         try {
@@ -134,7 +149,7 @@ public class KubernetesClusterUtil {
         return false;
     }
 
-    public static boolean isKubernetesClusterDashboardServiceRunning(KubernetesCluster kubernetesCluster, String ipAddress,
+    public static boolean isKubernetesClusterDashboardServiceRunning(final KubernetesCluster kubernetesCluster, String ipAddress,
                                                                      final int port, final String user, final File sshKeyFile,
                                                                      int retries, long waitDuration) {
         boolean running = false;
@@ -161,8 +176,8 @@ public class KubernetesClusterUtil {
         return running;
     }
 
-    public static String getKubernetesClusterConfig(KubernetesCluster kubernetesCluster, String ipAddress, int port,
-                                                    final String user, final File sshKeyFile,int retries) {
+    public static String getKubernetesClusterConfig(final KubernetesCluster kubernetesCluster, final String ipAddress, final int port,
+                                                    final String user, final File sshKeyFile, final int retries) {
         int retryCounter = 0;
         String kubeConfig = "";
         while (retryCounter < retries) {
@@ -203,8 +218,8 @@ public class KubernetesClusterUtil {
         return 0;
     }
 
-    public static boolean isKubernetesClusterServerRunning(KubernetesCluster kubernetesCluster, String ipAddress,
-                                                           int port,int retries, long waitDuration) {
+    public static boolean isKubernetesClusterServerRunning(final KubernetesCluster kubernetesCluster, final String ipAddress,
+                                                           final int port, final int retries, final long waitDuration) {
         int retryCounter = 0;
         boolean k8sApiServerSetup = false;
         while (retryCounter < retries) {
@@ -230,8 +245,8 @@ public class KubernetesClusterUtil {
         return k8sApiServerSetup;
     }
 
-    public static boolean isKubernetesClusterMasterVmRunning(final KubernetesCluster kubernetesCluster,
-                                                             final String ipAddress, final int port, final long timeout) {
+    public static boolean isKubernetesClusterMasterVmRunning(final KubernetesCluster kubernetesCluster, final String ipAddress,
+                                                             final int port, final long timeout) {
         boolean masterVmRunning = false;
         long startTime = System.currentTimeMillis();
         while (!masterVmRunning && System.currentTimeMillis() - startTime < timeout) {
@@ -253,9 +268,9 @@ public class KubernetesClusterUtil {
     }
 
     public static boolean validateKubernetesClusterReadyNodesCount(final KubernetesCluster kubernetesCluster,
-                                                                   final String ipAddress, int port,
+                                                                   final String ipAddress, final int port,
                                                                    final String user, final File sshKeyFile,
-                                                                   int retries, long waitDuration) {
+                                                                   final int retries, final long waitDuration) {
         int retryCounter = 0;
         while (retryCounter < retries) {
             if (LOGGER.isDebugEnabled()) {

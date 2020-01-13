@@ -35,11 +35,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.kubernetes.version.KubernetesVersionService;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -136,9 +132,12 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ServerApiException, ConcurrentOperationException {
         try {
             KubernetesSupportedVersionResponse response = kubernetesVersionService.addKubernetesSupportedVersion(this);
+            if (response == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Kubernetes supported version");
+            }
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (CloudRuntimeException ex) {

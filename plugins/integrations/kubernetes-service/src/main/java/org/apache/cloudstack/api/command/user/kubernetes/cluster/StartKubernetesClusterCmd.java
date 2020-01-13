@@ -31,11 +31,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ManagementServerException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
@@ -108,7 +103,7 @@ public class StartKubernetesClusterCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ServerApiException, ConcurrentOperationException {
         final KubernetesCluster kubernetesCluster = validateRequest();
         try {
             if (!kubernetesClusterService.startKubernetesCluster(kubernetesCluster.getId(), false)) {
@@ -117,10 +112,6 @@ public class StartKubernetesClusterCmd extends BaseAsyncCmd {
             final KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(kubernetesCluster.getId());
             response.setResponseName(getCommandName());
             setResponseObject(response);
-        } catch (InsufficientCapacityException | ResourceUnavailableException | ManagementServerException ex) {
-            String msg = String.format("Failed to start Kubernetes cluster ID: %d", getId());
-            LOGGER.error(msg, ex);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, msg, ex);
         } catch (CloudRuntimeException ex) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }

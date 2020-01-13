@@ -99,7 +99,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         logTransitStateToFailedIfNeededAndThrow(logLevel, message, null);
     }
 
-    private FirewallRule removeSshFirewallRule(IpAddress publicIp) {
+    private FirewallRule removeSshFirewallRule(final IpAddress publicIp) {
         FirewallRule rule = null;
         List<FirewallRuleVO> firewallRules = firewallRulesDao.listByIpAndPurposeAndNotRevoked(publicIp.getId(), FirewallRule.Purpose.Firewall);
         for (FirewallRuleVO firewallRule : firewallRules) {
@@ -112,7 +112,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         return rule;
     }
 
-    private void removePortForwardingRules(IpAddress publicIp, Network network, Account account, List<Long> removedVMIds) throws ResourceUnavailableException {
+    private void removePortForwardingRules(final IpAddress publicIp, final Network network, final Account account, final List<Long> removedVMIds) throws ResourceUnavailableException {
         if (!CollectionUtils.isEmpty(removedVMIds)) {
             for (Long vmId : removedVMIds) {
                 List<PortForwardingRuleVO> pfRules = portForwardingRulesDao.listByNetwork(network.getId());
@@ -136,7 +136,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
      * @param removedVMIds
      * @throws ManagementServerException
      */
-    private void scaleKubernetesClusterNetworkRules(List<Long> clusterVMIds, List<Long> removedVMIds) throws ManagementServerException {
+    private void scaleKubernetesClusterNetworkRules(final List<Long> clusterVMIds, final List<Long> removedVMIds) throws ManagementServerException {
         if (!Network.GuestType.Isolated.equals(network.getGuestType())) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(String.format("Network ID: %s for Kubernetes cluster ID: %s is not an isolated network, therefore, no need for network rules", network.getUuid(), kubernetesCluster.getUuid()));
@@ -211,7 +211,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         return kubernetesClusterVO;
     }
 
-    private boolean removeKubernetesClusterNode(String ipAddress, int port, UserVm userVm, int retries, int waitDuration) {
+    private boolean removeKubernetesClusterNode(final String ipAddress, final int port, final UserVm userVm, final int retries, final int waitDuration) {
         File pkFile = getManagementServerSshPublicKeyFile();
         int retryCounter = 0;
         String hostName = userVm.getHostName();

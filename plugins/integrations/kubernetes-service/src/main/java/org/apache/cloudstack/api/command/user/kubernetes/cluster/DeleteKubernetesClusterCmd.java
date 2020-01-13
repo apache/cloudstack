@@ -31,11 +31,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ManagementServerException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
@@ -77,15 +72,14 @@ public class DeleteKubernetesClusterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException,
-            ServerApiException, ConcurrentOperationException, ResourceAllocationException,
-            NetworkRuleConflictException {
+    public void execute() throws ServerApiException, ConcurrentOperationException {
         try {
-            boolean result = kubernetesClusterService.deleteKubernetesCluster(id);
+            if (kubernetesClusterService.deleteKubernetesCluster(id)) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to delete Kubernetes cluster ID: %d", getId()));
+            }
             SuccessResponse response = new SuccessResponse(getCommandName());
-            response.setSuccess(result);
             setResponseObject(response);
-        } catch (ManagementServerException | CloudRuntimeException e) {
+        } catch (CloudRuntimeException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

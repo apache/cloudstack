@@ -17,8 +17,11 @@
 package com.cloud.kubernetes.cluster;
 
 /**
- * KubernetesClusterVmMap will store a map of ID of KubernetesCuster
- * and ID of its VirtualMachine
+ * KubernetesClusterVmMap will describe mapping of ID of KubernetesCuster
+ * and ID of its VirtualMachine. A KubernetesCluster can have multiple VMs
+ * deployed for it therefore a list of KubernetesClusterVmMap are associated
+ * with a KubernetesCluster.
+ * A particular VM can be deployed only for a single KubernetesCluster.
  */
 public interface KubernetesClusterVmMap {
     long getId();

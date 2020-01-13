@@ -33,10 +33,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
@@ -107,10 +103,9 @@ public class UpgradeKubernetesClusterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ServerApiException, ConcurrentOperationException {
         try {
-            boolean upgraded = kubernetesClusterService.upgradeKubernetesCluster(this);
-            if (!upgraded) {
+            if (!kubernetesClusterService.upgradeKubernetesCluster(this)) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %d", getId()));
             }
             final KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(getId());

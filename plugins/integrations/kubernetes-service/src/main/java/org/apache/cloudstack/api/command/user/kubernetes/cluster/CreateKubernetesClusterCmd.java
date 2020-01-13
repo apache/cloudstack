@@ -39,11 +39,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ManagementServerException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
@@ -275,23 +270,19 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         try {
-            kubernetesClusterService.startKubernetesCluster(getEntityId(), true);
+            if (!kubernetesClusterService.startKubernetesCluster(getEntityId(), true)) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start Kubernetes cluster");
+            }
             KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(getEntityId());
             response.setResponseName(getCommandName());
             setResponseObject(response);
-        } catch (InsufficientCapacityException | ResourceUnavailableException  | ResourceAllocationException ex) {
-            LOGGER.warn("Failed to deploy Kubernetes cluster:" + getEntityUuid() + " due to " + ex.getMessage());
-            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,
-                    "Failed to deploy Kubernetes cluster:" + getEntityUuid(), ex);
-        } catch (ManagementServerException ex) {
-            LOGGER.warn("Failed to deploy Kubernetes cluster:" + getEntityUuid() + " due to " + ex.getMessage());
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
-                    "Failed to deploy Kubernetes cluster:" + getEntityUuid(), ex);
+        } catch (CloudRuntimeException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 
     @Override
-    public void create() throws ResourceAllocationException {
+    public void create() throws CloudRuntimeException {
         try {
             KubernetesCluster cluster = kubernetesClusterService.createKubernetesCluster(this);
             if (cluster == null) {
@@ -299,9 +290,6 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             }
             setEntityId(cluster.getId());
             setEntityUuid(cluster.getUuid());
-        } catch (ConcurrentOperationException | InsufficientCapacityException  | ManagementServerException me ) {
-            LOGGER.error("Exception: ", me);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, me.getMessage());
         } catch (CloudRuntimeException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }

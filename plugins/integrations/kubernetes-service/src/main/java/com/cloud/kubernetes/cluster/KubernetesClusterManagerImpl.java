@@ -76,10 +76,8 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterActionWorker;
@@ -541,7 +539,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return response;
     }
 
-    private void validateKubernetesClusterCreateParameters(final CreateKubernetesClusterCmd cmd) throws ManagementServerException {
+    private void validateKubernetesClusterCreateParameters(final CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
         final String name = cmd.getName();
         final Long zoneId = cmd.getZoneId();
         final Long kubernetesVersionId = cmd.getKubernetesVersionId();
@@ -662,7 +660,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     private Network getKubernetesClusterNetworkIfMissing(final String clusterName, final DataCenter zone,  final Account owner, final int masterNodesCount,
-                         final int nodesCount, final String externalLoadBalancerIpAddress, final Long networkId) throws ManagementServerException {
+                         final int nodesCount, final String externalLoadBalancerIpAddress, final Long networkId) throws CloudRuntimeException {
         Network network = null;
         if (networkId != null) {
             network = networkDao.findById(networkId);
@@ -851,8 +849,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
-    public KubernetesCluster createKubernetesCluster(CreateKubernetesClusterCmd cmd)
-            throws InsufficientCapacityException, ManagementServerException {
+    public KubernetesCluster createKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
@@ -867,7 +864,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final Account owner = accountService.getActiveAccountById(cmd.getEntityOwnerId());
         final KubernetesSupportedVersion clusterKubernetesVersion = kubernetesSupportedVersionDao.findById(cmd.getKubernetesVersionId());
 
-        plan(totalNodeCount, zone, serviceOffering);
+        try {
+            plan(totalNodeCount, zone, serviceOffering);
+        } catch (InsufficientCapacityException e) {
+            logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to insufficient capacity for %d cluster nodes in zone ID: %s with service offering ID: %s", totalNodeCount, zone.getUuid(), serviceOffering.getUuid()));
+        }
 
         final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)masterNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());
         final VMTemplateVO finalTemplate = templateDao.findByTemplateName(KubernetesClusterTemplateName.value());;
@@ -902,15 +903,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
      * @param kubernetesClusterId
      * @param onCreate
      * @return
-     * @throws ManagementServerException
-     * @throws ResourceAllocationException
-     * @throws ResourceUnavailableException
-     * @throws InsufficientCapacityException
+     * @throws CloudRuntimeException
      */
 
     @Override
-    public boolean startKubernetesCluster(long kubernetesClusterId, boolean onCreate) throws ManagementServerException,
-            ResourceAllocationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean startKubernetesCluster(long kubernetesClusterId, boolean onCreate) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
@@ -936,7 +933,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         final DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
         if (zone == null) {
-            throw new CloudRuntimeException(String.format("Unable to find zone for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+            logAndThrow(Level.WARN, String.format("Unable to find zone for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
         }
         KubernetesClusterStartWorker startWorker =
                 new KubernetesClusterStartWorker(kubernetesCluster, this);
@@ -981,7 +978,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
-    public boolean deleteKubernetesCluster(Long kubernetesClusterId) throws ManagementServerException {
+    public boolean deleteKubernetesCluster(Long kubernetesClusterId) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
@@ -1152,7 +1149,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         } else {
                             LOGGER.warn(String.format("Garbage collection failed for Kubernetes cluster ID: %s, it will be attempted to garbage collected in next run", kubernetesCluster.getUuid()));
                         }
-                    } catch (ManagementServerException e) {
+                    } catch (CloudRuntimeException e) {
                         LOGGER.warn(String.format("Failed to destroy Kubernetes cluster ID: %s during GC", kubernetesCluster.getUuid()), e);
                         // proceed further with rest of the Kubernetes cluster garbage collection
                     }

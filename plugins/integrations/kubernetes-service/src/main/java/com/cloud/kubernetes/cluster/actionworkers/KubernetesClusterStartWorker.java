@@ -116,7 +116,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return haSupported;
     }
 
-    private String getKubernetesMasterConfig(final String masterIp, final String serverIp, final Account owner,
+    private String getKubernetesMasterConfig(final String masterIp, final String serverIp,
                                              final String hostName, final boolean haSupported) throws IOException {
         String k8sMasterConfig = readResourceFile("/conf/k8s-master.yml");
         final String apiServerCert = "{{ k8s_master.apiserver.crt }}";
@@ -161,7 +161,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return k8sMasterConfig;
     }
 
-    private UserVm createKubernetesMaster(final Network network, final Account account, String serverIp) throws ManagementServerException,
+    private UserVm createKubernetesMaster(final Network network, String serverIp) throws ManagementServerException,
             ResourceUnavailableException, InsufficientCapacityException {
         UserVm masterVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
@@ -169,7 +169,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         VirtualMachineTemplate template = templateDao.findById(kubernetesCluster.getTemplateId());
         List<Long> networkIds = new ArrayList<Long>();
         networkIds.add(kubernetesCluster.getNetworkId());
-        Pair<String, Map<Long, Network.IpAddresses>> ipAddresses = getKubernetesMasterIpAddresses(zone, network, account);
+        Pair<String, Map<Long, Network.IpAddresses>> ipAddresses = getKubernetesMasterIpAddresses(zone, network, owner);
         String masterIp = ipAddresses.first();
         Map<Long, Network.IpAddresses> requestedIps = ipAddresses.second();
         if (Network.GuestType.Shared.equals(network.getGuestType()) && Strings.isNullOrEmpty(serverIp)) {
@@ -185,12 +185,12 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         boolean haSupported = isKubernetesVersionSupportsHA();
         String k8sMasterConfig = null;
         try {
-            k8sMasterConfig = getKubernetesMasterConfig(masterIp, serverIp, account, hostName, haSupported);
+            k8sMasterConfig = getKubernetesMasterConfig(masterIp, serverIp, hostName, haSupported);
         } catch (IOException e) {
             logAndThrow(Level.ERROR, "Failed to read Kubernetes master configuration file", e);
         }
         String base64UserData = Base64.encodeBase64String(k8sMasterConfig.getBytes(StringUtils.getPreferredCharset()));
-        masterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, account,
+        masterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner,
                 hostName, kubernetesCluster.getDescription(), null, null, null,
                 null, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
                 requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null);
@@ -253,10 +253,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return additionalMasterVm;
     }
 
-    private UserVm provisionKubernetesClusterMasterVm(final Network network, final Account account, final String publicIpAddress) throws CloudRuntimeException {
+    private UserVm provisionKubernetesClusterMasterVm(final Network network, final String publicIpAddress) throws CloudRuntimeException {
         UserVm k8sMasterVM = null;
         try {
-            k8sMasterVM = createKubernetesMaster(network, account, publicIpAddress);
+            k8sMasterVM = createKubernetesMaster(network, publicIpAddress);
             addKubernetesClusterVm(kubernetesCluster.getId(), k8sMasterVM.getId());
             startKubernetesVM(k8sMasterVM);
             k8sMasterVM = userVmDao.findById(k8sMasterVM.getId());
@@ -269,7 +269,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return k8sMasterVM;
     }
 
-    private List<UserVm> provisionKubernetesClusterAdditionalMasterVms(final String publicIpAddress) throws ManagementServerException {
+    private List<UserVm> provisionKubernetesClusterAdditionalMasterVms(final String publicIpAddress) throws CloudRuntimeException {
         List<UserVm> additionalMasters = new ArrayList<>();
         if (kubernetesCluster.getMasterNodeCount() > 1) {
             for (int i = 1; i < kubernetesCluster.getMasterNodeCount(); i++) {
@@ -290,8 +290,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return additionalMasters;
     }
 
-    private Network startKubernetesClusterNetwork(final DeployDestination destination, final Account account) throws ManagementServerException {
-        final ReservationContext context = new ReservationContextImpl(null, null, null, account);
+    private Network startKubernetesClusterNetwork(final DeployDestination destination) throws ManagementServerException {
+        final ReservationContext context = new ReservationContextImpl(null, null, null, owner);
         Network network = networkDao.findById(kubernetesCluster.getNetworkId());
         if (network == null) {
             String msg  = String.format("Network for Kubernetes cluster ID: %s not found", kubernetesCluster.getUuid());
@@ -313,8 +313,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return network;
     }
 
-    private void provisionLoadBalancerRule(IpAddress publicIp, Network network,
-                                           Account account, List<Long> clusterVMIds, int port) throws NetworkRuleConflictException,
+    private void provisionLoadBalancerRule(final IpAddress publicIp, final Network network,
+                                           final Account account, final List<Long> clusterVMIds, final int port) throws NetworkRuleConflictException,
             InsufficientAddressCapacityException {
         LoadBalancer lb = lbService.createPublicLoadBalancerRule(null, "api-lb", "LB rule for API access",
                 port, port, port, port,
@@ -339,12 +339,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
      * Open up  firewall ports NODES_DEFAULT_START_SSH_PORT to NODES_DEFAULT_START_SSH_PORT+n
      * for SSH access. Also create port-forwarding rule to forward public IP traffic to all
      * @param network
-     * @param account
      * @param clusterVMs
      * @throws ManagementServerException
      */
-    private void setupKubernetesClusterNetworkRules(Network network, Account account,
-                                                    List<UserVm> clusterVMs) throws ManagementServerException {
+    private void setupKubernetesClusterNetworkRules(Network network, List<UserVm> clusterVMs) throws ManagementServerException {
         if (!Network.GuestType.Isolated.equals(network.getGuestType())) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(String.format("Network ID: %s for Kubernetes cluster ID: %s is not an isolated network, therefore, no need for network rules", network.getUuid(), kubernetesCluster.getUuid()));
@@ -361,7 +359,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
 
         try {
-            provisionFirewallRules(publicIp, account, CLUSTER_API_PORT, CLUSTER_API_PORT);
+            provisionFirewallRules(publicIp, owner, CLUSTER_API_PORT, CLUSTER_API_PORT);
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info(String.format("Provisioned firewall rule to open up port %d on %s for Kubernetes cluster ID: %s",
                         CLUSTER_API_PORT, publicIp.getAddress().addr(), kubernetesCluster.getUuid()));
@@ -372,7 +370,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
 
         try {
             int endPort = CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMs.size() - 1;
-            provisionFirewallRules(publicIp, account, CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort);
+            provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort);
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info(String.format("Provisioned firewall rule to open up port %d to %d on %s for Kubernetes cluster ID: %s", CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort, publicIp.getAddress().addr(), kubernetesCluster.getUuid()));
             }
@@ -382,14 +380,14 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
 
         // Load balancer rule fo API access for master node VMs
         try {
-            provisionLoadBalancerRule(publicIp, network, account, clusterVMIds, CLUSTER_API_PORT);
+            provisionLoadBalancerRule(publicIp, network, owner, clusterVMIds, CLUSTER_API_PORT);
         } catch (NetworkRuleConflictException | InsufficientAddressCapacityException e) {
             throw new ManagementServerException(String.format("Failed to provision load balancer rule for API access for the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), e);
         }
 
         // Port forwarding rule fo SSH access on each node VM
         try {
-            provisionSshPortForwardingRules(publicIp, network, account, clusterVMIds, CLUSTER_NODES_DEFAULT_START_SSH_PORT);
+            provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds, CLUSTER_NODES_DEFAULT_START_SSH_PORT);
         } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), e);
         }
@@ -455,7 +453,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         kubernetesClusterDao.update(kubernetesCluster.getId(), kubernetesClusterVO);
     }
 
-    public boolean startKubernetesClusterOnCreate() throws ManagementServerException {
+    public boolean startKubernetesClusterOnCreate() {
         init();
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Starting Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
@@ -467,7 +465,12 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         } catch (InsufficientCapacityException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Provisioning the cluster failed due to insufficient capacity in the Kubernetes cluster: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
-        Network network = startKubernetesClusterNetwork(dest, owner);
+        Network network = null;
+        try {
+            network = startKubernetesClusterNetwork(dest);
+        } catch (ManagementServerException e) {
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s as its network cannot be started", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
+        }
         Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
         publicIpAddress = publicIpSshPort.first();
         if (Strings.isNullOrEmpty(publicIpAddress) &&
@@ -475,7 +478,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s as no public IP found for the cluster" , kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
         }
         List<UserVm> clusterVMs = new ArrayList<>();
-        UserVm k8sMasterVM = provisionKubernetesClusterMasterVm(network, owner, publicIpAddress);
+        UserVm k8sMasterVM = provisionKubernetesClusterMasterVm(network, publicIpAddress);
         clusterVMs.add(k8sMasterVM);
         if (Strings.isNullOrEmpty(publicIpAddress)) {
             publicIpSshPort = getKubernetesClusterServerIpSshPort(k8sMasterVM);
@@ -496,7 +499,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             LOGGER.info(String.format("Kubernetes cluster ID: %s VMs successfully provisioned", kubernetesCluster.getUuid()));
         }
         try {
-            setupKubernetesClusterNetworkRules(network, owner, clusterVMs);
+            setupKubernetesClusterNetworkRules(network, clusterVMs);
         } catch (ManagementServerException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster ID: %s, unable to setup network rules", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
