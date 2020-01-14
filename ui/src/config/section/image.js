@@ -124,6 +124,13 @@ export default {
         title: 'Instances',
         param: 'isoid'
       }],
+      tabs: [{
+        name: 'details',
+        component: () => import('@/components/view/DetailsTab.vue')
+      }, {
+        name: 'zones',
+        component: () => import('@/views/image/IsoZones.vue')
+      }],
       actions: [
         {
           api: 'registerIso',

@@ -982,6 +982,7 @@
 "xennetworklabel": "XenServer traffic label",
 "xenserverToolsVersion61plus": "Original XS Version is 6.1+",
 "zone": "Zone",
+"zones": "Zones",
 "zoneId": "Zone",
 "zoneid": "Zone",
 "zonename": "Zone",

@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="row-template-zone">
+  <div class="row-iso-zone">
     <a-row :gutter="12">
       <a-col :md="24" :lg="24">
         <a-table
@@ -26,7 +26,7 @@
           :columns="columns"
           :dataSource="dataSource"
           :pagination="false"
-          :rowKey="record => record.zoneid">
+          :rowKey="record => record.zoneid || record.id">
           <div slot="isready" slot-scope="text, record">
             <span v-if="record.isready">{{ $t('Yes') }}</span>
             <span v-else>{{ $t('No') }}</span>
@@ -52,7 +52,7 @@
 import { api } from '@/api'
 
 export default {
-  name: 'TemplateZones',
+  name: 'IsoZones',
   props: {
     resource: {
       type: Object,
@@ -67,6 +67,8 @@ export default {
     return {
       columns: [],
       dataSource: [],
+      detailColumn: [],
+      detail: [],
       page: 1,
       pageSize: 20,
       itemCount: 0,
@@ -91,6 +93,7 @@ export default {
         scopedSlots: { customRender: 'isready' }
       }
     ]
+    this.detailColumn = ['name', 'id', 'zonename', 'zoneid']
   },
   mounted () {
     this.fetchData()
@@ -107,7 +110,7 @@ export default {
       const params = {}
       params.listAll = true
       params.id = this.resource.id
-      params.templatefilter = 'self'
+      params.isofilter = 'self'
       params.page = this.page
       params.pagesize = this.pageSize
 
@@ -115,12 +118,12 @@ export default {
       this.itemCount = 0
       this.fetchLoading = true
 
-      api('listTemplates', params).then(json => {
-        const listTemplates = json.listtemplatesresponse.template
-        const count = json.listtemplatesresponse.count
+      api('listIsos', params).then(json => {
+        const listIsos = json.listisosresponse.iso
+        const count = json.listisosresponse.count
 
-        if (listTemplates) {
-          this.dataSource = listTemplates
+        if (listIsos) {
+          this.dataSource = listIsos
           this.itemCount = count
         }
       }).catch(error => {
@@ -150,5 +153,9 @@ export default {
 .row-element {
   margin-top: 15px;
   margin-bottom: 15px;
+}
+
+.action-button button {
+  margin-right: 5px;
 }
 </style>
