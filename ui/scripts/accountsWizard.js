@@ -70,7 +70,7 @@
                 docID: 'helpAccountLastName'
             },
             conflictingusersource: {
-                 label: 'label.user.source',
+                 label: 'label.user.conflict',
                  validation: {
                      required: true
                  },

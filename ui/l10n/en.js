@@ -1756,6 +1756,7 @@ var dictionary = {
 "label.use.vm.ips":"Use VM IPs",
 "label.used":"Used",
 "label.user":"User",
+"label.user.conflict":"Conflict",
 "label.user.data":"User Data",
 "label.user.details":"User details",
 "label.user.source":"source",
