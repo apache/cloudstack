@@ -104,13 +104,6 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         return vmDestroyed;
     }
 
-    private void processFailedNetworkDelete(final long kubernetesClusterId) {
-        stateTransitTo(kubernetesClusterId, KubernetesCluster.Event.OperationFailed);
-        KubernetesClusterVO kubernetesClusterVO = kubernetesClusterDao.findById(kubernetesClusterId);
-        kubernetesClusterVO.setCheckForGc(true);
-        kubernetesClusterDao.update(kubernetesClusterId, kubernetesClusterVO);
-    }
-
     private boolean updateKubernetesClusterEntryForGC() {
         KubernetesClusterVO kubernetesClusterVO = kubernetesClusterDao.findById(kubernetesCluster.getId());
         kubernetesClusterVO.setCheckForGc(false);
@@ -127,7 +120,6 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
             if (!networkDestroyed) {
                 String msg = String.format("Failed to destroy network ID: %s as part of Kubernetes cluster ID: %s cleanup", network.getUuid(), kubernetesCluster.getUuid());
                 LOGGER.warn(msg);
-                processFailedNetworkDelete(kubernetesCluster.getId());
                 throw new ManagementServerException(msg);
             }
             if (LOGGER.isInfoEnabled()) {
@@ -183,16 +175,14 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 } catch (Exception e) {
                     String msg = String.format("Failed to destroy network of Kubernetes cluster ID: %s cleanup", kubernetesCluster.getUuid());
                     LOGGER.warn(msg, e);
-                    processFailedNetworkDelete(kubernetesCluster.getId());
+                    updateKubernetesClusterEntryForGC();
                     throw new CloudRuntimeException(msg, e);
                 }
             }
         } else {
             String msg = String.format("Failed to destroy one or more VMs as part of Kubernetes cluster ID: %s cleanup", kubernetesCluster.getUuid());
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(msg);
-            }
-            processFailedNetworkDelete(kubernetesCluster.getId());
+            LOGGER.warn(msg);
+            updateKubernetesClusterEntryForGC();
             throw new CloudRuntimeException(msg);
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);

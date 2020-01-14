@@ -100,7 +100,6 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
             s_fsm.addTransition(State.Error, Event.DestroyRequested, State.Destroying);
 
             s_fsm.addTransition(State.Destroying, Event.OperationSucceeded, State.Destroyed);
-            s_fsm.addTransition(State.Destroying, Event.OperationFailed, State.Error);
 
         }
         String _description;
