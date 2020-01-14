@@ -16,8 +16,6 @@ write-files:
       exit 0
       fi
 
-      export PATH=$PATH:/opt/bin
-
       ISO_MOUNT_DIR=/mnt/k8sdisk
       BINARIES_DIR=${ISO_MOUNT_DIR}/
       ATTEMPT_ONLINE_INSTALL=false
@@ -62,6 +60,10 @@ write-files:
         sleep $OFFLINE_INSTALL_ATTEMPT_SLEEP
         offline_attempts=$[$offline_attempts + 1]
       done
+
+      if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
+        export PATH=$PATH:/opt/bin
+      fi
 
       if [ -d "$BINARIES_DIR" ]; then
         ### Binaries available offline ###
@@ -168,7 +170,9 @@ write-files:
       modprobe ip_vs_wrr
       modprobe ip_vs_sh
       modprobe nf_conntrack_ipv4
-      export PATH=$PATH:/opt/bin
+      if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
+        export PATH=$PATH:/opt/bin
+      fi
       kubeadm join {{ k8s_master.join_ip }}:6443 --token {{ k8s_master.cluster.token }} --control-plane --certificate-key {{ k8s_master.cluster.ha.certificate.key }} --discovery-token-unsafe-skip-ca-verification
 
       sudo touch /home/core/success

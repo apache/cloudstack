@@ -36,8 +36,6 @@ write-files:
       exit 0
       fi
 
-      export PATH=$PATH:/opt/bin
-
       ISO_MOUNT_DIR=/mnt/k8sdisk
       BINARIES_DIR=${ISO_MOUNT_DIR}/
       ATTEMPT_ONLINE_INSTALL=false
@@ -82,6 +80,10 @@ write-files:
         sleep $OFFLINE_INSTALL_ATTEMPT_SLEEP
         offline_attempts=$[$offline_attempts + 1]
       done
+
+      if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
+        export PATH=$PATH:/opt/bin
+      fi
 
       if [ -d "$BINARIES_DIR" ]; then
         ### Binaries available offline ###
@@ -204,7 +206,9 @@ write-files:
         echo "setup-kube-system is running!"
         exit 1
       fi
-      export PATH=$PATH:/opt/bin
+      if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
+        export PATH=$PATH:/opt/bin
+      fi
       export KUBECONFIG=/etc/kubernetes/admin.conf
 
       mkdir -p /root/.kube
