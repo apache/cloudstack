@@ -103,17 +103,24 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
 
     // These 2 settings should require a restart of the management server
     private static final ConfigKey<Boolean> EnableGarbageCollector = new ConfigKey<>("Advanced", Boolean.class,
-            "diagnostics.data.gc.enable", "true", "enable the diagnostics data files garbage collector", false);
+            "diagnostics.data.gc.enable", "true",
+            "Enable the garbage collector background task to delete old files from secondary storage.", false);
     private static final ConfigKey<Integer> GarbageCollectionInterval = new ConfigKey<>("Advanced", Integer.class,
-            "diagnostics.data.gc.interval", "86400", "garbage collection interval in seconds", false);
+            "diagnostics.data.gc.interval", "86400",
+            "The interval at which the garbage collector background tasks in seconds", false);
 
     // These are easily computed properties and need not need a restart of the management server
     private static final ConfigKey<Long> DataRetrievalTimeout = new ConfigKey<>("Advanced", Long.class,
-            "diagnostics.data.retrieval.timeout", "1800", "overall data retrieval timeout in seconds", true);
+            "diagnostics.data.retrieval.timeout", "1800",
+            "Overall system VM script execution time out in seconds.", true);
     private static final ConfigKey<Long> MaximumFileAgeforGarbageCollection = new ConfigKey<>("Advanced", Long.class,
-            "diagnostics.data.max.file.age", "86400", "maximum file age for garbage collection in seconds", true);
+            "diagnostics.data.max.file.age", "86400",
+            "Sets the maximum time in seconds a file can stay in secondary storage before it is deleted.", true);
     private static final ConfigKey<Double> DiskQuotaPercentageThreshold = new ConfigKey<>("Advanced", Double.class,
-            "diagnostics.data.disable.threshold", "0.9", "Minimum disk space percentage to initiate diagnostics file retrieval", true);
+            "diagnostics.data.disable.threshold", "0.9",
+            "Sets the secondary storage disk utilisation percentage for file retrieval. " +
+                    "Used to look for suitable secondary storage with enough space, otherwise an exception is " +
+                    "thrown when no secondary store is found.", true);
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SYSTEM_VM_DIAGNOSTICS, eventDescription = "running diagnostics on system vm", async = true)
