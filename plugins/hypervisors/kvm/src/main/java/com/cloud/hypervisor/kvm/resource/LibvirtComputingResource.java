@@ -583,7 +583,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private String getDefaultDirectDownloadTemporaryPath() {
-        return "/var/lib/libvirt/images";
+        return "/var/lib/libvirt/images/direct-download";
     }
 
     protected String getDefaultNetworkScriptsDir() {
