@@ -110,19 +110,67 @@
               </div>
               <div slot="title" class="title">
                 <router-link :to="{ path: '/guestnetwork/' + item.networkid }">{{ item.networkname }} </router-link>
-                <div class="tags">
-                  <a-tag v-if="item.isdefault">
-                    {{ $t('default') }}
-                  </a-tag>
-                  <a-tag v-if="item.type">
-                    {{ item.type }}
-                  </a-tag>
-                  <a-tag v-if="item.broadcasturi">
-                    {{ item.broadcasturi }}
-                  </a-tag>
-                  <a-tag v-if="item.isolationuri">
-                    {{ item.isolationuri }}
-                  </a-tag>
+                <div class="title__details">
+                  <div class="actions">
+                    <a-popconfirm
+                      title="Please confirm that you would like to make this NIC the default for this VM."
+                      @confirm="setAsDefault(item)"
+                      okText="Yes"
+                      cancelText="No"
+                    >
+                      <a-button
+                        icon="arrow-right"
+                        size="small"
+                        shape="round" />
+                    </a-popconfirm>
+                    <a-tooltip placement="right" v-if="item.type !== 'L2'">
+                      <template slot="title">
+                        {{ "Change IP Address" }}
+                      </template>
+                      <a-button
+                        icon="swap"
+                        size="small"
+                        shape="round"
+                        @click="editIpAddressNic = item.id; showUpdateIpModal = true" />
+                    </a-tooltip>
+                    <a-tooltip placement="right" v-if="item.type !== 'L2'">
+                      <template slot="title">
+                        {{ "Manage Secondary IP Addresses" }}
+                      </template>
+                      <a-button
+                        icon="environment"
+                        size="small"
+                        shape="round"
+                        @click="fetchSecondaryIPs(item.id)" />
+                    </a-tooltip>
+                    <a-popconfirm
+                      :title="$t('message.network.removeNIC')"
+                      @confirm="removeNIC(item)"
+                      okText="Yes"
+                      cancelText="No"
+                      v-if="!item.isdefault"
+                    >
+                      <a-button
+                        type="danger"
+                        icon="delete"
+                        size="small"
+                        shape="round" />
+                    </a-popconfirm>
+                  </div>
+                  <div class="tags">
+                    <a-tag v-if="item.isdefault">
+                      {{ $t('default') }}
+                    </a-tag>
+                    <a-tag v-if="item.type">
+                      {{ item.type }}
+                    </a-tag>
+                    <a-tag v-if="item.broadcasturi">
+                      {{ item.broadcasturi }}
+                    </a-tag>
+                    <a-tag v-if="item.isolationuri">
+                      {{ item.isolationuri }}
+                    </a-tag>
+                  </div>
                 </div>
               </div>
             </a-list-item-meta>
@@ -152,52 +200,6 @@
                 <div class="label">{{ $t('id') }}</div>
                 <div><a-icon type="barcode"/> {{ item.id }}</div>
               </div>
-            </div>
-            <div slot="actions" class="actions">
-              <a-popconfirm
-                title="Please confirm that you would like to make this NIC the default for this VM."
-                @confirm="setAsDefault(item)"
-                okText="Yes"
-                cancelText="No"
-              >
-                <a-button
-                  icon="arrow-right"
-                  size="small"
-                  shape="round" />
-              </a-popconfirm>
-              <a-tooltip placement="right" v-if="item.type !== 'L2'">
-                <template slot="title">
-                  {{ "Change IP Address" }}
-                </template>
-                <a-button
-                  icon="swap"
-                  size="small"
-                  shape="round"
-                  @click="editIpAddressNic = item.id; showUpdateIpModal = true" />
-              </a-tooltip>
-              <a-tooltip placement="right" v-if="item.type !== 'L2'">
-                <template slot="title">
-                  {{ "Manage Secondary IP Addresses" }}
-                </template>
-                <a-button
-                  icon="environment"
-                  size="small"
-                  shape="round"
-                  @click="fetchSecondaryIPs(item.id)" />
-              </a-tooltip>
-              <a-popconfirm
-                :title="$t('message.network.removeNIC')"
-                @confirm="removeNIC(item)"
-                okText="Yes"
-                cancelText="No"
-                v-if="!item.isdefault"
-              >
-                <a-button
-                  type="danger"
-                  icon="delete"
-                  size="small"
-                  shape="round" />
-              </a-popconfirm>
             </div>
           </a-list-item>
         </a-list>
@@ -662,10 +664,13 @@ export default {
 
   .actions {
     display: flex;
+    flex-wrap: wrap;
 
     button {
       padding: 5px;
       height: auto;
+      margin-bottom: 10px;
+      align-self: flex-start;
 
       &:not(:last-child) {
         margin-right: 10px;
@@ -701,6 +706,14 @@ export default {
 
     .ant-tag {
       margin-bottom: 10px;
+    }
+
+    &__details {
+      display: flex;
+    }
+
+    .tags {
+      margin-left: 10px;
     }
 
   }
