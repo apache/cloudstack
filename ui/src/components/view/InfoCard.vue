@@ -99,7 +99,7 @@
             <span v-if="resource.cpuused">
               <a-progress
                 v-if="resource.cpuused"
-                style="width: 85%"
+                class="progress-bar"
                 size="small"
                 status="active"
                 :percent="parseFloat(resource.cpuused)"
@@ -108,7 +108,7 @@
             </span>
             <span v-if="resource.cpuallocated">
               <a-progress
-                style="width: 85%"
+                class="progress-bar"
                 size="small"
                 :percent="parseFloat(resource.cpuallocated)"
                 :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('cpuallocatedghz')"
@@ -124,7 +124,7 @@
           <div>
             <span v-if="resource.memorykbs && resource.memoryintfreekbs">
               <a-progress
-                style="width: 85%"
+                class="progress-bar"
                 size="small"
                 status="active"
                 :percent="Number(parseFloat(100.0 * (resource.memorykbs - resource.memoryintfreekbs) / resource.memorykbs).toFixed(2))"
@@ -141,7 +141,7 @@
           <div>
             <span v-if="resource.memoryusedgb">
               <a-progress
-                style="width: 85%"
+                class="progress-bar"
                 size="small"
                 status="active"
                 :percent="Number(parseFloat(100.0 * parseFloat(resource.memoryusedgb) / parseFloat(resource.memorytotalgb)).toFixed(2))"
@@ -150,7 +150,7 @@
             </span>
             <span v-if="resource.memoryallocatedgb">
               <a-progress
-                style="width: 85%"
+                class="progress-bar"
                 size="small"
                 :percent="Number(parseFloat(100.0 * parseFloat(resource.memoryallocatedgb) / parseFloat(resource.memorytotalgb)).toFixed(2))"
                 :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('memoryallocatedgb')"
@@ -870,5 +870,9 @@ export default {
     height: auto;
   }
 
+}
+
+.progress-bar {
+  width: 85%;
 }
 </style>
