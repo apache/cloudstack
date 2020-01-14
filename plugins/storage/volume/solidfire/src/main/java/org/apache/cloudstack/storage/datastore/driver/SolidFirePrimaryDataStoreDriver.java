@@ -169,9 +169,11 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         try {
             List<HostVO> hosts = hostDao.findByClusterId(clusterId);
 
+            String clusterUuId = clusterDao.findById(clusterId).getUuid();
+
             SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, storagePoolDetailsDao);
 
-            SolidFireUtil.placeVolumeInVolumeAccessGroups(sfConnection, sfVolumeId, hosts, clusterId);
+            SolidFireUtil.placeVolumeInVolumeAccessGroups(sfConnection, sfVolumeId, hosts, clusterUuId);
 
             return true;
         }
