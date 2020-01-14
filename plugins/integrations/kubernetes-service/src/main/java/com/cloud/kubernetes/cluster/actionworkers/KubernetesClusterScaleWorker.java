@@ -398,7 +398,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         KubernetesClusterVO kubernetesClusterVO = kubernetesClusterDao.findById(kubernetesCluster.getId());
         kubernetesClusterVO.setNodeCount(clusterSize);
         boolean readyNodesCountValid = KubernetesClusterUtil.validateKubernetesClusterReadyNodesCount(kubernetesClusterVO, publicIpAddress, sshPort,
-                CLUSTER_NODE_VM_USER, sshKeyFile, 30, 30000);
+                CLUSTER_NODE_VM_USER, sshKeyFile, 20, 60000);
         detachIsoKubernetesVMs(clusterVMs);
         if (!readyNodesCountValid) { // Scaling failed
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling unsuccessful for Kubernetes cluster ID: %s as it does not have desired number of nodes in ready state", kubernetesCluster.getUuid()));
