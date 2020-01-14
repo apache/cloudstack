@@ -2274,7 +2274,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 // try to unmount this path
                 Script.runSimpleBashScriptForExitValue("sudo umount " + mountPoint, 10000);
                 // mount secondary storage - have to use sudo, doesn't work otherwise
-                result = Script.runSimpleBashScriptForExitValue(String.format("sudo mount -t nfs %s:%s %s",  uri.getHost(), uri.getPath(), mountPoint), 10000);
+                result = Script.runSimpleBashScriptForExitValue(String.format("sudo mount -t nfs %s:%s %s",  uri.getHost(), uri.getPath(), mountPoint), 60000);
                 if (result != 0){
                     throw new CloudRuntimeException("Unable to mount secondary storage for system template.");
                 }
@@ -2329,7 +2329,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             String finalDestination = String.format("%s/template/tmpl/%d/%d/%s.%s", mountPoint, userId, template.getId(), template.getUuid(), fileExtension);
 
             // create folder
-            result = Script.runSimpleBashScriptForExitValue(String.format("sudo mkdir -p %s/template/tmpl/%d/%d", mountPoint, userId, template.getId()), 10000);
+            result = Script.runSimpleBashScriptForExitValue(String.format("sudo mkdir -p %s/template/tmpl/%d/%d", mountPoint, userId, template.getId()), 60000);
             if (result != 0){
                 throw new CloudRuntimeException("Unable to create temporary mount folders.");
             }
@@ -2360,14 +2360,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             String propertiesFileLocation = String.format("%s/template/tmpl/%d/%d/template.properties", mountPoint, userId, template.getId());
             // Copy template properties File to image store
-            result = Script.runSimpleBashScriptForExitValue(String.format("sudo cp %s/template.properties %s", tempFolder, propertiesFileLocation), 10000);
+            result = Script.runSimpleBashScriptForExitValue(String.format("sudo cp %s/template.properties %s", tempFolder, propertiesFileLocation), 900000);
             if (result != 0){
                 throw new CloudRuntimeException("Failure copying template properties to image store");
             }
 
             updateTemplate(template.getId(), fileExtension, cmd.getId(), destinationFile.length());
 
-            Script.runSimpleBashScriptForExitValue("sudo umount " + mountPoint, 10000);
+            Script.runSimpleBashScriptForExitValue("sudo umount " + mountPoint, 60000);
         }
         return new SeedSystemVMTemplateResponse();
     }
