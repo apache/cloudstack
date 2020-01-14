@@ -61,11 +61,11 @@ class TestKubernetesCluster(cloudstackTestCase):
             cls.restartServer()
 
         cls.kubernetes_version_ids = []
-        cls.kuberetes_version_1 = cls.addKubernetesSupportedVersion('1.14.9', 'http://172.20.0.1/files/setup-1.14.9.iso')
+        cls.kuberetes_version_1 = cls.addKubernetesSupportedVersion('1.14.9', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.14.9.iso')
         cls.kubernetes_version_ids.append(cls.kuberetes_version_1.id)
-        cls.kuberetes_version_2 = cls.addKubernetesSupportedVersion('1.15.0', 'http://172.20.0.1/files/setup-1.15.0.iso')
+        cls.kuberetes_version_2 = cls.addKubernetesSupportedVersion('1.15.0', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.15.0.iso')
         cls.kubernetes_version_ids.append(cls.kuberetes_version_2.id)
-        cls.kuberetes_version_3 = cls.addKubernetesSupportedVersion('1.16.3', 'http://172.20.0.1/files/setup-1.16.3.iso')
+        cls.kuberetes_version_3 = cls.addKubernetesSupportedVersion('1.16.3', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.3.iso')
         cls.kubernetes_version_ids.append(cls.kuberetes_version_3.id)
 
         cks_offering_data = {
