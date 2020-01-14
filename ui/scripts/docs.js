@@ -111,7 +111,7 @@ cloudStack.docs = {
 
     //Ldap
     helpLdapUserFilter: {
-        desc: 'Filter to apply to listing of ldap accounts\n\t"NoFilter": no filtering is done\n\t"LocalDomain": shows only users not in the current or requested domain\n\t"AnyDomain": shows only users not currently known to cloudstack (in any domain)\n\t"PotentialImport": shows all users that (would be) automatically imported to cloudstack with their curent usersource',
+        desc: 'Filter to apply to listing of ldap accounts\n\t"NoFilter": no filtering is done\n\t"LocalDomain": shows only users not in the current or requested domain\n\t"AnyDomain": shows only users not currently known to cloudstack (in any domain)\n\t"PotentialImport": shows all users that (would be) automatically imported to cloudstack with their current usersource',
         externalLink: ''
     },
 
