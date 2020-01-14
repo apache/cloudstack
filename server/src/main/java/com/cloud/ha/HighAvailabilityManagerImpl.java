@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.ha;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.alert.AlertManager;
+import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -906,16 +909,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         _executor.shutdown();
 
         return true;
-    }
-
-    @Override
-    public String getConfigComponentName() {
-        return HighAvailabilityManagerImpl.class.getSimpleName();
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {MaxRetries};
     }
 
     protected class CleanupTask extends ManagedContextRunnable {
