@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id: installrtng.sh 11251 2010-07-23 23:40:44Z abhishek $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/secondary/installrtng.sh $
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -20,15 +19,30 @@
 
 
 usage() {
-  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-h <hypervisor name: kvm|vmware|xenserver|hyperv|ovm3> ] [ -s <mgmt server secret key, if you specified any when running cloudstack-setup-database, default is password>][-u <Url to system vm template>] [-F <clean up system templates of specified hypervisor>] [-e <Template suffix, e.g vhd, ova, qcow2>] [-o <Database server hostname or ip, e.g localhost>] [-r <Database user name, e.g root>] [-p <mysql database port>] [-d <Database password. Fllowed by nothing if the password is empty>]\n" $(basename $0) >&2
-  printf "or\n" >&2
-  printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-h <hypervisor name: kvm|vmware|xenserver|hyperv|ovm3> ] [ -s <mgmt server secret key>]\n" $(basename $0) >&2
+  printf "\nUsage: %s:\n\t-m secondary storage mount point\n\t-f system vm template file\n\t-h hypervisor name: kvm|vmware|xenserver|hyperv|ovm3\n\t-s mgmt server secret key, if you specified any when running cloudstack-setup-database, default is password\n\t-u Url to system vm template\n\t-F clean up system templates of specified hypervisor\n\t-e Template suffix, e.g vhd, ova, qcow2\n\t-o Database server hostname or ip, e.g localhost\n\t-r Database user name, e.g root\n\t-p mysql database port\n\t-d Database password. Followed by nothing if the password is empty\n\n" $(basename $0) >&2
+  printf "\tor\n"
+  printf "\nUsage: %s:\n\t-m secondary storage mount point\n\t-u http url for system vm template\n\t-h hypervisor name: kvm|vmware|xenserver|hyperv|ovm3\n\t-s mgmt server secret key\n\n" $(basename $0) >&2
 }
 
+# Usage: e.g. failed $? "this is an error"
 failed() {
-  echo "Installation failed"
-  exit $1
+  local returnval=$1
+  local returnmsg=$2
+  
+  # check for an message, if there is no one dont print anything
+  if [[ -z $returnmsg ]]; then
+    :
+  else
+    echo -e $returnmsg
+  fi
+  if [[ $returnval -eq 0 ]]; then
+    return 0
+  else
+    echo "Installation failed"
+    exit $returnval
+  fi
 }
+
 #set -x
 mflag=
 fflag=
@@ -42,7 +56,15 @@ dbUser="root"
 dbPassword=
 dbPort=3306
 jasypt='/usr/share/cloudstack-common/lib/jasypt-1.9.2.jar'
-while getopts 'm:h:f:u:Ft:e:s:o:r:d:p:'# OPTION
+
+# check if first parameter is not a dash (-) then print the usage block
+if [[ ! $@ =~ ^\-.+ ]]; then
+	usage
+	exit 0
+fi
+
+OPTERR=0
+while getopts 'm:h:f:u:Ft:e:Ms:o:r:d:p:'# OPTION
 do
   case $OPTION in
   m)    mflag=1
@@ -78,121 +100,94 @@ do
         dbPort="$OPTARG"
         ;;
   ?)    usage
-        failed 2
+        exit 0
+        ;;
+  *)    usage
+        exit 0
         ;;
   esac
 done
 
-if [[ "$mflag$fflag" != "11"  && "$mflag$uflag" != "11" ]]
-then
-  usage
-  failed 2
+if [[ "$mflag$fflag" != "11" && "$mflag$uflag" != "11" ]]; then
+  failed 2 "Please add a mount point and a system vm template file"
 fi
 
-if [ -z "$hyper" ]
-then
-  usage
-  failed 2
+if [[ -z "$hyper" ]]; then
+  failed 2 "Please add a correct hypervisor name like: kvm|vmware|xenserver|hyperv|ovm3"
 fi
 
-if [ ! -d $mntpoint ]
-then
-  echo "mount point $mntpoint doesn't exist\n"
-  failed 4
+if [[ ! -d $mntpoint ]]; then
+  failed 2 "mount point $mntpoint doesn't exist\n"
 fi
 
-if [[ "$fflag" == "1" && ! -f $tmpltimg ]]
-then
-  echo "template image file $tmpltimg doesn't exist"
-  failed 3
+if [[ "$fflag" == "1" && ! -f $tmpltimg ]]; then
+  failed 2 "template image file $tmpltimg doesn't exist"
 fi
 
-if [ -f /etc/cloudstack/management/db.properties ]
-then
-    if [ "$pflag" != 1 ]
-    then
-        dbPort=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.port'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+if [[ -f /etc/cloudstack/management/db.properties ]]; then
+  if [[ "$pflag" != 1 ]]; then
+    dbPort=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.port'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  fi
+
+  if [[ "$oflag" != 1 ]]; then
+    dbHost=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.host'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  fi
+
+  if [[ "$rflag" != 1 ]]; then
+    dbUser=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.username'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  fi
+
+  encType=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.encryption.type'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  if [[ "$encType" == "file" ]]; then
+    msKey=$(cat /etc/cloudstack/management/key)
+  elif [[ "$encType" == "web" ]]; then
+    if [[ ! "$sflag" == "1" ]]; then
+      failed 2 "Encryption type web requires mgmt secret key using -s option"
     fi
+  fi
 
-    if [ "$oflag" != 1 ]
-    then
-        dbHost=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.host'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  if [[ "$encType" == "file" || "$encType" == "web" ]]; then
+    encPassword=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i | sed 's/^ENC(\(.*\))/\1/')
+    if [[ ! $encPassword == "" ]]; then
+      dbPassword=(`java -classpath $jasypt org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
+      if [[ ! $dbPassword ]]; then
+        failed 2 "Failed to decrypt DB password from db.properties"
+      fi
     fi
-
-    if [ "$rflag" != 1 ]
-    then
-        dbUser=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.username'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  else
+    if [[ "$dflag" != 1 ]]; then
+      dbPassword=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i )
     fi
-
-    encType=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.encryption.type'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    if [ "$encType" == "file" ]
-    then
-        msKey=$(cat /etc/cloudstack/management/key)
-    elif [ "$encType" == "web" ]
-    then
-        if [ ! "$sflag" == "1" ]
-        then
-            echo "Encryption type web requires mgmt secret key using -s option"
-            failed 9
-        fi
-    fi
-
-    if [[ "$encType" == "file" || "$encType" == "web" ]]
-    then
-        encPassword=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i | sed 's/^ENC(\(.*\))/\1/')
-        if [ ! $encPassword == "" ]
-        then
-            dbPassword=(`java -classpath $jasypt org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
-            if [ ! $dbPassword ]
-            then
-                echo "Failed to decrypt DB password from db.properties"
-                failed 9
-            fi
-        fi
-    else
-        if [ "$dflag" != 1 ]
-        then
-            dbPassword=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i )
-        fi
-    fi
+  fi
 fi
 
-if [ "$templateId" == "" ]
-then
-   if [ "$hyper" == "kvm" ]
-   then
-      ext="qcow2"
-      templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"KVM\" and removed is null"`)
-   elif [ "$hyper" == "xenserver" ]
-   then
-      ext="vhd"
-      templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"XenServer\" and removed is null"`)
-   elif [ "$hyper" == "vmware" ]
-   then
-      ext="ova"
-      templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"VMware\" and removed is null"`)
-   elif [ "$hyper" == "lxc" ]
-   then
-      ext="qcow2"
-      templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"LXC\" and removed is null"`)
-   elif [ "$hyper" == "hyperv" ]
-   then
-      ext="vhd"
-      templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"Hyperv\" and removed is null"`)
-   elif [ "$hyper" == "ovm3" ]
-   then
-      ext="raw"
-      templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"Ovm3\" and removed is null"`)
-   else
-      usage
-      failed 2
-   fi
+if [[ "$templateId" == "" ]]; then
+  if [[ "$hyper" == "kvm" ]]; then
+    ext="qcow2"
+    templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"KVM\" and removed is null"`)
+    qemuimgcmd=$(which qemu-img)
+  elif [[ "$hyper" == "xenserver" ]]; then
+    ext="vhd"
+    templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"XenServer\" and removed is null"`)
+  elif [[ "$hyper" == "vmware" ]]; then
+    ext="ova"
+    templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"VMware\" and removed is null"`)
+  elif [[ "$hyper" == "lxc" ]]; then
+    ext="qcow2"
+    templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"LXC\" and removed is null"`)
+  elif [[ "$hyper" == "hyperv" ]]; then
+    ext="vhd"
+    templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"Hyperv\" and removed is null"`)
+  elif [[ "$hyper" == "ovm3" ]]; then
+    ext="raw"
+    templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"Ovm3\" and removed is null"`)
+  else
+    failed 2 "Please add a correct hypervisor name like: kvm|vmware|xenserver|hyperv|ovm3"
+  fi
 fi
 
-if [ ! $templateId ]
-then
-    echo "Unable to get template Id from database"
-    failed 8
+if [[ ! $templateId ]]; then
+  failed 2 "Unable to get template Id from database"
 fi
 
 _uuid=$(uuidgen)
@@ -205,43 +200,31 @@ mntpoint=`echo "$mntpoint" | sed 's|/*$||'`
 destdir=$mntpoint/template/tmpl/1/$templateId/
 
 mkdir -p $destdir
-if [ $? -ne 0 ]
-then
-  printf "Failed to write to mount point $mntpoint -- is it mounted?\n"
-  failed 3
+if [[ $? -ne 0 ]]; then
+  failed 2 "Failed to write to mount point $mntpoint -- is it mounted?\n"
 fi
 
-if [ "$Fflag" == "1" ]
-then
+if [[ "$Fflag" == "1" ]]; then
   rm -rf $destdir/*
-  if [ $? -ne 0 ]
-  then
-    echo "Failed to clean up template directory $destdir -- check permissions?"
-    failed 2
+  if [[ $? -ne 0 ]]; then
+    failed 2 "Failed to clean up template directory $destdir -- check permissions?"
   fi
 fi
 
-if [ -f $destdir/template.properties ]
-then
-  echo "Data already exists at destination $destdir -- use -F to force cleanup of old template"
-  echo "IF YOU ARE ATTEMPTING AN UPGRADE, YOU MAY NEED TO SPECIFY A TEMPLATE ID USING THE -t FLAG"
-  failed 4
+if [[ -f $destdir/template.properties ]]; then
+  failed 2 "Data already exists at destination $destdir -- use -F to force cleanup of old template\nIF YOU ARE ATTEMPTING AN UPGRADE, YOU MAY NEED TO SPECIFY A TEMPLATE ID USING THE -t FLAG"
 fi
 
-destvhdfiles=$(find $destdir -name \*.$ext)
-if [ "$destvhdfiles" != "" ]
-then
-  echo "Data already exists at destination $destdir -- use -F to force cleanup of old template"
-  failed 5
+destfiles=$(find $destdir -name \*.$ext)
+if [[ "$destfiles" != "" ]]; then
+  failed 2 "Data already exists at destination $destdir -- use -F to force cleanup of old template"
 fi
 
-tmpfile=$(dirname $0)/$localfile
+tmplfile=$(dirname $0)/$localfile
 
-touch $tmpfile
-if [ $? -ne 0 ]
-then
-  printf "Failed to create temporary file in directory $(dirname $0) -- is it read-only or full?\n"
-  failed 4
+touch $tmplfile
+if [[ $? -ne 0 ]]; then
+  failed 2 "Failed to create temporary file in directory $(dirname $0) -- is it read-only or full?\n"
 fi
 
 destcap=$(df -P $destdir | awk '{print $4}' | tail -1 )
@@ -250,34 +233,24 @@ destcap=$(df -P $destdir | awk '{print $4}' | tail -1 )
 localcap=$(df -P $(dirname $0) | awk '{print $4}' | tail -1 )
 [ $localcap -lt $DISKSPACE ] && echo "Insufficient free disk space for local temporary folder $(dirname $0): avail=${localcap}k req=${DISKSPACE}k" && failed 4
 
-if [ "$uflag" == "1" ]
-then
-  wget -O $tmpfile $url
-  if [ $? -ne 0 ]
-  then
-    echo "Failed to fetch system vm template from $url"
-    failed 5
+if [[ "$uflag" == "1" ]]; then
+  wget -O $tmplfile $url
+  if [[ $? -ne 0 ]]; then
+    failed 2 "Failed to fetch system vm template from $url"
   fi
 fi
 
-
-if [ "$fflag" == "1" ]
-then
-  cp $tmpltimg $tmpfile
-  if [ $? -ne 0 ]
-  then
-    printf "Failed to create temporary file in directory $(dirname $0) -- is it read-only or full?\n"
-    failed 6
+if [[ "$fflag" == "1" ]]; then
+  cp $tmpltimg $tmplfile
+  if [[ $? -ne 0 ]]; then
+    failed 2 "Failed to create temporary file in directory $(dirname $0) -- is it read-only or full?\n"
   fi
 fi
 
+installrslt=$($(dirname $0)/createtmplt.sh -s 2 -d 'SystemVM Template' -n $localfile -t $destdir/ -f $tmplfile -u -v)
 
-installrslt=$($(dirname $0)/createtmplt.sh -s 2 -d 'SystemVM Template' -n $localfile -t $destdir/ -f $tmpfile -u -v)
-
-if [ $? -ne 0 ]
-then
-  echo "Failed to install system vm template $tmpltimg to $destdir: $installrslt"
-  failed 7
+if [[ $? -ne 0 ]]; then
+  failed 2 "Failed to install system vm template $tmpltimg to $destdir: $installrslt"
 fi
 
 if [ "$ext" == "ova" ]
@@ -286,15 +259,20 @@ then
 fi
 
 tmpltfile=$destdir/$localfile
-tmpltsize=$(ls -l $tmpltfile| awk -F" " '{print $5}')
+tmpltsize=$(ls -l $tmpltfile | awk -F" " '{print $5}')
+if [[ "$ext" == "qcow2" ]]; then
+  vrtmpltsize=$($qemuimgcmd info $tmpltfile | grep -i 'virtual size' | sed -ne 's/.*(\([0-9]*\).*/\1/p' | xargs)
+else
+  vrtmpltsize=$tmpltsize
+fi
 
 echo "$ext=true" >> $destdir/template.properties
 echo "id=$templateId" >> $destdir/template.properties
 echo "public=true" >> $destdir/template.properties
 echo "$ext.filename=$localfile" >> $destdir/template.properties
 echo "uniquename=routing-$templateId" >> $destdir/template.properties
-echo "$ext.virtualsize=$tmpltsize" >> $destdir/template.properties
-echo "virtualsize=$tmpltsize" >> $destdir/template.properties
+echo "$ext.virtualsize=$vrtmpltsize" >> $destdir/template.properties
+echo "virtualsize=$vrtmpltsize" >> $destdir/template.properties
 echo "$ext.size=$tmpltsize" >> $destdir/template.properties
 
-echo "Successfully installed system VM template $tmpltimg to $destdir"
+echo "Successfully installed system VM template $tmpltimg and template.properties to $destdir"

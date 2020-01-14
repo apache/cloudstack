@@ -22,6 +22,9 @@
 -- KVM: enable storage data motion on KVM hypervisor_capabilities
 UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported` = 1 WHERE `hypervisor_capabilities`.`hypervisor_type` = 'KVM';
 
+-- #3659 Fix typo: the past tense of shutdown is shutdown, not shutdowned
+UPDATE `cloud`.`vm_instance` SET state='Shutdown' WHERE state='Shutdowned';
+
 -- Backup and Recovery
 
 CREATE TABLE IF NOT EXISTS `cloud`.`backup_offering` (
@@ -282,4 +285,3 @@ UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=283 AND display_name=
 UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=284 AND display_name="Red Hat Enterprise Linux 7.5";
 UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=285 AND display_name="Red Hat Enterprise Linux 7.6";
 UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=286 AND display_name="Red Hat Enterprise Linux 8.0";
-

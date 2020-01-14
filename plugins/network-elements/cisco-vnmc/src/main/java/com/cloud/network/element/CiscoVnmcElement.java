@@ -353,7 +353,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
                 try {
                     Account caller = CallContext.current().getCallingAccount();
                     long callerUserId = CallContext.current().getCallingUserId();
-                    outsideIp = _ipAddrMgr.allocateIp(owner, false, caller, callerUserId, zone, true);
+                    outsideIp = _ipAddrMgr.allocateIp(owner, false, caller, callerUserId, zone, true, null);
                 } catch (ResourceAllocationException e) {
                     s_logger.error("Unable to allocate additional public Ip address. Exception details " + e);
                     throw new CloudRuntimeException("Unable to allocate additional public Ip address. Exception details " + e);

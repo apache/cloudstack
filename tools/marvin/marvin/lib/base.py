@@ -1667,7 +1667,7 @@ class PublicIPAddress:
     @classmethod
     def create(cls, apiclient, accountid=None, zoneid=None, domainid=None,
                services=None, networkid=None, projectid=None, vpcid=None,
-               isportable=False):
+               isportable=False, ipaddress=None):
         """Associate Public IP address"""
         cmd = associateIpAddress.associateIpAddressCmd()
 
@@ -1697,6 +1697,9 @@ class PublicIPAddress:
 
         if vpcid:
             cmd.vpcid = vpcid
+
+        if ipaddress:
+            cmd.ipaddress = ipaddress
         return PublicIPAddress(apiclient.associateIpAddress(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -4054,7 +4057,7 @@ class Configurations:
     """Manage Configuration"""
 
     @classmethod
-    def update(cls, apiclient, name, value=None, zoneid=None, clusterid=None, storageid=None):
+    def update(cls, apiclient, name, value=None, zoneid=None, clusterid=None, storageid=None, domainid=None, accountid=None):
         """Updates the specified configuration"""
 
         cmd = updateConfiguration.updateConfigurationCmd()
@@ -4067,6 +4070,10 @@ class Configurations:
             cmd.clusterid = clusterid
         if storageid:
             cmd.storageid = storageid
+        if domainid:
+            cmd.domainid = domainid
+        if accountid:
+            cmd.accountid = accountid
         apiclient.updateConfiguration(cmd)
 
     @classmethod

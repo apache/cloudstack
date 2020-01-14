@@ -1556,7 +1556,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private SearchCriteria<HostVO> createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance() {
         SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
         sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
-        sc.addAnd("resourceState", SearchCriteria.Op.NIN, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
+        sc.addAnd("resourceState", SearchCriteria.Op.NIN,
+                ResourceState.Maintenance,
+                ResourceState.PrepareForMaintenance,
+                ResourceState.ErrorInPrepareForMaintenance,
+                ResourceState.ErrorInMaintenance);
         sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.Routing.toString());
         return sc;
     }

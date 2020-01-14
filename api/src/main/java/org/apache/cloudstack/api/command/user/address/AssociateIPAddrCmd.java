@@ -125,6 +125,9 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd implements UserCmd {
             authorized = {RoleType.Admin})
     private Boolean display;
 
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="IP Address to be associated")
+    private String ipAddress;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -176,6 +179,10 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public Integer getRegionId() {
         return regionId;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
     }
 
     public Long getNetworkId() {
@@ -306,7 +313,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd implements UserCmd {
             IpAddress ip = null;
 
             if (!isPortable()) {
-                ip = _networkService.allocateIP(_accountService.getAccount(getEntityOwnerId()), getZoneId(), getNetworkId(), getDisplayIp());
+                ip = _networkService.allocateIP(_accountService.getAccount(getEntityOwnerId()), getZoneId(), getNetworkId(), getDisplayIp(), ipAddress);
             } else {
                 ip = _networkService.allocatePortableIP(_accountService.getAccount(getEntityOwnerId()), 1, getZoneId(), getNetworkId(), getVpcId());
             }

@@ -8188,8 +8188,11 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   display: block;
   float: left;
   max-width: 90%;
-  text-overflow: ellipsis;
   overflow: hidden;
+  word-break: break-all;
+  word-wrap: break-word;
+  text-indent: 0;
+  margin-left: 10px;
 }
 
 .multi-edit .data .data-body .data-item table tbody tr td.name {

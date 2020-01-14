@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -23,7 +27,6 @@ import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -291,6 +294,18 @@ public class UserVmManagerImplTest {
         String returnedMacAddress = userVmManagerImpl.validateOrReplaceMacAddress(macAddress, 1l);
 
         Mockito.verify(networkModel, Mockito.times(times)).getNextAvailableMacAddressInNetwork(Mockito.anyLong());
-        Assert.assertEquals(expectedMacAddress, returnedMacAddress);
+        assertEquals(expectedMacAddress, returnedMacAddress);
+    }
+
+    @Test
+    public void testValidatekeyValuePair() throws Exception {
+        assertTrue(userVmManagerImpl.isValidKeyValuePair("is-a-template=true\nHVM-boot-policy=\nPV-bootloader=pygrub\nPV-args=hvc0"));
+        assertTrue(userVmManagerImpl.isValidKeyValuePair("is-a-template=true HVM-boot-policy= PV-bootloader=pygrub PV-args=hvc0"));
+        assertTrue(userVmManagerImpl.isValidKeyValuePair("nvp.vm-uuid=34b3d5ea-1c25-4bb0-9250-8dc3388bfa9b"));
+        assertFalse(userVmManagerImpl.isValidKeyValuePair("key"));
+        //key-1=value1, param:key-2=value2, my.config.v0=False"
+        assertTrue(userVmManagerImpl.isValidKeyValuePair("key-1=value1"));
+        assertTrue(userVmManagerImpl.isValidKeyValuePair("param:key-2=value2"));
+        assertTrue(userVmManagerImpl.isValidKeyValuePair("my.config.v0=False"));
     }
 }

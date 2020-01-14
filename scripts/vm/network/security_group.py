@@ -1032,7 +1032,18 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
                 action = "ACCEPT"
                 direction = "-s"
 
-            range = str(start) + ':' + str(end)
+            if start == 0 and end == 0:
+                dport = ""
+            else:
+                dport = " --dport " + str(start) + ":" + str(end)
+
+            if protocol != 'all' and protocol != 'icmp' and protocol != 'tcp' and protocol != 'udp':
+                protocol_all = " -p " + protocol
+                protocol_state = " "
+            else:
+                protocol_all = " -p " + protocol + " -m " + protocol
+                protocol_state = " -m state --state NEW "
+
             if 'icmp' == protocol:
                 range = str(start) + '/' + str(end)
                 if start == -1:
@@ -1041,16 +1052,16 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
             for ip in rule['ipv4']:
                 if protocol == 'all':
                     execute('iptables -I ' + vmchain + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
-                elif protocol != 'icmp':
-                    execute('iptables -I ' + vmchain + ' -p ' + protocol + ' -m ' + protocol + ' --dport ' + range + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
+                elif protocol == 'icmp':
+                    execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " " + direction + " " + ip + " -j " + action)
                 else:
-                    execute('iptables -I ' + vmchain + ' -p icmp --icmp-type ' + range + ' ' + direction + ' ' + ip + ' -j ' + action)
+                    execute("iptables -I " + vmchain + protocol_all + dport + protocol_state + direction + " " + ip + " -j "+ action)
 
             for ip in rule['ipv6']:
                 if protocol == 'all':
                     execute('ip6tables -I ' + vmchain + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
                 elif 'icmp' != protocol:
-                    execute('ip6tables -I ' + vmchain + ' -p ' + protocol + ' -m ' + protocol + ' --dport ' + range + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
+                    execute("ip6tables -I " + vmchain + protocol_all + dport + protocol_state + direction + " " + ip + " -j "+ action)
                 else:
                     # ip6tables does not allow '--icmpv6-type any', allowing all ICMPv6 is done by not allowing a specific type
                     if range == 'any':

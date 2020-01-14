@@ -500,6 +500,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             cfgResponse.setValue(cfg.getValue());
         }
+        cfgResponse.setIsDynamic(cfg.isDynamic());
         cfgResponse.setObjectName("configuration");
 
         return cfgResponse;
