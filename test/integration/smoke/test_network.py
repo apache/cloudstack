@@ -35,7 +35,8 @@ from marvin.lib.base import (Account,
                              NetworkOffering,
                              LoadBalancerRule,
                              Router,
-                             NIC)
+                             NIC,
+                             Cluster)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_test_template,
@@ -1558,12 +1559,24 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
         cls.hypervisor = testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
 
-        cls.hypervisorNotSupported = True
+        # Supported hypervisor = Vmware using dvSwitches for guest traffic
+        isVmware = False
+        isDvSwitch = False
         if cls.hypervisor.lower() in ["vmware"]:
-            cls.hypervisorNotSupported = False
+            isVmware = True
+            clusters = Cluster.list(cls.apiclient, zoneid=cls.zone.id, hypervisor=cls.hypervisor)
+            for cluster in clusters:
+                if cluster.resourcedetails.guestvswitchtype == "vmwaredvs":
+                    # Test only if cluster uses dvSwitch
+                    isDvSwitch = True
+                    break
+
+        supported = isVmware and isDvSwitch
+        cls.vmwareHypervisorDvSwitchesForGuestTrafficNotPresent = not supported
+
         cls._cleanup = []
 
-        if not cls.hypervisorNotSupported:
+        if supported:
 
             cls.account = Account.create(
                 cls.apiclient,
@@ -1717,7 +1730,7 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
         return vm_ip, eth_device
 
     @attr(tags=["advanced", "advancedns", "smoke", "pvlan"], required_hardware="true")
-    @skipTestIf("hypervisorNotSupported")
+    @skipTestIf("vmwareHypervisorDvSwitchesForGuestTrafficNotPresent")
     def test_l2_network_pvlan_connectivity(self):
         try:
             vm_community1_one = self.deploy_vm_multiple_nics("vmcommunity1one", self.l2_pvlan_community1)
