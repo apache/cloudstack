@@ -1297,6 +1297,20 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return null;
     }
 
+    private boolean restartVpcInDomainRouter(DomainRouterJoinVO router, User user) {
+        try {
+            s_logger.debug("Attempting restart VPC " + router.getVpcName() + " for router recreation " + router.getUuid());
+            ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                    Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS,
+                    "Recreating router " + router.getUuid() + " by restarting VPC " + router.getVpcUuid());
+            return vpcService.restartVpc(router.getVpcId(), true, false, user);
+        } catch (Exception e) {
+            s_logger.error("Failed to restart VPC for router recreation " +
+                    router.getVpcName() + " ,router " + router.getUuid(), e);
+            return false;
+        }
+    }
+
     private DomainRouterJoinVO getAnyRouterJoinWithGuestTraffic(long routerId) {
         List<DomainRouterJoinVO> routerJoinVOs = domainRouterJoinDao.searchByIds(routerId);
         for (DomainRouterJoinVO router : routerJoinVOs) {
@@ -1305,6 +1319,20 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         }
         return null;
+    }
+
+    private boolean restartGuestNetworkInDomainRouter(DomainRouterJoinVO router, User user) {
+        try {
+            s_logger.info("Attempting restart network " + router.getNetworkName() + " for router recreation " + router.getUuid());
+            ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                    Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS,
+                    "Recreating router " + router.getUuid() + " by restarting network " + router.getNetworkUuid());
+            return networkService.restartNetwork(router.getNetworkId(), true, false, user);
+        } catch (Exception e) {
+            s_logger.error("Failed to restart network " + router.getNetworkName() +
+                    " for router recreation " + router.getNetworkName(), e);
+            return false;
+        }
     }
 
     /**
@@ -1318,36 +1346,17 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // Find any VPC containing router join VO, restart it and return
         DomainRouterJoinVO routerJoinToRestart = getAnyRouterJoinWithVpc(routerId);
         if (routerJoinToRestart != null) {
-            try {
-                s_logger.debug("Attempting restart VPC " + routerJoinToRestart.getVpcName() + " for router recreation " + routerJoinToRestart.getUuid());
-                ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
-                        Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS,
-                        "Recreating router " + routerJoinToRestart.getUuid() + " by restarting VPC " + routerJoinToRestart.getVpcUuid());
-                return vpcService.restartVpc(routerJoinToRestart.getVpcId(), true, false, systemUser);
-            } catch (Exception e) {
-                s_logger.error("Failed to restart VPC for router recreation " +
-                        routerJoinToRestart.getVpcName() + " ,router " + routerJoinToRestart.getUuid(), e);
-                return false;
-            }
+            return restartVpcInDomainRouter(routerJoinToRestart, systemUser);
         }
 
         // If no VPC containing router join VO was found we look for a guest network traffic containing join VO and restart that.
         routerJoinToRestart = getAnyRouterJoinWithGuestTraffic(routerId);
-        if (routerJoinToRestart == null) {
-            s_logger.warn("Unable to find a valid guest network to restart for router recreation with id " + routerId);
-            return false;
+        if (routerJoinToRestart != null) {
+            return restartGuestNetworkInDomainRouter(routerJoinToRestart, systemUser);
         }
 
-        try {
-            s_logger.info("Attempting restart network " + routerJoinToRestart.getNetworkName() + " for router recreation " + routerJoinToRestart.getUuid());
-            ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
-                    Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS,
-                    "Recreating router " + routerJoinToRestart.getUuid() + " by restarting network " + routerJoinToRestart.getNetworkUuid());
-            return networkService.restartNetwork(routerJoinToRestart.getNetworkId(), true, false, systemUser);
-        } catch (Exception e) {
-            s_logger.error("Failed to restart network " + routerJoinToRestart.getNetworkName() + " for router recreation " + routerJoinToRestart.getNetworkName(), e);
-            return false;
-        }
+        s_logger.warn("Unable to find a valid guest network or VPC to restart for recreating router id " + routerId);
+        return false;
     }
 
     private Map<String, Map<String, RouterHealthCheckResultVO>> getHealthChecksFromDb(long routerId) {
