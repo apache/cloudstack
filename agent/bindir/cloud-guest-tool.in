@@ -1,0 +1,129 @@
+#!/usr/bin/env python
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+#
+# Talk to a KVM guest through Libvirt and the Qemu Guest Agent
+# to retrieve information from the guest
+#
+# System VMs have the Qemu Guest Agent installed by default
+# and should properly respond to such commands
+
+#
+# Talk to KVM Instances through the Qemu Guest Agent
+#
+
+import argparse
+import json
+import sys
+import libvirt
+import libvirt_qemu
+
+COMMANDS = ["info", "ping", "fstrim"]
+
+
+class Libvirt:
+    def __init__(self, uri=None, timeout=5):
+        self.timeout = timeout
+        self.conn = libvirt.open(uri)
+        if not self.conn:
+            raise Exception('Failed to open connection to the hypervisor')
+
+    def get_domain(self, name):
+        return self.conn.lookupByName(name)
+
+    def agent_command(self, dom, cmd, flags=0, raw=False):
+        ret = libvirt_qemu.qemuAgentCommand(dom, json.dumps({'execute': cmd}),
+                                            self.timeout, flags)
+        if raw:
+            return ret
+
+        return json.loads(ret)['return']
+
+class GuestCommand:
+    def __init__(self, domain, timeout):
+        self.domain = domain
+        self.timeout = timeout
+        self.virt = Libvirt(timeout=self.timeout)
+        self.dom = self.virt.get_domain(self.domain)
+
+    def ping(self):
+        result = self.virt.agent_command(self.dom, 'guest-ping')
+
+        res = False
+        code = 1
+        if len(result) == 0:
+            res = True
+            code = 0
+
+        return {'result': res}, code
+
+    def info(self):
+        info = dict()
+        info['filesystem'] = 'guest-get-fsinfo'
+        info['network'] = 'guest-network-get-interfaces'
+
+        result = dict()
+        for key, cmd in info.items():
+            result[key] = self.virt.agent_command(self.dom, cmd)
+
+        return result, 0
+
+    def fstrim(self):
+        result = self.virt.agent_command(self.dom, 'guest-fstrim')
+
+        res = False
+        code = 1
+        if len(result) > 0:
+            res = True
+            code = 0
+
+        return {'result': result}, code
+
+
+def main(args):
+    command = args.command
+
+    try:
+        guestcmd = GuestCommand(args.instance, args.timeout)
+        result = {'error': 'Command not implemented'}
+        code = 255
+
+        if command == 'info':
+            result, code = guestcmd.info()
+        elif command == 'ping':
+            result, code = guestcmd.ping()
+        elif command == 'fstrim':
+            result, code = guestcmd.fstrim()
+
+        print(json.dumps(result))
+        sys.exit(code)
+    except libvirt.libvirtError as exc:
+        print(json.dumps({'error': str(exc)}))
+        sys.exit(255)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='CloudStack Guest Tool')
+    parser.add_argument('instance', type=str,
+                        help='Instance Name')
+    parser.add_argument('--command', type=str, required=False,
+                        help='Command to execute', default='info',
+                        choices=COMMANDS)
+    parser.add_argument('--timeout', type=int, required=False,
+                        help='timeout in seconds', default=5)
+    args = parser.parse_args()
+    main(args)

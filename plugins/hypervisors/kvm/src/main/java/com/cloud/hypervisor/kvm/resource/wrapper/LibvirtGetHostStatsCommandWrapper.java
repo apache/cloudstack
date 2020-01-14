@@ -42,10 +42,11 @@ public final class LibvirtGetHostStatsCommandWrapper extends CommandWrapper<GetH
         MemStat memStat = libvirtComputingResource.getMemStat();
 
         final double cpuUtil = cpuStat.getCpuUsedPercent();
+        final double loadAvg = cpuStat.getCpuLoadAverage();
 
         final Pair<Double, Double> nicStats = libvirtComputingResource.getNicStats(libvirtComputingResource.getPublicBridgeName());
 
-        final HostStatsEntry hostStats = new HostStatsEntry(command.getHostId(), cpuUtil, nicStats.first() / 1024, nicStats.second() / 1024, "host", memStat.getTotal() / 1024, memStat.getAvailable() / 1024, 0, 0);
+        final HostStatsEntry hostStats = new HostStatsEntry(command.getHostId(), cpuUtil, nicStats.first() / 1024, nicStats.second() / 1024, "host", memStat.getTotal() / 1024, memStat.getAvailable() / 1024, 0, loadAvg);
         return new GetHostStatsAnswer(command, hostStats);
     }
 }

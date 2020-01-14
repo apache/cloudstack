@@ -52,7 +52,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
         Migrating(true, "VM is being migrated.  host id holds to from host"),
         Error(false, "VM is in error"),
         Unknown(false, "VM state is unknown."),
-        Shutdowned(false, "VM is shutdowned from inside");
+        Shutdown(false, "VM state is shutdown from inside");
 
         private final boolean _transitional;
         String _description;

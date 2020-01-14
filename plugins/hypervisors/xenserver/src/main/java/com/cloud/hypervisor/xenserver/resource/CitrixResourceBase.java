@@ -49,6 +49,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.hypervisor.xenserver.ExtraConfigurationUtility;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
@@ -1404,7 +1405,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         }
         try {
-            finalizeVmMetaData(vm, conn, vmSpec);
+            finalizeVmMetaData(vm, vmr, conn, vmSpec);
         } catch (final Exception e) {
             throw new CloudRuntimeException("Unable to finalize VM MetaData: " + vmSpec);
         }
@@ -1859,7 +1860,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected void finalizeVmMetaData(final VM vm, final Connection conn, final VirtualMachineTO vmSpec) throws Exception {
+    protected void finalizeVmMetaData(final VM vm, final VM.Record vmr, final Connection conn, final VirtualMachineTO vmSpec) throws Exception {
 
         final Map<String, String> details = vmSpec.getDetails();
         if (details != null) {
@@ -1889,6 +1890,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     vm.setPlatform(conn, platform);
                 }
             }
+        }
+
+        // Add configuration settings VM record for User VM instances before creating VM
+        Map<String, String> extraConfig = vmSpec.getExtraConfig();
+        if (vmSpec.getType().equals(VirtualMachine.Type.User) && MapUtils.isNotEmpty(extraConfig)) {
+            s_logger.info("Appending user extra configuration settings to VM");
+            ExtraConfigurationUtility.setExtraConfigurationToVm(conn,vmr, vm, extraConfig);
         }
     }
 

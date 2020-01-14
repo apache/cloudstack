@@ -29,8 +29,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.google.common.base.Strings;
-
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
@@ -419,10 +417,6 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         // Determine the guest OS category of the template
         String templateGuestOSCategory = getTemplateGuestOSCategory(template);
 
-        if (Strings.isNullOrEmpty(templateGuestOSCategory)) {
-            return hosts;
-        }
-
         List<Host> prioritizedHosts = new ArrayList<Host>();
         List<Host> noHvmHosts = new ArrayList<Host>();
 
@@ -453,7 +447,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             String hostGuestOSCategory = getHostGuestOSCategory(host);
             if (hostGuestOSCategory == null) {
                 continue;
-            } else if (templateGuestOSCategory.equals(hostGuestOSCategory)) {
+            } else if (templateGuestOSCategory != null && templateGuestOSCategory.equals(hostGuestOSCategory)) {
                 highPriorityHosts.add(host);
             } else {
                 lowPriorityHosts.add(host);

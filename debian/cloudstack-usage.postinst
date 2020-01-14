@@ -21,15 +21,10 @@ set -e
 
 case "$1" in
     configure)
-        # We copy the db.properties file from the management server to the usage server
-        # This used to be a symlink, but we don't do that anymore
-        if [ -f "/etc/cloud/management/db.properties" ]; then
-            cp -a /etc/cloud/management/db.properties /etc/cloudstack/usage/db.properties
-        fi
-
-        # Replacing db.properties with management server db.properties
+     
+        # Linking usage server db.properties to management server db.properties
         if [ -f "/etc/cloudstack/management/db.properties" ]; then
-            rm -rf /etc/cloudstack/usage/db.properties
+            rm -f /etc/cloudstack/usage/db.properties
             ln -s /etc/cloudstack/management/db.properties /etc/cloudstack/usage/db.properties
         fi
 
@@ -40,7 +35,7 @@ case "$1" in
 
         # Replacing key with management server key
         if [ -f "/etc/cloudstack/management/key" ]; then
-            rm -rf /etc/cloudstack/usage/key
+            rm -f /etc/cloudstack/usage/key
             ln -s /etc/cloudstack/management/key /etc/cloudstack/usage/key
         fi
         ;;

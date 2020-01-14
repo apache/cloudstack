@@ -61,7 +61,7 @@ public class NioServer extends NioConnection {
 
         _serverSocket.register(_selector, SelectionKey.OP_ACCEPT, null);
 
-        s_logger.info("NioConnection started and listening on " + _serverSocket.socket().getLocalSocketAddress());
+        s_logger.info("NioServer started and listening on " + _serverSocket.socket().getLocalSocketAddress());
     }
 
     @Override

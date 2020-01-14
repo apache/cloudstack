@@ -515,7 +515,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             return snapshot;
         } catch (Exception e) {
             s_logger.debug("Failed to create vm snapshot: " + vmSnapshotId, e);
-            return null;
+            throw new CloudRuntimeException("Failed to create vm snapshot: " + vmSnapshotId, e);
         }
     }
 
