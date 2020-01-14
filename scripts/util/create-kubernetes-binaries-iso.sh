@@ -74,8 +74,16 @@ echo "Fetching k8s docker images..."
 docker -v
 if [ $? -ne 0 ]; then
     echo "Installing docker..."
-    sudo apt update && sudo apt install docker.io -y
-    sudo systemctl enable docker && sudo systemctl start docker
+    if [ -f /etc/redhat-release ]; then
+      sudo yum -y remove docker-common docker container-selinux docker-selinux docker-engine
+      sudo yum -y install lvm2 device-mapper device-mapper-persistent-data device-mapper-event device-mapper-libs device-mapper-event-libs
+      sudo yum install -y http://mirror.centos.org/centos/7/extras/x86_64/Packages/container-selinux-2.107-3.el7.noarch.rpm
+      sudo wget https://download.docker.com/linux/centos/docker-ce.repo -O /etc/yum.repos.d/docker-ce.repo && sudo yum -y install docker-ce
+      sudo systemctl enable docker && sudo systemctl start docker
+    elif [ -f /etc/lsb-release ]; then
+      sudo apt update && sudo apt install docker.io -y
+      sudo systemctl enable docker && sudo systemctl start docker
+    fi
 fi
 mkdir -p "${working_dir}/docker"
 output=`${k8s_dir}/kubeadm config images list`
@@ -84,6 +92,7 @@ while read -r line; do
     sudo docker pull "$line"
     image_name=`echo "$line" | grep -oE "[^/]+$"`
     sudo docker save "$line" > "${working_dir}/docker/$image_name.tar"
+    sudo docker image rm "$line"
 done <<< "$output"
 
 echo "Restore kubeadm permissions..."
