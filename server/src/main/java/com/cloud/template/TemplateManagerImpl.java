@@ -2334,7 +2334,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new CloudRuntimeException("Unable to create temporary mount folders.");
             }
             // Copy template File to image store
-            result = Script.runSimpleBashScriptForExitValue(String.format("sudo cp %s %s", inputFile, finalDestination ), 10000);
+            result = Script.runSimpleBashScriptForExitValue(String.format("sudo cp %s %s", inputFile, finalDestination ), 900000);
             if (result != 0){
                 throw new CloudRuntimeException("Failure copying system VM template to image store");
             }
