@@ -697,6 +697,7 @@
                                                     $(option).attr('selected','selected');
                                                 }
                                             });
+                                            args.$form.find('.form-item[rel=size]').find('input[name=size]').val(args.context.kubernetesclusters[0].size);
                                         },
                                         fields: {
                                             serviceoffering: {

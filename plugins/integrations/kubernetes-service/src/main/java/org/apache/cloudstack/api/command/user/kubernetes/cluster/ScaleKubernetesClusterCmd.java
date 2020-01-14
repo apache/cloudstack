@@ -40,7 +40,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = ScaleKubernetesClusterCmd.APINAME,
-        description = "Scales a created or running Kubernetes cluster",
+        description = "Scales a created, running or stopped Kubernetes cluster",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {KubernetesCluster.class},
