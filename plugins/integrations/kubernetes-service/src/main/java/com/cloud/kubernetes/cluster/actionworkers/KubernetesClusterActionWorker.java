@@ -144,13 +144,23 @@ public class KubernetesClusterActionWorker {
     }
 
     protected void logMessage(final Level logLevel, final String message, final Exception e) {
-        if (logLevel == Level.DEBUG) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(message);
+        if (logLevel == Level.INFO) {
+            if (LOGGER.isInfoEnabled()) {
+                if (e != null) {
+                    LOGGER.info(message, e);
+                } else {
+                    LOGGER.info(message);
+                }
             }
-        } else if (logLevel == Level.ERROR) {
-            LOGGER.error(message);
-        } if (logLevel == Level.WARN) {
+        } else if (logLevel == Level.DEBUG) {
+            if (LOGGER.isDebugEnabled()) {
+                if (e != null) {
+                    LOGGER.debug(message, e);
+                } else {
+                    LOGGER.debug(message);
+                }
+            }
+        } else if (logLevel == Level.WARN) {
             if (e != null) {
                 LOGGER.warn(message, e);
             } else {

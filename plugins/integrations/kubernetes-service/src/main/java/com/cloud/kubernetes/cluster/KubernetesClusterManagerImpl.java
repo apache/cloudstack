@@ -213,13 +213,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected FirewallRulesDao firewallRulesDao;
 
     private void logMessage(final Level logLevel, final String message, final Exception e) {
-        if (logLevel == Level.DEBUG) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(message);
-            }
-        } else if (logLevel == Level.ERROR) {
-            LOGGER.error(message);
-        } if (logLevel == Level.WARN) {
+        if (logLevel == Level.WARN) {
             if (e != null) {
                 LOGGER.warn(message, e);
             } else {
