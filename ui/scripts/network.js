@@ -41,6 +41,10 @@
             elemData.endport = icmpcode;
         }
 
+        if (elemData.protocol != 'tcp' && elemData.protocol != 'udp' && elemData.protocol != 'icmp') {
+            elemData.startport = 'all';
+            elemData.endport = 'all';
+        }
         return elemData;
     };
 
@@ -2121,6 +2125,47 @@
                                             });
                                         },
                                         isHidden: true
+                                    },
+                                    ipaddress: {
+                                        label: 'label.ip.address',
+                                        select: function(args) {
+                                            var data = {
+                                                forvirtualnetwork : true,
+                                                allocatedonly: false
+                                            };
+                                            if ('vpc' in args.context) { //from VPC section
+                                                $.extend(data, {
+                                                    zoneid: args.context.vpc[0].zoneid,
+                                                    domainid: args.context.vpc[0].domainid,
+                                                    account: args.context.vpc[0].account
+                                                });
+                                            } else if ('networks' in args.context) { //from Guest Network section
+                                                $.extend(data, {
+                                                    zoneid: args.context.networks[0].zoneid,
+                                                    domainid: args.context.networks[0].domainid,
+                                                    account: args.context.networks[0].account
+                                                });
+                                            }
+                                            $.ajax({
+                                                url: createURL('listPublicIpAddresses'),
+                                                data: data,
+                                                success: function(json) {
+                                                    var ips = json.listpublicipaddressesresponse.publicipaddress;
+                                                    var items = [];
+                                                    $(ips).each(function() {
+                                                        if (this.state == "Free") {
+                                                            items.push({
+                                                                id: this.ipaddress,
+                                                                description: this.ipaddress
+                                                            });
+                                                        }
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            })
+                                        }
                                     }
                                 }
                             },
@@ -2149,6 +2194,11 @@
                                     }
                                 }
 
+                                if (args.data.ipaddress != null && args.data.ipaddress.length > 0) {
+                                    $.extend(dataObj, {
+                                        ipaddress: args.data.ipaddress
+                                    });
+                                }
                                 $.ajax({
                                     url: createURL('associateIpAddress'),
                                     data: dataObj,
@@ -4535,7 +4585,8 @@
                                                     var $otherFields = $inputs.filter(function() {
                                                         var name = $(this).attr('rel');
 
-                                                        return name != 'icmptype' &&
+                                                        return name != 'protocolnumber' &&
+                                                            name != 'icmptype' &&
                                                             name != 'icmpcode' &&
                                                             name != 'protocol' &&
                                                             name != 'add-rule' &&
@@ -4544,12 +4595,35 @@
                                                             name != 'securitygroup';
                                                     });
 
-                                                    if ($(this).val() == 'icmp') {
-                                                        $icmpFields.show();
-                                                        $otherFields.hide();
-                                                    } else {
+                                                    $portFields = $inputs.filter(function() {
+                                                        var name = $(this).attr('rel');
+                                                        return $.inArray(name, [
+                                                            'startport',
+                                                            'endport'
+                                                        ]) > -1;
+                                                    });
+                                                    $protocolFields = $inputs.filter(function() {
+                                                        var name = $(this).attr('rel');
+
+                                                        return $.inArray(name, ['protocolnumber']) > -1;
+                                                    });
+
+                                                    if ($(this).val() == 'protocolnumber') {
                                                         $icmpFields.hide();
+                                                        $portFields.hide();
+                                                        $protocolFields.show();
+                                                    } else if ($(this).val() == 'icmp') {
+                                                        $icmpFields.show();
+                                                        $protocolFields.hide();
+                                                        $portFields.hide();
+                                                    } else if ($(this).val() == 'all') {
+                                                        $portFields.hide();
+                                                        $icmpFields.hide();
+                                                        $protocolFields.hide();
+                                                    } else {
                                                         $otherFields.show();
+                                                        $icmpFields.hide();
+                                                        $protocolFields.hide();
                                                     }
                                                 });
 
@@ -4563,9 +4637,21 @@
                                                     }, {
                                                         name: 'icmp',
                                                         description: 'ICMP'
+                                                    }, {
+                                                        name: 'all',
+                                                        description: 'ALL'
+                                                    }, {
+                                                        name: 'protocolnumber',
+                                                        description: 'Protocol Number'
                                                     }]
                                                 });
                                             }
+                                        },
+                                        'protocolnumber': {
+                                            label: 'label.protocol.number',
+                                            edit: true,
+                                            isHidden: true,
+                                            isEditable: true
                                         },
                                         'startport': {
                                             edit: true,
@@ -4617,10 +4703,19 @@
                                         action: function(args) {
                                             var data = {
                                                 securitygroupid: args.context.securityGroups[0].id,
-                                                protocol: args.data.protocol,
                                                 domainid: args.context.securityGroups[0].domainid,
                                                 account: args.context.securityGroups[0].account
                                             };
+
+                                            if (args.data.protocol == 'protocolnumber') {
+                                                $.extend(data, {
+                                                    protocol: args.data.protocolnumber
+                                                });
+                                            } else {
+                                                $.extend(data, {
+                                                    protocol: args.data.protocol
+                                                });
+                                            }
 
                                             if (args.data.icmptype && args.data.icmpcode) { // ICMP
                                                 $.extend(data, {
@@ -4745,7 +4840,8 @@
                                                     var $otherFields = $inputs.filter(function() {
                                                         var name = $(this).attr('rel');
 
-                                                        return name != 'icmptype' &&
+                                                        return name != 'protocolnumber' &&
+                                                            name != 'icmptype' &&
                                                             name != 'icmpcode' &&
                                                             name != 'protocol' &&
                                                             name != 'add-rule' &&
@@ -4754,12 +4850,35 @@
                                                             name != 'securitygroup';
                                                     });
 
-                                                    if ($(this).val() == 'icmp') {
-                                                        $icmpFields.show();
-                                                        $otherFields.hide();
-                                                    } else {
+                                                    $portFields = $inputs.filter(function() {
+                                                        var name = $(this).attr('rel');
+                                                        return $.inArray(name, [
+                                                            'startport',
+                                                            'endport'
+                                                        ]) > -1;
+                                                    });
+                                                    $protocolFields = $inputs.filter(function() {
+                                                        var name = $(this).attr('rel');
+
+                                                        return $.inArray(name, ['protocolnumber']) > -1;
+                                                    });
+
+                                                    if ($(this).val() == 'protocolnumber') {
                                                         $icmpFields.hide();
+                                                        $portFields.hide();
+                                                        $protocolFields.show();
+                                                    } else if ($(this).val() == 'icmp') {
+                                                        $icmpFields.show();
+                                                        $protocolFields.hide();
+                                                        $portFields.hide();
+                                                    } else if ($(this).val() == 'all') {
+                                                        $portFields.hide();
+                                                        $icmpFields.hide();
+                                                        $protocolFields.hide();
+                                                    } else {
                                                         $otherFields.show();
+                                                        $icmpFields.hide();
+                                                        $protocolFields.hide();
                                                     }
                                                 });
 
@@ -4773,9 +4892,21 @@
                                                     }, {
                                                         name: 'icmp',
                                                         description: 'ICMP'
+                                                    }, {
+                                                        name: 'all',
+                                                        description: 'ALL'
+                                                    }, {
+                                                        name: 'protocolnumber',
+                                                        description: 'Protocol Number'
                                                     }]
                                                 });
                                             }
+                                        },
+                                        'protocolnumber': {
+                                            label: 'label.protocol.number',
+                                            edit: true,
+                                            isHidden: true,
+                                            isEditable: true
                                         },
                                         'startport': {
                                             edit: true,
@@ -4827,10 +4958,19 @@
                                         action: function(args) {
                                             var data = {
                                                 securitygroupid: args.context.securityGroups[0].id,
-                                                protocol: args.data.protocol,
                                                 domainid: args.context.securityGroups[0].domainid,
                                                 account: args.context.securityGroups[0].account
                                             };
+
+                                            if (args.data.protocol == 'protocolnumber') {
+                                                $.extend(data, {
+                                                    protocol: args.data.protocolnumber
+                                                });
+                                            } else {
+                                                $.extend(data, {
+                                                    protocol: args.data.protocol
+                                                });
+                                            }
 
                                             if (args.data.icmptype && args.data.icmpcode) { // ICMP
                                                 $.extend(data, {
@@ -6843,7 +6983,8 @@
             return [];
         }
 
-        var protocols = protocolCapabilities.value.split(',');
+        // make sure protocols are found in a script compatible way: i.e. "tcp,udp,tcp.proxy" , no minus sign or spaces
+        var protocols = protocolCapabilities.value.replace(/\s/g,'').replace('-','.').split(',');
 
         if (!protocols) {
             return [];

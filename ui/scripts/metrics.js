@@ -447,7 +447,7 @@
                         'Destroyed': 'off',
                         'Expunging': 'off',
                         'Stopping': 'warning',
-                        'Shutdowned': 'warning'
+                        'Shutdown': 'warning'
                     },
                     compact: true
                 },
@@ -679,6 +679,7 @@
                                 'Down': 'off',
                                 'Removed': 'off',
                                 'ErrorInMaintenance': 'off',
+                                'ErrorInPrepareForMaintenance': 'warning',
                                 'PrepareForMaintenance': 'warning',
                                 'CancelMaintenance': 'warning',
                                 'Maintenance': 'warning',

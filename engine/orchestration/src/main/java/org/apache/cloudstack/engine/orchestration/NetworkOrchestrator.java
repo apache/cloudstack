@@ -2014,15 +2014,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (final NicVO nic : nics) {
-            final NetworkVO network = _networksDao.findById(nic.getNetworkId());
-            if (network != null && network.getTrafficType() == TrafficType.Guest) {
-                final String nicIp = Strings.isNullOrEmpty(nic.getIPv4Address()) ? nic.getIPv6Address() : nic.getIPv4Address();
-                if (!Strings.isNullOrEmpty(nicIp)) {
-                    NicProfile nicProfile = new NicProfile(nic.getIPv4Address(), nic.getIPv6Address(), nic.getMacAddress());
-                    nicProfile.setId(nic.getId());
-                    cleanupNicDhcpDnsEntry(network, vm, nicProfile);
-                }
-            }
             removeNic(vm, nic);
         }
     }
@@ -2044,9 +2035,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
+        final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+        if (network != null && network.getTrafficType() == TrafficType.Guest) {
+            final String nicIp = Strings.isNullOrEmpty(nic.getIPv4Address()) ? nic.getIPv6Address() : nic.getIPv4Address();
+            if (!Strings.isNullOrEmpty(nicIp)) {
+                NicProfile nicProfile = new NicProfile(nic.getIPv4Address(), nic.getIPv6Address(), nic.getMacAddress());
+                nicProfile.setId(nic.getId());
+                cleanupNicDhcpDnsEntry(network, vm, nicProfile);
+            }
+        }
+
         nic.setState(Nic.State.Deallocating);
         _nicDao.update(nic.getId(), nic);
-        final NetworkVO network = _networksDao.findById(nic.getNetworkId());
         final NicProfile profile = new NicProfile(nic, network, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(
                 vm.getHypervisorType(), network));
 
@@ -2970,7 +2970,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         for (final VirtualRouter router : routers) {
             if (router.getState() == VirtualMachine.State.Stopped ||
                     router.getState() == VirtualMachine.State.Error ||
-                    router.getState() == VirtualMachine.State.Shutdowned ||
+                    router.getState() == VirtualMachine.State.Shutdown ||
                     router.getState() == VirtualMachine.State.Unknown) {
                 s_logger.debug("Destroying old router " + router);
                 _routerService.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId());

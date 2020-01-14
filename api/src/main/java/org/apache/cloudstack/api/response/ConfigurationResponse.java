@@ -48,6 +48,10 @@ public class ConfigurationResponse extends BaseResponse {
     @Param(description = "the description of the configuration")
     private String description;
 
+    @SerializedName(ApiConstants.IS_DYNAMIC)
+    @Param(description = "true if the configuration is dynamic")
+    private boolean isDynamic;
+
     public String getCategory() {
         return category;
     }
@@ -87,4 +91,13 @@ public class ConfigurationResponse extends BaseResponse {
     public void setScope(String scope) {
         this.scope = scope;
     }
+
+    public boolean isDynamic() {
+        return isDynamic;
+    }
+
+    public void setIsDynamic(boolean isDynamic) {
+        this.isDynamic = isDynamic;
+    }
+
 }

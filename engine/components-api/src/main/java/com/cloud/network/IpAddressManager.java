@@ -169,7 +169,7 @@ public interface IpAddressManager {
     PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat)
             throws ConcurrentOperationException, InsufficientAddressCapacityException;
 
-    IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone, Boolean displayIp)
+    IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone, Boolean displayIp, String ipaddress)
             throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException;
 
     PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem)

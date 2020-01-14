@@ -35,21 +35,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.cloud.resource.ResourceState;
+import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
-import com.cloud.vm.VmDetailConstants;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import org.apache.cloudstack.framework.security.keys.KeysManager;
-
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.user.Account;
@@ -64,7 +59,10 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * Thumbnail access : /console?cmd=thumbnail&vm=xxx&w=xxx&h=xxx
@@ -420,14 +418,24 @@ public class ConsoleProxyServlet extends HttpServlet {
         StringBuffer sb = new StringBuffer(rootUrl);
         String host = hostVo.getPrivateIpAddress();
 
-        Pair<String, Integer> portInfo;
-        if (hostVo.getResourceState().equals(ResourceState.ErrorInMaintenance)) {
+        Pair<String, Integer> portInfo = null;
+        if (hostVo.getHypervisorType() == Hypervisor.HypervisorType.KVM &&
+                (hostVo.getResourceState().equals(ResourceState.ErrorInMaintenance) ||
+                        hostVo.getResourceState().equals(ResourceState.ErrorInPrepareForMaintenance))) {
             UserVmDetailVO detailAddress = _userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS);
             UserVmDetailVO detailPort = _userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT);
-            portInfo = new Pair<>(detailAddress.getValue(), Integer.valueOf(detailPort.getValue()));
-        } else {
+            if (detailAddress != null && detailPort != null) {
+                portInfo = new Pair<>(detailAddress.getValue(), Integer.valueOf(detailPort.getValue()));
+            } else {
+                s_logger.warn("KVM Host in ErrorInMaintenance/ErrorInPrepareForMaintenance but " +
+                        "no VNC Address/Port was available. Falling back to default one from MS.");
+            }
+        }
+
+        if (portInfo == null) {
             portInfo = _ms.getVncPort(vm);
         }
+
         if (s_logger.isDebugEnabled())
             s_logger.debug("Port info " + portInfo.first());
 

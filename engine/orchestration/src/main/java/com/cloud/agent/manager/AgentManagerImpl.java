@@ -1242,7 +1242,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             if (s_logger.isDebugEnabled()) {
                 if (cmd instanceof PingRoutingCommand) {
                     logD = false;
-                    s_logger.debug("Ping from " + hostId + "(" + hostName + ")");
+                    s_logger.debug("Ping from Routing host " + hostId + "(" + hostName + ")");
                     s_logger.trace("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request);
                 } else if (cmd instanceof PingCommand) {
                     logD = false;
@@ -1583,7 +1583,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     final HostVO h = sc.find();
                     if (h != null) {
                         final ResourceState resourceState = h.getResourceState();
-                        if (resourceState == ResourceState.Disabled || resourceState == ResourceState.Maintenance || resourceState == ResourceState.ErrorInMaintenance) {
+                        if (resourceState == ResourceState.Disabled || resourceState == ResourceState.Maintenance) {
                             /*
                              * Host is in non-operation state, so no investigation and direct put agent to Disconnected
                              */
@@ -1605,7 +1605,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
 
                 final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
-                sc.and(sc.entity().getResourceState(), Op.IN, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
+                sc.and(sc.entity().getResourceState(), Op.IN,
+                        ResourceState.PrepareForMaintenance,
+                        ResourceState.ErrorInPrepareForMaintenance);
                 final List<HostVO> hosts = sc.list();
 
                 for (final HostVO host : hosts) {

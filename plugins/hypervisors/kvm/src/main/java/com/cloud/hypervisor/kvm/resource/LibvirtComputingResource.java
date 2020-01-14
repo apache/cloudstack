@@ -2236,7 +2236,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         vm.addComp(devices);
 
-        addExtraConfigComponent(extraConfig, vm);
+        // Add extra configuration to User VM Domain XML before starting
+        if (vmTO.getType().equals(VirtualMachine.Type.User) && MapUtils.isNotEmpty(extraConfig)) {
+            s_logger.info("Appending extra configuration data to guest VM domain XML");
+            addExtraConfigComponent(extraConfig, vm);
+        }
 
         return vm;
     }
