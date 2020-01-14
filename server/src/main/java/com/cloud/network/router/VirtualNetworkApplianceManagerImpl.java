@@ -121,7 +121,9 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -1266,6 +1268,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                             s_logger.warn("Found failing checks on router " + router + ". " +
                                     "Checking failed health checks to see if router needs reboot");
                             for (String failedCheck : answer.getFailingChecks()) {
+                                ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                                        Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS,
+                                        "Router " + router.getUuid() + " has failing check " + failedCheck);
                                 if (checkFailsToRestartVr.contains(failedCheck)) {
                                     s_logger.warn("Health Check Alert: Found failing check " + failedCheck + " in " +
                                             RouterHealthChecksFailuresToRestartVrCK + ", attempting restart of router.");
@@ -1296,6 +1301,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 if (router.getVpcId() != 0) {
                     try {
                         s_logger.debug("Attempting restart VPC " + router.getVpcName() + " for router recreation " + router.getUuid());
+                        ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                                Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS,
+                                "Recreating router " + router.getUuid() + " by restarting VPC " + router.getVpcUuid());
                         return vpcService.restartVpc(router.getVpcId(), true, false, systemUser);
                     } catch (Exception e) {
                         s_logger.error("Failed to restart VPC for router recreation " + router.getVpcName() + " ,router " + router.getUuid(), e);
@@ -1312,6 +1320,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         try {
             s_logger.info("Attempting restart network " + routerJoinToRestart.getNetworkName() + " for router recreation " + routerJoinToRestart.getUuid());
+            ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                    Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS,
+                    "Recreating router " + routerJoinToRestart.getUuid() + " by restarting network " + routerJoinToRestart.getNetworkUuid());
             return networkService.restartNetwork(routerJoinToRestart.getNetworkId(), true, false, systemUser);
         } catch (Exception e) {
             s_logger.error("Failed to restart network " + routerJoinToRestart.getNetworkName() + " for router recreation " + routerJoinToRestart.getNetworkName(), e);
