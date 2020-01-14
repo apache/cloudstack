@@ -99,7 +99,7 @@ public class DeleteKubernetesSupportedVersionCmd extends BaseAsyncCmd implements
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException {
         try {
-            if (kubernetesVersionService.deleteKubernetesSupportedVersion(this)) {
+            if (!kubernetesVersionService.deleteKubernetesSupportedVersion(this)) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to delete Kubernetes supported version ID: %d", getId()));
             }
             SuccessResponse response = new SuccessResponse(getCommandName());
