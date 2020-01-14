@@ -1732,20 +1732,20 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     /**
      * Perform a free space check on the host for downloading the direct download templates
-     * @param templateSize template size obtained from remote server when registering the template
+     * @param templateSize template size obtained from remote server when registering the template (in bytes)
      */
     protected boolean isEnoughSpaceForDownloadTemplateOnTemporaryLocation(Long templateSize) {
         if (templateSize == null || templateSize == 0L) {
             s_logger.info("The server did not provide the template size, assuming there is enough space to download it");
             return true;
         }
-        String cmd = String.format("df --output=avail %s | tail -1", resource.getDirectDownloadTemporaryDownloadPath());
-        String result = Script.runSimpleBashScript(cmd);
+        String cmd = String.format("df --output=avail %s -B 1 | tail -1", resource.getDirectDownloadTemporaryDownloadPath());
+        String resultInBytes = Script.runSimpleBashScript(cmd);
         Long availableBytes;
         try {
-            availableBytes = Long.parseLong(result);
+            availableBytes = Long.parseLong(resultInBytes);
         } catch (NumberFormatException e) {
-            String msg = "Could not parse the output " + result + " as a number, therefore not able to check for free space";
+            String msg = "Could not parse the output " + resultInBytes + " as a number, therefore not able to check for free space";
             s_logger.error(msg, e);
             return false;
         }
