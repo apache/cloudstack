@@ -15,19 +15,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-package org.apache.cloudstack.diagnostics;
+package org.apache.cloudstack.storage;
 
-import java.util.Map;
+public interface NfsMountManager {
 
-import org.apache.cloudstack.api.command.admin.diagnostics.GetDiagnosticsDataCmd;
-import org.apache.cloudstack.api.command.admin.diagnostics.RunDiagnosticsCmd;
-
-public interface DiagnosticsService {
-
-    String DIAGNOSTICS_DIRECTORY = "diagnostics";
-
-    Map<String, String> runDiagnosticsCommand(RunDiagnosticsCmd cmd);
-
-    String getDiagnosticsDataCommand(GetDiagnosticsDataCmd getDiagnosticsDataCmd);
+    String getMountPoint(String storageUrl, Integer nfsVersion);
 }

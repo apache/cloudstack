@@ -226,6 +226,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String SSHKEYSPATH = "/root/.ssh";
     public static final String SSHPRVKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.cloud";
     public static final String SSHPUBKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
+    public static final String DEFAULTDOMRSSHPORT = "3922";
 
     public static final String BASH_SCRIPT_PATH = "/bin/bash";
 

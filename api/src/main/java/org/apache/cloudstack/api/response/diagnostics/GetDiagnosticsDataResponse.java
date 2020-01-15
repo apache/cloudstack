@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,19 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-package org.apache.cloudstack.diagnostics;
+package org.apache.cloudstack.api.response.diagnostics;
 
-import java.util.Map;
+import com.cloud.serializer.Param;
+import com.cloud.vm.VirtualMachine;
+import com.google.gson.annotations.SerializedName;
 
-import org.apache.cloudstack.api.command.admin.diagnostics.GetDiagnosticsDataCmd;
-import org.apache.cloudstack.api.command.admin.diagnostics.RunDiagnosticsCmd;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
 
-public interface DiagnosticsService {
+@EntityReference(value = VirtualMachine.class)
+public class GetDiagnosticsDataResponse extends BaseResponse {
+    @SerializedName(ApiConstants.URL)
+    @Param(description = "Storage URL to download retrieve diagnostics data files")
+    private String url;
 
-    String DIAGNOSTICS_DIRECTORY = "diagnostics";
+    public String getUrl() {
+        return url;
+    }
 
-    Map<String, String> runDiagnosticsCommand(RunDiagnosticsCmd cmd);
-
-    String getDiagnosticsDataCommand(GetDiagnosticsDataCmd getDiagnosticsDataCmd);
+    public void setUrl(String url) {
+        this.url = url;
+    }
 }

@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,19 +14,31 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
 package org.apache.cloudstack.diagnostics;
 
-import java.util.Map;
+import java.util.List;
 
-import org.apache.cloudstack.api.command.admin.diagnostics.GetDiagnosticsDataCmd;
-import org.apache.cloudstack.api.command.admin.diagnostics.RunDiagnosticsCmd;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 
-public interface DiagnosticsService {
+public class PrepareFilesCommand extends NetworkElementCommand {
+    private List<String> filesToRetrieveList;
+    private long timeout;
 
-    String DIAGNOSTICS_DIRECTORY = "diagnostics";
+    public PrepareFilesCommand(List<String> filesToRetrieve, long timeout) {
+        this.filesToRetrieveList = filesToRetrieve;
+        this.timeout = timeout;
+    }
 
-    Map<String, String> runDiagnosticsCommand(RunDiagnosticsCmd cmd);
+    public List<String> getFilesToRetrieveList() {
+        return filesToRetrieveList;
+    }
 
-    String getDiagnosticsDataCommand(GetDiagnosticsDataCmd getDiagnosticsDataCmd);
+    public long getTimeout() {
+        return timeout;
+    }
+
+    @Override
+    public boolean isQuery() {
+        return true;
+    }
 }

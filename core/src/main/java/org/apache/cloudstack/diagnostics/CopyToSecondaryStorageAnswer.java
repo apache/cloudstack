@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,19 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
 package org.apache.cloudstack.diagnostics;
 
-import java.util.Map;
+import com.cloud.agent.api.Answer;
 
-import org.apache.cloudstack.api.command.admin.diagnostics.GetDiagnosticsDataCmd;
-import org.apache.cloudstack.api.command.admin.diagnostics.RunDiagnosticsCmd;
+public class CopyToSecondaryStorageAnswer extends Answer {
 
-public interface DiagnosticsService {
-
-    String DIAGNOSTICS_DIRECTORY = "diagnostics";
-
-    Map<String, String> runDiagnosticsCommand(RunDiagnosticsCmd cmd);
-
-    String getDiagnosticsDataCommand(GetDiagnosticsDataCmd getDiagnosticsDataCmd);
+    public CopyToSecondaryStorageAnswer(CopyToSecondaryStorageCommand command, boolean success, String details) {
+        super(command, success, details);
+    }
 }
