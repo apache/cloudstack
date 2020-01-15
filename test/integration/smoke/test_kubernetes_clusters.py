@@ -54,7 +54,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         cls.initial_configuration_cks_enabled = Configurations.list(cls.apiclient,
                                                                     name="cloud.kubernetes.service.enabled")[0].value
-        if cls.initial_configuration_cks_enabled == False:
+        if cls.initial_configuration_cks_enabled not in ["true", True]:
             Configurations.update(cls.apiclient,
                                   "cloud.kubernetes.service.enabled",
                                   "true")
@@ -133,7 +133,7 @@ class TestKubernetesCluster(cloudstackTestCase):
                                   "cloud.kubernetes.cluster.template.name",
                                   cls.initial_configuration_cks_template_name)
             # Restore CKS enabled
-            if cls.initial_configuration_cks_enabled == False:
+            if cls.initial_configuration_cks_enabled not in ["true", True]:
                 Configurations.update(cls.apiclient,
                                       "cloud.kubernetes.service.enabled",
                                       "false")

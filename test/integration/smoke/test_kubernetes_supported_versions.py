@@ -48,7 +48,8 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
 
         cls.initial_configuration_cks_enabled = Configurations.list(cls.apiclient,
                                                                     name="cloud.kubernetes.service.enabled")[0].value
-        if cls.initial_configuration_cks_enabled == False:
+        if cls.initial_configuration_cks_enabled not in ["true", True]:
+            self.debug("Enabling CloudStack Kubernetes Service plugin and restarting management server")
             Configurations.update(cls.apiclient,
                                   "cloud.kubernetes.service.enabled",
                                   "true")
@@ -61,7 +62,7 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Restore CKS enabled
-            if cls.initial_configuration_cks_enabled == False:
+            if cls.initial_configuration_cks_enabled not in ["true", True]:
                 Configurations.update(cls.apiclient,
                                       "cloud.kubernetes.service.enabled",
                                       "false")
