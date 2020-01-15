@@ -63,7 +63,7 @@
         <div class="resource-detail-item" v-if="resource.state || resource.status">
           <div class="resource-detail-item__label">{{ $t('status') }}</div>
           <div class="resource-detail-item__details">
-            <status :text="resource.state || resource.status"/>
+            <status class="status" :text="resource.state || resource.status"/>
             <span>{{ resource.state || resource.status }}</span>
           </div>
         </div>
@@ -78,7 +78,7 @@
                 <a-icon type="barcode" style="padding-left: 4px; margin-top: 4px"/>
               </a-button>
             </a-tooltip>
-            <span style="margin-left: 5px;">{{ resource.id }}</span>
+            <span style="margin-left: 10px;">{{ resource.id }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.ostypename && resource.ostypeid">
@@ -159,40 +159,46 @@
           </div>
         </div>
         <div class="resource-detail-item" v-else-if="resource.memorytotal">
-          <div class="resource-detail-item__label">{{ $t('memory') }}</div>
+          <div class="resource-detail-item__label">{{ $t('Memory') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="bulb" />{{ resource.memorytotal }} Memory
-            <span
-              v-if="resource.memoryused"
-              style="display: flex; padding-left: 25px">
-              {{ $t('memoryused') }}
-              <a-progress
-                style="padding-left: 10px"
-                size="small"
-                status="active"
-                :percent="parseFloat(resource.memoryused)" />
-            </span>
-            <span
-              v-if="resource.memoryallocated"
-              style="display: flex; padding-left: 25px">
-              {{ $t('memoryallocatedgb') }}
-              <a-progress
-                style="padding-left: 10px"
-                size="small"
-                :percent="parseFloat(resource.memoryallocated)" />
-            </span>
+
+            <div style="display: flex; flex-direction: column; width: 100%;">
+              <div>
+                <a-icon type="bulb" />{{ resource.memorytotal }} Memory
+              </div>
+              <div>
+                <span
+                  v-if="resource.memoryused">
+                  <a-progress
+                    class="progress-bar"
+                    size="small"
+                    status="active"
+                    :percent="parseFloat(resource.memoryused)"
+                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('memoryused')" />
+                </span>
+                <span
+                  v-if="resource.memoryallocated">
+                  <a-progress
+                    class="progress-bar"
+                    size="small"
+                    :percent="parseFloat(resource.memoryallocated)"
+                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('memoryallocatedgb')" />
+                </span>
+              </div>
+            </div>
+
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.volumes || resource.sizegb">
           <div class="resource-detail-item__label">{{ $t('disksize') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="hdd" />
-            <span v-if="resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage</span>
-            <span v-else-if="resource.sizegb">{{ resource.sizegb }}</span>
+            <span style="width: 100%;" v-if="resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage</span>
+            <span style="width: 100%;" v-else-if="resource.sizegb">{{ resource.sizegb }}</span>
             <div style="margin-left: 25px" v-if="resource.diskkbsread && resource.diskkbswrite && resource.diskioread && resource.diskiowrite">
-              <a-tag>Read {{ toSize(resource.diskkbsread) }}</a-tag>
-              <a-tag>Write {{ toSize(resource.diskkbswrite) }}</a-tag><br/>
-              <a-tag>Read (IO) {{ resource.diskioread }}</a-tag>
+              <a-tag style="margin-bottom: 5px;">Read {{ toSize(resource.diskkbsread) }}</a-tag>
+              <a-tag style="margin-bottom: 5px;">Write {{ toSize(resource.diskkbswrite) }}</a-tag><br/>
+              <a-tag style="margin-bottom: 5px;">Read (IO) {{ resource.diskioread }}</a-tag>
               <a-tag>Write (IO) {{ resource.diskiowrite }}</a-tag>
             </div>
           </div>
@@ -206,7 +212,7 @@
               style="display: flex; padding-left: 25px">
               {{ $t('disksizeusedgb') }}
               <a-progress
-                style="padding-left: 10px"
+                class="progress-bar"
                 size="small"
                 status="active"
                 :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeusedgb) / parseFloat(resource.disksizetotalgb)).toFixed(2))" />
@@ -216,7 +222,7 @@
               style="display: flex; padding-left: 25px">
               {{ $t('disksizeallocatedgb') }}
               <a-progress
-                style="padding-left: 10px"
+                class="progress-bar"
                 size="small"
                 :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / parseFloat(resource.disksizetotalgb)).toFixed(2))" />
             </span>
@@ -276,7 +282,7 @@
           <div class="resource-detail-item__details">
             <a-icon type="desktop" />
             <router-link :to="{ path: '/vm/' + resource.virtualmachineid }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
-            <status style="margin-top: -5px" :text="resource.vmstate" v-if="resource.vmstate"/>
+            <status class="status status--end" :text="resource.vmstate" v-if="resource.vmstate"/>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.volumeid">
@@ -347,7 +353,7 @@
           <div class="resource-detail-item__details">
             <a-icon type="database" />
             <router-link :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
-            <a-tag v-if="resource.storagetype">
+            <a-tag style="margin-left: 5px;" v-if="resource.storagetype">
               {{ resource.storagetype }}
             </a-tag>
           </div>
@@ -444,7 +450,9 @@
               </a-button>
             </a-tooltip>
           </strong>
-          {{ resource.apikey }}
+          <div>
+            {{ resource.apikey }}
+          </div>
         </div> <br/>
         <div class="user-keys">
           <a-icon type="lock" />
@@ -459,7 +467,9 @@
               </a-button>
             </a-tooltip>
           </strong>
-          {{ resource.secretkey }}
+          <div>
+            {{ resource.secretkey }}
+          </div>
         </div>
       </div>
 
@@ -873,6 +883,15 @@ export default {
 }
 
 .progress-bar {
-  width: 85%;
+  width: 75%;
+}
+
+.status {
+  margin-top: -5px;
+
+  &--end {
+    margin-left: 5px;
+  }
+
 }
 </style>
