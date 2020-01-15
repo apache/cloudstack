@@ -371,6 +371,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
      * Post local download activity (install and cleanup). Executed in context of
      * downloader thread
      *
+     * @return an error message describing why download failed or {code}null{code} on success
      * @throws IOException
      */
     private String postLocalDownload(String jobId) {
@@ -384,23 +385,56 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         ResourceType resourceType = dnld.getResourceType();
 
         File originalTemplate = new File(td.getDownloadLocalPath());
-        ChecksumValue oldValue = new ChecksumValue(dnld.getChecksum());
-        ChecksumValue newValue = null;
+        if(StringUtils.isNotBlank(dnld.getChecksum())) {
+            // we have a checksum so check:
+            String checksumErrorMessage = doTheChecksum(dnld, originalTemplate);
+            if (checksumErrorMessage != null) {
+                return checksumErrorMessage;
+            }
+        }
+
+        String result;
+        String extension = dnld.getFormat().getFileExtension();
+        String templateName = makeTemplatename(jobId, extension);
+        String templateFilename = templateName + "." + extension;
+
+        result = executeCreateScript(dnld, td, resourcePath, finalResourcePath, resourceType, templateFilename);
+        if (result != null) {
+            return result;
+        }
+
+        // Set permissions for the downloaded template
+        File downloadedTemplate = new File(resourcePath + "/" + templateFilename);
+
+        _storage.setWorldReadableAndWriteable(downloadedTemplate);
+        setPermissionsForTheDownloadedTemplate(dnld, resourcePath, resourceType);
+
+        TemplateLocation loc = new TemplateLocation(_storage, resourcePath);
         try {
-            newValue = computeCheckSum(oldValue.getAlgorithm(), originalTemplate);
-        } catch (NoSuchAlgorithmException e) {
-            return "checksum algorithm not recognised: " + oldValue.getAlgorithm();
-        }
-        if(StringUtils.isNotBlank(dnld.getChecksum()) && ! oldValue.equals(newValue)) {
-            return "checksum \"" + newValue +"\" didn't match the given value, \"" + oldValue + "\"";
-        }
-        String checksum = newValue.getChecksum();
-        if (checksum == null) {
-            s_logger.warn("Something wrong happened when try to calculate the checksum of downloaded template!");
+            loc.create(dnld.getId(), true, dnld.getTmpltName());
+        } catch (IOException e) {
+            s_logger.warn("Something is wrong with template location " + resourcePath, e);
+            loc.purge();
+            return "Unable to download due to " + e.getMessage();
         }
 
-        dnld.setCheckSum(checksum);
+        result =  postProcessAfterDownloadComplete(dnld, resourcePath, templateName, loc);
+        if (result != null) {
+            return result;
+        }
 
+        // if we don't have a checksum let's create one now
+        if(StringUtils.isBlank(dnld.getChecksum())) {
+            String checksumErrorMessage = doTheChecksum(dnld, originalTemplate);
+            if (checksumErrorMessage != null) {
+                return checksumErrorMessage;
+            }
+        }
+        return null;
+    }
+
+    private String executeCreateScript(DownloadJob dnld, TemplateDownloader td, String resourcePath, String finalResourcePath, ResourceType resourceType, String templateFilename) {
+        String result;
         int imgSizeGigs = (int)Math.ceil(_storage.getSize(td.getDownloadLocalPath()) * 1.0d / (1024 * 1024 * 1024));
         imgSizeGigs++; // add one just in case
         long timeout = (long)imgSizeGigs * installTimeoutPerGig;
@@ -416,35 +450,30 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             scr.add("-h");
         }
 
-        // add options common to ISO and template
-        String extension = dnld.getFormat().getFileExtension();
-        String templateName = "";
-        if (extension.equals("iso")) {
-            templateName = jobs.get(jobId).getTmpltName().trim().replace(" ", "_");
-        } else {
-            templateName = java.util.UUID.nameUUIDFromBytes((jobs.get(jobId).getTmpltName() + System.currentTimeMillis()).getBytes(StringUtils.getPreferredCharset())).toString();
-        }
-
         // run script to mv the temporary template file to the final template
         // file
-        String templateFilename = templateName + "." + extension;
         dnld.setTmpltPath(finalResourcePath + "/" + templateFilename);
         scr.add("-n", templateFilename);
 
         scr.add("-t", resourcePath);
         scr.add("-f", td.getDownloadLocalPath()); // this is the temporary template file downloaded
         scr.add("-u"); // cleanup
-        String result;
         result = scr.execute();
+        return result;
+    }
 
-        if (result != null) {
-            return result;
+    private String makeTemplatename(String jobId, String extension) {
+        // add options common to ISO and template
+        String templateName = "";
+        if (extension.equals("iso")) {
+            templateName = jobs.get(jobId).getTmpltName().trim().replace(" ", "_");
+        } else {
+            templateName = UUID.nameUUIDFromBytes((jobs.get(jobId).getTmpltName() + System.currentTimeMillis()).getBytes(StringUtils.getPreferredCharset())).toString();
         }
+        return templateName;
+    }
 
-        // Set permissions for the downloaded template
-        File downloadedTemplate = new File(resourcePath + "/" + templateFilename);
-        _storage.setWorldReadableAndWriteable(downloadedTemplate);
-
+    private void setPermissionsForTheDownloadedTemplate(DownloadJob dnld, String resourcePath, ResourceType resourceType) {
         // Set permissions for template/volume.properties
         String propertiesFile = resourcePath;
         if (resourceType == ResourceType.TEMPLATE) {
@@ -454,16 +483,28 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
         File templateProperties = new File(propertiesFile);
         _storage.setWorldReadableAndWriteable(templateProperties);
+    }
 
-        TemplateLocation loc = new TemplateLocation(_storage, resourcePath);
+    private String doTheChecksum(DownloadJob dnld, File originalTemplate) {
+        ChecksumValue oldValue = new ChecksumValue(dnld.getChecksum());
+        ChecksumValue newValue = null;
         try {
-            loc.create(dnld.getId(), true, dnld.getTmpltName());
-        } catch (IOException e) {
-            s_logger.warn("Something is wrong with template location " + resourcePath, e);
-            loc.purge();
-            return "Unable to download due to " + e.getMessage();
+            newValue = computeCheckSum(oldValue.getAlgorithm(), originalTemplate);
+        } catch (NoSuchAlgorithmException e) {
+            return "checksum algorithm not recognised: " + oldValue.getAlgorithm();
         }
+        if (StringUtils.isNotBlank(dnld.getChecksum()) && !oldValue.equals(newValue)) {
+            return "checksum \"" + newValue + "\" didn't match the given value, \"" + oldValue + "\"";
+        }
+        String checksum = newValue.getChecksum();
+        if (checksum == null) {
+            s_logger.warn("Something wrong happened when try to calculate the checksum of downloaded template!");
+        }
+        dnld.setCheckSum(checksum);
+        return null;
+    }
 
+    private String postProcessAfterDownloadComplete(DownloadJob dnld, String resourcePath, String templateName, TemplateLocation loc) {
         Iterator<Processor> en = _processors.values().iterator();
         while (en.hasNext()) {
             Processor processor = en.next();
