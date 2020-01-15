@@ -1703,11 +1703,22 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
 
         try {
+            s_logger.info("Verifying temporary location for downloading the template exists on the host");
+            String temporaryDownloadPath = resource.getDirectDownloadTemporaryDownloadPath();
+            if (!isLocationAccessible(temporaryDownloadPath)) {
+                String msg = "The temporary location path for downloading templates does not exist: " +
+                        temporaryDownloadPath + " on this host";
+                s_logger.error(msg);
+                return new DirectDownloadAnswer(false, msg, true);
+            }
+
             s_logger.info("Checking for free space on the host for downloading the template");
             if (!isEnoughSpaceForDownloadTemplateOnTemporaryLocation(cmd.getTemplateSize())) {
                 String msg = "Not enough space on the defined temporary location to download the template " + cmd.getTemplateId();
+                s_logger.error(msg);
                 return new DirectDownloadAnswer(false, msg, true);
             }
+
             s_logger.info("Trying to download template");
             if (!downloader.downloadTemplate()) {
                 s_logger.warn("Couldn't download template");
@@ -1728,6 +1739,14 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         DirectTemplateInformation info = downloader.getTemplateInformation();
         return new DirectDownloadAnswer(true, info.getSize(), info.getInstallPath());
+    }
+
+    /**
+     * True if location exists
+     */
+    private boolean isLocationAccessible(String temporaryDownloadPath) {
+        File dir = new File(temporaryDownloadPath);
+        return dir.exists();
     }
 
     /**
