@@ -63,12 +63,21 @@ class TestKubernetesCluster(cloudstackTestCase):
             cls.restartServer()
 
         cls.kubernetes_version_ids = []
-        cls.kuberetes_version_1 = cls.addKubernetesSupportedVersion('1.14.9', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.14.9.iso')
-        cls.kubernetes_version_ids.append(cls.kuberetes_version_1.id)
-        cls.kuberetes_version_2 = cls.addKubernetesSupportedVersion('1.15.0', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.15.0.iso')
-        cls.kubernetes_version_ids.append(cls.kuberetes_version_2.id)
-        cls.kuberetes_version_3 = cls.addKubernetesSupportedVersion('1.16.3', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.3.iso')
-        cls.kubernetes_version_ids.append(cls.kuberetes_version_3.id)
+        try:
+            cls.kuberetes_version_1 = cls.addKubernetesSupportedVersion('1.14.9', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.14.9.iso')
+            cls.kubernetes_version_ids.append(cls.kuberetes_version_1.id)
+        except Exception as e:
+            cls.fail("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.14.9.iso, %s" % e)
+        try:
+            cls.kuberetes_version_2 = cls.addKubernetesSupportedVersion('1.15.0', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.15.0.iso')
+            cls.kubernetes_version_ids.append(cls.kuberetes_version_2.id)
+        except Exception as e:
+            cls.fail("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.15.0.iso, %s" % e)
+        try:
+            cls.kuberetes_version_3 = cls.addKubernetesSupportedVersion('1.16.3', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.3.iso')
+            cls.kubernetes_version_ids.append(cls.kuberetes_version_3.id)
+        except Exception as e:
+            cls.fail("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.3.is, %s" % e)
 
         cks_offering_data = {
             "name": "CKS-Instance",
@@ -105,7 +114,10 @@ class TestKubernetesCluster(cloudstackTestCase):
                                          hypervisor=cls.hypervisor
                                         )
         cls.debug("Waiting for CKS template with ID %s to be ready" % cls.cks_template.id)
-        cls.waitForTemplateReadyState(cls.cks_template.id)
+        try:
+            cls.waitForTemplateReadyState(cls.cks_template.id)
+        except Exception as e:
+            cls.fail("Failed to get CKS template in ready state, {}, {}".format(cks_template_data.url, e))
 
         cls.initial_configuration_cks_template_name = Configurations.list(cls.apiclient,
                                                                           name="cloud.kubernetes.cluster.template.name")[0].value
