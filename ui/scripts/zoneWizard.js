@@ -5140,12 +5140,37 @@
                         $.ajax({
                             url: createURL('seedSystemVMTemplate&id=' + args.data.returnedZone.id + '&hypervisor=' + args.data.returnedCluster.hypervisortype + '&url=' + args.data.selectSystemVm.url + '&localfile=false&templateid=' + newTemplateId),
                             data: data,
+                            async: false,
+                            error: function(XMLHttpResponse){
+                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                if (errorMsg){
+                                    error('addSystemTemplate', errorMsg, {
+                                        fn: 'addSystemTemplate',
+                                        args: args
+                                    });
+                                }
+                            }
+                        });
+
+                        $.ajax({
+                            url: createURL('activateSystemVMTemplate'),
+                            data: {'id': newTemplateId},
                             success: function(json){
                                 complete({
                                     data: args.data
                                 });
+                            },
+                            error: function(XMLHttpResponse){
+                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                if (errorMsg){
+                                    error('addSystemTemplate', errorMsg, {
+                                        fn: 'addSystemTemplate',
+                                        args: args
+                                    });
+                                }
                             }
                         });
+
                     } else if (templateType == 'copy'){
                         var data = {
                             id: args.data.selectSystemVm.templates,
@@ -5215,6 +5240,15 @@
                                     async: false,
                                     success: function(json){
                                         imagestore = json.listimagestoresresponse.imagestore[0].id;
+                                    },
+                                    error: function(XMLHttpResponse){
+                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                        if (errorMsg){
+                                            error('addSystemTemplate', errorMsg, {
+                                                fn: 'addSystemTemplate',
+                                                args: args
+                                            });
+                                        }
                                     }
                                 });
                                 $.ajax({
@@ -5227,10 +5261,34 @@
                                         localfile: true,
                                     },
                                     async: false,
+                                    error: function(XMLHttpResponse){
+                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                        if (errorMsg){
+                                            error('addSystemTemplate', errorMsg, {
+                                                fn: 'addSystemTemplate',
+                                                args: args
+                                            });
+                                        }
+                                    }
                                 });
 
-                                complete({
-                                    data: args.data
+                                $.ajax({
+                                    url: createURL('activateSystemVMTemplate'),
+                                    data: {'id': uploadparams.id},
+                                    success: function(json){
+                                        complete({
+                                            data: args.data
+                                        });
+                                    },
+                                    error: function(XMLHttpResponse){
+                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                        if (errorMsg){
+                                            error('addSystemTemplate', errorMsg, {
+                                                fn: 'addSystemTemplate',
+                                                args: args
+                                            });
+                                        }
+                                    }
                                 });
                             },
                             error: function(XMLHttpResponse) {

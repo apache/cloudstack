@@ -322,12 +322,19 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                     + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
         }
 
+        TemplateType templateType = TemplateType.USER;
+        if (params.isRoutingType()){
+            templateType = TemplateType.ROUTING;
+        } else if (params.getType() != null){
+            templateType = TemplateType.valueOf(params.getType());
+        }
+
         return prepare(params.isIso(), params.getUserId(), params.getName(), params.getDisplayText(), params.getBits(),
                 params.isPasswordEnabled(), params.requiresHVM(), params.getUrl(), params.isPublic(), params.isFeatured(),
                 params.isExtractable(), params.getFormat(), params.getGuestOSId(), zoneList,
                 params.getHypervisorType(), params.getChecksum(), params.isBootable(), params.getTemplateTag(), owner,
                 params.getDetails(), params.isSshKeyEnabled(), params.getImageStoreUuid(),
-                params.isDynamicallyScalable(), params.isRoutingType() ? TemplateType.ROUTING : TemplateType.valueOf(params.getType()), params.isDirectDownload());
+                params.isDynamicallyScalable(), templateType, params.isDirectDownload());
     }
 
     @Override
