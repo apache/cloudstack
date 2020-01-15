@@ -407,6 +407,8 @@ export default {
         params.id = this.$route.params.id
         if (this.$route.path.startsWith('/ssh/')) {
           params.name = this.$route.params.id
+        } else if (this.$route.path.startsWith('/ldapsetting/')) {
+          params.hostname = this.$route.params.id
         }
       }
 
@@ -453,6 +455,8 @@ export default {
             }
             if (this.$route.path.startsWith('/ssh')) {
               this.items[idx].id = this.items[idx].name
+            } else if (this.$route.path.startsWith('/ldapsetting')) {
+              this.items[idx].id = this.items[idx].hostname
             }
           }
         }

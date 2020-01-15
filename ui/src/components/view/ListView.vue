@@ -105,7 +105,9 @@
       <router-link :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
     </a>
     <a slot="hostname" slot-scope="text, record" href="javascript:;">
-      <router-link :to="{ path: '/host/' + record.hostid }">{{ text }}</router-link>
+      <router-link v-if="record.hostid" :to="{ path: '/host/' + record.hostid }">{{ text }}</router-link>
+      <router-link v-else-if="record.hostname" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+      <span v-else>{{ text }}</span>
     </a>
     <a slot="clustername" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/cluster/' + record.clusterid }">{{ text }}</router-link>

@@ -257,6 +257,25 @@ export default {
           }
         },
         {
+          api: 'linkDomainToLdap',
+          icon: 'link',
+          label: 'Link Domain to LDAP Group/OU',
+          listView: true,
+          dataView: true,
+          args: ['type', 'domainid', 'name', 'accounttype', 'admin'],
+          mapping: {
+            type: {
+              options: ['GROUP', 'OU']
+            },
+            accounttype: {
+              options: ['0', '2']
+            },
+            domainid: {
+              value: (record) => { return record.id }
+            }
+          }
+        },
+        {
           api: 'deleteDomain',
           icon: 'delete',
           label: 'label.delete.domain',

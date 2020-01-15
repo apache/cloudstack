@@ -34,7 +34,8 @@ export default {
       title: 'LDAP Configuration',
       icon: 'team',
       permission: ['listLdapConfigurations'],
-      columns: ['hostname', 'port'],
+      columns: ['hostname', 'port', 'domainid'],
+      details: ['hostname', 'port', 'domainid'],
       actions: [
         {
           api: 'addLdapConfiguration',
@@ -44,6 +45,18 @@ export default {
           args: [
             'hostname', 'port'
           ]
+        },
+        {
+          api: 'deleteLdapConfiguration',
+          icon: 'delete',
+          label: 'label.remove.ldap',
+          dataView: true,
+          args: ['hostname'],
+          mapping: {
+            hostname: {
+              value: (record) => { return record.hostname }
+            }
+          }
         }
       ]
     },
