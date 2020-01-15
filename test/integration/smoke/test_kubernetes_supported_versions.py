@@ -39,9 +39,9 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        testClient = super(TestKubernetesSupportedVersion, cls).getClsTestClient()
-        cls.apiclient = testClient.getApiClient()
-        cls.services = testClient.getParsedTestDataConfig()
+        cls.testClient = super(TestKubernetesSupportedVersion, cls).getClsTestClient()
+        cls.apiclient = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
         cls.kubernetes_version_iso_url = 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.3.iso'
@@ -49,7 +49,7 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         cls.initial_configuration_cks_enabled = Configurations.list(cls.apiclient,
                                                                     name="cloud.kubernetes.service.enabled")[0].value
         if cls.initial_configuration_cks_enabled not in ["true", True]:
-            self.debug("Enabling CloudStack Kubernetes Service plugin and restarting management server")
+            cls.debug("Enabling CloudStack Kubernetes Service plugin and restarting management server")
             Configurations.update(cls.apiclient,
                                   "cloud.kubernetes.service.enabled",
                                   "true")
@@ -63,6 +63,7 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         try:
             # Restore CKS enabled
             if cls.initial_configuration_cks_enabled not in ["true", True]:
+                cls.debug("Restoring Kubernetes Service enabled value")
                 Configurations.update(cls.apiclient,
                                       "cloud.kubernetes.service.enabled",
                                       "false")
@@ -76,6 +77,7 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
     def restartServer(cls):
         """Restart management server"""
 
+        cls.debug("Restarting management server")
         sshClient = SshClient(
                     cls.mgtSvrDetails["mgtSvrIp"],
             22,
@@ -254,7 +256,7 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         response = self.apiclient.deleteKubernetesSupportedVersion(deleteKubernetesSupportedVersionCmd)
         return response
 
-    def waitForKubernetesSupportedVersionIsoReadyState(self, version_id, retries=15, interval=15):
+    def waitForKubernetesSupportedVersionIsoReadyState(self, version_id, retries=20, interval=30):
         """Check if Kubernetes supported version ISO is in Ready state"""
 
         while retries > -1:
