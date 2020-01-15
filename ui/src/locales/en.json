@@ -710,6 +710,7 @@
 "offerha": "Offer HA",
 "offeringType": "Compute offering type",
 "operation": "Operation",
+"order": "Order",
 "osTypeId": "OS Type",
 "oscategoryid": "OS Preference",
 "ostypeid": "OS Type",

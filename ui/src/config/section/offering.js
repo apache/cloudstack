@@ -27,7 +27,7 @@ export default {
       icon: 'cloud',
       permission: ['listServiceOfferings'],
       params: { isrecursive: 'true' },
-      columns: ['name', 'displaytext', 'cpunumber', 'cpuspeed', 'memory', 'tags', 'domain', 'zone'],
+      columns: ['name', 'displaytext', 'cpunumber', 'cpuspeed', 'memory', 'tags', 'domain', 'zone', 'order'],
       details: ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'tags', 'domain', 'zone', 'created'],
       related: [{
         name: 'vm',
@@ -67,7 +67,7 @@ export default {
       icon: 'setting',
       permission: ['listServiceOfferings', 'listInfrastructure'],
       params: { issystem: 'true', isrecursive: 'true' },
-      columns: ['name', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'tags'],
+      columns: ['name', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'tags', 'order'],
       details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'tags', 'domain', 'zone', 'created'],
       actions: [{
         api: 'createServiceOffering',
@@ -98,7 +98,7 @@ export default {
       icon: 'hdd',
       permission: ['listDiskOfferings'],
       params: { isrecursive: 'true' },
-      columns: ['name', 'displaytext', 'disksize', 'tags', 'domain', 'zone'],
+      columns: ['name', 'displaytext', 'disksize', 'tags', 'domain', 'zone', 'order'],
       details: ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'tags', 'domain', 'zone', 'created'],
       related: [{
         name: 'volume',
