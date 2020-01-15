@@ -63,6 +63,7 @@
         <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
           <a-button type="dashed" size="small" shape="circle" icon="login" @click="changeProject(record)" />
         </span>
+        <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
         <console :resource="record" size="small" />
         <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
         <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
@@ -154,6 +155,7 @@
 <script>
 import { api } from '@/api'
 import Console from '@/components/widgets/Console'
+import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import InfoCard from '@/components/view/InfoCard'
 
@@ -161,6 +163,7 @@ export default {
   name: 'ListView',
   components: {
     Console,
+    OsLogo,
     Status,
     InfoCard
   },

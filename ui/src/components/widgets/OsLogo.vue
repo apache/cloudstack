@@ -21,7 +21,7 @@
       {{ name }}
     </template>
     <font-awesome-icon :icon="['fab', logo]" :size="size" style="color: #666;" v-if="logo !== 'debian'" />
-    <debian-icon v-else-if="logo === 'debian'" :style="{ height: size === '4x' ? '56px' : '18px', width: size === '4x' ? '56px' : '18px', marginBottom: '-4px' }" />
+    <debian-icon v-else-if="logo === 'debian'" :style="{ height: size === '4x' ? '56px' : '16px', width: size === '4x' ? '56px' : '16px', marginBottom: '-4px' }" />
   </a-tooltip>
 </template>
 

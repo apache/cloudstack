@@ -206,7 +206,7 @@ export default {
           this.$emit('refresh-data')
           this.$notification.success({
             message: 'Register ISO',
-            description: 'Sucessfully registered ISO'
+            description: 'Sucessfully registered ISO ' + params.name
           })
         }).catch(error => {
           this.$notification.error({
