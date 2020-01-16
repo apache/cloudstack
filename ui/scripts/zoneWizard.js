@@ -5094,6 +5094,7 @@
                 },
 
                 addSystemTemplate: function(args) {
+                    processError = false;
                     var templateType = args.data.selectSystemVm.templateType;
                     if (templateType == '') {
                         complete({
@@ -5116,7 +5117,7 @@
                             ostypeid: args.data.selectSystemVm.osTypeId,
                             hypervisor: args.data.returnedCluster.hypervisortype,
                             system: true,
-                            activate: true,
+                            activate: (args.data.selectSystemVm.activate == "on"),
                         };
 
                         newTemplateId = "";
@@ -5133,8 +5134,13 @@
                                     fn: 'addSystemTemplate',
                                     args: args
                                 });
+                                processError = true;
                             }
                         });
+
+                        if (processError){
+                            return;
+                        }
 
                         // Seed the template via api call
                         $.ajax({
@@ -5148,10 +5154,16 @@
                                         fn: 'addSystemTemplate',
                                         args: args
                                     });
+                                    processError = true;
                                 }
                             }
                         });
 
+                        if (processError){
+                            return;
+                        }
+
+                        if ((args.data.selectSystemVm.activate == "on")){
                         $.ajax({
                             url: createURL('activateSystemVMTemplate'),
                             data: {'id': newTemplateId},
@@ -5167,10 +5179,20 @@
                                         fn: 'addSystemTemplate',
                                         args: args
                                     });
+                                    processError = true;
                                 }
                             }
                         });
 
+                        if (processError){
+                            return;
+                        }
+
+                        } else {
+                            complete({
+                                data: args.data
+                            });
+                        }
                     } else if (templateType == 'copy'){
                         var data = {
                             id: args.data.selectSystemVm.templates,
@@ -5191,8 +5213,12 @@
                                     fn: 'addSystemTemplate',
                                     args: args
                                 });
+                                processError = true;
                             }
                         });
+                        if (processError){
+                            return;
+                        }
                     } else if (templateType == 'upload'){
                         var data = {
                             name: args.data.selectSystemVm.name,
@@ -5230,9 +5256,13 @@
                                                 fn: 'addSystemTemplate',
                                                 args: args
                                             });
+                                            processError = true;
                                         }
                                     }
                                 });
+                                if (processError){
+                                    return;
+                                }
                                 var imagestore = "";
                                 $.ajax({
                                     url: createURL('listImageStores'),
@@ -5248,9 +5278,15 @@
                                                 fn: 'addSystemTemplate',
                                                 args: args
                                             });
+                                            processError = true;
                                         }
                                     }
                                 });
+
+                                if (processError){
+                                    return;
+                                }
+
                                 $.ajax({
                                     url: createURL('seedSystemVMTemplate'),
                                     data: {
@@ -5268,28 +5304,43 @@
                                                 fn: 'addSystemTemplate',
                                                 args: args
                                             });
+                                            processError = true;
                                         }
                                     }
                                 });
 
-                                $.ajax({
-                                    url: createURL('activateSystemVMTemplate'),
-                                    data: {'id': uploadparams.id},
-                                    success: function(json){
-                                        complete({
-                                            data: args.data
-                                        });
-                                    },
-                                    error: function(XMLHttpResponse){
-                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                        if (errorMsg){
-                                            error('addSystemTemplate', errorMsg, {
-                                                fn: 'addSystemTemplate',
-                                                args: args
+                                if (processError){
+                                    return;
+                                }
+
+                                if ((args.data.selectSystemVm.activate == "on")){
+                                    $.ajax({
+                                        url: createURL('activateSystemVMTemplate'),
+                                        data: {'id': uploadparams.id},
+                                        success: function(json){
+                                            complete({
+                                                data: args.data
                                             });
+                                        },
+                                        error: function(XMLHttpResponse){
+                                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                            if (errorMsg){
+                                                error('addSystemTemplate', errorMsg, {
+                                                    fn: 'addSystemTemplate',
+                                                    args: args
+                                                });
+                                                processError = true;
+                                            }
                                         }
+                                    });
+                                    if (processError){
+                                        return;
                                     }
-                                });
+                                } else {
+                                    complete({
+                                        data: args.data
+                                    }); 
+                                }
                             },
                             error: function(XMLHttpResponse) {
                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
