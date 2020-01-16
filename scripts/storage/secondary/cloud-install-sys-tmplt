@@ -19,9 +19,11 @@
 
 
 usage() {
+  printf "\nWARNING - This script has been deprecated and will be removed in a future release\n"
   printf "\nUsage: %s:\n\t-m secondary storage mount point\n\t-f system vm template file\n\t-h hypervisor name: kvm|vmware|xenserver|hyperv|ovm3\n\t-s mgmt server secret key, if you specified any when running cloudstack-setup-database, default is password\n\t-u Url to system vm template\n\t-F clean up system templates of specified hypervisor\n\t-e Template suffix, e.g vhd, ova, qcow2\n\t-o Database server hostname or ip, e.g localhost\n\t-r Database user name, e.g root\n\t-p mysql database port\n\t-d Database password. Followed by nothing if the password is empty\n\n" $(basename $0) >&2
   printf "\tor\n"
   printf "\nUsage: %s:\n\t-m secondary storage mount point\n\t-u http url for system vm template\n\t-h hypervisor name: kvm|vmware|xenserver|hyperv|ovm3\n\t-s mgmt server secret key\n\n" $(basename $0) >&2
+  printf "\nWARNING - This script has been deprecated and will be removed in a future release\n\n"
 }
 
 # Usage: e.g. failed $? "this is an error"
