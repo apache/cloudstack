@@ -25,13 +25,13 @@
               <slot name="avatar">
                 <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" />
                 <a-icon v-else style="font-size: 36px" :type="$route.meta.icon" />
-                <console style="margin-left: -15px" :resource="resource" size="default" v-if="resource.id" />
               </slot>
             </div>
             <slot name="name">
               <h4 class="name">
                 {{ resource.displayname || resource.name }}
               </h4>
+              <console style="margin-left: 10px" :resource="resource" size="default" v-if="resource.id" />
             </slot>
           </div>
           <slot name="actions">
@@ -54,6 +54,12 @@
               <a-tag v-if="'isdynamicallyscalable' in resource" :color="resource.isdynamicallyscalable ? 'green': 'red'">
                 {{ $t('isdynamicallyscalable') }}
               </a-tag>
+              <a-tag v-if="resource.scope">
+                {{ resource.scope }}
+              </a-tag>
+              <a-tag v-if="resource.version">
+                {{ resource.version }}
+              </a-tag>
             </div>
           </slot>
         </div>
@@ -65,6 +71,7 @@
           <div class="resource-detail-item__details">
             <status class="status" :text="resource.state || resource.status"/>
             <span>{{ resource.state || resource.status }}</span>
+            <console style="margin-left: 5px" :resource="resource" size="default" v-if="resource.id" />
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.id">
@@ -195,36 +202,34 @@
             <a-icon type="hdd" />
             <span style="width: 100%;" v-if="resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage</span>
             <span style="width: 100%;" v-else-if="resource.sizegb">{{ resource.sizegb }}</span>
-            <div style="margin-left: 25px" v-if="resource.diskkbsread && resource.diskkbswrite && resource.diskioread && resource.diskiowrite">
-              <a-tag style="margin-bottom: 5px;">Read {{ toSize(resource.diskkbsread) }}</a-tag>
-              <a-tag style="margin-bottom: 5px;">Write {{ toSize(resource.diskkbswrite) }}</a-tag><br/>
-              <a-tag style="margin-bottom: 5px;">Read (IO) {{ resource.diskioread }}</a-tag>
-              <a-tag>Write (IO) {{ resource.diskiowrite }}</a-tag>
-            </div>
+          </div>
+          <div style="margin-left: 25px; margin-top: 5px" v-if="resource.diskkbsread && resource.diskkbswrite && resource.diskioread && resource.diskiowrite">
+            <a-tag style="margin-bottom: 5px;">Read {{ toSize(resource.diskkbsread) }}</a-tag>
+            <a-tag style="margin-bottom: 5px;">Write {{ toSize(resource.diskkbswrite) }}</a-tag><br/>
+            <a-tag style="margin-bottom: 5px;">Read (IO) {{ resource.diskioread }}</a-tag>
+            <a-tag>Write (IO) {{ resource.diskiowrite }}</a-tag>
           </div>
         </div>
         <div class="resource-detail-item" v-else-if="resource.disksizetotalgb">
           <div class="resource-detail-item__label">{{ $t('disksize') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="database" />{{ resource.disksizetotalgb }}
-            <span
-              v-if="resource.disksizeusedgb"
-              style="display: flex; padding-left: 25px">
-              {{ $t('disksizeusedgb') }}
+          </div>
+          <div>
+            <span v-if="resource.disksizeusedgb">
               <a-progress
                 class="progress-bar"
                 size="small"
                 status="active"
-                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeusedgb) / parseFloat(resource.disksizetotalgb)).toFixed(2))" />
+                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeusedgb) / parseFloat(resource.disksizetotalgb)).toFixed(2))"
+                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('disksizeusedgb')" />
             </span>
-            <span
-              v-if="resource.disksizeallocatedgb"
-              style="display: flex; padding-left: 25px">
-              {{ $t('disksizeallocatedgb') }}
+            <span v-if="resource.disksizeallocatedgb">
               <a-progress
                 class="progress-bar"
                 size="small"
-                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / parseFloat(resource.disksizetotalgb)).toFixed(2))" />
+                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / parseFloat(resource.disksizetotalgb)).toFixed(2))"
+                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('disksizeallocatedgb')" />
             </span>
           </div>
         </div>
@@ -314,7 +319,7 @@
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
-          <div class="resource-detail-item__label">{{ $t('serviceCapabilities') }}</div>
+          <div class="resource-detail-item__label">{{ $t('serviceofferingname') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="cloud" />
             <router-link :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
@@ -328,14 +333,14 @@
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.diskofferingname && resource.diskofferingid">
-          <div class="resource-detail-item__label">{{ $t('diskOffering') }}</div>
+          <div class="resource-detail-item__label">{{ $t('diskoffering') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="hdd" />
             <router-link :to="{ path: '/diskoffering/' + resource.diskofferingid }">{{ resource.diskofferingname || resource.diskofferingid }} </router-link>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.networkofferingid">
-          <div class="resource-detail-item__label">{{ $t('networkofferingdisplaytext') }}</div>
+          <div class="resource-detail-item__label">{{ $t('networkofferingid') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="wifi" />
             <router-link :to="{ path: '/networkoffering/' + resource.networkofferingid }">{{ resource.networkofferingname || resource.networkofferingid }} </router-link>
@@ -349,7 +354,7 @@
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.storageid">
-          <div class="resource-detail-item__label">{{ $t('Storage') }}</div>
+          <div class="resource-detail-item__label">{{ $t('storagePool') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="database" />
             <router-link :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
@@ -873,6 +878,7 @@ export default {
   display: flex;
   flex-wrap: wrap;
   margin-top: 20px;
+  margin-bottom: -10px;
 
   .ant-tag {
     margin-right: 10px;
@@ -883,7 +889,8 @@ export default {
 }
 
 .progress-bar {
-  width: 75%;
+  padding-right: 60px;
+  width: 100%;
 }
 
 .status {

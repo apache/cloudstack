@@ -17,8 +17,7 @@
 
 <template>
   <div>
-    <a-collapse v-model="activeKey">
-
+    <a-collapse v-model="activeKey" :bordered="false">
       <a-collapse-panel :header="'ISO: ' + vm.isoname" v-if="vm.isoid" key="1">
         <a-list
           itemLayout="horizontal">
@@ -72,7 +71,7 @@
                 <div class="label">{{ $t('size') }}</div>
                 <div>{{ (item.size / (1024 * 1024 * 1024.0)).toFixed(2) }} GB</div>
               </div>
-              <div class="attribute">
+              <div class="attribute" v-if="item.physicalsize">
                 <div class="label">{{ $t('physicalsize') }}</div>
                 <div>{{ (item.physicalsize / (1024 * 1024 * 1024.0)).toFixed(4) }} GB</div>
               </div>
@@ -117,13 +116,14 @@
                       @confirm="setAsDefault(item)"
                       okText="Yes"
                       cancelText="No"
+                      v-if="!item.isdefault"
                     >
                       <a-button
-                        icon="arrow-right"
+                        icon="check-square"
                         size="small"
                         shape="round" />
                     </a-popconfirm>
-                    <a-tooltip placement="right" v-if="item.type !== 'L2'">
+                    <a-tooltip placement="bottom" v-if="item.type !== 'L2'">
                       <template slot="title">
                         {{ "Change IP Address" }}
                       </template>
@@ -133,7 +133,7 @@
                         shape="round"
                         @click="editIpAddressNic = item.id; showUpdateIpModal = true" />
                     </a-tooltip>
-                    <a-tooltip placement="right" v-if="item.type !== 'L2'">
+                    <a-tooltip placement="bottom" v-if="item.type !== 'L2'">
                       <template slot="title">
                         {{ "Manage Secondary IP Addresses" }}
                       </template>
@@ -184,7 +184,7 @@
                 <div class="label">{{ $t('IP Address') }}</div>
                 <div>{{ item.ipaddress }}</div>
               </div>
-              <div class="attribute" v-if="item.secondaryip && item.type !== 'L2'">
+              <div class="attribute" v-if="item.secondaryip && item.secondaryip.length > 0 && item.type !== 'L2'">
                 <div class="label">{{ $t('Secondary IPs') }}</div>
                 <div>{{ item.secondaryip.map(x => x.ipaddress).join(', ') }}</div>
               </div>
@@ -701,7 +701,6 @@ export default {
     a {
       margin-right: 30px;
       margin-bottom: 10px;
-      font-weight: bold;
     }
 
     .ant-tag {

@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-tooltip placement="right">
+  <a-tooltip placement="bottom">
     <template slot="title">
       {{ name }}
     </template>
