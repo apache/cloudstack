@@ -391,6 +391,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             if (checksumErrorMessage != null) {
                 return checksumErrorMessage;
             }
+        } else {
+            if(s_logger.isInfoEnabled()) {
+                s_logger.info(String.format("No checksum available for '%s'",originalTemplate.getName()));
+            }
         }
 
         String result;
@@ -425,9 +429,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         // if we don't have a checksum let's create one now
         if(StringUtils.isBlank(dnld.getChecksum())) {
-            String checksumErrorMessage = doTheChecksum(dnld, originalTemplate);
+            String checksumErrorMessage = doTheChecksum(dnld, downloadedTemplate);
             if (checksumErrorMessage != null) {
                 return checksumErrorMessage;
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("created new checksum (%s) for '%s'",dnld.getChecksum(), downloadedTemplate));
             }
         }
         return null;
@@ -490,6 +497,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         ChecksumValue newValue = null;
         try {
             newValue = computeCheckSum(oldValue.getAlgorithm(), originalTemplate);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("computed checksum: %s", newValue));
+            }
         } catch (NoSuchAlgorithmException e) {
             return "checksum algorithm not recognised: " + oldValue.getAlgorithm();
         }
