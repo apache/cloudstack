@@ -80,12 +80,8 @@ export default {
           label: 'Take Snapshot',
           dataView: true,
           show: (record) => { return record.state === 'Ready' },
-          args: ['volumeid', 'name', 'asyncbackup', 'tags'],
-          mapping: {
-            volumeid: {
-              value: (record) => { return record.id }
-            }
-          }
+          popup: true,
+          component: () => import('@/views/storage/TakeSnapshot.vue')
         },
         {
           api: 'createSnapshotPolicy',

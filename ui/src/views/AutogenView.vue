@@ -32,8 +32,7 @@
                 size="small"
                 type="dashed"
                 icon="reload"
-                @click="fetchData()">
-              </a-button>
+                @click="fetchData()" />
             </a-tooltip>
           </breadcrumb>
         </a-col>
