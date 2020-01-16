@@ -406,6 +406,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     + " Example: iops.maximum.rate.length = 3600 sets the maximum IOPS length accepted for a disk offering as 3600 seconds (60 minutes).",
             false, ConfigKey.Scope.Global, null);
 
+    public static ConfigKey<Long> iopsMaximumBytes = new ConfigKey<Long>(Long.class, "iops.maximum.rate.length", "Advanced", "0",
+            "Sets the maximum rate length (bytes) accepted; thus, preventing irrealistic values for a disk offering (e.g. Petabytes)."
+                    + " The default value is 0 (zero) and allows any IOPS maximum bytes rate."
+                    + " Example: iops.maximum.rate.length = 3600 sets the maximum IOPS length accepted for a disk offering as 3600 seconds (60 minutes).",
+            false, ConfigKey.Scope.Global, null);
+
     private static final String DefaultForSystemVmsForPodIpRange = "0";
     private static final String DefaultVlanForPodIpRange = Vlan.UNTAGGED.toString();
 
@@ -3042,9 +3048,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("IOPS write rate max length (max length: %d seconds) must be greater than zero", iopsWriteRateMaxLength));
         }
 
+        verifyMaximumLength(iopsReadRateMaxLength, iopsWriteRateMaxLength);
+        verifyMaximumBytesRate(iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRateMax, iopsWriteRateMaxLength);
+    }
+
+    private void verifyMaximumBytesRate(final Long iopsReadRateMax, final Long iopsReadRateMaxLength, final Long iopsWriteRateMax, final Long iopsWriteRateMaxLength) {
+        if (iopsMaximumBytes.value() != null && !iopsMaximumBytes.value().equals(0L)) {
+            if (iopsReadRateMax != null && iopsReadRateMax > iopsMaximumBytes.value()) {
+                throw new InvalidParameterValueException(String.format("IOPS read max rate (%d bytes) cannot be greater than iops.maximum.rate.length (%d bytes)", iopsReadRateMaxLength, iopsMaximumBytes.value()));
+            }
+            if (iopsWriteRateMax != null && iopsWriteRateMax > iopsMaximumBytes.value()) {
+                throw new InvalidParameterValueException(String.format("IOPS write max length (%d bytes) cannot be greater than sane.iops.maximum.rate.length (%d bytes)", iopsWriteRateMaxLength, iopsMaximumBytes.value()));
+            }
+        }
+    }
+
+    private void verifyMaximumLength(final Long iopsReadRateMaxLength, final Long iopsWriteRateMaxLength) {
         if (iopsMaximumRateLength.value() != null && !iopsMaximumRateLength.value().equals(0L)) {
             if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > iopsMaximumRateLength.value()) {
-                throw new InvalidParameterValueException(String.format("IOPS read max length (%d seconds) cannot be greater than iops.maximum.rate.length (%ds seconds)",
+                throw new InvalidParameterValueException(String.format("IOPS read max length (%d seconds) cannot be greater than iops.maximum.rate.length (%d seconds)",
                         iopsReadRateMaxLength, iopsMaximumRateLength.value()));
             }
 

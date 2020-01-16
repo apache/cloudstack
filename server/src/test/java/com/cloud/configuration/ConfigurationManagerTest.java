@@ -168,7 +168,7 @@ public class ConfigurationManagerTest {
 
     VlanVO vlan = new VlanVO(Vlan.VlanType.VirtualNetwork, "vlantag", "vlangateway", "vlannetmask", 1L, "iprange", 1L, 1L, null, null, null);
 
-    private static final String MAXIMUM_IOPS_ALLOWED = "3600";
+    private static final String MAXIMUM_LENGTH_ALLOWED = "3600";
 
     @Mock
     Network network;
@@ -553,8 +553,10 @@ public class ConfigurationManagerTest {
         try {
             configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
         } catch (InvalidParameterValueException e) {
-            Assert.assertTrue(e.getMessage(), e.getMessage()
-                    .contains("Capability " + Capability.AssociatePublicIP.getName() + " can only be set when capability " + Capability.ElasticIp.getName() + " is true"));
+            Assert.assertTrue(
+                    e.getMessage(),
+                    e.getMessage().contains(
+                        "Capability " + Capability.AssociatePublicIP.getName() + " can only be set when capability " + Capability.ElasticIp.getName() + " is true"));
             caught = true;
         }
         Assert.assertTrue("should not be accepted", caught);
@@ -832,7 +834,7 @@ public class ConfigurationManagerTest {
         try {
             configurationMgr.hasSameSubnet(true, "10.0.0.1", "255.255.0.0", "10.0.0.2", "255.255.255.0", "10.0.0.2", "10.0.0.10", false, null, null, null, null, null);
             Assert.fail();
-        } catch (InvalidParameterValueException e) {
+        } catch (InvalidParameterValueException e){
             Assert.assertEquals(e.getMessage(), "The subnet you are trying to add is a subset of the existing subnet having gateway 10.0.0.1 and netmask 255.255.0.0");
         }
         try {
@@ -848,43 +850,35 @@ public class ConfigurationManagerTest {
         Network ipV6Network = mock(Network.class);
         when(ipV6Network.getIp6Gateway()).thenReturn("2001:db8:0:f101::1");
         when(ipV6Network.getIp6Cidr()).thenReturn("2001:db8:0:f101::0/64");
-        doThrow(new InvalidParameterValueException("Exception from Mock: startIPv6 is not in ip6cidr indicated network!")).when(configurationMgr._networkModel)
-                .checkIp6Parameters("2001:db9:0:f101::2", "2001:db9:0:f101::a", "2001:db8:0:f101::1", "2001:db8:0:f101::0/64");
-        doThrow(new InvalidParameterValueException("Exception from Mock: endIPv6 is not in ip6cidr indicated network!")).when(configurationMgr._networkModel)
-                .checkIp6Parameters("2001:db8:0:f101::a", "2001:db9:0:f101::2", "2001:db8:0:f101::1", "2001:db8:0:f101::0/64");
-        doThrow(new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in")).when(configurationMgr._networkModel)
-                .checkIp6Parameters(Mockito.anyString(), Mockito.anyString(), Mockito.isNull(String.class), Mockito.isNull(String.class));
+        doThrow(new InvalidParameterValueException("Exception from Mock: startIPv6 is not in ip6cidr indicated network!")).when(configurationMgr._networkModel).checkIp6Parameters("2001:db9:0:f101::2", "2001:db9:0:f101::a", "2001:db8:0:f101::1", "2001:db8:0:f101::0/64");
+        doThrow(new InvalidParameterValueException("Exception from Mock: endIPv6 is not in ip6cidr indicated network!")).when(configurationMgr._networkModel).checkIp6Parameters("2001:db8:0:f101::a", "2001:db9:0:f101::2", "2001:db8:0:f101::1", "2001:db8:0:f101::0/64");
+        doThrow(new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in")).when(configurationMgr._networkModel).checkIp6Parameters(Mockito.anyString(), Mockito.anyString(), Mockito.isNull(String.class), Mockito.isNull(String.class));
 
-        configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/64", "2001:db8:0:f101::2", "2001:db8:0:f101::a",
-                ipV6Network);
+        configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/64", "2001:db8:0:f101::2", "2001:db8:0:f101::a", ipV6Network);
         Assert.assertTrue(result);
         try {
-            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::2", "2001:db8:0:f101::0/64", "2001:db8:0:f101::2",
-                    "2001:db8:0:f101::a", ipV6Network);
+            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::2", "2001:db8:0:f101::0/64", "2001:db8:0:f101::2", "2001:db8:0:f101::a", ipV6Network);
             Assert.fail();
-        } catch (InvalidParameterValueException e) {
+        } catch (InvalidParameterValueException e){
             Assert.assertEquals(e.getMessage(), "The input gateway 2001:db8:0:f101::2 is not same as network gateway 2001:db8:0:f101::1");
         }
         try {
-            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/63", "2001:db8:0:f101::2",
-                    "2001:db8:0:f101::a", ipV6Network);
+            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/63", "2001:db8:0:f101::2", "2001:db8:0:f101::a", ipV6Network);
             Assert.fail();
-        } catch (InvalidParameterValueException e) {
+        } catch (InvalidParameterValueException e){
             Assert.assertEquals(e.getMessage(), "The input cidr 2001:db8:0:f101::0/63 is not same as network cidr 2001:db8:0:f101::0/64");
         }
 
         try {
-            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/64", "2001:db9:0:f101::2",
-                    "2001:db9:0:f101::a", ipV6Network);
+            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/64", "2001:db9:0:f101::2", "2001:db9:0:f101::a", ipV6Network);
             Assert.fail();
         } catch (InvalidParameterValueException e) {
             Assert.assertEquals(e.getMessage(), "Exception from Mock: startIPv6 is not in ip6cidr indicated network!");
         }
         try {
-            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/64", "2001:db8:0:f101::a",
-                    "2001:db9:0:f101::2", ipV6Network);
+            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/64", "2001:db8:0:f101::a", "2001:db9:0:f101::2", ipV6Network);
             Assert.fail();
-        } catch (InvalidParameterValueException e) {
+        } catch(InvalidParameterValueException e) {
             Assert.assertEquals(e.getMessage(), "Exception from Mock: endIPv6 is not in ip6cidr indicated network!");
         }
 
@@ -961,42 +955,42 @@ public class ConfigurationManagerTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void valildateIopsWriteOfferingsTestIopsWriteLengthGreaterThanMaxAllowed() throws Exception {
-        staticPowerMockConfigKeyParameter(MAXIMUM_IOPS_ALLOWED);
+        staticPowerMockConfigKeyParameter(MAXIMUM_LENGTH_ALLOWED);
         //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 9999, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3, saneIopsMaximumLength=3600
         configurationMgr.valildateIopsRateOfferings(1L, 2L, 9999L, 1L, 2L, 3L);
     }
 
     @Test
     public void valildateIopsWriteOfferingsTestIopsWriteLengthSmallerThanMaxAllowed() throws Exception {
-        staticPowerMockConfigKeyParameter(MAXIMUM_IOPS_ALLOWED);
+        staticPowerMockConfigKeyParameter(MAXIMUM_LENGTH_ALLOWED);
         //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 3599, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3, saneIopsMaximumLength=3600
         configurationMgr.valildateIopsRateOfferings(1L, 2L, 3599L, 1L, 2L, 3L);
     }
 
     @Test
     public void valildateIopsWriteOfferingsTestIopsWriteLengthEqualsThanMaxAllowed() throws Exception {
-        staticPowerMockConfigKeyParameter(MAXIMUM_IOPS_ALLOWED);
+        staticPowerMockConfigKeyParameter(MAXIMUM_LENGTH_ALLOWED);
         //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 3600L, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3, saneIopsMaximumLength=3600
         configurationMgr.valildateIopsRateOfferings(1L, 2L, 3600L, 1L, 2L, 3L);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void valildateIopsWriteOfferingsTestIopsReadLengthGreaterThanMaxAllowed() throws Exception {
-        staticPowerMockConfigKeyParameter(MAXIMUM_IOPS_ALLOWED);
+        staticPowerMockConfigKeyParameter(MAXIMUM_LENGTH_ALLOWED);
         //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 3, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3, saneIopsMaximumLength=3600
         configurationMgr.valildateIopsRateOfferings(1L, 2L, 3L, 1L, 2L, 3601L);
     }
 
     @Test
     public void valildateIopsWriteOfferingsTestIopsReadLengthSmallerThanMaxAllowed() throws Exception {
-        staticPowerMockConfigKeyParameter(MAXIMUM_IOPS_ALLOWED);
+        staticPowerMockConfigKeyParameter(MAXIMUM_LENGTH_ALLOWED);
         //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 3, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3, saneIopsMaximumLength=3600
         configurationMgr.valildateIopsRateOfferings(1L, 2L, 3L, 1L, 2L, 3599L);
     }
 
     @Test
     public void valildateIopsWriteOfferingsTestIopsReadLengthEqualsThanMaxAllowed() throws Exception {
-        staticPowerMockConfigKeyParameter(MAXIMUM_IOPS_ALLOWED);
+        staticPowerMockConfigKeyParameter(MAXIMUM_LENGTH_ALLOWED);
         //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 3, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3, saneIopsMaximumLength=3600
         configurationMgr.valildateIopsRateOfferings(1L, 2L, 3L, 1L, 2L, 3600L);
     }
