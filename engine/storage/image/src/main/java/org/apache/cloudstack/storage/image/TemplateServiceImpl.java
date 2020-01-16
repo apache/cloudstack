@@ -1045,8 +1045,6 @@ public class TemplateServiceImpl implements TemplateService {
         }
         tmplForCopy.setUrl(url);
 
-        tmplForCopy.getImage().setChecksum("");
-
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Mark template_store_ref entry as Creating");
         }
