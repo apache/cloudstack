@@ -550,8 +550,9 @@ public class SolidFireUtil {
                                 throw new CloudRuntimeException(errMsg);
                             }
 
-                            addInitiatorsToSolidFireVag(sfConnection, sfVag.getId(), new String[] { host.getStorageUrl() });
-
+                            if(!isInitiatorInSfVag(host.getStorageUrl(),sfVag)) {
+                                addInitiatorsToSolidFireVag(sfConnection, sfVag.getId(), new String[]{host.getStorageUrl()});
+                            }
                             return;
                         }
                     }
