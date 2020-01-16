@@ -82,6 +82,6 @@ public class ChecksumValue {
             } // else if no algoritm
             return "MD5";
         } // or if no digest at all
-        return "SHA512";
+        return "SHA-512";
     }
 }
