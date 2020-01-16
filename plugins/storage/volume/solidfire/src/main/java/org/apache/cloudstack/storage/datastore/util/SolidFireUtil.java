@@ -497,7 +497,7 @@ public class SolidFireUtil {
                         if (sfVag != null) {
                             placeVolumeIdsInVag(sfConnection, sfVags, sfVag, hostVO, hostDao);
                         } else {
-                            handleVagForHost(sfConnection, sfVags, hostVO, hostDao);
+                            handleVagForHost(sfConnection, sfVags, hostVO, hostDao, clusterDao);
                         }
                     }
                 }
@@ -513,13 +513,13 @@ public class SolidFireUtil {
     // creating a new VAG won't exceed 4 VAGs for the computer cluster).
     // If none of the hosts in the cluster are in a VAG, then leave this host out of a VAG.
     // Place applicable volume IDs in VAG, if need be (account of volume starts with SF_CS_ACCOUNT_PREFIX).
-    private static void handleVagForHost(SolidFireUtil.SolidFireConnection sfConnection, List<SolidFireUtil.SolidFireVag> sfVags, Host host, HostDao hostDao) {
+    private static void handleVagForHost(SolidFireUtil.SolidFireConnection sfConnection, List<SolidFireUtil.SolidFireVag> sfVags, Host host, HostDao hostDao, ClusterDao clusterDao) {
         List<HostVO> hostVOs = hostDao.findByClusterId(host.getClusterId());
 
         if (hostVOs != null) {
             int numVags = 0;
 
-            String clusterUuId = hostDao.findById(host.getClusterId()).getUuid();
+            String clusterUuId = clusterDao.findById(host.getClusterId()).getUuid();
             SolidFireVag sfVagMatchingClusterId = sfVags.stream().filter(vag -> vag.getName().equals("CloudStack-"+clusterUuId)).findFirst().orElse(null);
             if (sfVagMatchingClusterId != null && sfVagMatchingClusterId.getInitiators().length < MAX_NUM_INITIATORS_PER_VAG) {
                 addInitiatorsToSolidFireVag(sfConnection, sfVagMatchingClusterId.getId(), new String[]{host.getStorageUrl()});
