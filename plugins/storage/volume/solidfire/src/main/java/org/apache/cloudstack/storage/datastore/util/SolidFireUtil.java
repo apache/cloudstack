@@ -713,17 +713,18 @@ public class SolidFireUtil {
 
             //Check if cluster VAG exists
             SolidFireVag sfVagMatchingClusterId = sfVags.stream().filter(vag -> vag.getName().equals("CloudStack-"+clusterUuId)).findFirst().orElse(null);
-            // Create cluster VAG if doesnt exist
-            if (sfVagMatchingClusterId == null) {
 
+            if (sfVagMatchingClusterId == null) {
+                // Create cluster VAG if doesnt exist
                 LOGGER.info("Creating volume access group CloudStack-"+clusterUuId);
                 SolidFireUtil.createVag(sfConnection, "CloudStack-"+clusterUuId, sfVagToIqnsMap.get(null).toArray(new String[0]), new long[] { sfVolumeId });
 
-                //update null entry in vag to IQN Map
-                sfVagMatchingClusterId = sfVags.stream().filter(vag -> vag.getName().equals("CloudStack-"+clusterUuId)).findFirst().orElse(null);
-                sfVagToIqnsMap.put(sfVagMatchingClusterId,sfVagToIqnsMap.get(null));
-                sfVagToIqnsMap.remove(null);
             }
+
+            //update null entry in vag to IQN Map
+            sfVagMatchingClusterId = sfVags.stream().filter(vag -> vag.getName().equals("CloudStack-"+clusterUuId)).findFirst().orElse(null);
+            sfVagToIqnsMap.put(sfVagMatchingClusterId,sfVagToIqnsMap.get(null));
+            sfVagToIqnsMap.remove(null);
         }
 
 
