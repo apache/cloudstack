@@ -506,7 +506,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         if (StringUtils.isNotBlank(dnld.getChecksum()) && !oldValue.equals(newValue)) {
             return "checksum \"" + newValue + "\" didn't match the given value, \"" + oldValue + "\"";
         }
-        String checksum = newValue.getChecksum();
+        String checksum = newValue.toString();
         if (checksum == null) {
             LOGGER.warn("Something wrong happened when try to calculate the checksum of downloaded template!");
         }
