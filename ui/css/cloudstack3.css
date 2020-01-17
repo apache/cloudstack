@@ -8188,8 +8188,11 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   display: block;
   float: left;
   max-width: 90%;
-  text-overflow: ellipsis;
   overflow: hidden;
+  word-break: break-all;
+  word-wrap: break-word;
+  text-indent: 0;
+  margin-left: 10px;
 }
 
 .multi-edit .data .data-body .data-item table tbody tr td.name {
@@ -12418,12 +12421,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -69px -677px;
 }
 
+.retrieveDiagnostics .icon,
 .downloadVolume .icon,
 .downloadTemplate .icon,
 .downloadISO .icon {
   background-position: -35px -125px;
 }
 
+.retrieveDiagnostics:hover .icon,
 .downloadVolume:hover .icon,
 .downloadTemplate:hover .icon,
 .downloadISO:hover .icon {

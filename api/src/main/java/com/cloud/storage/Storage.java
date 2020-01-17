@@ -16,10 +16,10 @@
 // under the License.
 package com.cloud.storage;
 
-import org.apache.commons.lang.NotImplementedException;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.lang.NotImplementedException;
 
 public class Storage {
     public static enum ImageFormat {
@@ -33,6 +33,7 @@ public class Storage {
         VMDK(true, true, false, "vmdk"),
         VDI(true, true, false, "vdi"),
         TAR(false, false, false, "tar"),
+        ZIP(false, false, false, "zip"),
         DIR(false, false, false, "dir");
 
         private final boolean supportThinProvisioning;

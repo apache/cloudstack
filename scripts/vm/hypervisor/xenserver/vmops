@@ -204,6 +204,33 @@ def createFile(session, args):
     return txt
 
 @echo
+def secureCopyToHost(session, args):
+    host_filepath = args['hostfilepath']
+    src_ip = args['srcip']
+    src_filepath = args['srcfilepath']
+    src_target = "root@" + src_ip + ":" + src_filepath
+    # Make any directories as needed
+    if not os.path.isdir(host_filepath):
+        try:
+            os.makedirs(host_filepath)
+        except OSError, (errno, strerror):
+            if not os.path.isdir(host_filepath):
+                errMsg = "OSError while creating " + host_filepath + " with errno: " + str(errno) + " and strerr: " + strerror
+                logging.debug(errMsg)
+                return "fail# Cannot create the directory to copy file to " + host_filepath
+
+    # Copy file to created directory
+    txt=""
+    try:
+        txt = util.pread2(['scp','-P','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud', src_target, host_filepath])
+        util.pread2(['chmod', 'a+r', os.path.join(host_filepath, os.path.basename(src_filepath))])
+        txt = 'success#' + txt
+    except:
+        logging.error("failed to scp source target " + src_target + " to host at file path " + host_filepath)
+        txt = 'fail#' + txt
+    return txt
+
+@echo
 def createFileInDomr(session, args):
     src_filepath = args['srcfilepath']
     dst_path = args['dstfilepath']
@@ -1560,4 +1587,5 @@ if __name__ == "__main__":
                             "setLinkLocalIP":setLinkLocalIP,
                             "cleanup_rules":cleanup_rules,
                             "createFileInDomr":createFileInDomr,
-                            "kill_copy_process":kill_copy_process})
+                            "kill_copy_process":kill_copy_process,
+                            "secureCopyToHost":secureCopyToHost})

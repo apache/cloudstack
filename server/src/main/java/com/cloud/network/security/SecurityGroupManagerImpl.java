@@ -50,6 +50,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -617,10 +618,27 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
         }
 
-        if (!NetUtils.isValidSecurityGroupProto(protocol)) {
-            throw new InvalidParameterValueException("Invalid protocol " + protocol);
+        //Validate Protocol
+        protocol = protocol.trim().toLowerCase();
+        //Check if protocol is a number
+        if(StringUtils.isNumeric(protocol)){
+            int protoNumber = Integer.parseInt(protocol);
+            // Deal with ICMP(protocol number 1) specially because it need to be paired with icmp type and code
+            if (protoNumber == 1) {
+                protocol = "icmp";
+                icmpCode = -1;
+                icmpType = -1;
+            } else if(protoNumber < 0 || protoNumber > 255){
+                throw new InvalidParameterValueException("Invalid protocol number: " + protoNumber);
+            }
+        } else {
+            //Protocol is not number
+            //Check for valid protocol strings
+            if (!NetUtils.isValidSecurityGroupProto(protocol)) {
+                throw new InvalidParameterValueException("Invalid protocol " + protocol);
+            }
         }
-        if ("icmp".equalsIgnoreCase(protocol)) {
+        if (protocol.equals(NetUtils.ICMP_PROTO)) {
             if ((icmpType == null) || (icmpCode == null)) {
                 throw new InvalidParameterValueException("Invalid ICMP type/code specified, icmpType = " + icmpType + ", icmpCode = " + icmpCode);
             }
@@ -641,7 +659,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
             startPortOrType = 0;
             endPortOrCode = 0;
-        } else {
+        } else if (protocol.equals(NetUtils.TCP_PROTO) || protocol.equals(NetUtils.UDP_PROTO)) {
             if ((startPort == null) || (endPort == null)) {
                 throw new InvalidParameterValueException("Invalid port range specified, startPort = " + startPort + ", endPort = " + endPort);
             }
@@ -660,9 +678,12 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
             startPortOrType = startPort;
             endPortOrCode = endPort;
+        } else {
+            // in 4.6, the start port and end port are ignored in definition of ProtocolAclRule
+            // see core/src/com/cloud/agent/resource/virtualnetwork/facade/SetNetworkAclConfigItem.java
+            startPortOrType = 0;
+            endPortOrCode = 0;
         }
-
-        protocol = protocol.toLowerCase();
 
         List<SecurityGroupVO> authorizedGroups = new ArrayList<SecurityGroupVO>();
         if (groupList != null) {

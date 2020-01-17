@@ -226,6 +226,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String SSHKEYSPATH = "/root/.ssh";
     public static final String SSHPRVKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.cloud";
     public static final String SSHPUBKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
+    public static final String DEFAULTDOMRSSHPORT = "3922";
 
     public static final String BASH_SCRIPT_PATH = "/bin/bash";
 
@@ -2236,7 +2237,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         vm.addComp(devices);
 
-        addExtraConfigComponent(extraConfig, vm);
+        // Add extra configuration to User VM Domain XML before starting
+        if (vmTO.getType().equals(VirtualMachine.Type.User) && MapUtils.isNotEmpty(extraConfig)) {
+            s_logger.info("Appending extra configuration data to guest VM domain XML");
+            addExtraConfigComponent(extraConfig, vm);
+        }
 
         return vm;
     }

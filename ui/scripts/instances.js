@@ -517,7 +517,7 @@
                         'Destroyed': 'off',
                         'Expunging': 'off',
                         'Stopping': 'warning',
-                        'Shutdowned': 'warning'
+                        'Shutdown': 'warning'
                     }
                 }
             },
@@ -3437,6 +3437,13 @@
 						custom: cloudStack.uiCustom.granularDetails({
                         resourceType: 'UserVm',
 							dataProvider: function(args) {
+							    // no paging for listVirtualMachines details
+							    if (args.page > 1) {
+							        args.response.success({
+							            data: []
+							        });
+							        return;
+							    }
 								$.ajax({
 									url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
 									success: function(json) {

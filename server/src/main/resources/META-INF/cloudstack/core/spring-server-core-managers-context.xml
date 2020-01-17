@@ -300,4 +300,12 @@
     <bean id="directDownloadManager" class="org.apache.cloudstack.direct.download.DirectDownloadManagerImpl" />
 
     <bean id="DiagnosticsService" class="org.apache.cloudstack.diagnostics.DiagnosticsServiceImpl" />
+
+    <bean id="storageLayer" class="com.cloud.storage.JavaStorageLayer" />
+
+    <bean id="nfsMountManager" class="org.apache.cloudstack.storage.NfsMountManagerImpl" >
+        <constructor-arg name="storage" ref="storageLayer" />
+        <constructor-arg name="timeout" value="10000" />
+    </bean>
+
 </beans>

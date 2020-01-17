@@ -70,4 +70,6 @@ public class VRScripts {
     public static final String VR_CFG = "vr_cfg.sh";
 
     public static final String DIAGNOSTICS = "diagnostics.py";
+    public static final String RETRIEVE_DIAGNOSTICS = "get_diagnostics_files.py";
+    public static final String VR_FILE_CLEANUP = "cleanup.sh";
 }
