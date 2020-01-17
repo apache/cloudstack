@@ -1175,9 +1175,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getVersion());
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
-        for (DomainRouterResponse res : routerResponses) {
-            DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
-            if (VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
+        if (VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
+            for (DomainRouterResponse res : routerResponses) {
+                DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
                 res.setHealthChecksFailed(routerHealthCheckResultDao.hasFailingChecks(resRouter.getId()));
                 if (cmd.shouldFetchHealthCheckResults()) {
                     res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter,
@@ -1195,9 +1195,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), null);
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
-        for (DomainRouterResponse res : routerResponses) {
-            DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
-            if (VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
+        if (VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
+            for (DomainRouterResponse res : routerResponses) {
+                DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
                 res.setHealthChecksFailed(routerHealthCheckResultDao.hasFailingChecks(resRouter.getId()));
                 if (cmd.shouldFetchHealthCheckResults()) {
                     res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter,
@@ -1205,6 +1205,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 }
             }
         }
+
         response.setResponses(routerResponses, result.second());
         return response;
     }
