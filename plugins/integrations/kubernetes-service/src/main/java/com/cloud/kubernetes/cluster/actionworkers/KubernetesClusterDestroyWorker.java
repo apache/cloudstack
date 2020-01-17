@@ -22,6 +22,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Level;
 
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.PermissionDeniedException;
@@ -106,7 +107,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
 
     private boolean updateKubernetesClusterEntryForGC() {
         KubernetesClusterVO kubernetesClusterVO = kubernetesClusterDao.findById(kubernetesCluster.getId());
-        kubernetesClusterVO.setCheckForGc(false);
+        kubernetesClusterVO.setCheckForGc(true);
         return kubernetesClusterDao.update(kubernetesCluster.getId(), kubernetesClusterVO);
     }
 
@@ -186,8 +187,12 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
             throw new CloudRuntimeException(msg);
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
-        updateKubernetesClusterEntryForGC();
-        kubernetesClusterDao.remove(kubernetesCluster.getId());
+        boolean deleted = kubernetesClusterDao.remove(kubernetesCluster.getId());
+        if (!deleted) {
+            logMessage(Level.WARN, String.format("Failed to delete Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), null);
+            updateKubernetesClusterEntryForGC();
+            return false;
+        }
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Kubernetes cluster ID: %s is successfully deleted", kubernetesCluster.getUuid()));
         }

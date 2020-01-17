@@ -43,7 +43,7 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
 
         GarbageCollectedSearch = createSearchBuilder();
         GarbageCollectedSearch.and("gc", GarbageCollectedSearch.entity().isCheckForGc(), SearchCriteria.Op.EQ);
-        GarbageCollectedSearch.and("state", GarbageCollectedSearch.entity().getState(), SearchCriteria.Op.NEQ);
+        GarbageCollectedSearch.and("state", GarbageCollectedSearch.entity().getState(), SearchCriteria.Op.EQ);
         GarbageCollectedSearch.done();
 
         StateSearch = createSearchBuilder();
