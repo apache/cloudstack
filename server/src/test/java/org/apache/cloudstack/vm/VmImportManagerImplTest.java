@@ -263,7 +263,7 @@ public class VmImportManagerImplTest {
         when(primaryDataStoreDao.listPoolByHostPath(Mockito.anyString(), Mockito.anyString())).thenReturn(pools);
         when(userVmManager.importVM(Mockito.any(DataCenter.class), Mockito.any(Host.class), Mockito.any(VirtualMachineTemplate.class), Mockito.anyString(), Mockito.anyString(),
                 Mockito.any(Account.class), Mockito.anyString(), Mockito.any(Account.class), Mockito.anyBoolean(), Mockito.anyString(),
-                Mockito.anyLong(), Mockito.anyLong(), Mockito.any(ServiceOffering.class), Mockito.any(DiskOffering.class), Mockito.anyString(),
+                Mockito.anyLong(), Mockito.anyLong(), Mockito.any(ServiceOffering.class), Mockito.anyString(),
                 Mockito.anyString(), Mockito.any(Hypervisor.HypervisorType.class), Mockito.anyMap(), Mockito.any(VirtualMachine.PowerState.class))).thenReturn(userVm);
         when(volumeApiService.doesTargetStorageSupportDiskOffering(Mockito.any(StoragePool.class), Mockito.anyString())).thenReturn(true);
         NetworkVO networkVO = Mockito.mock(NetworkVO.class);

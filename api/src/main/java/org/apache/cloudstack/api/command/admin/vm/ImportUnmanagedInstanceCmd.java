@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
@@ -128,13 +127,6 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             description = "the ID of the service offering for the virtual machine")
     private Long serviceOfferingId;
 
-    @Parameter(name = ApiConstants.DISK_OFFERING_ID,
-            type = CommandType.UUID,
-            entityType = DiskOfferingResponse.class,
-            required = true,
-            description = "the ID of the root disk offering for the virtual machine")
-    private Long diskOfferingId;
-
     @Parameter(name = ApiConstants.NIC_NETWORK_LIST,
             type = CommandType.MAP,
             description = "VM nic to network id mapping using keys nic and network")
@@ -198,10 +190,6 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     public Long getServiceOfferingId() {
         return serviceOfferingId;
-    }
-
-    public Long getDiskOfferingId() {
-        return diskOfferingId;
     }
 
     public Map<String, Long> getNicNetworkList() {
