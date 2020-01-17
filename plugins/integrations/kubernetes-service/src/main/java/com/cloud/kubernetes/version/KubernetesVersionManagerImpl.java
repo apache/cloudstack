@@ -92,9 +92,11 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             response.setSupportsHA(false);
         }
         TemplateJoinVO template = templateJoinDao.findById(kubernetesSupportedVersion.getIsoId());
-        response.setIsoId(template.getUuid());
-        response.setIsoName(template.getName());
-        response.setIsoState(template.getState().toString());
+        if (template != null) {
+            response.setIsoId(template.getUuid());
+            response.setIsoName(template.getName());
+            response.setIsoState(template.getState().toString());
+        }
         return response;
     }
 
@@ -359,11 +361,11 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             throw new CloudRuntimeException(String.format("Unable to delete Kubernetes version ID: %s. Existing clusters currently using the version.", version.getUuid()));
         }
 
-        VMTemplateVO template = templateDao.findById(version.getIsoId());
+        VMTemplateVO template = templateDao.findByIdIncludingRemoved(version.getIsoId());
         if (template == null) {
             LOGGER.warn(String.format("Unable to find ISO associated with supported Kubernetes version ID: %s", version.getUuid()));
         }
-        if (isDeleteIso && template != null) { // Delete ISO
+        if (isDeleteIso && template != null && template.getRemoved() == null) { // Delete ISO
             try {
                 deleteKubernetesVersionIso(template.getId());
             } catch (IllegalAccessException | NoSuchFieldException | IllegalArgumentException ex) {
