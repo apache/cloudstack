@@ -351,7 +351,7 @@ public class VmImportManagerImpl implements VmImportService {
         instances = vmDao.listByLastHostIdAndStates(host.getId(),
                 VirtualMachine.State.Stopped, VirtualMachine.State.Destroyed,
                 VirtualMachine.State.Expunging, VirtualMachine.State.Error,
-                VirtualMachine.State.Unknown, VirtualMachine.State.Shutdowned);
+                VirtualMachine.State.Unknown, VirtualMachine.State.Shutdown);
         for (VMInstanceVO instance : instances) {
             managedVms.add(instance.getInstanceName());
         }
