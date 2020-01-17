@@ -1052,6 +1052,9 @@ public class TemplateServiceImpl implements TemplateService {
         DataObject templateOnStore = destStore.create(tmplForCopy);
         templateOnStore.processEvent(Event.CreateOnlyRequested);
 
+        // I am the big assumer^Wpretender
+        ((TemplateObject)templateOnStore).getImage().setChecksum(null);
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Invoke datastore driver createAsync to create template on destination store");
         }
