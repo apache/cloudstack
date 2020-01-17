@@ -2303,13 +2303,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 cmd.setFeatures(_cpuFeatures);
             }
             // multi cores per socket, for larger core configs
-            if (vcpus % 6 == 0) {
-                final int sockets = vcpus / 6;
-                cmd.setTopology(6, sockets);
-            } else if (vcpus % 4 == 0) {
-                final int sockets = vcpus / 4;
-                cmd.setTopology(4, sockets);
+            int numCoresPerSocket = -1;
+            final Map<String, String> details = vmTO.getDetails();
+            if (details != null) {
+                final String coresPerSocket = details.get(VmDetailConstants.CPU_CORE_PER_SOCKET);
+                final int intCoresPerSocket = NumbersUtil.parseInt(coresPerSocket, numCoresPerSocket);
+                if (intCoresPerSocket > 0 && vcpus % intCoresPerSocket == 0) {
+                    numCoresPerSocket = intCoresPerSocket;
+                }
             }
+            if (numCoresPerSocket <= 0) {
+                if (vcpus % 6 == 0) {
+                    numCoresPerSocket = 6;
+                } else if (vcpus % 4 == 0) {
+                    numCoresPerSocket = 4;
+                } else {
+                    numCoresPerSocket = 1;
+                }
+            }
+            cmd.setTopology(numCoresPerSocket, vcpus / numCoresPerSocket);
             vm.addComp(cmd);
         }
 
