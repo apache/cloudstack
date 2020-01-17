@@ -19,6 +19,7 @@
 from os import sys, path
 from utility import getHealthChecksData, formatPort
 
+
 def checkMaxconn(haproxyData, haCfgSections):
     if "maxconn" in haproxyData and "maxconn" in haCfgSections["global"]:
         if haproxyData["maxconn"] != haCfgSections["global"]["maxconn"][0].strip():
@@ -67,7 +68,7 @@ def checkLoadBalance(haproxyData, haCfgSections):
                     foundPattern = False
                     for server in cfgSection["server"]:
                         s = server.split()
-                        if s[0].strip().find( srcServer + "_" ) == 0 and  s[1].strip() ==  pattern:
+                        if s[0].strip().find(srcServer + "_") == 0 and s[1].strip() == pattern:
                             foundPattern = True
                             break
 
