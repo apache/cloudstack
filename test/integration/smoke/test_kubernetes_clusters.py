@@ -53,6 +53,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
 
+        cls.setup_failed = False
+
         cls.initial_configuration_cks_enabled = Configurations.list(cls.apiclient,
                                                                     name="cloud.kubernetes.service.enabled")[0].value
         if cls.initial_configuration_cks_enabled not in ["true", True]:
@@ -62,22 +64,75 @@ class TestKubernetesCluster(cloudstackTestCase):
                                   "true")
             cls.restartServer()
 
+        cls.cks_template = None
+        cls.initial_configuration_cks_template_name = None
+        cls.cks_service_offering = None
+
         cls.kubernetes_version_ids = []
-        try:
-            cls.kuberetes_version_1 = cls.addKubernetesSupportedVersion('1.14.9', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.14.9.iso')
-            cls.kubernetes_version_ids.append(cls.kuberetes_version_1.id)
-        except Exception as e:
-            cls.fail("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.14.9.iso, %s" % e)
-        try:
-            cls.kuberetes_version_2 = cls.addKubernetesSupportedVersion('1.15.0', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.15.0.iso')
-            cls.kubernetes_version_ids.append(cls.kuberetes_version_2.id)
-        except Exception as e:
-            cls.fail("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.15.0.iso, %s" % e)
-        try:
-            cls.kuberetes_version_3 = cls.addKubernetesSupportedVersion('1.16.3', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.3.iso')
-            cls.kubernetes_version_ids.append(cls.kuberetes_version_3.id)
-        except Exception as e:
-            cls.fail("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.3.is, %s" % e)
+        if cls.setup_failed == False:
+            try:
+                cls.kuberetes_version_1 = cls.addKubernetesSupportedVersion('1.14.9', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.14.9.iso')
+                cls.kubernetes_version_ids.append(cls.kuberetes_version_1.id)
+            except Exception as e:
+                cls.setup_failed = True
+                cls.debug("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.14.9.iso, %s" % e)
+        if cls.setup_failed == False:
+            try:
+                cls.kuberetes_version_2 = cls.addKubernetesSupportedVersion('1.15.0', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.15.0.iso')
+                cls.kubernetes_version_ids.append(cls.kuberetes_version_2.id)
+            except Exception as e:
+                cls.setup_failed = True
+                cls.debug("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.15.0.iso, %s" % e)
+        if cls.setup_failed == False:
+            try:
+                cls.kuberetes_version_3 = cls.addKubernetesSupportedVersion('1.16.0', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.0.iso')
+                cls.kubernetes_version_ids.append(cls.kuberetes_version_3.id)
+            except Exception as e:
+                cls.setup_failed = True
+                cls.debug("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.0.is, %s" % e)
+        if cls.setup_failed == False:
+            try:
+                cls.kuberetes_version_4 = cls.addKubernetesSupportedVersion('1.16.3', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.3.iso')
+                cls.kubernetes_version_ids.append(cls.kuberetes_version_4.id)
+            except Exception as e:
+                cls.setup_failed = True
+                cls.debug("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.3.is, %s" % e)
+
+        cks_template_data = {
+            "name": "Kubernetes-Service-Template",
+            "displaytext": "Kubernetes-Service-Template",
+            "format": "qcow2",
+            "hypervisor": "kvm",
+            "ostype": "CoreOS",
+            "url": "http://staging.yadav.xyz/cks/templates/coreos_production_cloudstack_image-kvm.qcow2.bz2",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "isextractable": "True"
+        }
+        # "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2"
+        if cls.hypervisor.lower() == "vmware":
+            cks_template_data["url"] = "http://staging.yadav.xyz/cks/templates/coreos_production_cloudstack_image-vmware.ova" # "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova"
+        elif cls.hypervisor.lower() == "xenserver":
+            cks_template_data["url"] = "http://staging.yadav.xyz/cks/templates/coreos_production_cloudstack_image-xen.vhd.bz2" # "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2"
+        if cls.setup_failed == False:
+            cls.cks_template = Template.register(
+                                             cls.apiclient,
+                                             cks_template_data,
+                                             zoneid=cls.zone.id,
+                                             hypervisor=cls.hypervisor
+                                            )
+            cls.debug("Waiting for CKS template with ID %s to be ready" % cls.cks_template.id)
+            try:
+                cls.waitForTemplateReadyState(cls.cks_template.id)
+            except Exception as e:
+                cls.setup_failed = True
+                cls.debug("Failed to get CKS template in ready state, {}, {}".format(cks_template_data["url"], e))
+
+            cls.initial_configuration_cks_template_name = Configurations.list(cls.apiclient,
+                                                                              name="cloud.kubernetes.cluster.template.name")[0].value
+            Configurations.update(cls.apiclient,
+                                  "cloud.kubernetes.cluster.template.name",
+                                  cls.cks_template.name)
 
         cks_offering_data = {
             "name": "CKS-Instance",
@@ -87,48 +142,17 @@ class TestKubernetesCluster(cloudstackTestCase):
             "memory": 2048,
         }
         cks_offering_data["name"] = cks_offering_data["name"] + '-' + random_gen()
-        cls.cks_service_offering = ServiceOffering.create(
-                                                          cls.apiclient,
-                                                          cks_offering_data
-                                                         )
+        if cls.setup_failed == False:
+            cls.cks_service_offering = ServiceOffering.create(
+                                                              cls.apiclient,
+                                                              cks_offering_data
+                                                             )
 
-        cks_template_data = {
-            "name": "Kubernetes-Service-Template",
-            "displaytext": "Kubernetes-Service-Template",
-            "format": "qcow2",
-            "hypervisor": "kvm",
-            "ostype": "CoreOS",
-            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2",
-            "requireshvm": "True",
-            "ispublic": "True",
-            "isextractable": "True"
-        }
-        if cls.hypervisor.lower() == "vmware":
-            cks_template_data["url"] = "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova"
-        elif cls.hypervisor.lower() == "xenserver":
-            cks_template_data["url"] = "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2"
-        cls.cks_template = Template.register(
-                                         cls.apiclient,
-                                         cks_template_data,
-                                         zoneid=cls.zone.id,
-                                         hypervisor=cls.hypervisor
-                                        )
-        cls.debug("Waiting for CKS template with ID %s to be ready" % cls.cks_template.id)
-        try:
-            cls.waitForTemplateReadyState(cls.cks_template.id)
-        except Exception as e:
-            cls.fail("Failed to get CKS template in ready state, {}, {}".format(cks_template_data.url, e))
-
-        cls.initial_configuration_cks_template_name = Configurations.list(cls.apiclient,
-                                                                          name="cloud.kubernetes.cluster.template.name")[0].value
-        Configurations.update(cls.apiclient,
-                              "cloud.kubernetes.cluster.template.name",
-                              cls.cks_template.name)
-
-        cls._cleanup = [
-            cls.cks_service_offering,
-            cls.cks_template
-        ]
+        cls._cleanup = []
+        if cls.cks_template != None:
+            cls._cleanup.append(cls.cks_template)
+        if cls.cks_service_offering != None:
+            cls._cleanup.append(cls.cks_service_offering)
         return
 
     @classmethod
@@ -143,9 +167,14 @@ class TestKubernetesCluster(cloudstackTestCase):
                 cls.debug("Error: Exception during cleanup for added Kubernetes supported versions: %s" % e)
         try:
             # Restore original CKS template
-            Configurations.update(cls.apiclient,
-                                  "cloud.kubernetes.cluster.template.name",
-                                  cls.initial_configuration_cks_template_name)
+            if cls.initial_configuration_cks_template_name != None:
+                Configurations.update(cls.apiclient,
+                                      "cloud.kubernetes.cluster.template.name",
+                                      cls.initial_configuration_cks_template_name)
+            # Delete created CKS template
+            if cls.setup_failed == False and cls.cks_template != None:
+                cls.cks_template.delete(cls.apiclient,
+                                        cls.zone.id)
             # Restore CKS enabled
             if cls.initial_configuration_cks_enabled not in ["true", True]:
                 cls.debug("Restoring Kubernetes Service enabled value")
@@ -183,7 +212,9 @@ class TestKubernetesCluster(cloudstackTestCase):
         while time.time() < timeout:
             if cls.isManagementUp() is True: return
             time.sleep(5)
-        return cls.fail("Management server did not come up, failing")
+        cls.setup_failed = True
+        cls.debug("Management server did not come up, failing")
+        return
 
     @classmethod
     def isManagementUp(cls):
@@ -292,6 +323,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
             self.skipTest("CKS not supported for hypervisor: %s" % self.hypervisor.lower())
+        if self.setup_failed == True:
+            self.skipTest("Setup incomplete")
         name = 'testcluster-' + random_gen()
         self.debug("Creating for Kubernetes cluster with name %s" % name)
 
@@ -321,6 +354,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
             self.skipTest("CKS not supported for hypervisor: %s" % self.hypervisor.lower())
+        if self.setup_failed == True:
+            self.skipTest("Setup incomplete")
         name = 'testcluster-' + random_gen()
         self.debug("Creating for Kubernetes cluster with name %s" % name)
 
@@ -346,6 +381,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
             self.skipTest("CKS not supported for hypervisor: %s" % self.hypervisor.lower())
+        if self.setup_failed == True:
+            self.skipTest("Setup incomplete")
         name = 'testcluster-' + random_gen()
         self.debug("Creating for Kubernetes cluster with name %s" % name)
 
@@ -370,6 +407,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
             self.skipTest("CKS not supported for hypervisor: %s" % self.hypervisor.lower())
+        if self.setup_failed == True:
+            self.skipTest("Setup incomplete")
         name = 'testcluster-' + random_gen()
         self.debug("Creating for Kubernetes cluster with name %s" % name)
 
@@ -395,6 +434,8 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         return
 
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
     def test_05_deploy_and_upgrade_kubernetes_ha_cluster(self):
         """Test to deploy a new HA Kubernetes cluster and upgrade it to newer version
 
@@ -405,22 +446,24 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
             self.skipTest("CKS not supported for hypervisor: %s" % self.hypervisor.lower())
+        if self.setup_failed == True:
+            self.skipTest("Setup incomplete")
         name = 'testcluster-' + random_gen()
         self.debug("Creating for Kubernetes cluster with name %s" % name)
 
-        cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_2.id, 1, 2)
+        cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_3.id, 1, 2)
 
-        self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_2.id, 1, 2)
+        self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_3.id, 1, 2)
 
         self.debug("Kubernetes cluster with ID: %s successfully deployed, now upgrading it" % cluster_response.id)
 
         try:
-            cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_3.id)
+            cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_4.id)
         except Exception as e:
             self.deleteKubernetesCluster(cluster_response.id)
             self.fail("Failed to upgrade Kubernetes HA cluster due to: %s" % e)
 
-        self.verifyKubernetesClusterUpgrade(cluster_response, self.kuberetes_version_3.id)
+        self.verifyKubernetesClusterUpgrade(cluster_response, self.kuberetes_version_4.id)
 
         self.debug("Kubernetes cluster with ID: %s successfully upgraded, now deleting it" % cluster_response.id)
 
@@ -441,6 +484,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
             self.skipTest("CKS not supported for hypervisor: %s" % self.hypervisor.lower())
+        if self.setup_failed == True:
+            self.skipTest("Setup incomplete")
         name = 'testcluster-' + random_gen()
         self.debug("Creating for Kubernetes cluster with name %s" % name)
 
@@ -478,6 +523,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
             self.skipTest("CKS not supported for hypervisor: %s" % self.hypervisor.lower())
+        if self.setup_failed == True:
+            self.skipTest("Setup incomplete")
         name = 'testcluster-' + random_gen()
         self.debug("Creating for Kubernetes cluster with name %s" % name)
 
