@@ -25,6 +25,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -277,6 +278,7 @@ import com.google.gson.reflect.TypeToken;
 public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService, VirtualMachineGuru, Listener,
 Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine> {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
+    private static final String CONNECTIVITY_TEST = "connectivity.test";
 
     @Inject private EntityManager _entityMgr;
     @Inject private DataCenterDao _dcDao;
@@ -1252,37 +1254,58 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                 for (final DomainRouterVO router : routers) {
                     GetRouterMonitorResultsAnswer answer = fetchAndUpdateRouterHealthChecks(router, false);
-                    String checkFailsToRestartVr = RouterHealthChecksFailuresToRestartVr.valueIn(router.getDataCenterId());
-                    if (answer == null) {
-                        s_logger.warn("Unable to fetch monitor results for router " + router);
-                        updateRouterConnectivityHealthCheck(router.getId(), false, "Communication failed");
-                    } else if (!answer.getResult()) {
-                        s_logger.warn("Failed to fetch monitor results from router " + router + " with details: " + answer.getDetails());
-                        updateRouterConnectivityHealthCheck(router.getId(), false, "Failed to fetch results with details: " + answer.getDetails());
-                    } else {
-                        updateRouterConnectivityHealthCheck(router.getId(), true, "Successfully fetched data");
-                        updateDbHealthChecksFromRouterResponse(router.getId(), answer.getMonitoringResults());
-
-                        // Check failing tests and restart if needed
-                        if (answer.getFailingChecks().size() > 0 && StringUtils.isNotBlank(checkFailsToRestartVr)) {
-                            s_logger.warn("Found failing checks on router " + router + ". " +
-                                    "Checking failed health checks to see if router needs reboot");
-                            for (String failedCheck : answer.getFailingChecks()) {
-                                ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
-                                        Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS,
-                                        "Router " + router.getUuid() + " has failing check " + failedCheck);
-                                if (checkFailsToRestartVr.contains(failedCheck)) {
-                                    s_logger.warn("Health Check Alert: Found failing check " + failedCheck + " in " +
-                                            RouterHealthChecksFailuresToRestartVrCK + ", attempting restart of router.");
-                                    recreateRouter(router.getId());
-                                }
-                            }
-                        }
-                    }
+                    List<String> failingChecks = getFailingChecks(router, answer);
+                    handleFailingChecks(router, failingChecks);
                 }
             } catch (final Exception ex) {
                 s_logger.error("Fail to complete the FetchRouterHealthChecksResultTask! ", ex);
                 ex.printStackTrace();
+            }
+        }
+
+        private List<String> getFailingChecks(DomainRouterVO router, GetRouterMonitorResultsAnswer answer) {
+            if (answer == null) {
+                s_logger.warn("Unable to fetch monitor results for router " + router);
+                updateRouterConnectivityHealthCheck(router.getId(), false, "Communication failed");
+                return Arrays.asList(CONNECTIVITY_TEST);
+            } else if (!answer.getResult()) {
+                s_logger.warn("Failed to fetch monitor results from router " + router + " with details: " + answer.getDetails());
+                updateRouterConnectivityHealthCheck(router.getId(), false, "Failed to fetch results with details: " + answer.getDetails());
+                return Arrays.asList(CONNECTIVITY_TEST);
+            } else {
+                updateRouterConnectivityHealthCheck(router.getId(), true, "Successfully fetched data");
+                updateDbHealthChecksFromRouterResponse(router.getId(), answer.getMonitoringResults());
+                return answer.getFailingChecks();
+            }
+        }
+
+        private void handleFailingChecks(DomainRouterVO router, List<String> failingChecks) {
+            if (failingChecks == null || failingChecks.size() == 0) {
+                return;
+            }
+
+            String alertMessage = "Health checks failed: " + failingChecks.size() + " failing checks on router " + router.getUuid();
+            _alertMgr.sendAlert(AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(),
+                    alertMessage, alertMessage);
+            s_logger.warn(alertMessage + ". Checking failed health checks to see if router needs reboot");
+
+            String checkFailsToRecreateVr = RouterHealthChecksFailuresToRecreateVr.valueIn(router.getDataCenterId());
+            StringBuilder failingChecksEvent = new StringBuilder("Router " + router.getUuid() + " has failing checks:");
+            boolean recreateRouter = false;
+            for (String failedCheck : failingChecks) {
+                failingChecksEvent.append(" ").append(failedCheck);
+                if (StringUtils.isNotBlank(checkFailsToRecreateVr) && checkFailsToRecreateVr.contains(failedCheck)) {
+                    recreateRouter = true;
+                }
+            }
+
+            ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                    Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS, failingChecksEvent.toString());
+
+            if (recreateRouter) {
+                s_logger.warn("Health Check Alert: Found failing checks in " +
+                        RouterHealthChecksFailuresToRecreateVrCK + ", attempting recreating router.");
+                recreateRouter(router.getId());
             }
         }
     }
@@ -1378,9 +1401,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     private RouterHealthCheckResultVO updateRouterConnectivityHealthCheck(final long routerId, boolean connected, String message) {
         boolean newEntry = false;
-        RouterHealthCheckResultVO connectivityVO = routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, "connectivity.test", "basic");
+        RouterHealthCheckResultVO connectivityVO = routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, CONNECTIVITY_TEST, "basic");
         if (connectivityVO == null) {
-            connectivityVO = new RouterHealthCheckResultVO(routerId, "connectivity.test", "basic");
+            connectivityVO = new RouterHealthCheckResultVO(routerId, CONNECTIVITY_TEST, "basic");
             newEntry = true;
         }
 
@@ -1396,7 +1419,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             routerHealthCheckResultDao.update(connectivityVO.getId(), connectivityVO);
         }
 
-        return routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, "connectivity.test", "basic");
+        return routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, CONNECTIVITY_TEST, "basic");
     }
 
     private RouterHealthCheckResultVO parseHealthCheckVOFromJson(final long routerId,
@@ -1426,7 +1449,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         } else {
             routerHealthCheckResultDao.update(hcVo.getId(), hcVo);
         }
-        s_logger.info("Found health check " + hcVo + " which took running duration (secs) " + lastRunDuration);
+        s_logger.info("Found health check " + hcVo + " which took running duration (ms) " + lastRunDuration);
         return hcVo;
     }
 
@@ -1541,17 +1564,21 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         s_logger.info("Running health check results for router " + router.getUuid());
 
-        // Step 1: Update health check data on router.
+        final GetRouterMonitorResultsAnswer answer;
+        boolean success = true;
+        // Step 1: Update health check data on router and perform and retrieve health checks on router
         if (!updateRouterHealthChecksConfig(router)) {
-            s_logger.warn("Unable to update health check data for fresh run successfully for router: " + router);
-            return false;
+            s_logger.warn("Unable to update health check config for fresh run successfully for router: " + router + ", so trying to fetch last result.");
+            success = false;
+            answer = fetchAndUpdateRouterHealthChecks(router, false);
+        } else {
+            s_logger.info("Successfully updated health check config for fresh run successfully for router: " + router);
+            answer = fetchAndUpdateRouterHealthChecks(router, true);
         }
 
-        // Step 2: Perform and retrieve health checks on router
-        GetRouterMonitorResultsAnswer answer = fetchAndUpdateRouterHealthChecks(router, true);
-
-        // Step 3: Update health checks values in database
+        // Step 2: Update health checks values in database. We do this irrespective of new health check config.
         if (answer == null || !answer.getResult()) {
+            success = false;
             updateRouterConnectivityHealthCheck(routerId, false,
                     answer == null ? "Communication failed " : "Failed to fetch results with details: " + answer.getDetails());
         } else {
@@ -1559,7 +1586,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             updateDbHealthChecksFromRouterResponse(routerId, answer.getMonitoringResults());
         }
 
-        return true;
+        return success;
     }
 
     protected class UpdateRouterHealthChecksConfigTask extends ManagedContextRunnable {
@@ -1814,7 +1841,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 final String serviceMonitoringFlag = SetServiceMonitor.valueIn(router.getDataCenterId());
                 // Skip the routers in VPC network or skip the routers where
                 // Monitor service is not enabled in the corresponding Zone
-                if (!Boolean.parseBoolean(serviceMonitoringFlag) || router.getVpcId() != null) {
+                if (!Boolean.parseBoolean(serviceMonitoringFlag)) {
                     continue;
                 }
                 String controlIP = getRouterControlIP(router);
@@ -2271,19 +2298,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             if (reprogramGuestNtwks) {
                 finalizeIpAssocForNetwork(cmds, router, provider, guestNetworkId, null);
                 finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
-
-                final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(guestNetworkId).getNetworkOfferingId());
-                // service monitoring is currently not added in RVR
-                if (!offering.isRedundantRouter()) {
-                    final String serviceMonitringSet = _configDao.getValue(Config.EnableServiceMonitoring.key());
-
-                    if (serviceMonitringSet != null && serviceMonitringSet.equalsIgnoreCase("true")) {
-                        finalizeMonitorServiceOnStart(cmds, profile, router, provider, guestNetworkId, true);
-                    } else {
-                        finalizeMonitorServiceOnStart(cmds, profile, router, provider, guestNetworkId, false);
-                    }
-                }
-
+                finalizeMonitorServiceOnStart(cmds, profile, router, provider, guestNetworkId);
             }
 
             finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNetworkId);
@@ -2296,24 +2311,31 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return true;
     }
 
-    private void finalizeMonitorServiceOnStart(final Commands cmds, final VirtualMachineProfile profile, final DomainRouterVO router, final Provider provider,
-                                               final long networkId, final Boolean isMonitoringServicesEnabled) {
+    protected void finalizeMonitorServiceOnStart(final Commands cmds, final VirtualMachineProfile profile, final DomainRouterVO router, final Provider provider,
+                                               final long networkId) {
+        final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(networkId).getNetworkOfferingId());
+        if (offering.isRedundantRouter()) {
+            // service monitoring is currently not added in RVR
+            return;
+        }
 
+        final String serviceMonitoringSet = _configDao.getValue(Config.EnableServiceMonitoring.key());
+        final Boolean isMonitoringServicesEnabled = serviceMonitoringSet != null && serviceMonitoringSet.equalsIgnoreCase("true");
         final NetworkVO network = _networkDao.findById(networkId);
 
         s_logger.debug("Creating  monitoring services on " + router + " start...");
 
         // get the list of sevices for this network to monitor
         final List<MonitoringServiceVO> services = new ArrayList<MonitoringServiceVO>();
-        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, Provider.VirtualRouter)
-                || _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, Provider.VirtualRouter)) {
+        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, provider)
+                || _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, provider)) {
             final MonitoringServiceVO dhcpService = _monitorServiceDao.getServiceByName(MonitoringService.Service.Dhcp.toString());
             if (dhcpService != null) {
                 services.add(dhcpService);
             }
         }
 
-        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Lb, Provider.VirtualRouter)) {
+        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Lb, provider)) {
             final MonitoringServiceVO lbService = _monitorServiceDao.getServiceByName(MonitoringService.Service.LoadBalancing.toString());
             if (lbService != null) {
                 services.add(lbService);
@@ -3213,7 +3235,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksAdvancedInterval,
                 RouterHealthChecksConfigRefreshInterval,
                 RouterHealthChecksResultFetchInterval,
-                RouterHealthChecksFailuresToRestartVr,
+                RouterHealthChecksFailuresToRecreateVr,
                 RouterHealthChecksToExclude,
                 RouterHealthChecksFreeDiskSpaceThreshold,
                 RouterHealthChecksMaxCpuUsageThreshold,

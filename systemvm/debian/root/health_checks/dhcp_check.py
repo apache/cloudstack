@@ -37,8 +37,18 @@ def main():
         entry = vM["macAddress"] + "," + vM["ip"] + "," + vM["vmName"]
         foundEntry = False
         for host in allHosts:
-            host = host.strip()
-            if host.find(vM["macAddress"]) != -1 and host.find(vM["ip"]) != -1 and host.find(vM["vmName"]) != -1:
+            host = host.strip().split(',')
+            if len(host) < 4:
+                continue
+
+            if host[0].strip() == vM["macAddress"] and host[1].strip() == vM["ip"]\
+                    and host[2].strip() == vM["vmName"]:
+                foundEntry = True
+                break
+
+            nonDefaultSet = "set:" + vM["ip"].replace(".", "_")
+            if host[0].strip() == vM["macAddress"] and host[1].strip() == nonDefaultSet \
+                    and host[2].strip() == vM["ip"] and host[3].strip() == vM["vmName"]:
                 foundEntry = True
                 break
 

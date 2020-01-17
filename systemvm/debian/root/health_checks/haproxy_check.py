@@ -19,7 +19,6 @@
 from os import sys, path
 from utility import getHealthChecksData, formatPort
 
-
 def checkMaxconn(haproxyData, haCfgSections):
     if "maxconn" in haproxyData and "maxconn" in haCfgSections["global"]:
         if haproxyData["maxconn"] != haCfgSections["global"]["maxconn"][0].strip():
@@ -51,7 +50,7 @@ def checkLoadBalance(haproxyData, haCfgSections):
 
                 bindStr = lbSec["sourceIp"] + ":" + formatPort(lbSec["sourcePortStart"], lbSec["sourcePortEnd"])
                 if cfgSection["bind"][0] != bindStr:
-                    print "Incorrect bind string found. Expected " + bindStr + " but found " + cfgSection["bind"][0] + ".\n"
+                    print "Incorrect bind string found. Expected " + bindStr + " but found " + cfgSection["bind"][0] + "."
                     correct = False
 
                 if (lbSec["sourcePortStart"] == "80" and lbSec["sourcePortEnd"] == "80" and lbSec["keepAliveEnabled"] == "false") \
@@ -67,8 +66,8 @@ def checkLoadBalance(haproxyData, haCfgSections):
                                          lbSec["destPortEnd"])
                     foundPattern = False
                     for server in cfgSection["server"]:
-                        if server.find(srcServer) != -1 and \
-                                server.find(pattern) != -1:
+                        s = server.split()
+                        if s[0].strip().find( srcServer + "_" ) == 0 and  s[1].strip() ==  pattern:
                             foundPattern = True
                             break
 
@@ -80,6 +79,10 @@ def checkLoadBalance(haproxyData, haCfgSections):
 
 
 def main():
+    '''
+    Checks for max con and each load balancing rule - source ip, ports and destination
+    ips and ports. Also checks for http mode. Does not check for stickiness policies.
+    '''
     haproxyData = getHealthChecksData("haproxyData")
     if haproxyData is None or len(haproxyData) == 0:
         print "No data provided to check, skipping"
@@ -113,11 +116,12 @@ def main():
             if lineSec[0] not in currSectionDict:
                 currSectionDict[lineSec[0]] = []
 
-            currSectionDict[lineSec[0]]\
-                .append(lineSec[1] if len(lineSec) > 1 else '')
+            currSectionDict[lineSec[0]].append(lineSec[1] if len(lineSec) > 1 else '')
 
-    if checkMaxconn(haproxyData[0], haCfgSections) and \
-            checkLoadBalance(haproxyData, haCfgSections):
+    checkMaxConn = checkMaxconn(haproxyData[0], haCfgSections)
+    checkLbRules = checkLoadBalance(haproxyData, haCfgSections)
+
+    if checkMaxConn or checkLbRules:
         print "All checks pass"
         exit(0)
     else:

@@ -47,7 +47,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 
     static final String RouterHealthChecksConfigRefreshIntervalCK = "router.health.checks.config.refresh.interval";
     static final String RouterHealthChecksResultFetchIntervalCK = "router.health.checks.results.fetch.interval";
-    static final String RouterHealthChecksFailuresToRestartVrCK = "router.health.checks.failures.to.restart.vr";
+    static final String RouterHealthChecksFailuresToRecreateVrCK = "router.health.checks.failures.to.recreate.vr";
 
     static final ConfigKey<String> RouterTemplateXen = new ConfigKey<String>(String.class, RouterTemplateXenCK, "Advanced", "SystemVM Template (XenServer)",
             "Name of the default router template on Xenserver.", true, ConfigKey.Scope.Zone, null);
@@ -77,21 +77,23 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
             "If true, router health checks are allowed to be executed and read. If false, all scheduled checks and API calls for on demand checks are disabled.",
             true, ConfigKey.Scope.Global, null);
     static final ConfigKey<Integer> RouterHealthChecksBasicInterval = new ConfigKey<Integer>(Integer.class, "router.health.checks.basic.interval", "Advanced", "3",
-            "Interval at which basic router health checks are performed. If set to 0, no tests are scheduled.",
+            "Interval in minutes at which basic router health checks are performed. If set to 0, no tests are scheduled.",
             true, ConfigKey.Scope.Global, null);
     static final ConfigKey<Integer> RouterHealthChecksAdvancedInterval = new ConfigKey<Integer>(Integer.class, "router.health.checks.advanced.interval", "Advanced", "10",
-            "Interval at which advanced router health checks are performed. If set to 0, no tests are scheduled.",
+            "Interval in minutes at which advanced router health checks are performed. If set to 0, no tests are scheduled.",
             true, ConfigKey.Scope.Global, null);
     static final ConfigKey<Integer> RouterHealthChecksConfigRefreshInterval = new ConfigKey<Integer>(Integer.class, RouterHealthChecksConfigRefreshIntervalCK, "Advanced", "10",
-            "Interval at which router health checks config - such as scheduling intervals, excluded checks, etc is updated on virtual routers by the management server.",
+            "Interval in minutes at which router health checks config - such as scheduling intervals, excluded checks, etc is updated on virtual routers by the management server. This value should" +
+                    " be sufficiently high (like 2x) from the router.health.checks.basic.interval and router.health.checks.advanced.interval so that there is time between new results generation and results generation for passed data.",
             false, ConfigKey.Scope.Global, null);
     static final ConfigKey<Integer> RouterHealthChecksResultFetchInterval = new ConfigKey<Integer>(Integer.class, RouterHealthChecksResultFetchIntervalCK, "Advanced", "10",
-            " Interval at which router health checks results are fetched by management server. On each result fetch, management server evaluates need to restart as per configuration of " + RouterHealthChecksFailuresToRestartVrCK,
+            "Interval in minutes at which router health checks results are fetched by management server. On each result fetch, management server evaluates need to recreate VR as per configuration of " + RouterHealthChecksFailuresToRecreateVrCK +
+                    "This value should be sufficiently high (like 2x) from the router.health.checks.basic.interval and router.health.checks.advanced.interval so that there is time between new results generation and fetch.",
             false, ConfigKey.Scope.Global, null);
-    static final ConfigKey<String> RouterHealthChecksFailuresToRestartVr = new ConfigKey<String>(String.class, RouterHealthChecksFailuresToRestartVrCK, "Advanced", "",
-            "Health checks failures defined by this config are the checks that should cause router to restart. If empty the restart never happens because of check failure. Possible values are comma separated script names " +
-                    "from systemvm’s /root/health_scripts/ (namely - cpu_usage_check.py, dhcp_check.py, disk_space_check.py, dns_check.py, gateways_check.py, haproxy_check.py, iptables_check.py, memory_usage_check.py, router_version_check.py)," +
-                    " or services (namely - loadbalancing.service, ssh.service, webserver.service, dhcp.service) ",
+    static final ConfigKey<String> RouterHealthChecksFailuresToRecreateVr = new ConfigKey<String>(String.class, RouterHealthChecksFailuresToRecreateVrCK, "Advanced", "",
+            "Health checks failures defined by this config are the checks that should cause router recreation. If empty the recreate is not attempted for any health check failure. Possible values are comma separated script names " +
+                    "from systemvm’s /root/health_scripts/ (namely - cpu_usage_check.py, dhcp_check.py, disk_space_check.py, dns_check.py, gateways_check.py, haproxy_check.py, iptables_check.py, memory_usage_check.py, router_version_check.py), connectivity.test " +
+                    " or services (namely - loadbalancing.service, webserver.service, dhcp.service) ",
             true, ConfigKey.Scope.Zone, null);
     static final ConfigKey<String> RouterHealthChecksToExclude = new ConfigKey<String>(String.class, "router.health.checks.to.exclude", "Advanced", "",
             "Health checks that should be excluded when executing scheduled checks on the router. This can be a comma separated list of script names placed in the '/root/health_checks/' folder. Currently the following scripts are " +
@@ -101,10 +103,10 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
             "Advanced", "100", "Free disk space threshold (in MB) on VR below which the check is considered a failure.",
             true, ConfigKey.Scope.Zone, null);
     static final ConfigKey<Double> RouterHealthChecksMaxCpuUsageThreshold = new ConfigKey<Double>(Double.class, "router.health.checks.max.cpu.usage.threshold",
-            "Advanced", "100", " Max CPU Usage threshold as % above which check is considered a failure. 100% means all CPU is allowed.",
+            "Advanced", "100", " Max CPU Usage threshold as % above which check is considered a failure.",
             true, ConfigKey.Scope.Zone, null);
     static final ConfigKey<Double> RouterHealthChecksMaxMemoryUsageThreshold = new ConfigKey<Double>(Double.class, "router.health.checks.max.memory.usage.threshold",
-            "Advanced", "100", "Max Memory Usage threshold as % above which check is considered a failure. 100% means all Memory is allowed.",
+            "Advanced", "100", "Max Memory Usage threshold as % above which check is considered a failure.",
             true, ConfigKey.Scope.Zone, null);
 
     public static final int DEFAULT_ROUTER_VM_RAMSIZE = 256;            // 256M

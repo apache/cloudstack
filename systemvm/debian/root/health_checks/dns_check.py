@@ -36,7 +36,9 @@ def main():
     for vM in vMs:
         foundEntry = False
         for host in allHosts:
-            if host.find(vM["ip"]) != -1 and host.find(vM["vmName"]) != -1:
+            components = host.split('\t')
+            if len(components) == 2 and components[0].strip() == vM["ip"] \
+                    and components[1].strip() == vM["vmName"]:
                 foundEntry = True
                 break
 
