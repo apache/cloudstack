@@ -58,19 +58,12 @@ public class DeleteKubernetesSupportedVersionCmd extends BaseAsyncCmd implements
             description = "the ID of the Kubernetes supported version",
             required = true)
     private Long id;
-    @Parameter(name = ApiConstants.DELETE_ISO, type = CommandType.BOOLEAN,
-            description = "true if ISO associated with the Kubernetes version to be deleted else false. Default is false")
-    private Boolean deleteIso;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
     public Long getId() {
         return id;
-    }
-
-    public Boolean isDeleteIso() {
-        return deleteIso == null ? false : deleteIso;
     }
 
     @Override

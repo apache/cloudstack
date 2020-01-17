@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
@@ -70,11 +69,6 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
             description = "the ID of the zone in which Kubernetes supported version will be available")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.ISO_ID, type = CommandType.UUID,
-            entityType = TemplateResponse.class,
-            description = "the ID of the binaries ISO for Kubernetes supported version")
-    private Long isoId;
-
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING,
             description = "the URL of the binaries ISO for Kubernetes supported version")
     private String url;
@@ -104,10 +98,6 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
 
     public Long getZoneId() {
         return zoneId;
-    }
-
-    public Long getIsoId() {
-        return isoId;
     }
 
     public String getUrl() {

@@ -44,13 +44,12 @@ import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
-import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -63,6 +62,8 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     private KubernetesSupportedVersionDao kubernetesSupportedVersionDao;
     @Inject
     private KubernetesClusterDao kubernetesClusterDao;
+    @Inject
+    private AccountManager accountManager;
     @Inject
     private VMTemplateDao templateDao;
     @Inject
@@ -138,7 +139,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         return versions;
     }
 
-    private VirtualMachineTemplate registerKubernetesVersionIso(final String versionName, final String isoUrl, final String isoChecksum)throws IllegalAccessException, NoSuchFieldException,
+    private VirtualMachineTemplate registerKubernetesVersionIso(final Long zoneId, final String versionName, final String isoUrl, final String isoChecksum)throws IllegalAccessException, NoSuchFieldException,
             IllegalArgumentException, ResourceAllocationException {
         String isoName = String.format("%s-Kubernetes-Binaries-ISO", versionName);
         RegisterIsoCmd registerIsoCmd = new RegisterIsoCmd();
@@ -146,6 +147,11 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         Field f = registerIsoCmd.getClass().getDeclaredField("isoName");
         f.setAccessible(true);
         f.set(registerIsoCmd, isoName);
+        if (zoneId != null) {
+            f = registerIsoCmd.getClass().getDeclaredField("zoneId");
+            f.setAccessible(true);
+            f.set(registerIsoCmd, zoneId);
+        }
         f = registerIsoCmd.getClass().getDeclaredField("displayText");
         f.setAccessible(true);
         f.set(registerIsoCmd, isoName);
@@ -163,45 +169,13 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             f.setAccessible(true);
             f.set(registerIsoCmd, isoChecksum);
         }
+        f = registerIsoCmd.getClass().getDeclaredField("accountName");
+        f.setAccessible(true);
+        f.set(registerIsoCmd, accountManager.getSystemAccount().getAccountName());
+        f = registerIsoCmd.getClass().getDeclaredField("domainId");
+        f.setAccessible(true);
+        f.set(registerIsoCmd, accountManager.getSystemAccount().getDomainId());
         return templateService.registerIso(registerIsoCmd);
-    }
-
-    private void validateExistingTemplateForKubernetesVersionIso(final VirtualMachineTemplate template, final Long zoneId) {
-        if (!template.getFormat().equals(Storage.ImageFormat.ISO)) {
-            throw new InvalidParameterValueException(String.format("%s is not an ISO", template.getUuid()));
-        }
-        if (!template.isPublicTemplate()) {
-            throw new InvalidParameterValueException(String.format("ISO ID: %s is not public", template.getUuid()));
-        }
-        if (!template.isCrossZones() && zoneId == null) {
-            throw new InvalidParameterValueException(String.format("ISO ID: %s is not available across zones", template.getUuid()));
-        }
-        if (!template.isCrossZones() && zoneId != null) {
-            List<VMTemplateZoneVO> templatesZoneVOs = templateZoneDao.listByZoneTemplate(zoneId, template.getId());
-            if (templatesZoneVOs.isEmpty()) {
-                DataCenterVO zone = dataCenterDao.findById(zoneId);
-                throw new InvalidParameterValueException(String.format("ISO ID: %s is not available for zone ID: %s", template.getUuid(), zone.getUuid()));
-            }
-        }
-    }
-
-    private VMTemplateVO registerKubernetesVersionIsoIfNeeded(final Long isoId, final Long zoneId, final String name, final String isoUrl, final String isoChecksum) throws CloudRuntimeException {
-        VMTemplateVO templateVO = null;
-        if (isoId != null) {
-            templateVO = templateDao.findById(isoId);
-        }
-        if (templateVO == null) {
-            try {
-                VirtualMachineTemplate vmTemplate = registerKubernetesVersionIso(name, isoUrl, isoChecksum);
-                templateVO = templateDao.findById(vmTemplate.getId());
-            } catch (IllegalAccessException | NoSuchFieldException | IllegalArgumentException | ResourceAllocationException ex) {
-                LOGGER.error(String.format("Unable to register binaries ISO for supported kubernetes version, %s", name), ex);
-                throw new CloudRuntimeException(String.format("Unable to register binaries ISO for supported kubernetes version, %s", name));
-            }
-        } else {
-            validateExistingTemplateForKubernetesVersionIso(templateVO, zoneId);
-        }
-        return templateVO;
     }
 
     private void deleteKubernetesVersionIso(long templateId) throws IllegalAccessException, NoSuchFieldException,
@@ -314,20 +288,16 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         String name = cmd.getName();
         final String semanticVersion = cmd.getSemanticVersion();
         final Long zoneId = cmd.getZoneId();
-        final Long isoId = cmd.getIsoId();
         final String isoUrl = cmd.getUrl();
         final String isoChecksum = cmd.getChecksum();
         if (compareSemanticVersions(semanticVersion, MIN_KUBERNETES_VERSION) < 0) {
             throw new InvalidParameterValueException(String.format("New supported Kubernetes version cannot be added as %s is minimum version supported by Kubernetes Service", MIN_KUBERNETES_VERSION));
         }
-        if (Strings.isNullOrEmpty(isoUrl) && (isoId == null || isoId <= 0)) {
-            throw new InvalidParameterValueException(String.format("Either %s or %s parameter must be passed to add a new supported Kubernetes version", "isourl", ApiConstants.ISO_ID));
-        }
-        if (!Strings.isNullOrEmpty(isoUrl) && isoId != null && isoId > 0) {
-            throw new InvalidParameterValueException(String.format("Both %s and %s parameters can not be passed simultaneously to add a new supported Kubernetes version", ApiConstants.URL, ApiConstants.ISO_ID));
-        }
         if (zoneId != null && dataCenterDao.findById(zoneId) == null) {
             throw new InvalidParameterValueException("Invalid zone specified");
+        }
+        if (Strings.isNullOrEmpty(isoUrl)) {
+            throw new InvalidParameterValueException(String.format("Invalid URL for ISO specified, %s", isoUrl));
         }
         if (Strings.isNullOrEmpty(name)) {
             name = String.format("v%s", semanticVersion);
@@ -336,7 +306,14 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             }
         }
 
-        VMTemplateVO template = registerKubernetesVersionIsoIfNeeded(isoId, zoneId, name, isoUrl, isoChecksum);
+        VMTemplateVO template = null;
+        try {
+            VirtualMachineTemplate vmTemplate = registerKubernetesVersionIso(zoneId, name, isoUrl, isoChecksum);
+            template = templateDao.findById(vmTemplate.getId());
+        } catch (IllegalAccessException | NoSuchFieldException | IllegalArgumentException | ResourceAllocationException ex) {
+            LOGGER.error(String.format("Unable to register binaries ISO for supported kubernetes version, %s, with url: %s", name, isoUrl), ex);
+            throw new CloudRuntimeException(String.format("Unable to register binaries ISO for supported kubernetes version, %s, with url: %s", name, isoUrl));
+        }
 
         KubernetesSupportedVersionVO supportedVersionVO = new KubernetesSupportedVersionVO(name, semanticVersion, template.getId(), zoneId);
         supportedVersionVO = kubernetesSupportedVersionDao.persist(supportedVersionVO);
@@ -351,7 +328,6 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             throw new CloudRuntimeException("Kubernetes Service plugin is disabled");
         }
         final Long versionId = cmd.getId();
-        final boolean isDeleteIso = cmd.isDeleteIso();
         KubernetesSupportedVersion version = kubernetesSupportedVersionDao.findById(versionId);
         if (version == null) {
             throw new InvalidParameterValueException("Invalid Kubernetes version id specified");
@@ -365,7 +341,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         if (template == null) {
             LOGGER.warn(String.format("Unable to find ISO associated with supported Kubernetes version ID: %s", version.getUuid()));
         }
-        if (isDeleteIso && template != null && template.getRemoved() == null) { // Delete ISO
+        if (template != null && template.getRemoved() == null) { // Delete ISO
             try {
                 deleteKubernetesVersionIso(template.getId());
             } catch (IllegalAccessException | NoSuchFieldException | IllegalArgumentException ex) {

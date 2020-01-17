@@ -1184,64 +1184,16 @@
                                                 });
                                             }
                                         },
-                                        isoid: {
-                                            label: 'label.iso',
-                                            //docID: 'helpKubernetesClusterZone',
-                                            validation: {
-                                                required: true
-                                            },
-                                            select: function(args) {
-                                                $.ajax({
-                                                    url: createURL("listIsos&ispublic=true&bootable=false"),
-                                                    data: { zoneid: args.zone },
-                                                    dataType: "json",
-                                                    async: true,
-                                                    success: function(json) {
-                                                        var items = [];
-                                                        var isoObjs = json.listisosresponse.iso;
-                                                        if (isoObjs != null) {
-                                                            for (var i = 0; i < isoObjs.length; i++) {
-                                                                items.push({
-                                                                    id: isoObjs[i].id,
-                                                                    description: isoObjs[i].name
-                                                                });
-                                                            }
-                                                        }
-                                                        items.sort(function(a, b) {
-                                                            return a.description.localeCompare(b.description);
-                                                        });
-                                                        items.unshift({
-                                                            id: -1,
-                                                            description: 'label.add.new.iso'
-                                                        });
-                                                        args.response.success({
-                                                            data: items
-                                                        });
-                                                    }
-                                                });
-
-                                                args.$select.change(function() {
-                                                    var $form = $(this).closest('form');
-                                                    var currentIsoId = $(this).val();
-                                                    if (currentIsoId < 0) {
-                                                        $form.find('.form-item[rel=isourl]').css('display', 'inline-block');
-                                                        $form.find('.form-item[rel=isochecksum]').css('display', 'inline-block');
-                                                    } else {
-                                                        $form.find('.form-item[rel=isourl]').hide();
-                                                        $form.find('.form-item[rel=isochecksum]').hide();
-                                                    }
-                                                });
-                                            }
-                                        },
                                         isourl: {
                                             label: 'label.url',
                                             //docID: 'Name of the cluster',
-                                            isHidden: true
+                                            validation: {
+                                                required: true
+                                            }
                                         },
                                         isochecksum: {
                                             label: 'label.checksum',
                                             //docID: 'Name of the cluster',
-                                            isHidden: true
                                         },
                                     }
                                 },
@@ -1250,26 +1202,12 @@
                                     var data = {
                                         name: args.data.name,
                                         semanticversion: args.data.version,
+                                        url: args.data.isourl,
+                                        checksum: args.data.isochecksum
                                     };
                                     if (args.data.zone != null && args.data.zone != -1) {
                                         $.extend(data, {
                                             zoneid: args.data.zone
-                                        });
-                                    }
-                                    if (args.data.isoid < 0) {
-                                        if (args.data.isourl == null || args.data.isourl == '') {
-                                            cloudStack.dialog.notice({
-                                                message: 'ISO URL is required to a new ISO'
-                                            });
-                                            return;
-                                        }
-                                        $.extend(data, {
-                                            url: args.data.isourl,
-                                            checksum: args.data.isochecksum
-                                        });
-                                    } else {
-                                        $.extend(data, {
-                                            isoid: args.data.isoid
                                         });
                                     }
                                     $.ajax({
@@ -1333,13 +1271,7 @@
                                         title: 'label.delete.kubernetes.version',
                                         desc: 'label.delete.kubernetes.version',
                                         isWarning: true,
-                                        fields: {
-                                            deleteiso: {
-                                                label: 'label.delete.iso',
-                                                isBoolean: true,
-                                                isChecked: false
-                                            },
-                                        }
+                                        fields: {}
                                     },
                                     messages: {
                                         confirm: function(args) {
@@ -1353,11 +1285,6 @@
                                         var data = {
                                             id: args.context.kubernetesversions[0].id
                                         };
-                                        if (args.data.deleteiso === 'on') {
-                                            $.extend(data, {
-                                                deleteiso: true
-                                            });
-                                        }
                                         $.ajax({
                                             url: createURL('deleteKubernetesSupportedVersion'),
                                             data: data,
