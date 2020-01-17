@@ -36,6 +36,7 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
@@ -89,7 +90,6 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.direct.download.DirectTemplateDownloader;
-import com.cloud.agent.direct.download.DirectTemplateDownloader.DirectTemplateInformation;
 import com.cloud.agent.direct.download.HttpDirectTemplateDownloader;
 import com.cloud.agent.direct.download.HttpsDirectTemplateDownloader;
 import com.cloud.agent.direct.download.MetalinkDirectTemplateDownloader;
@@ -1676,15 +1676,20 @@ public class KVMStorageProcessor implements StorageProcessor {
     /**
      * Get direct template downloader from direct download command and destination pool
      */
-    private DirectTemplateDownloader getDirectTemplateDownloaderFromCommand(DirectDownloadCommand cmd, KVMStoragePool destPool) {
+    private DirectTemplateDownloader getDirectTemplateDownloaderFromCommand(DirectDownloadCommand cmd,
+                                                                            KVMStoragePool destPool,
+                                                                            String temporaryDownloadPath) {
         if (cmd instanceof HttpDirectDownloadCommand) {
-            return new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders(), cmd.getConnectTimeout(), cmd.getSoTimeout());
+            return new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders(),
+                    cmd.getConnectTimeout(), cmd.getSoTimeout(), temporaryDownloadPath);
         } else if (cmd instanceof HttpsDirectDownloadCommand) {
-            return new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders(), cmd.getConnectTimeout(), cmd.getSoTimeout(), cmd.getConnectionRequestTimeout());
+            return new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders(),
+                    cmd.getConnectTimeout(), cmd.getSoTimeout(), cmd.getConnectionRequestTimeout(), temporaryDownloadPath);
         } else if (cmd instanceof NfsDirectDownloadCommand) {
-            return new NfsDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum());
+            return new NfsDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), temporaryDownloadPath);
         } else if (cmd instanceof MetalinkDirectDownloadCommand) {
-            return new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), cmd.getHeaders(), cmd.getConnectTimeout(), cmd.getSoTimeout());
+            return new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), cmd.getHeaders(),
+                    cmd.getConnectTimeout(), cmd.getSoTimeout(), temporaryDownloadPath);
         } else {
             throw new IllegalArgumentException("Unsupported protocol, please provide HTTP(S), NFS or a metalink");
         }
@@ -1694,13 +1699,9 @@ public class KVMStorageProcessor implements StorageProcessor {
     public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
         final PrimaryDataStoreTO pool = cmd.getDestPool();
         KVMStoragePool destPool = storagePoolMgr.getStoragePool(pool.getPoolType(), pool.getUuid());
-        DirectTemplateDownloader downloader;
-
-        try {
-            downloader = getDirectTemplateDownloaderFromCommand(cmd, destPool);
-        } catch (IllegalArgumentException e) {
-            return new DirectDownloadAnswer(false, "Unable to create direct downloader: " + e.getMessage(), true);
-        }
+        DirectTemplateDownloader downloader = null;
+        String path;
+        long size = 0L;
 
         try {
             s_logger.info("Verifying temporary location for downloading the template exists on the host");
@@ -1719,26 +1720,34 @@ public class KVMStorageProcessor implements StorageProcessor {
                 return new DirectDownloadAnswer(false, msg, true);
             }
 
+            downloader = getDirectTemplateDownloaderFromCommand(cmd, destPool, temporaryDownloadPath);
             s_logger.info("Trying to download template");
-            if (!downloader.downloadTemplate()) {
+            Pair<Boolean, String> result = downloader.downloadTemplate();
+            if (!result.first()) {
                 s_logger.warn("Couldn't download template");
                 return new DirectDownloadAnswer(false, "Unable to download template", true);
             }
-            if (!downloader.validateChecksum()) {
+            String tempFilePath = result.second();
+            /**if (!downloader.validateChecksum()) {
                 s_logger.warn("Couldn't validate template checksum");
                 return new DirectDownloadAnswer(false, "Checksum validation failed", false);
-            }
-            if (!downloader.extractAndInstallDownloadedTemplate()) {
+            }**/
+            KVMPhysicalDisk template = storagePoolMgr.createPhysicalDiskFromDirectDownloadTemplate(tempFilePath, destPool, 100);
+            path = template.getPath();
+            size = template.getSize();
+            /**if (!downloader.extractAndInstallDownloadedTemplate()) {
                 s_logger.warn("Couldn't extract and install template");
                 return new DirectDownloadAnswer(false, "Extraction and installation failed", false);
-            }
+            }**/
         } catch (CloudRuntimeException e) {
             s_logger.warn("Error downloading template " + cmd.getTemplateId() + " due to: " + e.getMessage());
             return new DirectDownloadAnswer(false, "Unable to download template: " + e.getMessage(), true);
+        } catch (IllegalArgumentException e) {
+            return new DirectDownloadAnswer(false, "Unable to create direct downloader: " + e.getMessage(), true);
         }
 
-        DirectTemplateInformation info = downloader.getTemplateInformation();
-        return new DirectDownloadAnswer(true, info.getSize(), info.getInstallPath());
+        //DirectTemplateInformation info = downloader.getTemplateInformation();
+        return new DirectDownloadAnswer(true, size, path);
     }
 
     /**

@@ -39,13 +39,17 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
     private String installPath;
     private String checksum;
     private boolean redownload = false;
+    private String temporaryDownloadPath;
+
     public static final Logger s_logger = Logger.getLogger(DirectTemplateDownloaderImpl.class.getName());
 
-    protected DirectTemplateDownloaderImpl(final String url, final String destPoolPath, final Long templateId, final String checksum) {
+    protected DirectTemplateDownloaderImpl(final String url, final String destPoolPath, final Long templateId,
+                                           final String checksum, final String temporaryDownloadPath) {
         this.url = url;
         this.destPoolPath = destPoolPath;
         this.templateId = templateId;
         this.checksum = checksum;
+        this.temporaryDownloadPath = temporaryDownloadPath;
     }
 
     private static String directDownloadDir = "template";
@@ -53,10 +57,10 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
     /**
      * Return direct download temporary path to download template
      */
-    protected static String getDirectDownloadTempPath(Long templateId) {
+    protected String getDirectDownloadTempPath(Long templateId) {
         String templateIdAsString = String.valueOf(templateId);
-        return directDownloadDir + File.separator + templateIdAsString.substring(0,1) +
-                File.separator + templateIdAsString;
+        return this.temporaryDownloadPath + File.separator + directDownloadDir + File.separator +
+                templateIdAsString.substring(0,1) + File.separator + templateIdAsString;
     }
 
     /**

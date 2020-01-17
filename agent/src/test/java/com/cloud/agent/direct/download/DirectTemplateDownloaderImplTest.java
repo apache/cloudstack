@@ -18,8 +18,6 @@
 //
 package com.cloud.agent.direct.download;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -27,10 +25,4 @@ import org.mockito.runners.MockitoJUnitRunner;
 public class DirectTemplateDownloaderImplTest {
 
     private static final Long templateId = 202l;
-
-    @Test
-    public void testGetDirectDownloadTempPath() {
-        String path = DirectTemplateDownloaderImpl.getDirectDownloadTempPath(templateId);
-        Assert.assertEquals("template/2/202", path);
-    }
 }

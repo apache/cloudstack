@@ -19,6 +19,8 @@
 
 package com.cloud.agent.direct.download;
 
+import com.cloud.utils.Pair;
+
 public interface DirectTemplateDownloader {
 
     class DirectTemplateInformation {
@@ -47,9 +49,9 @@ public interface DirectTemplateDownloader {
 
     /**
      * Perform template download to pool specified on downloader creation
-     * @return true if successful, false if not
+     * @return (true if successful, false if not, download file path)
      */
-    boolean downloadTemplate();
+    Pair<Boolean, String> downloadTemplate();
 
     /**
      * Perform extraction (if necessary) and installation of previously downloaded template
