@@ -260,7 +260,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         int majorVerDiff = Integer.parseInt(thatParts[0]) - Integer.parseInt(thisParts[0]);
         int minorVerDiff = Integer.parseInt(thatParts[1]) - Integer.parseInt(thisParts[1]);
 
-        if (majorVerDiff != 0 || minorVerDiff != 1) {
+        if (majorVerDiff != 0 || minorVerDiff > 1) {
             throw new IllegalArgumentException(String.format("Kubernetes clusters can be upgraded between next minor or patch version releases, current version: %s, upgrade version: %s", currentVersion, upgradeVersion));
         }
         return true;
