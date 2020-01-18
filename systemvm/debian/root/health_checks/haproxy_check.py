@@ -122,7 +122,7 @@ def main():
     checkMaxConn = checkMaxconn(haproxyData[0], haCfgSections)
     checkLbRules = checkLoadBalance(haproxyData, haCfgSections)
 
-    if checkMaxConn or checkLbRules:
+    if checkMaxConn and checkLbRules:
         print "All checks pass"
         exit(0)
     else:

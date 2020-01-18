@@ -23,13 +23,20 @@ then
     python /root/monitorServices.py > /dev/null
 fi
 
-if [ -f /root/failing_health_checks ]
+printf "FAILING CHECKS:\n"
+
+if [ -f /root/basic_failing_health_checks ]
 then
-    printf "FAILING CHECKS:\n"
-    echo `cat /root/failing_health_checks`
+    echo `cat /root/basic_failing_health_checks`
+fi
+
+if [ -f /root/advanced_failing_health_checks ]
+then
+    echo `cat /root/advanced_failing_health_checks`
 fi
 
 printf "MONITOR RESULTS:\n"
+
 echo "{\"basic\":"
 if [ -f /root/basic_monitor_results.json ]
 then

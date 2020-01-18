@@ -367,7 +367,7 @@ def main(checkType = "basic"):
     with open(checkType + "_" + Config.MONITOR_RESULT_FILE_SUFFIX, 'w') as f:
         json.dump(monitResult, f, ensure_ascii=False)
 
-    failChecksFile = Config.FAILING_CHECKS_FILE
+    failChecksFile = checkType + "_" + Config.FAILING_CHECKS_FILE
     if len(failingChecks) > 0:
         fcs = ""
         for fc in failingChecks:
