@@ -17,7 +17,6 @@
 
 package com.cloud.kubernetes.version;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -144,37 +143,18 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         String isoName = String.format("%s-Kubernetes-Binaries-ISO", versionName);
         RegisterIsoCmd registerIsoCmd = new RegisterIsoCmd();
         registerIsoCmd = ComponentContext.inject(registerIsoCmd);
-        Field f = registerIsoCmd.getClass().getDeclaredField("isoName");
-        f.setAccessible(true);
-        f.set(registerIsoCmd, isoName);
+        registerIsoCmd.setIsoName(isoName);
         if (zoneId != null) {
-            f = registerIsoCmd.getClass().getDeclaredField("zoneId");
-            f.setAccessible(true);
-            f.set(registerIsoCmd, zoneId);
+            registerIsoCmd.setZoneId(zoneId);
         }
-        f = registerIsoCmd.getClass().getDeclaredField("displayText");
-        f.setAccessible(true);
-        f.set(registerIsoCmd, isoName);
-        f = registerIsoCmd.getClass().getDeclaredField("bootable");
-        f.setAccessible(true);
-        f.set(registerIsoCmd, false);
-        f = registerIsoCmd.getClass().getDeclaredField("publicIso");
-        f.setAccessible(true);
-        f.set(registerIsoCmd, true);
-        f = registerIsoCmd.getClass().getDeclaredField("url");
-        f.setAccessible(true);
-        f.set(registerIsoCmd, isoUrl);
+        registerIsoCmd.setDisplayText(isoName);
+        registerIsoCmd.setBootable(false);
+        registerIsoCmd.setUrl(isoUrl);
         if (!Strings.isNullOrEmpty(isoChecksum)) {
-            f = registerIsoCmd.getClass().getDeclaredField("checksum");
-            f.setAccessible(true);
-            f.set(registerIsoCmd, isoChecksum);
+            registerIsoCmd.setChecksum(isoChecksum);
         }
-        f = registerIsoCmd.getClass().getDeclaredField("accountName");
-        f.setAccessible(true);
-        f.set(registerIsoCmd, accountManager.getSystemAccount().getAccountName());
-        f = registerIsoCmd.getClass().getDeclaredField("domainId");
-        f.setAccessible(true);
-        f.set(registerIsoCmd, accountManager.getSystemAccount().getDomainId());
+        registerIsoCmd.setAccountName(accountManager.getSystemAccount().getAccountName());
+        registerIsoCmd.setDomainId(accountManager.getSystemAccount().getDomainId());
         return templateService.registerIso(registerIsoCmd);
     }
 
@@ -182,9 +162,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             IllegalArgumentException {
         DeleteIsoCmd deleteIsoCmd = new DeleteIsoCmd();
         deleteIsoCmd = ComponentContext.inject(deleteIsoCmd);
-        Field f = deleteIsoCmd.getClass().getDeclaredField("id");
-        f.setAccessible(true);
-        f.set(deleteIsoCmd, templateId);
+        deleteIsoCmd.setId(templateId);
         templateService.deleteIso(deleteIsoCmd);
     }
 
