@@ -504,7 +504,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster ID: %s, unable to setup network rules", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
         attachIsoKubernetesVMs(clusterVMs);
-        if (!KubernetesClusterUtil.isKubernetesClusterMasterVmRunning(kubernetesCluster, publicIpAddress, publicIpSshPort.second(), 10 * 60 * 1000)) {
+        if (!KubernetesClusterUtil.isKubernetesClusterMasterVmRunning(kubernetesCluster, publicIpAddress, publicIpSshPort.second(), 20 * 60 * 1000)) {
             String msg = String.format("Failed to setup Kubernetes cluster ID: %s in usable state as unable to access master node VMs of the cluster", kubernetesCluster.getUuid());
             if (kubernetesCluster.getMasterNodeCount() > 1 && Network.GuestType.Shared.equals(network.getGuestType())) {
                 msg = String.format("%s. Make sure external load-balancer has port forwarding rules for SSH access on ports %d-%d and API access on port %d",
@@ -544,9 +544,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StartRequested);
         startKubernetesClusterVMs();
-        InetAddress address = null;
         try {
-            address = InetAddress.getByName(new URL(kubernetesCluster.getEndpoint()).getHost());
+            InetAddress address = InetAddress.getByName(new URL(kubernetesCluster.getEndpoint()).getHost());
         } catch (MalformedURLException | UnknownHostException ex) {
             logTransitStateAndThrow(Level.ERROR, String.format("Kubernetes cluster ID: %s has invalid API endpoint. Can not verify if cluster is in ready state", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
@@ -555,7 +554,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (Strings.isNullOrEmpty(publicIpAddress)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s as no public IP found for the cluster" , kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
-        if (!KubernetesClusterUtil.isKubernetesClusterServerRunning(kubernetesCluster, publicIpAddress, CLUSTER_API_PORT, 10, 30000)) {
+        if (!KubernetesClusterUtil.isKubernetesClusterServerRunning(kubernetesCluster, publicIpAddress, CLUSTER_API_PORT, 20, 30000)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s in usable state", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         sshPort = publicIpSshPort.second();

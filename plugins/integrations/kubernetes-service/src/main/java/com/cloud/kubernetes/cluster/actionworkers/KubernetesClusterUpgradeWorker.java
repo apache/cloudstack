@@ -113,7 +113,7 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to uncordon Kubernetes node on VM ID: %s", kubernetesCluster.getUuid(), vm.getUuid()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
             if (i == 0) { // Wait for master to get in Ready state
-                if (!KubernetesClusterUtil.isKubernetesClusterNodeReady(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, getManagementServerSshPublicKeyFile(), hostName, 5, 20000)) {
+                if (!KubernetesClusterUtil.isKubernetesClusterNodeReady(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, getManagementServerSshPublicKeyFile(), hostName, 10, 30000)) {
                     logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to get master Kubernetes node on VM ID: %s in ready state", kubernetesCluster.getUuid(), vm.getUuid()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
                 }
             }
