@@ -44,10 +44,10 @@ def main():
 
         if not foundEntry:
             failedCheck = True
-            failureMessage = failureMessage + vM["ip"] + " " + vM["vmName"] + "\n"
+            failureMessage = failureMessage + vM["ip"] + " " + vM["vmName"] + ", "
 
     if failedCheck:
-        print failureMessage
+        print failureMessage[:-2]
         exit(1)
     else:
         print "All " + str(len(vMs)) + " VMs are present in /etc/hosts"

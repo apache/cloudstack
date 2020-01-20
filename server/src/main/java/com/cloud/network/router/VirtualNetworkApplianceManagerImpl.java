@@ -534,12 +534,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
     }
 
-    static final ConfigKey<Boolean> UseExternalDnsServers = new ConfigKey<Boolean>(Boolean.class, "use.external.dns", "Advanced", "false",
-            "Bypass internal dns, use external dns1 and dns2", true, ConfigKey.Scope.Zone, null);
-
-    static final ConfigKey<Boolean> routerVersionCheckEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "router.version.check", "true",
-            "If true, router minimum required version is checked before sending command", false);
-
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 
@@ -1264,16 +1258,17 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
 
         private List<String> getFailingChecks(DomainRouterVO router, GetRouterMonitorResultsAnswer answer) {
+
             if (answer == null) {
                 s_logger.warn("Unable to fetch monitor results for router " + router);
-                updateRouterConnectivityHealthCheck(router.getId(), false, "Communication failed");
+                resetRouterHealthChecksAndConnectivity(router.getId(), false, "Communication failed");
                 return Arrays.asList(CONNECTIVITY_TEST);
             } else if (!answer.getResult()) {
                 s_logger.warn("Failed to fetch monitor results from router " + router + " with details: " + answer.getDetails());
-                updateRouterConnectivityHealthCheck(router.getId(), false, "Failed to fetch results with details: " + answer.getDetails());
+                resetRouterHealthChecksAndConnectivity(router.getId(), false, "Failed to fetch results with details: " + answer.getDetails());
                 return Arrays.asList(CONNECTIVITY_TEST);
             } else {
-                updateRouterConnectivityHealthCheck(router.getId(), true, "Successfully fetched data");
+                resetRouterHealthChecksAndConnectivity(router.getId(), true, "Successfully fetched data");
                 updateDbHealthChecksFromRouterResponse(router.getId(), answer.getMonitoringResults());
                 return answer.getFailingChecks();
             }
@@ -1290,15 +1285,15 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             s_logger.warn(alertMessage + ". Checking failed health checks to see if router needs reboot");
 
             String checkFailsToRecreateVr = RouterHealthChecksFailuresToRecreateVr.valueIn(router.getDataCenterId());
-            StringBuilder failingChecksEvent = new StringBuilder("Router " + router.getUuid() + " has failing checks:");
+            StringBuilder failingChecksEvent = new StringBuilder("Router " + router.getUuid() + " has failing checks: ");
             boolean recreateRouter = false;
             for (String failedCheck : failingChecks) {
-                failingChecksEvent.append(" ").append(failedCheck);
+                failingChecksEvent.append(failedCheck).append(", ");
                 if (StringUtils.isNotBlank(checkFailsToRecreateVr) && checkFailsToRecreateVr.contains(failedCheck)) {
                     recreateRouter = true;
                 }
             }
-
+            failingChecksEvent.setLength(failingChecksEvent.length() - 2);
             ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
                     Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS, failingChecksEvent.toString());
 
@@ -1399,7 +1394,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return healthCheckResults;
     }
 
-    private RouterHealthCheckResultVO updateRouterConnectivityHealthCheck(final long routerId, boolean connected, String message) {
+    private RouterHealthCheckResultVO resetRouterHealthChecksAndConnectivity(final long routerId, boolean connected, String message) {
+        routerHealthCheckResultDao.expungeHealthChecks(routerId);
         boolean newEntry = false;
         RouterHealthCheckResultVO connectivityVO = routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, CONNECTIVITY_TEST, "basic");
         if (connectivityVO == null) {
@@ -1579,10 +1575,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // Step 2: Update health checks values in database. We do this irrespective of new health check config.
         if (answer == null || !answer.getResult()) {
             success = false;
-            updateRouterConnectivityHealthCheck(routerId, false,
+            resetRouterHealthChecksAndConnectivity(routerId, false,
                     answer == null ? "Communication failed " : "Failed to fetch results with details: " + answer.getDetails());
         } else {
-            updateRouterConnectivityHealthCheck(routerId, true, "Successfully fetched data");
+            resetRouterHealthChecksAndConnectivity(routerId, true, "Successfully fetched data");
             updateDbHealthChecksFromRouterResponse(routerId, answer.getMonitoringResults());
         }
 
@@ -3227,7 +3223,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
                 UseExternalDnsServers,
-                routerVersionCheckEnabled,
+                RouterVersionCheckEnabled,
                 SetServiceMonitor,
                 RouterAlertsCheckInterval,
                 RouterHealthChecksEnabled,

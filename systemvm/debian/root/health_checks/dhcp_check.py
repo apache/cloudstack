@@ -34,7 +34,7 @@ def main():
     failedCheck = False
     failureMessage = "Missing elements in dhcphosts.txt - \n"
     for vM in vMs:
-        entry = vM["macAddress"] + "," + vM["ip"] + "," + vM["vmName"]
+        entry = vM["macAddress"] + " " + vM["ip"] + " " + vM["vmName"]
         foundEntry = False
         for host in allHosts:
             host = host.strip().split(',')
@@ -54,10 +54,10 @@ def main():
 
         if not foundEntry:
             failedCheck = True
-            failureMessage = failureMessage + entry + "\n"
+            failureMessage = failureMessage + entry + ", "
 
     if failedCheck:
-        print failureMessage
+        print failureMessage[:-2]
         exit(1)
     else:
         print "All " + str(len(vMs)) + " VMs are present in dhcphosts.txt"

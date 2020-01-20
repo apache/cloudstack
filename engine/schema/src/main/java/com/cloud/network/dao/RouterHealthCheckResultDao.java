@@ -28,6 +28,8 @@ public interface RouterHealthCheckResultDao extends GenericDao<RouterHealthCheck
      */
     List<RouterHealthCheckResultVO> getHealthCheckResults(long routerId);
 
+    boolean expungeHealthChecks(long routerId);
+
     /**
      * @param routerId
      * @return true if there are checks that have been marked failed in the database

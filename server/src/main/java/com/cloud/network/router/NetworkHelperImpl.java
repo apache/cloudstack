@@ -258,7 +258,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
     @Override
     public boolean checkRouterVersion(final VirtualRouter router) {
-        if (!VirtualNetworkApplianceManagerImpl.routerVersionCheckEnabled.value()) {
+        if (!VirtualNetworkApplianceManager.RouterVersionCheckEnabled.value()) {
             // Router version check is disabled.
             return true;
         }

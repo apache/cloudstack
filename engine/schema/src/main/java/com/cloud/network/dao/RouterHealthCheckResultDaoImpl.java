@@ -55,6 +55,13 @@ public class RouterHealthCheckResultDaoImpl extends GenericDaoBase<RouterHealthC
     }
 
     @Override
+    public boolean expungeHealthChecks(long routerId) {
+        SearchCriteria<RouterHealthCheckResultVO> sc = RouterChecksSearchBuilder.create();
+        sc.setParameters("routerId", routerId);
+        return expunge(sc) > 0;
+    }
+
+    @Override
     public RouterHealthCheckResultVO getRouterHealthCheckResult(long routerId, String checkName, String checkType) {
         SearchCriteria<RouterHealthCheckResultVO> sc = RouterChecksSearchBuilder.create();
         sc.setParameters("routerId", routerId);
