@@ -1282,18 +1282,29 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             String alertMessage = "Health checks failed: " + failingChecks.size() + " failing checks on router " + router.getUuid();
             _alertMgr.sendAlert(AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(),
                     alertMessage, alertMessage);
-            s_logger.warn(alertMessage + ". Checking failed health checks to see if router needs reboot");
+            s_logger.warn(alertMessage + ". Checking failed health checks to see if router needs recreate");
 
             String checkFailsToRecreateVr = RouterHealthChecksFailuresToRecreateVr.valueIn(router.getDataCenterId());
-            StringBuilder failingChecksEvent = new StringBuilder("Router " + router.getUuid() + " has failing checks: ");
+            StringBuilder failingChecksEvent = new StringBuilder();
             boolean recreateRouter = false;
-            for (String failedCheck : failingChecks) {
-                failingChecksEvent.append(failedCheck).append(", ");
+            for (int i = 0; i < failingChecks.size(); i++) {
+                String failedCheck = failingChecks.get(i);
+                if (i == 0) {
+                    failingChecksEvent.append("Router ")
+                            .append(router.getUuid())
+                            .append(" has failing checks: ");
+                }
+
+                failingChecksEvent.append(failedCheck);
+                if (i < failingChecks.size() - 1) {
+                    failingChecksEvent.append(", ");
+                }
+
                 if (StringUtils.isNotBlank(checkFailsToRecreateVr) && checkFailsToRecreateVr.contains(failedCheck)) {
                     recreateRouter = true;
                 }
             }
-            failingChecksEvent.setLength(failingChecksEvent.length() - 2);
+
             ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
                     Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS, failingChecksEvent.toString());
 
