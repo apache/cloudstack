@@ -385,16 +385,15 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         ResourceType resourceType = dnld.getResourceType();
 
         File originalTemplate = new File(td.getDownloadLocalPath());
-        if(StringUtils.isNotBlank(dnld.getChecksum())) {
-            // we have a checksum so check:
-            String checksumErrorMessage = doTheChecksum(dnld, originalTemplate);
-            if (checksumErrorMessage != null) {
-                return checksumErrorMessage;
+        if(StringUtils.isBlank(dnld.getChecksum())) {
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(String.format("No checksum available for '%s'", originalTemplate.getName()));
             }
-        } else {
-            if(LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("No checksum available for '%s'",originalTemplate.getName()));
-            }
+        }
+        // check or create checksum
+        String checksumErrorMessage = checkOrCreateTheChecksum(dnld, originalTemplate);
+        if (checksumErrorMessage != null) {
+            return checksumErrorMessage;
         }
 
         String result;
@@ -427,16 +426,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             return result;
         }
 
-        // if we don't have a checksum let's create one now
-        if(StringUtils.isBlank(dnld.getChecksum())) {
-            String checksumErrorMessage = doTheChecksum(dnld, downloadedTemplate);
-            if (checksumErrorMessage != null) {
-                return checksumErrorMessage;
-            }
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("created new checksum (%s) for '%s'",dnld.getChecksum(), downloadedTemplate));
-            }
-        }
         return null;
     }
 
@@ -492,11 +481,11 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         _storage.setWorldReadableAndWriteable(templateProperties);
     }
 
-    private String doTheChecksum(DownloadJob dnld, File originalTemplate) {
+    private String checkOrCreateTheChecksum(DownloadJob dnld, File targetFile) {
         ChecksumValue oldValue = new ChecksumValue(dnld.getChecksum());
         ChecksumValue newValue = null;
         try {
-            newValue = computeCheckSum(oldValue.getAlgorithm(), originalTemplate);
+            newValue = computeCheckSum(oldValue.getAlgorithm(), targetFile);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(String.format("computed checksum: %s", newValue));
             }
