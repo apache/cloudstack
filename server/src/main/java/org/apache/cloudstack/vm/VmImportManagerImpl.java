@@ -563,15 +563,16 @@ public class VmImportManagerImpl implements VmImportService {
             return;
         }
 
+        String networkBroadcastUri = network.getBroadcastUri() == null ? null : network.getBroadcastUri().toString();
         if (nic.getVlan() != null && nic.getVlan() != 0 && nic.getPvlan() == null &&
-                (Strings.isNullOrEmpty(network.getBroadcastUri().toString()) ||
-                        !network.getBroadcastUri().toString().equals(String.format("vlan://%d", nic.getVlan())))) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) vlan://%d during VM import", network.getUuid(), network.getBroadcastUri().toString(), nic.getNicId(), nic.getVlan()));
+                (Strings.isNullOrEmpty(networkBroadcastUri) ||
+                        !networkBroadcastUri.equals(String.format("vlan://%d", nic.getVlan())))) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) vlan://%d during VM import", network.getUuid(), networkBroadcastUri, nic.getNicId(), nic.getVlan()));
         }
         if (nic.getVlan() != null && nic.getVlan() != 0 && nic.getPvlan() != null && nic.getPvlan() != 0 &&
                 (Strings.isNullOrEmpty(network.getBroadcastUri().toString()) ||
-                        !network.getBroadcastUri().toString().equals(String.format("pvlan://%d-i%d", nic.getVlan(), nic.getPvlan())))) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("PVLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) pvlan://%d-i%d during VM import", network.getUuid(), network.getBroadcastUri().toString(), nic.getNicId(), nic.getVlan(), nic.getPvlan()));
+                        !networkBroadcastUri.equals(String.format("pvlan://%d-i%d", nic.getVlan(), nic.getPvlan())))) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("PVLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) pvlan://%d-i%d during VM import", network.getUuid(), networkBroadcastUri, nic.getNicId(), nic.getVlan(), nic.getPvlan()));
         }
     }
 
