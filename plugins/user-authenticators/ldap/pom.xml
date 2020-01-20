@@ -27,12 +27,23 @@
         <version>4.14.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
+
+    <properties>
+        <ads.version>2.0.0.AM25</ads.version>
+        <gmaven.version>1.5</gmaven.version>
+        <ldap-maven.version>1.1.3</ldap-maven.version>
+        <ldapunit.version>1.1.3</ldapunit.version>
+        <groovy.version>1.1-groovy-2.4</groovy.version>
+        <zapdot.version>0.7</zapdot.version>
+        <unboundedid.version>4.0.4</unboundedid.version>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.gmaven</groupId>
                 <artifactId>gmaven-plugin</artifactId>
-                <version>1.3</version>
+                <version>${gmaven.version}</version>
                 <configuration>
                     <providerSelection>1.7</providerSelection>
                 </configuration>
@@ -58,7 +69,7 @@
                     <dependency>
                         <groupId>org.codehaus.gmaven.runtime</groupId>
                         <artifactId>gmaven-runtime-1.7</artifactId>
-                        <version>1.3</version>
+                        <version>${gmaven.version}</version>
                         <exclusions>
                             <exclusion>
                                 <groupId>org.codehaus.groovy</groupId>
@@ -81,38 +92,126 @@
                         <include>**/*Spec.groovy</include>
                         <include>**/*Test.java</include>
                     </includes>
+                    <excludes>
+                        <exclude>META-INF/*.SF</exclude>
+                        <exclude>META-INF/*.DSA</exclude>
+                        <exclude>META-INF/*.RSA</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>com.btmatthews.maven.plugins</groupId>
                 <artifactId>ldap-maven-plugin</artifactId>
-                <version>1.1.0</version>
+                <version>${ldap-maven.version}</version>
                 <configuration>
                     <monitorPort>11389</monitorPort>
                     <monitorKey>ldap</monitorKey>
                     <daemon>false</daemon>
                     <rootDn>dc=cloudstack,dc=org</rootDn>
                     <ldapPort>10389</ldapPort>
-                    <ldifFile>test/resources/cloudstack.org.ldif</ldifFile>
+                    <ldifFile>src/test/resources/cloudstack.org.ldif</ldifFile>
                 </configuration>
             </plugin>
         </plugins>
-        <testSourceDirectory>test</testSourceDirectory>
+        <testSourceDirectory>src/test/java</testSourceDirectory>
     </build>
     <dependencies>
         <!-- Mandatory dependencies for using Spock -->
         <dependency>
+            <groupId>com.btmatthews.ldapunit</groupId>
+            <artifactId>ldapunit</artifactId>
+            <version>${ldapunit.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.spockframework</groupId>
             <artifactId>spock-core</artifactId>
-            <version>1.1-groovy-2.4</version>
+            <version>${groovy.version}</version>
             <scope>test</scope>
         </dependency>
-
         <!-- Optional dependencies for using Spock -->
         <dependency> <!-- enables mocking of classes (in addition to interfaces) -->
             <groupId>cglib</groupId>
             <artifactId>cglib-nodep</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.zapodot</groupId>
+            <artifactId>embedded-ldap-junit</artifactId>
+            <version>${zapdot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.unboundid</groupId>
+            <artifactId>unboundid-ldapsdk</artifactId>
+            <version>${unboundedid.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+            <version>${cs.mockito.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${cs.junit.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-server-integ</artifactId>
+            <version>${ads.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <!--
+                 shared-ldap-schema module needs to be excluded to avoid multiple schema resources on the classpath
+                -->
+                <exclusion>
+                    <groupId>org.apache.directory.shared</groupId>
+                    <artifactId>shared-ldap-schema</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-core-constants</artifactId>
+            <version>${ads.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-core-annotations</artifactId>
+            <version>${ads.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-core</artifactId>
+            <version>${ads.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-protocol-ldap</artifactId>
+            <version>${ads.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-jdbm-partition</artifactId>
+            <version>${ads.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-ldif-partition</artifactId>
+            <version>${ads.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${cs.commons-io.version}</version>
         </dependency>
     </dependencies>
 </project>

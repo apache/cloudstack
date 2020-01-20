@@ -75,7 +75,7 @@ public class LdapConfigurationDaoImpl extends GenericDaoBase<LdapConfigurationVO
     private SearchCriteria<LdapConfigurationVO> getSearchCriteria(String hostname, int port, Long domainId) {
         SearchCriteria<LdapConfigurationVO> sc;
         if (domainId == null) {
-            sc = listDomainConfigurationsSearch.create();
+            sc = listGlobalConfigurationsSearch.create();
         } else {
             sc = listDomainConfigurationsSearch.create();
             sc.setParameters("domain_id", domainId);
