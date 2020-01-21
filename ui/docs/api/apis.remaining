@@ -2,7 +2,6 @@ addNetworkServiceProvider
 addResourceDetail
 addTrafficType
 assignCertToLoadBalancer
-authorizeSamlSso
 configureInternalLoadBalancerElement
 configureVirtualRouterElement
 createLBHealthCheckPolicy
@@ -13,7 +12,6 @@ createNetworkACLList
 createPhysicalNetwork
 createPortableIpRange
 createPrivateGateway
-createSecondaryStagingStore
 createSnapshotFromVMSnapshot
 createStaticRoute
 createStorageNetworkIpRange
@@ -31,8 +29,6 @@ deleteNetworkServiceProvider
 deletePhysicalNetwork
 deletePortableIpRange
 deletePrivateGateway
-deleteProjectInvitation
-deleteSecondaryStagingStore
 deleteStaticRoute
 deleteStorageNetworkIpRange
 deleteVlanIpRange
@@ -40,16 +36,13 @@ deleteVpnConnection
 deleteVpnGateway
 findStoragePoolsForMigration
 listAffinityGroupTypes
-listAndSwitchSamlAccount
 listDedicatedClusters
 listDedicatedGuestVlanRanges
 listDedicatedHosts
 listDedicatedPods
 listDedicatedZones
 listDeploymentPlanners
-listHostHAProviders
 listHostTags
-listIdps
 listInternalLoadBalancerElements
 listInternalLoadBalancerVMs
 listLBHealthCheckPolicies
@@ -59,14 +52,11 @@ listNetworkServiceProviders
 listOsCategories
 listPortableIpRanges
 listRegisteredServicePackages
-listSamlAuthorization
-listSecondaryStagingStores
 listStaticRoutes
 listStorageNetworkIpRange
 listStorageProviders
 listStorageTags
 listSupportedNetworkServices
-listTemplateOvfProperties
 listTrafficTypes
 listVirtualRouterElements
 listVlanIpRanges
