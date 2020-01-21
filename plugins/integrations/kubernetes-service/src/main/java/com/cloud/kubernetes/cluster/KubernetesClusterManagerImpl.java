@@ -1332,7 +1332,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return new ConfigKey<?>[] {
                 KubernetesServiceEnabled,
                 KubernetesClusterTemplateName,
-                KubernetesClusterNetworkOffering
+                KubernetesClusterNetworkOffering,
+                KubernetesClusterStartTimeout,
+                KubernetesClusterScaleTimeout,
+                KubernetesClusterUpgradeTimeout
         };
     }
 }

@@ -37,6 +37,7 @@ import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
@@ -71,6 +72,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     private Long clusterSize;
     private KubernetesCluster.State originalState;
     private Network network;
+    private long scaleTimeoutTime;
 
     public KubernetesClusterScaleWorker(final KubernetesCluster kubernetesCluster,
                                         final ServiceOffering serviceOffering,
@@ -325,6 +327,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             if (!result) {
                 logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster ID: %s failed, unable to scale cluster VM ID: %s", kubernetesCluster.getUuid(), userVM.getUuid()),kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
+            if (System.currentTimeMillis() > scaleTimeoutTime) {
+                logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster ID: %s failed, scaling action timed out", kubernetesCluster.getUuid()),kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            }
         }
         kubernetesCluster = updateKubernetesClusterEntry(null, serviceOffering);
     }
@@ -365,6 +370,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                         , kubernetesCluster.getUuid() , userVM.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
             }
             kubernetesClusterVmMapDao.expunge(vmMapVO.getId());
+            if (System.currentTimeMillis() > scaleTimeoutTime) {
+                logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster ID: %s failed, scaling action timed out", kubernetesCluster.getUuid()),kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            }
             i--;
         }
         // Scale network rules to update firewall rule
@@ -398,7 +406,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         KubernetesClusterVO kubernetesClusterVO = kubernetesClusterDao.findById(kubernetesCluster.getId());
         kubernetesClusterVO.setNodeCount(clusterSize);
         boolean readyNodesCountValid = KubernetesClusterUtil.validateKubernetesClusterReadyNodesCount(kubernetesClusterVO, publicIpAddress, sshPort,
-                CLUSTER_NODE_VM_USER, sshKeyFile, 20, 60000);
+                CLUSTER_NODE_VM_USER, sshKeyFile, scaleTimeoutTime, 15000);
         detachIsoKubernetesVMs(clusterVMs);
         if (!readyNodesCountValid) { // Scaling failed
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling unsuccessful for Kubernetes cluster ID: %s as it does not have desired number of nodes in ready state", kubernetesCluster.getUuid()));
@@ -436,6 +444,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Scaling Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
         }
+        scaleTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterScaleTimeout.value() * 1000;
         final long originalClusterSize = kubernetesCluster.getNodeCount();
         final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
         if (existingServiceOffering == null) {

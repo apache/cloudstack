@@ -414,14 +414,14 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
     }
 
-    private boolean isKubernetesClusterKubeConfigAvailable(final String masterVMPrivateIpAddress) {
+    private boolean isKubernetesClusterKubeConfigAvailable(final String masterVMPrivateIpAddress, final long timeoutTime) {
         if (Strings.isNullOrEmpty(masterVMPrivateIpAddress)) {
             KubernetesClusterDetailsVO kubeConfigDetail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), "kubeConfigData");
             if (kubeConfigDetail != null && !Strings.isNullOrEmpty(kubeConfigDetail.getValue())) {
                 return true;
             }
         }
-        String kubeConfig = KubernetesClusterUtil.getKubernetesClusterConfig(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, 5);
+        String kubeConfig = KubernetesClusterUtil.getKubernetesClusterConfig(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, timeoutTime);
         if (!Strings.isNullOrEmpty(kubeConfig)) {
             if (!Strings.isNullOrEmpty(masterVMPrivateIpAddress)) {
                 kubeConfig = kubeConfig.replace(String.format("server: https://%s:%d", masterVMPrivateIpAddress, CLUSTER_API_PORT),
@@ -433,14 +433,14 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return false;
     }
 
-    private boolean isKubernetesClusterDashboardServiceRunning(boolean onCreate) {
+    private boolean isKubernetesClusterDashboardServiceRunning(final boolean onCreate, final Long timeoutTime) {
         if (!onCreate) {
             KubernetesClusterDetailsVO dashboardServiceRunningDetail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), "dashboardServiceRunning");
             if (dashboardServiceRunningDetail != null && Boolean.parseBoolean(dashboardServiceRunningDetail.getValue())) {
                 return true;
             }
         }
-        if (KubernetesClusterUtil.isKubernetesClusterDashboardServiceRunning(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, 10, 20000)) {
+        if (KubernetesClusterUtil.isKubernetesClusterDashboardServiceRunning(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, timeoutTime, 15000)) {
             kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), "dashboardServiceRunning", String.valueOf(true), false);
             return true;
         }
@@ -458,6 +458,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Starting Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
         }
+        final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StartRequested);
         DeployDestination dest = null;
         try {
@@ -504,7 +505,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster ID: %s, unable to setup network rules", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
         attachIsoKubernetesVMs(clusterVMs);
-        if (!KubernetesClusterUtil.isKubernetesClusterMasterVmRunning(kubernetesCluster, publicIpAddress, publicIpSshPort.second(), 20 * 60 * 1000)) {
+        if (!KubernetesClusterUtil.isKubernetesClusterMasterVmRunning(kubernetesCluster, publicIpAddress, publicIpSshPort.second(), startTimeoutTime)) {
             String msg = String.format("Failed to setup Kubernetes cluster ID: %s in usable state as unable to access master node VMs of the cluster", kubernetesCluster.getUuid());
             if (kubernetesCluster.getMasterNodeCount() > 1 && Network.GuestType.Shared.equals(network.getGuestType())) {
                 msg = String.format("%s. Make sure external load-balancer has port forwarding rules for SSH access on ports %d-%d and API access on port %d",
@@ -515,22 +516,22 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             }
             logTransitStateDetachIsoAndThrow(Level.ERROR, msg, kubernetesCluster, clusterVMs, KubernetesCluster.Event.CreateFailed, null);
         }
-        boolean k8sApiServerSetup = KubernetesClusterUtil.isKubernetesClusterServerRunning(kubernetesCluster, publicIpAddress, CLUSTER_API_PORT, 20, 30000);
+        boolean k8sApiServerSetup = KubernetesClusterUtil.isKubernetesClusterServerRunning(kubernetesCluster, publicIpAddress, CLUSTER_API_PORT, startTimeoutTime, 15000);
         if (!k8sApiServerSetup) {
             logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster ID: %s in usable state as unable to provision API endpoint for the cluster", kubernetesCluster.getUuid()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.CreateFailed, null);
         }
         sshPort = publicIpSshPort.second();
         updateKubernetesClusterEntryEndpoint();
         boolean readyNodesCountValid = KubernetesClusterUtil.validateKubernetesClusterReadyNodesCount(kubernetesCluster, publicIpAddress, sshPort,
-                CLUSTER_NODE_VM_USER, sshKeyFile, 30, 30000);
+                CLUSTER_NODE_VM_USER, sshKeyFile, startTimeoutTime, 15000);
         detachIsoKubernetesVMs(clusterVMs);
         if (!readyNodesCountValid) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster ID: %s as it does not have desired number of nodes in ready state", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
         }
-        if (!isKubernetesClusterKubeConfigAvailable(k8sMasterVM.getPrivateIpAddress())) {
+        if (!isKubernetesClusterKubeConfigAvailable(publicIpAddress, startTimeoutTime)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster ID: %s in usable state as unable to retrieve kube-config for the cluster", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
-        if (!isKubernetesClusterDashboardServiceRunning(true)) {
+        if (!isKubernetesClusterDashboardServiceRunning(true, startTimeoutTime)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster ID: %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getUuid()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
@@ -542,6 +543,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Starting Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
         }
+        final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StartRequested);
         startKubernetesClusterVMs();
         try {
@@ -554,14 +556,14 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (Strings.isNullOrEmpty(publicIpAddress)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s as no public IP found for the cluster" , kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
-        if (!KubernetesClusterUtil.isKubernetesClusterServerRunning(kubernetesCluster, publicIpAddress, CLUSTER_API_PORT, 20, 30000)) {
+        if (!KubernetesClusterUtil.isKubernetesClusterServerRunning(kubernetesCluster, publicIpAddress, CLUSTER_API_PORT, startTimeoutTime, 15000)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s in usable state", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         sshPort = publicIpSshPort.second();
-        if (!isKubernetesClusterKubeConfigAvailable(null)) {
+        if (!isKubernetesClusterKubeConfigAvailable(null, startTimeoutTime)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s in usable state as unable to retrieve kube-config for the cluster", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
-        if (!isKubernetesClusterDashboardServiceRunning(false)) {
+        if (!isKubernetesClusterDashboardServiceRunning(false, startTimeoutTime)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
@@ -573,6 +575,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
 
     public boolean reconcileAlertCluster() {
         init();
+        final long startTimeoutTime = System.currentTimeMillis() + 3 * 60 * 1000;
         Pair<String, Integer> sshIpPort =  getKubernetesClusterServerIpSshPort(null);
         publicIpAddress = sshIpPort.first();
         sshPort = sshIpPort.second();
@@ -592,14 +595,14 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             return false;
         }
         if (!KubernetesClusterUtil.isKubernetesClusterServerRunning(kubernetesCluster, sshIpPort.first(),
-                KubernetesClusterActionWorker.CLUSTER_API_PORT, 1, 0)) {
+                KubernetesClusterActionWorker.CLUSTER_API_PORT, startTimeoutTime, 0)) {
             return false;
         }
         updateKubernetesClusterEntryEndpoint();
-        if (!isKubernetesClusterKubeConfigAvailable(null)) {
+        if (!isKubernetesClusterKubeConfigAvailable(null, startTimeoutTime)) {
             return false;
         }
-        if (!isKubernetesClusterDashboardServiceRunning(false)) {
+        if (!isKubernetesClusterDashboardServiceRunning(false, startTimeoutTime)) {
             return false;
         }
         // mark the cluster to be running

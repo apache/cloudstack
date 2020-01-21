@@ -48,6 +48,21 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "DefaultNetworkOfferingforKubernetesService",
             "Name of the network offering that will be used to create isolated network in which Kubernetes cluster VMs will be launched",
             false);
+    static final ConfigKey<Long> KubernetesClusterStartTimeout = new ConfigKey<Long>("Advanced", Long.class,
+            "cloud.kubernetes.cluster.start.timeout",
+            "3600",
+            "Timeout interval (in seconds) in which start operation for a Kubernetes cluster should be completed",
+            true);
+    static final ConfigKey<Long> KubernetesClusterScaleTimeout = new ConfigKey<Long>("Advanced", Long.class,
+            "cloud.kubernetes.cluster.scale.timeout",
+            "3600",
+            "Timeout interval (in seconds) in which scale operation for a Kubernetes cluster should be completed",
+            true);
+    static final ConfigKey<Long> KubernetesClusterUpgradeTimeout = new ConfigKey<Long>("Advanced", Long.class,
+            "cloud.kubernetes.cluster.upgrade.timeout",
+            "3600",
+            "Timeout interval (in seconds) in which upgrade operation for a Kubernetes cluster should be completed. Not strictly obeyed while upgrade is in progress on a node",
+            true);
 
     KubernetesCluster findById(final Long id);
 

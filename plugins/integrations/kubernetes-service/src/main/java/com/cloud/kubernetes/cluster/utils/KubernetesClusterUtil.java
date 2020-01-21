@@ -53,10 +53,9 @@ public class KubernetesClusterUtil {
     }
 
     public static boolean isKubernetesClusterNodeReady(final KubernetesCluster kubernetesCluster, final String ipAddress, final int port,
-                                                       final String user, final File sshKeyFile, final String nodeName, final int retries,
-                                                       final int waitDuration) {
-        int retryCounter = 0;
-        while (retryCounter < retries) {
+                                                       final String user, final File sshKeyFile, final String nodeName,
+                                                       final long timeoutTime, final int waitDuration) {
+        while (System.currentTimeMillis() < timeoutTime) {
             boolean ready = false;
             try {
                 ready = isKubernetesClusterNodeReady(kubernetesCluster, ipAddress, port, user, sshKeyFile, nodeName);
@@ -71,7 +70,6 @@ public class KubernetesClusterUtil {
             } catch (InterruptedException ie) {
                 LOGGER.error(String.format("Error while waiting for Kubernetes cluster ID: %s node: %s to become ready", kubernetesCluster.getUuid(), nodeName), ie);
             }
-            retryCounter++;
         }
         return false;
     }
@@ -87,18 +85,20 @@ public class KubernetesClusterUtil {
      * @param user
      * @param sshKeyFile
      * @param userVm
-     * @param retries
+     * @param timeoutTime
      * @param waitDuration
      * @return
      */
-    public static boolean uncordonKubernetesClusterNode(final KubernetesCluster kubernetesCluster, final String ipAddress, final int port,
-                                                        final String user, final File sshKeyFile, final UserVm userVm, final int retries, final int waitDuration) {
-        int retryCounter = 0;
+    public static boolean uncordonKubernetesClusterNode(final KubernetesCluster kubernetesCluster,
+                                                        final String ipAddress, final int port,
+                                                        final String user, final File sshKeyFile,
+                                                        final UserVm userVm, final long timeoutTime,
+                                                        final int waitDuration) {
         String hostName = userVm.getHostName();
         if (!Strings.isNullOrEmpty(hostName)) {
             hostName = hostName.toLowerCase();
         }
-        while (retryCounter < retries) {
+        while (System.currentTimeMillis() < timeoutTime) {
             Pair<Boolean, String> result = null;
             try {
                 result = SshHelper.sshExecute(ipAddress, port, user, sshKeyFile, null,
@@ -115,7 +115,6 @@ public class KubernetesClusterUtil {
             } catch (InterruptedException ie) {
                 LOGGER.warn(String.format("Error while waiting for uncordon Kubernetes cluster ID: %s node: %s on VM ID: %s", kubernetesCluster.getUuid(), hostName, userVm.getUuid()), ie);
             }
-            retryCounter++;
         }
         return false;
     }
@@ -151,13 +150,12 @@ public class KubernetesClusterUtil {
 
     public static boolean isKubernetesClusterDashboardServiceRunning(final KubernetesCluster kubernetesCluster, String ipAddress,
                                                                      final int port, final String user, final File sshKeyFile,
-                                                                     int retries, long waitDuration) {
+                                                                     final long timeoutTime, final long waitDuration) {
         boolean running = false;
-        int retryCounter = 0;
         // Check if dashboard service is up running.
-        while (retryCounter < retries) {
+        while (System.currentTimeMillis() < timeoutTime) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Checking dashboard service for the Kubernetes cluster ID: %s to come up. Attempt: %d/%d", kubernetesCluster.getUuid(), retryCounter + 1, retries));
+                LOGGER.debug(String.format("Checking dashboard service for the Kubernetes cluster ID: %s to come up", kubernetesCluster.getUuid()));
             }
             if (isKubernetesClusterAddOnServiceRunning(kubernetesCluster, ipAddress, port, user, sshKeyFile, "kubernetes-dashboard", "kubernetes-dashboard")) {
                 if (LOGGER.isInfoEnabled()) {
@@ -171,16 +169,14 @@ public class KubernetesClusterUtil {
             } catch (InterruptedException ex) {
                 LOGGER.error(String.format("Error while waiting for Kubernetes cluster: %s API dashboard service to be available", kubernetesCluster.getUuid()), ex);
             }
-            retryCounter++;
         }
         return running;
     }
 
     public static String getKubernetesClusterConfig(final KubernetesCluster kubernetesCluster, final String ipAddress, final int port,
-                                                    final String user, final File sshKeyFile, final int retries) {
-        int retryCounter = 0;
+                                                    final String user, final File sshKeyFile, final long timeoutTime) {
         String kubeConfig = "";
-        while (retryCounter < retries) {
+        while (System.currentTimeMillis() < timeoutTime) {
             try {
                 Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port, user,
                         sshKeyFile, null, "sudo cat /etc/kubernetes/admin.conf",
@@ -195,9 +191,8 @@ public class KubernetesClusterUtil {
                     }
                 }
             } catch (Exception e) {
-                LOGGER.warn(String.format("Failed to retrieve kube-config file for Kubernetes cluster ID: %s. Attempt: %d/%d", kubernetesCluster.getUuid(), retryCounter+1, retries), e);
+                LOGGER.warn(String.format("Failed to retrieve kube-config file for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), e);
             }
-            retryCounter++;
         }
         return kubeConfig;
     }
@@ -219,10 +214,9 @@ public class KubernetesClusterUtil {
     }
 
     public static boolean isKubernetesClusterServerRunning(final KubernetesCluster kubernetesCluster, final String ipAddress,
-                                                           final int port, final int retries, final long waitDuration) {
-        int retryCounter = 0;
+                                                           final int port, final long timeoutTime, final long waitDuration) {
         boolean k8sApiServerSetup = false;
-        while (retryCounter < retries) {
+        while (System.currentTimeMillis() < timeoutTime) {
             try {
                 String versionOutput = IOUtils.toString(new URL(String.format("https://%s:%d/version", ipAddress, port)), StringUtils.getPreferredCharset());
                 if (!Strings.isNullOrEmpty(versionOutput)) {
@@ -233,23 +227,21 @@ public class KubernetesClusterUtil {
                     break;
                 }
             } catch (Exception e) {
-                LOGGER.warn(String.format("API endpoint for Kubernetes cluster ID: %s not available. Attempt: %d/%d", kubernetesCluster.getUuid(), retryCounter+1, retries), e);
+                LOGGER.warn(String.format("API endpoint for Kubernetes cluster ID: %s not available", kubernetesCluster.getUuid()), e);
             }
             try {
                 Thread.sleep(waitDuration);
             } catch (InterruptedException ie) {
                 LOGGER.error(String.format("Error while waiting for Kubernetes cluster ID: %s API endpoint to be available", kubernetesCluster.getUuid()), ie);
             }
-            retryCounter++;
         }
         return k8sApiServerSetup;
     }
 
     public static boolean isKubernetesClusterMasterVmRunning(final KubernetesCluster kubernetesCluster, final String ipAddress,
-                                                             final int port, final long timeout) {
+                                                             final int port, final long timeoutTime) {
         boolean masterVmRunning = false;
-        long startTime = System.currentTimeMillis();
-        while (!masterVmRunning && System.currentTimeMillis() - startTime < timeout) {
+        while (!masterVmRunning && System.currentTimeMillis() < timeoutTime) {
             try (Socket socket = new Socket()) {
                 socket.connect(new InetSocketAddress(ipAddress, port), 10000);
                 masterVmRunning = true;
@@ -270,11 +262,10 @@ public class KubernetesClusterUtil {
     public static boolean validateKubernetesClusterReadyNodesCount(final KubernetesCluster kubernetesCluster,
                                                                    final String ipAddress, final int port,
                                                                    final String user, final File sshKeyFile,
-                                                                   final int retries, final long waitDuration) {
-        int retryCounter = 0;
-        while (retryCounter < retries) {
+                                                                   final long timeoutTime, final long waitDuration) {
+        while (System.currentTimeMillis() < timeoutTime) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Checking ready nodes for the Kubernetes cluster ID: %s with total %d provisioned nodes. Attempt: %d/%d", kubernetesCluster.getUuid(), kubernetesCluster.getTotalNodeCount(), retryCounter + 1, retries));
+                LOGGER.debug(String.format("Checking ready nodes for the Kubernetes cluster ID: %s with total %d provisioned nodes", kubernetesCluster.getUuid(), kubernetesCluster.getTotalNodeCount()));
             }
             try {
                 int nodesCount = KubernetesClusterUtil.getKubernetesClusterReadyNodesCount(kubernetesCluster, ipAddress, port,
@@ -295,9 +286,8 @@ public class KubernetesClusterUtil {
             try {
                 Thread.sleep(waitDuration);
             } catch (InterruptedException ex) {
-                LOGGER.warn(String.format("Error while waiting during Kubernetes cluster ID: %s ready node check. %d/%d", kubernetesCluster.getUuid(), retryCounter+1, retries), ex);
+                LOGGER.warn(String.format("Error while waiting during Kubernetes cluster ID: %s ready node check", kubernetesCluster.getUuid()), ex);
             }
-            retryCounter++;
         }
         return false;
     }
