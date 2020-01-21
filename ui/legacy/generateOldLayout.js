@@ -13,8 +13,8 @@ var loadLabel = function (allFields, fieldDict, prefix) {
         allFields[fieldId].components.push(prefix)
       } else {
         allFields[fieldId] = {
-          'labels': [fieldDict[fieldId].label],
-          'components': [prefix]
+          labels: [fieldDict[fieldId].label],
+          components: [prefix]
         }
       }
       cols = cols + "'" + fieldId + "', "
@@ -28,8 +28,8 @@ var loadLabel = function (allFields, fieldDict, prefix) {
             allFields[colId].components.push(prefix)
           } else {
             allFields[colId] = {
-              'labels': [columns[colId].label],
-              'components': [prefix]
+              labels: [columns[colId].label],
+              components: [prefix]
             }
           }
         })
@@ -63,9 +63,9 @@ var loadFields = function (data, prefix) {
       var curActions = []
       $.each(Object.keys(acVal), function (idx, acKey) {
         if (acVal[acKey].createForm) {
-          curActions.push({ 'action': acKey, 'label': acVal[acKey].label, 'keys': acVal[acKey].createForm.fields })
+          curActions.push({ action: acKey, label: acVal[acKey].label, keys: acVal[acKey].createForm.fields })
         } else {
-          curActions.push({ 'action': acKey, 'label': acVal[acKey].label })
+          curActions.push({ action: acKey, label: acVal[acKey].label })
         }
       })
       countActions = countActions + curActions.length
@@ -77,5 +77,5 @@ var loadFields = function (data, prefix) {
       $.extend(actions, recRes.actions)
     }
   })
-  return { 'allFields': allFields, 'columnsOrder': columnsOrder, 'actions': actions }
+  return { allFields: allFields, columnsOrder: columnsOrder, actions: actions }
 }

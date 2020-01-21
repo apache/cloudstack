@@ -45,8 +45,9 @@ export default {
         name: 'details',
         component: () => import('@/components/view/DetailsTab.vue')
       }, {
-        name: 'egress-rules',
-        component: () => import('@/views/network/EgressConfigure.vue')
+        name: 'Egress Rules',
+        component: () => import('@/views/network/EgressConfigure.vue'),
+        show: () => true
       }],
       actions: [
         {
@@ -227,14 +228,23 @@ export default {
       columns: ['ipaddress', 'state', 'associatednetworkname', 'virtualmachinename', 'allocated', 'account', 'zonename'],
       details: ['ipaddress', 'id', 'associatednetworkname', 'virtualmachinename', 'networkid', 'issourcenat', 'isstaticnat', 'virtualmachinename', 'vmipaddress', 'vlan', 'allocated', 'account', 'zonename'],
       tabs: [{
-        name: 'configure',
-        component: () => import('@/views/network/IpConfigure.vue')
-      }, {
-        name: 'vpn',
-        component: () => import('@/views/network/VpnDetails.vue')
-      }, {
         name: 'details',
         component: () => import('@/components/view/DetailsTab.vue')
+      }, {
+        name: 'Firewall',
+        component: () => import('@/views/network/FirewallRules.vue'),
+        networkServiceFilter: networkService => networkService.filter(x => x.name === 'Firewall').length > 0
+      }, {
+        name: 'Port Forwarding',
+        component: () => import('@/views/network/PortForwarding.vue'),
+        networkServiceFilter: networkService => networkService.filter(x => x.name === 'PortForwarding').length > 0
+      }, {
+        name: 'Load Balancing',
+        component: () => import('@/views/network/LoadBalancing.vue'),
+        networkServiceFilter: networkService => networkService.filter(x => x.name === 'Lb').length > 0
+      }, {
+        name: 'VPN',
+        component: () => import('@/views/network/VpnDetails.vue')
       }],
       actions: [
         {
@@ -243,39 +253,6 @@ export default {
           label: 'Acquire New IP',
           listView: true,
           args: ['networkid']
-        },
-        {
-          api: 'createRemoteAccessVpn',
-          icon: 'link',
-          label: 'Enable Remote Access VPN',
-          dataView: true,
-          args: ['publicipid', 'domainid', 'account'],
-          mapping: {
-            publicipid: {
-              value: (record) => { return record.id }
-            },
-            domainid: {
-              value: (record) => { return record.domainid }
-            },
-            account: {
-              value: (record) => { return record.account }
-            }
-          }
-        },
-        {
-          api: 'deleteRemoteAccessVpn',
-          icon: 'disconnect',
-          label: 'Disable Remove Access VPN',
-          dataView: true,
-          args: ['publicipid', 'domainid'],
-          mapping: {
-            publicipid: {
-              value: (record) => { return record.id }
-            },
-            domainid: {
-              value: (record) => { return record.domainid }
-            }
-          }
         },
         {
           api: 'enableStaticNat',
@@ -306,7 +283,7 @@ export default {
         {
           api: 'disassociateIpAddress',
           icon: 'delete',
-          label: 'Delete IP',
+          label: 'Release IP',
           dataView: true,
           show: (record) => { return !record.issourcenat }
         }

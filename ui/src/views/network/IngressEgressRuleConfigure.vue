@@ -107,7 +107,7 @@
             okText="Yes"
             cancelText="No"
           >
-            <a-button shape="round" type="danger" icon="close-circle" class="rule-action" />
+            <a-button shape="round" type="danger" icon="delete" class="rule-action" />
           </a-popconfirm>
         </div>
       </a-list-item>
