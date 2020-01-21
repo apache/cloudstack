@@ -1698,10 +1698,8 @@ public class KVMStorageProcessor implements StorageProcessor {
     @Override
     public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
         final PrimaryDataStoreTO pool = cmd.getDestPool();
-        KVMStoragePool destPool = storagePoolMgr.getStoragePool(pool.getPoolType(), pool.getUuid());
-        DirectTemplateDownloader downloader = null;
-        String path;
-        long size = 0L;
+        DirectTemplateDownloader downloader;
+        KVMPhysicalDisk template;
 
         try {
             s_logger.info("Verifying temporary location for downloading the template exists on the host");
@@ -1720,6 +1718,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 return new DirectDownloadAnswer(false, msg, true);
             }
 
+            KVMStoragePool destPool = storagePoolMgr.getStoragePool(pool.getPoolType(), pool.getUuid());
             downloader = getDirectTemplateDownloaderFromCommand(cmd, destPool, temporaryDownloadPath);
             s_logger.info("Trying to download template");
             Pair<Boolean, String> result = downloader.downloadTemplate();
@@ -1728,17 +1727,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                 return new DirectDownloadAnswer(false, "Unable to download template", true);
             }
             String tempFilePath = result.second();
-            /**if (!downloader.validateChecksum()) {
+            if (!downloader.validateChecksum()) {
                 s_logger.warn("Couldn't validate template checksum");
                 return new DirectDownloadAnswer(false, "Checksum validation failed", false);
-            }**/
-            KVMPhysicalDisk template = storagePoolMgr.createPhysicalDiskFromDirectDownloadTemplate(tempFilePath, destPool, 100);
-            path = template.getPath();
-            size = template.getSize();
-            /**if (!downloader.extractAndInstallDownloadedTemplate()) {
-                s_logger.warn("Couldn't extract and install template");
-                return new DirectDownloadAnswer(false, "Extraction and installation failed", false);
-            }**/
+            }
+            template = storagePoolMgr.createPhysicalDiskFromDirectDownloadTemplate(tempFilePath, destPool, 100);
         } catch (CloudRuntimeException e) {
             s_logger.warn("Error downloading template " + cmd.getTemplateId() + " due to: " + e.getMessage());
             return new DirectDownloadAnswer(false, "Unable to download template: " + e.getMessage(), true);
@@ -1746,8 +1739,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             return new DirectDownloadAnswer(false, "Unable to create direct downloader: " + e.getMessage(), true);
         }
 
-        //DirectTemplateInformation info = downloader.getTemplateInformation();
-        return new DirectDownloadAnswer(true, size, path);
+        return new DirectDownloadAnswer(true, template.getSize(), template.getPath());
     }
 
     /**
