@@ -110,6 +110,7 @@ export default {
     },
     showHideTab (tab) {
       if ('networkServiceFilter' in tab) {
+        if (this.resource.virtualmachineid && tab.name !== 'Firewall') return false
         return this.networkService && this.networkService.service &&
           tab.networkServiceFilter(this.networkService.service)
       } else if ('show' in tab) {
