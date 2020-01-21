@@ -113,6 +113,17 @@ export default {
           args: ['username', 'password', 'password', 'email', 'firstname', 'lastname', 'domainid', 'account', 'roleid', 'timezone', 'networkdomain']
         },
         {
+          api: 'ldapCreateAccount',
+          icon: 'user-add',
+          label: 'label.add.ldap.account',
+          listView: true,
+          popup: true,
+          show: (record, store) => {
+            return store.isLdapEnabled
+          },
+          component: () => import('@/views/iam/AddLdapAccount.vue')
+        },
+        {
           api: 'updateAccount',
           icon: 'edit',
           label: 'label.update.account',

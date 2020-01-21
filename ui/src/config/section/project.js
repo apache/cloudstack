@@ -95,7 +95,7 @@ export default {
       label: 'Add Account to Project',
       dataView: true,
       args: ['projectid', 'account', 'email'],
-      show: (record, user) => { return record.account === user.account || ['Admin', 'DomainAdmin'].includes(user.roletype) },
+      show: (record, store) => { return record.account === store.userInfo.account || ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) },
       mapping: {
         projectid: {
           value: (record) => { return record.id }

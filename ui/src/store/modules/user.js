@@ -31,7 +31,8 @@ const user = {
     apis: {},
     features: {},
     project: {},
-    asyncJobIds: []
+    asyncJobIds: [],
+    isLdapEnabled: false
   },
 
   mutations: {
@@ -61,6 +62,9 @@ const user = {
     SET_ASYNC_JOB_IDS: (state, jobsJsonArray) => {
       Vue.ls.set(ASYNC_JOB_IDS, jobsJsonArray)
       state.asyncJobIds = jobsJsonArray
+    },
+    SET_LDAP: (state, isLdapEnabled) => {
+      state.isLdapEnabled = isLdapEnabled
     },
     RESET_THEME: (state) => {
       Vue.ls.set(DEFAULT_THEME, 'light')
@@ -123,6 +127,13 @@ const user = {
         api('listCapabilities').then(response => {
           const result = response.listcapabilitiesresponse.capability
           commit('SET_FEATURES', result)
+        }).catch(error => {
+          reject(error)
+        })
+
+        api('listLdapConfigurations').then(response => {
+          const ldapEnable = (response.ldapconfigurationresponse.count > 0)
+          commit('SET_LDAP', ldapEnable)
         }).catch(error => {
           reject(error)
         })

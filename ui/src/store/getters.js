@@ -29,7 +29,8 @@ const getters = {
   userInfo: state => state.user.info,
   addRouters: state => state.permission.addRouters,
   multiTab: state => state.app.multiTab,
-  asyncJobIds: state => state.user.asyncJobIds
+  asyncJobIds: state => state.user.asyncJobIds,
+  isLdapEnabled: state => state.user.isLdapEnabled
 }
 
 export default getters

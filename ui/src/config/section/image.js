@@ -91,7 +91,7 @@ export default {
           label: 'Update template permissions',
           dataView: true,
           popup: true,
-          show: (record, user) => { return (['Admin', 'DomainAdmin'].includes(user.roletype) && (record.domainid === user.domainid && record.account === user.account) || record.templatetype !== 'BUILTIN') },
+          show: (record, store) => { return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) || record.templatetype !== 'BUILTIN') },
           component: () => import('@/views/image/UpdateTemplatePermissions')
         },
         {
