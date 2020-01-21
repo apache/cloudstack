@@ -208,7 +208,7 @@ export default {
       label: 'label.update.vmware.datacenter',
       dataView: true,
       show: (record) => { return record.vmwaredcid },
-      args: ['zoneid', 'name', 'vcenter', 'username', 'password', 'isrecursive'],
+      args: ['zoneid', 'name', 'vcenter', 'username', 'password'],
       mapping: {
         zoneid: {
           value: (record) => { return record.id }
