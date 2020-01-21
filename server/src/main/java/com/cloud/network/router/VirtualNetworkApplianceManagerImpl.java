@@ -45,14 +45,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
-import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
@@ -67,11 +59,18 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
+import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -300,12 +299,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject private AccountManager _accountMgr;
     @Inject private ConfigurationManager _configMgr;
     @Inject private ConfigurationServer _configServer;
-    @Inject private ServiceOfferingDao _serviceOfferingDao;
+    @Inject protected ServiceOfferingDao _serviceOfferingDao;
     @Inject private UserVmDao _userVmDao;
     @Inject private VMInstanceDao _vmDao;
     @Inject private NetworkOfferingDao _networkOfferingDao;
     @Inject private GuestOSDao _guestOSDao;
-    @Inject private NetworkOrchestrationService _networkMgr;
+    @Inject protected NetworkOrchestrationService _networkMgr;
     @Inject protected NetworkModel _networkModel;
     @Inject protected VirtualMachineManager _itMgr;
     @Inject private VpnUserDao _vpnUsersDao;
@@ -2305,7 +2304,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             if (reprogramGuestNtwks) {
                 finalizeIpAssocForNetwork(cmds, router, provider, guestNetworkId, null);
                 finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
-                finalizeMonitorServiceOnStart(cmds, profile, router, provider, guestNetworkId);
+                finalizeMonitorService(cmds, profile, router, provider, guestNetworkId, true);
             }
 
             finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNetworkId);
@@ -2318,8 +2317,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return true;
     }
 
-    protected void finalizeMonitorServiceOnStart(final Commands cmds, final VirtualMachineProfile profile, final DomainRouterVO router, final Provider provider,
-                                               final long networkId) {
+    protected void finalizeMonitorService(final Commands cmds, final VirtualMachineProfile profile, final DomainRouterVO router, final Provider provider,
+                                          final long networkId, boolean onStart) {
         final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(networkId).getNetworkOfferingId());
         if (offering.isRedundantRouter()) {
             // service monitoring is currently not added in RVR
@@ -2368,8 +2367,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             throw new CloudRuntimeException("VirtualMachine " + profile.getInstanceName() + " doesn't have a control interface");
         }
 
-        // As part of aggregate command we don't need to reconfigure and persist in processed cache. Subsequent updates are not needed.
-        SetMonitorServiceCommand command = createMonitorServiceCommand(router, servicesTO, false, false);
+        // As part of aggregate command we don't need to reconfigure if onStart and persist in processed cache. Subsequent updates are not needed.
+        SetMonitorServiceCommand command = createMonitorServiceCommand(router, servicesTO, !onStart, false);
         command.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(networkId, router.getId()));
         if (!isMonitoringServicesEnabled) {
             command.setAccessDetail(SetMonitorServiceCommand.ROUTER_MONITORING_ENABLED, isMonitoringServicesEnabled.toString());

@@ -79,6 +79,9 @@ import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
@@ -94,6 +97,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
@@ -151,8 +155,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 result = false;
             }
             // 3) apply networking rules
-            if (result && params.get(Param.ReProgramGuestNetworks) != null && (Boolean) params.get(Param.ReProgramGuestNetworks) == true) {
-                sendNetworkRulesToRouter(router.getId(), network.getId());
+            if (result) {
+                boolean reprogramNetwork = params != null && params.get(Param.ReProgramGuestNetworks) != null && (Boolean) params.get(Param.ReProgramGuestNetworks) == true;
+                sendNetworkRulesToRouter(router.getId(), network.getId(), reprogramNetwork);
             }
         } catch (final Exception ex) {
             s_logger.warn("Failed to add router " + router + " to network " + network + " due to ", ex);
@@ -454,6 +459,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 throw new CloudRuntimeException("Cannot find related provider of virtual router provider: " + vrProvider.getType().toString());
             }
 
+            if (reprogramGuestNtwks && publicNics.size() > 0) {
+                finalizeMonitorService(cmds, profile, domainRouterVO, provider, publicNics.get(0).second().getId(), true);
+            }
+
             for (final Pair<Nic, Network> nicNtwk : guestNics) {
                 final Nic guestNic = nicNtwk.first();
                 final long guestNetworkId = guestNic.getNetworkId();
@@ -463,7 +472,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 if (reprogramGuestNtwks) {
                     finalizeIpAssocForNetwork(cmds, domainRouterVO, provider, guestNetworkId, vlanMacAddress);
                     finalizeNetworkRulesForNetwork(cmds, domainRouterVO, provider, guestNetworkId);
-                    finalizeMonitorServiceOnStart(cmds, profile, domainRouterVO, provider, guestNetworkId);
+                    finalizeMonitorService(cmds, profile, domainRouterVO, provider, guestNetworkId, true);
                 }
 
                 finalizeUserDataAndDhcpOnStart(cmds, domainRouterVO, provider, guestNetworkId);
@@ -497,7 +506,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
     }
 
-    protected boolean sendNetworkRulesToRouter(final long routerId, final long networkId) throws ResourceUnavailableException {
+    protected boolean sendNetworkRulesToRouter(final long routerId, final long networkId, final boolean reprogramNetwork) throws ResourceUnavailableException {
         final DomainRouterVO router = _routerDao.findById(routerId);
         final Commands cmds = new Commands(OnError.Continue);
 
@@ -510,8 +519,24 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             throw new CloudRuntimeException("Cannot find related provider of virtual router provider: " + vrProvider.getType().toString());
         }
 
-        finalizeNetworkRulesForNetwork(cmds, router, provider, networkId);
+        if (reprogramNetwork) {
+            finalizeNetworkRulesForNetwork(cmds, router, provider, networkId);
+        }
+
+        finalizeMonitorService(cmds, getVirtualMachineProfile(router), router, provider, networkId, false);
+
         return _nwHelper.sendCommandsToRouter(router, cmds);
+    }
+
+    private VirtualMachineProfile getVirtualMachineProfile(DomainRouterVO router) {
+        final ServiceOfferingVO offering = _serviceOfferingDao.findById(router.getId(), router.getServiceOfferingId());
+        final VirtualMachineTemplate template = _entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, router.getTemplateId());
+        final Account owner = _entityMgr.findById(Account.class, router.getAccountId());
+        final VirtualMachineProfileImpl profile = new VirtualMachineProfileImpl(router, template, offering, owner, null);
+        for (final NicProfile nic : _networkMgr.getNicProfiles(router)) {
+            profile.addNic(nic);
+        }
+        return profile;
     }
 
     /**
