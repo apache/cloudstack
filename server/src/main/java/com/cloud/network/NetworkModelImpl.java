@@ -2298,10 +2298,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                     } else {
                         ipv6 = _ipv6Dao.findByNetworkIdAndIp(network.getId(), nic.getIPv6Address());
                     }
-                    //return nic only when its ip address belong to the pod range (for the Basic zone case)
+                    
                     if (vlans.isEmpty()) {
                         return nic;
                     }
+                    //return nic only when its ip address belong to the pod range (for the Basic zone case)
                     for (Vlan vlan : vlans) {
                         if (ip != null && ip.getVlanId() == vlan.getId()) {
                             return nic;
