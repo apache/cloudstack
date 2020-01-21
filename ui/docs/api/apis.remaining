@@ -39,8 +39,6 @@ deleteVlanIpRange
 deleteVpnConnection
 deleteVpnGateway
 findStoragePoolsForMigration
-importLdapUsers
-ldapCreateAccount
 listAffinityGroupTypes
 listAndSwitchSamlAccount
 listDedicatedClusters
@@ -55,7 +53,6 @@ listIdps
 listInternalLoadBalancerElements
 listInternalLoadBalancerVMs
 listLBHealthCheckPolicies
-listLdapUsers
 listLoadBalancers
 listNetworkACLs
 listNetworkServiceProviders
