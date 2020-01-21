@@ -330,7 +330,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject private NetworkService _networkSvc;
     @Inject private IpAddressManager _ipAddrMgr;
     @Inject private ConfigDepot _configDepot;
-    @Inject private MonitoringServiceDao _monitorServiceDao;
+    @Inject protected MonitoringServiceDao _monitorServiceDao;
     @Inject private AsyncJobManager _asyncMgr;
     @Inject protected VpcDao _vpcDao;
     @Inject protected ApiAsyncJobDispatcher _asyncDispatcher;
@@ -2347,8 +2347,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 services.add(lbService);
             }
         }
-        final List<MonitoringServiceVO> defaultServices = _monitorServiceDao.listDefaultServices(true);
-        services.addAll(defaultServices);
+
+        services.addAll(getDefaultServicesToMonitor(network));
 
         final List<MonitorServiceTO> servicesTO = new ArrayList<MonitorServiceTO>();
         for (final MonitoringServiceVO service : services) {
@@ -2375,6 +2375,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
 
         cmds.addCommand("monitor", command);
+    }
+
+    protected List<MonitoringServiceVO> getDefaultServicesToMonitor(final NetworkVO network) {
+        return _monitorServiceDao.listDefaultServices(true);
     }
 
     protected NicProfile getControlNic(final VirtualMachineProfile profile) {

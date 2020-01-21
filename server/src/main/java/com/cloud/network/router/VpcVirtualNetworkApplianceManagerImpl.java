@@ -18,6 +18,7 @@ package com.cloud.network.router;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -50,6 +51,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.IpAddress;
+import com.cloud.network.MonitoringService;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -61,6 +63,8 @@ import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.MonitoringServiceVO;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.NetworkACLItemVO;
@@ -485,6 +489,14 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             cmds.addCommands(usageCmds);
         }
         return true;
+    }
+
+    @Override
+    protected List<MonitoringServiceVO> getDefaultServicesToMonitor(NetworkVO network) {
+        if (network.getTrafficType() == TrafficType.Public) {
+            return Arrays.asList(_monitorServiceDao.getServiceByName(MonitoringService.Service.Ssh.toString()));
+        }
+        return super.getDefaultServicesToMonitor(network);
     }
 
     @Override
