@@ -2298,7 +2298,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                     } else {
                         ipv6 = _ipv6Dao.findByNetworkIdAndIp(network.getId(), nic.getIPv6Address());
                     }
-                    
+
                     if (vlans.isEmpty()) {
                         return nic;
                     }
