@@ -147,6 +147,10 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
         return publicIso;
     }
 
+    public void setPublic(Boolean publicIso) {
+        this.publicIso = publicIso;
+    }
+
     public Boolean isExtractable() {
         return extractable;
     }

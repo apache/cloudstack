@@ -144,6 +144,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         RegisterIsoCmd registerIsoCmd = new RegisterIsoCmd();
         registerIsoCmd = ComponentContext.inject(registerIsoCmd);
         registerIsoCmd.setIsoName(isoName);
+        registerIsoCmd.setPublic(true);
         if (zoneId != null) {
             registerIsoCmd.setZoneId(zoneId);
         }
