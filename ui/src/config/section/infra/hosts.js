@@ -23,7 +23,14 @@ export default {
   resourceType: 'Host',
   params: { type: 'routing' },
   columns: ['name', 'state', 'resourcestate', 'powerstate', 'ipaddress', 'hypervisor', 'instances', 'cpunumber', 'cputotalghz', 'cpuusedghz', 'cpuallocatedghz', 'memorytotalgb', 'memoryusedgb', 'memoryallocatedgb', 'networkread', 'networkwrite', 'clustername', 'zonename'],
-  details: ['name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'hypervisorversion', 'version', 'type', 'oscategoryname', 'hosttags', 'clustername', 'podname', 'zonename', 'created'],
+  details: ['name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'type', 'clustername', 'podname', 'zonename', 'disconnected', 'created'],
+  tabs: [{
+    name: 'details',
+    component: () => import('@/components/view/DetailsTab.vue')
+  }, {
+    name: 'Config',
+    component: () => import('@/views/infra/HostInfoTab.vue')
+  }],
   related: [{
     name: 'vm',
     title: 'Instances',
@@ -42,7 +49,12 @@ export default {
       icon: 'edit',
       label: 'label.edit',
       dataView: true,
-      args: ['hosttags', 'oscategoryid']
+      args: ['hosttags', 'oscategoryid'],
+      mapping: {
+        oscategoryid: {
+          api: 'listOsCategories'
+        }
+      }
     },
     {
       api: 'provisionCertificate',

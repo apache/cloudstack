@@ -36,11 +36,7 @@ deleteVpnConnection
 deleteVpnGateway
 findStoragePoolsForMigration
 listAffinityGroupTypes
-listDedicatedClusters
 listDedicatedGuestVlanRanges
-listDedicatedHosts
-listDedicatedPods
-listDedicatedZones
 listDeploymentPlanners
 listHostTags
 listInternalLoadBalancerElements
@@ -49,7 +45,6 @@ listLBHealthCheckPolicies
 listLoadBalancers
 listNetworkACLs
 listNetworkServiceProviders
-listOsCategories
 listPortableIpRanges
 listRegisteredServicePackages
 listStaticRoutes

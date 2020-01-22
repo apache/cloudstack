@@ -525,6 +525,9 @@ export default {
 
       this.showAction = true
       for (const param of this.currentAction.paramFields) {
+        if (param.type === 'list' && param.name === 'hosttags') {
+          param.type = 'string'
+        }
         if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
           this.listUuidOpts(param)
         }
