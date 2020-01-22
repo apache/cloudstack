@@ -24,6 +24,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
 
@@ -48,6 +49,7 @@ import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Transaction;
@@ -63,6 +65,8 @@ import com.google.common.base.Strings;
 
 public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModifierActionWorker {
 
+    @Inject
+    protected AccountManager accountManager;
     @Inject
     protected VMInstanceDao vmInstanceDao;
     @Inject
@@ -90,7 +94,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     }
 
     private void logTransitStateToFailedIfNeededAndThrow(final Level logLevel, final String message, final Exception e) throws CloudRuntimeException {
-        if (kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
+        KubernetesCluster cluster = kubernetesClusterDao.findById(kubernetesCluster.getId());
+        if (cluster != null && KubernetesCluster.State.Scaling.equals(kubernetesCluster.getState())) {
             logTransitStateAndThrow(logLevel, message, kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
         } else {
             logAndThrow(logLevel, message, e);
@@ -156,13 +161,13 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             throw new ManagementServerException("Firewall rule for node SSH access can't be provisioned!");
         }
         int existingFirewallRuleSourcePortEnd = firewallRule.getSourcePortEnd();
-
+        final int scaledTotalNodeCount = clusterSize == null ? (int)kubernetesCluster.getTotalNodeCount() : (int)(clusterSize + kubernetesCluster.getMasterNodeCount());
         // Provision new SSH firewall rules
         try {
-            provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, CLUSTER_NODES_DEFAULT_START_SSH_PORT + (int)kubernetesCluster.getTotalNodeCount() - 1);
+            provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, CLUSTER_NODES_DEFAULT_START_SSH_PORT + scaledTotalNodeCount - 1);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(String.format("Provisioned  firewall rule to open up port %d to %d on %s in Kubernetes cluster ID: %s",
-                        CLUSTER_NODES_DEFAULT_START_SSH_PORT, CLUSTER_NODES_DEFAULT_START_SSH_PORT + (int) kubernetesCluster.getTotalNodeCount() - 1, publicIp.getAddress().addr(), kubernetesCluster.getUuid()));
+                        CLUSTER_NODES_DEFAULT_START_SSH_PORT, CLUSTER_NODES_DEFAULT_START_SSH_PORT + scaledTotalNodeCount - 1, publicIp.getAddress().addr(), kubernetesCluster.getUuid()));
             }
         } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException e) {
             throw new ManagementServerException(String.format("Failed to activate SSH firewall rules for the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), e);
@@ -202,10 +207,10 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         final ServiceOffering serviceOffering = newServiceOffering == null ?
                 serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId()) : newServiceOffering;
         final Long serviceOfferingId = newServiceOffering == null ? null : serviceOffering.getId();
-        final long size = newSize == null ? kubernetesCluster.getNodeCount() : newSize;
+        final long size = newSize == null ? kubernetesCluster.getTotalNodeCount() : (newSize + kubernetesCluster.getMasterNodeCount());
         final long cores = serviceOffering.getCpu() * size;
         final long memory = serviceOffering.getRamSize() * size;
-        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(cores, memory, size, serviceOfferingId);
+        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(cores, memory, newSize, serviceOfferingId);
         if (kubernetesClusterVO == null) {
             logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, unable to update Kubernetes cluster",
                     kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
@@ -334,12 +339,14 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         kubernetesCluster = updateKubernetesClusterEntry(null, serviceOffering);
     }
 
-    private void scaleDownKubernetesClusterSize(final List<KubernetesClusterVmMapVO> originalVmList) throws CloudRuntimeException {
+    private void scaleDownKubernetesClusterSize() throws CloudRuntimeException {
         if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.ScaleDownRequested);
         }
+        final List<KubernetesClusterVmMapVO> originalVmList  = getKubernetesClusterVMMaps();
         int i = originalVmList.size() - 1;
         List<Long> removedVmIds = new ArrayList<>();
+        boolean isCallerAdmin = accountManager.isAdmin(CallContext.current().getCallingAccountId());
         while (i > kubernetesCluster.getMasterNodeCount()) {
             KubernetesClusterVmMapVO vmMapVO = originalVmList.get(i);
             UserVm userVM = userVmDao.findById(vmMapVO.getVmId());
@@ -349,21 +356,30 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             // For removing port-forwarding network rules
             removedVmIds.add(userVM.getId());
             try {
-                UserVm vm = userVmService.destroyVm(userVM.getId(), true);
-                if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
+                UserVm vm = userVmService.destroyVm(userVM.getId(), isCallerAdmin);
+                if (isCallerAdmin && !VirtualMachine.State.Expunging.equals(vm.getState())) {
                     logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, VM '%s' is now in state '%s'."
                             , kubernetesCluster.getUuid()
                             , vm.getInstanceName()
                             , vm.getState().toString()),
                             kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
                 }
-                vm = userVmService.expungeVm(userVM.getId());
-                if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
+                if (!isCallerAdmin && !VirtualMachine.State.Destroyed.equals(vm.getState())) {
                     logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, VM '%s' is now in state '%s'."
                             , kubernetesCluster.getUuid()
                             , vm.getInstanceName()
                             , vm.getState().toString()),
                             kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                }
+                if (isCallerAdmin) {
+                    vm = userVmService.expungeVm(userVM.getId());
+                    if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
+                        logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, VM '%s' is now in state '%s'."
+                                , kubernetesCluster.getUuid()
+                                , vm.getInstanceName()
+                                , vm.getState().toString()),
+                                kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                    }
                 }
             } catch (ResourceUnavailableException e) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, unable to remove VM ID: %s"
@@ -383,14 +399,14 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
     }
 
-    private void scaleUpKubernetesClusterSize(final List<KubernetesClusterVmMapVO> originalVmList, final long newVmCount) throws CloudRuntimeException {
+    private void scaleUpKubernetesClusterSize(final long newVmCount) throws CloudRuntimeException {
         if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.ScaleUpRequested);
         }
         List<UserVm> clusterVMs = new ArrayList<>();
         List<Long> clusterVMIds = new ArrayList<>();
         try {
-            clusterVMs = provisionKubernetesClusterNodeVms((int) newVmCount + originalVmList.size(), originalVmList.size(), publicIpAddress);
+            clusterVMs = provisionKubernetesClusterNodeVms((int)(newVmCount + kubernetesCluster.getNodeCount()), (int)kubernetesCluster.getNodeCount(), publicIpAddress);
         } catch (ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster ID: %s, unable to provision node VM in the cluster", kubernetesCluster.getUuid()), e);
         }
@@ -430,11 +446,10 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         if (Strings.isNullOrEmpty(publicIpAddress)) {
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster ID: %s, unable to retrieve associated public IP", kubernetesCluster.getUuid()));
         }
-        List<KubernetesClusterVmMapVO> vmList = getKubernetesClusterVMMaps();
         if (newVmRequiredCount < 0) { // downscale
-            scaleDownKubernetesClusterSize(vmList);
+            scaleDownKubernetesClusterSize();
         } else { // upscale, same node count handled above
-            scaleUpKubernetesClusterSize(vmList, newVmRequiredCount);
+            scaleUpKubernetesClusterSize(newVmRequiredCount);
         }
         kubernetesCluster = updateKubernetesClusterEntry(clusterSize, null);
     }
