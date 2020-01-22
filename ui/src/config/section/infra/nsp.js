@@ -16,39 +16,43 @@
 // under the License.
 
 export default {
-  name: 'physicalnetwork',
-  title: 'Physical Networks',
-  icon: 'api',
+  name: 'nsp',
+  title: 'Network Service Providers',
+  icon: 'compass',
   hidden: true,
-  permission: ['listPhysicalNetworks'],
-  columns: ['name', 'state', 'isolationmethods', 'vlan', 'broadcastdomainrange', 'zoneid'],
-  details: ['name', 'state', 'isolationmethods', 'vlan', 'broadcastdomainrange', 'zoneid'],
+  permission: ['listNetworkServiceProviders'],
+  columns: ['name', 'state', 'physicalnetworkid'],
+  details: ['name', 'state', 'servicelist', 'canenableindividualservice', 'physicalnetworkid'],
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
-  }, {
-    name: 'Network Service Providers',
-    component: () => import('@/views/infra/traffic/NspTab.vue')
-  }, {
-    name: 'Dedicated VLAN/VNI Ranges',
-    component: () => import('@/views/infra/traffic/DedicatedVLANTab.vue')
-  }],
-  related: [{
-    name: 'traffictype',
-    title: 'Traffic Types',
-    param: 'physicalnetworkid'
-  }, {
-    name: 'guestnetwork',
-    title: 'Networks',
-    param: 'physicalnetworkid'
   }],
   actions: [
     {
-      api: 'updatePhysicalNetwork',
-      icon: 'edit',
-      label: 'Update Physical Network',
+      api: 'updateNetworkServiceProvider',
+      icon: 'stop',
+      label: 'Disable Provider',
       dataView: true,
-      args: ['vlan', 'tags']
+      args: ['state'],
+      show: (record) => { return record.state === 'Enabled' },
+      mapping: {
+        state: {
+          value: (record) => { return 'Disabled' }
+        }
+      }
+    },
+    {
+      api: 'updateNetworkServiceProvider',
+      icon: 'right-circle',
+      label: 'Enable Provider',
+      dataView: true,
+      args: ['state'],
+      show: (record) => { return record.state === 'Disabled' },
+      mapping: {
+        state: {
+          value: (record) => { return 'Enabled' }
+        }
+      }
     }
   ]
 }

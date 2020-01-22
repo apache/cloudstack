@@ -16,39 +16,27 @@
 // under the License.
 
 export default {
-  name: 'physicalnetwork',
-  title: 'Physical Networks',
-  icon: 'api',
+  name: 'traffictype',
+  title: 'Traffic Types',
+  icon: 'branches',
   hidden: true,
-  permission: ['listPhysicalNetworks'],
-  columns: ['name', 'state', 'isolationmethods', 'vlan', 'broadcastdomainrange', 'zoneid'],
-  details: ['name', 'state', 'isolationmethods', 'vlan', 'broadcastdomainrange', 'zoneid'],
+  permission: ['listTrafficTypes'],
+  columns: ['traffictype', 'kvmnetworklabel', 'vmwarenetworklabel', 'xennetworklabel', 'physicalnetworkid'],
+  details: ['traffictype', 'kvmnetworklabel', 'vmwarenetworklabel', 'xennetworklabel', 'hypervnetworklabel', 'ovm3networklabel', 'physicalnetworkid'],
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
   }, {
-    name: 'Network Service Providers',
-    component: () => import('@/views/infra/traffic/NspTab.vue')
-  }, {
-    name: 'Dedicated VLAN/VNI Ranges',
-    component: () => import('@/views/infra/traffic/DedicatedVLANTab.vue')
-  }],
-  related: [{
-    name: 'traffictype',
-    title: 'Traffic Types',
-    param: 'physicalnetworkid'
-  }, {
-    name: 'guestnetwork',
-    title: 'Networks',
-    param: 'physicalnetworkid'
+    name: 'IP Ranges',
+    component: () => import('@/views/infra/traffic/IpRangesTab.vue')
   }],
   actions: [
     {
-      api: 'updatePhysicalNetwork',
+      api: 'updateTrafficType',
       icon: 'edit',
-      label: 'Update Physical Network',
+      label: 'Update Traffic Labels',
       dataView: true,
-      args: ['vlan', 'tags']
+      args: ['kvmnetworklabel', 'vmwarenetworklabel', 'xennetworklabel', 'hypervnetworklabel', 'ovm3networklabel']
     }
   ]
 }

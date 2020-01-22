@@ -44,15 +44,12 @@ listInternalLoadBalancerVMs
 listLBHealthCheckPolicies
 listLoadBalancers
 listNetworkACLs
-listNetworkServiceProviders
 listPortableIpRanges
-listRegisteredServicePackages
 listStaticRoutes
 listStorageNetworkIpRange
 listStorageProviders
 listStorageTags
 listSupportedNetworkServices
-listTrafficTypes
 listVirtualRouterElements
 listVlanIpRanges
 listVmwareDcs
@@ -64,6 +61,3 @@ startInternalLoadBalancerVM
 stopInternalLoadBalancerVM
 updateNetworkACLItem
 updateNetworkACLList
-updateNetworkServiceProvider
-updatePhysicalNetwork
-updateTrafficType
