@@ -281,8 +281,8 @@ export default {
   .form-layout {
     width: 80vw;
 
-    @media (min-width: 1000px) {
-      width: 35vw;
+    @media (min-width: 600px) {
+      width: 25vw;
     }
   }
 
