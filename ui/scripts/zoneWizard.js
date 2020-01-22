@@ -5238,7 +5238,7 @@
                             success: function(json) {
                                 var uploadparams = json.postuploadtemplateresponse.getuploadparams;
                                 var formData = new FormData();
-                                var fileData = $("form")[18][6].files[0];
+                                var fileData = $("form[rel='selectSystemVm'] input[type='file']")[0].files[0];
                                 formData.append('file', fileData, uploadparams.id);
                                 formData.append("X-signature", uploadparams.signature);
                                 formData.append("X-metadata", uploadparams.metadata);
