@@ -77,20 +77,29 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 if (userVM == null || userVM.isRemoved()) {
                     continue;
                 }
+                boolean isAdmin = accountManager.isAdmin(CallContext.current().getCallingAccountId());
                 try {
-                    UserVm vm = userVmService.destroyVm(vmID, true);
-                    if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
+                    UserVm vm = userVmService.destroyVm(vmID, isAdmin);
+                    if (isAdmin && !VirtualMachine.State.Expunging.equals(vm.getState())) {
                         LOGGER.warn(String.format("VM '%s' ID: %s should have been expunging by now but is '%s'... retrying..."
                                 , vm.getInstanceName()
                                 , vm.getUuid()
                                 , vm.getState().toString()));
                     }
-                    vm = userVmService.expungeVm(vmID);
-                    if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
-                        LOGGER.error(String.format("VM '%s' ID: %s is now in state '%s'. Will probably fail at deleting it's Kubernetes cluster."
+                    if (!isAdmin && !VirtualMachine.State.Destroyed.equals(vm.getState())) {
+                        LOGGER.warn(String.format("VM '%s' ID: %s should have been destroyed by now but is '%s'... retrying..."
                                 , vm.getInstanceName()
                                 , vm.getUuid()
                                 , vm.getState().toString()));
+                    }
+                    if (isAdmin) {
+                        vm = userVmService.expungeVm(vmID);
+                        if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
+                            LOGGER.error(String.format("VM '%s' ID: %s is now in state '%s'. Will probably fail at deleting it's Kubernetes cluster."
+                                    , vm.getInstanceName()
+                                    , vm.getUuid()
+                                    , vm.getState().toString()));
+                        }
                     }
                     kubernetesClusterVmMapDao.expunge(clusterVM.getId());
                     if (LOGGER.isInfoEnabled()) {
