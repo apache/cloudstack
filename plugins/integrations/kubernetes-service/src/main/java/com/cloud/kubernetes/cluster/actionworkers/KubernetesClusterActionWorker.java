@@ -288,18 +288,23 @@ public class KubernetesClusterActionWorker {
         if (kubernetesSupportedVersion == null) {
             version = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
         }
+        KubernetesCluster.Event failedEvent = KubernetesCluster.Event.OperationFailed;
+        KubernetesCluster cluster = kubernetesClusterDao.findById(kubernetesCluster.getId());
+        if (cluster != null && cluster.getState() == KubernetesCluster.State.Starting) {
+            failedEvent = KubernetesCluster.Event.CreateFailed;
+        }
         if (version == null) {
-            logAndThrow(Level.ERROR, String .format("Unable to find Kubernetes version for cluster ID: %s", kubernetesCluster.getUuid()));
+            logTransitStateAndThrow(Level.ERROR, String .format("Unable to find Kubernetes version for cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), failedEvent);
         }
         VMTemplateVO iso = templateDao.findById(version.getIsoId());
         if (iso == null) {
-            logAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster ID: %s. Binaries ISO not found.",  kubernetesCluster.getUuid()));
+            logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster ID: %s. Binaries ISO not found.",  kubernetesCluster.getUuid()), kubernetesCluster.getId(), failedEvent);
         }
         if (!iso.getFormat().equals(Storage.ImageFormat.ISO)) {
-            logAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster ID: %s. Invalid Binaries ISO.",  kubernetesCluster.getUuid()));
+            logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster ID: %s. Invalid Binaries ISO.",  kubernetesCluster.getUuid()), kubernetesCluster.getId(), failedEvent);
         }
         if (!iso.getState().equals(VirtualMachineTemplate.State.Active)) {
-            logAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster ID: %s. Binaries ISO not active.",  kubernetesCluster.getUuid()));
+            logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster ID: %s. Binaries ISO not active.",  kubernetesCluster.getUuid()), kubernetesCluster.getId(), failedEvent);
         }
         for (UserVm vm : clusterVMs) {
             try {
@@ -308,16 +313,16 @@ public class KubernetesClusterActionWorker {
                     LOGGER.info(String.format("Attached binaries ISO for VM: %s in cluster: %s", vm.getUuid(), kubernetesCluster.getName()));
                 }
             } catch (CloudRuntimeException ex) {
-                logAndThrow(Level.ERROR, String.format("Failed to attach binaries ISO for VM: %s in the Kubernetes cluster name: %s", vm.getDisplayName(), kubernetesCluster.getName()), ex);
+                logTransitStateAndThrow(Level.ERROR, String.format("Failed to attach binaries ISO for VM: %s in the Kubernetes cluster name: %s", vm.getDisplayName(), kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent, ex);
             }
         }
     }
 
-    protected void attachIsoKubernetesVMs(List<UserVm> clusterVMs) {
+    protected void attachIsoKubernetesVMs(List<UserVm> clusterVMs) throws CloudRuntimeException {
         attachIsoKubernetesVMs(clusterVMs, null);
     }
 
-    protected void detachIsoKubernetesVMs(List<UserVm> clusterVMs) throws CloudRuntimeException {
+    protected void detachIsoKubernetesVMs(List<UserVm> clusterVMs) {
         for (UserVm vm : clusterVMs) {
             boolean result = false;
             try {
