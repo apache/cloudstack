@@ -81,32 +81,6 @@ export default {
       show: (record) => { return record.resourcestate === 'Disabled' }
     },
     {
-      api: 'dedicateHost',
-      icon: 'user-add',
-      label: 'label.dedicate.host',
-      dataView: true,
-      show: (record) => { return !record.domainid },
-      args: ['hostid', 'domainid', 'account'],
-      mapping: {
-        hostid: {
-          value: (record) => { return record.id }
-        }
-      }
-    },
-    {
-      api: 'releaseDedicatedHost',
-      icon: 'user-delete',
-      label: 'label.release.dedicated.host',
-      dataView: true,
-      show: (record) => { return record.domainid },
-      args: ['hostid'],
-      mapping: {
-        hostid: {
-          value: (record) => { return record.id }
-        }
-      }
-    },
-    {
       api: 'prepareHostForMaintenance',
       icon: 'plus-square',
       label: 'label.action.enable.maintenance.mode',

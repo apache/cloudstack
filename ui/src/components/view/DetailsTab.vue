@@ -28,12 +28,19 @@
         </div>
       </div>
     </a-list-item>
+    <DedicateData :resource="resource" v-if="dedicatedSectionActive" />
   </a-list>
 </template>
 
 <script>
+
+import DedicateData from './DedicateData'
+
 export default {
   name: 'DetailsTab',
+  components: {
+    DedicateData
+  },
   props: {
     resource: {
       type: Object,
@@ -42,6 +49,19 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    }
+  },
+  data () {
+    return {
+      dedicatedSectionActive: false
+    }
+  },
+  created () {
+    this.dedicatedSectionActive = ['zone', 'pod', 'cluster', 'host'].includes(this.$route.meta.name)
+  },
+  watch: {
+    $route () {
+      this.dedicatedSectionActive = ['zone', 'pod', 'cluster', 'host'].includes(this.$route.meta.name)
     }
   }
 }

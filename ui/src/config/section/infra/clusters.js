@@ -59,32 +59,6 @@ export default {
       show: (record) => { return record.allocationstate === 'Enabled' }
     },
     {
-      api: 'dedicateCluster',
-      icon: 'user-add',
-      label: 'label.dedicate.cluster',
-      dataView: true,
-      show: (record) => { return !record.domainid },
-      args: ['clusterid', 'domainid', 'account'],
-      mapping: {
-        clusterid: {
-          value: (record) => { return record.id }
-        }
-      }
-    },
-    {
-      api: 'releaseDedicatedCluster',
-      icon: 'user-delete',
-      label: 'label.release.dedicated.cluster',
-      dataView: true,
-      show: (record) => { return record.domainid },
-      args: ['clusterid'],
-      mapping: {
-        clusterid: {
-          value: (record) => { return record.id }
-        }
-      }
-    },
-    {
       api: 'updateCluster',
       icon: 'plus-square',
       label: 'Manage Cluster',

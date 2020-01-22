@@ -47,32 +47,6 @@ export default {
       args: ['name', 'netmask', 'gateway']
     },
     {
-      api: 'dedicatePod',
-      icon: 'user-add',
-      label: 'label.dedicate.pod',
-      dataView: true,
-      show: (record) => { return !record.domainid },
-      args: ['podid', 'domainid', 'account'],
-      mapping: {
-        podid: {
-          value: (record) => { return record.id }
-        }
-      }
-    },
-    {
-      api: 'releaseDedicatedPod',
-      icon: 'user-delete',
-      label: 'label.release.dedicated.pod',
-      dataView: true,
-      show: (record) => { return record.domainid },
-      args: ['podid'],
-      mapping: {
-        podid: {
-          value: (record) => { return record.id }
-        }
-      }
-    },
-    {
       api: 'updatePod',
       icon: 'play-circle',
       label: 'label.action.enable.pod',

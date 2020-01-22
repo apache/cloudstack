@@ -100,32 +100,6 @@ export default {
       show: (record) => { return record.allocationstate === 'Disabled' }
     },
     {
-      api: 'dedicateZone',
-      icon: 'user-add',
-      label: 'label.dedicate.zone',
-      dataView: true,
-      show: (record) => { return !record.domainid },
-      args: ['zoneid', 'domainid', 'account'],
-      mapping: {
-        zoneid: {
-          value: (record) => { return record.id }
-        }
-      }
-    },
-    {
-      api: 'releaseDedicatedZone',
-      icon: 'user-delete',
-      label: 'label.release.dedicated.zone',
-      dataView: true,
-      show: (record) => { return record.domainid },
-      args: ['zoneid'],
-      mapping: {
-        zoneid: {
-          value: (record) => { return record.id }
-        }
-      }
-    },
-    {
       api: 'enableOutOfBandManagementForZone',
       icon: 'plus-circle',
       label: 'label.outofbandmanagement.enable',
