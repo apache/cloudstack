@@ -58,7 +58,6 @@ public class MetalinkDirectTemplateDownloader extends HttpDirectTemplateDownload
         if (StringUtils.isBlank(getUrl())) {
             throw new CloudRuntimeException("Download url has not been set, aborting");
         }
-        String downloadDir = getDirectDownloadTempPath(getTemplateId());
         boolean downloaded = false;
         int i = 0;
         do {
@@ -67,7 +66,7 @@ public class MetalinkDirectTemplateDownloader extends HttpDirectTemplateDownload
             }
             s_logger.info("Trying to download template from url: " + getUrl());
             try {
-                File f = new File(getDestPoolPath() + File.separator + downloadDir + File.separator + getFileNameFromUrl());
+                File f = new File(getDownloadedFilePath());
                 if (f.exists()) {
                     f.delete();
                     f.createNewFile();

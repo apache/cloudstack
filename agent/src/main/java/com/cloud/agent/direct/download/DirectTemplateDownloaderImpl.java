@@ -36,7 +36,7 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
     private String downloadedFilePath;
     private String checksum;
     private boolean redownload = false;
-    private String temporaryDownloadPath;
+    protected String temporaryDownloadPath;
 
     public static final Logger s_logger = Logger.getLogger(DirectTemplateDownloaderImpl.class.getName());
 
