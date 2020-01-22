@@ -198,31 +198,32 @@
                                         select: function(args){
                                             args.$select.change(function(){
                                                 var $form = $(this).closest('form');
-                                                if ($(this).val() == "copy"){
-                                                    $form.find(".form-item[rel='sourceZone']").show();
-                                                    $form.find(".form-item[rel='sourceTemplate']").show();
-                                                    $form.find(".form-item[rel='url']").hide();
-                                                    $form.find(".form-item[rel='name']").hide();
-                                                    $form.find(".form-item[rel='description']").hide();
-                                                    $form.find(".form-item[rel='hypervisor']").hide();
-                                                    $form.find(".form-item[rel='format']").hide();
-                                                    $form.find(".form-item[rel='osTypeId']").hide();
-                                                    $form.find(".form-item[rel='activate']").hide();
-                                                    $("select[name='zone'] option[value='-1']").remove()
-                                                } else {
-                                                    $form.find(".form-item[rel='sourceZone']").hide();
-                                                    $form.find(".form-item[rel='sourceTemplate']").hide();
-                                                    $form.find(".form-item[rel='url']").show();
-                                                    $form.find(".form-item[rel='name']").show();
-                                                    $form.find(".form-item[rel='description']").show();
-                                                    $form.find(".form-item[rel='hypervisor']").show();
-                                                    $form.find(".form-item[rel='format']").show();
-                                                    $form.find(".form-item[rel='osTypeId']").show();
-                                                    $form.find(".form-item[rel='activate']").show();
-                                                    if (!$("select[name='zone'] option[value='-1']").length){
-                                                        $("select[name='zone']").prepend(new Option("All Zones", "-1"));
+                                                if ( $("#label_action_create_template_type").val() == "system"){
+                                                    if ($(this).val() == "copy"){
+                                                        $form.find(".form-item[rel='sourceZone']").show();
+                                                        $form.find(".form-item[rel='sourceTemplate']").show();
+                                                        $form.find(".form-item[rel='url']").hide();
+                                                        $form.find(".form-item[rel='name']").hide();
+                                                        $form.find(".form-item[rel='description']").hide();
+                                                        $form.find(".form-item[rel='hypervisor']").hide();
+                                                        $form.find(".form-item[rel='format']").hide();
+                                                        $form.find(".form-item[rel='osTypeId']").hide();
+                                                        $form.find(".form-item[rel='activate']").hide();
+                                                        $("select[name='zone'] option[value='-1']").remove()
+                                                    } else {
+                                                        $form.find(".form-item[rel='sourceZone']").hide();
+                                                        $form.find(".form-item[rel='sourceTemplate']").hide();
+                                                        $form.find(".form-item[rel='url']").show();
+                                                        $form.find(".form-item[rel='name']").show();
+                                                        $form.find(".form-item[rel='description']").show();
+                                                        $form.find(".form-item[rel='hypervisor']").show();
+                                                        $form.find(".form-item[rel='format']").show();
+                                                        $form.find(".form-item[rel='osTypeId']").show();
+                                                        $form.find(".form-item[rel='activate']").show();
+                                                        if (!$("select[name='zone'] option[value='-1']").length){
+                                                            $("select[name='zone']").prepend(new Option("All Zones", "-1"));
+                                                        }
                                                     }
-                                                    
                                                 }
                                             });
 
@@ -315,7 +316,9 @@
                                         dependsOn: ['templatetype','templateSource','sourceZone'],
                                         isMultiple: true,
                                         validation: {
-                                            allzonesonly: true
+                                            allzonesonly: true,
+                                            required: true
+                                            
                                         },
                                         select: function(args) {
                                             if(g_regionsecondaryenabled == true) {
