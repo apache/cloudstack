@@ -1702,7 +1702,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         KVMPhysicalDisk template;
 
         try {
-            s_logger.info("Verifying temporary location for downloading the template exists on the host");
+            s_logger.debug("Verifying temporary location for downloading the template exists on the host");
             String temporaryDownloadPath = resource.getDirectDownloadTemporaryDownloadPath();
             if (!isLocationAccessible(temporaryDownloadPath)) {
                 String msg = "The temporary location path for downloading templates does not exist: " +
@@ -1711,7 +1711,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 return new DirectDownloadAnswer(false, msg, true);
             }
 
-            s_logger.info("Checking for free space on the host for downloading the template");
+            s_logger.debug("Checking for free space on the host for downloading the template");
             if (!isEnoughSpaceForDownloadTemplateOnTemporaryLocation(cmd.getTemplateSize())) {
                 String msg = "Not enough space on the defined temporary location to download the template " + cmd.getTemplateId();
                 s_logger.error(msg);
@@ -1720,7 +1720,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             KVMStoragePool destPool = storagePoolMgr.getStoragePool(pool.getPoolType(), pool.getUuid());
             downloader = getDirectTemplateDownloaderFromCommand(cmd, destPool, temporaryDownloadPath);
-            s_logger.info("Trying to download template");
+            s_logger.debug("Trying to download template");
             Pair<Boolean, String> result = downloader.downloadTemplate();
             if (!result.first()) {
                 s_logger.warn("Couldn't download template");
