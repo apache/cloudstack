@@ -1015,11 +1015,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         int currentCpu = currentServiceOffering.getCpu();
         int currentMemory = currentServiceOffering.getRamSize();
 
+        Account owner = _accountMgr.getActiveAccountById(vmInstance.getAccountId());
         if (newCpu > currentCpu) {
-            _resourceLimitMgr.checkResourceLimit(caller, ResourceType.cpu, newCpu - currentCpu);
+            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.cpu, newCpu - currentCpu);
         }
         if (newMemory > currentMemory) {
-            _resourceLimitMgr.checkResourceLimit(caller, ResourceType.memory, newMemory - currentMemory);
+            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.memory, newMemory - currentMemory);
         }
 
         // Check that the specified service offering ID is valid
@@ -1036,14 +1037,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Increment or decrement CPU and Memory count accordingly.
         if (newCpu > currentCpu) {
-            _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long(newCpu - currentCpu));
+            _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.cpu, new Long(newCpu - currentCpu));
         } else if (currentCpu > newCpu) {
-            _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long(currentCpu - newCpu));
+            _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.cpu, new Long(currentCpu - newCpu));
         }
         if (newMemory > currentMemory) {
-            _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long(newMemory - currentMemory));
+            _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.memory, new Long(newMemory - currentMemory));
         } else if (currentMemory > newMemory) {
-            _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long(currentMemory - newMemory));
+            _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.memory, new Long(currentMemory - newMemory));
         }
 
         // Generate usage event for VM upgrade
@@ -1121,11 +1122,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         int currentCpu = currentServiceOffering.getCpu();
         int currentMemory = currentServiceOffering.getRamSize();
 
+        Account owner = _accountMgr.getActiveAccountById(vmInstance.getAccountId());
         if (newCpu > currentCpu) {
-            _resourceLimitMgr.checkResourceLimit(caller, ResourceType.cpu, newCpu - currentCpu);
+            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.cpu, newCpu - currentCpu);
         }
         if (newMemory > currentMemory) {
-            _resourceLimitMgr.checkResourceLimit(caller, ResourceType.memory, newMemory - currentMemory);
+            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.memory, newMemory - currentMemory);
         }
 
         // Check that the specified service offering ID is valid
@@ -1147,7 +1149,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Check if the new service offering can be applied to vm instance
         ServiceOffering newSvcOffering = _offeringDao.findById(svcOffId);
-        Account owner = _accountMgr.getActiveAccountById(vmInstance.getAccountId());
         _accountMgr.checkAccess(owner, newSvcOffering, _dcDao.findById(vmInstance.getDataCenterId()));
 
         _itMgr.upgradeVmDb(vmId, svcOffId);
@@ -1161,14 +1162,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Increment or decrement CPU and Memory count accordingly.
         if (newCpu > currentCpu) {
-            _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long(newCpu - currentCpu));
+            _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.cpu, new Long(newCpu - currentCpu));
         } else if (currentCpu > newCpu) {
-            _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long(currentCpu - newCpu));
+            _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.cpu, new Long(currentCpu - newCpu));
         }
         if (newMemory > currentMemory) {
-            _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long(newMemory - currentMemory));
+            _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.memory, new Long(newMemory - currentMemory));
         } else if (currentMemory > newMemory) {
-            _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long(currentMemory - newMemory));
+            _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.memory, new Long(currentMemory - newMemory));
         }
 
         return _vmDao.findById(vmInstance.getId());
