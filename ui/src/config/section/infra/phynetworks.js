@@ -27,6 +27,9 @@ export default {
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
   }, {
+    name: 'Traffic Types',
+    component: () => import('@/views/infra/traffic/TrafficTypesTab.vue')
+  }, {
     name: 'Network Service Providers',
     component: () => import('@/views/infra/traffic/NspTab.vue')
   }, {
@@ -44,11 +47,86 @@ export default {
   }],
   actions: [
     {
+      api: 'createPhysicalNetwork',
+      icon: 'plus',
+      label: 'Create Physical Network',
+      listView: true,
+      args: ['name', 'zoneid', 'isolationmethods', 'vlan', 'tags', 'networkspeed', 'broadcastdomainrange'],
+      mapping: {
+        isolationmethods: {
+          options: ['VLAN', 'VXLAN', 'GRE', 'STT', 'BCF_SEGMENT', 'SSP', 'ODL', 'L3VPN', 'VCS']
+        }
+      }
+    },
+    {
+      api: 'updatePhysicalNetwork',
+      icon: 'play-circle',
+      label: 'Enable Physical Network',
+      dataView: true,
+      args: ['state'],
+      show: (record) => { return record.state === 'Disabled' },
+      mapping: {
+        state: {
+          value: (record) => { return 'Enabled' }
+        }
+      }
+    },
+    {
+      api: 'updatePhysicalNetwork',
+      icon: 'stop',
+      label: 'Disable Physical Network',
+      dataView: true,
+      args: ['state'],
+      show: (record) => { return record.state === 'Enabled' },
+      mapping: {
+        state: {
+          value: (record) => { return 'Disabled' }
+        }
+      }
+    },
+    {
       api: 'updatePhysicalNetwork',
       icon: 'edit',
       label: 'Update Physical Network',
       dataView: true,
       args: ['vlan', 'tags']
+    },
+    {
+      api: 'addTrafficType',
+      icon: 'plus-square',
+      label: 'Add Traffic Type',
+      dataView: true,
+      args: ['traffictype', 'physicalnetworkid', 'isolationmethod'],
+      mapping: {
+        traffictype: {
+          options: ['Public', 'Guest', 'Management', 'Storage']
+        },
+        physicalnetworkid: {
+          value: (record) => { return record.id }
+        },
+        isolationmethod: {
+          options: ['', 'vlan', 'vxlan']
+        }
+      }
+    },
+    {
+      api: 'updateTrafficType',
+      icon: 'branches',
+      label: 'Update Traffic Labels',
+      dataView: true,
+      args: ['id', 'kvmnetworklabel', 'vmwarenetworklabel', 'xennetworklabel', 'hypervnetworklabel', 'ovm3networklabel'],
+      mapping: {
+        id: {
+          api: 'listTrafficTypes',
+          params: (record) => { return { physicalnetworkid: record.id } }
+        }
+      }
+    },
+    {
+      api: 'deletePhysicalNetwork',
+      icon: 'delete',
+      label: 'Delete Physical Network',
+      dataView: true
     }
   ]
 }

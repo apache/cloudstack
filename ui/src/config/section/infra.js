@@ -17,7 +17,6 @@
 
 import zones from '@/config/section/infra/zones'
 import phynetworks from '@/config/section/infra/phynetworks'
-import traffictypes from '@/config/section/infra/traffictypes'
 import nsp from '@/config/section/infra/nsp'
 import pods from '@/config/section/infra/pods'
 import clusters from '@/config/section/infra/clusters'
@@ -42,7 +41,6 @@ export default {
     },
     zones,
     phynetworks,
-    traffictypes,
     nsp,
     pods,
     clusters,

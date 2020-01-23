@@ -26,7 +26,6 @@ deleteManagementNetworkIpRange
 deleteNetworkACL
 deleteNetworkACLList
 deleteNetworkServiceProvider
-deletePhysicalNetwork
 deletePortableIpRange
 deletePrivateGateway
 deleteStaticRoute
@@ -52,7 +51,6 @@ listStorageTags
 listSupportedNetworkServices
 listVirtualRouterElements
 listVlanIpRanges
-listVmwareDcs
 moveNetworkAclItem
 releaseDedicatedGuestVlanRange
 releasePublicIpRange
