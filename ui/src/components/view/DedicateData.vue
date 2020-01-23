@@ -16,36 +16,32 @@
 // under the License.
 
 <template>
-  <div>
+  <a-list-item v-if="dedicatedDomainId">
     <div>
-      <a-list-item v-if="dedicatedDomainId">
-        <div>
-          <div style="margin-bottom: 10px;">
-            <strong>{{ $t('dedicated') }}</strong>
-            <div>Yes</div>
-          </div>
-          <p>
-            <strong>{{ $t('domainid') }}</strong><br/>
-            <router-link :to="{ path: '/domain/' + dedicatedDomainId }">{{ dedicatedDomainId }}</router-link>
-          </p>
-          <p v-if="dedicatedAccountId">
-            <strong>{{ $t('account') }}</strong><br/>
-            <router-link :to="{ path: '/account/' + dedicatedAccountId }">{{ dedicatedAccountId }}</router-link>
-          </p>
-          <a-button style="margin-top: 10px;" type="danger" @click="handleRelease">
-            {{ releaseButtonLabel }}
-          </a-button>
-        </div>
-      </a-list-item>
-      <a-list-item v-else>
-        <div>
-          <strong>{{ $t('dedicated') }}</strong>
-          <div>No</div>
-          <a-button type="primary" style="margin-top: 10px;" @click="modalActive = true">
-            {{ dedicatedButtonLabel }}
-          </a-button>
-        </div>
-      </a-list-item>
+      <div style="margin-bottom: 10px;">
+        <strong>{{ $t('dedicated') }}</strong>
+        <div>Yes</div>
+      </div>
+      <p>
+        <strong>{{ $t('domainid') }}</strong><br/>
+        <router-link :to="{ path: '/domain/' + dedicatedDomainId }">{{ dedicatedDomainId }}</router-link>
+      </p>
+      <p v-if="dedicatedAccountId">
+        <strong>{{ $t('account') }}</strong><br/>
+        <router-link :to="{ path: '/account/' + dedicatedAccountId }">{{ dedicatedAccountId }}</router-link>
+      </p>
+      <a-button style="margin-top: 10px; margin-bottom: 10px;" type="danger" @click="handleRelease">
+        {{ releaseButtonLabel }}
+      </a-button>
+    </div>
+  </a-list-item>
+  <a-list-item v-else>
+    <div>
+      <strong>{{ $t('dedicated') }}</strong>
+      <div>No</div>
+      <a-button type="primary" style="margin-top: 10px; margin-bottom: 10px;" @click="modalActive = true">
+        {{ dedicatedButtonLabel }}
+      </a-button>
     </div>
     <DedicateModal
       :resource="resource"
@@ -53,7 +49,7 @@
       :label="dedicatedModalLabel"
       @close="modalActive = false"
       :fetchData="fetchData" />
-  </div>
+  </a-list-item>
 </template>
 
 <script>

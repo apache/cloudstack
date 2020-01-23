@@ -29,17 +29,19 @@
       </div>
     </a-list-item>
     <DedicateData :resource="resource" v-if="dedicatedSectionActive" />
+    <VmwareData :resource="resource" v-if="$route.meta.name === 'zone'" />
   </a-list>
 </template>
 
 <script>
-
 import DedicateData from './DedicateData'
+import VmwareData from './VmwareData'
 
 export default {
   name: 'DetailsTab',
   components: {
-    DedicateData
+    DedicateData,
+    VmwareData
   },
   props: {
     resource: {
