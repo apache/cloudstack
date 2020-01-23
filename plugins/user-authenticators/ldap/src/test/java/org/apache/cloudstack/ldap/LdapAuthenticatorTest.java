@@ -18,6 +18,9 @@ package org.apache.cloudstack.ldap;
 
 
 import com.cloud.server.auth.UserAuthenticator;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
 import com.cloud.user.dao.UserAccountDao;
@@ -25,13 +28,20 @@ import com.cloud.utils.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 
@@ -43,9 +53,12 @@ public class LdapAuthenticatorTest {
     @Mock
     UserAccountDao userAccountDao;
     @Mock
+    AccountManager accountManager;
+    @Mock
     UserAccount user = new UserAccountVO();
 
-    LdapAuthenticator ldapAuthenticator;
+    @InjectMocks
+    LdapAuthenticator ldapAuthenticator = new LdapAuthenticator();
     private String username  = "bbanner";
     private String principal = "cd=bbanner";
     private String hardcoded = "password";
@@ -53,7 +66,18 @@ public class LdapAuthenticatorTest {
 
     @Before
     public void setUp() throws Exception {
-        ldapAuthenticator = new LdapAuthenticator(ldapManager, userAccountDao);
+    }
+
+    @Test
+    public void authenticateAsNativeUser() throws Exception {
+        final UserAccountVO user = new UserAccountVO();
+        user.setSource(User.Source.NATIVE);
+
+        when(userAccountDao.getUserAccount(username, domainId)).thenReturn(user);
+        Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> rc;
+        rc = ldapAuthenticator.authenticate(username, "password", domainId, (Map<String, Object[]>)null);
+        assertFalse("authentication succeeded when it should have failed", rc.first());
+        assertEquals("We should not have tried to authenticate", null,rc.second());
     }
 
     @Test
@@ -62,9 +86,39 @@ public class LdapAuthenticatorTest {
         Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> rc;
         when(ldapManager.getUser(username, domainId)).thenReturn(ldapUser);
         rc = ldapAuthenticator.authenticate(username, "password", domainId, user);
-        assertFalse("authentication succeded when it should have failed", rc.first());
+        assertFalse("authentication succeeded when it should have failed", rc.first());
         assertEquals("", UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT,rc.second());
     }
+
+    @Test
+    public void authenticateFailingOnSyncedAccount() throws Exception {
+        Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> rc;
+
+        List<String> memberships = new ArrayList<>();
+        memberships.add("g1");
+        List<String> mappedGroups = new ArrayList<>();
+        mappedGroups.add("g1");
+        mappedGroups.add("g2");
+
+        LdapUser ldapUser = new LdapUser(username,"a@b","b","banner",principal,"",false,null);
+        LdapUser userSpy = spy(ldapUser);
+        when(userSpy.getMemberships()).thenReturn(memberships);
+
+        List<LdapTrustMapVO> maps = new ArrayList<>();
+        LdapAuthenticator auth = spy(ldapAuthenticator);
+        when(auth.getMappedGroups(maps)).thenReturn(mappedGroups);
+
+        LdapTrustMapVO trustMap = new LdapTrustMapVO(domainId, LdapManager.LinkType.GROUP, "cn=name", (short)2, 1l);
+
+        AccountVO account = new AccountVO("accountName" , domainId, "domain.net", (short)2, "final String uuid");
+        when(accountManager.getAccount(anyLong())).thenReturn(account);
+        when(ldapManager.getUser(username, domainId)).thenReturn(userSpy);
+        when(ldapManager.getLinkedLdapGroup(domainId, "g1")).thenReturn(trustMap);
+        rc = auth.authenticate(username, "password", domainId, user, maps);
+        assertFalse("authentication succeeded when it should have failed", rc.first());
+        assertEquals("", UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT,rc.second());
+    }
+
     @Test
     public void authenticate() throws Exception {
         LdapUser ldapUser = new LdapUser(username, "a@b", "b", "banner", principal, "", false, null);

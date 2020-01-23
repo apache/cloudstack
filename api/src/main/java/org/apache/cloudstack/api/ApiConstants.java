@@ -336,7 +336,10 @@ public class ApiConstants {
     public static final String URL = "url";
     public static final String USAGE_INTERFACE = "usageinterface";
     public static final String USER_DATA = "userdata";
+    public static final String USER_FILTER = "userfilter";
     public static final String USER_ID = "userid";
+    public static final String USER_SOURCE = "usersource";
+    public static final String USER_CONFLICT_SOURCE = "conflictingusersource";
     public static final String USE_SSL = "ssl";
     public static final String USERNAME = "username";
     public static final String USER_CONFIGURABLE = "userconfigurable";
@@ -742,6 +745,7 @@ public class ApiConstants {
     public static final String STDERR = "stderr";
     public static final String EXITCODE = "exitcode";
     public static final String TARGET_ID = "targetid";
+    public static final String FILES = "files";
     public static final String VOLUME_IDS = "volumeids";
 
     public enum HostDetails {

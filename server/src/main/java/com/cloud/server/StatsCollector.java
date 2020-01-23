@@ -1378,6 +1378,20 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     }
 
     /**
+     * Calculates secondary storage disk capacity against a configurable threshold instead of the hardcoded default 95 % value
+     * @param imageStore secondary storage
+     * @param storeCapThreshold the threshold capacity for computing if secondary storage has enough space to accommodate the @this object
+     * @return
+     */
+    public boolean imageStoreHasEnoughCapacity(DataStore imageStore, Double storeCapThreshold) {
+        StorageStats imageStoreStats = _storageStats.get(imageStore.getId());
+        if (imageStoreStats != null && (imageStoreStats.getByteUsed() / (imageStoreStats.getCapacityBytes() * 1.0)) <= storeCapThreshold) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Sends VMs metrics to the configured graphite host.
      */
     protected void sendVmMetricsToGraphiteHost(Map<Object, Object> metrics, HostVO host) {

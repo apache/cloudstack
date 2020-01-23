@@ -109,6 +109,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             newPath = createOvaForVolume((VolumeObjectTO)data, timeout);
         } else if (data.getObjectType() == DataObjectType.TEMPLATE) {
             newPath = createOvaForTemplate((TemplateObjectTO)data, timeout);
+        } else if (data.getObjectType() == DataObjectType.ARCHIVE) {
+            newPath = cmd.getInstallPath();
         }
         if (newPath != null) {
             cmd.setInstallPath(newPath);

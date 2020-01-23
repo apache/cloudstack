@@ -18,12 +18,16 @@
 //
 package org.apache.cloudstack.diagnostics;
 
-import org.apache.cloudstack.api.command.admin.diagnostics.RunDiagnosticsCmd;
-
 import java.util.Map;
+
+import org.apache.cloudstack.api.command.admin.diagnostics.GetDiagnosticsDataCmd;
+import org.apache.cloudstack.api.command.admin.diagnostics.RunDiagnosticsCmd;
 
 public interface DiagnosticsService {
 
+    String DIAGNOSTICS_DIRECTORY = "diagnostics";
+
     Map<String, String> runDiagnosticsCommand(RunDiagnosticsCmd cmd);
 
+    String getDiagnosticsDataCommand(GetDiagnosticsDataCmd getDiagnosticsDataCmd);
 }
