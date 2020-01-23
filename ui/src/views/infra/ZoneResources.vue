@@ -28,8 +28,6 @@
             </div>
             <a-progress
               status="normal"
-              strokeWidth="10"
-              style="margin-top: -2px"
               :percent="parseFloat(item.percentused)"
               :format="p => parseFloat(item.percentused).toFixed(2) + '%'" />
           </div>
