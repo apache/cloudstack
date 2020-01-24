@@ -293,7 +293,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
         return this.getId();
     }
 
-    public Boolean isDestroyed() {
+    public Boolean getDestroyed() {
         return destroyed;
     }
 
@@ -750,36 +750,35 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
         this.utilization = utilization;
     }
 
-    public String getClusterId() {
+    public String getClusterid() {
         return clusterid;
     }
 
-    public void setClusterId(String clusterid) {
+    public void setClusterid(String clusterid) {
         this.clusterid = clusterid;
     }
 
-    public String getClusterName() {
+    public String getClustername() {
         return clustername;
     }
 
-    public void setClusterName(String clustername) {
+    public void setClustername(String clustername) {
         this.clustername = clustername;
     }
 
-    public String getPodId() {
+    public String getPodid() {
         return podid;
     }
 
-    public void setPodId(String podid) {
+    public void setPodid(String podid) {
         this.podid = podid;
     }
 
-    public String getPodName() {
+    public String getPodname() {
         return podname;
     }
 
-    public void setPodName(String podname) {
+    public void setPodname(String podname) {
         this.podname = podname;
     }
-
 }

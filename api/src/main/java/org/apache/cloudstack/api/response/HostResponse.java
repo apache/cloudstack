@@ -361,7 +361,7 @@ public class HostResponse extends BaseResponse {
         this.memoryUsed = memoryUsed;
     }
 
-    public void setGpuGroups(List<GpuResponse> gpuGroup) {
+    public void setGpuGroup(List<GpuResponse> gpuGroup) {
         this.gpuGroup = gpuGroup;
     }
 
