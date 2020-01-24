@@ -38,7 +38,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,7 +51,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LdapDirectoryServerConnectionTest {
@@ -82,15 +82,15 @@ public class LdapDirectoryServerConnectionTest {
     @Before
     public void setup() throws Exception {
         LdapConfigurationVO configurationVO = new LdapConfigurationVO("localhost",10389,null);
-        when(configurationDao.find("localhost",10389,null)).thenReturn(configurationVO);
+        lenient().when(configurationDao.find("localhost",10389,null)).thenReturn(configurationVO);
         ldapTestConfigTool.overrideConfigValue(configuration, "ldapBaseDn", "ou=system");
         ldapTestConfigTool.overrideConfigValue(configuration, "ldapBindPassword", "secret");
         ldapTestConfigTool.overrideConfigValue(configuration, "ldapBindPrincipal", "uid=admin,ou=system");
         ldapTestConfigTool.overrideConfigValue(configuration, "ldapMemberOfAttribute", "memberOf");
-        when(userManagerFactory.getInstance(LdapUserManager.Provider.OPENLDAP)).thenReturn(new OpenLdapUserManagerImpl(configuration));
+        lenient().when(userManagerFactory.getInstance(LdapUserManager.Provider.OPENLDAP)).thenReturn(new OpenLdapUserManagerImpl(configuration));
         // construct an ellaborate structure around a single object
         Pair<List<LdapConfigurationVO>, Integer> vos = new Pair<List<LdapConfigurationVO>, Integer>( Collections.singletonList(configurationVO),1);
-        when(configurationDao.searchConfigurations(null, 0, 1L)).thenReturn(vos);
+        lenient().when(configurationDao.searchConfigurations(null, 0, 1L)).thenReturn(vos);
 
         contextFactory = new LdapContextFactory(configuration);
         ldapManager = new LdapManagerImpl(configurationDao, contextFactory, userManagerFactory, configuration);
