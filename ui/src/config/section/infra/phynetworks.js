@@ -27,20 +27,13 @@ export default {
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
   }, {
-    name: 'Traffic Types',
-    component: () => import('@/views/infra/traffic/TrafficTypesTab.vue')
-  }, {
-    name: 'Network Service Providers',
-    component: () => import('@/views/infra/traffic/NspTab.vue')
+    name: 'Network',
+    component: () => import('@/views/infra/network/NetworkTab.vue')
   }, {
     name: 'Dedicated VLAN/VNI Ranges',
-    component: () => import('@/views/infra/traffic/DedicatedVLANTab.vue')
+    component: () => import('@/views/infra/network/DedicatedVLANTab.vue')
   }],
   related: [{
-    name: 'traffictype',
-    title: 'Traffic Types',
-    param: 'physicalnetworkid'
-  }, {
     name: 'guestnetwork',
     title: 'Networks',
     param: 'physicalnetworkid'

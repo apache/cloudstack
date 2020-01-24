@@ -271,7 +271,9 @@ export default {
   provide: function () {
     return {
       parentFetchData: this.fetchData,
-      parentToggleLoading: this.toggleLoading
+      parentToggleLoading: this.toggleLoading,
+      parentStartLoading: this.startLoading,
+      parentFinishLoading: this.finishLoading
     }
   },
   data () {
@@ -751,6 +753,12 @@ export default {
     },
     toggleLoading () {
       this.loading = !this.loading
+    },
+    startLoading () {
+      this.loading = true
+    },
+    finishLoading () {
+      this.loading = false
     }
   }
 }

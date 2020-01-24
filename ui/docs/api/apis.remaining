@@ -1,6 +1,5 @@
 addNetworkServiceProvider
 addResourceDetail
-addTrafficType
 assignCertToLoadBalancer
 configureInternalLoadBalancerElement
 configureVirtualRouterElement
@@ -9,7 +8,6 @@ createLoadBalancer
 createManagementNetworkIpRange
 createNetworkACL
 createNetworkACLList
-createPhysicalNetwork
 createPortableIpRange
 createPrivateGateway
 createSnapshotFromVMSnapshot
@@ -18,7 +16,6 @@ createStorageNetworkIpRange
 createVlanIpRange
 createVpnConnection
 createVpnGateway
-dedicateGuestVlanRange
 dedicatePublicIpRange
 deleteLBHealthCheckPolicy
 deleteLoadBalancer
@@ -35,7 +32,6 @@ deleteVpnConnection
 deleteVpnGateway
 findStoragePoolsForMigration
 listAffinityGroupTypes
-listDedicatedGuestVlanRanges
 listDeploymentPlanners
 listHostTags
 listInternalLoadBalancerElements
@@ -52,7 +48,6 @@ listSupportedNetworkServices
 listVirtualRouterElements
 listVlanIpRanges
 moveNetworkAclItem
-releaseDedicatedGuestVlanRange
 releasePublicIpRange
 resetVpnConnection
 startInternalLoadBalancerVM

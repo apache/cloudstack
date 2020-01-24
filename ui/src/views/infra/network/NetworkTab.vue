@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    <a-tabs :animated="false" defaultActiveKey="0" tabPosition="left" type="card">
+    <a-tabs :animated="false" defaultActiveKey="0" tabPosition="left">
       <a-tab-pane v-for="(item, index) in traffictypes" :tab="item.traffictype" :key="index">
         <div>
           <strong>{{ $t('id') }}</strong> {{ item.id }}
@@ -31,6 +31,14 @@
           <IpRangesTab :resource="resource" />
         </div>
       </a-tab-pane>
+      <a-tab-pane tab="Service Providers" key="nsp">
+        <a-list size="small">
+          <a-list-item v-for="(nsp, index) in nsps" :key="index">
+            <status :text="nsp.state" />
+            <router-link :to="{ path: '/nsp/' + nsp.id + '?name=' + nsp.name + '&physicalnetworkid=' + resource.id }">{{ nsp.name }} </router-link>
+          </a-list-item>
+        </a-list>
+      </a-tab-pane>
     </a-tabs>
   </a-spin>
 </template>
@@ -41,7 +49,7 @@ import Status from '@/components/widgets/Status'
 import IpRangesTab from './IpRangesTab'
 
 export default {
-  name: 'NspTab',
+  name: 'NetworkTab',
   components: {
     IpRangesTab,
     Status
@@ -59,6 +67,7 @@ export default {
   data () {
     return {
       traffictypes: [],
+      nsps: [],
       fetchLoading: false
     }
   },
@@ -77,6 +86,18 @@ export default {
       this.fetchLoading = true
       api('listTrafficTypes', { physicalnetworkid: this.resource.id }).then(json => {
         this.traffictypes = json.listtraffictypesresponse.traffictype
+      }).catch(error => {
+        this.$notification.error({
+          message: 'Request Failed',
+          description: error.response.headers['x-description']
+        })
+      }).finally(() => {
+        this.fetchLoading = false
+      })
+
+      this.fetchLoading = true
+      api('listNetworkServiceProviders', { physicalnetworkid: this.resource.id }).then(json => {
+        this.nsps = json.listnetworkserviceprovidersresponse.networkserviceprovider
       }).catch(error => {
         this.$notification.error({
           message: 'Request Failed',
