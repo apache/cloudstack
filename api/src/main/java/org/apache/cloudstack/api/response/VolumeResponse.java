@@ -262,19 +262,19 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     @SerializedName(ApiConstants.CLUSTER_ID)
     @Param(description = "cluster id of the volume")
-    private String clusterid;
+    private String clusterId;
 
     @SerializedName(ApiConstants.CLUSTER_NAME)
     @Param(description = "cluster name where the volume is allocated")
-    private String clustername;
+    private String clusterName;
 
     @SerializedName(ApiConstants.POD_ID)
     @Param(description = "pod id of the volume")
-    private String podid;
+    private String podId;
 
     @SerializedName(ApiConstants.POD_NAME)
     @Param(description = "pod name of the volume")
-    private String podname;
+    private String podName;
 
     public String getPath() {
         return path;
@@ -750,35 +750,35 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
         this.utilization = utilization;
     }
 
-    public String getClusterid() {
-        return clusterid;
+    public String getClusterId() {
+        return clusterId;
     }
 
-    public void setClusterid(String clusterid) {
-        this.clusterid = clusterid;
+    public void setClusterId(String clusterId) {
+        this.clusterId = clusterId;
     }
 
-    public String getClustername() {
-        return clustername;
+    public String getClusterName() {
+        return clusterName;
     }
 
-    public void setClustername(String clustername) {
-        this.clustername = clustername;
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
     }
 
-    public String getPodid() {
-        return podid;
+    public String getPodId() {
+        return podId;
     }
 
-    public void setPodid(String podid) {
-        this.podid = podid;
+    public void setPodId(String podId) {
+        this.podId = podId;
     }
 
-    public String getPodname() {
-        return podname;
+    public String getPodName() {
+        return podName;
     }
 
-    public void setPodname(String podname) {
-        this.podname = podname;
+    public void setPodName(String podName) {
+        this.podName = podName;
     }
 }
