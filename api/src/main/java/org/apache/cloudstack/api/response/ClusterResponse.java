@@ -215,4 +215,8 @@ public class ClusterResponse extends BaseResponse {
             resourceDetails.remove("password");
         }
     }
+
+    public Map<String, String> getResourceDetails() {
+        return resourceDetails;
+    }
 }
