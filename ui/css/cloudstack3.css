@@ -1789,6 +1789,11 @@ div.list-view td.state.notsuitable-storage-migration-required span {
   overflow-x: hidden;
 }
 
+div#details-tab-settings.detail-group.ui-tabs-panel {
+  overflow: hidden;
+  overflow-x: scroll;
+}
+
 .detail-view .main-groups {
   width: 100%;
   max-height: 407px;
