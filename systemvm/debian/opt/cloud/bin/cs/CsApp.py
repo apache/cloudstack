@@ -25,6 +25,7 @@ class CsApp:
     def __init__(self, ip):
         self.dev = ip.getDevice()
         self.ip = ip.get_ip_address()
+        self.gateway = ip.get_gateway()
         self.type = ip.get_type()
         self.fw = ip.fw
         self.config = ip.config
@@ -44,10 +45,16 @@ class CsApache(CsApp):
                                 "/etc/apache2/sites-enabled/vhost-%s.conf" % self.ip)
 
         file = CsFile("/etc/apache2/sites-enabled/vhost-%s.conf" % (self.ip))
-        file.search("<VirtualHost.*:80>", "\t<VirtualHost %s:80>" % (self.ip))
-        file.search("<VirtualHost.*:443>", "\t<VirtualHost %s:443>" % (self.ip))
-        file.search("Listen .*:80", "Listen %s:80" % (self.ip))
-        file.search("Listen .*:443", "Listen %s:443" % (self.ip))
+        if not self.config.cl.is_redundant():
+            file.replaceIfFound("<VirtualHost.*:8180>", "<VirtualHost %s:80>" % (self.ip))
+            file.replaceIfFound("<VirtualHost.*:8443>", "\t<VirtualHost %s:443>" % (self.ip))
+            file.replaceIfFound("Listen .*:8180", "Listen %s:80" % (self.ip))
+            file.replaceIfFound("Listen .*:8443", "Listen %s:443" % (self.ip))
+        else:
+            file.replaceIfFound("<VirtualHost.*:8180>", "<VirtualHost %s:80 %s:80>" % (self.ip, self.gateway))
+            file.replaceIfFound("<VirtualHost.*:8443>", "\t<VirtualHost %s:443 %s:443>" % (self.ip, self.gateway))
+            file.replaceIfFound("Listen .*:8180", "Listen %s:80\nListen %s:80" % (self.ip, self.gateway))
+            file.replaceIfFound("Listen .*:8443", "Listen %s:443\nListen %s:443" % (self.ip, self.gateway))
         file.search("ServerName.*", "\tServerName %s.%s" % (self.config.cl.get_type(), self.config.get_domain()))
         if file.is_changed():
             file.commit()
