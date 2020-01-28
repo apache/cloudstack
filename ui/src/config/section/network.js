@@ -449,7 +449,7 @@ export default {
       hidden: true,
       permission: ['listLoadBalancers'],
       columns: ['name', 'sourceipaddress', 'loadbalancerrule', 'algorithm', 'account', 'domain'],
-      columns: ['name', 'sourceipaddress', 'loadbalancerrule', 'algorithm', 'account', 'domain'],
+      details: ['name', 'sourceipaddress', 'loadbalancerrule', 'algorithm', 'account', 'domain'],
       actions: [
         {
           api: 'createLoadBalancer',
