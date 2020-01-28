@@ -2353,6 +2353,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             _networkMgr.rollbackNicForMigration(vmSrc, profile);
             s_logger.info("Migration cancelled because " + e1.getMessage());
             throw new ConcurrentOperationException("Migration cancelled because " + e1.getMessage());
+        } catch (final CloudRuntimeException e2) {
+            _networkMgr.rollbackNicForMigration(vmSrc, profile);
+            s_logger.info("Migration cancelled because " + e2.getMessage());
+            work.setStep(Step.Done);
+            _workDao.update(work.getId(), work);
+            try {
+                stateTransitTo(vm, Event.OperationFailed, srcHostId);
+            } catch (final NoTransitionException e3) {
+                s_logger.warn(e3.getMessage());
+            }
+            throw new CloudRuntimeException("Migration cancelled because " + e2.getMessage());
         }
 
         boolean migrated = false;

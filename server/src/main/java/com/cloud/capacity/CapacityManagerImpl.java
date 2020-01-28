@@ -172,6 +172,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         final ServiceOfferingVO svo = _offeringsDao.findById(vm.getId(), vm.getServiceOfferingId());
         CapacityVO capacityCpu = _capacityDao.findByHostIdType(hostId, Capacity.CAPACITY_TYPE_CPU);
         CapacityVO capacityMemory = _capacityDao.findByHostIdType(hostId, Capacity.CAPACITY_TYPE_MEMORY);
+        CapacityVO capacityCpuCore = _capacityDao.findByHostIdType(hostId, Capacity.CAPACITY_TYPE_CPU_CORE);
         Long clusterId = null;
         if (hostId != null) {
             HostVO host = _hostDao.findById(hostId);
@@ -182,7 +183,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
             clusterId = host.getClusterId();
         }
-        if (capacityCpu == null || capacityMemory == null || svo == null) {
+        if (capacityCpu == null || capacityMemory == null || svo == null || capacityCpuCore == null) {
             return false;
         }
 
@@ -190,20 +191,26 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             final Long clusterIdFinal = clusterId;
             final long capacityCpuId = capacityCpu.getId();
             final long capacityMemoryId = capacityMemory.getId();
+            final long capacityCpuCoreId = capacityCpuCore.getId();
+
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
                     CapacityVO capacityCpu = _capacityDao.lockRow(capacityCpuId, true);
                     CapacityVO capacityMemory = _capacityDao.lockRow(capacityMemoryId, true);
+                    CapacityVO capacityCpuCore = _capacityDao.lockRow(capacityCpuCoreId, true);
 
                     long usedCpu = capacityCpu.getUsedCapacity();
                     long usedMem = capacityMemory.getUsedCapacity();
+                    long usedCpuCore = capacityCpuCore.getUsedCapacity();
                     long reservedCpu = capacityCpu.getReservedCapacity();
                     long reservedMem = capacityMemory.getReservedCapacity();
+                    long reservedCpuCore = capacityCpuCore.getReservedCapacity();
                     long actualTotalCpu = capacityCpu.getTotalCapacity();
                     float cpuOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterIdFinal, "cpuOvercommitRatio").getValue());
                     float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterIdFinal, "memoryOvercommitRatio").getValue());
                     int vmCPU = svo.getCpu() * svo.getSpeed();
+                    int vmCPUCore = svo.getCpu();
                     long vmMem = svo.getRamSize() * 1024L * 1024L;
                     long actualTotalMem = capacityMemory.getTotalCapacity();
                     long totalMem = (long)(actualTotalMem * memoryOvercommitRatio);
@@ -221,6 +228,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                         if (usedMem >= vmMem) {
                             capacityMemory.setUsedCapacity(usedMem - vmMem);
                         }
+                        if (usedCpuCore >= vmCPUCore) {
+                            capacityCpuCore.setUsedCapacity(usedCpuCore - vmCPUCore);
+                        }
 
                         if (moveToReservered) {
                             if (reservedCpu + vmCPU <= totalCpu) {
@@ -229,6 +239,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                             if (reservedMem + vmMem <= totalMem) {
                                 capacityMemory.setReservedCapacity(reservedMem + vmMem);
                             }
+                            capacityCpuCore.setReservedCapacity(reservedCpuCore + vmCPUCore);
                         }
                     } else {
                         if (reservedCpu >= vmCPU) {
@@ -236,6 +247,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                         }
                         if (reservedMem >= vmMem) {
                             capacityMemory.setReservedCapacity(reservedMem - vmMem);
+                        }
+                        if (reservedCpuCore >= vmCPUCore) {
+                            capacityCpuCore.setReservedCapacity(reservedCpuCore - vmCPUCore);
                         }
                     }
 
@@ -249,6 +263,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
                     _capacityDao.update(capacityCpu.getId(), capacityCpu);
                     _capacityDao.update(capacityMemory.getId(), capacityMemory);
+                    _capacityDao.update(capacityCpuCore.getId(), capacityCpuCore);
                 }
             });
 
@@ -263,8 +278,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Override
     public void allocateVmCapacity(VirtualMachine vm, final boolean fromLastHost) {
 
+        final long vmId = vm.getId();
         final long hostId = vm.getHostId();
-        HostVO host = _hostDao.findById(hostId);
+        final HostVO host = _hostDao.findById(hostId);
         final long clusterId = host.getClusterId();
         final float cpuOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, "cpuOvercommitRatio").getValue());
         final float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, "memoryOvercommitRatio").getValue());
@@ -273,28 +289,35 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
         CapacityVO capacityCpu = _capacityDao.findByHostIdType(hostId, Capacity.CAPACITY_TYPE_CPU);
         CapacityVO capacityMem = _capacityDao.findByHostIdType(hostId, Capacity.CAPACITY_TYPE_MEMORY);
+        CapacityVO capacityCpuCore = _capacityDao.findByHostIdType(hostId, Capacity.CAPACITY_TYPE_CPU_CORE);
 
-        if (capacityCpu == null || capacityMem == null || svo == null) {
+        if (capacityCpu == null || capacityMem == null || svo == null || capacityCpuCore == null) {
             return;
         }
 
         final int cpu = svo.getCpu() * svo.getSpeed();
+        final int cpucore = svo.getCpu();
+        final int cpuspeed = svo.getSpeed();
         final long ram = svo.getRamSize() * 1024L * 1024L;
 
         try {
             final long capacityCpuId = capacityCpu.getId();
             final long capacityMemId = capacityMem.getId();
+            final long capacityCpuCoreId = capacityCpuCore.getId();
 
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
                     CapacityVO capacityCpu = _capacityDao.lockRow(capacityCpuId, true);
                     CapacityVO capacityMem = _capacityDao.lockRow(capacityMemId, true);
+                    CapacityVO capacityCpuCore = _capacityDao.lockRow(capacityCpuCoreId, true);
 
                     long usedCpu = capacityCpu.getUsedCapacity();
                     long usedMem = capacityMem.getUsedCapacity();
+                    long usedCpuCore = capacityCpuCore.getUsedCapacity();
                     long reservedCpu = capacityCpu.getReservedCapacity();
                     long reservedMem = capacityMem.getReservedCapacity();
+                    long reservedCpuCore = capacityCpuCore.getReservedCapacity();
                     long actualTotalCpu = capacityCpu.getTotalCapacity();
                     long actualTotalMem = capacityMem.getTotalCapacity();
                     long totalCpu = (long)(actualTotalCpu * cpuOvercommitRatio);
@@ -313,6 +336,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     }
                     capacityCpu.setUsedCapacity(usedCpu + cpu);
                     capacityMem.setUsedCapacity(usedMem + ram);
+                    capacityCpuCore.setUsedCapacity(usedCpuCore + cpucore);
 
                     if (fromLastHost) {
                         /* alloc from reserved */
@@ -324,6 +348,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                         if (reservedCpu >= cpu && reservedMem >= ram) {
                             capacityCpu.setReservedCapacity(reservedCpu - cpu);
                             capacityMem.setReservedCapacity(reservedMem - ram);
+                            capacityCpuCore.setReservedCapacity(reservedCpuCore - cpucore);
                         }
                     } else {
                         /* alloc from free resource */
@@ -343,12 +368,38 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                         totalMem + "; new used: " + capacityMem.getUsedCapacity() + ", reserved: " + capacityMem.getReservedCapacity() + "; requested mem: " + ram +
                         ",alloc_from_last:" + fromLastHost);
 
+                    long cluster_id = host.getClusterId();
+                    ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, "cpuOvercommitRatio");
+                    ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, "memoryOvercommitRatio");
+                    Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
+                    Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
+
+                    boolean hostHasCpuCapability, hostHasCapacity = false;
+                    hostHasCpuCapability = checkIfHostHasCpuCapability(host.getId(), cpucore, cpuspeed);
+
+                    if (hostHasCpuCapability) {
+                        // first check from reserved capacity
+                        hostHasCapacity = checkIfHostHasCapacity(host.getId(), cpu, ram, true, cpuOvercommitRatio, memoryOvercommitRatio, true);
+
+                        // if not reserved, check the free capacity
+                        if (!hostHasCapacity)
+                            hostHasCapacity = checkIfHostHasCapacity(host.getId(), cpu, ram, false, cpuOvercommitRatio, memoryOvercommitRatio, true);
+                    }
+
+                    if (!hostHasCapacity || !hostHasCpuCapability) {
+                        throw new CloudRuntimeException("Host does not have enough capacity for vm " + vmId);
+                    }
+
                     _capacityDao.update(capacityCpu.getId(), capacityCpu);
                     _capacityDao.update(capacityMem.getId(), capacityMem);
+                    _capacityDao.update(capacityCpuCore.getId(), capacityCpuCore);
                 }
             });
         } catch (Exception e) {
             s_logger.error("Exception allocating VM capacity", e);
+            if (e instanceof CloudRuntimeException) {
+                throw e;
+            }
             return;
         }
     }
