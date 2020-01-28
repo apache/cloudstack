@@ -119,12 +119,12 @@ export default {
       columns: ['name', 'state', 'displaytext', 'cidr', 'account', 'zonename'],
       details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain'],
       related: [{
-        name: 'publicip',
-        title: 'Public IP Addresses',
-        param: 'vpcid'
-      }, {
         name: 'privategw',
         title: 'Private Gateways',
+        param: 'vpcid'
+      }, {
+        name: 'publicip',
+        title: 'Public IP Addresses',
         param: 'vpcid'
       }, {
         name: 's2svpn',
@@ -151,7 +151,10 @@ export default {
         name: 'details',
         component: () => import('@/components/view/DetailsTab.vue')
       }, {
-        name: 'Tiers',
+        name: 'Router',
+        component: () => import('@/views/network/VpcRouterTab.vue')
+      }, {
+        name: 'Network',
         component: () => import('@/views/network/VpcTiersTab.vue')
       }],
       actions: [
@@ -293,7 +296,49 @@ export default {
       permission: ['listPrivateGateways'],
       columns: ['ipaddress', 'state', 'gateway', 'netmask', 'account', 'domain'],
       details: ['ipaddress', 'gateway', 'netmask', 'vlan', 'sourcenatsupported', 'aclid', 'account', 'domain', 'zone'],
+      tabs: [{
+        name: 'details',
+        component: () => import('@/components/view/DetailsTab.vue')
+      }, {
+        name: 'Static Routes',
+        component: () => import('@/views/network/StaticRoutesTab.vue'),
+        show: () => true
+      }],
       actions: [
+        {
+          api: 'createPrivateGateway',
+          icon: 'plus',
+          label: 'Add Private Gateway',
+          listView: true,
+          args: ['physicalnetworkid', 'vlan', 'ipaddress', 'gateway', 'netmask', 'sourcenatsupported', 'aclid'],
+          mapping: {
+            aclid: {
+              api: 'listNetworkACLLists'
+            }
+          }
+        },
+        {
+          api: 'replaceNetworkACLList',
+          icon: 'swap',
+          label: 'Replace ACL List',
+          dataView: true,
+          args: ['aclid', 'gatewayid'],
+          mapping: {
+            aclid: {
+              api: 'listNetworkACLLists',
+              params: (record) => { return { vpcid: record.vpcid } }
+            },
+            gatewayid: {
+              value: (record) => { return record.id }
+            }
+          }
+        },
+        {
+          api: 'deletePrivateGateway',
+          icon: 'delete',
+          label: 'Delete Private Gateway',
+          dataView: true
+        }
       ]
     },
     {
@@ -305,6 +350,19 @@ export default {
       columns: ['publicip', 'account', 'domain'],
       details: ['publicip', 'account', 'domain'],
       actions: [
+        {
+          api: 'createVpnGateway',
+          icon: 'plus',
+          label: 'Create VPN Gateway',
+          listView: true,
+          args: ['vpcid']
+        },
+        {
+          api: 'deleteVpnGateway',
+          icon: 'delete',
+          label: 'Delete VPN Gateway',
+          dataView: true
+        }
       ]
     },
     {
@@ -316,6 +374,33 @@ export default {
       columns: ['publicip', 'state', 'gateway', 'ipsecpsk', 'ikepolicy', 'esppolicy'],
       details: ['publicip', 'gateway', 'passive', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'esppolicy', 'ikelifetime', 'esplifetime', 'dpd', 'forceencap', 'created'],
       actions: [
+        {
+          api: 'createVpnConnection',
+          icon: 'plus',
+          label: 'Create VPN Connection',
+          listView: true,
+          args: ['s2scustomergatewayid', 's2svpngatewayid', 'passive'],
+          mapping: {
+            s2scustomergatewayid: {
+              api: 'listVpnCustomerGateways'
+            },
+            s2svpngatewayid: {
+              api: 'listVpnGateways'
+            }
+          }
+        },
+        {
+          api: 'resetVpnConnection',
+          icon: 'reload',
+          label: 'Reset VPN Connection',
+          dataView: true
+        },
+        {
+          api: 'deleteVpnConnection',
+          icon: 'delete',
+          label: 'Delete VPN Connection',
+          dataView: true
+        }
       ]
     },
     {
@@ -353,6 +438,44 @@ export default {
           api: 'deleteNetworkACLList',
           icon: 'delete',
           label: 'Delete ACL List',
+          dataView: true
+        }
+      ]
+    },
+    {
+      name: 'ilb',
+      title: 'Internal LB',
+      icon: 'share-alt',
+      hidden: true,
+      permission: ['listLoadBalancers'],
+      columns: ['name', 'sourceipaddress', 'loadbalancerrule', 'algorithm', 'account', 'domain'],
+      columns: ['name', 'sourceipaddress', 'loadbalancerrule', 'algorithm', 'account', 'domain'],
+      actions: [
+        {
+          api: 'createLoadBalancer',
+          icon: 'plus',
+          label: 'Add Internal LB',
+          listView: true,
+          args: ['name', 'description', 'sourceipaddress', 'sourceport', 'instanceport', 'algorithm', 'networkid', 'sourceipaddressnetworkid', 'scheme'],
+          mapping: {
+            algorithm: {
+              options: ['source', 'roundrobin', 'leastconn']
+            },
+            scheme: {
+              value: (record) => { return 'Internal' }
+            }
+          }
+        },
+        {
+          api: 'assignToLoadBalancerRule',
+          icon: 'plus',
+          label: 'Assign VMs',
+          dataView: true
+        },
+        {
+          api: 'deleteLoadBalancer',
+          icon: 'delete',
+          label: 'Delete LB',
           dataView: true
         }
       ]

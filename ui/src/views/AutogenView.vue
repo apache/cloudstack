@@ -147,7 +147,7 @@
                   }"
                 >
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
-                    {{ opt.name || opt.description || opt.traffictype }}
+                    {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                   </a-select-option>
                 </a-select>
               </span>
