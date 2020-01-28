@@ -413,6 +413,36 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return response;
     }
 
+    public ListResponse<UserResponse> searchForUsers(Long domainId, boolean recursive) throws PermissionDeniedException {
+        Account caller = CallContext.current().getCallingAccount();
+
+        List<Long> permittedAccounts = new ArrayList<Long>();
+
+        boolean listAll = true;
+        Long id = null;
+
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            long currentId = CallContext.current().getCallingUser().getId();
+            if (id != null && currentId != id.longValue()) {
+                throw new PermissionDeniedException("Calling user is not authorized to see the user requested by id");
+            }
+            id = currentId;
+        }
+        Object username = null;
+        Object type = null;
+        String accountName = null;
+        Object state = null;
+        Object keyword = null;
+
+        Pair<List<UserAccountJoinVO>, Integer> result =  getUserListInternal(caller, permittedAccounts, listAll, id, username, type, accountName, state, keyword, domainId, recursive,
+                null);
+        ListResponse<UserResponse> response = new ListResponse<UserResponse>();
+        List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(CallContext.current().getCallingAccount().getDomainId(),
+                result.first().toArray(new UserAccountJoinVO[result.first().size()]));
+        response.setResponses(userResponses, result.second());
+        return response;
+    }
+
     private Pair<List<UserAccountJoinVO>, Integer> searchForUsersInternal(ListUsersCmd cmd) throws PermissionDeniedException {
         Account caller = CallContext.current().getCallingAccount();
 
@@ -427,42 +457,52 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
             id = currentId;
         }
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), null, permittedAccounts, domainIdRecursiveListProject, listAll, false);
-        Long domainId = domainIdRecursiveListProject.first();
-        Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-
-        Filter searchFilter = new Filter(UserAccountJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-
         Object username = cmd.getUsername();
         Object type = cmd.getAccountType();
-        Object accountName = cmd.getAccountName();
+        String accountName = cmd.getAccountName();
         Object state = cmd.getState();
         Object keyword = cmd.getKeyword();
 
+        Long domainId = cmd.getDomainId();
+        boolean recursive = cmd.isRecursive();
+        Long pageSizeVal = cmd.getPageSizeVal();
+        Long startIndex = cmd.getStartIndex();
+
+        Filter searchFilter = new Filter(UserAccountJoinVO.class, "id", true, startIndex, pageSizeVal);
+
+        return getUserListInternal(caller, permittedAccounts, listAll, id, username, type, accountName, state, keyword, domainId, recursive, searchFilter);
+    }
+
+    private Pair<List<UserAccountJoinVO>, Integer> getUserListInternal(Account caller, List<Long> permittedAccounts, boolean listAll, Long id, Object username, Object type,
+            String accountName, Object state, Object keyword, Long domainId, boolean recursive, Filter searchFilter) {
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, recursive, null);
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject, listAll, false);
+        domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
         SearchBuilder<UserAccountJoinVO> sb = _userAccountJoinDao.createSearchBuilder();
         _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-        sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.LIKE);
+        sb.and("username", sb.entity().getUsername(), Op.LIKE);
         if (id != null && id == 1) {
             // system user should NOT be searchable
             List<UserAccountJoinVO> emptyList = new ArrayList<UserAccountJoinVO>();
             return new Pair<List<UserAccountJoinVO>, Integer>(emptyList, 0);
         } else if (id != null) {
-            sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+            sb.and("id", sb.entity().getId(), Op.EQ);
         } else {
             // this condition is used to exclude system user from the search
             // results
-            sb.and("id", sb.entity().getId(), SearchCriteria.Op.NEQ);
+            sb.and("id", sb.entity().getId(), Op.NEQ);
         }
 
-        sb.and("type", sb.entity().getAccountType(), SearchCriteria.Op.EQ);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.and("type", sb.entity().getAccountType(), Op.EQ);
+        sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
+        sb.and("accountName", sb.entity().getAccountName(), Op.EQ);
+        sb.and("state", sb.entity().getState(), Op.EQ);
 
         if ((accountName == null) && (domainId != null)) {
-            sb.and("domainPath", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
+            sb.and("domainPath", sb.entity().getDomainPath(), Op.LIKE);
         }
 
         SearchCriteria<UserAccountJoinVO> sc = sb.create();
@@ -472,15 +512,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (keyword != null) {
             SearchCriteria<UserAccountJoinVO> ssc = _userAccountJoinDao.createSearchCriteria();
-            ssc.addOr("username", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("firstname", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("lastname", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("email", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("accountName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("accountType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("username", Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("firstname", Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("lastname", Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("email", Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("state", Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("accountName", Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("accountType", Op.LIKE, "%" + keyword + "%");
 
-            sc.addAnd("username", SearchCriteria.Op.SC, ssc);
+            sc.addAnd("username", Op.SC, ssc);
         }
 
         if (username != null) {

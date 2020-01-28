@@ -3441,21 +3441,21 @@
                                                 isEditable: true,
                                                 select: function(args) {
                                                     var data = [{
-                                                            id: 'ssl',
-                                                            name: 'ssl',
-                                                            description: _l('label.lb.protocol.ssl')
-                                                        }, {
                                                             id: 'tcp',
                                                             name: 'tcp',
                                                             description: _l('label.lb.protocol.tcp')
+                                                        }, {
+                                                            id: 'udp',
+                                                            name: 'udp',
+                                                            description: _l('label.lb.protocol.udp')
                                                         }, {
                                                             id: 'tcp-proxy',
                                                             name: 'tcp-proxy',
                                                             description: _l('label.lb.protocol.tcp.proxy')
                                                         }, {
-                                                            id: 'udp',
-                                                            name: 'udp',
-                                                            description: _l('label.lb.protocol.udp')
+                                                            id: 'ssl',
+                                                            name: 'ssl',
+                                                            description: _l('label.lb.protocol.ssl')
                                                         }];
                                                     if (typeof args.context != 'undefined') {
                                                         var lbProtocols = getLBProtocols(args.context.networks[0]);

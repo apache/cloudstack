@@ -304,6 +304,12 @@
     <bean id="backupManager" class="org.apache.cloudstack.backup.BackupManagerImpl">
         <property name="backupProviders" value="#{backupProvidersRegistry.registered}" />
         <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
+
+    <bean id="storageLayer" class="com.cloud.storage.JavaStorageLayer" />
+
+    <bean id="nfsMountManager" class="org.apache.cloudstack.storage.NfsMountManagerImpl" >
+        <constructor-arg name="storage" ref="storageLayer" />
+        <constructor-arg name="timeout" value="10000" />
     </bean>
 
 </beans>

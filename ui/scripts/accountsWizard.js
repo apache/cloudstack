@@ -68,10 +68,43 @@
                     required: true
                 },
                 docID: 'helpAccountLastName'
-            }
+            },
+            conflictingusersource: {
+                 label: 'label.user.conflict',
+                 validation: {
+                     required: true
+                 },
+                 docID: 'helpConflictSource'
+             }
         },
 
         informationNotInLdap: {
+            filter: {
+                label: 'label.filterBy',
+                docID: 'helpLdapUserFilter',
+                select: function(args) {
+                    var items = [];
+                    items.push({
+                        id: "NoFilter",
+                        description: "No filter"
+                    });
+                    items.push({
+                        id: "LocalDomain",
+                        description: "Local domain"
+                    });
+                    items.push({
+                        id: "AnyDomain",
+                        description: "Any domain"
+                    });
+                    items.push({
+                        id: "PotentialImport",
+                        description: "Potential import"
+                    });
+                    args.response.success({
+                        data: items
+                    });
+                }
+            },
             domainid: {
                 label: 'label.domain',
                 docID: 'helpAccountDomain',
