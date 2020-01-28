@@ -59,22 +59,50 @@ public class IscsiStorageCleanupMonitor implements Runnable{
                 conn = LibvirtConnection.getConnection();
 
                 //populate all the iscsi disks currently attached to this host
-                diskStatusMap.clear();
                 File[] iscsiVolumes = new File(ISCSI_PATH_PREFIX).listFiles();
-
                 if (iscsiVolumes == null || iscsiVolumes.length == 0) {
                     s_logger.debug("No iscsi sessions found for cleanup");
                     return;
                 }
 
-                for( File v : iscsiVolumes) {
-                    if (isIscsiDisk(v.getAbsolutePath())) {
-                        s_logger.debug("found iscsi disk by cleanup thread, marking inactive:" + v.getAbsolutePath());
-                        diskStatusMap.put(v.getAbsolutePath(), false);
-                    }
-                }
+                // set all status values to false
+                initializeDiskStatusMap(iscsiVolumes);
 
-                // check if they belong to any VM
+                // check if iscsi sessions belong to any VM
+                updateDiskStatusMapWithInactiveIscsiSessions(conn);
+
+                // disconnect stale iscsi sessions
+                disconnectInactiveSessions();
+
+            } catch (LibvirtException e) {
+                s_logger.warn("[ignored] Error trying to cleanup ", e);
+            }
+        }
+
+        private boolean isIscsiDisk(String path) {
+            return path.startsWith(ISCSI_PATH_PREFIX) && path.contains(KEYWORD_ISCSI) && path.contains(KEYWORD_IQN);
+        }
+
+        /**
+         * for each volume if the volume is path is of type iscsi, add to diskstatusmap and set status to false.
+         * @param iscsiVolumes
+         */
+        private void initializeDiskStatusMap(File[] iscsiVolumes){
+            diskStatusMap.clear();
+            for( File v : iscsiVolumes) {
+                if (isIscsiDisk(v.getAbsolutePath())) {
+                    s_logger.debug("found iscsi disk by cleanup thread, marking inactive: " + v.getAbsolutePath());
+                    diskStatusMap.put(v.getAbsolutePath(), false);
+                }
+            }
+        }
+
+        /** Loop over list of VMs or domains, get disks, if disk is in diskStatusMap, set status value to true.
+         *
+         * @param conn
+         */
+        private void updateDiskStatusMapWithInactiveIscsiSessions(Connect conn){
+            try {
                 int[] domains = conn.listDomains();
                 s_logger.debug(String.format("found %d domains", domains.length));
                 for (int domId : domains) {
@@ -92,33 +120,35 @@ public class IscsiStorageCleanupMonitor implements Runnable{
                         }
                     }
                 }
-
-                // the ones where the state is false, they are stale. They may be
-                // removed we go through each volume which is false, check iscsiadm,
-                // if the volume still exisits, logout of that volume and remove it from the map
-
-                // XXX: It is possible that someone had manually added an iSCSI volume.
-                // we would not be able to detect that
-                for (String diskPath : diskStatusMap.keySet()) {
-                    if (!diskStatusMap.get(diskPath)) {
-                        if (Files.exists(Paths.get(diskPath))) {
-                            try {
-                                s_logger.info("Cleaning up disk " + diskPath);
-                                iscsiStorageAdaptor.disconnectPhysicalDiskByPath(diskPath);
-                            } catch (Exception e) {
-                                s_logger.warn("[ignored] Error cleaning up " + diskPath, e);
-                            }
-                        }
-                    }
-                }
-
             } catch (LibvirtException e) {
                 s_logger.warn("[ignored] Error trying to cleanup ", e);
             }
+
         }
 
-        private boolean isIscsiDisk(String path) {
-            return path.startsWith(ISCSI_PATH_PREFIX) && path.contains(KEYWORD_ISCSI) && path.contains(KEYWORD_IQN);
+        /**
+         * When the state is false, the iscsi sessions are stale. They may be
+         * removed. We go through each volume which is false, check iscsiadm,
+         * if the volume still exisits, logout of that volume and remove it from the map
+
+         * XXX: It is possible that someone had manually added an iSCSI volume.
+         * we would not be able to detect that
+         */
+        private void disconnectInactiveSessions(){
+
+            for (String diskPath : diskStatusMap.keySet()) {
+                if (!diskStatusMap.get(diskPath)) {
+                    if (Files.exists(Paths.get(diskPath))) {
+                        try {
+                            s_logger.info("Cleaning up disk " + diskPath);
+                            iscsiStorageAdaptor.disconnectPhysicalDiskByPath(diskPath);
+                        } catch (Exception e) {
+                            s_logger.warn("[ignored] Error cleaning up " + diskPath, e);
+                        }
+                    }
+                }
+            }
+
         }
     }
 
