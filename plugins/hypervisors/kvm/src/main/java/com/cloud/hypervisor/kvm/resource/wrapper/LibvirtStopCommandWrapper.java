@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.to.DpdkTO;
+import com.cloud.hypervisor.kvm.resource.LibvirtKvmAgentHook;
 import com.cloud.utils.Pair;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
@@ -92,6 +93,8 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
             libvirtComputingResource.destroyNetworkRulesForVM(conn, vmName);
             final String result = libvirtComputingResource.stopVM(conn, vmName, command.isForceStop());
 
+            performAgentStopHook(vmName, libvirtComputingResource);
+
             if (result == null) {
                 if (disks != null && disks.size() > 0) {
                     for (final DiskDef disk : disks) {
@@ -147,4 +150,14 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
             return new StopAnswer(command, e.getMessage(), false);
         }
     }
+
+    private void performAgentStopHook(String vmName, final LibvirtComputingResource libvirtComputingResource) {
+        try {
+            LibvirtKvmAgentHook onStopHook = libvirtComputingResource.getStopHook();
+            onStopHook.handle(vmName);
+        } catch (Exception e) {
+            s_logger.warn("Exception occurred when handling LibVirt VM onStop hook: {}", e);
+        }
+    }
+
 }

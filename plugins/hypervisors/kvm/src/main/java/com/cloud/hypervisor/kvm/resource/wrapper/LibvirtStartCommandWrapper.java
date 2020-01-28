@@ -19,14 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import java.net.URISyntaxException;
-import java.util.List;
-
-import org.apache.log4j.Logger;
-import org.libvirt.Connect;
-import org.libvirt.DomainInfo.DomainState;
-import org.libvirt.LibvirtException;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
@@ -36,12 +28,20 @@ import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtKvmAgentHook;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.vm.VirtualMachine;
+import org.apache.log4j.Logger;
+import org.libvirt.Connect;
+import org.libvirt.DomainInfo.DomainState;
+import org.libvirt.LibvirtException;
+
+import java.net.URISyntaxException;
+import java.util.List;
 
 @ResourceWrapper(handles =  StartCommand.class)
 public final class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Answer, LibvirtComputingResource> {
@@ -81,7 +81,10 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             libvirtComputingResource.createVifs(vmSpec, vm);
 
             s_logger.debug("starting " + vmName + ": " + vm.toString());
-            libvirtComputingResource.startVM(conn, vmName, vm.toString());
+            String vmInitialSpecification = vm.toString();
+            String vmFinalSpecification = performXmlTransformHook(vmInitialSpecification, libvirtComputingResource);
+            libvirtComputingResource.startVM(conn, vmName, vmFinalSpecification);
+            performAgentStartHook(vmName, libvirtComputingResource);
 
             for (final NicTO nic : nics) {
                 if (nic.isSecurityGroupEnabled() || nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
@@ -157,5 +160,31 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                 storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vmSpec);
             }
         }
+    }
+
+    private void performAgentStartHook(String vmName, LibvirtComputingResource libvirtComputingResource) {
+        try {
+            LibvirtKvmAgentHook onStartHook = libvirtComputingResource.getStartHook();
+            onStartHook.handle(vmName);
+        } catch (Exception e) {
+            s_logger.warn("Exception occurred when handling LibVirt VM onStart hook: {}", e);
+        }
+    }
+
+    private String performXmlTransformHook(String vmInitialSpecification, final LibvirtComputingResource libvirtComputingResource) {
+        String vmFinalSpecification;
+        try {
+            // if transformer fails, everything must go as it's just skipped.
+            LibvirtKvmAgentHook t = libvirtComputingResource.getTransformer();
+            vmFinalSpecification = (String) t.handle(vmInitialSpecification);
+            if (null == vmFinalSpecification) {
+                s_logger.warn("Libvirt XML transformer returned NULL, will use XML specification unchanged.");
+                vmFinalSpecification = vmInitialSpecification;
+            }
+        } catch(Exception e) {
+            s_logger.warn("Exception occurred when handling LibVirt XML transformer hook: {}", e);
+            vmFinalSpecification = vmInitialSpecification;
+        }
+        return vmFinalSpecification;
     }
 }
