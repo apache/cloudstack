@@ -58,11 +58,22 @@ class CsPassword(CsDataBag):
         except IOError:
             logging.debug("File %s does not exist" % self.TOKEN_FILE)
 
-        ips_cmd = "ip addr show | grep inet | awk '{print $2}'"
-        ips = CsHelper.execute(ips_cmd)
-        for ip in ips:
-            server_ip = ip.split('/')[0]
-            proc = CsProcess(['/opt/cloud/bin/passwd_server_ip.py', server_ip])
+        server_ip = None
+        guest_ip = None
+        for interface in self.config.address().get_interfaces():
+            if interface.ip_in_subnet(vm_ip):
+                if self.config.cl.is_redundant():
+                    server_ip = interface.get_gateway()
+                    guest_ip = interface.get_ip()
+                else:
+                    server_ip = interface.get_ip()
+                break
+
+        if server_ip is not None:
+            if guest_ip is None:
+                proc = CsProcess(['/opt/cloud/bin/passwd_server_ip.py', server_ip])
+            else:
+                proc = CsProcess(['/opt/cloud/bin/passwd_server_ip.py', server_ip + "," + guest_ip])
             if proc.find():
                 url = "http://%s:8080/" % server_ip
                 payload = {"ip": vm_ip, "password": password, "token": token}
