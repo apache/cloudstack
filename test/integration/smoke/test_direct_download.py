@@ -30,6 +30,7 @@ from marvin.lib.common import (get_pod,
 from nose.plugins.attrib import attr
 from marvin.cloudstackAPI import (uploadTemplateDirectDownloadCertificate, revokeTemplateDirectDownloadCertificate)
 from marvin.lib.decoratorGenerators import skipTestIf
+import uuid
 
 
 class TestUploadDirectDownloadCertificates(cloudstackTestCase):
@@ -91,7 +92,7 @@ class TestUploadDirectDownloadCertificates(cloudstackTestCase):
 
         cmd = uploadTemplateDirectDownloadCertificate.uploadTemplateDirectDownloadCertificateCmd()
         cmd.hypervisor = self.hypervisor
-        cmd.name = "marvin-test-verify-certs"
+        cmd.name = "marvin-test-verify-certs" + str(uuid.uuid1())
         cmd.certificate = self.certificates["invalid"]
         cmd.zoneid = self.zone.id
 
@@ -126,7 +127,7 @@ class TestUploadDirectDownloadCertificates(cloudstackTestCase):
 
         cmd = uploadTemplateDirectDownloadCertificate.uploadTemplateDirectDownloadCertificateCmd()
         cmd.hypervisor = self.hypervisor
-        cmd.name = "marvin-test-verify-certs"
+        cmd.name = "marvin-test-verify-certs" + str(uuid.uuid1())
         cmd.certificate = self.certificates["valid"]
         cmd.zoneid = self.zone.id
 
