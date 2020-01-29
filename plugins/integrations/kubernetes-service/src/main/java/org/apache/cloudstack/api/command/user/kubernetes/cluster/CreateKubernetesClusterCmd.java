@@ -66,7 +66,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name for the Kubernetes cluster")
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "description for the Kubernetes cluster")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = true, description = "description for the Kubernetes cluster")
     private String description;
 
     @ACL(accessType = AccessType.UseEntry)

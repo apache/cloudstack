@@ -166,6 +166,9 @@
                                         description: {
                                             label: 'label.description',
                                             //docID: 'helpKubernetesClusterDesc',
+                                            validation: {
+                                                required: true
+                                            }
                                         },
                                         zone: {
                                             label: 'label.zone',
