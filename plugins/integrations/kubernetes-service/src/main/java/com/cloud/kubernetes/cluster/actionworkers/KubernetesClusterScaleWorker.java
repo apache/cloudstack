@@ -24,7 +24,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
 
@@ -315,7 +314,6 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         final List<KubernetesClusterVmMapVO> originalVmList  = getKubernetesClusterVMMaps();
         int i = originalVmList.size() - 1;
         List<Long> removedVmIds = new ArrayList<>();
-        boolean isCallerAdmin = accountManager.isAdmin(CallContext.current().getCallingAccountId());
         while (i > kubernetesCluster.getMasterNodeCount()) {
             KubernetesClusterVmMapVO vmMapVO = originalVmList.get(i);
             UserVm userVM = userVmDao.findById(vmMapVO.getVmId());
@@ -325,22 +323,12 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             // For removing port-forwarding network rules
             removedVmIds.add(userVM.getId());
             try {
-                UserVm vm = userVmService.destroyVm(userVM.getId(), isCallerAdmin);
-                if (isCallerAdmin && !VirtualMachine.State.Expunging.equals(vm.getState())) {
-                    logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, VM '%s' is now in state '%s'."
-                            , kubernetesCluster.getUuid()
+                UserVm vm = userVmService.destroyVm(userVM.getId(), true);
+                if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
+                    logMessage(Level.WARN, String.format("VM '%s' is in state '%s' while destroying it during scaling Kubernetes cluster ID: %s. Retrying..."
                             , vm.getInstanceName()
-                            , vm.getState().toString()),
-                            kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
-                }
-                if (!isCallerAdmin && !VirtualMachine.State.Destroyed.equals(vm.getState())) {
-                    logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, VM '%s' is now in state '%s'."
-                            , kubernetesCluster.getUuid()
-                            , vm.getInstanceName()
-                            , vm.getState().toString()),
-                            kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
-                }
-                if (isCallerAdmin) {
+                            , vm.getState().toString()
+                            , kubernetesCluster.getUuid()), null);
                     vm = userVmService.expungeVm(userVM.getId());
                     if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
                         logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, VM '%s' is now in state '%s'."

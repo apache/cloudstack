@@ -26,6 +26,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
 
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -83,37 +84,46 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 if (userVM == null || userVM.isRemoved()) {
                     continue;
                 }
-                boolean isAdmin = accountManager.isAdmin(CallContext.current().getCallingAccountId());
                 try {
-                    UserVm vm = userVmService.destroyVm(vmID, isAdmin);
-                    if (isAdmin && !VirtualMachine.State.Expunging.equals(vm.getState())) {
-                        LOGGER.warn(String.format("VM '%s' ID: %s should have been expunging by now but is '%s'... retrying..."
+                    UserVm vm = userVmService.destroyVm(vmID, true);
+                    if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
+                        LOGGER.warn(String.format("VM '%s' ID: %s should have been expunging by now but is '%s'. Retrying..."
                                 , vm.getInstanceName()
                                 , vm.getUuid()
                                 , vm.getState().toString()));
-                    }
-                    if (!isAdmin && !VirtualMachine.State.Destroyed.equals(vm.getState())) {
-                        LOGGER.warn(String.format("VM '%s' ID: %s should have been destroyed by now but is '%s'... retrying..."
-                                , vm.getInstanceName()
-                                , vm.getUuid()
-                                , vm.getState().toString()));
-                    }
-                    if (isAdmin) {
                         vm = userVmService.expungeVm(vmID);
-                        if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
-                            LOGGER.error(String.format("VM '%s' ID: %s is now in state '%s'. Will probably fail at deleting it's Kubernetes cluster."
-                                    , vm.getInstanceName()
-                                    , vm.getUuid()
-                                    , vm.getState().toString()));
-                        }
+                        LOGGER.warn(String.format("VM '%s' ID: %s is in state: %s, Kubernetes cluster will probably fail"
+                                , vm.getInstanceName()
+                                , vm.getUuid()
+                                , vm.getState().toString()));
                     }
                     kubernetesClusterVmMapDao.expunge(clusterVM.getId());
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER.info(String.format("Destroyed VM ID: %s as part of Kubernetes cluster ID: %s cleanup", vm.getUuid(), kubernetesCluster.getUuid()));
                     }
-                } catch (Exception e) {
-                    vmDestroyed = false;
+                } catch (ResourceUnavailableException | ConcurrentOperationException e) {
                     LOGGER.warn(String.format("Failed to destroy VM ID: %s part of the Kubernetes cluster ID: %s cleanup. Moving on with destroying remaining resources provisioned for the Kubernetes cluster", userVM.getUuid(), kubernetesCluster.getUuid()), e);
+                    return false;
+                }
+            }
+            final long startTime = System.currentTimeMillis();
+            while (System.currentTimeMillis() - startTime < 10 * 60 * 1000) {
+                vmDestroyed = true;
+                for (KubernetesClusterVmMapVO clusterVM : clusterVMs) {
+                    UserVmVO userVM = userVmDao.findById(clusterVM.getVmId());
+                    if (userVM != null && !userVM.isRemoved()) {
+                        LOGGER.info(String.format("Waiting for Kubernetes cluster ID: %s VMs to get expunged", kubernetesCluster.getUuid()));
+                        vmDestroyed = false;
+                        break;
+                    }
+                }
+                if (vmDestroyed) {
+                    break;
+                }
+                try {
+                    Thread.sleep(15 * 1000);
+                } catch (InterruptedException ie) {
+                    LOGGER.warn(String.format("Error while waiting for Kubernetes cluster ID: %s VMs to get expunged", kubernetesCluster.getUuid()), ie);
                 }
             }
         }
