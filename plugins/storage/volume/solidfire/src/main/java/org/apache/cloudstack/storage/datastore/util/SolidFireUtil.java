@@ -519,11 +519,7 @@ public class SolidFireUtil {
         if (hostVOs != null) {
             int numVags = 0;
 
-            String clusterUuId = clusterDao.findById(host.getClusterId()).getUuid();
-            SolidFireVag sfVagMatchingClusterId = sfVags.stream().filter(vag -> vag.getName().equals("CloudStack-"+clusterUuId)).findFirst().orElse(null);
-            if (sfVagMatchingClusterId != null && sfVagMatchingClusterId.getInitiators().length < MAX_NUM_INITIATORS_PER_VAG) {
-                addInitiatorsToSolidFireVag(sfConnection, sfVagMatchingClusterId.getId(), new String[]{host.getStorageUrl()});
-            }
+            addInitiatorsToExistingVag(clusterDao, host, sfVags, sfConnection);
 
             Collections.shuffle(hostVOs, RANDOM);
 
@@ -575,6 +571,14 @@ public class SolidFireUtil {
                 SolidFireUtil.createVag(sfConnection, "CloudStack-" + UUID.randomUUID().toString(),
                         new String[]{host.getStorageUrl()}, getVolumeIds(sfConnection, sfVags, host, hostDao));
             }
+        }
+    }
+
+    private static void addInitiatorsToExistingVag(ClusterDao clusterDao, Host host, List<SolidFireUtil.SolidFireVag> sfVags, SolidFireUtil.SolidFireConnection sfConnection){
+        String clusterUuId = clusterDao.findById(host.getClusterId()).getUuid();
+        SolidFireVag sfVagMatchingClusterId = sfVags.stream().filter(vag -> vag.getName().equals("CloudStack-"+clusterUuId)).findFirst().orElse(null);
+        if (sfVagMatchingClusterId != null && sfVagMatchingClusterId.getInitiators().length < MAX_NUM_INITIATORS_PER_VAG) {
+            addInitiatorsToSolidFireVag(sfConnection, sfVagMatchingClusterId.getId(), new String[]{host.getStorageUrl()});
         }
     }
 
@@ -698,49 +702,48 @@ public class SolidFireUtil {
 
             throw new CloudRuntimeException(errMsg);
         }
-
-        // Get list of VAGs from solidfire
         List<SolidFireUtil.SolidFireVag> sfVags = SolidFireUtil.getAllVags(sfConnection);
-
-        // Populate vag to iqn(host) map
-        Map<SolidFireUtil.SolidFireVag, List<String>> sfVagToIqnsMap = buildVagtoIQNMap(hosts, sfVags);
-
-        // throw exception if more than 4 VAGs
+        Map<SolidFireUtil.SolidFireVag, List<String>> sfVagToIqnsMap = buildVagToIQNMap(hosts, sfVags);
         if (sfVagToIqnsMap.size() > MAX_NUM_VAGS_PER_VOLUME) {
             throw new CloudRuntimeException("A SolidFire volume can be in at most four volume access groups simultaneously.");
         }
-
         if (sfVagToIqnsMap.containsKey(null)) {
-
-            //Check if cluster VAG exists
-            SolidFireVag sfVagMatchingClusterId = sfVags.stream().filter(vag -> vag.getName().equals("CloudStack-"+clusterUuId)).findFirst().orElse(null);
-
-            if (sfVagMatchingClusterId == null) {
-                // Create cluster VAG if doesnt exist
-                LOGGER.info("Creating volume access group CloudStack-"+clusterUuId);
-                SolidFireUtil.createVag(sfConnection, "CloudStack-"+clusterUuId, sfVagToIqnsMap.get(null).toArray(new String[0]), new long[] { sfVolumeId });
-                sfVags = SolidFireUtil.getAllVags(sfConnection);
-                sfVagMatchingClusterId = sfVags.stream().filter(vag -> vag.getName().equals("CloudStack-"+clusterUuId)).findFirst().orElse(null);
-            }
-
-            //update null entry in vag to IQN Map
-            sfVagToIqnsMap.put(sfVagMatchingClusterId,sfVagToIqnsMap.get(null));
-            sfVagToIqnsMap.remove(null);
+            sfVagToIqnsMap = updateNullKeyInsfVagToIqnsMap(sfVagToIqnsMap, sfVags, sfConnection, clusterUuId, sfVolumeId);
         }
+        addVoulumestoVagIfNotPresent(sfVagToIqnsMap.keySet(), sfVolumeId, sfConnection);
+    }
 
+    private static Map<SolidFireUtil.SolidFireVag, List<String>> updateNullKeyInsfVagToIqnsMap(Map<SolidFireUtil.SolidFireVag,List<String>> sfVagToIqnsMap, List <SolidFireUtil.SolidFireVag> sfVags, SolidFireConnection sfConnection, String clusterUuId, long sfVolumeId){
+        SolidFireUtil.SolidFireVag sfVagMatchingClusterId = createClusterVagIfDoesntExist(sfVags, sfConnection, clusterUuId, sfVagToIqnsMap, sfVolumeId);
+        sfVagToIqnsMap.put(sfVagMatchingClusterId, sfVagToIqnsMap.get(null));
+        sfVagToIqnsMap.remove(null);
+        return sfVagToIqnsMap;
+    }
 
-        // add volumeId to each VAG if not already present
-        for (SolidFireUtil.SolidFireVag sfVag : sfVagToIqnsMap.keySet()) {
+    private static SolidFireVag createClusterVagIfDoesntExist(List<SolidFireUtil.SolidFireVag> sfVags, SolidFireConnection sfConnection, String clusterUuId, Map<SolidFireUtil.SolidFireVag, List<String>> sfVagToIqnsMap, long sfVolumeId) {
+        SolidFireVag sfVagMatchingClusterId = sfVags.stream().filter(vag -> vag.getName().equals("CloudStack-" + clusterUuId)).findFirst().orElse(null);
+        if (sfVagMatchingClusterId == null) {
+            LOGGER.info("Creating volume access group CloudStack-" + clusterUuId);
+            SolidFireUtil.createVag(sfConnection, "CloudStack-" + clusterUuId, sfVagToIqnsMap.get(null).toArray(new String[0]), new long[]{sfVolumeId});
+            sfVags = SolidFireUtil.getAllVags(sfConnection);
+            return sfVags.stream().filter(vag -> vag.getName().equals("CloudStack-" + clusterUuId)).findFirst().orElse(null);
+        }else{
+            return sfVagMatchingClusterId;
+        }
+    }
+
+    private static void addVoulumestoVagIfNotPresent(Set<SolidFireUtil.SolidFireVag> sfVagSet, long sfVolumeId, SolidFireConnection sfConnection){
+        for (SolidFireUtil.SolidFireVag sfVag : sfVagSet) {
             if (sfVag != null) {
                 if (!SolidFireUtil.isVolumeIdInSfVag(sfVolumeId, sfVag)) {
                     SolidFireUtil.addVolumeIdsToSolidFireVag(sfConnection, sfVag.getId(), new Long[] { sfVolumeId });
                 }
             }
-
         }
     }
 
-    public static Map<SolidFireVag,List<String>> buildVagtoIQNMap(List<HostVO> hosts, List<SolidFireVag> sfVags) {
+
+    private static Map<SolidFireVag,List<String>> buildVagToIQNMap(List<HostVO> hosts, List<SolidFireVag> sfVags) {
 
         Map<SolidFireUtil.SolidFireVag, List<String>> sfVagToIqnsMap = new HashMap<>();
         for (HostVO hostVO : hosts) {
