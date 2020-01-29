@@ -58,9 +58,12 @@ import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
@@ -102,6 +105,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected PortForwardingRulesDao portForwardingRulesDao;
     @Inject
     protected ResourceManager resourceManager;
+    @Inject
+    protected LoadBalancerDao loadBalancerDao;
 
     protected KubernetesClusterResourceModifierActionWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
@@ -300,7 +305,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
         String base64UserData = Base64.encodeBase64String(k8sNodeConfig.getBytes(StringUtils.getPreferredCharset()));
         nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner,
-                hostName, kubernetesCluster.getDescription(), null, null, null,
+                hostName, hostName, null, null, null,
                 null, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
                 null, addrs, null, null, null, customParameterMap, null, null, null, null);
         if (LOGGER.isInfoEnabled()) {
@@ -401,6 +406,62 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info(String.format("Provisioned SSH port forwarding rule from port %d to 22 on %s to the VM IP : %s in Kubernetes cluster ID: %s", srcPortFinal, publicIp.getAddress().addr(), vmIp.toString(), kubernetesCluster.getUuid()));
                 }
+            }
+        }
+    }
+
+    protected FirewallRule removeApiFirewallRule(final IpAddress publicIp) {
+        FirewallRule rule = null;
+        List<FirewallRuleVO> firewallRules = firewallRulesDao.listByIpAndPurposeAndNotRevoked(publicIp.getId(), FirewallRule.Purpose.Firewall);
+        for (FirewallRuleVO firewallRule : firewallRules) {
+            if (firewallRule.getSourcePortStart() == CLUSTER_API_PORT &&
+                    firewallRule.getSourcePortEnd() == CLUSTER_API_PORT) {
+                rule = firewallRule;
+                firewallService.revokeIngressFwRule(firewallRule.getId(), true);
+                break;
+            }
+        }
+        return rule;
+    }
+
+    protected FirewallRule removeSshFirewallRule(final IpAddress publicIp) {
+        FirewallRule rule = null;
+        List<FirewallRuleVO> firewallRules = firewallRulesDao.listByIpAndPurposeAndNotRevoked(publicIp.getId(), FirewallRule.Purpose.Firewall);
+        for (FirewallRuleVO firewallRule : firewallRules) {
+            if (firewallRule.getSourcePortStart() == CLUSTER_NODES_DEFAULT_START_SSH_PORT) {
+                rule = firewallRule;
+                firewallService.revokeIngressFwRule(firewallRule.getId(), true);
+                break;
+            }
+        }
+        return rule;
+    }
+
+    protected void removePortForwardingRules(final IpAddress publicIp, final Network network, final Account account, final List<Long> removedVMIds) throws ResourceUnavailableException {
+        if (!CollectionUtils.isEmpty(removedVMIds)) {
+            for (Long vmId : removedVMIds) {
+                List<PortForwardingRuleVO> pfRules = portForwardingRulesDao.listByNetwork(network.getId());
+                for (PortForwardingRuleVO pfRule : pfRules) {
+                    if (pfRule.getVirtualMachineId() == vmId) {
+                        portForwardingRulesDao.remove(pfRule.getId());
+                        break;
+                    }
+                }
+            }
+            rulesService.applyPortForwardingRules(publicIp.getId(), account);
+        }
+    }
+
+    protected void removeLoadBalancingRule(final IpAddress publicIp, final Network network,
+                                           final Account account, final int port) throws ResourceUnavailableException {
+        List<LoadBalancerVO> rules = loadBalancerDao.listByIpAddress(publicIp.getId());
+        for (LoadBalancerVO rule : rules) {
+            if (rule.getNetworkId() == network.getId() &&
+                    rule.getAccountId() == account.getId() &&
+                    rule.getSourcePortStart() == port &&
+                    rule.getSourcePortEnd() == port) {
+                lbService.deleteLoadBalancerRule(rule.getId(), true);
+                break;
             }
         }
     }

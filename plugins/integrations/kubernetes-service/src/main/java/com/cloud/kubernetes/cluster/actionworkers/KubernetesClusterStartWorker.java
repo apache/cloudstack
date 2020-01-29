@@ -182,6 +182,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
         String hostName = kubernetesCluster.getName() + "-k8s-master";
+        if (kubernetesCluster.getMasterNodeCount() > 1) {
+            hostName += "-1";
+        }
         boolean haSupported = isKubernetesVersionSupportsHA();
         String k8sMasterConfig = null;
         try {
@@ -191,7 +194,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         String base64UserData = Base64.encodeBase64String(k8sMasterConfig.getBytes(StringUtils.getPreferredCharset()));
         masterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner,
-                hostName, kubernetesCluster.getDescription(), null, null, null,
+                hostName, hostName, null, null, null,
                 null, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
                 requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null);
         if (LOGGER.isInfoEnabled()) {
@@ -235,7 +238,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
-        String hostName = String.format("%s-k8s-master-%s", kubernetesCluster.getName(), additionalMasterNodeInstance);
+        String hostName = String.format("%s-k8s-master-%d", kubernetesCluster.getName(), additionalMasterNodeInstance + 1);
         String k8sMasterConfig = null;
         try {
             k8sMasterConfig = getKubernetesAdditionalMasterConfig(joinIp);
@@ -244,7 +247,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         String base64UserData = Base64.encodeBase64String(k8sMasterConfig.getBytes(StringUtils.getPreferredCharset()));
         additionalMasterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner,
-                hostName, kubernetesCluster.getDescription(), null, null, null,
+                hostName, hostName, null, null, null,
                 null, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
                 null, addrs, null, null, null, customParameterMap, null, null, null, null);
         if (LOGGER.isInfoEnabled()) {

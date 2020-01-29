@@ -45,10 +45,7 @@ import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -106,34 +103,6 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         logTransitStateToFailedIfNeededAndThrow(logLevel, message, null);
     }
 
-    private FirewallRule removeSshFirewallRule(final IpAddress publicIp) {
-        FirewallRule rule = null;
-        List<FirewallRuleVO> firewallRules = firewallRulesDao.listByIpAndPurposeAndNotRevoked(publicIp.getId(), FirewallRule.Purpose.Firewall);
-        for (FirewallRuleVO firewallRule : firewallRules) {
-            if (firewallRule.getSourcePortStart() == CLUSTER_NODES_DEFAULT_START_SSH_PORT) {
-                rule = firewallRule;
-                firewallService.revokeIngressFwRule(firewallRule.getId(), true);
-                break;
-            }
-        }
-        return rule;
-    }
-
-    private void removePortForwardingRules(final IpAddress publicIp, final Network network, final Account account, final List<Long> removedVMIds) throws ResourceUnavailableException {
-        if (!CollectionUtils.isEmpty(removedVMIds)) {
-            for (Long vmId : removedVMIds) {
-                List<PortForwardingRuleVO> pfRules = portForwardingRulesDao.listByNetwork(network.getId());
-                for (PortForwardingRuleVO pfRule : pfRules) {
-                    if (pfRule.getVirtualMachineId() == vmId) {
-                        portForwardingRulesDao.remove(pfRule.getId());
-                        break;
-                    }
-                }
-            }
-            rulesService.applyPortForwardingRules(publicIp.getId(), account);
-        }
-    }
-
     /**
      * Scale network rules for an existing Kubernetes cluster while scaling it
      * Open up firewall for SSH access from port NODES_DEFAULT_START_SSH_PORT to NODES_DEFAULT_START_SSH_PORT+n.
@@ -158,7 +127,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         // Remove existing SSH firewall rules
         FirewallRule firewallRule = removeSshFirewallRule(publicIp);
         if (firewallRule == null) {
-            throw new ManagementServerException("Firewall rule for node SSH access can't be provisioned!");
+            throw new ManagementServerException("Firewall rule for node SSH access can't be provisioned");
         }
         int existingFirewallRuleSourcePortEnd = firewallRule.getSourcePortEnd();
         final int scaledTotalNodeCount = clusterSize == null ? (int)kubernetesCluster.getTotalNodeCount() : (int)(clusterSize + kubernetesCluster.getMasterNodeCount());
