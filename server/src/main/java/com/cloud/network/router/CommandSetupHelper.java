@@ -1109,7 +1109,7 @@ public class CommandSetupHelper {
     private TrafficType getNetworkTrafficType(Network network) {
         final VpcGatewayVO gateway = _vpcGatewayDao.getVpcGatewayByNetworkId(network.getId());
         if (gateway != null) {
-            s_logger.debug("network " + network.getId() + " is a vpc private gateway, set traffic type to Public");
+            s_logger.debug("network " + network.getId() + " (name: " + network.getName() + " ) is a vpc private gateway, set traffic type to Public");
             return TrafficType.Public;
         } else {
             return network.getTrafficType();
