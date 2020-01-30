@@ -3835,10 +3835,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<ManagementServerHostVO>, Integer> result = listManagementServersInternal(cmd);
         List<ManagementServerResponse> hostResponses = new ArrayList<>();
 
-        for(ManagementServerHostVO host : result.first()) {
+        for (ManagementServerHostVO host : result.first()) {
             ManagementServerResponse hostResponse = createManagementServerResponse(host);
             hostResponses.add(hostResponse);
-         }
+        }
 
         response.setResponses(hostResponses);
         return response;
@@ -3850,10 +3850,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         SearchBuilder<ManagementServerHostVO> sb = managementServerHostDao.createSearchBuilder();
         SearchCriteria<ManagementServerHostVO> sc = sb.create();
-        if(id != null) {
+        if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
-        if(name != null) {
+        if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
         return managementServerHostDao.searchAndCount(sc, null);
