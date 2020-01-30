@@ -16,18 +16,62 @@
 // under the License.
 package com.cloud.ha;
 
-import java.util.List;
+import static org.apache.cloudstack.framework.config.ConfigKey.Scope.Cluster;
 
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VMInstanceVO;
+import org.apache.cloudstack.framework.config.ConfigKey;
+
+import java.util.List;
 
 /**
  * HighAvailabilityManager checks to make sure the VMs are running fine.
  */
 public interface HighAvailabilityManager extends Manager {
+
+    ConfigKey<Boolean> ForceHA = new ConfigKey<>("Advanced", Boolean.class, "force.ha", "false",
+        "Force High-Availability to happen even if the VM says no.", true, Cluster);
+
+    ConfigKey<Integer> HAWorkers = new ConfigKey<>("Advanced", Integer.class, "ha.workers", "5",
+        "The number of High-Availability worker threads.", true, Cluster);
+
+    ConfigKey<Integer> InvestigateRetryInterval = new ConfigKey<>("Advanced", Integer.class, "investigate.retry.interval",
+        "60", "The time (in seconds) between VM pings when the agent is disconnected.", true, Cluster);
+
+    ConfigKey<Integer> MigrateRetryInterval = new ConfigKey<>("Advanced", Integer.class, "migrate.retry.interval",
+        "120", "The time (in seconds) between migration retries.", true, Cluster);
+
+    ConfigKey<Integer> RestartRetryInterval = new ConfigKey<>("Advanced", Integer.class, "restart.retry.interval",
+        "600", "The time (in seconds) between retries to restart a VM.", true, Cluster);
+
+    ConfigKey<Integer> StopRetryInterval = new ConfigKey<>("Advanced", Integer.class, "stop.retry.interval",
+        "600", "The time in seconds between retries to stop or destroy a VM.", true, Cluster);
+
+    ConfigKey<Long> TimeBetweenCleanup = new ConfigKey<>("Advanced", Long.class,
+        "time.between.cleanup", "86400", "The time in seconds to wait before the"
+        + " cleanup thread runs for the different HA-Worker-Threads. The cleanup thread finds all the work items "
+        + "that were successful and is now ready to be purged from the the database (table: op_ha_work).",
+        true, Cluster);
+
+    ConfigKey<Integer> MaxRetries = new ConfigKey<>("Advanced", Integer.class, "max.retries",
+        "5", "The number of times to try a restart for the different Work-Types: "
+        + "Migrating - VMs off of a host, Destroy - a VM, Stop - a VM for storage pool migration purposes,"
+        + " CheckStop - checks if a VM has been stopped, ForceStop - force a VM to stop even if the "
+        + "states don't allow it, Destroy - a VM and HA - restart a VM.", true, Cluster);
+
+    ConfigKey<Long> TimeToSleep = new ConfigKey<>("Advanced", Long.class, "time.to.sleep",
+        "60", "The time in seconds to sleep before checking the database (table: op_ha_work) "
+        + "for new working types (Migration, Stop, CheckStop, ForceStop, Destroy and HA), if no work items are found.",
+        true, Cluster);
+
+    ConfigKey<Long> TimeBetweenFailures = new ConfigKey<>("Advanced", Long.class,
+        "time.between.failures", "3600", "The time in seconds before try to cleanup all the VMs"
+        + " which are registered for the HA event that were successful and are now ready to be purged.",
+        true, Cluster);
+
     public enum WorkType {
         Migration,  // Migrating VMs off of a host.
         Stop,       // Stops a VM for storage pool migration purposes.  This should be obsolete now.

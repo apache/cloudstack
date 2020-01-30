@@ -22,10 +22,6 @@ package com.cloud.agent.resource.virtualnetwork;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
-
-import org.apache.cloudstack.diagnostics.DiagnosticsAnswer;
-import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
-import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,8 +38,14 @@ import org.apache.cloudstack.ca.SetupCertificateAnswer;
 import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.ca.SetupKeyStoreCommand;
 import org.apache.cloudstack.ca.SetupKeystoreAnswer;
+import org.apache.cloudstack.diagnostics.DeleteFileInVrCommand;
+import org.apache.cloudstack.diagnostics.DiagnosticsAnswer;
+import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
+import org.apache.cloudstack.diagnostics.PrepareFilesAnswer;
+import org.apache.cloudstack.diagnostics.PrepareFilesCommand;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.log4j.Logger;
+import org.joda.time.Duration;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -56,6 +58,8 @@ import com.cloud.agent.api.GetRouterAlertsAnswer;
 import com.cloud.agent.api.routing.AggregationControlCommand;
 import com.cloud.agent.api.routing.AggregationControlCommand.Action;
 import com.cloud.agent.api.routing.GetRouterAlertsCommand;
+import com.cloud.agent.api.routing.GetRouterMonitorResultsAnswer;
+import com.cloud.agent.api.routing.GetRouterMonitorResultsCommand;
 import com.cloud.agent.api.routing.GroupAnswer;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.resource.virtualnetwork.facade.AbstractConfigItemFacade;
@@ -196,7 +200,13 @@ public class VirtualRoutingResource {
         } else if (cmd instanceof GetRouterAlertsCommand) {
             return execute((GetRouterAlertsCommand)cmd);
         } else if (cmd instanceof DiagnosticsCommand) {
-            return execute((DiagnosticsCommand)cmd);
+            return execute((DiagnosticsCommand) cmd);
+        } else if (cmd instanceof PrepareFilesCommand) {
+            return execute((PrepareFilesCommand) cmd);
+        } else if (cmd instanceof DeleteFileInVrCommand) {
+            return execute((DeleteFileInVrCommand)cmd);
+        } else if (cmd instanceof GetRouterMonitorResultsCommand) {
+            return execute((GetRouterMonitorResultsCommand)cmd);
         } else {
             s_logger.error("Unknown query command in VirtualRoutingResource!");
             return Answer.createUnsupportedCommandAnswer(cmd);
@@ -218,10 +228,7 @@ public class VirtualRoutingResource {
         throw new CloudRuntimeException("Unable to apply unknown configitem of type " + c.getClass().getSimpleName());
     }
 
-
     private Answer applyConfig(NetworkElementCommand cmd, List<ConfigItem> cfg) {
-
-
         if (cfg.isEmpty()) {
             return new Answer(cmd, true, "Nothing to do");
         }
@@ -249,7 +256,6 @@ public class VirtualRoutingResource {
             s_logger.warn("Expected " + cmd.getAnswersCount() + " answers while executing " + cmd.getClass().getSimpleName() + " but received " + results.size());
         }
 
-
         if (results.size() == 1) {
             return new Answer(cmd, finalResult, results.get(0).getDetails());
         } else {
@@ -266,6 +272,60 @@ public class VirtualRoutingResource {
         }
         ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.S2SVPN_CHECK, buff.toString());
         return new CheckS2SVpnConnectionsAnswer(cmd, result.isSuccess(), result.getDetails());
+    }
+
+    private List<String> getFailingChecks(String line) {
+        List<String> failingChecks = new ArrayList<>();
+        for (String w : line.split(",")) {
+            if (!w.trim().isEmpty()) {
+                failingChecks.add(w.trim());
+            }
+        }
+        return failingChecks;
+    }
+
+    private GetRouterMonitorResultsAnswer parseLinesForHealthChecks(GetRouterMonitorResultsCommand cmd, String executionResult) {
+        List<String> failingChecks = new ArrayList<>();
+        StringBuilder monitorResults = new StringBuilder();
+        String[] lines = executionResult.trim().split("\n");
+        boolean readingFailedChecks = false, readingMonitorResults = false;
+        for (String line : lines) {
+            line = line.trim();
+            if (line.contains("FAILING CHECKS")) { // Toggle to reading failing checks from next line
+                readingFailedChecks = true;
+                readingMonitorResults = false;
+            } else if (line.contains("MONITOR RESULTS")) { // Toggle to reading monitor results from next line
+                readingFailedChecks = false;
+                readingMonitorResults = true;
+            } else if (readingFailedChecks && !readingMonitorResults) { // Reading failing checks section
+                failingChecks.addAll(getFailingChecks(line));
+            } else if (!readingFailedChecks && readingMonitorResults) { // Reading monitor checks result
+                monitorResults.append(line);
+            } else {
+                s_logger.error("Unexpected lines reached while parsing health check response. Skipping line:- " + line);
+            }
+        }
+
+        return new GetRouterMonitorResultsAnswer(cmd, true, failingChecks, monitorResults.toString());
+    }
+
+    private GetRouterMonitorResultsAnswer execute(GetRouterMonitorResultsCommand cmd) {
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String args = cmd.shouldPerformFreshChecks() ? "true" : "false";
+        s_logger.info("Fetching health check result for " + routerIp + " and executing fresh checks: " + args);
+        ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.ROUTER_MONITOR_RESULTS, args);
+
+        if (!result.isSuccess()) {
+            s_logger.warn("Result of " + cmd + " failed with details: " + result.getDetails());
+            return new GetRouterMonitorResultsAnswer(cmd, false, null, result.getDetails());
+        }
+
+        if (result.getDetails().isEmpty()) {
+            s_logger.warn("Result of " + cmd + " received no details.");
+            return new GetRouterMonitorResultsAnswer(cmd, false, null, "No results available.");
+        }
+
+        return parseLinesForHealthChecks(cmd, result.getDetails());
     }
 
     private GetRouterAlertsAnswer execute(GetRouterAlertsCommand cmd) {
@@ -304,6 +364,24 @@ public class VirtualRoutingResource {
             return new DiagnosticsAnswer(cmd, false, result.getDetails());
         }
         return new DiagnosticsAnswer(cmd, result.isSuccess(), result.getDetails());
+    }
+
+    private Answer execute(PrepareFilesCommand cmd) {
+        String fileList = String.join(" ", cmd.getFilesToRetrieveList());
+        _eachTimeout = Duration.standardSeconds(cmd.getTimeout());
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.RETRIEVE_DIAGNOSTICS, fileList, _eachTimeout);
+        if (result.isSuccess()) {
+            return new PrepareFilesAnswer(cmd, true, result.getDetails());
+        }
+        return new PrepareFilesAnswer(cmd, false, result.getDetails());
+    }
+
+    private Answer execute(DeleteFileInVrCommand cmd) {
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VR_FILE_CLEANUP, cmd.getFileName());
+        if (result.isSuccess()) {
+            return new Answer(cmd, result.isSuccess(), result.getDetails());
+        }
+        return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
     private Answer execute(GetDomRVersionCmd cmd) {

@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.command.admin.host.ListHostTagsCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
+import org.apache.cloudstack.api.command.admin.router.GetRouterHealthCheckResultsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
@@ -68,6 +69,7 @@ import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceDetailResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -110,6 +112,8 @@ public interface QueryService {
             "Determines whether users can view all user accounts within the same domain", true, ConfigKey.Scope.Domain);
 
     ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
+
+    ListResponse<UserResponse> searchForUsers(Long domainId, boolean recursive) throws PermissionDeniedException;
 
     ListResponse<EventResponse> searchForEvents(ListEventsCmd cmd);
 
@@ -170,4 +174,6 @@ public interface QueryService {
     ListResponse<ManagementServerResponse> listManagementServers(ListMgmtsCmd cmd);
 
     ListResponse<TemplateOVFPropertyResponse> listTemplateOVFProperties(ListTemplateOVFProperties cmd);
+
+    List<RouterHealthCheckResultResponse> listRouterHealthChecks(GetRouterHealthCheckResultsCmd cmd);
 }

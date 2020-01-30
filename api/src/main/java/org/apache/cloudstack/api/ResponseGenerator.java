@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -146,6 +147,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
@@ -466,4 +468,6 @@ public interface ResponseGenerator {
     SSHKeyPairResponse createSSHKeyPairResponse(SSHKeyPair sshkeyPair, boolean privatekey);
 
     ManagementServerResponse createManagementResponse(ManagementServerHost mgmt);
+
+    List<RouterHealthCheckResultResponse> createHealthCheckResponse(VirtualMachine router, List<RouterHealthCheckResult> healthCheckResults);
 }

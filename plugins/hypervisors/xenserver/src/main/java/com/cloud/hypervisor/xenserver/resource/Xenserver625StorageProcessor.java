@@ -71,7 +71,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
     private void mountNfs(Connection conn, String remoteDir, String localDir) {
         if (localDir == null) {
-            localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(remoteDir.getBytes());
+            localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remoteDir.getBytes());
         }
         String result = hypervisorResource.callHostPluginAsync(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", 100 * 1000, "localDir", localDir, "remoteDir", remoteDir);
         if (StringUtils.isBlank(result)) {
@@ -241,7 +241,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
     }
 
     protected SR createFileSr(Connection conn, String remotePath, String dir) {
-        String localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(remotePath.getBytes());
+        String localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remotePath.getBytes());
         mountNfs(conn, remotePath, localDir);
         return createFileSR(conn, localDir + "/" + dir);
     }
@@ -563,7 +563,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 SR snapshotSr = null;
                 Task task = null;
                 try {
-                    final String localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
+                    final String localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
                     mountNfs(conn, secondaryStorageMountPath, localDir);
                     final boolean result = makeDirectory(conn, localDir + "/" + folder);
                     if (!result) {
@@ -1074,7 +1074,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             srcSr = createFileSr(conn, srcUri.getHost() + ":" + srcUri.getPath(), srcDir);
 
             final String destNfsPath = destUri.getHost() + ":" + destUri.getPath();
-            final String localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(destNfsPath.getBytes());
+            final String localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(destNfsPath.getBytes());
 
             mountNfs(conn, destUri.getHost() + ":" + destUri.getPath(), localDir);
             makeDirectory(conn, localDir + "/" + destDir);
@@ -1216,7 +1216,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             srcSr = hypervisorResource.getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, false, srType, true);
 
             final String destNfsPath = destUri.getHost() + ":" + destUri.getPath();
-            final String localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(destNfsPath.getBytes());
+            final String localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(destNfsPath.getBytes());
 
             mountNfs(conn, destNfsPath, localDir);
             makeDirectory(conn, localDir + "/" + destDir);

@@ -336,7 +336,10 @@ public class ApiConstants {
     public static final String URL = "url";
     public static final String USAGE_INTERFACE = "usageinterface";
     public static final String USER_DATA = "userdata";
+    public static final String USER_FILTER = "userfilter";
     public static final String USER_ID = "userid";
+    public static final String USER_SOURCE = "usersource";
+    public static final String USER_CONFLICT_SOURCE = "conflictingusersource";
     public static final String USE_SSL = "ssl";
     public static final String USERNAME = "username";
     public static final String USER_CONFIGURABLE = "userconfigurable";
@@ -724,6 +727,7 @@ public class ApiConstants {
     public static final String VIRTUAL_SIZE = "virtualsize";
     public static final String NETSCALER_CONTROLCENTER_ID = "netscalercontrolcenterid";
     public static final String NETSCALER_SERVICEPACKAGE_ID = "netscalerservicepackageid";
+    public static final String FETCH_ROUTER_HEALTH_CHECK_RESULTS = "fetchhealthcheckresults";
 
     public static final String ZONE_ID_LIST = "zoneids";
     public static final String DESTINATION_ZONE_ID_LIST = "destzoneids";
@@ -742,10 +746,17 @@ public class ApiConstants {
     public static final String STDERR = "stderr";
     public static final String EXITCODE = "exitcode";
     public static final String TARGET_ID = "targetid";
+    public static final String FILES = "files";
     public static final String VOLUME_IDS = "volumeids";
 
+    public static final String ROUTER_ID = "routerid";
+    public static final String ROUTER_HEALTH_CHECKS = "healthchecks";
+    public static final String ROUTER_CHECK_NAME = "checkname";
+    public static final String ROUTER_CHECK_TYPE = "checktype";
+    public static final String LAST_UPDATED = "lastupdated";
+    public static final String PERFORM_FRESH_CHECKS = "performfreshchecks";
+
     public static final String CONSOLE_END_POINT = "consoleendpoint";
-    public static final String DELETE_ISO = "deleteiso";
     public static final String EXTERNAL_LOAD_BALANCER_IP_ADDRESS = "externalloadbalanceripaddress";
     public static final String DOCKER_REGISTRY_USER_NAME = "dockerregistryusername";
     public static final String DOCKER_REGISTRY_PASSWORD = "dockerregistrypassword";

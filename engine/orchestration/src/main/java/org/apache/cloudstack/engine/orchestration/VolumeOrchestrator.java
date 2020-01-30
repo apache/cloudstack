@@ -30,7 +30,6 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.VolumeApiService;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
@@ -106,6 +105,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;

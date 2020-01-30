@@ -32,7 +32,7 @@ public class LdapUserManagerFactory implements ApplicationContextAware {
 
     public static final Logger s_logger = Logger.getLogger(LdapUserManagerFactory.class.getName());
 
-    private static Map<LdapUserManager.Provider, LdapUserManager> ldapUserManagerMap = new HashMap<>();
+    static Map<LdapUserManager.Provider, LdapUserManager> ldapUserManagerMap = new HashMap<>();
 
     private ApplicationContext applicationCtx;
 

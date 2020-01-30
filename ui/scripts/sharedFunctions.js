@@ -37,6 +37,7 @@ var g_idpList = null;
 var g_appendIdpDomain = false;
 var g_sortKeyIsAscending = false;
 var g_allowUserViewAllDomainAccounts = false;
+var g_routerHealthChecksEnabled = false;
 
 //keyboard keycode
 var keycode_Enter = 13;

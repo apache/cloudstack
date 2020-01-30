@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -137,13 +138,14 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                 }
 
                 if (s_logger.isInfoEnabled()) {
+                    String lastTime = new SimpleDateFormat("yyyy/MM/dd'T'HH:mm:ss.SSS'Z'").format(vmStateUpdateTime);
                     s_logger.info(
-                            String.format("Detected missing VM. host: %l, vm id: %l(%s), power state: %s, last state update: %l"
+                            String.format("Detected missing VM. host: %d, vm id: %d(%s), power state: %s, last state update: %s"
                                     , hostId
                                     , instance.getId()
                                     , instance.getUuid()
                                     , VirtualMachine.PowerState.PowerReportMissing
-                                    , vmStateUpdateTime.getTime()));
+                                    , lastTime));
                 }
 
                 long milliSecondsSinceLastStateUpdate = currentTime.getTime() - vmStateUpdateTime.getTime();

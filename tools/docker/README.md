@@ -1,6 +1,6 @@
 # Docker Files for Apache CloudStack
 
-Dockerfiles used to build CloudStack images available on Docker hub.
+Dockerfiles used to build CloudStack images are available on Docker hub.
 
 
 ## Using images from docker-hub
@@ -8,7 +8,7 @@ Dockerfiles used to build CloudStack images available on Docker hub.
 
 ### CloudStack Simulator
 
-CloudStack Simulator if a all on one CloudStack Build including the simulator that mimic Hypervisor. This is usefull to test CloudStack API behavior without having to deploy real hypervisor nodes. CloudStack Simulator is used for tests and CI.
+CloudStack Simulator is an all in one CloudStack Build including the simulator that mimic Hypervisor. This is useful to test CloudStack API behavior without having to deploy real hypervisor nodes. CloudStack Simulator is used for tests and CI.
 
 ```
 docker pull cloudstack/simulator
@@ -55,7 +55,7 @@ docker run -ti --rm --link simulator:8096 \
 
 # How to build images
 
-Image provide by CloudStack are automatically build by Jenkins performing following tasks:
+Image provided by CloudStack are automatically built by Jenkins performing following tasks:
 
 
 ### CentOS 6
@@ -94,7 +94,7 @@ Build Marvin container usable to deploy cloud in the CloudStack management serve
 
 ### Simulator
 
-Build CloudStack with Simulator. this image is an all on one, including the database. Build from source using maven.
+Build CloudStack with Simulator. This image is an all in one, including the database. Built from source using maven.
 
 ```
 docker build -f Dockerfile -t cloudstack/simulator ../..

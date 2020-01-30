@@ -181,7 +181,7 @@ class Account:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, admin=False, domainid=None, roleid=None):
+    def create(cls, apiclient, services, admin=False, domainid=None, roleid=None, account=None):
         """Creates an account"""
         cmd = createAccount.createAccountCmd()
 
@@ -212,6 +212,9 @@ class Account:
 
         if roleid:
             cmd.roleid = roleid
+
+        if account:
+            cmd.account = account
 
         account = apiclient.createAccount(cmd)
 
