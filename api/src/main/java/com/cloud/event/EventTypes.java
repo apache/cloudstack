@@ -19,6 +19,13 @@ package com.cloud.event;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.annotation.Annotation;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.usage.Usage;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
@@ -69,12 +76,6 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RolePermission;
-import org.apache.cloudstack.annotation.Annotation;
-import org.apache.cloudstack.config.Configuration;
-import org.apache.cloudstack.ha.HAConfig;
-import org.apache.cloudstack.usage.Usage;
 
 public class EventTypes {
 
@@ -106,6 +107,7 @@ public class EventTypes {
     public static final String EVENT_ROUTER_HA = "ROUTER.HA";
     public static final String EVENT_ROUTER_UPGRADE = "ROUTER.UPGRADE";
     public static final String EVENT_ROUTER_DIAGNOSTICS = "ROUTER.DIAGNOSTICS";
+    public static final String EVENT_ROUTER_HEALTH_CHECKS = "ROUTER.HEALTH.CHECKS";
 
     // Console proxy
     public static final String EVENT_PROXY_CREATE = "PROXY.CREATE";
@@ -603,6 +605,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_ROUTER_HA, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_UPGRADE, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_DIAGNOSTICS, VirtualRouter.class);
+        entityEventDetails.put(EVENT_ROUTER_HEALTH_CHECKS, VirtualRouter.class);
 
         entityEventDetails.put(EVENT_PROXY_CREATE, VirtualMachine.class);
         entityEventDetails.put(EVENT_PROXY_DESTROY, VirtualMachine.class);

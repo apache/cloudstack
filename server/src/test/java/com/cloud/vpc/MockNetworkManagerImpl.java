@@ -213,11 +213,16 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
         return false;
     }
 
+    @Override
+    public boolean restartNetwork(Long networkId, boolean cleanup, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        return false;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkService#restartNetwork(com.cloud.api.commands.RestartNetworkCmd, boolean)
      */
     @Override
-    public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup, boolean makeRedundant) throws ConcurrentOperationException, ResourceUnavailableException,
+    public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException,
         InsufficientCapacityException {
         // TODO Auto-generated method stub
         return false;

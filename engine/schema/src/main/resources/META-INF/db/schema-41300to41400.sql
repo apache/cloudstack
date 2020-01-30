@@ -36,3 +36,18 @@ UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=283 AND display_name=
 UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=284 AND display_name="Red Hat Enterprise Linux 7.5";
 UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=285 AND display_name="Red Hat Enterprise Linux 7.6";
 UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=286 AND display_name="Red Hat Enterprise Linux 8.0";
+
+-- Create table for router health checks. We only save last check result for each.
+CREATE TABLE  `cloud`.`router_health_check` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `router_id` bigint unsigned NOT NULL COMMENT 'router id',
+  `check_name` varchar(255) NOT NULL COMMENT 'name of the health check',
+  `check_type` varchar(255) NOT NULL COMMENT 'type of the health check',
+  `last_update` DATETIME NULL COMMENT 'last check update time',
+  `check_result` boolean NOT NULL COMMENT 'check executions success or failure',
+  `check_details` BLOB NULL COMMENT 'check result detailed message',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_router_health_checks__router_id` FOREIGN KEY (`router_id`) REFERENCES `domain_router`(`id`) ON DELETE CASCADE,
+  UNIQUE `i_router_health_checks__router_id__check_name__check_type`(`router_id`, `check_name`, `check_type`),
+  INDEX `i_router_health_checks__router_id`(`router_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;

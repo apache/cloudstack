@@ -31,8 +31,7 @@ public interface VirtualNetworkApplianceService {
     /**
      * Starts domain router
      *
-     * @param cmd
-     *            the command specifying router's id
+     * @param cmd the command specifying router's id
      * @return DomainRouter object
      */
     VirtualRouter startRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
@@ -51,10 +50,8 @@ public interface VirtualNetworkApplianceService {
     /**
      * Stops domain router
      *
-     * @param id
-     *            of the router
-     * @param forced
-     *            just do it. caller knows best.
+     * @param id of the router
+     * @param forced just do it. caller knows best.
      * @return router if successful, null otherwise
      * @throws ResourceUnavailableException
      * @throws ConcurrentOperationException
@@ -68,4 +65,13 @@ public interface VirtualNetworkApplianceService {
     VirtualRouter findRouter(long routerId);
 
     List<Long> upgradeRouterTemplate(UpgradeRouterTemplateCmd cmd);
+
+    /**
+     * Updates router with latest health checkdata, runs health checks and persists health checks on virtual router if feasible.
+     * Throws relevant exception if feature is disabled or failures occur.
+     *
+     * @param routerId id of the router
+     * @return
+     */
+    boolean performRouterHealthChecks(long routerId);
 }

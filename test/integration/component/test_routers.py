@@ -21,7 +21,8 @@ from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import (stopVirtualMachine,
                                   stopRouter,
-                                  startRouter)
+                                  startRouter,
+                                  getRouterHealthCheckResults)
 from marvin.lib.utils import (cleanup_resources,
                               get_process_status)
 from marvin.lib.base import (ServiceOffering,
@@ -593,6 +594,75 @@ class TestRouterServices(cloudstackTestCase):
             )
 
         return
+
+    @attr(tags=["advanced"], required_hardware="true")
+    def test_04_RouterHealthChecksResults(self):
+        """Test advanced zone router list contains health check records
+        """
+
+        routers = list_routers(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            fetchhealthcheckresults=True
+        )
+
+        self.assertEqual(isinstance(routers, list), True,
+            "Check for list routers response return valid data"
+        )
+        self.assertNotEqual(
+            len(routers), 0,
+            "Check list router response"
+        )
+
+        router = routers[0]
+        self.info("Router ID: %s & Router state: %s" % (
+            router.id, router.state
+        ))
+
+        self.assertEqual(isinstance(router.healthcheckresults, list), True,
+            "Router response should contain it's health check result as list"
+        )
+
+        cmd = getRouterHealthCheckResults.getRouterHealthCheckResultsCmd()
+        cmd.routerid = router.id
+        cmd.performfreshchecks = True # Perform fresh checks as a newly created router may not have results
+        healthData = self.api_client.getRouterHealthCheckResults(cmd)
+        self.info("Router ID: %s & Router state: %s" % (
+            router.id, router.state
+        ))
+
+        self.assertEqual(router.id, healthData.routerid,
+            "Router response should contain it's health check result so id should match"
+        )
+        self.assertEqual(isinstance(healthData.healthchecks, list), True,
+            "Router response should contain it's health check result as list"
+        )
+
+        self.verifyCheckTypes(healthData.healthchecks)
+        self.verifyCheckNames(healthData.healthchecks)
+
+    def verifyCheckTypes(self, healthChecks):
+        for checkType in ["basic", "advanced"]:
+            foundType = False
+            for check in healthChecks:
+                if check.checktype == checkType:
+                    foundType = True
+                    break
+            self.assertTrue(foundType,
+                "Router should contain health check results info for type: " + checkType
+            )
+
+    def verifyCheckNames(self, healthChecks):
+        for checkName in ["dns_check.py", "dhcp_check.py", "haproxy_check.py", "disk_space_check.py", "iptables_check.py", "gateways_check.py", "router_version_check.py"]:
+            foundCheck = False
+            for check in healthChecks:
+                if check.checkname == checkName:
+                    foundCheck = True
+                    break
+            self.assertTrue(foundCheck,
+                "Router should contain health check results info for check name: " + checkName
+            )
 
 
 class TestRouterStopCreatePF(cloudstackTestCase):

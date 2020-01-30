@@ -96,7 +96,7 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
-        boolean result = _networkService.restartNetwork(this, getCleanup(), getMakeRedundant());
+        boolean result = _networkService.restartNetwork(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
