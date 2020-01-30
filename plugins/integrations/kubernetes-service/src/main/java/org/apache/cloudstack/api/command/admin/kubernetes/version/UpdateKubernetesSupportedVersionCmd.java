@@ -59,7 +59,7 @@ public class UpdateKubernetesSupportedVersionCmd extends BaseCmd implements Admi
     private Long id;
 
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING,
-            description = "the enabled or disabled state of the host",
+            description = "the enabled or disabled state of the Kubernetes supported version",
             required = true)
     private String state;
 
