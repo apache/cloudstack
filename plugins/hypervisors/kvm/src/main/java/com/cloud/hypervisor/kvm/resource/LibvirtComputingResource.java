@@ -48,6 +48,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.resource.RequestWrapper;
+import com.cloud.hypervisor.kvm.storage.IscsiStorageCleanupMonitor;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -1085,6 +1086,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final KVMStorageProcessor storageProcessor = new KVMStorageProcessor(_storagePoolMgr, this);
         storageProcessor.configure(name, params);
         storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
+
+        IscsiStorageCleanupMonitor isciCleanupMonitor = new IscsiStorageCleanupMonitor();
+        final Thread cleanupMonitor = new Thread(isciCleanupMonitor);
+        cleanupMonitor.start();
 
         return true;
     }
