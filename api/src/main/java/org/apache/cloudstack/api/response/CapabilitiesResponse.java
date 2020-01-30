@@ -85,7 +85,7 @@ public class CapabilitiesResponse extends BaseResponse {
     private boolean allowUserExpungeRecoverVM;
 
     @SerializedName("allowuserexpungerecovervolume")
-    @Param(description = "true if the user can recover and expunge volumes, false otherwise", since = "4.6.0")
+    @Param(description = "true if the user can recover and expunge volumes, false otherwise", since = "4.14.0")
     private boolean allowUserExpungeRecoverVolume;
 
     @SerializedName("allowuserviewalldomainaccounts")
