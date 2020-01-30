@@ -480,6 +480,31 @@
                                         </div>
                                     </div>
 
+                                    <!--  UEFI Boot -->
+                                    <div class="select" odd>
+                                        <div class="name">
+                                            <span><translate key="label.vm.boottype" /></span>
+                                        </div>
+                                        <div class="value">
+                                            <select name="customboot" id="customboot">
+                                                <option value="BIOS">BIOS</option>
+                                                <option value="UEFI">UEFI</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="select field hide-if-unselected">
+                                        <div class="name">
+                                            <span><translate key="label.vm.bootmode" /></span>
+                                        </div>
+                                        <div class="value">
+                                            <select name="bootmode" id="bootmode">
+                                                <option value="LEGACY">LEGACY</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+
                                     <!-- Zone -->
                                     <div class="select">
                                         <div class="name">

@@ -775,6 +775,27 @@ public class ApiConstants {
     public static final String LAST_UPDATED = "lastupdated";
     public static final String PERFORM_FRESH_CHECKS = "performfreshchecks";
 
+    public static final String BOOT_TYPE ="boottype";
+    public static final String BOOT_MODE ="bootmode";
+
+    public enum BootType {
+        UEFI, BIOS;
+
+        @Override
+        public String toString() {
+            return this.name();
+        }
+    }
+
+    public enum BootMode {
+        LEGACY, SECURE;
+
+        @Override
+        public String toString() {
+            return this.name();
+        }
+    }
+
     public enum HostDetails {
         all, capacity, events, stats, min;
     }

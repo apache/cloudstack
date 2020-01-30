@@ -317,6 +317,15 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                         (UserVmManager.DisplayVMOVFProperties.value() && userVmDetailVO.getName().startsWith(ApiConstants.OVF_PROPERTIES))) {
                     resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
                 }
+                if ((ApiConstants.BootType.UEFI.toString()).equalsIgnoreCase(userVmDetailVO.getName())) {
+                    userVmResponse.setBootType("Uefi");
+                    userVmResponse.setBootMode(userVmDetailVO.getValue().toLowerCase());
+
+                }
+            }
+            if (vmDetails.size() == 0) {
+                userVmResponse.setBootType("Bios");
+                userVmResponse.setBootMode("legacy");
             }
             // Remove blacklisted settings if user is not admin
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {

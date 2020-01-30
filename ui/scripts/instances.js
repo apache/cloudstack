@@ -2900,6 +2900,12 @@
                             },
                             id: {
                                 label: 'label.id'
+                            },
+                            boottype: {
+                                label: 'label.vm.boottype'
+                            },
+                            bootmode: {
+                                 label: 'label.vm.bootmode'
                             }
                         }],
 
