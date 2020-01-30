@@ -214,9 +214,6 @@
                                                     data: filterData,
                                                     dataType: "json",
                                                     async: true,
-                                                    url: createURL("listKubernetesSupportedVersions"),
-                                                    dataType: "json",
-                                                    async: true,
                                                     success: function(json) {
                                                         var items = [];
                                                         versionObjs = json.listkubernetessupportedversionsresponse.kubernetessupportedversion;
@@ -1227,14 +1224,10 @@
                                         }
                                     });
                                 },
-
                                 messages: {
                                     notification: function(args) {
                                         return 'Kubernetes Supported Version Add';
                                     }
-                                },
-                                notification: {
-                                    poll: pollAsyncJobResult
                                 }
                             }
                         },
