@@ -41,6 +41,7 @@ public class CSExceptionErrorCode {
             ExceptionErrorCodeMap.put("com.cloud.utils.exception.CloudRuntimeException", 4250);
             ExceptionErrorCodeMap.put("com.cloud.utils.exception.ExecutionException", 4260);
             ExceptionErrorCodeMap.put("com.cloud.utils.exception.HypervisorVersionChangedException", 4265);
+            ExceptionErrorCodeMap.put("com.cloud.utils.exception.NioConnectionException", 4270);
             ExceptionErrorCodeMap.put("com.cloud.exception.CloudException", 4275);
             ExceptionErrorCodeMap.put("com.cloud.exception.AccountLimitException", 4280);
             ExceptionErrorCodeMap.put("com.cloud.exception.AgentUnavailableException", 4285);
