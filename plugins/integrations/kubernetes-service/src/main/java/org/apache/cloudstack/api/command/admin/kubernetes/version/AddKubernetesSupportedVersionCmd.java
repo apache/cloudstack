@@ -43,7 +43,7 @@ import com.google.common.base.Strings;
 @APICommand(name = AddKubernetesSupportedVersionCmd.APINAME,
         description = "Add a supported Kubernetes version",
         responseObject = KubernetesSupportedVersionResponse.class,
-        responseView = ResponseObject.ResponseView.Restricted,
+        responseView = ResponseObject.ResponseView.Full,
         entityType = {KubernetesSupportedVersion.class},
         authorized = {RoleType.Admin})
 public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCmd {
