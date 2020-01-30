@@ -16,14 +16,13 @@
 // under the License.
 package org.apache.cloudstack.management;
 
-public interface ManagementServerHost {
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface ManagementServerHost extends InternalIdentity, Identity {
     enum State {
         Up, Down
     }
-
-    long getId();
-
-    String getUuid();
 
     long getMsid();
 

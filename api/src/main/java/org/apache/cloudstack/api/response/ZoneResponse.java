@@ -173,7 +173,7 @@ public class ZoneResponse extends BaseResponse {
         this.domainId = domainId;
     }
 
-    public void setType(String networkType) {
+    public void setNetworkType(String networkType) {
         this.networkType = networkType;
     }
 

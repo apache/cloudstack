@@ -661,6 +661,10 @@ class CsIP:
             if not found:
                 self.delete(ip)
 
+    def get_gateway(self):
+        interface = CsInterface(self.address, self.config)
+        return interface.get_gateway()
+
     def is_guest_gateway(self, bag, ip):
         """ Exclude the vrrp maintained addresses on a redundant router """
         interface = CsInterface(bag, self.config)
