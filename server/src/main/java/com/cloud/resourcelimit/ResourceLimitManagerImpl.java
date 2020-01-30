@@ -44,6 +44,8 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
+import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceOwnerType;
@@ -100,6 +102,8 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -151,6 +155,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     private VlanDao _vlanDao;
     @Inject
     private SnapshotDataStoreDao _snapshotDataStoreDao;
+    @Inject
+    private UserVmJoinDao _userVmJoinDao;
 
     protected GenericSearchBuilder<TemplateDataStoreVO, SumCount> templateSizeSearch;
     protected GenericSearchBuilder<SnapshotDataStoreVO, SumCount> snapshotSizeSearch;
@@ -872,7 +878,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     protected long recalculateAccountResourceCount(final long accountId, final ResourceType type) {
         final Long newCount;
         if (type == Resource.ResourceType.user_vm) {
-            newCount = _userVmDao.countAllocatedVMsForAccount(accountId);
+            newCount = _userVmDao.countAllocatedVMsForAccount(accountId, VirtualMachineManager.ResoureCountRunningVMsonly.value());
         } else if (type == Resource.ResourceType.volume) {
             long virtualRouterCount = _vmDao.findIdsOfAllocatedVirtualRoutersForAccount(accountId).size();
             newCount = _volumeDao.countAllocatedVolumesForAccount(accountId) - virtualRouterCount; // don't count the volumes of virtual router
@@ -929,11 +935,51 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     public long countCpusForAccount(long accountId) {
-        return _resourceCountDao.countCpuNumberAllocatedToAccount(accountId);
+        long cputotal = 0;
+        // user vms
+        SearchBuilder<UserVmJoinVO> userVmSearch = _userVmJoinDao.createSearchBuilder();
+        userVmSearch.and("accountId", userVmSearch.entity().getAccountId(), Op.EQ);
+        userVmSearch.and("state", userVmSearch.entity().getState(), SearchCriteria.Op.NIN);
+        userVmSearch.and("displayVm", userVmSearch.entity().isDisplayVm(), Op.EQ);
+        userVmSearch.groupBy(userVmSearch.entity().getId()); // select distinct
+        userVmSearch.done();
+
+        SearchCriteria<UserVmJoinVO> sc1 = userVmSearch.create();
+        sc1.setParameters("accountId", accountId);
+        if (VirtualMachineManager.ResoureCountRunningVMsonly.value())
+            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Stopped});
+        else
+            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+        sc1.setParameters("displayVm", 1);
+        List<UserVmJoinVO> userVms = _userVmJoinDao.search(sc1,null);
+        for (UserVmJoinVO vm : userVms) {
+            cputotal += Long.valueOf(vm.getCpu());
+        }
+        return cputotal;
     }
 
     public long calculateMemoryForAccount(long accountId) {
-        return _resourceCountDao.countMemoryAllocatedToAccount(accountId);
+        long ramtotal = 0;
+        // user vms
+        SearchBuilder<UserVmJoinVO> userVmSearch = _userVmJoinDao.createSearchBuilder();
+        userVmSearch.and("accountId", userVmSearch.entity().getAccountId(), Op.EQ);
+        userVmSearch.and("state", userVmSearch.entity().getState(), SearchCriteria.Op.NIN);
+        userVmSearch.and("displayVm", userVmSearch.entity().isDisplayVm(), Op.EQ);
+        userVmSearch.groupBy(userVmSearch.entity().getId()); // select distinct
+        userVmSearch.done();
+
+        SearchCriteria<UserVmJoinVO> sc1 = userVmSearch.create();
+        sc1.setParameters("accountId", accountId);
+        if (VirtualMachineManager.ResoureCountRunningVMsonly.value())
+            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Stopped});
+        else
+            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+        sc1.setParameters("displayVm", 1);
+        List<UserVmJoinVO> userVms = _userVmJoinDao.search(sc1,null);
+        for (UserVmJoinVO vm : userVms) {
+            ramtotal += Long.valueOf(vm.getRamSize());
+        }
+        return ramtotal;
     }
 
     public long calculateSecondaryStorageForAccount(long accountId) {
