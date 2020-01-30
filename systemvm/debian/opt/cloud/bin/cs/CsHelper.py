@@ -29,8 +29,8 @@ from netaddr import *
 
 PUBLIC_INTERFACES = {"router": "eth2", "vpcrouter": "eth1"}
 
-STATE_COMMANDS = {"router": "ip addr | grep eth0 | grep inet | wc -l | xargs bash -c  'if [ $0 == 2 ]; then echo \"MASTER\"; else echo \"BACKUP\"; fi'",
-                  "vpcrouter": "ip addr | grep eth1 | grep state | awk '{print $9;}' | xargs bash -c 'if [ $0 == \"UP\" ]; then echo \"MASTER\"; else echo \"BACKUP\"; fi'"}
+STATE_COMMANDS = {"router": "ip addr show dev eth0 | grep inet | wc -l | xargs bash -c  'if [ $0 == 2 ]; then echo \"MASTER\"; else echo \"BACKUP\"; fi'",
+                  "vpcrouter": "ip addr show dev eth1 | grep state | awk '{print $9;}' | xargs bash -c 'if [ $0 == \"UP\" ]; then echo \"MASTER\"; else echo \"BACKUP\"; fi'"}
 
 
 def reconfigure_interfaces(router_config, interfaces):
@@ -215,7 +215,7 @@ def save_iptables(command, iptables_file):
 
 def execute2(command, wait=True):
     """ Execute command """
-    logging.debug("Executing: %s" % command)
+    logging.info("Executing: %s" % command)
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     if wait:
         p.wait()
