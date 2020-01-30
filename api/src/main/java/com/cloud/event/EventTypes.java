@@ -107,6 +107,7 @@ public class EventTypes {
     public static final String EVENT_ROUTER_HA = "ROUTER.HA";
     public static final String EVENT_ROUTER_UPGRADE = "ROUTER.UPGRADE";
     public static final String EVENT_ROUTER_DIAGNOSTICS = "ROUTER.DIAGNOSTICS";
+    public static final String EVENT_ROUTER_HEALTH_CHECKS = "ROUTER.HEALTH.CHECKS";
 
     // Console proxy
     public static final String EVENT_PROXY_CREATE = "PROXY.CREATE";
@@ -615,6 +616,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_ROUTER_HA, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_UPGRADE, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_DIAGNOSTICS, VirtualRouter.class);
+        entityEventDetails.put(EVENT_ROUTER_HEALTH_CHECKS, VirtualRouter.class);
 
         entityEventDetails.put(EVENT_PROXY_CREATE, VirtualMachine.class);
         entityEventDetails.put(EVENT_PROXY_DESTROY, VirtualMachine.class);

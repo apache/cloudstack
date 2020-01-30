@@ -88,6 +88,7 @@ import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
 import org.apache.cloudstack.api.response.ResourceCountResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SSHKeyPairResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
@@ -152,6 +153,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
@@ -478,4 +480,6 @@ public interface ResponseGenerator {
     BackupOfferingResponse createBackupOfferingResponse(BackupOffering policy);
 
     ManagementServerResponse createManagementResponse(ManagementServerHost mgmt);
+
+    List<RouterHealthCheckResultResponse> createHealthCheckResponse(VirtualMachine router, List<RouterHealthCheckResult> healthCheckResults);
 }

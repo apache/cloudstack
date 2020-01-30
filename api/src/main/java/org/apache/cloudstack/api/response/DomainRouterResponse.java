@@ -18,9 +18,8 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
-
-import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -29,6 +28,7 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = VirtualMachine.class)
 @SuppressWarnings("unused")
@@ -217,6 +217,14 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     @Param(description = "true if the router template requires upgrader")
     private boolean requiresUpgrade;
 
+    @SerializedName("healthchecksfailed")
+    @Param(description = "true if any health checks had failed")
+    private boolean healthChecksFailed;
+
+    @SerializedName("healthcheckresults")
+    @Param(description = "Last executed health check result for the router", responseObject = RouterHealthCheckResultResponse.class, since = "4.14")
+    List<RouterHealthCheckResultResponse> healthCheckResults;
+
     public DomainRouterResponse() {
         nics = new LinkedHashSet<NicResponse>();
     }
@@ -276,6 +284,14 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
 
     public String getHypervisor() {
         return hypervisor;
+    }
+
+    public List<RouterHealthCheckResultResponse> getHealthCheckResults() {
+        return healthCheckResults;
+    }
+
+    public boolean getHealthChecksFailed() {
+        return healthChecksFailed;
     }
 
     public void setHypervisor(String hypervisor) {
@@ -445,5 +461,13 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
 
     public void setRequiresUpgrade(boolean requiresUpgrade) {
         this.requiresUpgrade = requiresUpgrade;
+    }
+
+    public void setHealthChecksFailed(boolean healthChecksFailed) {
+        this.healthChecksFailed = healthChecksFailed;
+    }
+
+    public void setHealthCheckResults(List<RouterHealthCheckResultResponse> healthCheckResults) {
+        this.healthCheckResults = healthCheckResults;
     }
 }

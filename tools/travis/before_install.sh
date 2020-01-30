@@ -89,7 +89,7 @@ echo "<settings>
   <mirrors>
     <mirror>
       <id>Central</id>
-      <url>http://repo1.maven.org/maven2</url>
+      <url>https://repo1.maven.org/maven2</url>
       <mirrorOf>central</mirrorOf>
       <!-- United States, St. Louis-->
     </mirror>

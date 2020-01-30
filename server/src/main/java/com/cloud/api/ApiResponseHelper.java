@@ -64,6 +64,7 @@ import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.CreateSSHKeyPairResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
@@ -240,6 +241,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
@@ -1357,6 +1359,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         assert listVrs != null && listVrs.size() == 1 : "There should be one virtual router returned";
         return listVrs.get(0);
     }
+
 
     @Override
     public SystemVmResponse createSystemVmResponse(VirtualMachine vm) {
@@ -4251,5 +4254,21 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setVersion(mgmt.getVersion());
         response.setState(mgmt.getState());
         return response;
+    }
+
+    @Override
+    public List<RouterHealthCheckResultResponse> createHealthCheckResponse(VirtualMachine router, List<RouterHealthCheckResult> healthCheckResults) {
+        List<RouterHealthCheckResultResponse> responses = new ArrayList<>(healthCheckResults.size());
+        for (RouterHealthCheckResult hcResult : healthCheckResults) {
+            RouterHealthCheckResultResponse healthCheckResponse = new RouterHealthCheckResultResponse();
+            healthCheckResponse.setObjectName("routerhealthchecks");
+            healthCheckResponse.setCheckName(hcResult.getCheckName());
+            healthCheckResponse.setCheckType(hcResult.getCheckType());
+            healthCheckResponse.setResult(hcResult.getCheckResult());
+            healthCheckResponse.setLastUpdated(hcResult.getLastUpdateTime());
+            healthCheckResponse.setDetails(hcResult.getParsedCheckDetails());
+            responses.add(healthCheckResponse);
+        }
+        return responses;
     }
 }

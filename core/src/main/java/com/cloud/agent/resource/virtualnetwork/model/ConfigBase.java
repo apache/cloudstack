@@ -41,6 +41,10 @@ public abstract class ConfigBase {
 
     private String type = UNKNOWN;
 
+    // For use in update_config.py which by default persists files in /var/cache/cloud/processed
+    // If true we don't keep the file in cache. Useful for monitor service command to avoid space waste
+    protected boolean deleteFromProcessedCache;
+
     private ConfigBase() {
         // Empty constructor for (de)serialization
     }
@@ -57,4 +61,7 @@ public abstract class ConfigBase {
         this.type = type;
     }
 
+    public boolean shouldDeleteFromProcessedCache() {
+        return deleteFromProcessedCache;
+    }
 }

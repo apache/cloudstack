@@ -525,7 +525,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
         String details = null;
         boolean success = false;
-        String newVolumeName = UUID.randomUUID().toString().replaceAll("-", "");
+        String newVolumeName = UUID.randomUUID().toString().replace("-", "");
 
         VmwareContext context = hostService.getServiceContext(cmd);
         try {
@@ -1053,7 +1053,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             Integer nfsVersion) throws Exception {
 
         String volumeFolder = String.valueOf(volumeId) + "/";
-        String newVolume = UUID.randomUUID().toString().replaceAll("-", "");
+        String newVolume = UUID.randomUUID().toString().replace("-", "");
         restoreVolumeFromSecStorage(hyperHost, dsMo, newVolume, secStorageUrl, "volumes/" + volumeFolder, exportName, nfsVersion);
 
         return new Pair<String, String>(volumeFolder, newVolume);

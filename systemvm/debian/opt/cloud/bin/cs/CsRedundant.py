@@ -102,7 +102,7 @@ class CsRedundant(object):
                 command = "ip link show %s | grep 'state UP'" % dev
                 devUp = CsHelper.execute(command)
                 if devUp:
-                    logging.info("Device %s is present, let's start keepalive now." % dev)
+                    logging.info("Device %s is present, let's start keepalived now." % dev)
                     isDeviceReady = True
 
         if not isDeviceReady:
@@ -231,7 +231,7 @@ class CsRedundant(object):
             return
 
         self.set_lock()
-        logging.info("Router switched to fault mode")
+        logging.info("Setting router to fault")
 
         interfaces = [interface for interface in self.address.get_interfaces() if interface.is_public()]
         for interface in interfaces:
@@ -245,8 +245,7 @@ class CsRedundant(object):
 
         interfaces = [interface for interface in self.address.get_interfaces() if interface.needs_vrrp()]
         for interface in interfaces:
-            CsPasswdSvc(interface.get_ip()).stop()
-            CsPasswdSvc(interface.get_gateway()).stop()
+            CsPasswdSvc(interface.get_gateway() + "," + interface.get_ip()).stop()
 
         self.cl.set_fault_state()
         self.cl.save()
@@ -282,8 +281,7 @@ class CsRedundant(object):
 
         interfaces = [interface for interface in self.address.get_interfaces() if interface.needs_vrrp()]
         for interface in interfaces:
-            CsPasswdSvc(interface.get_ip()).stop()
-            CsPasswdSvc(interface.get_gateway()).stop()
+            CsPasswdSvc(interface.get_gateway() + "," + interface.get_ip()).stop()
 
         CsHelper.service("dnsmasq", "stop")
 
@@ -341,8 +339,7 @@ class CsRedundant(object):
 
         interfaces = [interface for interface in self.address.get_interfaces() if interface.needs_vrrp()]
         for interface in interfaces:
-            CsPasswdSvc(interface.get_ip()).restart()
-            CsPasswdSvc(interface.get_gateway()).restart()
+            CsPasswdSvc(interface.get_gateway() + "," + interface.get_ip()).restart()
 
         CsHelper.service("dnsmasq", "restart")
         self.cl.set_master_state(True)
@@ -408,9 +405,6 @@ class CsRedundant(object):
                 cmdline = self.config.get_cmdline_instance()
                 if not interface.is_added():
                     continue
-                if cmdline.get_type() == 'router':
-                    str = "        %s brd %s dev %s\n" % (cmdline.get_guest_gw(), interface.get_broadcast(), interface.get_device())
-                else:
-                    str = "        %s brd %s dev %s\n" % (interface.get_gateway_cidr(), interface.get_broadcast(), interface.get_device())
+                str = "        %s brd %s dev %s\n" % (interface.get_gateway_cidr(), interface.get_broadcast(), interface.get_device())
                 lines.append(str)
         return lines
