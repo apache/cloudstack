@@ -2979,7 +2979,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                         final int vnetId = Integer.parseInt(nic.getBrName().replaceFirst("cloudVirBr", ""));
                         final String pifName = getPif(_guestBridgeName);
                         final String newBrName = "br" + pifName + "-" + vnetId;
-                        vmDef = vmDef.replaceAll("'" + nic.getBrName() + "'", "'" + newBrName + "'");
+                        vmDef = vmDef.replace("'" + nic.getBrName() + "'", "'" + newBrName + "'");
                         s_logger.debug("VM bridge name is changed from " + nic.getBrName() + " to " + newBrName);
                     } catch (final NumberFormatException e) {
                         continue;
