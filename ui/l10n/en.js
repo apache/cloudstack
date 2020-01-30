@@ -1760,6 +1760,7 @@ var dictionary = {
 "label.unhealthy.threshold":"Unhealthy Threshold",
 "label.unlimited":"Unlimited",
 "label.untagged":"Untagged",
+"label.update.kubernetes.version":"Update Kubernetes Version",
 "label.update.project.resources":"Update project resources",
 "label.update.ssl":" SSL Certificate",
 "label.update.ssl.cert":" SSL Certificate",

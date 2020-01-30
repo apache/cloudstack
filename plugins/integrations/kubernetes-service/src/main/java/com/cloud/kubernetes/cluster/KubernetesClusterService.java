@@ -32,6 +32,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public interface KubernetesClusterService extends PluggableService, Configurable {
     static final String MIN_KUBERNETES_VERSION_HA_SUPPORT = "1.16.0";
+    static final int MIN_KUBERNETES_CLUSTER_NODE_CPU = 2;
+    static final int MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE = 2048;
 
     static final ConfigKey<Boolean> KubernetesServiceEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
             "cloud.kubernetes.service.enabled",

@@ -19,6 +19,7 @@ package com.cloud.kubernetes.version;
 
 import org.apache.cloudstack.api.command.admin.kubernetes.version.AddKubernetesSupportedVersionCmd;
 import org.apache.cloudstack.api.command.admin.kubernetes.version.DeleteKubernetesSupportedVersionCmd;
+import org.apache.cloudstack.api.command.admin.kubernetes.version.UpdateKubernetesSupportedVersionCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.version.ListKubernetesSupportedVersionsCmd;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -31,4 +32,5 @@ public interface KubernetesVersionService extends PluggableService {
     ListResponse<KubernetesSupportedVersionResponse> listKubernetesSupportedVersions(ListKubernetesSupportedVersionsCmd cmd);
     KubernetesSupportedVersionResponse addKubernetesSupportedVersion(AddKubernetesSupportedVersionCmd cmd) throws CloudRuntimeException;
     boolean deleteKubernetesSupportedVersion(DeleteKubernetesSupportedVersionCmd cmd) throws CloudRuntimeException;
+    KubernetesSupportedVersionResponse updateKubernetesSupportedVersion(UpdateKubernetesSupportedVersionCmd cmd) throws CloudRuntimeException;
 }

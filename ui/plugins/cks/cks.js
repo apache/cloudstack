@@ -46,6 +46,8 @@
             document.body.removeChild(elem);
         }
     };
+    var minCpu = 0;
+    var minRamSize = 0;
     cloudStack.plugins.cks = function(plugin) {
         plugin.ui.addSection({
             id: 'cks',
@@ -219,7 +221,7 @@
                                                         versionObjs = json.listkubernetessupportedversionsresponse.kubernetessupportedversion;
                                                         if (versionObjs != null) {
                                                             for (var i = 0; i < versionObjs.length; i++) {
-                                                                if (versionObjs[i].isostate == 'Ready') {
+                                                                if (versionObjs[i].state == 'Enabled' && versionObjs[i].isostate == 'Ready') {
                                                                     items.push({
                                                                         id: versionObjs[i].id,
                                                                         description: versionObjs[i].name
@@ -241,8 +243,19 @@
                                                     var currentVersionId = $(this).val();
                                                     if (currentVersionId != null  && versionObjs != null) {
                                                         for (var i = 0; i < versionObjs.length; i++) {
-                                                            if (currentVersionId == versionObjs[i].id && versionObjs[i].supportsha === true) {
-                                                                $form.find('.form-item[rel=multimaster]').css('display', 'inline-block');
+                                                            if (currentVersionId == versionObjs[i].id) {
+                                                                if (versionObjs[i].supportsha === true) {
+                                                                    $form.find('.form-item[rel=multimaster]').css('display', 'inline-block');
+                                                                }
+                                                                minCpu = 0;
+                                                                if (versionObjs[i].mincpunumber != null && versionObjs[i].mincpunumber != undefined) {
+                                                                    minCpu = versionObjs[i].mincpunumber;
+                                                                }
+                                                                minRamSize = 0;
+                                                                if (versionObjs[i].minmemory != null && versionObjs[i].minmemory != undefined) {
+                                                                    minRamSize = versionObjs[i].minmemory;
+                                                                }
+                                                                break;
                                                             }
                                                         }
                                                     }
@@ -251,6 +264,7 @@
                                         },
                                         serviceoffering: {
                                             label: 'label.menu.service.offerings',
+                                            dependsOn: ['kubernetesversion'],
                                             //docID: 'helpKubernetesClusterServiceOffering',
                                             validation: {
                                                 required: true
@@ -265,10 +279,13 @@
                                                         var items = json.listserviceofferingsresponse.serviceoffering;
                                                         if (items != null) {
                                                             for (var i = 0; i < items.length; i++) {
-                                                                offeringObjs.push({
-                                                                    id: items[i].id,
-                                                                    description: items[i].name
-                                                                });
+                                                                if (items[i].iscustomized == false &&
+                                                                    items[i].cpunumber >= minCpu && items[i].memory >= minRamSize) {
+                                                                    offeringObjs.push({
+                                                                        id: items[i].id,
+                                                                        description: items[i].name
+                                                                    });
+                                                                }
                                                             }
                                                         }
                                                         args.response.success({
@@ -791,16 +808,13 @@
                                                         data: filterData,
                                                         dataType: "json",
                                                         async: true,
-                                                        url: createURL("listKubernetesSupportedVersions"),
-                                                        dataType: "json",
-                                                        async: true,
                                                         success: function(json) {
                                                             var items = [];
                                                             var versionObjs = json.listkubernetessupportedversionsresponse.kubernetessupportedversion;
                                                             if (versionObjs != null) {
                                                                 for (var i = 0; i < versionObjs.length; i++) {
                                                                     if (versionObjs[i].id != args.context.kubernetesclusters[0].kubernetesversionid &&
-                                                                        versionObjs[i].isostate == 'Ready') {
+                                                                        versionObjs[i].state == 'Enabled' && versionObjs[i].isostate == 'Ready') {
                                                                         items.push({
                                                                             id: versionObjs[i].id,
                                                                             description: versionObjs[i].name
@@ -1097,6 +1111,19 @@
                             },
                             isostate: {
                                 label: 'label.iso.state'
+                            },
+                            mincpunumber: {
+                                label: 'label.min.cpu.cores'
+                            },
+                            minmemory: {
+                                label: 'label.memory.minimum.mb'
+                            },
+                            state: {
+                                label: 'label.state',
+                                indicator: {
+                                    'Enabled': 'on',
+                                    'Disabled': 'off'
+                                }
                             }
                         },
                         advSearchFields: {
@@ -1194,6 +1221,18 @@
                                             label: 'label.checksum',
                                             //docID: 'Name of the cluster',
                                         },
+                                        mincpunumber: {
+                                            label: 'label.min.cpu.cores',
+                                            validation: {
+                                                number: true
+                                            },
+                                        },
+                                        minmemory: {
+                                            label: 'label.memory.minimum.mb',
+                                            validation: {
+                                                number: true
+                                            }
+                                        }
                                     }
                                 },
 
@@ -1207,6 +1246,16 @@
                                     if (args.data.zone != null && args.data.zone != -1) {
                                         $.extend(data, {
                                             zoneid: args.data.zone
+                                        });
+                                    }
+                                    if (args.data.mincpunumber != null && args.data.mincpunumber != "" && args.data.mincpunumber > 0) {
+                                        $.extend(data, {
+                                            mincpunumber: args.data.mincpunumber
+                                        });
+                                    }
+                                    if (args.data.minmemory != null && args.data.minmemory != "" && args.data.minmemory > 0) {
+                                        $.extend(data, {
+                                            minmemory: args.data.minmemory
                                         });
                                     }
                                     $.ajax({
@@ -1258,6 +1307,89 @@
                             name: 'label.kubernetes.version.details',
                             isMaximized: true,
                             actions: {
+                                update: {
+                                    label: 'label.edit',
+                                    messages: {
+                                        notification: function(args) {
+                                            return 'label.update.kubernetes.version';
+                                        }
+                                    },
+                                    createForm: {
+                                        title: 'label.update.kubernetes.version',
+                                        desc: '',
+                                        preFilter: function(args) {
+                                            var formVersion = args.context.kubernetesversions[0];
+                                            $.ajax({
+                                                url: createURL('listKubernetesSupportedVersions'),
+                                                data: {
+                                                    id: args.context.kubernetesversions[0].id
+                                                },
+                                                dataType: "json",
+                                                async: false,
+                                                success: function (json) {
+                                                    if (json.listkubernetessupportedversionsresponse.kubernetessupportedversion != null &&
+                                                        json.listkubernetessupportedversionsresponse.kubernetessupportedversion.length > 0) {
+                                                        formVersion = json.listkubernetessupportedversionsresponse.kubernetessupportedversion[0];
+                                                    }
+                                                }
+                                            });
+                                            if (formVersion.state != null) {
+                                                var options = args.$form.find('.form-item[rel=state]').find('option');
+                                                $.each(options, function(optionIndex, option) {
+                                                    if ($(option).val() === formVersion.state) {
+                                                        $(option).attr('selected','selected');
+                                                    }
+                                                });
+                                            }
+                                        },
+                                        fields: {
+                                            state: {
+                                                label: 'label.state',
+                                                //docID: 'helpKubernetesClusterZone',
+                                                validation: {
+                                                    required: true
+                                                },
+                                                select: function(args) {
+                                                    var items = [];
+                                                    items.push({
+                                                        id: 'Enabled',
+                                                        description: 'state.Enabled'
+                                                    }, {
+                                                        id: 'Disabled',
+                                                        description: 'state.Disabled'
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            },
+                                        }
+                                    },
+                                    action: function(args) {
+                                        var data = {
+                                            id: args.context.kubernetesversions[0].id,
+                                            state: args.data.state
+                                        };
+                                        $.ajax({
+                                            url: createURL('updateKubernetesSupportedVersion'),
+                                            data: data,
+                                            dataType: "json",
+                                            success: function (json) {
+                                                var jsonObj;
+                                                if (json.updatekubernetessupportedversionresponse.kubernetessupportedversion != null) {
+                                                    jsonObj = json.updatekubernetessupportedversionresponse.kubernetessupportedversion;
+                                                }
+                                                args.response.success({
+                                                    data: jsonObj
+                                                });
+                                            },
+                                            error: function(XMLHttpResponse) {
+                                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                args.response.error(errorMsg);
+                                            }
+                                        }); //end ajax
+                                    }
+                                },
                                 destroy: {
                                     label: 'label.delete.kubernetes.version',
                                     compactLabel: 'label.delete',

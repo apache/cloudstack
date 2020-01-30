@@ -45,6 +45,9 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_supported_version` (
     `semantic_version` varchar(32) NOT NULL COMMENT 'the semantic version for this Kubernetes version',
     `iso_id` bigint unsigned NOT NULL COMMENT 'the ID of the binaries ISO for this Kubernetes version',
     `zone_id` bigint unsigned DEFAULT NULL COMMENT 'the ID of the zone for which this Kubernetes version is made available',
+    `state` char(32) DEFAULT NULL COMMENT 'the enabled or disabled state for this Kubernetes version',
+    `min_cpu` int(10) unsigned DEFAULT NULL COMMENT 'the minimum CPU needed by cluster nodes for using this Kubernetes version',
+    `min_ram_size` bigint(20) unsigned DEFAULT NULL COMMENT 'the minimum RAM in MB needed by cluster nodes for this Kubernetes version',
     `created` datetime NOT NULL COMMENT 'date created',
     `removed` datetime COMMENT 'date removed or null, if still present',
 

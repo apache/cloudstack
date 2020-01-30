@@ -25,9 +25,25 @@ import org.apache.cloudstack.api.InternalIdentity;
  *
  */
 public interface KubernetesSupportedVersion extends InternalIdentity, Identity {
+
+    public enum State {
+        Disabled, Enabled
+    }
+
     long getId();
     String getName();
     String getSemanticVersion();
     long getIsoId();
     Long getZoneId();
+    State getState();
+
+    /**
+     * @return minimum # of cpu.
+     */
+    Integer getMinimumCpu();
+
+    /**
+     * @return minimum ram size in megabytes
+     */
+    Integer getMinimumRamSize();
 }

@@ -393,12 +393,18 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return true;
     }
 
-    private boolean validateServiceOffering(ServiceOffering serviceOffering) {
+    private boolean validateServiceOffering(final ServiceOffering serviceOffering, final KubernetesSupportedVersion version) {
         if (serviceOffering.isDynamic()) {
             throw new InvalidParameterValueException(String.format("Custom service offerings are not supported for creating clusters, service offering ID: %s", serviceOffering.getUuid()));
         }
-        if (serviceOffering.getCpu() < 2 || serviceOffering.getRamSize() < 2048) {
-            throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, Kubernetes cluster template(CoreOS) needs minimum 2 vCPUs and 2 GB RAM", serviceOffering.getUuid()));
+        if ((version.getMinimumCpu() == null || version.getMinimumRamSize() == null) && serviceOffering.getCpu() < MIN_KUBERNETES_CLUSTER_NODE_CPU || serviceOffering.getRamSize() < MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, Kubernetes cluster template(CoreOS) needs minimum %d vCPUs and %d MB RAM", serviceOffering.getUuid(), MIN_KUBERNETES_CLUSTER_NODE_CPU, MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
+        }
+        if (version.getMinimumCpu() != null && serviceOffering.getCpu() < version.getMinimumCpu()) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, Kubernetes version ID: %s needs minimum %d vCPUs", serviceOffering.getUuid(), version.getUuid(), version.getMinimumCpu()));
+        }
+        if (version.getMinimumRamSize() != null && serviceOffering.getRamSize() < version.getMinimumRamSize()) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, associated Kubernetes version ID: %s needs minimum %d MB RAM", serviceOffering.getUuid(), version.getUuid(), version.getMinimumRamSize()));
         }
         return true;
     }
@@ -579,6 +585,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (clusterKubernetesVersion == null) {
             throw new InvalidParameterValueException("Unable to find given Kubernetes version in supported versions");
         }
+        if (!KubernetesSupportedVersion.State.Enabled.equals(clusterKubernetesVersion.getState())) {
+            throw new InvalidParameterValueException(String.format("Kubernetes version ID: %s is in %s state", clusterKubernetesVersion.getUuid(), clusterKubernetesVersion.getState()));
+        }
         if (clusterKubernetesVersion.getZoneId() != null && !clusterKubernetesVersion.getZoneId().equals(zone.getId())) {
             throw new InvalidParameterValueException(String.format("Kubernetes version ID: %s is not available for zone ID: %s", clusterKubernetesVersion.getUuid(), zone.getUuid()));
         }
@@ -626,7 +635,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logAndThrow(Level.WARN, String.format("The template ID: %s is not available for use in zone ID: %s to provision Kubernetes cluster name: %s", template.getUuid(), zone.getUuid(), name));
         }
 
-        if (!validateServiceOffering(serviceOfferingDao.findById(serviceOfferingId))) {
+        if (!validateServiceOffering(serviceOffering, clusterKubernetesVersion)) {
             throw new InvalidParameterValueException("Given service offering ID: %s is not suitable for Kubernetes cluster");
         }
 
@@ -752,6 +761,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s cannot be scaled, either a new service offering or a new cluster size must be passed", kubernetesCluster.getUuid()));
         }
 
+        final KubernetesSupportedVersion clusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
+        if (clusterVersion == null) {
+            throw new CloudRuntimeException(String.format("Invalid Kubernetes version associated with Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+        }
+
         ServiceOffering serviceOffering = null;
         if (serviceOfferingId != null) {
             serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
@@ -761,8 +775,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 if (serviceOffering.isDynamic()) {
                     throw new InvalidParameterValueException(String.format("Custom service offerings are not supported for Kubernetes clusters. Kubernetes cluster ID: %s, service offering ID: %s", kubernetesCluster.getUuid(), serviceOffering.getUuid()));
                 }
-                if (serviceOffering.getCpu() < 2 || serviceOffering.getRamSize() < 2048) {
-                    throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s cannot be scaled with service offering ID: %s, Kubernetes cluster template(CoreOS) needs minimum 2 vCPUs and 2 GB RAM", kubernetesCluster.getUuid(), serviceOffering.getUuid()));
+                if ((clusterVersion.getMinimumCpu() == null || clusterVersion.getMinimumRamSize() == null) && serviceOffering.getCpu() < MIN_KUBERNETES_CLUSTER_NODE_CPU || serviceOffering.getRamSize() < MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
+                    throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s cannot be scaled with service offering ID: %s, Kubernetes cluster template(CoreOS) needs minimum %d vCPUs and %d MB RAM",
+                            kubernetesCluster.getUuid(), serviceOffering.getUuid(), MIN_KUBERNETES_CLUSTER_NODE_CPU, MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
+                }
+                if (clusterVersion.getMinimumCpu() != null && serviceOffering.getCpu() < clusterVersion.getMinimumCpu()) {
+                    throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s cannot be scaled with service offering ID: %s, associated Kubernetes version ID: %s needs minimum %d vCPUs",
+                            kubernetesCluster.getUuid(), serviceOffering.getUuid(), clusterVersion.getUuid(), clusterVersion.getMinimumCpu()));
+                }
+                if (clusterVersion.getMinimumRamSize() != null && serviceOffering.getRamSize() < clusterVersion.getMinimumRamSize()) {
+                    throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s cannot be scaled with service offering ID: %s, associated Kubernetes version ID: %s needs minimum %d MB RAM",
+                            kubernetesCluster.getUuid(), serviceOffering.getUuid(), clusterVersion.getUuid(), clusterVersion.getMinimumRamSize()));
                 }
             }
             final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
@@ -811,10 +834,25 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (upgradeVersion == null || upgradeVersion.getRemoved() != null) {
             throw new InvalidParameterValueException("Invalid Kubernetes version ID");
         }
+        if (!KubernetesSupportedVersion.State.Enabled.equals(upgradeVersion.getState())) {
+            throw new InvalidParameterValueException(String.format("Kubernetes version ID: %s for upgrade is in %s state", upgradeVersion.getUuid(), upgradeVersion.getState()));
+        }
         KubernetesSupportedVersionVO clusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
         if (clusterVersion == null || clusterVersion.getRemoved() != null) {
             throw new InvalidParameterValueException(String.format("Invalid Kubernetes version associated with cluster ID: %s",
                     kubernetesCluster.getUuid()));
+        }
+        final ServiceOffering serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(kubernetesCluster.getServiceOfferingId());
+        if (serviceOffering == null) {
+            throw new CloudRuntimeException(String.format("Invalid service offering associated with Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+        }
+        if (upgradeVersion.getMinimumCpu() != null && serviceOffering.getCpu() < upgradeVersion.getMinimumCpu()) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s cannot be upgraded with Kubernetes version ID: %s which needs minimum %d vCPUs while associated service offering ID: %s offers only %d vCPUs",
+                    kubernetesCluster.getUuid(), upgradeVersion.getUuid(), upgradeVersion.getMinimumCpu(), serviceOffering.getUuid(), serviceOffering.getCpu()));
+        }
+        if (upgradeVersion.getMinimumRamSize() != null && serviceOffering.getRamSize() < upgradeVersion.getMinimumRamSize()) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s cannot be upgraded with Kubernetes version ID: %s which needs minimum %d MB RAM while associated service offering ID: %s offers only %d MB RAM",
+                    kubernetesCluster.getUuid(), upgradeVersion.getUuid(), upgradeVersion.getMinimumRamSize(), serviceOffering.getUuid(), serviceOffering.getRamSize()));
         }
         // Check upgradeVersion is either patch upgrade or immediate minor upgrade
         try {

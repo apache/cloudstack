@@ -20,4 +20,5 @@ package com.cloud.kubernetes.version;
 public class KubernetesVersionEventTypes {
     public static final String EVENT_KUBERNETES_VERSION_ADD = "KUBERNETES.VERSION.ADD";
     public static final String EVENT_KUBERNETES_VERSION_DELETE = "KUBERNETES.VERSION.DELETE";
+    public static final String EVENT_KUBERNETES_VERSION_UPDATE = "KUBERNETES.VERSION.UPDATE";
 }

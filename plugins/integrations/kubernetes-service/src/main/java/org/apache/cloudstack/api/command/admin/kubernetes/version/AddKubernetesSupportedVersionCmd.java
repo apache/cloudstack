@@ -77,6 +77,14 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
             description = "the checksum value of the binaries ISO. " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
     private String checksum;
 
+    @Parameter(name = ApiConstants.MIN_CPU_NUMBER, type = CommandType.INTEGER,
+            description = "the minimum number of CPUs to be set with the Kubernetes version")
+    private Integer minimumCpu;
+
+    @Parameter(name = ApiConstants.MIN_MEMORY, type = CommandType.INTEGER,
+            description = "the minimum RAM size in MB to be set with the Kubernetes version")
+    private Integer minimumRamSize;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -106,6 +114,14 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
 
     public String getChecksum() {
         return checksum;
+    }
+
+    public Integer getMinimumCpu() {
+        return minimumCpu;
+    }
+
+    public Integer getMinimumRamSize() {
+        return minimumRamSize;
     }
 
     @Override

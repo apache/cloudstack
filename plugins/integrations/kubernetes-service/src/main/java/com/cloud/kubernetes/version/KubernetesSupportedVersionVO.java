@@ -22,6 +22,8 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -52,6 +54,16 @@ public class KubernetesSupportedVersionVO implements KubernetesSupportedVersion 
     @Column(name = "zone_id")
     private Long zoneId;
 
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
+    State state = State.Enabled;
+
+    @Column(name = "min_cpu")
+    private Integer minimumCpu;
+
+    @Column(name = "min_ram_size")
+    private Integer minimumRamSize;
+
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
@@ -63,11 +75,18 @@ public class KubernetesSupportedVersionVO implements KubernetesSupportedVersion 
     }
 
     public KubernetesSupportedVersionVO(String name, String semanticVersion, long isoId, Long zoneId) {
+        this(name, semanticVersion, isoId, zoneId, null, null);
+    }
+
+    public KubernetesSupportedVersionVO(String name, String semanticVersion, long isoId, Long zoneId,
+                                        Integer minimumCpu, Integer minimumRamSize) {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
         this.semanticVersion = semanticVersion;
         this.isoId = isoId;
         this.zoneId = zoneId;
+        this.minimumCpu = minimumCpu;
+        this.minimumRamSize = minimumRamSize;
     }
 
     @Override
@@ -114,6 +133,33 @@ public class KubernetesSupportedVersionVO implements KubernetesSupportedVersion 
 
     public void setZoneId(Long zoneId) {
         this.zoneId = zoneId;
+    }
+
+    @Override
+    public State getState() {
+        return this.state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
+    }
+
+    @Override
+    public Integer getMinimumCpu() {
+        return minimumCpu;
+    }
+
+    public void setMinimumCpu(Integer minimumCpu) {
+        this.minimumCpu = minimumCpu;
+    }
+
+    @Override
+    public Integer getMinimumRamSize() {
+        return minimumRamSize;
+    }
+
+    public void setMinimumRamSize(Integer minimumRamSize) {
+        this.minimumRamSize = minimumRamSize;
     }
 
     public Date getCreated() {

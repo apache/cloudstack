@@ -64,6 +64,18 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
     @Param(description = "whether Kubernetes supported version supports HA, multi-master")
     private Boolean supportsHA;
 
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the enabled or disabled state of the Kubernetes supported version")
+    private String state;
+
+    @SerializedName(ApiConstants.MIN_CPU_NUMBER)
+    @Param(description = "the minimum number of CPUs needed for the Kubernetes supported version")
+    private Integer minimumCpu;
+
+    @SerializedName(ApiConstants.MIN_MEMORY)
+    @Param(description = "the minimum RAM size in MB needed for the Kubernetes supported version")
+    private Integer minimumRamSize;
+
     public String getId() {
         return id;
     }
@@ -134,5 +146,29 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
 
     public void setSupportsHA(Boolean supportsHA) {
         this.supportsHA = supportsHA;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public Integer getMinimumCpu() {
+        return minimumCpu;
+    }
+
+    public void setMinimumCpu(Integer minimumCpu) {
+        this.minimumCpu = minimumCpu;
+    }
+
+    public Integer getMinimumRamSize() {
+        return minimumRamSize;
+    }
+
+    public void setMinimumRamSize(Integer minimumRamSize) {
+        this.minimumRamSize = minimumRamSize;
     }
 }
