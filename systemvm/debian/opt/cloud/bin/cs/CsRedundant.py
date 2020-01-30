@@ -102,7 +102,7 @@ class CsRedundant(object):
                 command = "ip link show %s | grep 'state UP'" % dev
                 devUp = CsHelper.execute(command)
                 if devUp:
-                    logging.info("Device %s is present, let's start keepalive now." % dev)
+                    logging.info("Device %s is present, let's start keepalived now." % dev)
                     isDeviceReady = True
 
         if not isDeviceReady:
@@ -231,7 +231,7 @@ class CsRedundant(object):
             return
 
         self.set_lock()
-        logging.info("Router switched to fault mode")
+        logging.info("Setting router to fault")
 
         interfaces = [interface for interface in self.address.get_interfaces() if interface.is_public()]
         for interface in interfaces:
