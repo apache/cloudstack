@@ -156,7 +156,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
 
     private void deleteKubernetesClusterNetworkRules() throws ManagementServerException {
         NetworkVO network = networkDao.findById(kubernetesCluster.getNetworkId());
-        if (!Network.GuestType.Isolated.equals(network.getGuestType())) {
+        if (network == null || !Network.GuestType.Isolated.equals(network.getGuestType())) {
             return;
         }
         List<Long> removedVmIds = new ArrayList<>();
