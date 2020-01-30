@@ -361,6 +361,7 @@
                 args.context.item.state != 'Destroyed' &&
                 args.context.item.name != 'default') {
                 allowedActions.push('remove');
+                allowedActions.push('edit');
             }
 
             return allowedActions;
@@ -4523,7 +4524,11 @@
                                 title: 'label.details',
                                 fields: [{
                                     name: {
-                                        label: 'label.name'
+                                        label: 'label.name',
+                                        isEditable: true,
+                                        validation: {
+                                            required: true
+                                        }
                                     }
                                 }, {
                                     id: {
@@ -5075,6 +5080,30 @@
                         },
 
                         actions: {
+                            edit: {
+                                label: 'label.edit',
+                                action: function(args) {
+                                    var data = {
+                                        id: args.context.securityGroups[0].id
+                                    };
+                                    if (args.data.name != args.context.securityGroups[0].name) {
+                                        $.extend(data, {
+                                            name: args.data.name
+                                        });
+                                    };
+                                    $.ajax({
+                                        url: createURL('updateSecurityGroup'),
+                                        data: data,
+                                        success: function(json) {
+                                            var item = json.updatesecuritygroupresponse.securitygroup;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                }
+                            },
+
                             remove: {
                                 label: 'label.action.delete.security.group',
                                 messages: {
