@@ -65,11 +65,15 @@ def handleMigrateBegin():
             bridge = source.getAttribute("bridge")
             if isOldStyleBridge(bridge):
                 vlanId = bridge.replace("cloudVirBr", "")
+                phyDev = getGuestNetworkDevice()
             elif isNewStyleBridge(bridge):
                 vlanId = re.sub(r"br(\w+)-", "", bridge)
+                phyDev = re.sub(r"-(\d+)$", "" , re.sub(r"^br", "" ,bridge))
+                netlib = networkConfig()
+                if not netlib.isNetworkDev(phyDev):
+                    phyDev = getGuestNetworkDevice()
             else:
                 continue
-            phyDev = getGuestNetworkDevice()
             newBrName = "br" + phyDev + "-" + vlanId
             source.setAttribute("bridge", newBrName)
         print(domain.toxml())
