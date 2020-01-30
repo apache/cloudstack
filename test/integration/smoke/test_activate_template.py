@@ -145,7 +145,7 @@ class TestActivateTemplate(cloudstackTestCase):
     def test_02_seedSystemVMTemplate(self):
         activeTemplate = self.apiclient.listTemplates(self.listTemplatesCmd)[0]
         cmd = seedSystemVMTemplate.seedSystemVMTemplateCmd()
-        cmd.id = self.zone.id
+        cmd.zoneid = self.zone.id
         cmd.templateid = activeTemplate.id
         systemTemplateId = self.dbclient.execute("SELECT id FROM cloud.vm_template WHERE uuid = '%s';" % activeTemplate.id)
         cmd.hypervisor = self.hypervisor

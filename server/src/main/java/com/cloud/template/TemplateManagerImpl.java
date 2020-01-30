@@ -2313,12 +2313,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 String downloadPath = downloadURI.getPath();
                 downloadedFileName = downloadPath.substring(downloadPath.lastIndexOf("/"));
 
-                startDownloadTemplate(template.getId(), cmd.getId());
+                startDownloadTemplate(template.getId(), cmd.getZoneId());
                 download(cmd.getUrl(), tempFolder + downloadedFileName);
                 inputFile = tempFolder + downloadedFileName;
             }
 
-            startInstallTemplate(template.getId(), cmd.getId());
+            startInstallTemplate(template.getId(), cmd.getZoneId());
             // Decompress file
             boolean decompressed = decompressFile(inputFile, tempFolder + "/" + template.getUuid() + "." + fileExtension);
             if (decompressed) {
@@ -2365,7 +2365,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new CloudRuntimeException("Failure copying template properties to image store");
             }
 
-            updateTemplate(template.getId(), fileExtension, cmd.getId(), destinationFile.length());
+            updateTemplate(template.getId(), fileExtension, cmd.getZoneId(), destinationFile.length());
 
             Script.runSimpleBashScriptForExitValue("sudo umount " + mountPoint, 60000);
         }

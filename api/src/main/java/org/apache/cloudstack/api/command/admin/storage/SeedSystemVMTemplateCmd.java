@@ -40,8 +40,8 @@ public class SeedSystemVMTemplateCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of the zone")
-    private Long id;
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of the zone")
+    private Long zoneId;
 
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "The template download url")
     private String url;
@@ -62,12 +62,12 @@ public class SeedSystemVMTemplateCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getId() {
-        return id;
+    public Long getZoneId() {
+        return zoneId;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
     }
 
     public String getUrl() {

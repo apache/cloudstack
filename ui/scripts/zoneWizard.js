@@ -5144,7 +5144,7 @@
 
                         // Seed the template via api call
                         $.ajax({
-                            url: createURL('seedSystemVMTemplate&id=' + args.data.returnedZone.id + '&hypervisor=' + args.data.returnedCluster.hypervisortype + '&url=' + args.data.selectSystemVm.url + '&localfile=false&templateid=' + newTemplateId),
+                            url: createURL('seedSystemVMTemplate&zoneid=' + args.data.returnedZone.id + '&hypervisor=' + args.data.returnedCluster.hypervisortype + '&url=' + args.data.selectSystemVm.url + '&localfile=false&templateid=' + newTemplateId),
                             data: data,
                             async: false,
                             error: function(XMLHttpResponse){
@@ -5291,7 +5291,7 @@
                                     url: createURL('seedSystemVMTemplate'),
                                     data: {
                                         hypervisor: args.data.zone.hypervisor,
-                                        id: args.data.returnedZone.id,
+                                        zoneid: args.data.returnedZone.id,
                                         fileuuid: uploadparams.id,
                                         templateid: uploadparams.id,
                                         localfile: true,

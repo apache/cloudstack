@@ -4160,7 +4160,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends Cluster>, Integer> searchForClusters(SeedSystemVMTemplateCmd cmd) {
-        Long zoneId = cmd.getId();
+        Long zoneId = cmd.getZoneId();
 
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
 

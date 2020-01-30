@@ -4002,7 +4002,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     public HashSet<String> searchForImageStores(SeedSystemVMTemplateCmd cmd) {
 
-        Long zoneId = cmd.getId();
+        Long zoneId = cmd.getZoneId();
 
         Filter searchFilter = new Filter(ImageStoreJoinVO.class, "id", Boolean.TRUE, 0L, 1000L);
 
@@ -4042,7 +4042,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public String getSystemVMTemplateId(SeedSystemVMTemplateCmd cmd) {
-        VMTemplateVO template = _templateDao.findSystemVMTemplate(cmd.getId());
+        VMTemplateVO template = _templateDao.findSystemVMTemplate(cmd.getZoneId());
         return template.getUuid();
     }
 
