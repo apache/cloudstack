@@ -45,8 +45,6 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -85,7 +83,6 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
@@ -190,8 +187,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     ResourceManager _resourceMgr;
     @Inject
     ManagementServiceConfiguration mgmtServiceConf;
-    @Inject
-    MessageBus messageBus;
 
     protected final ConfigKey<Integer> Workers = new ConfigKey<Integer>("Advanced", Integer.class, "workers", "5",
             "Number of worker threads handling remote agent connections.", false);
@@ -241,8 +236,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         _directAgentThreadCap = Math.round(DirectAgentPoolSize.value() * DirectAgentThreadCap.value()) + 1; // add 1 to always make the value > 0
 
         _monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("AgentMonitor"));
-
-        initMessageBusListener();
 
         return true;
     }
@@ -1828,24 +1821,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
-    private void propagateChangeToAgents() {
+    @Override
+    public void propagateChangeToAgents() {
         s_logger.debug("Propagating changes on host parameters to the agents");
         Map<Long, List<Long>> hostsPerZone = getHostsPerZone();
         Map<String, String> params = new HashMap<String, String>();
         params.put("router.aggregation.command.each.timeout", _configDao.getValue("router.aggregation.command.each.timeout"));
         sendCommandToAgents(hostsPerZone, params);
     }
-
-    private void initMessageBusListener() {
-        messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, new MessageSubscriber() {
-            @Override
-            public void onPublishMessage(String serderAddress, String subject, Object args) {
-                String globalSettingUpdated = (String)args;
-                if (globalSettingUpdated.equals("router.aggregation.command.each.timeout")) {
-                    propagateChangeToAgents();
-                }
-            }
-        });
-    }
-
 }
