@@ -364,7 +364,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         List<Long> clusterVMIds = new ArrayList<>();
         try {
             clusterVMs = provisionKubernetesClusterNodeVms((int)(newVmCount + kubernetesCluster.getNodeCount()), (int)kubernetesCluster.getNodeCount(), publicIpAddress);
-        } catch (ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
+        } catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster ID: %s, unable to provision node VM in the cluster", kubernetesCluster.getUuid()), e);
         }
         for (UserVm vm : clusterVMs) {

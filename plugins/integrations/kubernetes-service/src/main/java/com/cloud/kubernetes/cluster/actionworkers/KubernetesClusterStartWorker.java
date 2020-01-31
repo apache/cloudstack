@@ -486,7 +486,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         UserVm k8sMasterVM = null;
         try {
             k8sMasterVM = provisionKubernetesClusterMasterVm(network, publicIpAddress);
-        } catch (ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
+        } catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Provisioning the master VM failed in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
         clusterVMs.add(k8sMasterVM);
@@ -500,13 +500,13 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         try {
             List<UserVm> additionalMasterVMs = provisionKubernetesClusterAdditionalMasterVms(publicIpAddress);
             clusterVMs.addAll(additionalMasterVMs);
-        }  catch (ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
+        }  catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Provisioning additional master VM failed in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
         try {
             List<UserVm> nodeVMs = provisionKubernetesClusterNodeVms(kubernetesCluster.getNodeCount(), publicIpAddress);
             clusterVMs.addAll(nodeVMs);
-        }  catch (ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
+        }  catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Provisioning node VM failed in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
         if (LOGGER.isInfoEnabled()) {
