@@ -256,37 +256,38 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return additionalMasterVm;
     }
 
-    private UserVm provisionKubernetesClusterMasterVm(final Network network, final String publicIpAddress) throws CloudRuntimeException {
+    private UserVm provisionKubernetesClusterMasterVm(final Network network, final String publicIpAddress) throws
+            ManagementServerException, InsufficientCapacityException, ResourceUnavailableException {
         UserVm k8sMasterVM = null;
-        try {
-            k8sMasterVM = createKubernetesMaster(network, publicIpAddress);
-            addKubernetesClusterVm(kubernetesCluster.getId(), k8sMasterVM.getId());
-            startKubernetesVM(k8sMasterVM);
-            k8sMasterVM = userVmDao.findById(k8sMasterVM.getId());
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Provisioned the master VM ID: %s in to the Kubernetes cluster ID: %s", k8sMasterVM.getUuid(), kubernetesCluster.getUuid()));
-            }
-        } catch (ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Provisioning the master VM failed in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
+        k8sMasterVM = createKubernetesMaster(network, publicIpAddress);
+        addKubernetesClusterVm(kubernetesCluster.getId(), k8sMasterVM.getId());
+        startKubernetesVM(k8sMasterVM);
+        k8sMasterVM = userVmDao.findById(k8sMasterVM.getId());
+        if (k8sMasterVM == null) {
+            throw new ManagementServerException(String.format("Failed to provision master VM for Kubernetes cluster ID: %s" , kubernetesCluster.getUuid()));
+        }
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(String.format("Provisioned the master VM ID: %s in to the Kubernetes cluster ID: %s", k8sMasterVM.getUuid(), kubernetesCluster.getUuid()));
         }
         return k8sMasterVM;
     }
 
-    private List<UserVm> provisionKubernetesClusterAdditionalMasterVms(final String publicIpAddress) throws CloudRuntimeException {
+    private List<UserVm> provisionKubernetesClusterAdditionalMasterVms(final String publicIpAddress) throws
+            InsufficientCapacityException, ManagementServerException, ResourceUnavailableException {
         List<UserVm> additionalMasters = new ArrayList<>();
         if (kubernetesCluster.getMasterNodeCount() > 1) {
             for (int i = 1; i < kubernetesCluster.getMasterNodeCount(); i++) {
                 UserVm vm = null;
-                try {
-                    vm = createKubernetesAdditionalMaster(publicIpAddress, i);
-                    addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId());
-                    startKubernetesVM(vm);
-                    additionalMasters.add(vm);
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info(String.format("Provisioned additional master VM ID: %s in to the Kubernetes cluster ID: %s", vm.getUuid(), kubernetesCluster.getUuid()));
-                    }
-                } catch (ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
-                    logTransitStateAndThrow(Level.ERROR, String.format("Provisioning additional master VM %d/%d failed in the Kubernetes cluster ID: %s", i+1, kubernetesCluster.getMasterNodeCount(), kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
+                vm = createKubernetesAdditionalMaster(publicIpAddress, i);
+                addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId());
+                startKubernetesVM(vm);
+                vm = userVmDao.findById(vm.getId());
+                if (vm == null) {
+                    throw new ManagementServerException(String.format("Failed to provision additional master VM for Kubernetes cluster ID: %s" , kubernetesCluster.getUuid()));
+                }
+                additionalMasters.add(vm);
+                if (LOGGER.isInfoEnabled()) {
+                    LOGGER.info(String.format("Provisioned additional master VM ID: %s in to the Kubernetes cluster ID: %s", vm.getUuid(), kubernetesCluster.getUuid()));
                 }
             }
         }
@@ -404,7 +405,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             }
             try {
                 startKubernetesVM(vm);
-            } catch (CloudRuntimeException ex) {
+            } catch (ManagementServerException ex) {
                 LOGGER.warn(String.format("Failed to start VM ID: %s in Kubernetes cluster ID: %s due to ", vm.getUuid(), kubernetesCluster.getUuid()) + ex);
                 // dont bail out here. proceed further to stop the reset of the VM's
             }
@@ -482,7 +483,12 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s as no public IP found for the cluster" , kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
         }
         List<UserVm> clusterVMs = new ArrayList<>();
-        UserVm k8sMasterVM = provisionKubernetesClusterMasterVm(network, publicIpAddress);
+        UserVm k8sMasterVM = null;
+        try {
+            k8sMasterVM = provisionKubernetesClusterMasterVm(network, publicIpAddress);
+        } catch (ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
+            logTransitStateAndThrow(Level.ERROR, String.format("Provisioning the master VM failed in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
+        }
         clusterVMs.add(k8sMasterVM);
         if (Strings.isNullOrEmpty(publicIpAddress)) {
             publicIpSshPort = getKubernetesClusterServerIpSshPort(k8sMasterVM);
@@ -491,8 +497,12 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 logTransitStateAndThrow(Level.WARN, String.format("Failed to start Kubernetes cluster ID: %s as no public IP found for the cluster", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
             }
         }
-        List<UserVm> additionalMasterVMs = provisionKubernetesClusterAdditionalMasterVms(publicIpAddress);
-        clusterVMs.addAll(additionalMasterVMs);
+        try {
+            List<UserVm> additionalMasterVMs = provisionKubernetesClusterAdditionalMasterVms(publicIpAddress);
+            clusterVMs.addAll(additionalMasterVMs);
+        }  catch (ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
+            logTransitStateAndThrow(Level.ERROR, String.format("Provisioning additional master VM failed in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
+        }
         try {
             List<UserVm> nodeVMs = provisionKubernetesClusterNodeVms(kubernetesCluster.getNodeCount(), publicIpAddress);
             clusterVMs.addAll(nodeVMs);

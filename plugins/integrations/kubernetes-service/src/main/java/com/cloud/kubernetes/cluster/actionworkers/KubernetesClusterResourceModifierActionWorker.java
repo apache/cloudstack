@@ -42,7 +42,6 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ManagementServerException;
@@ -239,7 +238,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return plan(kubernetesCluster.getTotalNodeCount(), zone, offering);
     }
 
-    protected void startKubernetesVM(final UserVm vm) throws ConcurrentOperationException {
+    protected void startKubernetesVM(final UserVm vm) throws ManagementServerException {
         try {
             StartVMCmd startVm = new StartVMCmd();
             startVm = ComponentContext.inject(startVm);
@@ -252,12 +251,12 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
         } catch (IllegalAccessException | NoSuchFieldException | ExecutionException |
                 ResourceUnavailableException | ResourceAllocationException | InsufficientCapacityException ex) {
-            logAndThrow(Level.WARN, String.format("Failed to start VM in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), ex);
+            throw new ManagementServerException(String.format("Failed to start VM in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), ex);
         }
 
         UserVm startVm = userVmDao.findById(vm.getId());
         if (!startVm.getState().equals(VirtualMachine.State.Running)) {
-            logAndThrow(Level.WARN, String.format("Failed to start VM in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+            throw new ManagementServerException(String.format("Failed to start VM in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
         }
     }
 
@@ -268,6 +267,10 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             UserVm vm = createKubernetesNode(publicIpAddress, i);
             addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId());
             startKubernetesVM(vm);
+            vm = userVmDao.findById(vm.getId());
+            if (vm == null) {
+                throw new ManagementServerException(String.format("Failed to provision worker VM for Kubernetes cluster ID: %s" , kubernetesCluster.getUuid()));
+            }
             nodes.add(vm);
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info(String.format("Provisioned node VM ID: %s in to the Kubernetes cluster ID: %s", vm.getUuid(), kubernetesCluster.getUuid()));
