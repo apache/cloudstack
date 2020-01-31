@@ -735,8 +735,7 @@ class TestTemplates(cloudstackTestCase):
 
         list_template_response = Template.list(
                                     self.apiclient,
-                                    templatefilter=\
-                                    self.services["templatefilter"],
+                                    templatefilter='selfexecutable',
                                     id=self.template_1.id,
                                     account=self.account.name,
                                     domainid=self.account.domainid
