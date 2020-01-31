@@ -645,7 +645,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (size < 0 || (size > 0 && size < (1024 * 1024 * 1024))) {
             throw new InvalidParameterValueException("Please specify a size of at least 1 GB.");
         } else if (size > (MaxVolumeSize.value() * 1024 * 1024 * 1024)) {
-            throw new InvalidParameterValueException("volume size " + size + ", but the maximum size allowed is " + MaxVolumeSize + " GB.");
+            throw new InvalidParameterValueException("volume size " + size + ", but the maximum size allowed is " + MaxVolumeSize.value() + " GB.");
         }
 
         return true;
