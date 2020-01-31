@@ -1104,9 +1104,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         // Save configurations in agent.properties
         PropertiesStorage storage = new PropertiesStorage();
         storage.configure("Storage", new HashMap<String, Object>());
-        if (params.get("router.aggregation.command.each.timeout") == null) {
+        if (params.get("router.aggregation.command.each.timeout") != null) {
             String value = (String)params.get("router.aggregation.command.each.timeout");
-            Integer intValue = NumbersUtil.parseInt(value, 10);
+            Integer intValue = NumbersUtil.parseInt(value, 600);
             storage.persist("router.aggregation.command.each.timeout", String.valueOf(intValue));
         }
 
