@@ -500,6 +500,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                         s_logger.debug("The ip is not associated with the VPC network id=" + networkId + ", so assigning");
                         try {
                             ipAddress = _ipAddrMgr.associateIPToGuestNetwork(ipId, networkId, false);
+                            performedIpAssoc = true;
                         } catch (Exception ex) {
                             s_logger.warn("Failed to associate ip id=" + ipId + " to VPC network id=" + networkId + " as " + "a part of enable static nat");
                             return false;
