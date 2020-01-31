@@ -23,16 +23,16 @@
     :rowSelection="rowSelection"
     size="middle"
   >
-    <span slot="cpuTitle"><a-icon type="appstore" /> {{ $t('cpu') }}</span>
-    <span slot="ramTitle"><a-icon type="bulb" /> {{ $t('memory') }}</span>
+    <template v-slot:account><a-icon type="user" /> {{ $t('account') }}</template>
+    <template v-slot:domain><a-icon type="block" /> {{ $t('domain') }}</template>
   </a-table>
 </template>
 
 <script>
 export default {
-  name: 'ComputeSelection',
+  name: 'SshKeyPairSelection',
   props: {
-    computeItems: {
+    items: {
       type: Array,
       default: () => []
     },
@@ -46,17 +46,17 @@ export default {
       columns: [
         {
           dataIndex: 'name',
-          title: this.$t('serviceOfferingId'),
+          title: this.$t('sshKeyPairs'),
           width: '40%'
         },
         {
-          dataIndex: 'cpu',
-          slots: { title: 'cpuTitle' },
+          dataIndex: 'account',
+          slots: { title: 'account' },
           width: '30%'
         },
         {
-          dataIndex: 'ram',
-          slots: { title: 'ramTitle' },
+          dataIndex: 'domain',
+          slots: { title: 'domain' },
           width: '30%'
         }
       ],
@@ -65,12 +65,12 @@ export default {
   },
   computed: {
     tableSource () {
-      return this.computeItems.map((item) => {
+      return this.items.map((item) => {
         return {
-          key: item.id,
+          key: item.name,
           name: item.name,
-          cpu: `${item.cpunumber} CPU x ${parseFloat(item.cpuspeed / 1000.0).toFixed(2)} Ghz`,
-          ram: `${item.memory} MB`
+          account: item.account,
+          domain: item.domain
         }
       })
     },
@@ -79,7 +79,7 @@ export default {
         type: 'radio',
         selectedRowKeys: this.selectedRowKeys,
         onSelect: (row) => {
-          this.$emit('select-compute-item', row.key)
+          this.$emit('select-ssh-key-pair-item', row.key)
         }
       }
     }

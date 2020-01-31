@@ -425,6 +425,16 @@
             <a-icon type="calendar" />{{ resource.created }}
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.affinitygroup && resource.affinitygroup.length > 0">
+          <a-icon type="swap" />
+          <span
+            v-for="(group, index) in resource.affinitygroup"
+            :key="group.id"
+          >
+            <router-link :to="{ path: '/affinitygroup/' + group.id }">{{ group.name }}</router-link>
+            <span v-if="index + 1 < resource.affinitygroup.length">, </span>
+          </span>
+        </div>
       </div>
 
       <div class="account-center-tags" v-if="$route.meta.related">

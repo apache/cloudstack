@@ -1055,7 +1055,17 @@
 "instance": "Instance",
 "yourInstance": "Your instance",
 "newInstance": "New instance",
+"defaultNetwork": "Default network",
 "cpu": "CPU",
-"ram": "RAM",
+"minMaxIops": "Min IOPS / Max IOPS",
+"isSelf": "Self",
+"isShared": "Shared",
+"networks": "Networks",
+"BasicSetup": "Basic setup",
+"templateIso": "Template/ISO",
+"addAnotherNetwork": "Add another network",
+"addNewNetworks": "Add new networks",
+"existingNetworks": "Existing networks",
+"sshKeyPairs": "SSH keypairs",
 "wednesday": "Wednesday"
 }

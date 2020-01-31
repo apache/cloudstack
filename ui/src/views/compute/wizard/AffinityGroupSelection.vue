@@ -18,27 +18,28 @@
 <template>
   <a-table
     :columns="columns"
-    :dataSource="tableSource"
+    :dataSource="items"
+    :rowKey="record => record.id"
     :pagination="{showSizeChanger: true}"
     :rowSelection="rowSelection"
     size="middle"
   >
-    <span slot="cpuTitle"><a-icon type="appstore" /> {{ $t('cpu') }}</span>
-    <span slot="ramTitle"><a-icon type="bulb" /> {{ $t('memory') }}</span>
   </a-table>
 </template>
 
 <script>
+import _ from 'lodash'
+
 export default {
-  name: 'ComputeSelection',
+  name: 'AffinityGroupSelection',
   props: {
-    computeItems: {
+    items: {
       type: Array,
       default: () => []
     },
     value: {
-      type: String,
-      default: ''
+      type: Array,
+      default: () => []
     }
   },
   data () {
@@ -46,48 +47,33 @@ export default {
       columns: [
         {
           dataIndex: 'name',
-          title: this.$t('serviceOfferingId'),
+          title: this.$t('Affinity Groups'),
           width: '40%'
         },
         {
-          dataIndex: 'cpu',
-          slots: { title: 'cpuTitle' },
-          width: '30%'
-        },
-        {
-          dataIndex: 'ram',
-          slots: { title: 'ramTitle' },
-          width: '30%'
+          dataIndex: 'description',
+          title: this.$t('description'),
+          width: '60%'
         }
       ],
       selectedRowKeys: []
     }
   },
   computed: {
-    tableSource () {
-      return this.computeItems.map((item) => {
-        return {
-          key: item.id,
-          name: item.name,
-          cpu: `${item.cpunumber} CPU x ${parseFloat(item.cpuspeed / 1000.0).toFixed(2)} Ghz`,
-          ram: `${item.memory} MB`
-        }
-      })
-    },
     rowSelection () {
       return {
-        type: 'radio',
+        type: 'checkbox',
         selectedRowKeys: this.selectedRowKeys,
-        onSelect: (row) => {
-          this.$emit('select-compute-item', row.key)
+        onChange: (rows) => {
+          this.$emit('select-affinity-group-item', rows)
         }
       }
     }
   },
   watch: {
     value (newValue, oldValue) {
-      if (newValue && newValue !== oldValue) {
-        this.selectedRowKeys = [newValue]
+      if (newValue && !_.isEqual(newValue, oldValue)) {
+        this.selectedRowKeys = newValue
       }
     }
   }

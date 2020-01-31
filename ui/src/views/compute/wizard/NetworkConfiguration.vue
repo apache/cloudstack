@@ -18,21 +18,30 @@
 <template>
   <a-table
     :columns="columns"
-    :dataSource="tableSource"
+    :dataSource="items"
     :pagination="{showSizeChanger: true}"
     :rowSelection="rowSelection"
+    :rowKey="record => record.id"
     size="middle"
   >
-    <span slot="cpuTitle"><a-icon type="appstore" /> {{ $t('cpu') }}</span>
-    <span slot="ramTitle"><a-icon type="bulb" /> {{ $t('memory') }}</span>
+    <template v-slot:ipAddress="text">
+      <a-input
+        :value="text"
+      ></a-input>
+    </template>
+    <template v-slot:macAddress="text">
+      <a-input
+        :value="text"
+      ></a-input>
+    </template>
   </a-table>
 </template>
 
 <script>
 export default {
-  name: 'ComputeSelection',
+  name: 'NetworkConfiguration',
   props: {
-    computeItems: {
+    items: {
       type: Array,
       default: () => []
     },
@@ -46,40 +55,32 @@ export default {
       columns: [
         {
           dataIndex: 'name',
-          title: this.$t('serviceOfferingId'),
+          title: this.$t('defaultNetwork'),
           width: '40%'
         },
         {
-          dataIndex: 'cpu',
-          slots: { title: 'cpuTitle' },
-          width: '30%'
+          dataIndex: 'ip',
+          title: this.$t('ip'),
+          width: '30%',
+          scopedSlots: { customRender: 'ipAddress' }
         },
         {
-          dataIndex: 'ram',
-          slots: { title: 'ramTitle' },
-          width: '30%'
+          dataIndex: 'mac',
+          title: this.$t('macaddress'),
+          width: '30%',
+          scopedSlots: { customRender: 'macAddress' }
         }
       ],
       selectedRowKeys: []
     }
   },
   computed: {
-    tableSource () {
-      return this.computeItems.map((item) => {
-        return {
-          key: item.id,
-          name: item.name,
-          cpu: `${item.cpunumber} CPU x ${parseFloat(item.cpuspeed / 1000.0).toFixed(2)} Ghz`,
-          ram: `${item.memory} MB`
-        }
-      })
-    },
     rowSelection () {
       return {
         type: 'radio',
         selectedRowKeys: this.selectedRowKeys,
         onSelect: (row) => {
-          this.$emit('select-compute-item', row.key)
+          this.$emit('select-default-network-item', row.key)
         }
       }
     }

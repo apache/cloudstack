@@ -23,16 +23,20 @@
     :rowSelection="rowSelection"
     size="middle"
   >
-    <span slot="cpuTitle"><a-icon type="appstore" /> {{ $t('cpu') }}</span>
-    <span slot="ramTitle"><a-icon type="bulb" /> {{ $t('memory') }}</span>
+    <span slot="diskSizeTitle"><a-icon type="hdd" /> {{ $t('disksize') }}</span>
+    <span slot="iopsTitle"><a-icon type="rocket" /> {{ $t('minMaxIops') }}</span>
+    <template slot="diskSize" slot-scope="text, record">
+      <div v-if="record.isCustomized">{{ $t('isCustomized') }}</div>
+      <div v-else>{{ record.diskSize }} GB</div>
+    </template>
   </a-table>
 </template>
 
 <script>
 export default {
-  name: 'ComputeSelection',
+  name: 'DiskOfferingSelection',
   props: {
-    computeItems: {
+    items: {
       type: Array,
       default: () => []
     },
@@ -46,17 +50,18 @@ export default {
       columns: [
         {
           dataIndex: 'name',
-          title: this.$t('serviceOfferingId'),
+          title: this.$t('diskOffering'),
           width: '40%'
         },
         {
-          dataIndex: 'cpu',
-          slots: { title: 'cpuTitle' },
-          width: '30%'
+          dataIndex: 'diskSize',
+          slots: { title: 'diskSizeTitle' },
+          width: '30%',
+          scopedSlots: { customRender: 'diskSize' }
         },
         {
-          dataIndex: 'ram',
-          slots: { title: 'ramTitle' },
+          dataIndex: 'iops',
+          slots: { title: 'iopsTitle' },
           width: '30%'
         }
       ],
@@ -65,12 +70,13 @@ export default {
   },
   computed: {
     tableSource () {
-      return this.computeItems.map((item) => {
+      return this.items.map((item) => {
         return {
           key: item.id,
           name: item.name,
-          cpu: `${item.cpunumber} CPU x ${parseFloat(item.cpuspeed / 1000.0).toFixed(2)} Ghz`,
-          ram: `${item.memory} MB`
+          diskSize: item.disksize,
+          iops: `${item.miniops} – ${item.maxiops}`,
+          isCustomized: item.iscustomized
         }
       })
     },
@@ -79,7 +85,7 @@ export default {
         type: 'radio',
         selectedRowKeys: this.selectedRowKeys,
         onSelect: (row) => {
-          this.$emit('select-compute-item', row.key)
+          this.$emit('select-disk-offering-item', row.key)
         }
       }
     }
