@@ -3952,6 +3952,71 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return _nicDao.persist(nic);
     }
 
+    @DB
+    @Override
+    public Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses)
+            throws ConcurrentOperationException, InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+        s_logger.debug("Allocating nic for vm " + vm.getUuid() + " in network " + network + " during import");
+        String guestIp = null;
+        if (ipAddresses != null && !Strings.isNullOrEmpty(ipAddresses.getIp4Address())) {
+            if (ipAddresses.getIp4Address().equals("auto")) {
+                ipAddresses.setIp4Address(null);
+            }
+            if (network.getGuestType() != GuestType.L2) {
+                guestIp = _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
+            } else {
+                guestIp = null;
+            }
+            if (guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
+                throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP  address for network " + network, DataCenter.class,
+                        network.getDataCenterId());
+            }
+        }
+        final String finalGuestIp = guestIp;
+        final NicVO vo = Transaction.execute(new TransactionCallback<NicVO>() {
+            @Override
+            public NicVO doInTransaction(TransactionStatus status) {
+                NicVO vo = new NicVO(network.getGuruName(), vm.getId(), network.getId(), vm.getType());
+                vo.setMacAddress(macAddress);
+                vo.setAddressFormat(Networks.AddressFormat.Ip4);
+                if (NetUtils.isValidIp4(finalGuestIp) && !Strings.isNullOrEmpty(network.getGateway())) {
+                    vo.setIPv4Address(finalGuestIp);
+                    vo.setIPv4Gateway(network.getGateway());
+                    if (!Strings.isNullOrEmpty(network.getCidr())) {
+                        vo.setIPv4Netmask(NetUtils.cidr2Netmask(network.getCidr()));
+                    }
+                }
+                vo.setBroadcastUri(network.getBroadcastUri());
+                vo.setMode(network.getMode());
+                vo.setState(Nic.State.Reserved);
+                vo.setReservationStrategy(ReservationStrategy.Start);
+                vo.setReservationId(UUID.randomUUID().toString());
+                vo.setIsolationUri(network.getBroadcastUri());
+                vo.setDeviceId(deviceId);
+                vo.setDefaultNic(isDefaultNic);
+                vo = _nicDao.persist(vo);
+
+                int count = 1;
+                if (vo.getVmType() == VirtualMachine.Type.User) {
+                    s_logger.debug("Changing active number of nics for network id=" + network.getUuid() + " on " + count);
+                    _networksDao.changeActiveNicsBy(network.getId(), count);
+                }
+                if (vo.getVmType() == VirtualMachine.Type.User
+                        || vo.getVmType() == VirtualMachine.Type.DomainRouter && _networksDao.findById(network.getId()).getTrafficType() == TrafficType.Guest) {
+                    _networksDao.setCheckForGc(network.getId());
+                }
+
+                return vo;
+            }
+        });
+
+        final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
+        final NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
+                _networkModel.getNetworkTag(vm.getHypervisorType(), network));
+
+        return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
+    }
+
     @Override
     public String getConfigComponentName() {
         return NetworkOrchestrationService.class.getSimpleName();

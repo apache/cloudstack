@@ -22,6 +22,7 @@ public class ApiConstants {
     public static final String ACCOUNT_TYPE = "accounttype";
     public static final String ACCOUNT_ID = "accountid";
     public static final String ACTIVITY = "activity";
+    public static final String ADAPTER_TYPE = "adaptertype";
     public static final String ADDRESS = "address";
     public static final String ALGORITHM = "algorithm";
     public static final String ALLOCATED_ONLY = "allocatedonly";
@@ -43,6 +44,7 @@ public class ApiConstants {
     public static final String BYTES_WRITE_RATE_MAX = "byteswriteratemax";
     public static final String BYTES_WRITE_RATE_MAX_LENGTH = "byteswriteratemaxlength";
     public static final String BYPASS_VLAN_OVERLAP_CHECK = "bypassvlanoverlapcheck";
+    public static final String CAPACITY = "capacity";
     public static final String CATEGORY = "category";
     public static final String CAN_REVERT = "canrevert";
     public static final String CA_CERTIFICATES = "cacertificates";
@@ -50,9 +52,15 @@ public class ApiConstants {
     public static final String CERTIFICATE_CHAIN = "certchain";
     public static final String CERTIFICATE_FINGERPRINT = "fingerprint";
     public static final String CERTIFICATE_ID = "certid";
+    public static final String CONTROLLER = "controller";
+    public static final String CONTROLLER_UNIT = "controllerunit";
     public static final String COPY_IMAGE_TAGS = "copyimagetags";
     public static final String CSR = "csr";
     public static final String PRIVATE_KEY = "privatekey";
+    public static final String DATASTORE_HOST = "datastorehost";
+    public static final String DATASTORE_NAME = "datastorename";
+    public static final String DATASTORE_PATH = "datastorepath";
+    public static final String DATASTORE_TYPE = "datastoretype";
     public static final String DOMAIN_SUFFIX = "domainsuffix";
     public static final String DNS_SEARCH_ORDER = "dnssearchorder";
     public static final String CHAIN_INFO = "chaininfo";
@@ -69,6 +77,7 @@ public class ApiConstants {
     public static final String COMMAND = "command";
     public static final String CMD_EVENT_TYPE = "cmdeventtype";
     public static final String COMPONENT = "component";
+    public static final String CPU_CORE_PER_SOCKET = "cpucorepersocket";
     public static final String CPU_NUMBER = "cpunumber";
     public static final String CPU_SPEED = "cpuspeed";
     public static final String CPU_LOAD_AVERAGE = "cpuloadaverage";
@@ -91,6 +100,7 @@ public class ApiConstants {
     public static final String DETAILS = "details";
     public static final String DEVICE_ID = "deviceid";
     public static final String DIRECT_DOWNLOAD = "directdownload";
+    public static final String DISK = "disk";
     public static final String DISK_OFFERING_ID = "diskofferingid";
     public static final String NEW_DISK_OFFERING_ID = "newdiskofferingid";
     public static final String DISK_KBS_READ = "diskkbsread";
@@ -170,6 +180,7 @@ public class ApiConstants {
     public static final String PREVIOUS_ACL_RULE_ID = "previousaclruleid";
     public static final String NEXT_ACL_RULE_ID = "nextaclruleid";
     public static final String MOVE_ACL_CONSISTENCY_HASH = "aclconsistencyhash";
+    public static final String IMAGE_PATH = "imagepath";
     public static final String INTERNAL_DNS1 = "internaldns1";
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERVAL_TYPE = "intervaltype";
@@ -181,6 +192,7 @@ public class ApiConstants {
     public static final String IOPS_WRITE_RATE_MAX = "iopswriteratemax";
     public static final String IOPS_WRITE_RATE_MAX_LENGTH = "iopswriteratemaxlength";
     public static final String IP_ADDRESS = "ipaddress";
+    public static final String IP_ADDRESSES = "ipaddresses";
     public static final String IP6_ADDRESS = "ip6address";
     public static final String IP_ADDRESS_ID = "ipaddressid";
     public static final String IS_ASYNC = "isasync";
@@ -224,6 +236,9 @@ public class ApiConstants {
     public static final String NETWORK_DOMAIN = "networkdomain";
     public static final String NETMASK = "netmask";
     public static final String NEW_NAME = "newname";
+    public static final String NIC = "nic";
+    public static final String NIC_NETWORK_LIST = "nicnetworklist";
+    public static final String NIC_IP_ADDRESS_LIST = "nicipaddresslist";
     public static final String NUM_RETRIES = "numretries";
     public static final String OFFER_HA = "offerha";
     public static final String IS_SYSTEM_OFFERING = "issystem";
@@ -231,6 +246,7 @@ public class ApiConstants {
     public static final String OLD_FORMAT = "oldformat";
     public static final String OP = "op";
     public static final String OS_CATEGORY_ID = "oscategoryid";
+    public static final String OS_ID = "osid";
     public static final String OS_TYPE_ID = "ostypeid";
     public static final String OS_DISPLAY_NAME = "osdisplayname";
     public static final String OS_NAME_FOR_HYPERVISOR = "osnameforhypervisor";
@@ -255,6 +271,7 @@ public class ApiConstants {
     public static final String PORTAL = "portal";
     public static final String PORTABLE_IP_ADDRESS = "portableipaddress";
     public static final String PORT_FORWARDING_SERVICE_ID = "portforwardingserviceid";
+    public static final String POSITION = "position";
     public static final String POST_URL = "postURL";
     public static final String POWER_STATE = "powerstate";
     public static final String PRIVATE_INTERFACE = "privateinterface";
@@ -360,6 +377,7 @@ public class ApiConstants {
     public static final String REMOVE_VLAN = "removevlan";
     public static final String VLAN_ID = "vlanid";
     public static final String ISOLATED_PVLAN = "isolatedpvlan";
+    public static final String ISOLATED_PVLAN_TYPE = "isolatedpvlantype";
     public static final String ISOLATION_URI = "isolationuri";
     public static final String VM_AVAILABLE = "vmavailable";
     public static final String VM_LIMIT = "vmlimit";
@@ -531,6 +549,7 @@ public class ApiConstants {
     public static final String CUSTOM_DISK_OFF_MAX_SIZE = "customdiskofferingmaxsize";
     public static final String DEFAULT_ZONE_ID = "defaultzoneid";
     public static final String LIVE_MIGRATE = "livemigrate";
+    public static final String MIGRATE_ALLOWED = "migrateallowed";
     public static final String MIGRATE_TO = "migrateto";
     public static final String GUID = "guid";
     public static final String VSWITCH_TYPE_GUEST_TRAFFIC = "guestvswitchtype";
