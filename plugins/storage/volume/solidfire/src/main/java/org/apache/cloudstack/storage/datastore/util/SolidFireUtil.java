@@ -708,12 +708,12 @@ public class SolidFireUtil {
             throw new CloudRuntimeException("A SolidFire volume can be in at most four volume access groups simultaneously.");
         }
         if (sfVagToIqnsMap.containsKey(null)) {
-            sfVagToIqnsMap = updateNullKeyInsfVagToIqnsMap(sfVagToIqnsMap, sfVags, sfConnection, clusterUuId, sfVolumeId);
+            sfVagToIqnsMap = updateNullKeyInSfVagToIqnsMap(sfVagToIqnsMap, sfVags, sfConnection, clusterUuId, sfVolumeId);
         }
-        addVoulumestoVagIfNotPresent(sfVagToIqnsMap.keySet(), sfVolumeId, sfConnection);
+        addVolumestoVagIfNotPresent(sfVagToIqnsMap.keySet(), sfVolumeId, sfConnection);
     }
 
-    private static Map<SolidFireUtil.SolidFireVag, List<String>> updateNullKeyInsfVagToIqnsMap(Map<SolidFireUtil.SolidFireVag,List<String>> sfVagToIqnsMap, List <SolidFireUtil.SolidFireVag> sfVags, SolidFireConnection sfConnection, String clusterUuId, long sfVolumeId){
+    private static Map<SolidFireUtil.SolidFireVag, List<String>> updateNullKeyInSfVagToIqnsMap(Map<SolidFireUtil.SolidFireVag,List<String>> sfVagToIqnsMap, List <SolidFireUtil.SolidFireVag> sfVags, SolidFireConnection sfConnection, String clusterUuId, long sfVolumeId){
         SolidFireUtil.SolidFireVag sfVagMatchingClusterId = createClusterVagIfDoesntExist(sfVags, sfConnection, clusterUuId, sfVagToIqnsMap, sfVolumeId);
         sfVagToIqnsMap.put(sfVagMatchingClusterId, sfVagToIqnsMap.get(null));
         sfVagToIqnsMap.remove(null);
@@ -732,7 +732,7 @@ public class SolidFireUtil {
         }
     }
 
-    private static void addVoulumestoVagIfNotPresent(Set<SolidFireUtil.SolidFireVag> sfVagSet, long sfVolumeId, SolidFireConnection sfConnection){
+    private static void addVolumestoVagIfNotPresent(Set<SolidFireUtil.SolidFireVag> sfVagSet, long sfVolumeId, SolidFireConnection sfConnection){
         for (SolidFireUtil.SolidFireVag sfVag : sfVagSet) {
             if (sfVag != null) {
                 if (!SolidFireUtil.isVolumeIdInSfVag(sfVolumeId, sfVag)) {
