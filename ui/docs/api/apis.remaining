@@ -3,14 +3,12 @@ createLBHealthCheckPolicy
 createManagementNetworkIpRange
 createNetworkACL
 createSnapshotFromVMSnapshot
-createStaticRoute
 createStorageNetworkIpRange
 createVlanIpRange
 dedicatePublicIpRange
 deleteLBHealthCheckPolicy
 deleteManagementNetworkIpRange
 deleteNetworkACL
-deleteStaticRoute
 deleteStorageNetworkIpRange
 deleteVlanIpRange
 findStoragePoolsForMigration
