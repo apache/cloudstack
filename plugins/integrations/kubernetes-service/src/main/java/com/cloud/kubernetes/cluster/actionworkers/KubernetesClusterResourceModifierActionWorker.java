@@ -80,6 +80,7 @@ import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.VirtualMachine;
 import com.google.common.base.Strings;
@@ -107,8 +108,15 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     @Inject
     protected LoadBalancerDao loadBalancerDao;
 
+    protected String kubernetesClusterNodeNamePrefix;
+
     protected KubernetesClusterResourceModifierActionWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
+    }
+
+    protected void init() {
+        super.init();
+        kubernetesClusterNodeNamePrefix = getKubernetesClusterNodeNamePrefix();
     }
 
     private String getKubernetesNodeConfig(final String joinIp) throws IOException {
@@ -299,7 +307,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
-        String hostName = String.format("%s-k8s-node-%s", kubernetesCluster.getName(), nodeInstance);
+        String hostName = String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, nodeInstance);
         String k8sNodeConfig = null;
         try {
             k8sNodeConfig = getKubernetesNodeConfig(joinIp);
@@ -467,5 +475,20 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 break;
             }
         }
+    }
+
+    protected String getKubernetesClusterNodeNamePrefix() {
+        String prefix = kubernetesCluster.getName();
+        if (!NetUtils.verifyDomainNameLabel(prefix, true)) {
+            prefix = prefix.replaceAll("[^a-zA-Z0-9-]", "");
+            if (prefix.length() == 0) {
+                prefix = kubernetesCluster.getUuid();
+            }
+            prefix = "k8s-" + prefix;
+        }
+        if (prefix.length() > 40) {
+            prefix = prefix.substring(0, 40);
+        }
+        return prefix;
     }
 }
