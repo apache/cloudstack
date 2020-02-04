@@ -680,7 +680,7 @@ public class CommandSetupHelper {
             }
         }
 
-        Map<String, Boolean> vlanLastIp = getVlanLastIpMap(router.getVpcId(), guestNetworkId);
+        Map<String, Boolean> vlanLastIpMap = getVlanLastIpMap(router.getVpcId(), guestNetworkId);
 
         for (final Map.Entry<String, ArrayList<PublicIpAddress>> vlanAndIp : vlanIpMap.entrySet()) {
             final String vlanTagKey = vlanAndIp.getKey();
@@ -741,12 +741,7 @@ public class CommandSetupHelper {
             final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
-            Boolean lastIp = vlanLastIp.get(vlanTagKey);
-            if (lastIp == null) {
-                cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "true");
-            } else {
-                cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "false");
-            }
+            setAccessDetailNetworkLastPublicIp(vlanLastIpMap, vlanTagKey, cmd);
 
             cmds.addCommand(ipAssocCommand, cmd);
         }
@@ -800,7 +795,7 @@ public class CommandSetupHelper {
             }
         }
 
-        Map<String, Boolean> vlanLastIp = getVlanLastIpMap(router.getVpcId(), guestNetworkId);
+        Map<String, Boolean> vlanLastIpMap = getVlanLastIpMap(router.getVpcId(), guestNetworkId);
 
         for (final Map.Entry<String, ArrayList<PublicIpAddress>> vlanAndIp : vlanIpMap.entrySet()) {
             final String vlanTagKey = vlanAndIp.getKey();
@@ -874,21 +869,26 @@ public class CommandSetupHelper {
             final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
-            // if there is 1 static nat then it will be checked for remove at the resource
-            Boolean lastIp = vlanLastIp.get(vlanTagKey);
-            if (lastIp == null) {
-                cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "true");
-            } else {
-                cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "false");
-            }
+            setAccessDetailNetworkLastPublicIp(vlanLastIpMap, vlanTagKey, cmd);
 
             cmds.addCommand(ipAssocCommand, cmd);
         }
     }
 
+    private void setAccessDetailNetworkLastPublicIp(Map<String, Boolean> vlanLastIpMap, String vlanTagKey, IpAssocCommand cmd) {
+        // if public ip is the last ip in the vlan which is used for static nat or has active rules,
+        // it will be checked for remove at the resource
+        Boolean lastIp = vlanLastIpMap.get(vlanTagKey);
+        if (lastIp == null) {
+            cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "true");
+        } else {
+            cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "false");
+        }
+    }
+
     private Map<String, Boolean> getVlanLastIpMap(Long vpcId, Long guestNetworkId) {
         // for network if the ips does not have any rules, then only last ip
-        final Map<String, Boolean> vlanLastIp = new HashMap<String, Boolean>();
+        final Map<String, Boolean> vlanLastIpMap = new HashMap<String, Boolean>();
         final List<IPAddressVO> userIps;
         if (vpcId != null) {
             userIps = _ipAddressDao.listByAssociatedVpc(vpcId, null);
@@ -897,17 +897,17 @@ public class CommandSetupHelper {
         }
         for (IPAddressVO ip : userIps) {
             String vlanTag = _vlanDao.findById(ip.getVlanId()).getVlanTag();
-            Boolean lastIp = vlanLastIp.get(vlanTag);
+            Boolean lastIp = vlanLastIpMap.get(vlanTag);
             if (lastIp != null && !lastIp) {
                 continue;
             }
             if (ip.isSourceNat()
                     || _rulesDao.countRulesByIpIdAndState(ip.getId(), FirewallRule.State.Active) > 0
                     || (ip.isOneToOneNat() && ip.getRuleState() == null)) {
-                vlanLastIp.put(vlanTag, false);
+                vlanLastIpMap.put(vlanTag, false);
             }
         }
-        return vlanLastIp;
+        return vlanLastIpMap;
     }
 
     public void createStaticRouteCommands(final List<StaticRouteProfile> staticRoutes, final DomainRouterVO router, final Commands cmds) {
