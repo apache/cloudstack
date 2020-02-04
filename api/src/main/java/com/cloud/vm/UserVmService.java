@@ -513,4 +513,8 @@ public interface UserVmService {
 
     void collectVmNetworkStatistics (UserVm userVm);
 
+    UserVm importVM(final DataCenter zone, final Host host, final VirtualMachineTemplate template, final String instanceName, final String displayName, final Account owner, final String userData, final Account caller, final Boolean isDisplayVm, final String keyboard,
+                    final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKey,
+                    final String hostName, final HypervisorType hypervisorType, final Map<String, String> customParameters, final VirtualMachine.PowerState powerState) throws InsufficientCapacityException;
+
 }

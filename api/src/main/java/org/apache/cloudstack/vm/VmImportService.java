@@ -14,21 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.dao;
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.GuestOSHypervisorVO;
-import com.cloud.utils.db.GenericDao;
+package org.apache.cloudstack.vm;
 
-public interface GuestOSHypervisorDao extends GenericDao<GuestOSHypervisorVO, Long> {
+import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 
-    HypervisorType findHypervisorTypeByGuestOsId(long guestOsId);
+import com.cloud.utils.component.PluggableService;
 
-    GuestOSHypervisorVO findByOsIdAndHypervisor(long guestOsId, String hypervisorType, String hypervisorVersion);
-
-    boolean removeGuestOsMapping(Long id);
-
-    GuestOSHypervisorVO findByOsIdAndHypervisorAndUserDefined(long guestOsId, String hypervisorType, String hypervisorVersion, boolean isUserDefined);
-
-    GuestOSHypervisorVO findByOsNameAndHypervisor(String guestOsName, String hypervisorType, String hypervisorVersion);
+public interface VmImportService extends PluggableService {
+    ListResponse<UnmanagedInstanceResponse> listUnmanagedInstances(ListUnmanagedInstancesCmd cmd);
+    UserVmResponse importUnmanagedInstance(ImportUnmanagedInstanceCmd cmd);
 }
