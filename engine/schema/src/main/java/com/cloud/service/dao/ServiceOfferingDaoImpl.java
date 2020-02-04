@@ -161,7 +161,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
                 throw new CloudRuntimeException("missing argument vmId");
             }
             Map<String, String> dynamicOffering = userVmDetailsDao.listDetailsKeyPairs(vmId);
-            return getcomputeOffering(offering, dynamicOffering);
+            return getComputeOffering(offering, dynamicOffering);
         }
         return offering;
     }
@@ -175,7 +175,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
                 throw new CloudRuntimeException("missing argument vmId");
             }
             Map<String, String> dynamicOffering = userVmDetailsDao.listDetailsKeyPairs(vmId);
-            return getcomputeOffering(offering, dynamicOffering);
+            return getComputeOffering(offering, dynamicOffering);
         }
         return offering;
     }
@@ -187,7 +187,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     }
 
     @Override
-    public ServiceOfferingVO getcomputeOffering(ServiceOfferingVO serviceOffering, Map<String, String> customParameters) {
+    public ServiceOfferingVO getComputeOffering(ServiceOfferingVO serviceOffering, Map<String, String> customParameters) {
         ServiceOfferingVO dummyoffering = new ServiceOfferingVO(serviceOffering);
         dummyoffering.setDynamicFlag(true);
         if (customParameters.containsKey(UsageEventVO.DynamicParameters.cpuNumber.name())) {

@@ -673,8 +673,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 zoneId = snapshotCheck.getDataCenterId();
             }
 
-            _configMgr.checkDiskOfferingAccess(null, diskOffering, _dcDao.findById(zoneId));
-
             if (diskOffering == null) { // Pure snapshot is being used to create volume.
                 diskOfferingId = snapshotCheck.getDiskOfferingId();
                 diskOffering = _diskOfferingDao.findById(diskOfferingId);
@@ -688,6 +686,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                             size / (1024 * 1024 * 1024), snapshotCheck.getSize() / (1024 * 1024 * 1024)));
                 }
             }
+
+            _configMgr.checkDiskOfferingAccess(null, diskOffering, _dcDao.findById(zoneId));
 
             // check snapshot permissions
             _accountMgr.checkAccess(caller, null, true, snapshotCheck);

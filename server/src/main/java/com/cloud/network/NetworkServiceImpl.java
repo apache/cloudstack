@@ -55,6 +55,8 @@ import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
@@ -107,6 +109,7 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
@@ -200,9 +203,14 @@ import com.cloud.vm.dao.VMInstanceDao;
 /**
  * NetworkServiceImpl implements NetworkService.
  */
-public class NetworkServiceImpl extends ManagerBase implements NetworkService {
+public class NetworkServiceImpl extends ManagerBase implements NetworkService, Configurable {
     private static final Logger s_logger = Logger.getLogger(NetworkServiceImpl.class);
 
+    private static final ConfigKey<Boolean> AllowDuplicateNetworkName = new ConfigKey<Boolean>("Advanced", Boolean.class,
+            "allow.duplicate.networkname", "true", "Allow creating networks with same name in account", true, ConfigKey.Scope.Account);
+    private static final ConfigKey<Boolean> AllowEmptyStartEndIpAddress = new ConfigKey<Boolean>("Advanced", Boolean.class,
+            "allow.empty.start.end.ipaddress", "true", "Allow creating network without mentioning start and end IP address",
+            true, ConfigKey.Scope.Account);
     private static final long MIN_VLAN_ID = 0L;
     private static final long MAX_VLAN_ID = 4095L; // 2^12 - 1
     private static final long MIN_GRE_KEY = 0L;
@@ -313,6 +321,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     VpcOfferingDao _vpcOfferingDao;
     @Inject
     AccountService _accountService;
+    @Inject
+    NetworkAccountDao _networkAccountDao;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -1164,6 +1174,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             throw new InvalidParameterValueException("Parameter subDomainAccess can be specified only with aclType=Domain");
         }
 
+        if (aclType == ACLType.Domain) {
+            owner = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
+        }
+
+        // The network name is unique under the account
+        if (!AllowDuplicateNetworkName.valueIn(owner.getAccountId())) {
+            List<NetworkVO> existingNetwork = _networksDao.listByAccountIdNetworkName(owner.getId(), name);
+            if (!existingNetwork.isEmpty()) {
+                throw new InvalidParameterValueException("Another network with same name already exists within account: " + owner.getAccountName());
+            }
+        }
+
         boolean ipv4 = true, ipv6 = false;
         if (startIP != null) {
             ipv4 = true;
@@ -1185,6 +1207,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             } catch (UnknownHostException e) {
                 s_logger.error("Unable to convert gateway IP to a InetAddress", e);
                 throw new InvalidParameterValueException("Gateway parameter is invalid");
+            }
+        }
+
+        // Start and end IP address are mandatory for shared networks.
+        if (ntwkOff.getGuestType() == GuestType.Shared && vpcId == null) {
+            if (!AllowEmptyStartEndIpAddress.valueIn(owner.getAccountId()) &&
+                (startIP == null && endIP == null) &&
+                (startIPv6 == null && endIPv6 == null)) {
+                throw new InvalidParameterValueException("Either IPv4 or IPv6 start and end address are mandatory");
             }
         }
 
@@ -1861,14 +1892,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
-    public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup, boolean makeRedundant) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        // This method restarts all network elements belonging to the network and re-applies all the rules
-        Long networkId = cmd.getNetworkId();
-
-        User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
-        Account callerAccount = _accountMgr.getActiveAccountById(callerUser.getAccountId());
-
-        // Check if network exists
+    public boolean restartNetwork(Long networkId, boolean cleanup, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
             throwInvalidIdException("Network with specified id doesn't exist", networkId.toString(), "networkId");
@@ -1888,8 +1912,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             throw new InvalidParameterException("Unable to restart a running SDN network.");
         }
 
+        Account callerAccount = _accountMgr.getActiveAccountById(user.getAccountId());
         _accountMgr.checkAccess(callerAccount, null, true, network);
-
         if (!network.isRedundant() && makeRedundant) {
             network.setRedundant(true);
             if (!_networksDao.update(network.getId(), network)) {
@@ -1898,8 +1922,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             cleanup = true;
         }
 
-        boolean success = _networkMgr.restartNetwork(networkId, callerAccount, callerUser, cleanup);
-
+        boolean success = _networkMgr.restartNetwork(networkId, callerAccount, user, cleanup);
         if (success) {
             s_logger.debug("Network id=" + networkId + " is restarted successfully.");
         } else {
@@ -1907,6 +1930,17 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         }
 
         return success;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
+    public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        // This method restarts all network elements belonging to the network and re-applies all the rules
+        Long networkId = cmd.getNetworkId();
+        boolean cleanup = cmd.getCleanup();
+        boolean makeRedundant = cmd.getMakeRedundant();
+        User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+        return restartNetwork(networkId, cleanup, makeRedundant, callerUser);
     }
 
     @Override
@@ -4532,6 +4566,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     public boolean releasePodIp(ReleasePodIpCmdByAdmin ip) throws CloudRuntimeException {
         _ipAddrMgr.releasePodIp(ip.getId());
         return true;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return NetworkService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress};
     }
 
 }

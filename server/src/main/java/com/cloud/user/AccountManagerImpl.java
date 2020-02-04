@@ -2328,9 +2328,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
                 // Block when is not in the list of allowed IPs
                 if (!NetUtils.isIpInCidrList(loginIpAddress, accessAllowedCidrs.split(","))) {
-                    s_logger.warn("Request by account '" + account.toString() + "' was denied since " + loginIpAddress.toString().replaceAll("/", "") + " does not match " + accessAllowedCidrs);
+                    s_logger.warn("Request by account '" + account.toString() + "' was denied since " + loginIpAddress.toString().replace("/", "") + " does not match " + accessAllowedCidrs);
                     throw new CloudAuthenticationException("Failed to authenticate user '" + username + "' in domain '" + domain.getPath() + "' from ip "
-                            + loginIpAddress.toString().replaceAll("/", "") + "; please provide valid credentials");
+                            + loginIpAddress.toString().replace("/", "") + "; please provide valid credentials");
                 }
             }
 

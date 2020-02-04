@@ -140,6 +140,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
+import com.cloud.hypervisor.kvm.storage.IscsiStorageCleanupMonitor;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -1093,6 +1094,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final KVMStorageProcessor storageProcessor = new KVMStorageProcessor(_storagePoolMgr, this);
         storageProcessor.configure(name, params);
         storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
+
+        IscsiStorageCleanupMonitor isciCleanupMonitor = new IscsiStorageCleanupMonitor();
+        final Thread cleanupMonitor = new Thread(isciCleanupMonitor);
+        cleanupMonitor.start();
 
         return true;
     }
@@ -2979,7 +2984,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                         final int vnetId = Integer.parseInt(nic.getBrName().replaceFirst("cloudVirBr", ""));
                         final String pifName = getPif(_guestBridgeName);
                         final String newBrName = "br" + pifName + "-" + vnetId;
-                        vmDef = vmDef.replaceAll("'" + nic.getBrName() + "'", "'" + newBrName + "'");
+                        vmDef = vmDef.replace("'" + nic.getBrName() + "'", "'" + newBrName + "'");
                         s_logger.debug("VM bridge name is changed from " + nic.getBrName() + " to " + newBrName);
                     } catch (final NumberFormatException e) {
                         continue;

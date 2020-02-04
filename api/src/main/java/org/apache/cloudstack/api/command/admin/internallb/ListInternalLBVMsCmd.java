@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.internallb;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -73,6 +74,11 @@ public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd 
     @Parameter(name = ApiConstants.FOR_VPC, type = CommandType.BOOLEAN, description = "if true is passed for this parameter, list only VPC Internal LB VMs")
     private Boolean forVpc;
 
+
+    @Parameter(name = ApiConstants.FETCH_ROUTER_HEALTH_CHECK_RESULTS, type = CommandType.BOOLEAN, since = "4.14",
+            description = "if true is passed for this parameter, also fetch last executed health check results for the VM. Default is false")
+    private Boolean fetchHealthCheckResults;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -115,6 +121,10 @@ public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd 
 
     public String getRole() {
         return Role.INTERNAL_LB_VM.toString();
+    }
+
+    public boolean shouldFetchHealthCheckResults() {
+        return BooleanUtils.isTrue(fetchHealthCheckResults);
     }
 
     /////////////////////////////////////////////////////
