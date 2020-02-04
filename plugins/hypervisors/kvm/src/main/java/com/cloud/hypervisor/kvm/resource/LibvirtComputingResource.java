@@ -1764,17 +1764,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         try {
             conn = getLibvirtUtilitiesHelper().getConnectionByVmName(routerName);
+            Pair<Map<String, Integer>, Integer> macAddressToNicNumPair = getMacAddressToNicNumPair(conn, routerName);
+            final Map<String, Integer> macAddressToNicNum = macAddressToNicNumPair.first();
+            Integer devNum = macAddressToNicNumPair.second();
+
             final IpAddressTO[] ips = cmd.getIpAddresses();
-            Integer devNum = 0;
-            final List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
-            final Map<String, Integer> macAddressToNicNum = new HashMap<>(pluggedNics.size());
-
-            for (final InterfaceDef pluggedNic : pluggedNics) {
-                final String pluggedVlan = pluggedNic.getBrName();
-                macAddressToNicNum.put(pluggedNic.getMacAddress(), devNum);
-                devNum++;
-            }
-
             for (final IpAddressTO ip : ips) {
                 ip.setNicDevId(macAddressToNicNum.get(ip.getVifMacAddress()));
             }
@@ -1792,14 +1786,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         Connect conn;
         try {
             conn = getLibvirtUtilitiesHelper().getConnectionByVmName(routerName);
-            Integer devNum = 0;
-            final List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
-            final Map<String, Integer> macAddressToNicNum = new HashMap<>(pluggedNics.size());
-            for (final InterfaceDef pluggedNic : pluggedNics) {
-                final String pluggedVlan = pluggedNic.getBrName();
-                macAddressToNicNum.put(pluggedNic.getMacAddress(), devNum);
-                devNum++;
-            }
+            Pair<Map<String, Integer>, Integer> macAddressToNicNumPair = getMacAddressToNicNumPair(conn, routerName);
+            final Map<String, Integer> macAddressToNicNum = macAddressToNicNumPair.first();
+            Integer devNum = macAddressToNicNumPair.second();
+
             final IpAddressTO[] ips = cmd.getIpAddresses();
             int nicNum = 0;
             for (final IpAddressTO ip : ips) {
@@ -1834,14 +1824,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         Connect conn;
         try {
             conn = getLibvirtUtilitiesHelper().getConnectionByVmName(routerName);
-            Integer devNum = 0;
-            final List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
-            final Map<String, Integer> macAddressToNicNum = new HashMap<>(pluggedNics.size());
-            for (final InterfaceDef pluggedNic : pluggedNics) {
-                final String pluggedVlan = pluggedNic.getBrName();
-                macAddressToNicNum.put(pluggedNic.getMacAddress(), devNum);
-                devNum++;
-            }
+            Pair<Map<String, Integer>, Integer> macAddressToNicNumPair = getMacAddressToNicNumPair(conn, routerName);
+            final Map<String, Integer> macAddressToNicNum = macAddressToNicNumPair.first();
+            Integer devNum = macAddressToNicNumPair.second();
+
             final IpAddressTO[] ips = cmd.getIpAddresses();
             int nicNum = 0;
             for (final IpAddressTO ip : ips) {
@@ -1870,6 +1856,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return new ExecutionResult(true, null);
+    }
+
+
+    private Pair<Map<String, Integer>, Integer> getMacAddressToNicNumPair(Connect conn, String routerName) {
+        Integer devNum = 0;
+        final List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
+        final Map<String, Integer> macAddressToNicNum = new HashMap<>(pluggedNics.size());
+        for (final InterfaceDef pluggedNic : pluggedNics) {
+            final String pluggedVlan = pluggedNic.getBrName();
+            macAddressToNicNum.put(pluggedNic.getMacAddress(), devNum);
+            devNum++;
+        }
+        return new Pair<Map<String, Integer>, Integer>(macAddressToNicNum, devNum);
     }
 
     protected PowerState convertToPowerState(final DomainState ps) {
