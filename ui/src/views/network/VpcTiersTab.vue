@@ -238,44 +238,6 @@ export default {
       this.params.find(i => {
         if (i.name === field) this.placeholder[field] = i.description
       })
-    },
-    handleDeleteNetwork (item) {
-      this.fetchLoading = true
-
-      api('deleteNetwork', {
-        id: item.id
-      }).then(response => {
-        this.$store.dispatch('AddAsyncJob', {
-          title: `Delete VPC Network`,
-          jobid: response.deletenetworkresponse.jobid,
-          status: 'progress'
-        })
-        this.$pollJob({
-          jobId: response.deletenetworkresponse.jobid,
-          successMethod: () => {
-            this.fetchData()
-            this.fetchLoading = false
-          },
-          errorMessage: 'Failed to delete VPC Network',
-          errorMethod: () => {
-            this.fetchData()
-            this.fetchLoading = false
-          },
-          loadingMessage: `Deleting VPC Network...`,
-          catchMessage: 'Error encountered while fetching async job result',
-          catchMethod: () => {
-            this.fetchData()
-            this.fetchLoading = false
-          }
-        })
-      }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
-        this.fetchLoading = false
-        this.fetchData()
-      })
     }
   }
 }
