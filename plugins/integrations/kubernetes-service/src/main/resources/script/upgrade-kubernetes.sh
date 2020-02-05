@@ -40,6 +40,7 @@ BINARIES_DIR=${ISO_MOUNT_DIR}/
 OFFLINE_INSTALL_ATTEMPT_SLEEP=5
 MAX_OFFLINE_INSTALL_ATTEMPTS=10
 offline_attempts=1
+iso_drive_path=""
 while true; do
   if (( "$offline_attempts" > "$MAX_OFFLINE_INSTALL_ATTEMPTS" )); then
     echo "Warning: Offline install timed out!"
@@ -60,6 +61,7 @@ while true; do
       set -e
       if [ $retval -eq 0 ]; then
         if [ -d "$BINARIES_DIR" ]; then
+          iso_drive_path="${line}"
           break
         else
           umount "${line}" && rmdir "${ISO_MOUNT_DIR}"
@@ -121,4 +123,7 @@ if [ -d "$BINARIES_DIR" ]; then
   fi
 
   umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
+  if [ "$iso_drive_path" != "" ]; then
+    eject "${iso_drive_path}"
+  fi
 fi
