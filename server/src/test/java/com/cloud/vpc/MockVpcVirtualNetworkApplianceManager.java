@@ -274,4 +274,10 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
         // TODO Auto-generated method stub
         return false;
     }
+
+    @Override
+    public boolean startSite2SiteVpn(DomainRouterVO router) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }
