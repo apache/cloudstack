@@ -97,6 +97,7 @@ public class EventTypes {
     public static final String EVENT_VM_MOVE = "VM.MOVE";
     public static final String EVENT_VM_RESTORE = "VM.RESTORE";
     public static final String EVENT_VM_EXPUNGE = "VM.EXPUNGE";
+    public static final String EVENT_VM_IMPORT = "VM.IMPORT";
 
     // Domain Router
     public static final String EVENT_ROUTER_CREATE = "ROUTER.CREATE";
@@ -596,6 +597,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VM_MOVE, VirtualMachine.class);
         entityEventDetails.put(EVENT_VM_RESTORE, VirtualMachine.class);
         entityEventDetails.put(EVENT_VM_EXPUNGE, VirtualMachine.class);
+        entityEventDetails.put(EVENT_VM_IMPORT, VirtualMachine.class);
 
         entityEventDetails.put(EVENT_ROUTER_CREATE, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_DESTROY, VirtualRouter.class);

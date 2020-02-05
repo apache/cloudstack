@@ -266,6 +266,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
         this.gateway = gateway;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public void setName(String name) {
         this.name = name;
     }

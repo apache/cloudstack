@@ -230,6 +230,13 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         return template;
     }
 
+    public static VMTemplateVO createSystemIso(Long id, String uniqueName, String name, boolean isPublic,
+                                               String url, boolean requiresHvm, int bits, long accountId, String cksum,
+                                               String displayText, boolean enablePassword, long guestOSId) {
+        return new VMTemplateVO(id, uniqueName, name, ImageFormat.ISO, isPublic, false, TemplateType.SYSTEM, url, null, requiresHvm, bits, accountId, cksum, displayText, enablePassword,
+                guestOSId, false, null);
+    }
+
     public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type, String url, Date created,
             boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable,
             HypervisorType hyperType) {

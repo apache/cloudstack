@@ -599,6 +599,13 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public List<VolumeVO> findIncludingRemovedByZone(long zoneId) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("dcId", zoneId);
+        return searchIncludingRemoved(sc, null, null, false);
+    }
+
+    @Override
     @DB()
     public Pair<Long, Long> getNonDestroyedCountAndTotalByPool(long poolId) {
         SearchCriteria<SumCount> sc = TotalSizeByPoolSearch.create();

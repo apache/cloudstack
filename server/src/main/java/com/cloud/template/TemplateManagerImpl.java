@@ -927,8 +927,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     }
                 }
             }
-
-
         }
 
         if ((destZoneIds != null) && (destZoneIds.size() > failedZones.size())){

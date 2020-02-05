@@ -100,6 +100,8 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     List<VMInstanceVO> listByLastHostId(Long hostId);
 
+    List<VMInstanceVO> listByLastHostIdAndStates(Long hostId, State... states);
+
     List<VMInstanceVO> listByTypeAndState(VirtualMachine.Type type, State state);
 
     List<VMInstanceVO> listByAccountId(long accountId);

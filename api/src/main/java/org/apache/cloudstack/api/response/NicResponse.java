@@ -16,14 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.serializer.Param;
-import com.cloud.vm.Nic;
-import com.google.gson.annotations.SerializedName;
+import java.util.List;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-import java.util.List;
+import com.cloud.serializer.Param;
+import com.cloud.vm.Nic;
+import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = Nic.class)
@@ -112,6 +113,26 @@ public class NicResponse extends BaseResponse {
     @SerializedName(ApiConstants.NSX_LOGICAL_SWITCH_PORT)
     @Param(description = "Id of the NSX Logical Switch Port (if NSX based), null otherwise", since="4.6.0")
     private String nsxLogicalSwitchPort;
+
+    @SerializedName(ApiConstants.VLAN_ID)
+    @Param(description = "ID of the VLAN/VNI if available", since="4.14.0")
+    private Integer vlanId;
+
+    @SerializedName(ApiConstants.ISOLATED_PVLAN)
+    @Param(description = "the isolated private VLAN if available", since="4.14.0")
+    private Integer isolatedPvlanId;
+
+    @SerializedName(ApiConstants.ISOLATED_PVLAN_TYPE)
+    @Param(description = "the isolated private VLAN type if available", since="4.14.0")
+    private String isolatedPvlanType;
+
+    @SerializedName(ApiConstants.ADAPTER_TYPE)
+    @Param(description = "Type of adapter if available", since="4.14.0")
+    private String adapterType;
+
+    @SerializedName(ApiConstants.IP_ADDRESSES)
+    @Param(description = "IP addresses associated with NIC found for unmanaged VM", since="4.14.0")
+    private List<String> ipAddresses;
 
     public void setVmId(String vmId) {
         this.vmId = vmId;
@@ -302,5 +323,45 @@ public class NicResponse extends BaseResponse {
 
     public String getNsxLogicalSwitchPort() {
         return nsxLogicalSwitchPort;
+    }
+
+    public Integer getVlanId() {
+        return vlanId;
+    }
+
+    public void setVlanId(Integer vlanId) {
+        this.vlanId = vlanId;
+    }
+
+    public Integer getIsolatedPvlanId() {
+        return isolatedPvlanId;
+    }
+
+    public void setIsolatedPvlanId(Integer isolatedPvlanId) {
+        this.isolatedPvlanId = isolatedPvlanId;
+    }
+
+    public String getIsolatedPvlanType() {
+        return isolatedPvlanType;
+    }
+
+    public void setIsolatedPvlanType(String isolatedPvlanType) {
+        this.isolatedPvlanType = isolatedPvlanType;
+    }
+
+    public String getAdapterType() {
+        return adapterType;
+    }
+
+    public void setAdapterType(String adapterType) {
+        this.adapterType = adapterType;
+    }
+
+    public List<String> getIpAddresses() {
+        return ipAddresses;
+    }
+
+    public void setIpAddresses(List<String> ipAddresses) {
+        this.ipAddresses = ipAddresses;
     }
 }
