@@ -58,9 +58,16 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
         cls.zone = Zone(zone.__dict__)
         cls.template = get_template(cls.apiclient, cls.zone.id)
         cls._cleanup = []
+        cls.skip = False
 
         if str(cls.zone.securitygroupsenabled) == "True":
-            sys.exit(1)
+            cls.skip = True
+            return
+
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() not in ['kvm']:
+            cls.skip = True
+            return
 
         cls.logger = logging.getLogger("TestMultiplePublicIpSubnets")
         cls.stream_handler = logging.StreamHandler()
@@ -86,6 +93,8 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
         return
 
     def setUp(cls):
+        if cls.skip:
+            cls.skipTest("Test can be run only on advanced zone and KVM hypervisor")
         cls.apiclient = cls.testClient.getApiClient()
         cls.cleanup = []
         return
