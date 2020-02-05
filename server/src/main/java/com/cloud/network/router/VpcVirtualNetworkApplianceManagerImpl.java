@@ -66,6 +66,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.MonitoringServiceVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnVO;
+import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLManager;
@@ -654,6 +655,17 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
 
         return applySite2SiteVpn(true, router, conn);
+    }
+
+    @Override
+    public boolean startSite2SiteVpn(DomainRouterVO router) throws ResourceUnavailableException {
+        boolean result = true;
+        List<Site2SiteVpnConnectionVO> conns = _s2sVpnMgr.getConnectionsForRouter(router);
+        for (Site2SiteVpnConnectionVO conn : conns) {
+            result = result && startSite2SiteVpn(conn, router);
+        }
+
+        return result;
     }
 
     @Override

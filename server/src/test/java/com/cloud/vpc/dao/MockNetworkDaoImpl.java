@@ -240,4 +240,9 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     public NetworkVO findByVlan(String vlan) {
         return null;
     }
+
+    @Override
+    public List<NetworkVO> listByAccountIdNetworkName(final long accountId, final String name) {
+        return null;
+    }
 }

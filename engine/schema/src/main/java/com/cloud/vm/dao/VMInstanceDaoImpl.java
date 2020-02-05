@@ -95,6 +95,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> StartingWithNoHostSearch;
     protected SearchBuilder<VMInstanceVO> NotMigratingSearch;
     protected SearchBuilder<VMInstanceVO> BackupSearch;
+    protected SearchBuilder<VMInstanceVO> LastHostAndStatesSearch;
 
     @Inject
     ResourceTagDao _tagsDao;
@@ -293,6 +294,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         BackupSearch.and("backup_offering_not_null", BackupSearch.entity().getBackupOfferingId(), Op.NNULL);
         BackupSearch.and("backup_offering_id", BackupSearch.entity().getBackupOfferingId(), Op.EQ);
         BackupSearch.done();
+
+        LastHostAndStatesSearch = createSearchBuilder();
+        LastHostAndStatesSearch.and("lastHost", LastHostAndStatesSearch.entity().getLastHostId(), Op.EQ);
+        LastHostAndStatesSearch.and("states", LastHostAndStatesSearch.entity().getState(), Op.IN);
+        LastHostAndStatesSearch.done();
     }
 
     @Override
@@ -571,6 +577,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = AllFieldsSearch.create();
         sc.setParameters("lastHost", hostId);
         sc.setParameters("state", State.Stopped);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VMInstanceVO> listByLastHostIdAndStates(Long hostId, State... states) {
+        SearchCriteria<VMInstanceVO> sc = LastHostAndStatesSearch.create();
+        sc.setParameters("lastHost", hostId);
+        sc.setParameters("states", (Object[])states);
         return listBy(sc);
     }
 

@@ -190,7 +190,8 @@ known_categories = {
     'Diagnostics': 'Diagnostics',
     'Management': 'Management',
     'Backup' : 'Backup and Recovery',
-    'Restore' : 'Backup and Recovery'
+    'Restore' : 'Backup and Recovery',
+    'UnmanagedInstance': 'Virtual Machine'
     }
 
 

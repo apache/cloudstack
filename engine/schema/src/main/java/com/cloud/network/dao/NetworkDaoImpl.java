@@ -104,6 +104,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     @PostConstruct
     protected void init() {
         AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), Op.EQ);
         AllFieldsSearch.and("trafficType", AllFieldsSearch.entity().getTrafficType(), Op.EQ);
         AllFieldsSearch.and("cidr", AllFieldsSearch.entity().getCidr(), Op.EQ);
         AllFieldsSearch.and("broadcastType", AllFieldsSearch.entity().getBroadcastDomainType(), Op.EQ);
@@ -704,5 +705,14 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         sc.setParameters("broadcastType", BroadcastDomainType.Vlan);
         sc.setParameters("broadcastUri", BroadcastDomainType.Vlan.toUri(vlan));
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<NetworkVO> listByAccountIdNetworkName(final long accountId, final String name) {
+        final SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("account", accountId);
+        sc.setParameters("name", name);
+
+        return listBy(sc, null);
     }
 }

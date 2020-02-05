@@ -23,6 +23,7 @@ import java.util.Map;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -313,4 +314,6 @@ public interface NetworkOrchestrationService {
      * Remove entry from /etc/dhcphosts and /etc/hosts on virtual routers
      */
     void cleanupNicDhcpDnsEntry(Network network, VirtualMachineProfile vmProfile, NicProfile nicProfile);
+
+    Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
 }

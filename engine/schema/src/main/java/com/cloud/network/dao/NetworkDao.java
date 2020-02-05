@@ -122,4 +122,6 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
     List<NetworkVO> listNetworkVO(List<Long> idset);
 
     NetworkVO findByVlan(String vlan);
+
+    List<NetworkVO> listByAccountIdNetworkName(long accountId, String name);
 }
