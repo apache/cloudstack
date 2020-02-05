@@ -30,6 +30,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
@@ -91,11 +92,16 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                                 , vm.getInstanceName()
                                 , vm.getUuid()
                                 , vm.getState().toString()));
+                    }
+                    if (!VirtualMachine.State.Expunging.equals(vm.getState()) ||
+                            Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType())) {
                         vm = userVmService.expungeVm(vmID);
-                        LOGGER.warn(String.format("VM '%s' ID: %s is in state: %s, Kubernetes cluster will probably fail"
-                                , vm.getInstanceName()
-                                , vm.getUuid()
-                                , vm.getState().toString()));
+                        if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
+                            LOGGER.warn(String.format("VM '%s' ID: %s is in state: %s, Kubernetes cluster will probably fail"
+                                    , vm.getInstanceName()
+                                    , vm.getUuid()
+                                    , vm.getState().toString()));
+                        }
                     }
                     kubernetesClusterVmMapDao.expunge(clusterVM.getId());
                     if (LOGGER.isInfoEnabled()) {
