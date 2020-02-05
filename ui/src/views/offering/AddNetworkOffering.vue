@@ -133,6 +133,71 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
+        <a-form-item :label="$t('label.supported.services')">
+          <div class="supported-services-container" scroll-to="last-child">
+            <a-list itemLayout="horizontal" :dataSource="this.supportedServices">
+              <a-list-item slot="renderItem" slot-scope="item">
+                <CheckBoxSelectPair
+                  :resourceKey="item.name"
+                  :resourceTitle="item.description"
+                  :resourceOptions="item.provider"
+                  @handle-check-change="handleSupportedServiceChange"/>
+              </a-list-item>
+            </a-list>
+          </div>
+        </a-form-item>
+        <a-form-item :label="$t('serviceofferingid')">
+          <a-select
+            v-decorator="['serviceofferingid', {
+              rules: [
+                {
+                  required: true,
+                  message: 'Please select option'
+                }
+              ],
+              initialValue: 0
+            }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="serviceOfferingLoading"
+            :placeholder="this.$t('serviceofferingid')">
+            <a-select-option v-for="(opt, optIndex) in this.serviceOfferings" :key="optIndex">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item :label="$t('redundant.router.capability')" v-if="this.redundantRouterCapabilityVisible">
+          <a-switch v-decorator="['redundant.router.capability']" />
+        </a-form-item>
+        <a-form-item :label="$t('service.SourceNat.sourceNatType')" v-if="this.sourceNatTypeVisible">
+          <a-radio-group
+            v-decorator="['sourcenattype', {
+              initialValue: 'peraccount'
+            }]"
+            buttonStyle="solid">
+            <a-radio-button value="peraccount">
+              {{ $t('label.peraccount') }}
+            </a-radio-button>
+            <a-radio-button value="perzone">
+              {{ $t('label.perzone') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
+        <a-form-item :label="$t('service.StaticNat.elasticIp')" v-if="this.elasticIpCheckVisible">
+          <a-switch v-decorator="['staticnatelasticip']" />
+        </a-form-item>
+        <a-form-item :label="$t('StaticNat.associatePublicIP')" v-if="this.associatePublicIPCheckVisible">
+          <a-switch v-decorator="['staticnatassociatepublicip']" />
+        </a-form-item>
+        <a-form-item :label="$t('supportsstrechedl2subnet')" v-if="this.supportsStrechedL2SubnetVisible">
+          <a-switch v-decorator="['supportsstrechedl2subnet']" />
+        </a-form-item>
+        <a-form-item :label="$t('supportspublicaccess')" v-if="this.supportsPublicAccessVisible">
+          <a-switch v-decorator="['supportspublicaccess']" />
+        </a-form-item>
         <a-form-item :label="$t('label.conservemode')">
           <a-switch v-decorator="['isconservemode']" :checked="this.isConserveMode" />
         </a-form-item>
@@ -206,10 +271,12 @@
 
 <script>
 import { api } from '@/api'
+import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 
 export default {
   name: 'AddNetworkOffering',
   components: {
+    CheckBoxSelectPair
   },
   data () {
     return {
@@ -219,6 +286,10 @@ export default {
       forgedTransmits: '',
       selectedDomains: [],
       selectedZones: [],
+      supportedServices: [],
+      supportedServiceLoading: false,
+      serviceOfferings: [],
+      serviceOfferingLoading: false,
       isConserveMode: true,
       isPublic: true,
       domains: [],
@@ -246,6 +317,8 @@ export default {
     fetchData () {
       this.fetchDomainData()
       this.fetchZoneData()
+      this.fetchSupportedServiceData()
+      this.fetchServiceOfferingData()
     },
     isAdmin () {
       return ['Admin'].includes(this.$store.getters.userInfo.roletype)
@@ -285,6 +358,77 @@ export default {
     handleForgedTransmitsChange (val) {
       this.forgedTransmits = val
     },
+    fetchSupportedServiceData () {
+      const params = {}
+      params.listAll = true
+      this.supportedServiceLoading = true
+      this.supportedServices = []
+      api('listSupportedNetworkServices', params).then(json => {
+        this.supportedServices = json.listsupportednetworkservicesresponse.networkservice
+        for (var i in this.supportedServices) {
+          var networkServiceObj = this.supportedServices[i]
+          var serviceName = networkServiceObj.name
+          var serviceDisplayName = ''
+
+          // Sanitize names
+          switch (serviceName) {
+            case 'Vpn':
+              serviceDisplayName = this.$t('label.vpn')
+              break
+            case 'Dhcp':
+              serviceDisplayName = this.$t('label.dhcp')
+              break
+            case 'Dns':
+              serviceDisplayName = this.$t('label.dns')
+              break
+            case 'Lb':
+              serviceDisplayName = this.$t('label.load.balancer')
+              break
+            case 'SourceNat':
+              serviceDisplayName = this.$t('label.source.nat')
+              break
+            case 'StaticNat':
+              serviceDisplayName = this.$t('label.static.nat')
+              break
+            case 'PortForwarding':
+              serviceDisplayName = this.$t('label.port.forwarding')
+              break
+            case 'UserData':
+              serviceDisplayName = this.$t('label.user.data')
+              break
+            case 'Connectivity':
+              serviceDisplayName = this.$t('label.virtual.networking')
+              break
+            default:
+              serviceDisplayName = serviceName
+              break
+          }
+          this.supportedServices[i].description = serviceDisplayName
+          console.log(this.supportedServices[i])
+        }
+      })
+    },
+    handleSupportedServiceChange (service, checked) {
+      if (service === 'Connectivity') {
+        this.regionLevelVpcVisible = checked
+        this.distributedRouterVisible = checked
+      }
+      if (service === 'SourceNat') {
+        this.redundantRouterCapabilityVisible = checked
+      }
+    },
+    fetchServiceOfferingData () {
+      const params = {}
+      params.issystem = true
+      params.systemvmtype = 'domainrouter'
+      this.supportedServiceLoading = true
+      api('listServiceOfferings', params).then(json => {
+        const listServiceOfferings = json.listserviceofferingsresponse.serviceoffering
+        this.serviceOfferings = this.serviceOfferings.concat(listServiceOfferings)
+      }).finally(() => {
+        this.supportedServiceLoading = false
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
       this.form.validateFields((err, values) => {
@@ -302,5 +446,24 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+  .form-layout {
+    width: 60vw;
+
+    @media (min-width: 450px) {
+      width: 40vw;
+    }
+  }
+  .supported-services-container {
+    height: 250px;
+    overflow: auto;
+  }
+
+  .action-button {
+    text-align: right;
+
+    button {
+      margin-right: 5px;
+    }
+  }
 </style>

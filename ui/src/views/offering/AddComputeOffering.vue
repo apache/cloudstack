@@ -326,10 +326,22 @@
             v-decorator="['hosttags', {}]"
             :placeholder="this.$t('label.hosttags')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.storagetags')" v-if="this.isAdmin()">
-          <a-input
+        <a-form-item :label="$t('label.storage.tags')" v-if="this.isAdmin()">
+          <a-select
+            mode="tags"
             v-decorator="['storagetags', {}]"
-            :placeholder="this.$t('label.storagetags')"/>
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="storageTagLoading"
+            :placeholder="this.$t('label.storage.tags')"
+            v-if="this.isAdmin()">
+            <a-select-option v-for="(opt) in this.storageTags" :key="opt.name">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
         </a-form-item>
         <a-form-item :label="$t('label.cpucap')">
           <a-switch v-decorator="['iscpucap']" />
@@ -337,7 +349,7 @@
         <a-form-item :label="$t('label.volatile')">
           <a-switch v-decorator="['isvolatile']" />
         </a-form-item>
-        <a-form-item :label="$t('label.deploymentplanner')">
+        <a-form-item :label="$t('label.deploymentplanner')" v-if="this.isAdmin()">
           <a-select
             v-decorator="['deploymentplanner', {
               rules: [
@@ -345,7 +357,8 @@
                   required: true,
                   message: 'Please select option'
                 }
-              ]
+              ],
+              initialValue: 0
             }]"
             showSearch
             optionFilterProp="children"
@@ -354,8 +367,7 @@
             }"
             :loading="deploymentPlannerLoading"
             :placeholder="this.$t('label.deploymentplanner')"
-            @change="val => { this.handleDeploymentPlannerChange(this.deploymentPlanners[val]) }"
-            v-if="this.isAdmin()">
+            @change="val => { this.handleDeploymentPlannerChange(this.deploymentPlanners[val]) }">
             <a-select-option v-for="(opt, optIndex) in this.deploymentPlanners" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -492,6 +504,8 @@ export default {
       zones: [],
       zoneLoading: false,
       selectedDeployementPlanner: null,
+      storageTags: [],
+      storageTagLoading: false,
       deploymentPlanners: [],
       deploymentPlannerLoading: false,
       plannerModeVisible: false,
@@ -538,6 +552,7 @@ export default {
       this.fetchDomainData()
       this.fetchZoneData()
       if (this.isAdmin()) {
+        this.fetchStorageTagData()
         this.fetchDeploymentPlannerData()
       }
     },
@@ -568,6 +583,24 @@ export default {
         this.zones = this.zones.concat(listZones)
       }).finally(() => {
         this.zoneLoading = false
+      })
+    },
+    fetchStorageTagData () {
+      const params = {}
+      params.listAll = true
+      this.storageTagLoading = true
+      api('listStorageTags', params).then(json => {
+        const tags = json.liststoragetagsresponse.storagetag
+        if (this.arrayHasItems(tags)) {
+          for (var i in tags) {
+            var tag = {}
+            tag.id = tags[i].name
+            tag.name = tags[i].name
+            this.storageTags.push(tag)
+          }
+        }
+      }).finally(() => {
+        this.storageTagLoading = false
       })
     },
     fetchDeploymentPlannerData () {

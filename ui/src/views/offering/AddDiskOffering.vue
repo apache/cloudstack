@@ -36,7 +36,7 @@
             }]"
             :placeholder="this.$t('Description')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.storagetype')">
+        <a-form-item :label="$t('label.storage.type')">
           <a-radio-group
             v-decorator="['storagetype', {
               initialValue: this.storageType
@@ -51,7 +51,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.provisioningtype')">
+        <a-form-item :label="$t('label.disk.provisioningtype')">
           <a-radio-group
             v-decorator="['provisioningtype', {
               initialValue: this.provisioningType
@@ -225,6 +225,23 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
+        <a-form-item :label="$t('label.storage.tags')" v-if="this.isAdmin()">
+          <a-select
+            mode="tags"
+            v-decorator="['storagetags', {}]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="storageTagLoading"
+            :placeholder="this.$t('label.storage.tags')"
+            v-if="this.isAdmin()">
+            <a-select-option v-for="(opt) in this.storageTags" :key="opt.name">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item :label="$t('ispublic')" v-show="this.isAdmin()">
           <a-switch v-decorator="['ispublic']" :checked="this.isPublic" @change="val => { this.isPublic = val }" />
         </a-form-item>
@@ -307,6 +324,8 @@ export default {
       writeCacheType: 'nodiskcache',
       selectedDomains: [],
       selectedZones: [],
+      storageTags: [],
+      storageTagLoading: false,
       isPublic: true,
       domains: [],
       domainLoading: false,
@@ -333,9 +352,15 @@ export default {
     fetchData () {
       this.fetchDomainData()
       this.fetchZoneData()
+      if (this.isAdmin()) {
+        this.fetchStorageTagData()
+      }
     },
     isAdmin () {
       return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    arrayHasItems (array) {
+      return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
     fetchDomainData () {
       const params = {}
@@ -358,6 +383,24 @@ export default {
         this.zones = this.zones.concat(listZones)
       }).finally(() => {
         this.zoneLoading = false
+      })
+    },
+    fetchStorageTagData () {
+      const params = {}
+      params.listAll = true
+      this.storageTagLoading = true
+      api('listStorageTags', params).then(json => {
+        const tags = json.liststoragetagsresponse.storagetag
+        if (this.arrayHasItems(tags)) {
+          for (var i in tags) {
+            var tag = {}
+            tag.id = tags[i].name
+            tag.name = tags[i].name
+            this.storageTags.push(tag)
+          }
+        }
+      }).finally(() => {
+        this.storageTagLoading = false
       })
     },
     handleStorageTypeChange (val) {

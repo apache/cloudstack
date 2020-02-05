@@ -251,23 +251,24 @@ export default {
           zoneId = zoneIds.join(',')
         }
         params.zoneid = zoneId
+        console.log(values, params)
 
-        this.loading = true
-        api('update' + this.offeringType, params).then(json => {
-          this.$emit('refresh-data')
-          this.$notification.success({
-            message: this.$t('label.action.update.offering.access'),
-            description: this.$t('label.action.update.offering.access')
-          })
-        }).catch(error => {
-          this.$notification.error({
-            message: 'Request Failed',
-            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
-          })
-        }).finally(() => {
-          this.loading = false
-          this.closeAction()
-        })
+        // this.loading = true
+        // api('update' + this.offeringType, params).then(json => {
+        //   this.$emit('refresh-data')
+        //   this.$notification.success({
+        //     message: this.$t('label.action.update.offering.access'),
+        //     description: this.$t('label.action.update.offering.access')
+        //   })
+        // }).catch(error => {
+        //   this.$notification.error({
+        //     message: 'Request Failed',
+        //     description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
+        //   })
+        // }).finally(() => {
+        //   this.loading = false
+        //   this.closeAction()
+        // })
       })
     },
     closeAction () {
