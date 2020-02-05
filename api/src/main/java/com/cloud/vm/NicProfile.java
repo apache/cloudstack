@@ -423,6 +423,7 @@ public class NicProfile implements InternalIdentity, Serializable {
                 .append(iPv4Address)
                 .append("-")
                 .append(broadcastUri)
+                .append("]")
                 .toString();
     }
 }
