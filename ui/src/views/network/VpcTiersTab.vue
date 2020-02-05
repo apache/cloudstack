@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    <a-button type="dashed" icon="plus" style="width: 100%">Add Network</a-button>
+    <a-button type="dashed" icon="plus" style="width: 100%" @click="handleOpenModal">Add Network</a-button>
     <a-list class="list">
       <a-list-item v-for="network in networks" :key="network.id" class="list__item">
         <div class="list__item-outer-container">
@@ -103,7 +103,18 @@ export default {
   data () {
     return {
       networks: [],
-      fetchLoading: false
+      fetchLoading: false,
+      addNetworkModal: false,
+      params: [],
+      placeholder: {
+        name: null,
+        gateway: null,
+        netmask: null,
+        externalid: null
+      },
+      networkOfferings: [],
+      networkAclList: [],
+      modalLoading: false
     }
   },
   mounted () {
@@ -115,6 +126,9 @@ export default {
         this.fetchData()
       }
     }
+  },
+  beforeCreate () {
+    this.form = this.$form.createForm(this)
   },
   methods: {
     fetchData () {
@@ -129,12 +143,145 @@ export default {
       }).finally(() => {
         this.fetchLoading = false
       })
+    },
+    fetchNetworkAclList () {
+      this.fetchLoading = true
+      this.modalLoading = true
+      api('listNetworkACLLists', { vpcid: this.resource.id }).then(json => {
+        this.networkAclList = json.listnetworkacllistsresponse.networkacllist
+        this.$nextTick(function () {
+          this.form.setFieldsValue({
+            acl: this.networkAclList[0].id
+          })
+        })
+      }).catch(error => {
+        this.$notification.error({
+          message: 'Request Failed',
+          description: error.response.headers['x-description']
+        })
+      }).finally(() => {
+        this.fetchLoading = false
+        this.modalLoading = false
+      })
+    },
+    fetchNetworkOfferings () {
+      this.fetchLoading = true
+      this.modalLoading = true
+      api('listNetworkOfferings', {
+        forvpc: true,
+        guestiptype: 'Isolated',
+        supportedServices: 'SourceNat',
+        state: 'Enabled'
+      }).then(json => {
+        this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
+        this.$nextTick(function () {
+          this.form.setFieldsValue({
+            networkOffering: this.networkOfferings[0].id
+          })
+        })
+      }).catch(error => {
+        this.$notification.error({
+          message: 'Request Failed',
+          description: error.response.headers['x-description']
+        })
+      }).finally(() => {
+        this.fetchLoading = false
+        this.modalLoading = false
+      })
+    },
+    handleOpenModal () {
+      this.addNetworkModal = true
+      this.fetchNetworkAclList()
+      this.fetchNetworkOfferings()
+      this.params = this.$store.getters.apis.createNetwork.params
+      Object.keys(this.placeholder).forEach(item => { this.returnPlaceholder(item) })
+    },
+    handleAddNetworkSubmit () {
+      this.fetchLoading = true
+
+      this.form.validateFields((errors, values) => {
+        if (errors) {
+          this.fetchLoading = false
+          return
+        }
+
+        this.addNetworkModal = false
+        api('createNetwork', {
+          vpcid: this.resource.id,
+          domainid: this.resource.domainid,
+          account: this.resource.account,
+          networkOfferingId: values.networkOffering,
+          name: values.name,
+          displayText: values.name,
+          gateway: values.gateway,
+          netmask: values.netmask,
+          zoneId: this.resource.zoneid,
+          externalid: values.externalId,
+          aclid: values.acl
+        }).then(() => {
+          this.$notification.success({
+            message: 'Successfully added VPC Network'
+          })
+          this.fetchData()
+        }).catch(error => {
+          this.$notification.error({
+            message: 'Request Failed',
+            description: error.response.headers['x-description']
+          })
+        }).finally(() => {
+          this.fetchLoading = false
+          this.fetchData()
+        })
+      })
+    },
+    returnPlaceholder (field) {
+      this.params.find(i => {
+        if (i.name === field) this.placeholder[field] = i.description
+      })
+    },
+    handleDeleteNetwork (item) {
+      this.fetchLoading = true
+
+      api('deleteNetwork', {
+        id: item.id
+      }).then(response => {
+        this.$store.dispatch('AddAsyncJob', {
+          title: `Delete VPC Network`,
+          jobid: response.deletenetworkresponse.jobid,
+          status: 'progress'
+        })
+        this.$pollJob({
+          jobId: response.deletenetworkresponse.jobid,
+          successMethod: () => {
+            this.fetchData()
+            this.fetchLoading = false
+          },
+          errorMessage: 'Failed to delete VPC Network',
+          errorMethod: () => {
+            this.fetchData()
+            this.fetchLoading = false
+          },
+          loadingMessage: `Deleting VPC Network...`,
+          catchMessage: 'Error encountered while fetching async job result',
+          catchMethod: () => {
+            this.fetchData()
+            this.fetchLoading = false
+          }
+        })
+      }).catch(error => {
+        this.$notification.error({
+          message: 'Request Failed',
+          description: error.response.headers['x-description']
+        })
+        this.fetchLoading = false
+        this.fetchData()
+      })
     }
   }
 }
 </script>
 
-<style lang="less" scoped>
+<style lang="scss" scoped>
 .list {
 
   &__label {
@@ -153,6 +300,7 @@ export default {
 
   &__item {
     margin-right: -8px;
+    align-items: flex-start;
 
     &-outer-container {
       width: 100%;
