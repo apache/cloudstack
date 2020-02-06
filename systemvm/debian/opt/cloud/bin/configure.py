@@ -937,7 +937,7 @@ class CsForwardingRules(CsDataBag):
             fw_output_rule += ":" + self.portsToString(rule["internal_ports"], "-")
 
         fw_postrout_rule2 = "-j SNAT --to-source %s -A POSTROUTING -s %s -d %s/32 -o %s -p %s -m %s --dport %s" % \
-              (
+            (
                 self.getGuestIpByIp(rule['internal_ip']),
                 self.getNetworkByIp(rule['internal_ip']),
                 rule['internal_ip'],
@@ -945,7 +945,7 @@ class CsForwardingRules(CsDataBag):
                 rule['protocol'],
                 rule['protocol'],
                 self.portsToString(rule['internal_ports'], ':')
-              )
+            )
 
         self.fw.append(["nat", "", fw_prerout_rule])
         self.fw.append(["nat", "", fw_postrout_rule])
