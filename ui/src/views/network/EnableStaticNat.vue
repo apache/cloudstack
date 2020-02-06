@@ -68,6 +68,17 @@
           @change="fetchNics"></a-radio>
       </template>
     </a-table>
+    <a-pagination
+      class="row-element pagination"
+      size="small"
+      :current="page"
+      :pageSize="pageSize"
+      :total="vmsList.length"
+      :showTotal="total => `Total ${total} items`"
+      :pageSizeOptions="['10', '20', '40', '80', '100']"
+      @change="changePage"
+      @showSizeChange="changePageSize"
+      showSizeChanger/>
 
     <div class="list__footer">
       <a-button @click="handleClose">{{ $t('cancel') }}</a-button>
@@ -135,7 +146,9 @@ export default {
       tiersSelect: false,
       networksList: [],
       vpcTiers: [],
-      selectedVpcTier: null
+      selectedVpcTier: null,
+      page: 1,
+      pageSize: 10
     }
   },
   mounted () {
@@ -151,8 +164,8 @@ export default {
       }
 
       api('listVirtualMachines', {
-        page: 1,
-        pageSize: 500,
+        page: this.page,
+        pageSize: this.pageSize,
         listAll: true,
         networkid: this.resource.associatednetworkid,
         account: this.resource.account,
@@ -173,8 +186,8 @@ export default {
       this.loading = true
 
       api('listVirtualMachines', {
-        page: 1,
-        pageSize: 500,
+        page: this.page,
+        pageSize: this.pageSize,
         listAll: true,
         networkid: e,
         account: this.resource.account,
@@ -269,6 +282,16 @@ export default {
     handleTierSelect (tier) {
       this.selectedVpcTier = tier
       this.fetchDataTiers(tier)
+    },
+    changePage (page, pageSize) {
+      this.page = page
+      this.pageSize = pageSize
+      this.fetchData()
+    },
+    changePageSize (currentPage, pageSize) {
+      this.page = currentPage
+      this.pageSize = pageSize
+      this.fetchData()
     }
   }
 }
@@ -377,5 +400,16 @@ export default {
     margin-top: 10px;
     margin-right: auto;
     min-width: 150px;
+  }
+
+  .pagination {
+    margin-top: 20px;
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .table {
+    margin-top: 20px;
+    overflow-y: auto;
   }
 </style>
