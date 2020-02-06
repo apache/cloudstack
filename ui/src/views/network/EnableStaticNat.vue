@@ -19,7 +19,7 @@
   <div class="list" :loading="loading">
     <div class="list__header">
       <div class="list__header__col" v-if="tiersSelect">
-        <a-select @change="handleTierSelect" v-model="selectedTier">
+        <a-select @change="handleTierSelect" v-model="vpcTiers" placeholder="Select a tier">
           <a-select-option v-for="network in networksList" :key="network.id" :value="network.id">
             {{ network.name }}
           </a-select-option>
@@ -71,7 +71,7 @@
 
     <div class="list__footer">
       <a-button @click="handleClose">{{ $t('cancel') }}</a-button>
-      <a-button @click="handleSubmit" type="primary" :disabled="!selectedVm || !selectedNic">{{ $t('Ok') }}</a-button>
+      <a-button @click="handleSubmit" type="primary" :disabled="!selectedVm || !selectedNic">{{ $t('OK') }}</a-button>
     </div>
 
   </div>
@@ -134,7 +134,8 @@ export default {
       ],
       tiersSelect: false,
       networksList: [],
-      selectedTier: 'Please select a tier'
+      vpcTiers: [],
+      selectedVpcTier: null
     }
   },
   mounted () {
@@ -145,7 +146,7 @@ export default {
       this.loading = true
       if (this.resource.vpcid) {
         this.handleTiers()
-        if (this.selectedTier) this.fetchDataTiers(this.selectedTier)
+        if (this.selectedVpcTier) this.fetchDataTiers(this.selectedVpcTier)
         return
       }
 
@@ -242,7 +243,8 @@ export default {
       api('enableStaticNat', {
         ipaddressid: this.resource.id,
         virtualmachineid: this.selectedVm,
-        vmguestip: this.selectedNic.ipaddress
+        vmguestip: this.selectedNic.ipaddress,
+        networkid: this.selectedVpcTier
       }).then(() => {
         this.parentFetchData()
         this.loading = false
@@ -250,7 +252,8 @@ export default {
       }).catch(error => {
         this.$notification.error({
           message: 'Request Failed',
-          description: error.response.headers['x-description']
+          description: error.response.headers['x-description'],
+          duration: 0
         })
         this.loading = false
         this.handleClose()
@@ -263,8 +266,9 @@ export default {
       this.tiersSelect = true
       this.fetchNetworks()
     },
-    handleTierSelect (e) {
-      this.fetchDataTiers(e)
+    handleTierSelect (tier) {
+      this.selectedVpcTier = tier
+      this.fetchDataTiers(tier)
     }
   }
 }
