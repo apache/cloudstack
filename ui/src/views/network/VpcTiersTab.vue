@@ -78,6 +78,47 @@
         </div>
       </a-list-item>
     </a-list>
+
+    <a-modal v-model="showCreateNetworkModal" :title="$t('label.add.new.tier')" @ok="handleAddNetworkSubmit">
+      <a-spin :spinning="modalLoading">
+        <a-form @submit.prevent="handleAddNetworkSubmit" :form="form">
+          <a-form-item :label="$t('name')">
+            <a-input
+              placeholder="A unique name of the tier"
+              v-decorator="['name',{rules: [{ required: true, message: 'Required' }]}]"></a-input>
+          </a-form-item>
+          <a-form-item :label="$t('networkOfferingId')">
+            <a-select
+              v-decorator="['networkOffering',{rules: [{ required: true, message: 'Required' }]}]">
+              <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
+                {{ item.name }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item :label="$t('gateway')">
+            <a-input
+              placeholder="The gateway of the tier in the super CIDR range and not overlapping the CIDR of any other tier in this VPC."
+              v-decorator="['gateway',{rules: [{ required: true, message: 'Required' }]}]"></a-input>
+          </a-form-item>
+          <a-form-item :label="$t('netmask')">
+            <a-input
+              placeholder="Netmask of the tier. For example, with VPC CIDR of 10.0.0.0/16 and network tier CIDR of 10.1.1.0/24, gateway is 10.1.1.1 and netmask is 255.255.255.0"
+              v-decorator="['netmask',{rules: [{ required: true, message: 'Required' }]}]"></a-input>
+          </a-form-item>
+          <a-form-item :label="$t('externalId')">
+            <a-input
+              v-decorator="['externalId']"></a-input>
+          </a-form-item>
+          <a-form-item :label="$t('aclid')">
+            <a-select v-decorator="['acl']">
+              <a-select-option v-for="item in networkAclList" :key="item.id" :value="item.id">
+                {{ item.name }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+        </a-form>
+      </a-spin>
+    </a-modal>
   </a-spin>
 </template>
 
@@ -104,14 +145,7 @@ export default {
     return {
       networks: [],
       fetchLoading: false,
-      addNetworkModal: false,
-      params: [],
-      placeholder: {
-        name: null,
-        gateway: null,
-        netmask: null,
-        externalid: null
-      },
+      showCreateNetworkModal: false,
       networkOfferings: [],
       networkAclList: [],
       modalLoading: false
@@ -190,11 +224,10 @@ export default {
       })
     },
     handleOpenModal () {
-      this.addNetworkModal = true
+      this.form = this.$form.createForm(this)
       this.fetchNetworkAclList()
       this.fetchNetworkOfferings()
-      this.params = this.$store.getters.apis.createNetwork.params
-      Object.keys(this.placeholder).forEach(item => { this.returnPlaceholder(item) })
+      this.showCreateNetworkModal = true
     },
     handleAddNetworkSubmit () {
       this.fetchLoading = true
@@ -205,7 +238,7 @@ export default {
           return
         }
 
-        this.addNetworkModal = false
+        this.showCreateNetworkModal = false
         api('createNetwork', {
           vpcid: this.resource.id,
           domainid: this.resource.domainid,
@@ -232,11 +265,6 @@ export default {
           this.fetchLoading = false
           this.fetchData()
         })
-      })
-    },
-    returnPlaceholder (field) {
-      this.params.find(i => {
-        if (i.name === field) this.placeholder[field] = i.description
       })
     }
   }
