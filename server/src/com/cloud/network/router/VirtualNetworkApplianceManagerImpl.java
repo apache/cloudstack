@@ -342,6 +342,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     private ScheduledExecutorService _checkExecutor;
     private ScheduledExecutorService _networkStatsUpdateExecutor;
     private ExecutorService _rvrStatusUpdateExecutor;
+    private ExecutorService _routerOobStartExecutor;
 
     private BlockingQueue<Long> _vrUpdateQueue;
 
@@ -508,6 +509,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterMonitor"));
         _checkExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterStatusMonitor"));
         _networkStatsUpdateExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NetworkStatsUpdater"));
+        _routerOobStartExecutor = Executors.newCachedThreadPool(new NamedThreadFactory("CheckRouterAfterOobStartExecutor"));
 
         VirtualMachine.State.getStateMachine().registerListener(this);
 
@@ -2605,7 +2607,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 event == VirtualMachine.Event.FollowAgentPowerOnReport &&
                 newState == VirtualMachine.State.Running &&
                 isOutOfBandMigrated(opaque)) {
-            s_logger.debug("Virtual router " + vo.getInstanceName() + " is powered-on out-of-band");
+            // Since vRouter appears to be powered-on OOB, make sure we can talk to router
+            // If we can't talk to it, we need to reboot it to get it managed correctly
+            // This is needed for example when a host agent goes down and comes back up,
+            // we would have done a failed HA event on the router and end up having our controlIP out-of-sync
+            s_logger.info("Virtual router " + vo.getInstanceName() + " (ID:" + vo.getId() + ") is powered-on out-of-band, checking if can send CheckRouterCommand to router");
+            _routerOobStartExecutor.execute(new CheckRouterAfterOobStart(vo.getId()));
         }
 
         return true;
@@ -2633,6 +2640,42 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         }
         return false;
+    }
+
+    protected class CheckRouterAfterOobStart extends ManagedContextRunnable {
+
+        long _routerId;
+
+        public CheckRouterAfterOobStart(final long routerId) {
+            _routerId = routerId;
+        }
+
+        @Override
+        protected void runInContext() {
+            // Since vRouter appears to be powered-on OOB, make sure we can talk to router
+            // If we can't talk to it, we need to reboot it to get it managed correctly
+            // This is needed for example when a host agent goes down and comes back up,
+            // we would have done a failed HA event on the router and end up having our controlIP out-of-sync
+            final DomainRouterVO router = _routerDao.findById(_routerId);
+            final CheckRouterCommand command = new CheckRouterCommand();
+            final String routerDesc = router.getInstanceName() + " (ID:" + _routerId + ")";
+
+            command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(_routerId));
+            command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+            command.setWait(30);
+            final Answer answer = _agentMgr.easySend(router.getHostId(), command);
+            if (answer instanceof CheckRouterAnswer && answer.getResult()) {
+                s_logger.info("Successfully able to send CheckRouterCommand to " + routerDesc + " after out-of-band power-on");
+            }
+            else {
+                s_logger.warn("Unable to send CheckRouterCommand to " + routerDesc + ", rebooting router ");
+                try {
+                    rebootRouter(_routerId, true);
+                } catch (final Exception e) {
+                    s_logger.error("Error while rebooting router " + routerDesc, e);
+                }
+            }
+        }
     }
 
     protected boolean aggregationExecution(final AggregationControlCommand.Action action, final Network network, final List<DomainRouterVO> routers)
