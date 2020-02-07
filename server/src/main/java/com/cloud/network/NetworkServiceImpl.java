@@ -1431,7 +1431,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (isNotBlank(vlanId) && isBlank(secondaryVlanId) && privateVlanType != null && privateVlanType != PVlanType.Promiscuous) {
             throw new InvalidParameterValueException("Private VLAN ID has not been set, therefore Promiscuous type is expected");
         } else if (isNotBlank(vlanId) && isNotBlank(secondaryVlanId) && !vlanId.equalsIgnoreCase(secondaryVlanId) && privateVlanType == PVlanType.Promiscuous) {
-            throw new InvalidParameterValueException("Private VLAN type is set to Promiscouos, but VLAN ID and Secondary VLAN ID differ");
+            throw new InvalidParameterValueException("Private VLAN type is set to Promiscuous, but VLAN ID and Secondary VLAN ID differ");
         } else if (isNotBlank(vlanId) && isNotBlank(secondaryVlanId) && privateVlanType != null && privateVlanType != PVlanType.Promiscuous && vlanId.equalsIgnoreCase(secondaryVlanId)) {
             throw new InvalidParameterValueException("Private VLAN type is set to " + privateVlanType + ", but VLAN ID and Secondary VLAN ID are equal");
         }
