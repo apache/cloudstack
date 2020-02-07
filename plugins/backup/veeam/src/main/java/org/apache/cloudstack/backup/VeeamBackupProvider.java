@@ -144,22 +144,24 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         final VeeamClient client = getClient(vm.getDataCenterId());
         final Job parentJob = client.listJob(backupOffering.getExternalId());
         final String clonedJobName = getGuestBackupName(vm.getInstanceName(), vm.getUuid());
-        if (client.cloneVeeamJob(parentJob, clonedJobName)) {
-            for (BackupOffering job : client.listJobs()) {
-                if (job.getName().equals(clonedJobName)) {
-                    final Job clonedJob = client.listJob(job.getExternalId());
-                    if (clonedJob.getScheduleConfigured() && !clonedJob.getScheduleEnabled()) {
-                        client.toggleJobSchedule(clonedJob.getId());
-                    }
-                    final VmwareDatacenter vmwareDC = findVmwareDatacenterForVM(vm);
-                    if (client.addVMToVeeamJob(job.getExternalId(), vm.getInstanceName(), vmwareDC.getVcenterHost())) {
-                        ((VMInstanceVO) vm).setBackupExternalId(job.getExternalId());
-                        return true;
-                    }
+
+        if (!client.cloneVeeamJob(parentJob, clonedJobName)) {
+            LOG.error("Failed to clone pre-defined Veeam job (backup offering) for backup offering ID: " + backupOffering.getExternalId() + " but will check the list of jobs again if it was eventually succeeded.");
+        }
+
+        for (final BackupOffering job : client.listJobs()) {
+            if (job.getName().equals(clonedJobName)) {
+                final Job clonedJob = client.listJob(job.getExternalId());
+                if (clonedJob.getScheduleConfigured() && !clonedJob.getScheduleEnabled()) {
+                    client.toggleJobSchedule(clonedJob.getId());
+                }
+                LOG.debug("Veeam job (backup offering) for backup offering ID: " + backupOffering.getExternalId() + " found, now trying to assign the VM to the job.");
+                final VmwareDatacenter vmwareDC = findVmwareDatacenterForVM(vm);
+                if (client.addVMToVeeamJob(job.getExternalId(), vm.getInstanceName(), vmwareDC.getVcenterHost())) {
+                    ((VMInstanceVO) vm).setBackupExternalId(job.getExternalId());
+                    return true;
                 }
             }
-        } else {
-            LOG.error("Failed to clone pre-defined Veeam job (backup offering) for backup offering ID: " + backupOffering.getExternalId());
         }
         return false;
     }

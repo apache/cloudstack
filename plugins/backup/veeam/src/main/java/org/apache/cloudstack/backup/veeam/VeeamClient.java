@@ -282,7 +282,7 @@ public class VeeamClient {
 
     private boolean checkTaskStatus(final HttpResponse response) throws IOException {
         final Task task = parseTaskResponse(response);
-        for (int i = 0; i < 60; i++) {
+        for (int i = 0; i < 120; i++) {
             final HttpResponse taskResponse = get("/tasks/" + task.getTaskId());
             final Task polledTask = parseTaskResponse(taskResponse);
             if (polledTask.getState().equals("Finished")) {
@@ -297,7 +297,7 @@ public class VeeamClient {
                         String type = pair.second();
                         String path = url.replace(apiURI.toString(), "");
                         if (type.equals("RestoreSession")) {
-                            for (int j = 0; j < 60; j++) {
+                            for (int j = 0; j < 120; j++) {
                                 HttpResponse relatedResponse = get(path);
                                 RestoreSession session = parseRestoreSessionResponse(relatedResponse);
                                 if (session.getResult().equals("Success")) {
@@ -305,8 +305,7 @@ public class VeeamClient {
                                 }
                                 try {
                                     Thread.sleep(5000);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
+                                } catch (InterruptedException ignored) {
                                 }
                             }
                             throw new CloudRuntimeException("Related job type: " + type + " was not successful");
@@ -445,9 +444,8 @@ public class VeeamClient {
             final JobCloneSpec cloneSpec = new JobCloneSpec(cloneInfo);
             final HttpResponse response = post(String.format("/jobs/%s?action=clone", parentJob.getId()), cloneSpec);
             return checkTaskStatus(response);
-        } catch (final IOException e) {
-            LOG.error("Failed to list Veeam jobs due to:", e);
-            checkResponseTimeOut(e);
+        } catch (final Exception e) {
+            LOG.warn("Exception caught while trying to clone Veeam job:", e);
         }
         return false;
     }

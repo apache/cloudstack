@@ -284,23 +284,24 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Failed to get the backup provider for the zone, please contact the administrator");
         }
 
-        boolean result = false;
-        try {
-            vm.setBackupOfferingId(offering.getId());
-            vm.setBackupVolumes(createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
-            result = backupProvider.assignVMToBackupOffering(vm, offering);
-        } catch (Exception e) {
-            LOG.error("Exception caught while assigning VM to backup offering by the backup provider", e);
-            throw e;
-        }
-
-        if (result && vmInstanceDao.update(vm.getId(), vm)) {
+        vm.setBackupOfferingId(offering.getId());
+        vm.setBackupVolumes(createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+        if (vmInstanceDao.update(vm.getId(), vm)) {
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
                     "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null,
                     Backup.class.getSimpleName(), vm.getUuid());
-            return true;
+        } else {
+            throw new CloudRuntimeException("Failed to update VM assignment to the backup offering in the DB, please try again.");
         }
-        throw new CloudRuntimeException("Failed to update VM backup in the database, please try again");
+
+        try {
+            if (backupProvider.assignVMToBackupOffering(vm, offering)) {
+                return true;
+            }
+        } catch (Exception e) {
+            LOG.error("Exception caught while assigning VM to backup offering by the backup provider", e);
+        }
+        throw new CloudRuntimeException("Failed to assign the VM to the backup offering, please try removing the assignment and try again.");
     }
 
     @Override
