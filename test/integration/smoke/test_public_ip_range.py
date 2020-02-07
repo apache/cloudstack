@@ -417,11 +417,12 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         self.apiclient.updateZone(cmd)
 
         # Delete System VM and IP range, so System VM can get IP from original ranges
-        for v in system_vms:
-            self.debug("Destroying System VM: %s" % v.id)
-            cmd = destroySystemVm.destroySystemVmCmd()
-            cmd.id = v.id
-            self.apiclient.destroySystemVm(cmd)
+        if system_vms:
+            for v in system_vms:
+                self.debug("Destroying System VM: %s" % v.id)
+                cmd = destroySystemVm.destroySystemVmCmd()
+                cmd.id = v.id
+                self.apiclient.destroySystemVm(cmd)
 
         self.public_ip_range.delete(self.apiclient)
 
