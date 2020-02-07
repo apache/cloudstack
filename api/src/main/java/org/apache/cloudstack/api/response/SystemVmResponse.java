@@ -139,7 +139,7 @@ public class SystemVmResponse extends BaseResponse {
     private String state;
 
     @SerializedName("agentstate")
-    @Param(description = "the agent state of the system VM")
+    @Param(description = "the agent state of the system VM", since = "4.13.1")
     private String agentState;
 
     @SerializedName("activeviewersessions")
@@ -155,11 +155,11 @@ public class SystemVmResponse extends BaseResponse {
     private List<String> publicVlan;
 
     @SerializedName("lastpinged")
-    @Param(description = "the date and time the host was last pinged")
+    @Param(description = "the date and time the host was last pinged", since = "4.13.1")
     private Date lastPinged;
 
     @SerializedName("version")
-    @Param(description = "the systemvm agent version")
+    @Param(description = "the systemvm agent version", since = "4.13.1")
     private String version;
 
     @Override
