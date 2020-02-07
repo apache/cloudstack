@@ -1578,6 +1578,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (volume.getState() == Volume.State.Allocated) {
                 _volsDao.remove(volume.getId());
                 stateTransitTo(volume, Volume.Event.DestroyRequested);
+                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplay());
+                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplay(), new Long(volume.getSize()));
             } else {
                 volService.destroyVolume(volume.getId());
             }
@@ -1585,8 +1587,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             // publish usage event for the volume
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), Volume.class.getName(),
                     volume.getUuid(), volume.isDisplayVolume());
-            _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplay());
-            _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplay(), new Long(volume.getSize()));
         } catch (Exception e) {
             s_logger.debug("Failed to destroy volume" + volume.getId(), e);
             throw new CloudRuntimeException("Failed to destroy volume" + volume.getId(), e);

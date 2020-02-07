@@ -739,8 +739,6 @@ public class VolumeApiServiceImplTest {
         volumeApiServiceImpl.destroyVolumeIfPossible(volumeVoMock);
 
         Mockito.verify(volumeServiceMock, Mockito.times(1)).destroyVolume(volumeMockId);
-        Mockito.verify(resourceLimitServiceMock, Mockito.times(1)).decrementResourceCount(accountMockId, ResourceType.volume, true);
-        Mockito.verify(resourceLimitServiceMock, Mockito.times(1)).decrementResourceCount(accountMockId, ResourceType.primary_storage, true, volumeSizeMock);
     }
 
     private void verifyMocksForTestDestroyVolumeWhenVolumeIsNotInRightState() {
@@ -973,25 +971,6 @@ public class VolumeApiServiceImplTest {
         Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
     }
 
-    @Test
-    public void deleteVolumeTestVolumeStateReadyThrowingNoTransitionException() throws InterruptedException, ExecutionException, NoTransitionException {
-        Mockito.doReturn(Volume.State.Ready).when(volumeVoMock).getState();
-
-        Mockito.doReturn(volumeVoMock).when(volumeApiServiceImpl).retrieveAndValidateVolume(volumeMockId, accountMock);
-        Mockito.doNothing().when(volumeApiServiceImpl).destroyVolumeIfPossible(volumeVoMock);
-        Mockito.doThrow(NoTransitionException.class).when(volumeApiServiceImpl).expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
-
-        Mockito.lenient().doReturn(true).when(volumeDaoMock).remove(volumeMockId);
-        Mockito.lenient().doReturn(true).when(volumeApiServiceImpl).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
-
-        boolean result = volumeApiServiceImpl.deleteVolume(volumeMockId, accountMock);
-
-        Assert.assertFalse(result);
-        Mockito.verify(volumeApiServiceImpl).retrieveAndValidateVolume(volumeMockId, accountMock);
-        Mockito.verify(volumeApiServiceImpl).destroyVolumeIfPossible(volumeVoMock);
-        Mockito.verify(volumeDaoMock, Mockito.times(0)).remove(volumeMockId);
-        Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
-    }
 
     @Test(expected = RuntimeException.class)
     public void deleteVolumeTestVolumeStateReadyThrowingRuntimeException() throws InterruptedException, ExecutionException, NoTransitionException {

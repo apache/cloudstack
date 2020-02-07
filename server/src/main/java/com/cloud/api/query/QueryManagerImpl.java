@@ -1809,6 +1809,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long clusterId = cmd.getClusterId();
         Long diskOffId = cmd.getDiskOfferingId();
         Boolean display = cmd.getDisplay();
+        String state = cmd.getState();
 
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
@@ -1844,8 +1845,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("storageId", sb.entity().getPoolUuid(), SearchCriteria.Op.EQ);
         sb.and("diskOfferingId", sb.entity().getDiskOfferingId(), SearchCriteria.Op.EQ);
         sb.and("display", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
-        // Only return volumes that are not destroyed
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
         // display UserVM volumes only
         sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.NIN);
@@ -1860,6 +1861,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             SearchCriteria<VolumeJoinVO> ssc = _volumeJoinDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("volumeType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
@@ -1918,8 +1920,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // Don't return DomR and ConsoleProxy volumes
         sc.setParameters("type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
 
-        // Only return volumes that are not destroyed
-        sc.setParameters("state", Volume.State.Destroy);
+        if (state != null) {
+            sc.setParameters("state", state);
+        } else if (!_accountMgr.isAdmin(caller.getId())) {
+            sc.setParameters("stateNEQ", Volume.State.Expunged);
+        }
 
         // search Volume details by ids
         Pair<List<VolumeJoinVO>, Integer> uniqueVolPair = _volumeJoinDao.searchAndCount(sc, searchFilter);

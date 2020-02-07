@@ -119,6 +119,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine;
 
 @Component
 public class VolumeServiceImpl implements VolumeService {
@@ -325,7 +326,10 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(volume.getId());
         if (volumeStore != null) {
             if (volumeStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
-                s_logger.debug("Volume: " + volume.getName() + " is currently being uploaded; cant' delete it.");
+                String msg = "Volume: " + volume.getName() + " is currently being uploaded; cant' delete it.";
+                s_logger.debug(msg);
+                result.setSuccess(false);
+                result.setResult(msg);
                 future.complete(result);
                 return future;
             }
@@ -1213,6 +1217,12 @@ public class VolumeServiceImpl implements VolumeService {
         snapshotMgr.deletePoliciesForVolume(volumeId);
 
         vol.stateTransit(Volume.Event.OperationSucceeded);
+
+        if (vol.getAttachedVM() == null || vol.getAttachedVM().getType() == VirtualMachine.Type.User) {
+            // Decrement the resource count for volumes and primary storage belonging user VM's only
+            _resourceLimitMgr.decrementResourceCount(vol.getAccountId(), ResourceType.volume, vol.isDisplay());
+            _resourceLimitMgr.decrementResourceCount(vol.getAccountId(), ResourceType.primary_storage, vol.isDisplay(), new Long(vol.getSize()));
+        }
     }
 
     @Override
