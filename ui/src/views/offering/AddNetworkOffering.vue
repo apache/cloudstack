@@ -169,10 +169,10 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('redundant.router.capability')" v-if="this.redundantRouterCapabilityVisible">
+        <a-form-item :label="$t('service.SourceNat.redundant.router.capability')" v-if="this.sourceNatServiceChecked">
           <a-switch v-decorator="['redundant.router.capability']" />
         </a-form-item>
-        <a-form-item :label="$t('service.SourceNat.sourceNatType')" v-if="this.sourceNatTypeVisible">
+        <a-form-item :label="$t('service.SourceNat.sourceNatType')" v-if="this.sourceNatServiceChecked">
           <a-radio-group
             v-decorator="['sourcenattype', {
               initialValue: 'peraccount'
@@ -186,16 +186,74 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('service.StaticNat.elasticIp')" v-if="this.elasticIpCheckVisible">
+        <a-form-item :label="$t('service.Lb.elasticLb')" v-if="this.lbServiceChecked">
+          <a-switch v-decorator="['elasticLb']" />
+        </a-form-item>
+        <a-form-item :label="$t('service.Lb.inlineMode')" v-if="this.lbServiceChecked">
+          <a-radio-group
+            v-decorator="['inlineMode', {
+              initialValue: 'false'
+            }]"
+            buttonStyle="solid">
+            <a-radio-button value="false">
+              {{ $t('side by side') }}
+            </a-radio-button>
+            <a-radio-button value="true">
+              {{ $t('inline') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
+        <a-form-item :label="$t('service.Lb.netscaler.service.packages')" v-if="this.lbServiceChecked">
+          <a-select
+            v-decorator="['netscalerServicePackages', {
+              rules: [
+                {
+                  required: true,
+                  message: 'Please select option'
+                }
+              ]
+            }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="registeredServicePackageLoading"
+            :placeholder="this.$t('netscaler.service.packages')">
+            <a-select-option v-for="(opt, optIndex) in this.registeredServicePackages" :key="optIndex">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item :label="$t('service.Lb.netscaler.service.packages.description')" v-if="this.lbServiceChecked">
+          <a-input
+            v-decorator="['lbNetscalerServicePackagesDescription', {}]"
+            :placeholder="this.$t('netscaler.service.packages.description')"/>
+        </a-form-item>
+        <a-form-item :label="$t('service.Lb.lbIsolation')" v-if="this.lbServiceChecked">
+          <a-radio-group
+            v-decorator="['lbIsolation', {
+              initialValue: 'dedicated'
+            }]"
+            buttonStyle="solid">
+            <a-radio-button value="dedicated">
+              {{ $t('Dedicated') }}
+            </a-radio-button>
+            <a-radio-button value="shared">
+              {{ $t('Shared') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
+        <a-form-item :label="$t('service.StaticNat.elasticIp')" v-if="this.staticNatServiceChecked">
           <a-switch v-decorator="['staticnatelasticip']" />
         </a-form-item>
-        <a-form-item :label="$t('StaticNat.associatePublicIP')" v-if="this.associatePublicIPCheckVisible">
+        <a-form-item :label="$t('service.StaticNat.associatePublicIP')" v-if="this.staticNatServiceChecked">
           <a-switch v-decorator="['staticnatassociatepublicip']" />
         </a-form-item>
-        <a-form-item :label="$t('supportsstrechedl2subnet')" v-if="this.supportsStrechedL2SubnetVisible">
+        <a-form-item :label="$t('service.Connectivity.supportsstrechedl2subnet')" v-if="this.connectivityServiceChecked">
           <a-switch v-decorator="['supportsstrechedl2subnet']" />
         </a-form-item>
-        <a-form-item :label="$t('supportspublicaccess')" v-if="this.supportsPublicAccessVisible">
+        <a-form-item :label="$t('service.Connectivity.supportspublicaccess')" v-if="this.connectivityServiceChecked">
           <a-switch v-decorator="['supportspublicaccess']" />
         </a-form-item>
         <a-form-item :label="$t('label.conservemode')">
@@ -290,6 +348,10 @@ export default {
       supportedServiceLoading: false,
       serviceOfferings: [],
       serviceOfferingLoading: false,
+      sourceNatServiceChecked: false,
+      lbServiceChecked: false,
+      staticNatServiceChecked: false,
+      connectivityServiceChecked: false,
       isConserveMode: true,
       isPublic: true,
       domains: [],
@@ -403,19 +465,22 @@ export default {
               serviceDisplayName = serviceName
               break
           }
+          var providers = []
+          for (var j in this.supportedServices[i].provider) {
+            var provider = this.supportedServices[i].provider[j]
+            provider.description = provider.name
+            provider.enabled = provider.canenableindividualservice
+            if (provider.name === 'VirtualRouter') {
+              providers.unshift(provider)
+            } else {
+              providers.push(provider)
+            }
+          }
+          this.supportedServices[i].provider = providers
           this.supportedServices[i].description = serviceDisplayName
           console.log(this.supportedServices[i])
         }
       })
-    },
-    handleSupportedServiceChange (service, checked) {
-      if (service === 'Connectivity') {
-        this.regionLevelVpcVisible = checked
-        this.distributedRouterVisible = checked
-      }
-      if (service === 'SourceNat') {
-        this.redundantRouterCapabilityVisible = checked
-      }
     },
     fetchServiceOfferingData () {
       const params = {}
@@ -428,6 +493,42 @@ export default {
       }).finally(() => {
         this.supportedServiceLoading = false
       })
+    },
+    fetchRegisteredServicePackageData () {
+      this.registeredServicePackageLoading = true
+      this.registeredServicePackages = []
+      api('listRegisteredServicePackages', {}).then(json => {
+        var servicePackages = json.listregisteredservicepackage.registeredServicepackage
+        if (servicePackages === undefined || servicePackages == null || !servicePackages) {
+          servicePackages = json.listregisteredservicepackage
+        }
+        for (var i in servicePackages) {
+          this.registeredServicePackages.push({
+            id: servicePackages[i].id,
+            description: servicePackages[i].name,
+            desc: servicePackages[i].description
+          })
+        }
+      }).finally(() => {
+        this.registeredServicePackageLoading = false
+      })
+    },
+    handleSupportedServiceChange (service, checked) {
+      if (service === 'SourceNat') {
+        this.sourceNatServiceChecked = checked
+      }
+      if (service === 'Lb') {
+        if (checked) {
+          this.fetchRegisteredServicePackageData()
+        }
+        this.lbServiceChecked = checked
+      }
+      if (service === 'StaticNat') {
+        this.staticNatServiceChecked = checked
+      }
+      if (service === 'Connectivity') {
+        this.connectivityServiceChecked = checked
+      }
     },
     handleSubmit (e) {
       e.preventDefault()

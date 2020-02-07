@@ -30,7 +30,7 @@
         :filterOption="(input, option) => {
           return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }">
-        <a-select-option v-for="(opt) in resourceOptions" :key="opt.name">
+        <a-select-option v-for="(opt) in resourceOptions" :key="opt.name" :disabled="!opt.enabled">
           {{ opt.name || opt.description }}
         </a-select-option>
       </a-select>
