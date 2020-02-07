@@ -19,14 +19,14 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
+import com.cloud.host.Status;
 import com.cloud.serializer.Param;
 import com.cloud.vm.VirtualMachine;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = VirtualMachine.class)
 public class SystemVmResponse extends BaseResponse {
@@ -138,6 +138,10 @@ public class SystemVmResponse extends BaseResponse {
     @Param(description = "the state of the system VM")
     private String state;
 
+    @SerializedName("agentstate")
+    @Param(description = "the agent state of the system VM", since = "4.13.1")
+    private String agentState;
+
     @SerializedName("activeviewersessions")
     @Param(description = "the number of active console sessions for the console proxy system vm")
     private Integer activeViewerSessions;
@@ -149,6 +153,14 @@ public class SystemVmResponse extends BaseResponse {
     @SerializedName("publicvlan")
     @Param(description = "public vlan range")
     private List<String> publicVlan;
+
+    @SerializedName("lastpinged")
+    @Param(description = "the date and time the host was last pinged", since = "4.13.1")
+    private Date lastPinged;
+
+    @SerializedName("version")
+    @Param(description = "the systemvm agent version", since = "4.13.1")
+    private String version;
 
     @Override
     public String getObjectId() {
@@ -331,6 +343,18 @@ public class SystemVmResponse extends BaseResponse {
         this.state = state;
     }
 
+    public String getAgentState() {
+        return agentState;
+    }
+
+    public void setAgentState(Status agentState) {
+        if (agentState != null) {
+            this.agentState = agentState.toString();
+        } else {
+            this.agentState = Status.Unknown.toString();
+        }
+    }
+
     public Integer getActiveViewerSessions() {
         return activeViewerSessions;
     }
@@ -377,5 +401,21 @@ public class SystemVmResponse extends BaseResponse {
 
     public void setPublicVlan(List<String> publicVlan) {
         this.publicVlan = publicVlan;
+    }
+
+    public Date getLastPinged() {
+        return lastPinged;
+    }
+
+    public void setLastPinged(Date lastPinged) {
+        this.lastPinged = lastPinged;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 }
