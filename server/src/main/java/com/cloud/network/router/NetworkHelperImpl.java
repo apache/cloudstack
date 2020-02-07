@@ -154,6 +154,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     protected IpAddressManager _ipAddrMgr;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    VpcVirtualNetworkApplianceManager _vpcRouterMgr;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -288,7 +290,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         // only after router start successfully
         final Long vpcId = router.getVpcId();
         if (vpcId != null) {
-            _s2sVpnMgr.reconnectDisconnectedVpnByVpc(vpcId);
+            _vpcRouterMgr.startSite2SiteVpn(_routerDao.findById(router.getId()));
         }
         return _routerDao.findById(router.getId());
     }

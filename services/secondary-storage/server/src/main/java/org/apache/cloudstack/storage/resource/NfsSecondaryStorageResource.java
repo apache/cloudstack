@@ -67,7 +67,7 @@ import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
 import org.apache.cloudstack.storage.template.DownloadManager;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
+import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.template.UploadEntity;
 import org.apache.cloudstack.storage.template.UploadManager;
 import org.apache.cloudstack.storage.template.UploadManagerImpl;
@@ -2905,7 +2905,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         script = new Script(!_inSystemVM, "mount", _timeout, s_logger);
 
         List<String> res = new ArrayList<String>();
-        ZfsPathParser parser = new ZfsPathParser(localRootPath);
+        PathParser parser = new PathParser(localRootPath);
         script.execute(parser);
         res.addAll(parser.getPaths());
         for (String s : res) {

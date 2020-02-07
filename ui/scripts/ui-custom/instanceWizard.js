@@ -330,9 +330,8 @@
                                             .attr('checked', false);
                                     }
                                 })
-                                .after(
-                                    $('<div>').addClass('name').html(options.secondary.desc)
-                                )
+                            ).append(
+                                $('<div>').addClass('name').html(options.secondary.desc)
                             ).appendTo($select);
                         }
                     });
