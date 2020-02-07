@@ -66,7 +66,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
             "administrator",
             "The Veeam backup and recovery username.", true, ConfigKey.Scope.Zone);
 
-    private ConfigKey<String> VeeamPassword = new ConfigKey<>("Advanced", String.class,
+    private ConfigKey<String> VeeamPassword = new ConfigKey<>("Secure", String.class,
             "backup.plugin.veeam.password",
             "P@ssword123",
             "The Veeam backup and recovery password.", true, ConfigKey.Scope.Zone);
