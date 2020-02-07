@@ -15,37 +15,38 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
+
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteVolume", description = "Deletes a detached disk volume.", responseObject = SuccessResponse.class, entityType = {Volume.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class DeleteVolumeCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteVolumeCmd.class.getName());
-    private static final String s_name = "deletevolumeresponse";
+@APICommand(name = "recoverVolume", description = "Recovers a Destroy volume.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {Volume.class},
+            since = "4.14.0",
+            authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = true)
+public class RecoverVolumeCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(RecoverVolumeCmd.class.getName());
+
+    private static final String s_name = "recovervolumeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
-            required=true, description="The ID of the disk volume")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "The ID of the volume")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -65,10 +66,6 @@ public class DeleteVolumeCmd extends BaseCmd {
         return s_name;
     }
 
-    public static String getResultObjectName() {
-        return "volume";
-    }
-
     @Override
     public long getEntityOwnerId() {
         Volume volume = _entityMgr.findById(Volume.class, getId());
@@ -80,14 +77,15 @@ public class DeleteVolumeCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ConcurrentOperationException {
-        CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getId()));
-        Volume result = _volumeService.destroyVolume(id, CallContext.current().getCallingAccount(), true, false);
+    public void execute() {
+        CallContext.current().setEventDetails("Volume Id: " + getId());
+        Volume result = _volumeService.recoverVolume(getId());
         if (result != null) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
+            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, result);
+            response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete volume");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to recover volume");
         }
     }
 }

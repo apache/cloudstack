@@ -1080,6 +1080,19 @@ class Volume:
         cmd.id = self.id
         apiclient.deleteVolume(cmd)
 
+    def destroy(self, apiclient, expunge=False):
+        """Destroy Volume"""
+        cmd = destroyVolume.destroyVolumeCmd()
+        cmd.id = self.id
+        cmd.expunge = expunge
+        apiclient.destroyVolume(cmd)
+
+    def recover(self, apiclient):
+        """Recover Volume"""
+        cmd = recoverVolume.recoverVolumeCmd()
+        cmd.id = self.id
+        apiclient.recoverVolume(cmd)
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """List all volumes matching criteria"""
