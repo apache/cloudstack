@@ -748,12 +748,12 @@ public class VolumeApiServiceImplTest {
     }
 
     private void configureMocksForTestDestroyVolumeWhenVolume() {
-        Mockito.doReturn(accountMockId).when(volumeVoMock).getAccountId();
-        Mockito.doReturn(true).when(volumeVoMock).isDisplayVolume();
+        Mockito.lenient().doReturn(accountMockId).when(volumeVoMock).getAccountId();
+        Mockito.lenient().doReturn(true).when(volumeVoMock).isDisplayVolume();
 
-        Mockito.doNothing().when(volumeServiceMock).destroyVolume(volumeMockId);
-        Mockito.doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.volume, true);
-        Mockito.doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.primary_storage, true, volumeSizeMock);
+        Mockito.lenient().doNothing().when(volumeServiceMock).destroyVolume(volumeMockId);
+        Mockito.lenient().doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.volume, true);
+        Mockito.lenient().doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.primary_storage, true, volumeSizeMock);
     }
 
     @Test

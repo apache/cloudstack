@@ -78,7 +78,7 @@
         <cs.logging.version>1.1.1</cs.logging.version>
 
         <!-- Apache Commons versions -->
-        <cs.codec.version>1.13</cs.codec.version>
+        <cs.codec.version>1.14</cs.codec.version>
         <cs.commons-collections.version>4.4</cs.commons-collections.version>
         <cs.commons-compress.version>1.19</cs.commons-compress.version>
         <cs.commons-exec.version>1.3</cs.commons-exec.version>
@@ -103,7 +103,7 @@
         <cs.junit.dataprovider.version>1.13.1</cs.junit.dataprovider.version>
         <cs.guava-testlib.version>18.0</cs.guava-testlib.version>
         <cs.mockito.version>3.2.4</cs.mockito.version>
-        <cs.powermock.version>2.0.4</cs.powermock.version>
+        <cs.powermock.version>2.0.5</cs.powermock.version>
         <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
         <cs.selenium-java-client-driver.version>1.0.1</cs.selenium-java-client-driver.version>
         <cs.testng.version>7.1.0</cs.testng.version>
@@ -111,10 +111,10 @@
         <cs.xercesImpl.version>2.11.0</cs.xercesImpl.version>
 
         <!-- Dependencies versions -->
-        <cs.amqp-client.version>5.7.3</cs.amqp-client.version>
+        <cs.amqp-client.version>5.8.0</cs.amqp-client.version>
         <cs.apache-cloudstack-java-client.version>1.0.9</cs.apache-cloudstack-java-client.version>
         <cs.aspectjrt.version>1.9.5</cs.aspectjrt.version>
-        <cs.aws.sdk.version>1.11.700</cs.aws.sdk.version>
+        <cs.aws.sdk.version>1.11.717</cs.aws.sdk.version>
         <cs.axiom.version>1.2.8</cs.axiom.version>
         <cs.axis.version>1.4</cs.axis.version>
         <cs.axis2.version>1.5.6</cs.axis2.version>
@@ -128,8 +128,8 @@
         <cs.groovy.version>2.4.17</cs.groovy.version>
         <cs.gson.version>1.7.2</cs.gson.version>
         <cs.guava.version>28.2-jre</cs.guava.version>
-        <cs.httpclient.version>4.5.10</cs.httpclient.version>
-        <cs.httpcore.version>4.4.12</cs.httpcore.version>
+        <cs.httpclient.version>4.5.11</cs.httpclient.version>
+        <cs.httpcore.version>4.4.13</cs.httpcore.version>
         <cs.influxdb-java.version>2.17</cs.influxdb-java.version>
         <cs.jackson.version>2.9.2</cs.jackson.version>
         <cs.jasypt.version>1.9.3</cs.jasypt.version>
@@ -140,8 +140,8 @@
         <cs.jaxb.version>2.3.0</cs.jaxb.version>
         <cs.jaxws.version>2.3.2</cs.jaxws.version>
         <cs.jersey-bundle.version>1.19.4</cs.jersey-bundle.version>
-        <cs.jetty.version>9.4.25.v20191220</cs.jetty.version>
-        <cs.jetty-maven-plugin.version>9.4.25.v20191220</cs.jetty-maven-plugin.version>
+        <cs.jetty.version>9.4.26.v20200117</cs.jetty.version>
+        <cs.jetty-maven-plugin.version>9.4.26.v20200117</cs.jetty-maven-plugin.version>
         <cs.jna.version>4.0.0</cs.jna.version>
         <cs.joda-time.version>2.8.1</cs.joda-time.version>
         <cs.jpa.version>2.2.1</cs.jpa.version>
@@ -152,14 +152,14 @@
         <cs.kafka-clients.version>0.11.0.3</cs.kafka-clients.version>
         <cs.libvirt-java.version>0.5.1</cs.libvirt-java.version>
         <cs.mail.version>1.5.0-b01</cs.mail.version>
-        <cs.mysql.version>8.0.18</cs.mysql.version>
+        <cs.mysql.version>8.0.19</cs.mysql.version>
         <cs.neethi.version>2.0.4</cs.neethi.version>
         <cs.nitro.version>10.1</cs.nitro.version>
         <cs.opensaml.version>2.6.4</cs.opensaml.version>
         <cs.rados-java.version>0.5.0</cs.rados-java.version>
         <cs.rampart.version>1.5.1</cs.rampart.version>
-        <cs.reflections.version>0.9.11</cs.reflections.version>
-        <cs.servicemix.version>3.3.2_1</cs.servicemix.version>
+        <cs.reflections.version>0.9.12</cs.reflections.version>
+        <cs.servicemix.version>3.3.3_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
         <cs.tomcat-embed-core.version>8.5.47</cs.tomcat-embed-core.version>
         <cs.trilead.version>1.0.0-build222</cs.trilead.version>
@@ -169,7 +169,7 @@
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
         <cs.xstream.version>1.4.11.1</cs.xstream.version>
         <cs.slf4j.version>1.7.29</cs.slf4j.version>
-        <org.springframework.version>5.2.2.RELEASE</org.springframework.version>
+        <org.springframework.version>5.2.3.RELEASE</org.springframework.version>
     </properties>
 
     <distributionManagement>
