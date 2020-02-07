@@ -102,6 +102,64 @@
 
         var $container = $('#cloudStack3-container');
 
+        var updateSharedConfigs = function() {
+            // Update global pagesize for list APIs in UI
+            $.ajax({
+                type: 'GET',
+                url: createURL('listConfigurations'),
+                data: {name: 'default.ui.page.size'},
+                dataType: 'json',
+                async: false,
+                success: function(data, textStatus, xhr) {
+                    if (data && data.listconfigurationsresponse && data.listconfigurationsresponse.configuration) {
+                        var config = data.listconfigurationsresponse.configuration[0];
+                        if (config && config.name == 'default.ui.page.size') {
+                            pageSize = parseInt(config.value);
+                        }
+                    }
+                },
+                error: function(xhr) { // ignore any errors, fallback to the default
+                }
+            });
+
+            // Update global pagesize for sort key in UI
+            $.ajax({
+                type: 'GET',
+                url: createURL('listConfigurations'),
+                data: {name: 'sortkey.algorithm'},
+                dataType: 'json',
+                async: false,
+                success: function(data, textStatus, xhr) {
+                    if (data && data.listconfigurationsresponse && data.listconfigurationsresponse.configuration) {
+                        var config = data.listconfigurationsresponse.configuration[0];
+                        if (config && config.name == 'sortkey.algorithm') {
+                            g_sortKeyIsAscending = config.value == 'true';
+                        }
+                    }
+                },
+                error: function(xhr) { // ignore any errors, fallback to the default
+                }
+            });
+
+            // Update global router health checks enabled
+            $.ajax({
+                type: 'GET',
+                url: createURL('listConfigurations'),
+                data: {name: 'router.health.checks.enabled'},
+                dataType: 'json',
+                async: false,
+                success: function(data, textStatus, xhr) {
+                    if (data && data.listconfigurationsresponse && data.listconfigurationsresponse.configuration) {
+                        var config = data.listconfigurationsresponse.configuration[0];
+                        if (config && config.name == 'router.health.checks.enabled') {
+                            g_routerHealthChecksEnabled = config.value == 'true';
+                        }
+                    }
+                },
+                error: function(xhr) { // ignore any errors, fallback to the default
+                }
+            });
+        }
         var loginArgs = {
             $container: $container,
 
@@ -170,61 +228,25 @@
                     }
                 });
 
-                // Update global pagesize for list APIs in UI
-                $.ajax({
-                    type: 'GET',
-                    url: createURL('listConfigurations'),
-                    data: {name: 'default.ui.page.size'},
-                    dataType: 'json',
-                    async: false,
-                    success: function(data, textStatus, xhr) {
-                        if (data && data.listconfigurationsresponse && data.listconfigurationsresponse.configuration) {
-                            var config = data.listconfigurationsresponse.configuration[0];
-                            if (config && config.name == 'default.ui.page.size') {
-                                pageSize = parseInt(config.value);
-                            }
-                        }
-                    },
-                    error: function(xhr) { // ignore any errors, fallback to the default
-                    }
-                });
+               updateSharedConfigs()
 
-                // Update global pagesize for sort key in UI
-                $.ajax({
-                    type: 'GET',
-                    url: createURL('listConfigurations'),
-                    data: {name: 'sortkey.algorithm'},
-                    dataType: 'json',
-                    async: false,
-                    success: function(data, textStatus, xhr) {
-                        if (data && data.listconfigurationsresponse && data.listconfigurationsresponse.configuration) {
-                            var config = data.listconfigurationsresponse.configuration[0];
-                            if (config && config.name == 'sortkey.algorithm') {
-                                g_sortKeyIsAscending = config.value == 'true';
-                            }
-                        }
-                    },
-                    error: function(xhr) { // ignore any errors, fallback to the default
-                    }
-                });
-
-                // Populate IDP list
-                $.ajax({
-                    type: 'GET',
-                    url: createURL('listIdps'),
-                    dataType: 'json',
-                    async: false,
-                    success: function(data, textStatus, xhr) {
-                        if (data && data.listidpsresponse && data.listidpsresponse.idp) {
-                            var idpList = data.listidpsresponse.idp.sort(function (a, b) {
-                                return a.orgName.localeCompare(b.orgName);
-                            });
-                            g_idpList = idpList;
-                        }
-                    },
-                    error: function(xhr) {
-                    }
-                });
+               // Populate IDP list
+               $.ajax({
+                   type: 'GET',
+                   url: createURL('listIdps'),
+                   dataType: 'json',
+                   async: false,
+                   success: function(data, textStatus, xhr) {
+                       if (data && data.listidpsresponse && data.listidpsresponse.idp) {
+                           var idpList = data.listidpsresponse.idp.sort(function (a, b) {
+                               return a.orgName.localeCompare(b.orgName);
+                           });
+                           g_idpList = idpList;
+                       }
+                   },
+                   error: function(xhr) {
+                   }
+               });
 
                 return userValid ? {
                     user: {
@@ -337,6 +359,7 @@
                                         })
                                     }
                                 });
+                                updateSharedConfigs();
                             },
                             error: function(xmlHTTP) {
                                 args.response.error();
@@ -377,6 +400,7 @@
                         g_regionsecondaryenabled = null;
                         g_loginCmdText = null;
                         g_allowUserViewAllDomainAccounts = null;
+                        g_routerHealthChecksEnabled = false;
 
                         // Remove any cookies
                         var cookies = document.cookie.split(";");

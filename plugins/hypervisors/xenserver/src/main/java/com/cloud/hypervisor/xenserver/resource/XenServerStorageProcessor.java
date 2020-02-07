@@ -31,21 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.VmPowerState;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VM;
-
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -67,6 +52,9 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -86,11 +74,23 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.resource.StorageProcessor;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.S3.ClientOptions;
+import com.google.common.annotations.VisibleForTesting;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.VmPowerState;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VM;
 
 public class XenServerStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
     protected CitrixResourceBase hypervisorResource;
     protected String BaseMountPointOnHost = "/var/run/cloud_mount";
+
+    protected final static String BASE_MOUNT_POINT_ON_REMOTE = "/var/cloud_mount/";
 
     public XenServerStorageProcessor(final CitrixResourceBase resource) {
         hypervisorResource = resource;

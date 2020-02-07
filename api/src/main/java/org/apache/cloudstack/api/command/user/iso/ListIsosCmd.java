@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -34,7 +35,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "listIsos", description = "Lists all available ISO files.", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListIsosCmd extends BaseListTaggedResourcesCmd {
+public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 
     private static final String s_name = "listisosresponse";

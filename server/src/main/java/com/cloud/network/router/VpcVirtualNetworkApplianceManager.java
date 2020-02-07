@@ -74,4 +74,11 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @throws ResourceUnavailableException
      */
     boolean stopRemoteAccessVpn(RemoteAccessVpn vpn, VirtualRouter router) throws ResourceUnavailableException;
+
+    /**
+     * @param router
+     * @return
+     * @throws ResourceUnavailableException
+     */
+    boolean startSite2SiteVpn(DomainRouterVO router) throws ResourceUnavailableException;
 }

@@ -31,9 +31,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.cloud.agent.api.storage.OVFProperty;
-import com.cloud.storage.TemplateOVFPropertyVO;
-import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -42,6 +39,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.ResourceDetail;
+import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.admin.account.ListAccountsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
@@ -51,6 +49,7 @@ import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
+import org.apache.cloudstack.api.command.admin.router.GetRouterHealthCheckResultsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
@@ -98,6 +97,7 @@ import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceDetailResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -123,6 +123,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.agent.api.storage.OVFProperty;
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
@@ -182,6 +183,10 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.RouterHealthCheckResult;
+import com.cloud.network.VpcVirtualNetworkApplianceService;
+import com.cloud.network.dao.RouterHealthCheckResultDao;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.org.Grouping;
@@ -206,9 +211,11 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePoolTagVO;
+import com.cloud.storage.TemplateOVFPropertyVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.StoragePoolTagsDao;
+import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -395,6 +402,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Inject
     TemplateOVFPropertiesDao templateOVFPropertiesDao;
 
+    @Inject
+    public VpcVirtualNetworkApplianceService routerService;
+
+    @Inject
+    private ResponseGenerator responseGenerator;
+
+    @Inject
+    private RouterHealthCheckResultDao routerHealthCheckResultDao;
+
     /*
      * (non-Javadoc)
      *
@@ -406,6 +422,36 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
         Pair<List<UserAccountJoinVO>, Integer> result = searchForUsersInternal(cmd);
+        ListResponse<UserResponse> response = new ListResponse<UserResponse>();
+        List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(CallContext.current().getCallingAccount().getDomainId(),
+                result.first().toArray(new UserAccountJoinVO[result.first().size()]));
+        response.setResponses(userResponses, result.second());
+        return response;
+    }
+
+    public ListResponse<UserResponse> searchForUsers(Long domainId, boolean recursive) throws PermissionDeniedException {
+        Account caller = CallContext.current().getCallingAccount();
+
+        List<Long> permittedAccounts = new ArrayList<Long>();
+
+        boolean listAll = true;
+        Long id = null;
+
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            long currentId = CallContext.current().getCallingUser().getId();
+            if (id != null && currentId != id.longValue()) {
+                throw new PermissionDeniedException("Calling user is not authorized to see the user requested by id");
+            }
+            id = currentId;
+        }
+        Object username = null;
+        Object type = null;
+        String accountName = null;
+        Object state = null;
+        Object keyword = null;
+
+        Pair<List<UserAccountJoinVO>, Integer> result =  getUserListInternal(caller, permittedAccounts, listAll, id, username, type, accountName, state, keyword, domainId, recursive,
+                null);
         ListResponse<UserResponse> response = new ListResponse<UserResponse>();
         List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(CallContext.current().getCallingAccount().getDomainId(),
                 result.first().toArray(new UserAccountJoinVO[result.first().size()]));
@@ -427,42 +473,52 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
             id = currentId;
         }
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), null, permittedAccounts, domainIdRecursiveListProject, listAll, false);
-        Long domainId = domainIdRecursiveListProject.first();
-        Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-
-        Filter searchFilter = new Filter(UserAccountJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-
         Object username = cmd.getUsername();
         Object type = cmd.getAccountType();
-        Object accountName = cmd.getAccountName();
+        String accountName = cmd.getAccountName();
         Object state = cmd.getState();
         Object keyword = cmd.getKeyword();
 
+        Long domainId = cmd.getDomainId();
+        boolean recursive = cmd.isRecursive();
+        Long pageSizeVal = cmd.getPageSizeVal();
+        Long startIndex = cmd.getStartIndex();
+
+        Filter searchFilter = new Filter(UserAccountJoinVO.class, "id", true, startIndex, pageSizeVal);
+
+        return getUserListInternal(caller, permittedAccounts, listAll, id, username, type, accountName, state, keyword, domainId, recursive, searchFilter);
+    }
+
+    private Pair<List<UserAccountJoinVO>, Integer> getUserListInternal(Account caller, List<Long> permittedAccounts, boolean listAll, Long id, Object username, Object type,
+            String accountName, Object state, Object keyword, Long domainId, boolean recursive, Filter searchFilter) {
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, recursive, null);
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject, listAll, false);
+        domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
         SearchBuilder<UserAccountJoinVO> sb = _userAccountJoinDao.createSearchBuilder();
         _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-        sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.LIKE);
+        sb.and("username", sb.entity().getUsername(), Op.LIKE);
         if (id != null && id == 1) {
             // system user should NOT be searchable
             List<UserAccountJoinVO> emptyList = new ArrayList<UserAccountJoinVO>();
             return new Pair<List<UserAccountJoinVO>, Integer>(emptyList, 0);
         } else if (id != null) {
-            sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+            sb.and("id", sb.entity().getId(), Op.EQ);
         } else {
             // this condition is used to exclude system user from the search
             // results
-            sb.and("id", sb.entity().getId(), SearchCriteria.Op.NEQ);
+            sb.and("id", sb.entity().getId(), Op.NEQ);
         }
 
-        sb.and("type", sb.entity().getAccountType(), SearchCriteria.Op.EQ);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.and("type", sb.entity().getAccountType(), Op.EQ);
+        sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
+        sb.and("accountName", sb.entity().getAccountName(), Op.EQ);
+        sb.and("state", sb.entity().getState(), Op.EQ);
 
         if ((accountName == null) && (domainId != null)) {
-            sb.and("domainPath", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
+            sb.and("domainPath", sb.entity().getDomainPath(), Op.LIKE);
         }
 
         SearchCriteria<UserAccountJoinVO> sc = sb.create();
@@ -472,15 +528,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (keyword != null) {
             SearchCriteria<UserAccountJoinVO> ssc = _userAccountJoinDao.createSearchCriteria();
-            ssc.addOr("username", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("firstname", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("lastname", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("email", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("accountName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("accountType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("username", Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("firstname", Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("lastname", Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("email", Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("state", Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("accountName", Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("accountType", Op.LIKE, "%" + keyword + "%");
 
-            sc.addAnd("username", SearchCriteria.Op.SC, ssc);
+            sc.addAnd("username", Op.SC, ssc);
         }
 
         if (username != null) {
@@ -1158,8 +1214,17 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getClusterId(),
                 cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getVersion());
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
-
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
+        if (VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
+            for (DomainRouterResponse res : routerResponses) {
+                DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
+                res.setHealthChecksFailed(routerHealthCheckResultDao.hasFailingChecks(resRouter.getId()));
+                if (cmd.shouldFetchHealthCheckResults()) {
+                    res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter,
+                            new ArrayList<>(routerHealthCheckResultDao.getHealthCheckResults(resRouter.getId()))));
+                }
+            }
+        }
         response.setResponses(routerResponses, result.second());
         return response;
     }
@@ -1169,8 +1234,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), null, cmd.getHostId(),
                 cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), null);
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
-
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
+        if (VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
+            for (DomainRouterResponse res : routerResponses) {
+                DomainRouterVO resRouter = _routerDao.findByUuid(res.getId());
+                res.setHealthChecksFailed(routerHealthCheckResultDao.hasFailingChecks(resRouter.getId()));
+                if (cmd.shouldFetchHealthCheckResults()) {
+                    res.setHealthCheckResults(responseGenerator.createHealthCheckResponse(resRouter,
+                            new ArrayList<>(routerHealthCheckResultDao.getHealthCheckResults(resRouter.getId()))));
+                }
+            }
+        }
+
         response.setResponses(routerResponses, result.second());
         return response;
     }
@@ -1689,11 +1764,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<VolumeJoinVO>, Integer> result = searchForVolumesInternal(cmd);
         ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
 
-        ResponseView respView = ResponseView.Restricted;
-        Account account = CallContext.current().getCallingAccount();
-        if (_accountMgr.isAdmin(account.getAccountId())) {
-            respView = ResponseView.Full;
-        }
+        ResponseView respView = cmd.getResponseView();
 
         List<VolumeResponse> volumeResponses = ViewResponseHelper.createVolumeResponse(respView, result.first().toArray(new VolumeJoinVO[result.first().size()]));
 
@@ -3890,6 +3961,27 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         response.setResponses(result);
         return response;
+    }
+
+    @Override
+    public List<RouterHealthCheckResultResponse> listRouterHealthChecks(GetRouterHealthCheckResultsCmd cmd) {
+        s_logger.info("Executing health check command " + cmd);
+        long routerId = cmd.getRouterId();
+        if (!VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
+            throw new CloudRuntimeException("Router health checks are not enabled for router " + routerId);
+        }
+
+        if (cmd.shouldPerformFreshChecks() && !routerService.performRouterHealthChecks(routerId)) {
+            throw new CloudRuntimeException("Unable to perform fresh checks on router.");
+        }
+
+        List<RouterHealthCheckResult> result = new ArrayList<>(routerHealthCheckResultDao.getHealthCheckResults(routerId));
+        if (result == null || result.size() == 0) {
+            throw new CloudRuntimeException("Database had no entries for health checks for router. This could happen for " +
+                    "a newly created router. Please wait for periodic results to populate or manually call for checks to execute.");
+        }
+
+        return responseGenerator.createHealthCheckResponse(_routerDao.findById(routerId), result);
     }
 
     @Override

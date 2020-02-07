@@ -268,19 +268,7 @@ public class NetUtils {
             final String defDev = Script.runSimpleBashScript("/sbin/route -n get default 2> /dev/null | grep interface | awk '{print $2}'");
             return defDev;
         }
-        final String defaultRoute = Script.runSimpleBashScript("/sbin/route | grep default");
-
-        if (defaultRoute == null) {
-            return null;
-        }
-
-        final String[] defaultRouteList = defaultRoute.split("\\s+");
-
-        if (defaultRouteList.length != 8) {
-            return null;
-        }
-
-        return defaultRouteList[7];
+        return Script.runSimpleBashScript("ip route show default 0.0.0.0/0 | head -1 | awk '{print $5}'");
     }
 
     public static String getLocalIPString() {

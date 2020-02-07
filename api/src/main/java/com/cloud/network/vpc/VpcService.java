@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
+import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -29,6 +30,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
+import com.cloud.user.User;
 import com.cloud.utils.Pair;
 
 public interface VpcService {
@@ -132,7 +134,9 @@ public interface VpcService {
      * @return
      * @throws InsufficientCapacityException
      */
-    boolean restartVpc(long id, boolean cleanUp, boolean makeredundant) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean restartVpc(RestartVPCCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+
+    boolean restartVpc(Long networkId, boolean cleanup, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * Returns a Private gateway found in the VPC by id

@@ -44,6 +44,7 @@ env:
              smoke/test_affinity_groups_projects
              smoke/test_async_job
              smoke/test_create_list_domain_account_project
+             smoke/test_create_network
              smoke/test_deploy_vgpu_enabled_vm
              smoke/test_deploy_vm_iso
              smoke/test_deploy_vm_root_resize

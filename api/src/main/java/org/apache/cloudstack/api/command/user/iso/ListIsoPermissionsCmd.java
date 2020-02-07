@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 
 import com.cloud.storage.Storage.ImageFormat;
@@ -29,7 +30,7 @@ import com.cloud.template.VirtualMachineTemplate;
 @APICommand(name = "listIsoPermissions", description = "List ISO visibility and all accounts that have permissions to view this ISO.", responseObject = TemplatePermissionsResponse.class, responseView = ResponseView.Restricted,
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
-public class ListIsoPermissionsCmd extends BaseListTemplateOrIsoPermissionsCmd {
+public class ListIsoPermissionsCmd extends BaseListTemplateOrIsoPermissionsCmd implements UserCmd {
     protected String getResponseName() {
         return "listisopermissionsresponse";
     }
@@ -47,10 +48,5 @@ public class ListIsoPermissionsCmd extends BaseListTemplateOrIsoPermissionsCmd {
     @Override
     protected boolean templateIsCorrectType(VirtualMachineTemplate template) {
         return template.getFormat().equals(ImageFormat.ISO);
-    }
-
-    @Override
-    public void execute() {
-        executeWithView(ResponseView.Restricted);
     }
 }

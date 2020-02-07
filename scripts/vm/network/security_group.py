@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -26,9 +26,7 @@ import re
 import libvirt
 import fcntl
 import time
-from netaddr import IPAddress, IPNetwork
-from netaddr.core import AddrFormatError
-
+import ipaddress
 
 logpath = "/var/run/cloud/"        # FIXME: Logs should reside in /var/log/cloud
 lock_file = "/var/lock/cloudstack_security_group.lock"
@@ -52,7 +50,7 @@ def obtain_file_lock(path):
 def execute(cmd):
     logging.debug(cmd)
     try:
-        return check_output(cmd, shell=True)
+        return check_output(cmd, shell=True).decode()
     except CalledProcessError as e:
         logging.exception('Command exited non-zero: %s', cmd)
         raise
@@ -103,8 +101,8 @@ def virshlist(states):
 
     conn = get_libvirt_connection()
 
-    alldomains = map(conn.lookupByID, conn.listDomainsID())
-    alldomains += map(conn.lookupByName, conn.listDefinedDomains())
+    alldomains = [domain for domain in map(conn.lookupByID, conn.listDomainsID())]
+    alldomains += [domain for domain in map(conn.lookupByName, conn.listDefinedDomains())]
 
     domains = []
     for domain in alldomains:
@@ -130,7 +128,7 @@ def ipv6_link_local_addr(mac=None):
     eui64 = re.sub(r'[.:-]', '', mac).lower()
     eui64 = eui64[0:6] + 'fffe' + eui64[6:]
     eui64 = hex(int(eui64[0:2], 16) ^ 2)[2:].zfill(2) + eui64[2:]
-    return IPAddress('fe80::' + ':'.join(re.findall(r'.{4}', eui64)))
+    return ipaddress.ip_address('fe80::' + ':'.join(re.findall(r'.{4}', eui64)))
 
 
 def split_ips_by_family(ips):
@@ -140,10 +138,10 @@ def split_ips_by_family(ips):
     ip4s = []
     ip6s = []
     for ip in ips:
-        version = IPNetwork(ip).version
-        if version == 4:
+        network = ipaddress.ip_network(ip)
+        if network.version == 4:
             ip4s.append(ip)
-        elif version == 6:
+        elif network.version == 6:
             ip6s.append(ip)
     return ip4s, ip6s
 
@@ -516,10 +514,10 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
 
     vm_ip6_addr = [ipv6_link_local]
     try:
-        ip6 = IPAddress(vm_ip6)
+        ip6 = ipaddress.ip_address(vm_ip6)
         if ip6.version == 6:
             vm_ip6_addr.append(ip6)
-    except AddrFormatError:
+    except (ipaddress.AddressValueError, ValueError):
         pass
 
     add_to_ipset(vmipsetName6, vm_ip6_addr, action)
@@ -969,7 +967,7 @@ def parse_network_rules(rules):
         ipv6 = []
         for ip in cidrs.split(","):
             try:
-                network = IPNetwork(ip)
+                network = ipaddress.ip_network(ip, False)
                 if network.version == 4:
                     ipv4.append(ip)
                 else:
@@ -1034,7 +1032,18 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
                 action = "ACCEPT"
                 direction = "-s"
 
-            range = str(start) + ':' + str(end)
+            if start == 0 and end == 0:
+                dport = ""
+            else:
+                dport = " --dport " + str(start) + ":" + str(end)
+
+            if protocol != 'all' and protocol != 'icmp' and protocol != 'tcp' and protocol != 'udp':
+                protocol_all = " -p " + protocol
+                protocol_state = " "
+            else:
+                protocol_all = " -p " + protocol + " -m " + protocol
+                protocol_state = " -m state --state NEW "
+
             if 'icmp' == protocol:
                 range = str(start) + '/' + str(end)
                 if start == -1:
@@ -1043,16 +1052,16 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
             for ip in rule['ipv4']:
                 if protocol == 'all':
                     execute('iptables -I ' + vmchain + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
-                elif protocol != 'icmp':
-                    execute('iptables -I ' + vmchain + ' -p ' + protocol + ' -m ' + protocol + ' --dport ' + range + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
+                elif protocol == 'icmp':
+                    execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " " + direction + " " + ip + " -j " + action)
                 else:
-                    execute('iptables -I ' + vmchain + ' -p icmp --icmp-type ' + range + ' ' + direction + ' ' + ip + ' -j ' + action)
+                    execute("iptables -I " + vmchain + protocol_all + dport + protocol_state + direction + " " + ip + " -j "+ action)
 
             for ip in rule['ipv6']:
                 if protocol == 'all':
                     execute('ip6tables -I ' + vmchain + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
                 elif 'icmp' != protocol:
-                    execute('ip6tables -I ' + vmchain + ' -p ' + protocol + ' -m ' + protocol + ' --dport ' + range + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
+                    execute("ip6tables -I " + vmchain + protocol_all + dport + protocol_state + direction + " " + ip + " -j "+ action)
                 else:
                     # ip6tables does not allow '--icmpv6-type any', allowing all ICMPv6 is done by not allowing a specific type
                     if range == 'any':

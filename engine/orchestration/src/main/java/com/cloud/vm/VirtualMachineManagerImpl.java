@@ -39,11 +39,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.PrepareForMigrationAnswer;
-import com.cloud.agent.api.to.DpdkTO;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
@@ -97,6 +94,7 @@ import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
@@ -116,6 +114,7 @@ import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -123,6 +122,7 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.DataCenter;
@@ -166,7 +166,9 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
@@ -190,6 +192,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Journal;
@@ -300,6 +303,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private CAManager caManager;
     @Inject
     private ResourceManager _resourceMgr;
+    @Inject
+    private ResourceLimitService _resourceLimitMgr;
     @Inject
     private VMSnapshotManager _vmSnapshotMgr;
     @Inject
@@ -969,6 +974,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
 
+        // check resource count if ResoureCountRunningVMsonly.value() = true
+        final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
+        if (VirtualMachine.Type.User.equals(vm.type) && ResoureCountRunningVMsonly.value()) {
+            resourceCountIncrement(owner.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
+        }
+
         boolean canRetry = true;
         ExcludeList avoids = null;
         try {
@@ -1044,7 +1055,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
 
-                final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
                 final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, params);
                 DeployDestination dest = null;
                 try {
@@ -1122,6 +1132,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     cmds.addCommand(new StartCommand(vmTO, dest.getHost(), getExecuteInSequence(vm.getHypervisorType())));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
+
+                    // Get VM extraConfig from DB and set to VM TO
+                    addExtraConfig(vmTO);
 
                     work = _workDao.findById(work.getId());
                     if (work == null || work.getStep() != Step.Prepare) {
@@ -1268,6 +1281,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
         } finally {
             if (startedVm == null) {
+                if (VirtualMachine.Type.User.equals(vm.type) && ResoureCountRunningVMsonly.value()) {
+                    resourceCountDecrement(owner.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                }
                 if (canRetry) {
                     try {
                         changeState(vm, Event.OperationFailed, null, work, Step.Done);
@@ -1284,6 +1300,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (startedVm == null) {
             throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName() + "' (" + vm.getUuid() + "), see management server log for details");
+        }
+    }
+
+    // Add extra config data to the vmTO as a Map
+    private void addExtraConfig(VirtualMachineTO vmTO) {
+        Map<String, String> details = vmTO.getDetails();
+        for (String key : details.keySet()) {
+            if (key.startsWith(ApiConstants.EXTRA_CONFIG)) {
+                vmTO.addExtraConfig(key, details.get(key));
+            }
         }
     }
 
@@ -1803,7 +1829,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _workDao.update(work.getId(), work);
             }
 
-            if (!stateTransitTo(vm, Event.OperationSucceeded, null)) {
+            boolean result = stateTransitTo(vm, Event.OperationSucceeded, null);
+            if (result) {
+                if (VirtualMachine.Type.User.equals(vm.type) && ResoureCountRunningVMsonly.value()) {
+                    //update resource count if stop successfully
+                    ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+                    resourceCountDecrement(vm.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                }
+            } else {
                 throw new CloudRuntimeException("unable to stop " + vm);
             }
         } catch (final NoTransitionException e) {
@@ -4204,7 +4237,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait,
             VmOpLockStateRetry,
-            VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, HaVmRestartHostUp};
+            VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, HaVmRestartHostUp,
+            ResoureCountRunningVMsonly };
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
@@ -5324,4 +5358,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         return workJob;
     }
+
+    protected void resourceCountIncrement (long accountId, Long cpu, Long memory) {
+        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.user_vm);
+        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.cpu, cpu);
+        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.memory, memory);
+    }
+
+    protected void resourceCountDecrement (long accountId, Long cpu, Long memory) {
+        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.user_vm);
+        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.cpu, cpu);
+        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.memory, memory);
+    }
+
 }

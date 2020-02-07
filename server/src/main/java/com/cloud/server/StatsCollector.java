@@ -1378,6 +1378,20 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     }
 
     /**
+     * Calculates secondary storage disk capacity against a configurable threshold instead of the hardcoded default 95 % value
+     * @param imageStore secondary storage
+     * @param storeCapThreshold the threshold capacity for computing if secondary storage has enough space to accommodate the @this object
+     * @return
+     */
+    public boolean imageStoreHasEnoughCapacity(DataStore imageStore, Double storeCapThreshold) {
+        StorageStats imageStoreStats = _storageStats.get(imageStore.getId());
+        if (imageStoreStats != null && (imageStoreStats.getByteUsed() / (imageStoreStats.getCapacityBytes() * 1.0)) <= storeCapThreshold) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Sends VMs metrics to the configured graphite host.
      */
     protected void sendVmMetricsToGraphiteHost(Map<Object, Object> metrics, HostVO host) {
@@ -1556,7 +1570,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private SearchCriteria<HostVO> createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance() {
         SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
         sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
-        sc.addAnd("resourceState", SearchCriteria.Op.NIN, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
+        sc.addAnd("resourceState", SearchCriteria.Op.NIN,
+                ResourceState.Maintenance,
+                ResourceState.PrepareForMaintenance,
+                ResourceState.ErrorInPrepareForMaintenance,
+                ResourceState.ErrorInMaintenance);
         sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.Routing.toString());
         return sc;
     }

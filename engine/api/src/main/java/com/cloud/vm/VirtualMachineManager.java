@@ -58,6 +58,9 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> VmConfigDriveOnPrimaryPool = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.primarypool.enabled", "false",
             "If config drive need to be created and hosted on primary storage pool. Currently only supported for KVM.", true);
 
+    ConfigKey<Boolean> ResoureCountRunningVMsonly = new ConfigKey<Boolean>("Advanced", Boolean.class, "resource.count.running.vms.only", "false",
+            "Count the resources of only running VMs in resource limitation.", true);
+
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
     }

@@ -125,12 +125,17 @@ public class LibvirtVMDef {
                     guestDef.append(" machine='" + _machine + "'");
                 }
                 guestDef.append(">hvm</type>\n");
+                if (_arch != null && _arch.equals("aarch64")) {
+                    guestDef.append("<loader readonly='yes' type='pflash'>/usr/share/AAVMF/AAVMF_CODE.fd</loader>\n");
+                }
                 if (!_bootdevs.isEmpty()) {
                     for (BootOrder bo : _bootdevs) {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
-                guestDef.append("<smbios mode='sysinfo'/>\n");
+                if (_arch == null || !_arch.equals("aarch64")) {
+                    guestDef.append("<smbios mode='sysinfo'/>\n");
+                }
                 guestDef.append("</os>\n");
                 return guestDef.toString();
             } else if (_type == GuestType.LXC) {
@@ -780,6 +785,10 @@ public class LibvirtVMDef {
 
         public DiskBus getBusType() {
             return _bus;
+        }
+
+        public void setBusType(DiskBus busType) {
+            _bus = busType;
         }
 
         public DiskFmtType getDiskFormatType() {
@@ -1619,6 +1628,37 @@ public class LibvirtVMDef {
             if (this.queues > 0) {
                 scsiBuilder.append(String.format("<driver queues='%d'/>\n", this.queues));
             }
+            scsiBuilder.append("</controller>\n");
+            return scsiBuilder.toString();
+        }
+    }
+
+    public static class USBDef {
+        private short index = 0;
+        private int domain = 0;
+        private int bus = 0;
+        private int slot = 9;
+        private int function = 0;
+
+        public USBDef(short index, int domain, int bus, int slot, int function) {
+            this.index = index;
+            this.domain = domain;
+            this.bus = bus;
+            this.slot = slot;
+            this.function = function;
+        }
+
+        public USBDef() {
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder scsiBuilder = new StringBuilder();
+
+            scsiBuilder.append(String.format("<controller type='usb' index='%d' model='qemu-xhci'>\n", this.index));
+            scsiBuilder.append("<alias name='usb'/>");
+            scsiBuilder.append(String.format("<address type='pci' domain='0x%04X' bus='0x%02X' slot='0x%02X' function='0x%01X'/>\n",
+                    this.domain, this.bus, this.slot, this.function ) );
             scsiBuilder.append("</controller>\n");
             return scsiBuilder.toString();
         }

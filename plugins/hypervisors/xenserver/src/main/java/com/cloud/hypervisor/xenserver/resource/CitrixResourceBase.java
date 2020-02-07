@@ -49,6 +49,10 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
+import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
+import org.apache.cloudstack.diagnostics.DiagnosticsService;
+import org.apache.cloudstack.hypervisor.xenserver.ExtraConfigurationUtility;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
@@ -200,6 +204,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     private final static int BASE_TO_CONVERT_BYTES_INTO_KILOBYTES = 1024;
+    private final static String BASE_MOUNT_POINT_ON_REMOTE = "/var/cloud_mount/";
 
     private static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
     // static min values for guests on xenserver
@@ -1404,7 +1409,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         }
         try {
-            finalizeVmMetaData(vm, conn, vmSpec);
+            finalizeVmMetaData(vm, vmr, conn, vmSpec);
         } catch (final Exception e) {
             throw new CloudRuntimeException("Unable to finalize VM MetaData: " + vmSpec);
         }
@@ -1859,7 +1864,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected void finalizeVmMetaData(final VM vm, final Connection conn, final VirtualMachineTO vmSpec) throws Exception {
+    protected void finalizeVmMetaData(final VM vm, final VM.Record vmr, final Connection conn, final VirtualMachineTO vmSpec) throws Exception {
 
         final Map<String, String> details = vmSpec.getDetails();
         if (details != null) {
@@ -1889,6 +1894,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     vm.setPlatform(conn, platform);
                 }
             }
+        }
+
+        // Add configuration settings VM record for User VM instances before creating VM
+        Map<String, String> extraConfig = vmSpec.getExtraConfig();
+        if (vmSpec.getType().equals(VirtualMachine.Type.User) && MapUtils.isNotEmpty(extraConfig)) {
+            s_logger.info("Appending user extra configuration settings to VM");
+            ExtraConfigurationUtility.setExtraConfigurationToVm(conn,vmr, vm, extraConfig);
         }
     }
 
@@ -5604,4 +5616,67 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     }
 
+    /**
+     * Get Diagnostics Data API
+     * Copy zip file from system vm and copy file directly to secondary storage
+     */
+    public Answer copyDiagnosticsFileToSecondaryStorage(Connection conn, CopyToSecondaryStorageCommand cmd) {
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
+        String vmIP = cmd.getSystemVmIp();
+        String diagnosticsZipFile = cmd.getFileName();
+
+        String localDir = null;
+        boolean success;
+
+        // Mount Secondary storage
+        String secondaryStorageMountPath = null;
+        try {
+            URI uri = new URI(secondaryStorageUrl);
+            secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
+            localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
+            String mountPoint = mountNfs(conn, secondaryStorageMountPath, localDir);
+            if (org.apache.commons.lang.StringUtils.isBlank(mountPoint)) {
+                return new CopyToSecondaryStorageAnswer(cmd, false, "Could not mount secondary storage " + secondaryStorageMountPath + " on host " + localDir);
+            }
+
+            String dataDirectoryInSecondaryStore = localDir + File.separator + DiagnosticsService.DIAGNOSTICS_DIRECTORY;
+            final CopyToSecondaryStorageAnswer answer;
+            final String scpResult = callHostPlugin(conn, "vmops", "secureCopyToHost", "hostfilepath", dataDirectoryInSecondaryStore,
+                    "srcip", vmIP, "srcfilepath", cmd.getFileName()).toLowerCase();
+
+            if (scpResult.contains("success")) {
+                answer = new CopyToSecondaryStorageAnswer(cmd, true, "File copied to secondary storage successfully.");
+            } else {
+                answer = new CopyToSecondaryStorageAnswer(cmd, false, "Zip file " + diagnosticsZipFile.replace("/root/", "") + "could not be copied to secondary storage due to " + scpResult);
+            }
+            umountNfs(conn, secondaryStorageMountPath, localDir);
+            localDir = null;
+            return answer;
+        } catch (Exception e) {
+            String msg = "Exception caught zip file copy to secondary storage URI: " + secondaryStorageUrl + "Exception : " + e;
+            s_logger.error(msg, e);
+            return new CopyToSecondaryStorageAnswer(cmd, false, msg);
+        } finally {
+            if (localDir != null) umountNfs(conn, secondaryStorageMountPath, localDir);
+        }
+    }
+
+    private String mountNfs(Connection conn, String remoteDir, String localDir) {
+        if (localDir == null) {
+            localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remoteDir.getBytes());
+        }
+        return callHostPlugin(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir);
+    }
+
+    // Unmount secondary storage from host
+    private void umountNfs(Connection conn, String remoteDir, String localDir) {
+        if (localDir == null) {
+            localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remoteDir.getBytes());
+        }
+        String result = callHostPlugin(conn, "cloud-plugin-storage", "umountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir);
+        if (org.apache.commons.lang.StringUtils.isBlank(result)) {
+            String errMsg = "Could not umount secondary storage " + remoteDir + " on host " + localDir;
+            s_logger.warn(errMsg);
+        }
+    }
 }

@@ -33,15 +33,19 @@ import javax.naming.ldap.LdapContext;
 import javax.naming.ldap.PagedResultsControl;
 import javax.naming.ldap.PagedResultsResponseControl;
 
+import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 public class OpenLdapUserManagerImpl implements LdapUserManager {
-    private static final Logger s_logger = Logger.getLogger(OpenLdapUserManagerImpl.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(OpenLdapUserManagerImpl.class.getName());
 
     @Inject
     protected LdapConfiguration _ldapConfiguration;
+
+    @Inject
+    LdapTrustMapDao _ldapTrustMapDao;
 
     public OpenLdapUserManagerImpl() {
     }
@@ -82,25 +86,62 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         usernameFilter.append((username == null ? "*" : username));
         usernameFilter.append(")");
 
-        final StringBuilder memberOfFilter = new StringBuilder();
-        if (_ldapConfiguration.getSearchGroupPrinciple(domainId) != null) {
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("adding search filter for '" + _ldapConfiguration.getSearchGroupPrinciple(domainId) +
-                "', using " + _ldapConfiguration.getUserMemberOfAttribute(domainId));
+        String memberOfAttribute = _ldapConfiguration.getUserMemberOfAttribute(domainId);
+        StringBuilder ldapGroupsFilter = new StringBuilder();
+        // this should get the trustmaps for this domain
+        List<String> ldapGroups = getMappedLdapGroups(domainId);
+        if (null != ldapGroups && ldapGroups.size() > 0) {
+            ldapGroupsFilter.append("(|");
+            for (String ldapGroup : ldapGroups) {
+                ldapGroupsFilter.append(getMemberOfGroupString(ldapGroup, memberOfAttribute));
             }
-            memberOfFilter.append("(" + _ldapConfiguration.getUserMemberOfAttribute(domainId) + "=");
-            memberOfFilter.append(_ldapConfiguration.getSearchGroupPrinciple(domainId));
-            memberOfFilter.append(")");
+            ldapGroupsFilter.append(')');
         }
-
+        // make sure only users in the principle group are retrieved
+        String pricipleGroup = _ldapConfiguration.getSearchGroupPrinciple(domainId);
+        final StringBuilder principleGroupFilter = new StringBuilder();
+        if (null != pricipleGroup) {
+            principleGroupFilter.append(getMemberOfGroupString(pricipleGroup, memberOfAttribute));
+        }
         final StringBuilder result = new StringBuilder();
         result.append("(&");
         result.append(userObjectFilter);
         result.append(usernameFilter);
-        result.append(memberOfFilter);
+        result.append(ldapGroupsFilter);
+        result.append(principleGroupFilter);
         result.append(")");
 
-        return result.toString();
+        String returnString = result.toString();
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("constructed ldap query: " + returnString);
+        }
+        return returnString;
+    }
+
+    private List<String> getMappedLdapGroups(Long domainId) {
+        List <String> ldapGroups = new ArrayList<>();
+        // first get the trustmaps
+        if (null != domainId) {
+            for (LdapTrustMapVO trustMap : _ldapTrustMapDao.searchByDomainId(domainId)) {
+                // then retrieve the string from it
+                ldapGroups.add(trustMap.getName());
+            }
+        }
+        return ldapGroups;
+    }
+
+    private String getMemberOfGroupString(String group, String memberOfAttribute) {
+        final StringBuilder memberOfFilter = new StringBuilder();
+        if (null != group) {
+            if(LOGGER.isDebugEnabled()) {
+                LOGGER.debug("adding search filter for '" + group +
+                "', using '" + memberOfAttribute + "'");
+            }
+            memberOfFilter.append("(" + memberOfAttribute + "=");
+            memberOfFilter.append(group);
+            memberOfFilter.append(")");
+        }
+        return memberOfFilter.toString();
     }
 
     private String generateGroupSearchFilter(final String groupName, Long domainId) {
@@ -212,7 +253,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
                 try{
                     users.add(getUserForDn(userdn, context, domainId));
                 } catch (NamingException e){
-                    s_logger.info("Userdn: " + userdn + " Not Found:: Exception message: " + e.getMessage());
+                    LOGGER.info("Userdn: " + userdn + " Not Found:: Exception message: " + e.getMessage());
                 }
             }
         }
@@ -251,8 +292,8 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes(domainId));
 
         NamingEnumeration<SearchResult> results = context.search(basedn, searchString, searchControls);
-        if(s_logger.isDebugEnabled()) {
-            s_logger.debug("searching user(s) with filter: \"" + searchString + "\"");
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug("searching user(s) with filter: \"" + searchString + "\"");
         }
         final List<LdapUser> users = new ArrayList<LdapUser>();
         while (results.hasMoreElements()) {
@@ -277,7 +318,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
 
         String basedn = _ldapConfiguration.getBaseDn(domainId);
         if (StringUtils.isBlank(basedn)) {
-            throw new IllegalArgumentException("ldap basedn is not configured");
+            throw new IllegalArgumentException(String.format("ldap basedn is not configured (for domain: %s)", domainId));
         }
         byte[] cookie = null;
         int pageSize = _ldapConfiguration.getLdapPageSize(domainId);
@@ -301,7 +342,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
                     }
                 }
             } else {
-                s_logger.info("No controls were sent from the ldap server");
+                LOGGER.info("No controls were sent from the ldap server");
             }
             context.setRequestControls(new Control[] {new PagedResultsControl(pageSize, cookie, Control.CRITICAL)});
         } while (cookie != null);
