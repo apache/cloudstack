@@ -156,13 +156,13 @@ export default {
   },
   methods: {
     fetchData () {
-      this.loading = true
       if (this.resource.vpcid) {
         this.handleTiers()
         if (this.selectedVpcTier) this.fetchDataTiers(this.selectedVpcTier)
         return
       }
 
+      this.loading = true
       api('listVirtualMachines', {
         page: this.page,
         pageSize: this.pageSize,
@@ -173,18 +173,17 @@ export default {
         keyword: this.searchQuery
       }).then(response => {
         this.vmsList = response.listvirtualmachinesresponse.virtualmachine
-        this.loading = false
       }).catch(error => {
         this.$notification.error({
           message: 'Request Failed',
           description: error.response.headers['x-description']
         })
+      }).finally(() => {
         this.loading = false
       })
     },
     fetchDataTiers (e) {
       this.loading = true
-
       api('listVirtualMachines', {
         page: this.page,
         pageSize: this.pageSize,
@@ -195,20 +194,20 @@ export default {
         vpcid: this.resource.vpcid,
         keyword: this.searchQuery
       }).then(response => {
-        this.vmsList = response.listvirtualmachinesresponse.virtualmachine
-        this.loading = false
+        this.vmsList = response.listvirtualmachinesresponse.virtualmachine || []
       }).catch(error => {
         this.$notification.error({
           message: 'Request Failed',
           description: error.response.headers['x-description']
         })
+      }).finally(() => {
         this.loading = false
       })
     },
     fetchNics (e) {
       this.selectedVm = e.target.value
-      this.loading = true
       this.nicsList = []
+      this.loading = true
       api('listNics', {
         virtualmachineid: this.selectedVm,
         networkid: this.resource.associatednetworkid
@@ -223,18 +222,17 @@ export default {
         }
 
         this.selectedNic = this.nicsList[0]
-        this.loading = false
       }).catch(error => {
         this.$notification.error({
           message: 'Request Failed',
           description: error.response.headers['x-description']
         })
+      }).finally(() => {
         this.loading = false
       })
     },
     fetchNetworks () {
       this.loading = true
-
       api('listNetworks', {
         vpcid: this.resource.vpcid,
         domainid: this.resource.domainid,
@@ -242,12 +240,12 @@ export default {
         supportedservices: 'StaticNat'
       }).then(response => {
         this.networksList = response.listnetworksresponse.network
-        this.loading = false
       }).catch(error => {
         this.$notification.error({
           message: 'Request Failed',
           description: error.response.headers['x-description']
         })
+      }).finally(() => {
         this.loading = false
       })
     },
@@ -260,14 +258,13 @@ export default {
         networkid: this.selectedVpcTier
       }).then(() => {
         this.parentFetchData()
-        this.loading = false
-        this.handleClose()
       }).catch(error => {
         this.$notification.error({
           message: 'Request Failed',
           description: error.response.headers['x-description'],
           duration: 0
         })
+      }).finally(() => {
         this.loading = false
         this.handleClose()
       })
@@ -307,7 +304,7 @@ export default {
 
     @media (min-width: 1000px) {
       max-height: 70vh;
-      width: 60vw;
+      width: 900px;
     }
 
     &__header,
@@ -411,5 +408,9 @@ export default {
   .table {
     margin-top: 20px;
     overflow-y: auto;
+  }
+
+  /deep/ .ant-table-small {
+    border: 0
   }
 </style>
