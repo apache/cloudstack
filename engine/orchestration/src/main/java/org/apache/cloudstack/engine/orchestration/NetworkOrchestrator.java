@@ -38,7 +38,10 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
@@ -222,6 +225,8 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
 
+import static org.apache.commons.lang.StringUtils.isNotBlank;
+
 /**
  * NetworkManagerImpl implements NetworkManager.
  */
@@ -250,6 +255,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     NetworkOfferingDao _networkOfferingDao;
     @Inject
     NetworkDao _networksDao;
+    @Inject
+    NetworkDetailsDao networkDetailsDao;
     @Inject
     NicDao _nicDao;
     @Inject
@@ -697,6 +704,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         final NetworkVO networkPersisted = _networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated,
                                 finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId()));
                         networks.add(networkPersisted);
+
+                        if (network.getPvlanType() != null) {
+                            NetworkDetailVO detailVO = new NetworkDetailVO(networkPersisted.getId(), ApiConstants.ISOLATED_PVLAN_TYPE, network.getPvlanType().toString(), true);
+                            networkDetailsDao.persist(detailVO);
+                        }
 
                         if (predefined instanceof NetworkVO && guru instanceof NetworkGuruAdditionalFunctions){
                             final NetworkGuruAdditionalFunctions functions = (NetworkGuruAdditionalFunctions) guru;
@@ -2168,7 +2180,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public Network createGuestNetwork(final long networkOfferingId, final String name, final String displayText, final String gateway, final String cidr, String vlanId,
                                       boolean bypassVlanOverlapCheck, String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk,
                                       final long zoneId, final ACLType aclType, Boolean subdomainAccess, final Long vpcId, final String ip6Gateway, final String ip6Cidr,
-                                      final Boolean isDisplayNetworkEnabled, final String isolatedPvlan, String externalId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
+                                      final Boolean isDisplayNetworkEnabled, final String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
         final NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
         final DataCenterVO zone = _dcDao.findById(zoneId);
@@ -2280,16 +2292,25 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         if (vlanSpecified) {
             URI uri = BroadcastDomainType.fromString(vlanId);
+            // Aux: generate secondary URI for secondary VLAN ID (if provided) for performing checks
+            URI secondaryUri = isNotBlank(isolatedPvlan) ? BroadcastDomainType.fromString(isolatedPvlan) : null;
             //don't allow to specify vlan tag used by physical network for dynamic vlan allocation
             if (!(bypassVlanOverlapCheck && ntwkOff.getGuestType() == GuestType.Shared) && _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(uri)).size() > 0) {
                 throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                         + zone.getName());
             }
+            if (secondaryUri != null && !(bypassVlanOverlapCheck && ntwkOff.getGuestType() == GuestType.Shared) &&
+                    _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(secondaryUri)).size() > 0) {
+                throw new InvalidParameterValueException("The VLAN tag " + isolatedPvlan + " is already being used for dynamic vlan allocation for the guest network in zone "
+                        + zone.getName());
+            }
             if (! UuidUtils.validateUUID(vlanId)){
                 // For Isolated and L2 networks, don't allow to create network with vlan that already exists in the zone
-                if (ntwkOff.getGuestType() == GuestType.Isolated || !hasGuestBypassVlanOverlapCheck(bypassVlanOverlapCheck, ntwkOff)) {
+                if (ntwkOff.getGuestType() == GuestType.Isolated || ntwkOff.getGuestType() == GuestType.L2 || !hasGuestBypassVlanOverlapCheck(bypassVlanOverlapCheck, ntwkOff)) {
                     if (_networksDao.listByZoneAndUriAndGuestType(zoneId, uri.toString(), null).size() > 0) {
                         throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists or overlaps with other network vlans in zone " + zoneId);
+                    } else if (secondaryUri != null && _networksDao.listByZoneAndUriAndGuestType(zoneId, secondaryUri.toString(), null).size() > 0) {
+                        throw new InvalidParameterValueException("Network with vlan " + isolatedPvlan + " already exists or overlaps with other network vlans in zone " + zoneId);
                     } else {
                         final List<DataCenterVnetVO> dcVnets = _datacenterVnetDao.findVnet(zoneId, BroadcastDomainType.getValue(uri));
                         //for the network that is created as part of private gateway,
@@ -2436,8 +2457,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         if (vlanIdFinal.equalsIgnoreCase(Vlan.UNTAGGED)) {
                             throw new InvalidParameterValueException("Cannot support pvlan with untagged primary vlan!");
                         }
-                        userNetwork.setBroadcastUri(NetUtils.generateUriForPvlan(vlanIdFinal, isolatedPvlan));
+                        URI uri = NetUtils.generateUriForPvlan(vlanIdFinal, isolatedPvlan);
+                        if (_networksDao.listByPhysicalNetworkPvlan(physicalNetworkId, uri.toString(), isolatedPvlanType).size() > 0) {
+                            throw new InvalidParameterValueException("Network with primary vlan " + vlanIdFinal +
+                                    " and secondary vlan " + isolatedPvlan + " type " + isolatedPvlanType +
+                                    " already exists or overlaps with other network pvlans in zone " + zoneId);
+                        }
+                        userNetwork.setBroadcastUri(uri);
                         userNetwork.setBroadcastDomainType(BroadcastDomainType.Pvlan);
+                        userNetwork.setPvlanType(isolatedPvlanType);
                     }
                 }
 

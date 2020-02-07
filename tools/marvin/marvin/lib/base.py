@@ -3067,6 +3067,10 @@ class Network:
             cmd.vlan = services["vlan"]
         if "acltype" in services:
             cmd.acltype = services["acltype"]
+        if "isolatedpvlan" in services:
+            cmd.isolatedpvlan = services["isolatedpvlan"]
+        if "isolatedpvlantype" in services:
+            cmd.isolatedpvlantype = services["isolatedpvlantype"]
 
         if accountid:
             cmd.account = accountid

@@ -39,6 +39,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -329,6 +331,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private StorageManager storageMgr;
     @Inject
     private NetworkOfferingDetailsDao networkOfferingDetailsDao;
+    @Inject
+    private NetworkDetailsDao networkDetailsDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -4059,6 +4063,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VMInstanceVO router = _vmDao.findById(vm.getId());
         if (router.getState() == State.Running) {
             try {
+                NetworkDetailVO pvlanTypeDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.ISOLATED_PVLAN_TYPE);
+                if (pvlanTypeDetail != null) {
+                    Map<NetworkOffering.Detail, String> nicDetails = nic.getDetails() == null ? new HashMap<>() : nic.getDetails();
+                    s_logger.debug("Found PVLAN type: " + pvlanTypeDetail.getValue() + " on network details, adding it as part of the PlugNicCommand");
+                    nicDetails.putIfAbsent(NetworkOffering.Detail.pvlanType, pvlanTypeDetail.getValue());
+                    nic.setDetails(nicDetails);
+                }
                 final PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName(), vm.getType(), vm.getDetails());
                 final Commands cmds = new Commands(Command.OnError.Stop);
                 cmds.addCommand("plugnic", plugNicCmd);

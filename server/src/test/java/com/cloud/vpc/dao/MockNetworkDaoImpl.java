@@ -240,4 +240,9 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     public List<NetworkVO> listByAccountIdNetworkName(final long accountId, final String name) {
         return null;
     }
+
+    @Override
+    public List<NetworkVO> listByPhysicalNetworkPvlan(long physicalNetworkId, String broadcastUri, Network.PVlanType pVlanType) {
+        return null;
+    }
 }
