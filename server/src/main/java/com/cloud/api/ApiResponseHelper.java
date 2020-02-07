@@ -31,8 +31,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.vm.snapshot.VMSnapshotVO;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -336,6 +334,8 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -1375,6 +1375,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                     vmResponse.setHostId(host.getUuid());
                     vmResponse.setHostName(host.getName());
                     vmResponse.setHypervisor(host.getHypervisorType().toString());
+                    vmResponse.setAgentState(host.getStatus());
+                    vmResponse.setLastPinged(new Date(host.getLastPinged()));
+                    vmResponse.setVersion(host.getVersion());
                 }
             }
 
