@@ -22,7 +22,7 @@
       <p class="modal-form__label">{{ $t('storagePool') }}</p>
       <a-select v-model="selectedStoragePool" style="width: 100%;">
         <a-select-option v-for="(storagePool, index) in storagePools" :value="storagePool.id" :key="index">
-          {{ storagePool.name }}
+          {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? '(Suitable)' : '(Not Suitable)'}}</span>
         </a-select-option>
       </a-select>
       <template v-if="this.resource.virtualmachineid">
@@ -78,24 +78,39 @@ export default {
       selectedDiskOffering: null
     }
   },
-  created () {
+  mounted () {
     this.fetchStoragePools()
     this.resource.virtualmachineid && this.fetchDiskOfferings()
   },
   methods: {
     fetchStoragePools () {
-      api('listStoragePools', {
-        zoneid: this.resource.zoneid
-      }).then(response => {
-        this.storagePools = response.liststoragepoolsresponse.storagepool
-        this.selectedStoragePool = this.storagePools[0].id
-      }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
+      if (this.resource.virtualmachineid) {
+        api('findStoragePoolsForMigration', {
+          id: this.resource.id
+        }).then(response => {
+          this.storagePools = response.findstoragepoolsformigrationresponse.storagepool || []
+          this.selectedStoragePool = this.storagePools[0].id || ''
+        }).catch(error => {
+          this.$notification.error({
+            message: `Error ${error.response.status}`,
+            description: error.response.data.errorresponse.errortext
+          })
+          this.closeModal()
         })
-        this.closeModal()
-      })
+      } else {
+        api('listStoragePools', {
+          zoneid: this.resource.zoneid
+        }).then(response => {
+          this.storagePools = response.liststoragepoolsresponse.storagepool || []
+          this.selectedStoragePool = this.storagePools[0].id || ''
+        }).catch(error => {
+          this.$notification.error({
+            message: `Error ${error.response.status}`,
+            description: error.response.data.errorresponse.errortext
+          })
+          this.closeModal()
+        })
+      }
     },
     fetchDiskOfferings () {
       api('listDiskOfferings', {
@@ -180,7 +195,6 @@ export default {
     margin-top: -20px;
 
     &__label {
-      font-weight: bold;
       margin-top: 10px;
       margin-bottom: 5px;
     }
