@@ -122,6 +122,14 @@ export default {
         name: 'vm',
         title: 'Instances',
         param: 'vpcid'
+      }, {
+        name: 'router',
+        title: 'Virtual Routers',
+        param: 'vpcid'
+      }, {
+        name: 'ilbvm',
+        title: 'Internal LB VMs',
+        param: 'vpcid'
       }],
       tabs: [{
         name: 'VPC',
@@ -433,6 +441,14 @@ export default {
             },
             scheme: {
               value: (record) => { return 'Internal' }
+            },
+            networkid: {
+              api: 'listNetworks',
+              params: (record) => { return { forvpc: true } }
+            },
+            sourceipaddressnetworkid: {
+              api: 'listNetworks',
+              params: (record) => { return { forvpc: true } }
             }
           }
         },

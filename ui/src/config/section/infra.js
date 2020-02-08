@@ -25,6 +25,7 @@ import primaryStorages from '@/config/section/infra/primaryStorages'
 import secondaryStorages from '@/config/section/infra/secondaryStorages'
 import systemVms from '@/config/section/infra/systemVms'
 import routers from '@/config/section/infra/routers'
+import ilbvms from '@/config/section/infra/ilbvms'
 
 export default {
   name: 'infra',
@@ -49,6 +50,7 @@ export default {
     secondaryStorages,
     systemVms,
     routers,
+    ilbvms,
     {
       name: 'cpusocket',
       title: 'CPU Sockets',
