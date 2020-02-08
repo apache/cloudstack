@@ -206,6 +206,7 @@
                         }
 
                         g_allowUserExpungeRecoverVm = json.listcapabilitiesresponse.capability.allowuserexpungerecovervm;
+                        g_allowUserExpungeRecoverVolume = json.listcapabilitiesresponse.capability.allowuserexpungerecovervolume;
                         g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
 
                         g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
@@ -337,6 +338,7 @@
                                     g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
                                 }
                                 g_allowUserExpungeRecoverVm = json.listcapabilitiesresponse.capability.allowuserexpungerecovervm;
+                                g_allowUserExpungeRecoverVolume = json.listcapabilitiesresponse.capability.allowuserexpungerecovervolume;
                                 g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
 
                                 g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;

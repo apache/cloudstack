@@ -1387,6 +1387,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                     vmResponse.setHostId(host.getUuid());
                     vmResponse.setHostName(host.getName());
                     vmResponse.setHypervisor(host.getHypervisorType().toString());
+                    vmResponse.setAgentState(host.getStatus());
+                    vmResponse.setLastPinged(new Date(host.getLastPinged()));
+                    vmResponse.setVersion(host.getVersion());
                 }
             }
 

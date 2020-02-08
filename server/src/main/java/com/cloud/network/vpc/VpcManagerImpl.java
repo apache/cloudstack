@@ -2569,7 +2569,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 2) Create network
         final Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, false, networkDomain, owner, domainId, pNtwk, zoneId, aclType,
-                                                                 subdomainAccess, vpcId, null, null, isDisplayNetworkEnabled, null, externalId);
+                                                                 subdomainAccess, vpcId, null, null, isDisplayNetworkEnabled, null, null, externalId);
 
         if (guestNetwork != null) {
             guestNetwork.setNetworkACLId(aclId);
