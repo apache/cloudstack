@@ -74,6 +74,7 @@
             :is="currentAction.component"
             :resource="resource"
             :loading="loading"
+            :action="{currentAction}"
             v-bind="{currentAction}"
             @refresh-data="fetchData"
             @poll-action="pollActionCompletion"

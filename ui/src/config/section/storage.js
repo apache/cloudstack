@@ -40,7 +40,16 @@ export default {
           label: 'Create Volume',
           listView: true,
           args: ['name', 'zoneid', 'diskofferingid']
-        }, {
+        },
+        {
+          api: 'getUploadParamsForVolume',
+          icon: 'cloud-upload',
+          label: 'Upload Local Volume',
+          listView: true,
+          popup: true,
+          component: () => import('@/views/storage/UploadLocalVolume.vue')
+        },
+        {
           api: 'uploadVolume',
           icon: 'link',
           label: 'Upload Volume From URL',
@@ -51,13 +60,6 @@ export default {
               options: ['RAW', 'VHD', 'VHDX', 'OVA', 'QCOW2']
             }
           }
-        }, {
-          api: 'getUploadParamsForVolume',
-          icon: 'cloud-upload',
-          label: 'Upload Local Volume',
-          listView: true,
-          popup: true,
-          component: () => import('@/views/storage/UploadLocalVolume.vue')
         },
         {
           api: 'attachVolume',

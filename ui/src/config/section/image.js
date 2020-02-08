@@ -48,10 +48,10 @@ export default {
         {
           api: 'registerTemplate',
           icon: 'plus',
-          label: 'Create template',
+          label: 'Register Template',
           listView: true,
           popup: true,
-          component: () => import('@/views/image/RegisterTemplate.vue')
+          component: () => import('@/views/image/RegisterOrUploadTemplate.vue')
         },
         {
           api: 'getUploadParamsForTemplate',
@@ -59,7 +59,7 @@ export default {
           label: 'Upload Local Template',
           listView: true,
           popup: true,
-          component: () => import('@/views/image/UploadLocalTemplate.vue')
+          component: () => import('@/views/image/RegisterOrUploadTemplate.vue')
         },
         {
           api: 'updateTemplate',
@@ -88,7 +88,7 @@ export default {
         {
           api: 'updateTemplatePermissions',
           icon: 'reconciliation',
-          label: 'Update template permissions',
+          label: 'Update Template Permissions',
           dataView: true,
           popup: true,
           show: (record, store) => { return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) || record.templatetype !== 'BUILTIN') },
@@ -139,15 +139,15 @@ export default {
           label: 'Register ISO',
           listView: true,
           popup: true,
-          component: () => import('@/views/image/RegisterIso.vue')
+          component: () => import('@/views/image/RegisterOrUploadIso.vue')
         },
         {
           api: 'getUploadParamsForIso',
           icon: 'cloud-upload',
-          label: 'Upload Local Iso',
+          label: 'Upload Local ISO',
           listView: true,
           popup: true,
-          component: () => import('@/views/image/UploadLocalIso.vue')
+          component: () => import('@/views/image/RegisterOrUploadIso.vue')
         },
         {
           api: 'updateIso',
