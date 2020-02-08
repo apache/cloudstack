@@ -22,7 +22,7 @@
       <p class="modal-form__label">{{ $t('storagePool') }}</p>
       <a-select v-model="selectedStoragePool" style="width: 100%;">
         <a-select-option v-for="(storagePool, index) in storagePools" :value="storagePool.id" :key="index">
-          {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? '(Suitable)' : '(Not Suitable)'}}</span>
+          {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? '(Suitable)' : '(Not Suitable)' }}</span>
         </a-select-option>
       </a-select>
       <template v-if="this.resource.virtualmachineid">
