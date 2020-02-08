@@ -23,10 +23,6 @@ export default {
   columns: ['name', 'state', 'networktype', 'clusters', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'order'],
   details: ['name', 'id', 'allocationstate', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2'],
   related: [{
-    name: 'physicalnetwork',
-    title: 'Physical Networks',
-    param: 'zoneid'
-  }, {
     name: 'pod',
     title: 'Pods',
     param: 'zoneid'
@@ -37,10 +33,6 @@ export default {
   }, {
     name: 'host',
     title: 'Hosts',
-    param: 'zoneid'
-  }, {
-    name: 'systemvm',
-    title: 'SystemVMs',
     param: 'zoneid'
   }, {
     name: 'storagepool',
@@ -55,8 +47,14 @@ export default {
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
   }, {
+    name: 'Physical Networks',
+    component: () => import('@/views/infra/zone/PhysicalNetworksTab.vue')
+  }, {
+    name: 'System VMs',
+    component: () => import('@/views/infra/zone/SystemVmsTab.vue')
+  }, {
     name: 'resources',
-    component: () => import('@/views/infra/ZoneResources.vue')
+    component: () => import('@/views/infra/zone/ZoneResources.vue')
   }, {
     name: 'settings',
     component: () => import('@/components/view/SettingsTab.vue')
@@ -68,7 +66,7 @@ export default {
       label: 'Add Zone',
       listView: true,
       popup: true,
-      component: () => import('@/views/infra/ZoneWizard.vue')
+      component: () => import('@/views/infra/zone/ZoneWizard.vue')
     },
     {
       api: 'updateZone',

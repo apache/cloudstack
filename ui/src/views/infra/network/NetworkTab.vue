@@ -17,18 +17,34 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    <a-tabs :animated="false" defaultActiveKey="0" tabPosition="left">
+    <a-tabs :tabPosition="device === 'mobile' ? 'top' : 'left'" :animated="false">
       <a-tab-pane v-for="(item, index) in traffictypes" :tab="item.traffictype" :key="index">
-        <div>
-          <strong>{{ $t('id') }}</strong> {{ item.id }}
-        </div>
-        <div v-for="(type, idx) in ['kvmnetworklabel', 'vmwarenetworklabel', 'xennetworklabel', 'hypervnetworklabel', 'ovm3networklabel']" :key="idx">
-          <strong>{{ $t(type) }}</strong>
-          {{ item[type] || 'Use default gateway' }}
+        <div
+          v-for="(type, idx) in ['kvmnetworklabel', 'vmwarenetworklabel', 'xennetworklabel', 'hypervnetworklabel', 'ovm3networklabel']"
+          :key="idx"
+          style="margin-bottom: 10px;">
+          <div><strong>{{ $t(type) }}</strong></div>
+          <div>{{ item[type] || 'Use default gateway' }}</div>
         </div>
         <div v-if="item.traffictype === 'Public'">
-          Insert here form/component to manage public IP ranges
-          <IpRangesTab :resource="resource" />
+          <div style="margin-bottom: 10px;">
+            <div><strong>{{ $t('traffictype') }}</strong></div>
+            <div>{{ publicNetwork.traffictype }}</div>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <div><strong>{{ $t('broadcastdomaintype') }}</strong></div>
+            <div>{{ publicNetwork.broadcastdomaintype }}</div>
+          </div>
+          <a-divider />
+          <IpRangesTabPublic :resource="resource" :loading="loading" :network="publicNetwork" />
+        </div>
+        <div v-if="item.traffictype === 'Management'">
+          <a-divider />
+          <IpRangesTabManagement :resource="resource" :loading="loading" />
+        </div>
+        <div v-if="item.traffictype === 'Storage'">
+          <a-divider />
+          <IpRangesTabStorage :resource="resource" />
         </div>
       </a-tab-pane>
       <a-tab-pane tab="Service Providers" key="nsp">
@@ -45,15 +61,21 @@
 
 <script>
 import { api } from '@/api'
+import { mixinDevice } from '@/utils/mixin.js'
 import Status from '@/components/widgets/Status'
-import IpRangesTab from './IpRangesTab'
+import IpRangesTabPublic from './IpRangesTabPublic'
+import IpRangesTabManagement from './IpRangesTabManagement'
+import IpRangesTabStorage from './IpRangesTabStorage'
 
 export default {
   name: 'NetworkTab',
   components: {
-    IpRangesTab,
+    IpRangesTabPublic,
+    IpRangesTabManagement,
+    IpRangesTabStorage,
     Status
   },
+  mixins: [mixinDevice],
   props: {
     resource: {
       type: Object,
@@ -68,6 +90,7 @@ export default {
     return {
       traffictypes: [],
       nsps: [],
+      publicNetwork: {},
       fetchLoading: false
     }
   },
@@ -86,6 +109,23 @@ export default {
       this.fetchLoading = true
       api('listTrafficTypes', { physicalnetworkid: this.resource.id }).then(json => {
         this.traffictypes = json.listtraffictypesresponse.traffictype
+      }).catch(error => {
+        this.$notification.error({
+          message: 'Request Failed',
+          description: error.response.headers['x-description']
+        })
+      }).finally(() => {
+        this.fetchLoading = false
+      })
+
+      this.fetchLoading = true
+      api('listNetworks', {
+        listAll: true,
+        trafficType: 'Public',
+        isSystem: true,
+        zoneId: this.resource.zoneid
+      }).then(json => {
+        this.publicNetwork = json.listnetworksresponse.network[0] || {}
       }).catch(error => {
         this.$notification.error({
           message: 'Request Failed',
