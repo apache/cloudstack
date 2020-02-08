@@ -358,6 +358,41 @@ var addGuestNetworkDialog = {
                 isolatedpvlanId: {
                     label: 'label.secondary.isolated.vlan.id'
                 },
+                pvlanType: {
+                    label: 'label.secondary.isolated.vlan.type',
+                    isHidden: true,
+                    select: function (args) {
+                        var type = [{
+                            id: 'none',
+                            description: _l('label.secondary.isolated.vlan.type.none')
+                        }, {
+                            id: 'community',
+                            description: _l('label.secondary.isolated.vlan.type.community')
+                        }, {
+                            id: 'isolated',
+                            description: _l('label.secondary.isolated.vlan.type.isolated')
+                        }, {
+                            id: 'promiscuous',
+                            description: _l('label.secondary.isolated.vlan.type.promiscuous')
+                        }
+                        ];
+
+                        args.response.success({
+                            data: type
+                        });
+
+                        args.$select.change(function () {
+                            var $form = $(this).closest('form');
+                            var pvlanType = $(this).val();
+
+                            if (pvlanType === 'none' || pvlanType === 'promiscuous') {
+                                $form.find('.form-item[rel=isolatedpvlanId]').hide();
+                            } else if (pvlanType === 'isolated' || pvlanType === 'community') {
+                                $form.find('.form-item[rel=isolatedpvlanId]').css('display', 'inline-block');
+                            }
+                        })
+                    }
+                },
 
                 scope: {
                     label: 'label.scope',
@@ -635,12 +670,12 @@ var addGuestNetworkDialog = {
                                         $form.find('.form-item[rel=vlanId]').hide();
                                         cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=vlanId]')); //make vlanId optional
 
-                                        $form.find('.form-item[rel=isolatedpvlanId]').hide();
+                                        $form.find('.form-item[rel=pvlanType]').hide();
                                     } else {
                                         $form.find('.form-item[rel=vlanId]').css('display', 'inline-block');
                                         cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=vlanId]')); //make vlanId required
 
-                                        $form.find('.form-item[rel=isolatedpvlanId]').css('display', 'inline-block');
+                                        $form.find('.form-item[rel=pvlanType]').css('display', 'inline-block');
                                     }
                                     return false; //break each loop
                                 }
@@ -815,6 +850,9 @@ var addGuestNetworkDialog = {
             }
             if (args.data.hideipaddressusage != null && args.data.hideipaddressusage) {
                 array1.push("&hideipaddressusage=true")
+            }
+            if (args.$form.find('.form-item[rel=pvlanType]').css('display') != 'none' && args.data.pvlanType != 'none') {
+                array1.push("&isolatedpvlantype=" + args.data.pvlanType);
             }
 
             $.ajax({
@@ -1006,6 +1044,7 @@ var addL2GuestNetwork = {
                                 args.$select.change(function() {
                                     var $vlan = args.$select.closest('form').find('[rel=vlan]');
                                     var $bypassVlanOverlapCheck = args.$select.closest('form').find('[rel=bypassVlanOverlapCheck]');
+                                    var $pvlanType = args.$select.closest('form').find('[rel=pvlanType]');
                                     var networkOffering = $.grep(
                                         networkOfferingObjs, function(netoffer) {
                                             return netoffer.id == args.$select.val();
@@ -1015,9 +1054,11 @@ var addL2GuestNetwork = {
                                     if (networkOffering.specifyvlan) {
                                         $vlan.css('display', 'inline-block');
                                         $bypassVlanOverlapCheck.css('display', 'inline-block');
+                                        $pvlanType.css('display', 'inline-block');
                                     } else {
                                         $vlan.hide();
                                         $bypassVlanOverlapCheck.hide();
+                                        $pvlanType.hide();
                                     }
                                 });
 
@@ -1046,6 +1087,45 @@ var addL2GuestNetwork = {
                     isBoolean: true,
                     isHidden: true
                 },
+                pvlanId: {
+                    label: 'label.secondary.isolated.vlan.id',
+                    isHidden: true
+                },
+                pvlanType: {
+                    label: 'label.secondary.isolated.vlan.type',
+                    isHidden: true,
+                    select: function (args) {
+                        var type = [{
+                                id: 'none',
+                                description: _l('label.secondary.isolated.vlan.type.none')
+                            }, {
+                                id: 'community',
+                                description: _l('label.secondary.isolated.vlan.type.community')
+                            }, {
+                                id: 'isolated',
+                                description: _l('label.secondary.isolated.vlan.type.isolated')
+                            }, {
+                                id: 'promiscuous',
+                                description: _l('label.secondary.isolated.vlan.type.promiscuous')
+                            }
+                        ];
+
+                        args.response.success({
+                            data: type
+                        });
+
+                        args.$select.change(function () {
+                            var $form = $(this).closest('form');
+                            var pvlanType = $(this).val();
+
+                            if (pvlanType === 'none' || pvlanType === 'promiscuous') {
+                                $form.find('.form-item[rel=pvlanId]').hide();
+                            } else if (pvlanType === 'isolated' || pvlanType === 'community') {
+                                $form.find('.form-item[rel=pvlanId]').css('display', 'inline-block');
+                            }
+                        })
+                    }
+                },
                 account: {
                     label: 'label.account',
                     validation: {
@@ -1073,6 +1153,18 @@ var addL2GuestNetwork = {
                 $.extend(dataObj, {
                     vlan: args.data.vlan,
                     bypassVlanOverlapCheck: (args.data.bypassVlanOverlapCheck == "on")
+                });
+            }
+
+            if (args.$form.find('.form-item[rel=pvlanId]').css('display') != 'none') {
+                $.extend(dataObj, {
+                    isolatedpvlan: args.data.pvlanId
+                });
+            }
+
+            if (args.$form.find('.form-item[rel=pvlanType]').css('display') != 'none' && args.data.pvlanType != 'none') {
+                $.extend(dataObj, {
+                    isolatedpvlantype: args.data.pvlanType
                 });
             }
 
