@@ -38,7 +38,7 @@
           </template>
           <a
             v-if="item.meta.docHelp"
-            style="margin-right: 10px"
+            style="margin-right: 12px"
             :href="docBase + '/' + $route.meta.docHelp"
             target="_blank">
             <a-icon type="question-circle-o"></a-icon>

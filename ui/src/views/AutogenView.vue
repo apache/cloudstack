@@ -28,11 +28,12 @@
               <a-button
                 style="margin-top: 4px"
                 :loading="loading"
-                shape="circle"
+                shape="round"
                 size="small"
-                type="dashed"
                 icon="reload"
-                @click="fetchData()" />
+                @click="fetchData()">
+                {{ "Refresh" }}
+              </a-button>
             </a-tooltip>
           </breadcrumb>
         </a-col>
@@ -47,10 +48,11 @@
               :resource="resource"
               @exec-action="execAction"/>
             <a-input-search
-              style="width: 25vw; margin-left: 10px"
+              style="width: 20vw; margin-left: 10px"
               placeholder="Search"
               v-model="searchQuery"
               v-if="!dataView && !treeView"
+              allowClear
               @search="onSearch" />
           </span>
         </a-col>
@@ -229,6 +231,7 @@
         @change="changePage"
         @showSizeChange="changePageSize"
         showSizeChanger
+        showQuickJumper
         v-if="!treeView" />
       <tree-view
         v-if="treeView"

@@ -29,7 +29,7 @@
       </div>
     </a-list-item>
     <DedicateData :resource="resource" v-if="dedicatedSectionActive" />
-    <VmwareData :resource="resource" v-if="$route.meta.name === 'zone'" />
+    <VmwareData :resource="resource" v-if="$route.meta.name === 'zone' && 'listVmwareDcs' in $store.getters.apis" />
   </a-list>
 </template>
 
