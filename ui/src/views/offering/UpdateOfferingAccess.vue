@@ -24,7 +24,7 @@
         layout="vertical">
 
         <a-form-item :label="$t('ispublic')" v-show="this.isAdmin()">
-          <a-switch v-decorator="['ispublic']" :checked="this.offeringIsPublic" @change="val => { this.offeringIsPublic = val }" />
+          <a-switch v-decorator="['ispublic', {initialValue: this.isPublic}]" :defaultChecked="this.offeringIsPublic" @change="val => { this.offeringIsPublic = val }" />
         </a-form-item>
 
         <a-form-item :label="$t('domainid')" v-if="!this.offeringIsPublic">
