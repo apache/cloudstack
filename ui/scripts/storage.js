@@ -1575,13 +1575,13 @@
                                     if (newDiskOffering != null && newDiskOffering.length > 0) {
                                         array1.push("&diskofferingid=" + encodeURIComponent(newDiskOffering));
                                     }
-                                    if (selectedDiskOfferingObj.iscustomized == true) {
+                                    if (selectedDiskOfferingObj != null && selectedDiskOfferingObj.iscustomized == true) {
                                         cloudStack.addNewSizeToCommandUrlParameterArrayIfItIsNotNullAndHigherThanZero(array1, args.data.newsize);
                                     }
 
                                     var minIops;
                                     var maxIops
-                                    if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                    if (selectedDiskOfferingObj != null && selectedDiskOfferingObj.iscustomizediops == true) {
                                         minIops = args.data.minIops;
                                         maxIops = args.data.maxIops;
                                     }
