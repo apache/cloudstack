@@ -1378,9 +1378,16 @@ public class ApiResponseHelper implements ResponseGenerator {
                     vmResponse.setHostId(host.getUuid());
                     vmResponse.setHostName(host.getName());
                     vmResponse.setHypervisor(host.getHypervisorType().toString());
-                    vmResponse.setAgentState(host.getStatus());
-                    vmResponse.setLastPinged(new Date(host.getLastPinged()));
-                    vmResponse.setVersion(host.getVersion());
+                }
+            }
+
+            if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy) {
+                Host systemVmHost = ApiDBUtils.findHostByTypeNameAndZoneId(vm.getDataCenterId(), vm.getHostName(),
+                        Type.SecondaryStorageVm.equals(vm.getType()) ? Host.Type.SecondaryStorageVM : Host.Type.ConsoleProxy);
+                if (systemVmHost != null) {
+                    vmResponse.setAgentState(systemVmHost.getStatus());
+                    vmResponse.setDisconnectedOn(systemVmHost.getDisconnectedOn());
+                    vmResponse.setVersion(systemVmHost.getVersion());
                 }
             }
 
