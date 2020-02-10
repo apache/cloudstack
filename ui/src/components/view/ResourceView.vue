@@ -86,8 +86,7 @@ export default {
   data () {
     return {
       activeTab: '',
-      networkService: null,
-      vpnEnabled: false
+      networkService: null
     }
   },
   watch: {
@@ -98,15 +97,6 @@ export default {
       if (this.resource.associatednetworkid) {
         api('listNetworks', { id: this.resource.associatednetworkid }).then(response => {
           this.networkService = response.listnetworksresponse.network[0]
-        })
-      }
-
-      if (this.resource.id && this.resource.ipaddress) {
-        api('listRemoteAccessVpns', {
-          publicipid: this.resource.id,
-          listAll: true
-        }).then(response => {
-          this.vpnEnabled = response.listremoteaccessvpnsresponse.remoteaccessvpn && response.listremoteaccessvpnsresponse.remoteaccessvpn.length > 0
         })
       }
     }
