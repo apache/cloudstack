@@ -29,14 +29,14 @@
             }]"
             :placeholder="this.$t('Name')"/>
         </a-form-item>
-        <a-form-item :label="$t('description')">
+        <a-form-item :label="$t('displaytext')">
           <a-input
-            v-decorator="['description', {
+            v-decorator="['displaytext', {
               rules: [{ required: true, message: 'Please enter description' }]
             }]"
-            :placeholder="this.$t('Description')"/>
+            :placeholder="this.$t('displaytext  ')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.storagetype')">
+        <a-form-item :label="$t('storagetype')">
           <a-radio-group
             v-decorator="['storagetype', {
               initialValue: this.storageType
@@ -51,7 +51,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.provisioningtype')">
+        <a-form-item :label="$t('provisioningtype')">
           <a-radio-group
             v-decorator="['provisioningtype', {
               initialValue: this.provisioningType
@@ -69,10 +69,10 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.computeofferingtype')">
+        <a-form-item :label="$t('offeringtype')">
           <a-radio-group
-            v-decorator="['computeofferingtype', {
-              initialValue: this.computeOfferingType
+            v-decorator="['offeringtype', {
+              initialValue: this.offeringType
             }]"
             buttonStyle="solid"
             @change="selected => { this.handleComputeOfferingTypeChange(selected.target.value) }">
@@ -87,9 +87,9 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.cpucores')" v-if="this.computeOfferingType === 'fixed'">
+        <a-form-item :label="$t('cpunumber')" v-if="this.offeringType === 'fixed'">
           <a-input
-            v-decorator="['cpucores', {
+            v-decorator="['cpunumber', {
               rules: [{ required: true, message: 'Please enter value' },
                       {
                         validator: (rule, value, callback) => {
@@ -101,9 +101,9 @@
                       }
               ]
             }]"
-            :placeholder="this.$t('label.cpucores')"/>
+            :placeholder="this.$t('cpunumber')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.cpuspeed')" v-if="this.computeOfferingType !== 'customunconstrained'">
+        <a-form-item :label="$t('cpuspeed')" v-if="this.offeringType !== 'customunconstrained'">
           <a-input
             v-decorator="['cpuspeed', {
               rules: [{ required: true, message: 'Please enter value' },
@@ -117,11 +117,11 @@
                       }
               ]
             }]"
-            :placeholder="this.$t('label.cpuspeed')"/>
+            :placeholder="this.$t('cpuspeed')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.mincpucores')" v-if="this.computeOfferingType === 'customconstrained'">
+        <a-form-item :label="$t('mincpunumber')" v-if="this.offeringType === 'customconstrained'">
           <a-input
-            v-decorator="['mincpucores', {
+            v-decorator="['mincpunumber', {
               rules: [{ required: true, message: 'Please enter value' },
                       {
                         validator: (rule, value, callback) => {
@@ -133,11 +133,11 @@
                       }
               ]
             }]"
-            :placeholder="this.$t('label.mincpucores')"/>
+            :placeholder="this.$t('mincpunumber')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.maxcpucores')" v-if="this.computeOfferingType === 'customconstrained'">
+        <a-form-item :label="$t('maxcpunumber')" v-if="this.offeringType === 'customconstrained'">
           <a-input
-            v-decorator="['maxcpucores', {
+            v-decorator="['maxcpunumber', {
               rules: [{ required: true, message: 'Please enter value' },
                       {
                         validator: (rule, value, callback) => {
@@ -149,9 +149,9 @@
                       }
               ]
             }]"
-            :placeholder="this.$t('label.maxcpucores')"/>
+            :placeholder="this.$t('maxcpunumber')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.memory.mb')" v-if="this.computeOfferingType === 'fixed'">
+        <a-form-item :label="$t('memory')" v-if="this.offeringType === 'fixed'">
           <a-input
             v-decorator="['memory', {
               rules: [{ required: true, message: 'Please enter value' },
@@ -165,9 +165,9 @@
                       }
               ]
             }]"
-            :placeholder="this.$t('label.memory.mb')"/>
+            :placeholder="this.$t('memory')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.minmemory.mb')" v-if="this.computeOfferingType === 'customconstrained'">
+        <a-form-item :label="$t('minmemory')" v-if="this.offeringType === 'customconstrained'">
           <a-input
             v-decorator="['minmemory', {
               rules: [{ required: true, message: 'Please enter value' },
@@ -181,9 +181,9 @@
                       }
               ]
             }]"
-            :placeholder="this.$t('label.minmemory.mb')"/>
+            :placeholder="this.$t('minmemory')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.maxmemory.mb')" v-if="this.computeOfferingType === 'customconstrained'">
+        <a-form-item :label="$t('maxmemory')" v-if="this.offeringType === 'customconstrained'">
           <a-input
             v-decorator="['maxmemory', {
               rules: [{ required: true, message: 'Please enter value' },
@@ -197,9 +197,9 @@
                       }
               ]
             }]"
-            :placeholder="this.$t('label.maxmemory.mb')"/>
+            :placeholder="this.$t('maxmemory')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.qostype')">
+        <a-form-item :label="$t('qostype')">
           <a-radio-group
             v-decorator="['qostype', {
               initialValue: this.qosType
@@ -217,7 +217,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.disk.bytes.read.rate')" v-if="this.qosType === 'hypervisor'">
+        <a-form-item :label="$t('diskbytesreadrate')" v-if="this.qosType === 'hypervisor'">
           <a-input
             v-decorator="['diskbytesreadrate', {
               rules: [{
@@ -229,9 +229,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('label.disk.bytes.read.rate')"/>
+            :placeholder="this.$t('diskbytesreadrate')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.disk.bytes.write.rate')" v-if="this.qosType === 'hypervisor'">
+        <a-form-item :label="$t('diskbyteswriterate')" v-if="this.qosType === 'hypervisor'">
           <a-input
             v-decorator="['diskbyteswriterate', {
               rules: [{
@@ -243,9 +243,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('label.disk.bytes.write.rate')"/>
+            :placeholder="this.$t('diskbyteswriterate')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.disk.iops.read.rate')" v-if="this.qosType === 'hypervisor'">
+        <a-form-item :label="$t('diskiopsreadrate')" v-if="this.qosType === 'hypervisor'">
           <a-input
             v-decorator="['diskiopsreadrate', {
               rules: [{
@@ -257,9 +257,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('label.disk.iops.read.rate')"/>
+            :placeholder="this.$t('diskiopsreadrate')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.disk.iops.write.rate')" v-if="this.qosType === 'hypervisor'">
+        <a-form-item :label="$t('diskiopswriterate')" v-if="this.qosType === 'hypervisor'">
           <a-input
             v-decorator="['diskiopswriterate', {
               rules: [{
@@ -271,12 +271,12 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('label.disk.iops.write.rate')"/>
+            :placeholder="this.$t('diskiopswriterate')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.custom.disk.iops')" v-if="this.qosType === 'storage'">
-          <a-switch v-decorator="['iscustomizeddiskiops']" :checked="this.isCustomizedDiskIops" @change="val => { this.isCustomizedDiskIops = val }" />
+        <a-form-item :label="$t('iscustomizeddiskiops')" v-if="this.qosType === 'storage'">
+          <a-switch v-decorator="['iscustomizeddiskiops', {initialValue: this.isCustomizedDiskIops}]" :defaultChecked="this.isCustomizedDiskIops" @change="val => { this.isCustomizedDiskIops = val }" />
         </a-form-item>
-        <a-form-item :label="$t('label.disk.iops.min')" v-if="!this.isCustomizedDiskIops">
+        <a-form-item :label="$t('diskiopsmin')" v-if="this.qosType === 'storage' && !this.isCustomizedDiskIops">
           <a-input
             v-decorator="['diskiopsmin', {
               rules: [{
@@ -288,9 +288,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('label.disk.iops.min')"/>
+            :placeholder="this.$t('diskiopsmin')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.disk.iops.max')" v-if="!this.isCustomizedDiskIops">
+        <a-form-item :label="$t('diskiopsmax')" v-if="this.qosType === 'storage' && !this.isCustomizedDiskIops">
           <a-input
             v-decorator="['diskiopsmax', {
               rules: [{
@@ -302,9 +302,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('label.disk.iops.max')"/>
+            :placeholder="this.$t('diskiopsmax')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.hypervisor.snapshot.reserve')" v-if="this.qosType === 'storage'">
+        <a-form-item :label="$t('hypervisorsnapshotreserve')" v-if="this.qosType === 'storage'">
           <a-input
             v-decorator="['hypervisorsnapshotreserve', {
               rules: [{
@@ -316,17 +316,17 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('label.hypervisor.snapshot.reserve')"/>
+            :placeholder="this.$t('hypervisorsnapshotreserve')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.offerha')">
-          <a-switch v-decorator="['isofferha']" />
+        <a-form-item :label="$t('offerha')">
+          <a-switch v-decorator="['offerha', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.hosttags')" v-if="this.isAdmin()">
+        <a-form-item :label="$t('hosttags')" v-if="this.isAdmin()">
           <a-input
             v-decorator="['hosttags', {}]"
-            :placeholder="this.$t('label.hosttags')"/>
+            :placeholder="this.$t('hosttags')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.storage.tags')" v-if="this.isAdmin()">
+        <a-form-item :label="$t('tags')" v-if="this.isAdmin()">
           <a-select
             mode="tags"
             v-decorator="['storagetags', {}]"
@@ -336,29 +336,23 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="storageTagLoading"
-            :placeholder="this.$t('label.storage.tags')"
+            :placeholder="this.$t('tags')"
             v-if="this.isAdmin()">
             <a-select-option v-for="(opt) in this.storageTags" :key="opt.name">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.cpucap')">
-          <a-switch v-decorator="['iscpucap']" />
+        <a-form-item :label="$t('limitcpuuse')">
+          <a-switch v-decorator="['limitcpuuse', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.volatile')">
-          <a-switch v-decorator="['isvolatile']" />
+        <a-form-item :label="$t('isvolatile')">
+          <a-switch v-decorator="['isvolatile', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.deploymentplanner')" v-if="this.isAdmin()">
+        <a-form-item :label="$t('deploymentplanner')" v-if="this.isAdmin()">
           <a-select
             v-decorator="['deploymentplanner', {
-              rules: [
-                {
-                  required: true,
-                  message: 'Please select option'
-                }
-              ],
-              initialValue: 0
+              initialValue: this.deploymentPlanners.length > 0 ? this.deploymentPlanners[0].name : ''
             }]"
             showSearch
             optionFilterProp="children"
@@ -366,14 +360,14 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="deploymentPlannerLoading"
-            :placeholder="this.$t('label.deploymentplanner')"
-            @change="val => { this.handleDeploymentPlannerChange(this.deploymentPlanners[val]) }">
-            <a-select-option v-for="(opt, optIndex) in this.deploymentPlanners" :key="optIndex">
+            :placeholder="this.$t('deploymentplanner')"
+            @change="val => { this.handleDeploymentPlannerChange(val) }">
+            <a-select-option v-for="(opt) in this.deploymentPlanners" :key="opt.name">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.plannermode')" v-if="this.plannerModeVisible">
+        <a-form-item :label="$t('plannermode')" v-if="this.plannerModeVisible">
           <a-radio-group
             v-decorator="['plannermode', {
               initialValue: this.plannerMode
@@ -391,9 +385,9 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.gpu')">
+        <a-form-item :label="$t('pcidevice')">
           <a-radio-group
-            v-decorator="['gpu', {
+            v-decorator="['pcidevice', {
               initialValue: this.selectedGpu
             }]"
             buttonStyle="solid"
@@ -403,7 +397,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.vgputype')" v-if="this.vGpuVisible">
+        <a-form-item :label="$t('vgputype')" v-if="this.vGpuVisible">
           <a-select
             v-decorator="['vgputype', {}]"
             showSearch
@@ -411,14 +405,14 @@
             :filterOption="(input, option) => {
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            :placeholder="this.$t('label.vgputype')">
+            :placeholder="this.$t('vgputype')">
             <a-select-option v-for="(opt, optIndex) in this.vGpuTypes" :key="optIndex">
               {{ opt }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item :label="$t('ispublic')" v-show="this.isAdmin()">
-          <a-switch v-decorator="['ispublic']" :checked="this.isPublic" @change="val => { this.isPublic = val }" />
+          <a-switch v-decorator="['ispublic', {initialValue: this.isPublic}]" :checked="this.isPublic" @change="val => { this.isPublic = val }" />
         </a-form-item>
         <a-form-item :label="$t('domainid')" v-if="!this.isPublic">
           <a-select
@@ -437,7 +431,7 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
-            :placeholder="this.$t('label.domain')">
+            :placeholder="this.$t('domainid')">
             <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -465,7 +459,7 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
-            :placeholder="this.$t('label.zone')">
+            :placeholder="this.$t('zoneid')">
             <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -493,7 +487,7 @@ export default {
     return {
       storageType: 'shared',
       provisioningType: 'thin',
-      computeOfferingType: 'fixed',
+      offeringType: 'fixed',
       qosType: '',
       isCustomizedDiskIops: false,
       isPublic: true,
@@ -610,6 +604,7 @@ export default {
       api('listDeploymentPlanners', params).then(json => {
         const planners = json.listdeploymentplannersresponse.deploymentPlanner
         this.deploymentPlanners = this.deploymentPlanners.concat(planners)
+        this.deploymentPlanners.unshift({ name: '' })
       }).finally(() => {
         this.deploymentPlannerLoading = false
       })
@@ -621,7 +616,7 @@ export default {
       this.provisioningType = val
     },
     handleComputeOfferingTypeChange (val) {
-      this.computeOfferingType = val
+      this.offeringType = val
     },
     handleQosTypeChange (val) {
       this.qosType = val
@@ -629,7 +624,7 @@ export default {
     handleDeploymentPlannerChange (planner) {
       this.selectedDeployementPlanner = planner
       this.plannerModeVisible = false
-      if (this.selectedDeployementPlanner.name === 'ImplicitDedicationPlanner') {
+      if (this.selectedDeployementPlanner === 'ImplicitDedicationPlanner') {
         this.plannerModeVisible = this.isAdmin()
       }
     },
@@ -655,8 +650,131 @@ export default {
         if (err) {
           return
         }
-        var params = {}
-        console.log(params)
+        console.log(values)
+        var params = {
+          issystem: false,
+          name: values.name,
+          displaytext: values.displaytext,
+          storagetype: values.storageType,
+          provisioningtype: values.provisioningtype,
+          customized: values.offeringtype !== 'fixed',
+          offerha: values.offerha === true,
+          limitcpuuse: values.limitcpuuse === true,
+          isvolatile: values.isvolatile === true
+        }
+
+        // custom fields (begin)
+        if (values.offeringtype === 'fixed') {
+          params.cpunumber = values.cpunumber
+          params.cpuspeed = values.cpuspeed
+          params.memory = values.memory
+        } else {
+          if (values.cpuspeed != null &&
+              values.mincpunumber != null &&
+              values.maxcpunumber != null &&
+              values.minmemory != null &&
+              values.maxmemory != null) {
+            params.cpuspeed = values.cpuspeed
+            params.mincpunumber = values.mincpunumber
+            params.maxcpunumber = values.maxcpunumber
+            params.minmemory = values.minmemory
+            params.maxmemory = values.maxmemory
+          }
+        }
+        // custom fields (end)
+
+        if (values.qostype === 'storage') {
+          var customIops = values.iscustomizeddiskiops === true
+          params.customizediops = customIops
+          if (!customIops) {
+            if (values.diskiopsmin != null && values.diskiopsmin.length > 0) {
+              params.miniops = values.diskiopsmin
+            }
+            if (values.diskiopsmax != null && values.diskiopsmax.length > 0) {
+              params.maxiops = values.diskiopsmax
+            }
+            if (values.hypervisorsnapshotreserve != null && values.hypervisorsnapshotreserve.length > 0) {
+              params.hypervisorsnapshotreserve = values.hypervisorsnapshotreserve
+            }
+          }
+        } else if (values.qostype === 'hypervisor') {
+          if (values.diskbytesreadrate != null && values.diskbytesreadrate.length > 0) {
+            params.bytesreadrate = values.diskbytesreadrate
+          }
+          if (values.diskbyteswriterate != null && values.diskbyteswriterate.length > 0) {
+            params.byteswriterate = values.diskbyteswriterate
+          }
+          if (values.diskiopsreadrate != null && values.diskiopsreadrate.length > 0) {
+            params.iopsreadrate = values.diskiopsreadrate
+          }
+          if (values.diskiopswriterate != null && values.diskiopswriterate.length > 0) {
+            params.iopswriterate = values.diskiopswriterate
+          }
+        }
+        if (values.storagetags != null && values.storagetags.length > 0) {
+          var tags = values.storagetags.join(',')
+          params.tags = tags
+        }
+        if (values.hosttags != null && values.hosttags.length > 0) {
+          params.hosttags = values.hosttags
+        }
+        if (values.deploymentplanner != null && values.deploymentplanner.length > 0) {
+          params.deploymentplanner = values.deploymentplanner
+        }
+        if (values.deploymentplanner === 'ImplicitDedicationPlanner' && values.plannermode !== '') {
+          params['serviceofferingdetails[0].key'] = 'ImplicitDedicationMode'
+          params['serviceofferingdetails[0].value'] = values.plannermode
+        }
+        if (values.pcidevice !== '') {
+          params['serviceofferingdetails[1].key'] = 'pciDevice'
+          params['serviceofferingdetails[1].value'] = values.pcidevice
+        }
+        if ('vgputype' in values &&
+          this.vGpuTypes != null && this.vGpuTypes !== undefined &&
+          values.vgputype > this.vGpuTypes.length) {
+          params['serviceofferingdetails[2].key'] = 'vgpuType'
+          params['serviceofferingdetails[2].value'] = this.vGpuTypes[values.vgputype]
+        }
+        if (values.ispublic !== true) {
+          var domainIndexes = values.domainid
+          var domainId = null
+          if (domainIndexes && domainIndexes.length > 0) {
+            var domainIds = []
+            for (var i = 0; i < domainIndexes.length; i++) {
+              domainIds = domainIds.concat(this.domains[domainIndexes[i]].id)
+            }
+            domainId = domainIds.join(',')
+          }
+          if (domainId) {
+            params.domainid = domainId
+          }
+        }
+        var zoneIndexes = values.zoneid
+        var zoneId = null
+        if (zoneIndexes && zoneIndexes.length > 0) {
+          var zoneIds = []
+          for (var j = 0; j < zoneIndexes.length; j++) {
+            zoneIds = zoneIds.concat(this.zones[zoneIndexes[j]].id)
+          }
+          zoneId = zoneIds.join(',')
+        }
+        if (zoneId) {
+          params.zoneid = zoneId
+        }
+        api('createServiceOffering', params).then(json => {
+          this.$notification.success({
+            message: this.$t('message.add.service.offering'),
+            description: this.$t('message.add.service.offering')
+          })
+        }).catch(error => {
+          this.$notification.error({
+            message: 'Request Failed',
+            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
+          })
+        }).finally(() => {
+          this.loading = false
+          this.closeAction()
+        })
       })
     },
     closeAction () {
