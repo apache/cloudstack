@@ -126,7 +126,6 @@ export default {
     ]
   },
   mounted () {
-    this.offeringType = this.$route.meta.name
     switch (this.$route.meta.name) {
       case 'computeoffering':
         this.offeringType = 'ServiceOffering'
