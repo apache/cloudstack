@@ -36,6 +36,22 @@
             }]"
             :placeholder="this.$t('displaytext  ')"/>
         </a-form-item>
+        <a-form-item :label="$t('systemvmtype')" v-if="this.isSystem">
+          <a-select
+            v-decorator="['systemvmtype', {
+              initialValue: 'domainrouter'
+            }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :placeholder="this.$t('systemvmtype')">
+            <a-select-option key="domainrouter">{{ $t('domain.router') }}</a-select-option>
+            <a-select-option key="consoleproxy">{{ $t('console.proxy') }}</a-select-option>
+            <a-select-option key="secondarystoragevm">{{ $t('secondary.storage.vm') }}</a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item :label="$t('storagetype')">
           <a-radio-group
             v-decorator="['storagetype', {
@@ -69,7 +85,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('offeringtype')">
+        <a-form-item :label="$t('offeringtype')" v-show="!this.isSystem">
           <a-radio-group
             v-decorator="['offeringtype', {
               initialValue: this.offeringType
@@ -199,6 +215,22 @@
             }]"
             :placeholder="this.$t('maxmemory')"/>
         </a-form-item>
+        <a-form-item :label="$t('networkrate')">
+          <a-input
+            v-decorator="['networkrate', {
+              rules: [
+                {
+                  validator: (rule, value, callback) => {
+                    if (value && (isNaN(value) || value <= 0)) {
+                      callback('Please enter a valid number')
+                    }
+                    callback()
+                  }
+                }
+              ]
+            }]"
+            :placeholder="this.$t('networkrate')"/>
+        </a-form-item>
         <a-form-item :label="$t('qostype')">
           <a-radio-group
             v-decorator="['qostype', {
@@ -273,7 +305,7 @@
             }]"
             :placeholder="this.$t('diskiopswriterate')"/>
         </a-form-item>
-        <a-form-item :label="$t('iscustomizeddiskiops')" v-if="this.qosType === 'storage'">
+        <a-form-item :label="$t('iscustomizeddiskiops')" v-if="!this.isSystem && this.qosType === 'storage'">
           <a-switch v-decorator="['iscustomizeddiskiops', {initialValue: this.isCustomizedDiskIops}]" :defaultChecked="this.isCustomizedDiskIops" @change="val => { this.isCustomizedDiskIops = val }" />
         </a-form-item>
         <a-form-item :label="$t('diskiopsmin')" v-if="this.qosType === 'storage' && !this.isCustomizedDiskIops">
@@ -304,7 +336,7 @@
             }]"
             :placeholder="this.$t('diskiopsmax')"/>
         </a-form-item>
-        <a-form-item :label="$t('hypervisorsnapshotreserve')" v-if="this.qosType === 'storage'">
+        <a-form-item :label="$t('hypervisorsnapshotreserve')" v-if="!this.isSystem && this.qosType === 'storage'">
           <a-input
             v-decorator="['hypervisorsnapshotreserve', {
               rules: [{
@@ -346,10 +378,10 @@
         <a-form-item :label="$t('limitcpuuse')">
           <a-switch v-decorator="['limitcpuuse', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('isvolatile')">
+        <a-form-item :label="$t('isvolatile')" v-if="!this.isSystem">
           <a-switch v-decorator="['isvolatile', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('deploymentplanner')" v-if="this.isAdmin()">
+        <a-form-item :label="$t('deploymentplanner')" v-if="!this.isSystem && this.isAdmin()">
           <a-select
             v-decorator="['deploymentplanner', {
               initialValue: this.deploymentPlanners.length > 0 ? this.deploymentPlanners[0].name : ''
@@ -385,7 +417,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('pcidevice')">
+        <a-form-item :label="$t('pcidevice')" v-if="!this.isSystem">
           <a-radio-group
             v-decorator="['pcidevice', {
               initialValue: this.selectedGpu
@@ -437,7 +469,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('zoneid')">
+        <a-form-item :label="$t('zoneid')" v-if="!this.isSystem">
           <a-select
             id="zone-selection"
             mode="multiple"
@@ -485,6 +517,7 @@ export default {
   },
   data () {
     return {
+      isSystem: false,
       storageType: 'shared',
       provisioningType: 'thin',
       offeringType: 'fixed',
@@ -539,6 +572,9 @@ export default {
     ]
   },
   mounted () {
+    if (this.$route.meta.name === 'systemoffering') {
+      this.isSystem = true
+    }
     this.fetchData()
   },
   methods: {
@@ -651,15 +687,14 @@ export default {
           return
         }
         var params = {
-          issystem: false,
+          issystem: this.isSystem,
           name: values.name,
           displaytext: values.displaytext,
           storagetype: values.storageType,
           provisioningtype: values.provisioningtype,
           customized: values.offeringtype !== 'fixed',
           offerha: values.offerha === true,
-          limitcpuuse: values.limitcpuuse === true,
-          isvolatile: values.isvolatile === true
+          limitcpuuse: values.limitcpuuse === true
         }
 
         // custom fields (begin)
@@ -682,6 +717,10 @@ export default {
         }
         // custom fields (end)
 
+        if (values.networkRate != null && values.networkRate.length > 0) {
+          params.networkrate = values.networkrate
+        }
+
         if (values.qostype === 'storage') {
           var customIops = values.iscustomizeddiskiops === true
           params.customizediops = customIops
@@ -692,7 +731,8 @@ export default {
             if (values.diskiopsmax != null && values.diskiopsmax.length > 0) {
               params.maxiops = values.diskiopsmax
             }
-            if (values.hypervisorsnapshotreserve != null && values.hypervisorsnapshotreserve.length > 0) {
+            if (values.hypervisorsnapshotreserve !== undefined &&
+              values.hypervisorsnapshotreserve != null && values.hypervisorsnapshotreserve.length > 0) {
               params.hypervisorsnapshotreserve = values.hypervisorsnapshotreserve
             }
           }
@@ -717,14 +757,21 @@ export default {
         if (values.hosttags != null && values.hosttags.length > 0) {
           params.hosttags = values.hosttags
         }
-        if (values.deploymentplanner != null && values.deploymentplanner.length > 0) {
+        if ('deploymentplanner' in values &&
+          values.deploymentplanner !== undefined &&
+          values.deploymentplanner != null && values.deploymentplanner.length > 0) {
           params.deploymentplanner = values.deploymentplanner
         }
-        if (values.deploymentplanner === 'ImplicitDedicationPlanner' && values.plannermode !== '') {
+        if ('deploymentplanner' in values &&
+          values.deploymentplanner !== undefined &&
+          values.deploymentplanner === 'ImplicitDedicationPlanner' &&
+          values.plannermode !== undefined &&
+          values.plannermode !== '') {
           params['serviceofferingdetails[0].key'] = 'ImplicitDedicationMode'
           params['serviceofferingdetails[0].value'] = values.plannermode
         }
-        if (values.pcidevice !== '') {
+        if ('pcidevice' in values &&
+          values.pcidevice !== undefined && values.pcidevice !== '') {
           params['serviceofferingdetails[1].key'] = 'pciDevice'
           params['serviceofferingdetails[1].value'] = values.pcidevice
         }
@@ -733,6 +780,9 @@ export default {
           values.vgputype > this.vGpuTypes.length) {
           params['serviceofferingdetails[2].key'] = 'vgpuType'
           params['serviceofferingdetails[2].value'] = this.vGpuTypes[values.vgputype]
+        }
+        if ('isvolatile' in values && values.isvolatile !== undefined) {
+          params.isvolatile = values.isvolatile === true
         }
         if (values.ispublic !== true) {
           var domainIndexes = values.domainid
@@ -762,8 +812,8 @@ export default {
         }
         api('createServiceOffering', params).then(json => {
           this.$notification.success({
-            message: this.$t('message.add.service.offering'),
-            description: this.$t('message.add.service.offering')
+            message: this.isSystem ? this.$t('message.add.system.service.offering') : this.$t('message.add.service.offering'),
+            description: this.isSystem ? this.$t('message.add.system.service.offering') : this.$t('message.add.service.offering')
           })
         }).catch(error => {
           this.$notification.error({
