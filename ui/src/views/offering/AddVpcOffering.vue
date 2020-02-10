@@ -404,7 +404,7 @@ export default {
     width: 60vw;
 
     @media (min-width: 450px) {
-      width: 40vw;
+      width: 60vw;
     }
   }
   .supported-services-container {
