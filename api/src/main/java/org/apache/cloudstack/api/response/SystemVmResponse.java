@@ -154,9 +154,9 @@ public class SystemVmResponse extends BaseResponse {
     @Param(description = "public vlan range")
     private List<String> publicVlan;
 
-    @SerializedName("lastpinged")
-    @Param(description = "the date and time the host was last pinged", since = "4.13.1")
-    private Date lastPinged;
+    @SerializedName("disconnected")
+    @Param(description = "the last disconnected date of host", since = "4.13.1")
+    private Date disconnectedOn;
 
     @SerializedName("version")
     @Param(description = "the systemvm agent version", since = "4.13.1")
@@ -403,12 +403,12 @@ public class SystemVmResponse extends BaseResponse {
         this.publicVlan = publicVlan;
     }
 
-    public Date getLastPinged() {
-        return lastPinged;
+    public Date getDisconnectedOn() {
+        return disconnectedOn;
     }
 
-    public void setLastPinged(Date lastPinged) {
-        this.lastPinged = lastPinged;
+    public void setDisconnectedOn(Date disconnectedOn) {
+        this.disconnectedOn = disconnectedOn;
     }
 
     public String getVersion() {
