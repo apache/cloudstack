@@ -1575,7 +1575,7 @@
                                     if (newDiskOffering != null && newDiskOffering.length > 0) {
                                         array1.push("&diskofferingid=" + encodeURIComponent(newDiskOffering));
                                     }
-                                    if (selectedDiskOfferingObj != null && selectedDiskOfferingObj.iscustomized == true) {
+                                    if (selectedDiskOfferingObj == null || selectedDiskOfferingObj.iscustomized == true) {
                                         cloudStack.addNewSizeToCommandUrlParameterArrayIfItIsNotNullAndHigherThanZero(array1, args.data.newsize);
                                     }
 
@@ -1593,12 +1593,10 @@
                                     if (maxIops != null && maxIops.length > 0) {
                                         array1.push("&maxiops=" + encodeURIComponent(maxIops));
                                     }
-                                    //if original disk size  > new disk size
-                                    if (args.context.volumes[0].type == "ROOT"){
-                                        if (args.context.volumes[0].size > (args.data.newsize * (1024 * 1024 * 1024))) {
-                                            return args.response.error('message.volume.root.shrink.disk.size');
-                                        }
-                                        array1.push("&size="+args.data.newsize);
+                                    //if original disk size > new disk size
+                                    if (args.context.volumes[0].type == "ROOT" &&
+                                        args.context.volumes[0].size > (args.data.newsize * (1024 * 1024 * 1024))) {
+                                        return args.response.error('message.volume.root.shrink.disk.size');
                                     }
 
                                     $.ajax({
