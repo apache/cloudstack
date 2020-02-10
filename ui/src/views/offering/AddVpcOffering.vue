@@ -29,14 +29,14 @@
             }]"
             :placeholder="this.$t('Name')"/>
         </a-form-item>
-        <a-form-item :label="$t('description')">
+        <a-form-item :label="$t('displaytext')">
           <a-input
-            v-decorator="['description', {
+            v-decorator="['displaytext', {
               rules: [{ required: true, message: 'Please enter description' }]
             }]"
-            :placeholder="this.$t('Description')"/>
+            :placeholder="this.$t('displaytext')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.supported.services')">
+        <a-form-item :label="$t('supportedservices')">
           <div class="supported-services-container" scroll-to="last-child">
             <a-list itemLayout="horizontal" :dataSource="this.supportedServices">
               <a-list-item slot="renderItem" slot-scope="item">
@@ -49,17 +49,17 @@
             </a-list>
           </div>
         </a-form-item>
-        <a-form-item :label="$t('regionlevelvpc')" v-if="this.regionLevelVpcVisible">
-          <a-switch v-decorator="['regionlevelvpc']" defaultChecked="true" />
+        <a-form-item :label="$t('regionlevelvpc')" v-if="this.connectivityServiceChecked">
+          <a-switch v-decorator="['regionlevelvpc', {initialValue: true}]" defaultChecked />
         </a-form-item>
-        <a-form-item :label="$t('distributedrouter')" v-if="this.distributedRouterVisible">
-          <a-switch v-decorator="['distributedrouter']" defaultChecked="true" />
+        <a-form-item :label="$t('distributedrouter')" v-if="this.connectivityServiceChecked">
+          <a-switch v-decorator="['distributedrouter', {initialValue: true}]" defaultChecked />
         </a-form-item>
-        <a-form-item :label="$t('redundant.router.capability')" v-if="this.redundantRouterCapabilityVisible">
-          <a-switch v-decorator="['redundant.router.capability']" />
+        <a-form-item :label="$t('redundantrouter')" v-if="this.sourceNatServiceChecked">
+          <a-switch v-decorator="['redundantrouter', {initialValue: false}]" />
         </a-form-item>
         <a-form-item :label="$t('ispublic')" v-if="this.isAdmin()">
-          <a-switch v-decorator="['ispublic']" :checked="this.isPublic" @change="val => { this.isPublic = val }" />
+          <a-switch v-decorator="['ispublic', {initialValue: this.isPublic}]" :defaultChecked="this.isPublic" @change="val => { this.isPublic = val }" />
         </a-form-item>
         <a-form-item :label="$t('domainid')" v-if="!this.isPublic">
           <a-select
@@ -143,9 +143,8 @@ export default {
       loading: false,
       supportedServices: [],
       supportedServiceLoading: false,
-      regionLevelVpcVisible: false,
-      distributedRouterVisible: false,
-      redundantRouterCapabilityVisible: false
+      connectivityServiceChecked: false,
+      sourceNatServiceChecked: false
     }
   },
   beforeCreate () {
@@ -270,47 +269,46 @@ export default {
       })
       for (var i in this.supportedServices) {
         var serviceName = this.supportedServices[i].name
-        var serviceDisplayName
+        var serviceDisplayName = 'label.' + serviceName
         // Sanitize names
-        switch (serviceName) {
-          case 'Vpn':
-            serviceDisplayName = this.$t('label.vpn')
-            break
-          case 'Dhcp':
-            serviceDisplayName = this.$t('label.dhcp')
-            break
-          case 'Dns':
-            serviceDisplayName = this.$t('label.dns')
-            break
-          case 'Lb':
-            serviceDisplayName = this.$t('label.load.balancer')
-            break
-          case 'SourceNat':
-            serviceDisplayName = this.$t('label.source.nat')
-            break
-          case 'StaticNat':
-            serviceDisplayName = this.$t('label.static.nat')
-            break
-          case 'PortForwarding':
-            serviceDisplayName = this.$t('label.port.forwarding')
-            break
-          case 'UserData':
-            serviceDisplayName = this.$t('label.user.data')
-            break
-          default:
-            serviceDisplayName = serviceName
-            break
-        }
+        // switch (serviceName) {
+        //   case 'Vpn':
+        //     serviceDisplayName = this.$t('label.vpn')
+        //     break
+        //   case 'Dhcp':
+        //     serviceDisplayName = this.$t('label.dhcp')
+        //     break
+        //   case 'Dns':
+        //     serviceDisplayName = this.$t('label.dns')
+        //     break
+        //   case 'Lb':
+        //     serviceDisplayName = this.$t('label.load.balancer')
+        //     break
+        //   case 'SourceNat':
+        //     serviceDisplayName = this.$t('label.source.nat')
+        //     break
+        //   case 'StaticNat':
+        //     serviceDisplayName = this.$t('label.static.nat')
+        //     break
+        //   case 'PortForwarding':
+        //     serviceDisplayName = this.$t('label.port.forwarding')
+        //     break
+        //   case 'UserData':
+        //     serviceDisplayName = this.$t('label.user.data')
+        //     break
+        //   default:
+        //     serviceDisplayName = 'label.' + serviceName
+        //     break
+        // }
         this.supportedServices[i].description = serviceDisplayName
       }
     },
     handleSupportedServiceChange (service, checked) {
       if (service === 'Connectivity') {
-        this.regionLevelVpcVisible = checked
-        this.distributedRouterVisible = checked
+        this.connectivityServiceChecked = checked
       }
       if (service === 'SourceNat') {
-        this.redundantRouterCapabilityVisible = checked
+        this.sourceNatServiceChecked = checked
       }
     },
     handleSubmit (e) {
@@ -321,13 +319,10 @@ export default {
         }
         var params = {}
         params.name = values.name
-        params.description = values.description
-        var ispublic = values.ispublic
-        if (ispublic === true) {
-          params.domainid = 'public'
-        } else {
+        params.displaytext = values.displaytext
+        if (values.ispublic !== true) {
           var domainIndexes = values.domainid
-          var domainId = 'public'
+          var domainId = null
           if (domainIndexes && domainIndexes.length > 0) {
             var domainIds = []
             for (var i = 0; i < domainIndexes.length; i++) {
@@ -335,19 +330,66 @@ export default {
             }
             domainId = domainIds.join(',')
           }
-          params.domainid = domainId
+          if (domainId) {
+            params.domainid = domainId
+          }
         }
         var zoneIndexes = values.zoneid
-        var zoneId = 'all'
+        var zoneId = null
         if (zoneIndexes && zoneIndexes.length > 0) {
           var zoneIds = []
           for (var j = 0; j < zoneIndexes.length; j++) {
             zoneIds = zoneIds.concat(this.zones[zoneIndexes[j]].id)
           }
           zoneId = zoneIds.join(',')
+        }
+        if (zoneId) {
           params.zoneid = zoneId
         }
-        console.log(values, params)
+        var selectedServices = values.label
+        if (selectedServices != null) {
+          var supportedServices = Object.keys(selectedServices)
+          params.supportedservices = supportedServices.join(',')
+          for (var k in supportedServices) {
+            params['serviceProviderList[' + k + '].service'] = supportedServices[k]
+            params['serviceProviderList[' + k + '].provider'] = selectedServices[supportedServices[k]].provider
+          }
+          var serviceCapabilityIndex = 0
+          if (supportedServices.includes('Connectivity')) {
+            if (values.regionlevelvpc === true) {
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Connectivity'
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RegionLevelVpc'
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
+              serviceCapabilityIndex++
+            }
+            if (values.distributedrouter === true) {
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Connectivity'
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'DistributedRouter'
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
+              serviceCapabilityIndex++
+            }
+          }
+          if (supportedServices.includes('SourceNat') && values.redundantrouter === true) {
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
+            serviceCapabilityIndex++
+          }
+        }
+        api('createVPCOffering', params).then(json => {
+          this.$notification.success({
+            message: this.$t('message.added.vpc.offering'),
+            description: this.$t('message.added.vpc.offering')
+          })
+        }).catch(error => {
+          this.$notification.error({
+            message: 'Request Failed',
+            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
+          })
+        }).finally(() => {
+          this.loading = false
+          this.closeAction()
+        })
       })
     },
     closeAction () {

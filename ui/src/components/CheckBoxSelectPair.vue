@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div>
+  <div v-decorator="['service.' + resourceTitle, {}]">
     <a-checkbox class="pair-checkbox" @change="handleCheckChange">
       {{ resourceTitle }}
     </a-checkbox>
@@ -69,10 +69,8 @@ export default {
     handleCheckChange (e) {
       this.checked = e.target.checked
       if (this.checked && this.arrayHasItems(this.resourceOptions)) {
-        // console.log(this.resourceOptions[0].name)
         this.selectedOption = this.resourceOptions[0].name
       }
-      // console.log(e.target)
       this.$emit('handle-check-change', this.resourceKey, this.checked)
     }
   }
