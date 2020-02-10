@@ -29,12 +29,12 @@
             }]"
             :placeholder="this.$t('Name')"/>
         </a-form-item>
-        <a-form-item :label="$t('description')">
+        <a-form-item :label="$t('displaytext')">
           <a-input
-            v-decorator="['description', {
+            v-decorator="['displaytext', {
               rules: [{ required: true, message: 'Please enter description' }]
             }]"
-            :placeholder="this.$t('Description')"/>
+            :placeholder="this.$t('displaytext')"/>
         </a-form-item>
         <a-form-item :label="$t('storagetype')">
           <a-radio-group
@@ -88,7 +88,7 @@
             }]"
             :placeholder="this.$t('disksize')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.qostype')">
+        <a-form-item :label="$t('qostype')">
           <a-radio-group
             v-decorator="['qostype', {
               initialValue: this.qosType
@@ -243,7 +243,7 @@
           </a-select>
         </a-form-item>
         <a-form-item :label="$t('ispublic')" v-show="this.isAdmin()">
-          <a-switch v-decorator="['ispublic']" :checked="this.isPublic" @change="val => { this.isPublic = val }" />
+          <a-switch v-decorator="['ispublic', {initialValue: this.isPublic}]" :checked="this.isPublic" @change="val => { this.isPublic = val }" />
         </a-form-item>
         <a-form-item :label="$t('domainid')" v-if="!this.isPublic">
           <a-select
