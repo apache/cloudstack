@@ -36,7 +36,7 @@
             }]"
             :placeholder="this.$t('Description')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.storage.type')">
+        <a-form-item :label="$t('storagetype')">
           <a-radio-group
             v-decorator="['storagetype', {
               initialValue: this.storageType
@@ -51,7 +51,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.disk.provisioningtype')">
+        <a-form-item :label="$t('provisioningtype')">
           <a-radio-group
             v-decorator="['provisioningtype', {
               initialValue: this.provisioningType
@@ -69,10 +69,10 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.customdisksize')">
-          <a-switch v-decorator="['ciustomdisksize']" :checked="this.isCustomDiskSize" @change="val => { this.isCustomDiskSize = val }" />
+        <a-form-item :label="$t('customdisksize')">
+          <a-switch v-decorator="['customdisksize']" :checked="this.isCustomDiskSize" @change="val => { this.isCustomDiskSize = val }" />
         </a-form-item>
-        <a-form-item :label="$t('label.disksize.gb')" v-if="this.isCustomDiskSize">
+        <a-form-item :label="$t('disksize')" v-if="!this.isCustomDiskSize">
           <a-input
             v-decorator="['disksize', {
               rules: [{ required: true, message: 'Please enter disk size' },
@@ -86,7 +86,7 @@
                       }
               ]
             }]"
-            :placeholder="this.$t('Description')"/>
+            :placeholder="this.$t('disksize')"/>
         </a-form-item>
         <a-form-item :label="$t('label.qostype')">
           <a-radio-group
@@ -106,7 +106,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.disk.bytes.read.rate')" v-if="this.qosType === 'hypervisor'">
+        <a-form-item :label="$t('diskbytesreadrate')" v-if="this.qosType === 'hypervisor'">
           <a-input
             v-decorator="['diskbytesreadrate', {
               rules: [{
@@ -118,9 +118,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('label.disk.bytes.read.rate')"/>
+            :placeholder="this.$t('diskbytesreadrate')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.disk.bytes.write.rate')" v-if="this.qosType === 'hypervisor'">
+        <a-form-item :label="$t('diskbyteswriterate')" v-if="this.qosType === 'hypervisor'">
           <a-input
             v-decorator="['diskbyteswriterate', {
               rules: [{
@@ -132,9 +132,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('label.disk.bytes.write.rate')"/>
+            :placeholder="this.$t('diskbyteswriterate')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.disk.iops.read.rate')" v-if="this.qosType === 'hypervisor'">
+        <a-form-item :label="$t('diskiopsreadrate')" v-if="this.qosType === 'hypervisor'">
           <a-input
             v-decorator="['diskiopsreadrate', {
               rules: [{
@@ -146,9 +146,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('label.disk.iops.read.rate')"/>
+            :placeholder="this.$t('diskiopsreadrate')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.disk.iops.write.rate')" v-if="this.qosType === 'hypervisor'">
+        <a-form-item :label="$t('diskiopswriterate')" v-if="this.qosType === 'hypervisor'">
           <a-input
             v-decorator="['diskiopswriterate', {
               rules: [{
@@ -160,12 +160,12 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('label.disk.iops.write.rate')"/>
+            :placeholder="this.$t('diskiopswriterate')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.custom.disk.iops')" v-if="this.qosType === 'storage'">
+        <a-form-item :label="$t('iscustomizeddiskiops')" v-if="this.qosType === 'storage'">
           <a-switch v-decorator="['iscustomizeddiskiops']" :checked="this.isCustomizedDiskIops" @change="val => { this.isCustomizedDiskIops = val }" />
         </a-form-item>
-        <a-form-item :label="$t('label.disk.iops.min')" v-if="!this.isCustomizedDiskIops">
+        <a-form-item :label="$t('diskiopsmin')" v-if="this.qosType === 'storage' && !this.isCustomizedDiskIops">
           <a-input
             v-decorator="['diskiopsmin', {
               rules: [{
@@ -177,9 +177,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('label.disk.iops.min')"/>
+            :placeholder="this.$t('diskiopsmin')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.disk.iops.max')" v-if="!this.isCustomizedDiskIops">
+        <a-form-item :label="$t('diskiopsmax')" v-if="this.qosType === 'storage' && !this.isCustomizedDiskIops">
           <a-input
             v-decorator="['diskiopsmax', {
               rules: [{
@@ -191,9 +191,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('label.disk.iops.max')"/>
+            :placeholder="this.$t('diskiopsmax')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.hypervisor.snapshot.reserve')" v-if="this.qosType === 'storage'">
+        <a-form-item :label="$t('hypervisorsnapshotreserve')" v-if="this.qosType === 'storage'">
           <a-input
             v-decorator="['hypervisorsnapshotreserve', {
               rules: [{
@@ -205,9 +205,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('label.hypervisor.snapshot.reserve')"/>
+            :placeholder="this.$t('hypervisorsnapshotreserve')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.writecachetype')">
+        <a-form-item :label="$t('writecachetype')">
           <a-radio-group
             v-decorator="['writecachetype', {
               initialValue: this.writeCacheType
@@ -225,17 +225,17 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.storage.tags')" v-if="this.isAdmin()">
+        <a-form-item :label="$t('tags')" v-if="this.isAdmin()">
           <a-select
             mode="tags"
-            v-decorator="['storagetags', {}]"
+            v-decorator="['tags', {}]"
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="storageTagLoading"
-            :placeholder="this.$t('label.storage.tags')"
+            :placeholder="this.$t('tags')"
             v-if="this.isAdmin()">
             <a-select-option v-for="(opt) in this.storageTags" :key="opt.name">
               {{ opt.name || opt.description }}
@@ -262,7 +262,7 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
-            :placeholder="this.$t('label.domain')">
+            :placeholder="this.$t('domainid')">
             <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -290,7 +290,7 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
-            :placeholder="this.$t('label.zone')">
+            :placeholder="this.$t('zoneid')">
             <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -318,7 +318,7 @@ export default {
     return {
       storageType: 'shared',
       provisioningType: 'thin',
-      isCustomDiskSize: false,
+      isCustomDiskSize: true,
       qosType: '',
       isCustomizedDiskIops: false,
       writeCacheType: 'nodiskcache',
@@ -421,8 +421,90 @@ export default {
         if (err) {
           return
         }
-        var params = {}
-        console.log(params)
+        var params = {
+          isMirrored: false,
+          name: values.name,
+          displaytext: values.description,
+          storageType: values.storagetype,
+          cacheMode: values.writecachetype,
+          provisioningType: values.provisioningtype,
+          customized: (values.customdisksize === true)
+        }
+        if (values.customdisksize !== true) {
+          params.disksize = values.disksize
+        }
+        if (values.qostype === 'storage') {
+          var customIops = values.iscustomizeddiskiops === true
+          params.customizediops = customIops
+          if (!customIops) {
+            if (values.diskiopsmin != null && values.diskiopsmin.length > 0) {
+              params.miniops = values.diskiopsmin
+            }
+            if (values.diskiopsmax != null && values.diskiopsmax.length > 0) {
+              params.maxiops = values.diskiopsmax
+            }
+            if (values.hypervisorsnapshotreserve != null && values.hypervisorsnapshotreserve.length > 0) {
+              params.hypervisorsnapshotreserve = values.hypervisorsnapshotreserve
+            }
+          }
+        } else if (values.qostype === 'hypervisor') {
+          if (values.diskbytesreadrate != null && values.diskbytesreadrate.length > 0) {
+            params.bytesreadrate = values.diskbytesreadrate
+          }
+          if (values.diskbyteswriterate != null && values.diskbyteswriterate.length > 0) {
+            params.byteswriterate = values.diskbyteswriterate
+          }
+          if (values.diskiopsreadrate != null && values.diskiopsreadrate.length > 0) {
+            params.iopsreadrate = values.diskiopsreadrate
+          }
+          if (values.diskiopswriterate != null && values.diskiopswriterate.length > 0) {
+            params.iopswriterate = values.diskiopswriterate
+          }
+        }
+        if (values.tags != null && values.tags.length > 0) {
+          var tags = values.tags.join(',')
+          params.tags = tags
+        }
+        if (values.ispublic !== true) {
+          var domainIndexes = values.domainid
+          var domainId = null
+          if (domainIndexes && domainIndexes.length > 0) {
+            var domainIds = []
+            for (var i = 0; i < domainIndexes.length; i++) {
+              domainIds = domainIds.concat(this.domains[domainIndexes[i]].id)
+            }
+            domainId = domainIds.join(',')
+          }
+          if (domainId) {
+            params.domainid = domainId
+          }
+        }
+        var zoneIndexes = values.zoneid
+        var zoneId = null
+        if (zoneIndexes && zoneIndexes.length > 0) {
+          var zoneIds = []
+          for (var j = 0; j < zoneIndexes.length; j++) {
+            zoneIds = zoneIds.concat(this.zones[zoneIndexes[j]].id)
+          }
+          zoneId = zoneIds.join(',')
+        }
+        if (zoneId) {
+          params.zoneid = zoneId
+        }
+        api('createDiskOffering', params).then(json => {
+          this.$notification.success({
+            message: this.$t('message.add.disk.offering'),
+            description: this.$t('message.add.disk.offering')
+          })
+        }).catch(error => {
+          this.$notification.error({
+            message: 'Request Failed',
+            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
+          })
+        }).finally(() => {
+          this.loading = false
+          this.closeAction()
+        })
       })
     },
     closeAction () {
