@@ -17,7 +17,7 @@
 
 <template>
   <a
-    v-if="['vm', 'systemvm', 'router'].includes($route.meta.name)"
+    v-if="['vm', 'systemvm', 'router', 'ilbvm'].includes($route.meta.name)"
     :href="'/client/console?cmd=access&vm=' + resource.id"
     target="_blank">
     <a-button style="margin-right: 5px" shape="circle" type="dashed" :size="size" :disabled="['Stopped', 'Error', 'Destroyed'].includes(resource.state)" >

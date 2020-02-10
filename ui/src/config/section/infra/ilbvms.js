@@ -37,6 +37,19 @@ export default {
       dataView: true,
       args: ['forced'],
       show: (record) => { return record.state === 'Running' }
+    },
+    {
+      api: 'migrateSystemVm',
+      icon: 'drag',
+      label: 'label.action.migrate.router',
+      dataView: true,
+      show: (record) => { return record.state === 'Running' },
+      args: ['virtualmachineid', 'hostid'],
+      mapping: {
+        virtualmachineid: {
+          value: (record) => { return record.id }
+        }
+      }
     }
   ]
 }
