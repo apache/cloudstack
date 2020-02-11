@@ -1575,7 +1575,7 @@
                                     if (newDiskOffering != null && newDiskOffering.length > 0) {
                                         array1.push("&diskofferingid=" + encodeURIComponent(newDiskOffering));
                                     }
-                                    if ((args.context.volumes[0].type == "ROOT" || selectedDiskOfferingObj.iscustomized == true) {
+                                    if (args.context.volumes[0].type == "ROOT" || selectedDiskOfferingObj.iscustomized == true) {
                                         cloudStack.addNewSizeToCommandUrlParameterArrayIfItIsNotNullAndHigherThanZero(array1, args.data.newsize);
                                     }
 
