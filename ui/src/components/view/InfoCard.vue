@@ -71,7 +71,6 @@
           <div class="resource-detail-item__details">
             <status class="status" :text="resource.state || resource.status"/>
             <span>{{ resource.state || resource.status }}</span>
-            <console style="margin-left: 5px" :resource="resource" size="default" v-if="resource.id" />
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.id">

@@ -17,6 +17,7 @@
 
 <template>
   <span class="row-action-button">
+    <console :resource="resource" size="default" v-if="resource && resource.id && dataView" />
     <a-tooltip
       v-for="(action, actionIndex) in actions"
       :key="actionIndex"
@@ -56,9 +57,13 @@
 
 <script>
 import { api } from '@/api'
+import Console from '@/components/widgets/Console'
 
 export default {
   name: 'ActionButton',
+  components: {
+    Console
+  },
   data () {
     return {
       actionBadge: []

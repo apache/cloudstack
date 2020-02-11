@@ -47,14 +47,6 @@
           <IpRangesTabStorage :resource="resource" />
         </div>
       </a-tab-pane>
-      <a-tab-pane tab="Service Providers" key="nsp">
-        <a-list size="small">
-          <a-list-item v-for="(nsp, index) in nsps" :key="index">
-            <status :text="nsp.state" />
-            <router-link :to="{ path: '/nsp/' + nsp.id + '?name=' + nsp.name + '&physicalnetworkid=' + resource.id }">{{ nsp.name }} </router-link>
-          </a-list-item>
-        </a-list>
-      </a-tab-pane>
     </a-tabs>
   </a-spin>
 </template>
@@ -62,18 +54,16 @@
 <script>
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
-import Status from '@/components/widgets/Status'
 import IpRangesTabPublic from './IpRangesTabPublic'
 import IpRangesTabManagement from './IpRangesTabManagement'
 import IpRangesTabStorage from './IpRangesTabStorage'
 
 export default {
-  name: 'NetworkTab',
+  name: 'TrafficTypesTab',
   components: {
     IpRangesTabPublic,
     IpRangesTabManagement,
-    IpRangesTabStorage,
-    Status
+    IpRangesTabStorage
   },
   mixins: [mixinDevice],
   props: {
@@ -89,7 +79,6 @@ export default {
   data () {
     return {
       traffictypes: [],
-      nsps: [],
       publicNetwork: {},
       fetchLoading: false
     }
@@ -126,18 +115,6 @@ export default {
         zoneId: this.resource.zoneid
       }).then(json => {
         this.publicNetwork = json.listnetworksresponse.network[0] || {}
-      }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
-      }).finally(() => {
-        this.fetchLoading = false
-      })
-
-      this.fetchLoading = true
-      api('listNetworkServiceProviders', { physicalnetworkid: this.resource.id }).then(json => {
-        this.nsps = json.listnetworkserviceprovidersresponse.networkserviceprovider
       }).catch(error => {
         this.$notification.error({
           message: 'Request Failed',

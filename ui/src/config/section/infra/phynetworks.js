@@ -27,8 +27,11 @@ export default {
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
   }, {
-    name: 'Network',
-    component: () => import('@/views/infra/network/NetworkTab.vue')
+    name: 'Traffic Types',
+    component: () => import('@/views/infra/network/TrafficTypesTab.vue')
+  }, {
+    name: 'Service Providers',
+    component: () => import('@/views/infra/network/ServiceProvidersTab.vue')
   }, {
     name: 'Dedicated VLAN/VNI Ranges',
     component: () => import('@/views/infra/network/DedicatedVLANTab.vue')
