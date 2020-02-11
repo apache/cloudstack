@@ -21,7 +21,7 @@
     <a-tabs :tabPosition="device === 'mobile' ? 'top' : 'left'" :animated="false">
       <a-tab-pane v-for="(nsp, index) in nsps" :key="index">
         <span slot="tab">
-          {{ nsp.name}}
+          {{ nsp.name }}
           <status :text="nsp.state" style="margin-bottom: 6px" />
         </span>
         <router-link :to="{ path: '/nsp/' + nsp.id + '?name=' + nsp.name + '&physicalnetworkid=' + resource.id }">{{ nsp.name }} </router-link>
