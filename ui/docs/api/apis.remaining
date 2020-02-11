@@ -1,10 +1,4 @@
-createLBHealthCheckPolicy
-deleteLBHealthCheckPolicy
 listDeploymentPlanners
 listHostTags
-listInternalLoadBalancerVMs
-listLBHealthCheckPolicies
 listStorageProviders
 listStorageTags
-startInternalLoadBalancerVM
-stopInternalLoadBalancerVM

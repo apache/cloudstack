@@ -35,7 +35,7 @@
         animation="200"
         ghostClass="drag-ghost">
         <transition-group type="transition">
-          <div v-for="(acl, index) in acls" :key="index" class="list__item">
+          <div v-for="acl in acls" :key="acl.id" class="list__item">
             <div class="drag-handle">
               <a-icon type="drag"></a-icon>
             </div>
@@ -266,7 +266,7 @@ export default {
     fetchData () {
       this.fetchLoading = true
       api('listNetworkACLs', { aclid: this.resource.id }).then(json => {
-        this.acls = json.listnetworkaclsresponse.networkacl
+        this.acls = json.listnetworkaclsresponse.networkacl || []
         if (this.acls.length > 0) {
           this.acls.sort((a, b) => a.number - b.number)
         }
@@ -285,7 +285,7 @@ export default {
         resourceType: 'NetworkACL',
         listAll: true
       }).then(response => {
-        this.tags = response.listtagsresponse.tag
+        this.tags = response.listtagsresponse.tag || []
       }).catch(error => {
         this.$notification.error({
           message: `Error ${error.response.status}`,
