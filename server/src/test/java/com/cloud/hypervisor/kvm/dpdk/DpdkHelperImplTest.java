@@ -107,13 +107,13 @@ public class DpdkHelperImplTest {
 
         Mockito.when(dpdkVhostUserModeDetailVO.getName()).thenReturn(DpdkHelper.DPDK_VHOST_USER_MODE);
         Mockito.when(dpdkVhostUserModeDetailVO.getValue()).thenReturn(dpdkVhostMode);
-        Mockito.when(dpdkVhostUserModeDetailVO.getResourceId()).thenReturn(offeringId);
+        Mockito.lenient().when(dpdkVhostUserModeDetailVO.getResourceId()).thenReturn(offeringId);
         Mockito.when(dpdkNumaDetailVO.getName()).thenReturn(DpdkHelper.DPDK_NUMA);
-        Mockito.when(dpdkNumaDetailVO.getResourceId()).thenReturn(offeringId);
-        Mockito.when(dpdkNumaDetailVO.getValue()).thenReturn(dpdkNumaValue);
+        Mockito.lenient().when(dpdkNumaDetailVO.getResourceId()).thenReturn(offeringId);
+        Mockito.lenient().when(dpdkNumaDetailVO.getValue()).thenReturn(dpdkNumaValue);
         Mockito.when(dpdkHugePagesDetailVO.getName()).thenReturn(DpdkHelper.DPDK_HUGE_PAGES);
-        Mockito.when(dpdkHugePagesDetailVO.getResourceId()).thenReturn(offeringId);
-        Mockito.when(dpdkHugePagesDetailVO.getValue()).thenReturn(dpdkHugePagesValue);
+        Mockito.lenient().when(dpdkHugePagesDetailVO.getResourceId()).thenReturn(offeringId);
+        Mockito.lenient().when(dpdkHugePagesDetailVO.getValue()).thenReturn(dpdkHugePagesValue);
 
         Mockito.when(serviceOfferingDetailsDao.listDetails(offeringId)).thenReturn(
                 Arrays.asList(dpdkNumaDetailVO, dpdkHugePagesDetailVO, dpdkVhostUserModeDetailVO));
@@ -132,9 +132,9 @@ public class DpdkHelperImplTest {
         Mockito.when(vmInstanceVO.getId()).thenReturn(vmId);
 
         Mockito.when(dpdkNumaVmDetail.getName()).thenReturn(DpdkHelper.DPDK_NUMA);
-        Mockito.when(dpdkNumaVmDetail.getValue()).thenReturn(dpdkNumaConf);
+        Mockito.lenient().when(dpdkNumaVmDetail.getValue()).thenReturn(dpdkNumaConf);
         Mockito.when(dpdkHugePagesVmDetail.getName()).thenReturn(DpdkHelper.DPDK_HUGE_PAGES);
-        Mockito.when(dpdkHugePagesVmDetail.getValue()).thenReturn(dpdkHugePagesConf);
+        Mockito.lenient().when(dpdkHugePagesVmDetail.getValue()).thenReturn(dpdkHugePagesConf);
         Mockito.when(userVmDetailsDao.listDetails(vmId)).thenReturn(Arrays.asList(dpdkNumaVmDetail, dpdkHugePagesVmDetail));
     }
 
@@ -148,13 +148,13 @@ public class DpdkHelperImplTest {
 
     @Test
     public void testSetDpdkVhostUserModeInvalidDetail() {
-        Mockito.when(dpdkVhostUserModeDetailVO.getValue()).thenReturn("serverrrr");
+        Mockito.lenient().when(dpdkVhostUserModeDetailVO.getValue()).thenReturn("serverrrr");
         Mockito.verify(vmTO, Mockito.never()).addExtraConfig(Mockito.anyString(), Mockito.anyString());
     }
 
     @Test
     public void testSetDpdkVhostUserModeNotExistingDetail() {
-        Mockito.when(serviceOfferingDetailsDao.listDetails(offeringId)).thenReturn(
+        Mockito.lenient().when(serviceOfferingDetailsDao.listDetails(offeringId)).thenReturn(
                 Arrays.asList(dpdkNumaDetailVO, dpdkHugePagesDetailVO));
         Mockito.verify(vmTO, Mockito.never()).addExtraConfig(Mockito.anyString(), Mockito.anyString());
     }

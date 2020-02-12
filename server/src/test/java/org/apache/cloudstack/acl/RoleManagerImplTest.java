@@ -102,7 +102,7 @@ public class RoleManagerImplTest {
 
     @Test
     public void findRoleTestRootAdminAndNotRoleAdminType() {
-        Mockito.doReturn(RoleType.DomainAdmin).when(roleVoMock).getRoleType();
+        Mockito.lenient().doReturn(RoleType.DomainAdmin).when(roleVoMock).getRoleType();
         Mockito.doReturn(roleVoMock).when(roleDaoMock).findById(roleMockId);
         Mockito.doReturn(true).when(accountManagerMock).isRootAdmin(accountMockId);
 
@@ -115,7 +115,7 @@ public class RoleManagerImplTest {
 
     @Test
     public void findRoleTestRootAdminAndRoleAdminType() {
-        Mockito.doReturn(RoleType.Admin).when(roleVoMock).getRoleType();
+        Mockito.lenient().doReturn(RoleType.Admin).when(roleVoMock).getRoleType();
         Mockito.doReturn(roleVoMock).when(roleDaoMock).findById(roleMockId);
         Mockito.doReturn(true).when(accountManagerMock).isRootAdmin(accountMockId);
 
@@ -258,8 +258,8 @@ public class RoleManagerImplTest {
 
     @Test
     public void findRolesByTypeTestNonAdminRoleRootAdminUser() {
-        Mockito.doReturn(accountMock).when(roleManagerImpl).getCurrentAccount();
-        Mockito.doReturn(true).when(accountManagerMock).isRootAdmin(accountMockId);
+        Mockito.lenient().doReturn(accountMock).when(roleManagerImpl).getCurrentAccount();
+        Mockito.lenient().doReturn(true).when(accountManagerMock).isRootAdmin(accountMockId);
 
         List<Role> roles = new ArrayList<>();
         roles.add(Mockito.mock(Role.class));

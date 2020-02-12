@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.motion;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -85,9 +86,9 @@ public class StorageSystemDataMotionStrategyTest {
 
     @Test
     public void cantHandleSecondary() {
-        doReturn(sourceStore).when(volumeObjectSource).getDataStore();
+        lenient().doReturn(sourceStore).when(volumeObjectSource).getDataStore();
         doReturn(DataStoreRole.Primary).when(sourceStore).getRole();
-        doReturn(destinationStore).when(dataObjectDestination).getDataStore();
+        lenient().doReturn(destinationStore).when(dataObjectDestination).getDataStore();
         doReturn(DataStoreRole.Image).when((DataStore)destinationStore).getRole();
         doReturn(sourceStore).when(volumeObjectSource).getDataStore();
         doReturn(destinationStore).when(dataObjectDestination).getDataStore();
@@ -199,7 +200,7 @@ public class StorageSystemDataMotionStrategyTest {
         StoragePoolVO destStoragePool = new StoragePoolVO();
         StoragePoolType[] storagePoolTypes = StoragePoolType.values();
         for (int i = 0; i < storagePoolTypes.length; i++) {
-            Mockito.doReturn(storagePoolTypes[i]).when(sourceStoragePool).getPoolType();
+            Mockito.lenient().doReturn(storagePoolTypes[i]).when(sourceStoragePool).getPoolType();
             boolean result = strategy.shouldMigrateVolume(sourceStoragePool, destHost, destStoragePool);
             Assert.assertTrue(result);
         }
@@ -244,7 +245,7 @@ public class StorageSystemDataMotionStrategyTest {
 
     private void configureAndVerifyIsSourceAndDestinationPoolTypeOfNfs(StoragePoolType destStoragePoolType, StoragePoolType sourceStoragePoolType, boolean expected) {
         VolumeInfo srcVolumeInfo = Mockito.mock(VolumeObject.class);
-        Mockito.when(srcVolumeInfo.getId()).thenReturn(0l);
+        Mockito.lenient().when(srcVolumeInfo.getId()).thenReturn(0l);
 
         DataStore destDataStore = Mockito.mock(PrimaryDataStoreImpl.class);
         Mockito.when(destDataStore.getId()).thenReturn(1l);

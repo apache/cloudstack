@@ -37,6 +37,14 @@ public class Profiler {
         return stopTickNanoSeconds;
     }
 
+    public void setStartTick(long value) {
+        this.startTickNanoSeconds = value;
+    }
+
+    public void setStopTick(long value) {
+        this.stopTickNanoSeconds = value;
+    }
+
     /**
      * 1 millisecond = 1e+6 nanoseconds
      * 1 second = 1000 milliseconds = 1e+9 nanoseconds

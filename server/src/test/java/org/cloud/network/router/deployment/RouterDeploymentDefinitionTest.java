@@ -25,6 +25,7 @@ import static junit.framework.Assert.fail;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -285,7 +286,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test(expected = ResourceUnavailableException.class)
     public void testCheckPreconditionsWrongState() throws ResourceUnavailableException {
         // Prepare wrong traffic type to trigger error
-        when(deployment.guestNetwork.getTrafficType()).thenReturn(TrafficType.Guest);
+        lenient().when(deployment.guestNetwork.getTrafficType()).thenReturn(TrafficType.Guest);
 
         // Execute
         driveTestCheckPreconditionsCorrectNwState(Network.State.Shutdown);
@@ -422,8 +423,8 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test
     public void testPlanDeploymentRoutersNonBasic() {
         // Prepare
-        when(mockDataCenter.getNetworkType()).thenReturn(NetworkType.Advanced);
-        when(mockDestination.getPod()).thenReturn(mockPod);
+        lenient().when(mockDataCenter.getNetworkType()).thenReturn(NetworkType.Advanced);
+        lenient().when(mockDestination.getPod()).thenReturn(mockPod);
 
         // Execute
         deployment.planDeploymentRouters();
@@ -651,7 +652,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     public void testFindSourceNatIPNonPublicNw() throws InsufficientAddressCapacityException, ConcurrentOperationException {
         // Prepare
         final PublicIp sourceNatIp = mock(PublicIp.class);
-        when(mockIpAddrMgr.assignSourceNatIpAddressToGuestNetwork(
+        lenient().when(mockIpAddrMgr.assignSourceNatIpAddressToGuestNetwork(
                 mockOwner, mockNw)).thenReturn(sourceNatIp);
         deployment.isPublicNetwork = false;
 
@@ -705,7 +706,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
 
         // Prepare
         deployment.routers = new ArrayList<>();
-        when(mockNw.isRedundant()).thenReturn(true);
+        lenient().when(mockNw.isRedundant()).thenReturn(true);
         //this.deployment.routers.add(routerVO1);
         final RouterDeploymentDefinition deploymentUT = spy(deployment);
         doReturn(2).when(deploymentUT).getNumberOfRoutersToDeploy();
@@ -714,7 +715,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
         when(mockNetworkHelper.deployRouter(deploymentUT, false))
         .thenReturn(routerVO1).thenReturn(routerVO2);
-        when(networkDetailsDao.findById(anyLong())).thenReturn(null);
+        lenient().when(networkDetailsDao.findById(anyLong())).thenReturn(null);
         // Execute
         deploymentUT.deployAllVirtualRouters();
 
@@ -757,7 +758,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         // Prepare
         when(mockNetworkModel.isNetworkSystem(mockNw)).thenReturn(false);
         when(mockNw.getGuestType()).thenReturn(Network.GuestType.Isolated);
-        when(mockAccountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM)).thenReturn(null);
+        lenient().when(mockAccountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM)).thenReturn(null);
         //Execute
         deployment.setupAccountOwner();
         // Assert

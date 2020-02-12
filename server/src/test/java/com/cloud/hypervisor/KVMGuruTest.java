@@ -79,20 +79,20 @@ public class KVMGuruTest {
         Mockito.when(vmProfile.getVirtualMachine()).thenReturn(vm);
         Mockito.when(vm.getHostId()).thenReturn(hostId);
         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
-        Mockito.when(host.getCpus()).thenReturn(3);
+        Mockito.lenient().when(host.getCpus()).thenReturn(3);
         Mockito.when(host.getSpeed()).thenReturn(1995L);
         Mockito.when(vmTO.getMaxSpeed()).thenReturn(500);
-        Mockito.when(serviceOffering.getId()).thenReturn(offeringId);
-        Mockito.when(vmProfile.getServiceOffering()).thenReturn(serviceOffering);
+        Mockito.lenient().when(serviceOffering.getId()).thenReturn(offeringId);
+        Mockito.lenient().when(vmProfile.getServiceOffering()).thenReturn(serviceOffering);
 
-        Mockito.when(detail1.getName()).thenReturn(detail1Key);
-        Mockito.when(detail1.getValue()).thenReturn(detail1Value);
-        Mockito.when(detail1.getResourceId()).thenReturn(offeringId);
-        Mockito.when(detail2.getName()).thenReturn(detail2Key);
-        Mockito.when(detail2.getResourceId()).thenReturn(offeringId);
-        Mockito.when(detail2.getValue()).thenReturn(detail2Value);
+        Mockito.lenient().when(detail1.getName()).thenReturn(detail1Key);
+        Mockito.lenient().when(detail1.getValue()).thenReturn(detail1Value);
+        Mockito.lenient().when(detail1.getResourceId()).thenReturn(offeringId);
+        Mockito.lenient().when(detail2.getName()).thenReturn(detail2Key);
+        Mockito.lenient().when(detail2.getResourceId()).thenReturn(offeringId);
+        Mockito.lenient().when(detail2.getValue()).thenReturn(detail2Value);
 
-        Mockito.when(serviceOfferingDetailsDao.listDetails(offeringId)).thenReturn(
+        Mockito.lenient().when(serviceOfferingDetailsDao.listDetails(offeringId)).thenReturn(
                 Arrays.asList(detail1, detail2));
     }
 

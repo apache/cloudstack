@@ -156,7 +156,7 @@ public class HighAvailabilityManagerImplTest {
     public void scheduleRestartForVmsOnHost() {
         Mockito.when(hostVO.getType()).thenReturn(Host.Type.Routing);
         Mockito.when(hostVO.getHypervisorType()).thenReturn(HypervisorType.KVM);
-        Mockito.when(_instanceDao.listByHostId(42l)).thenReturn(Arrays.asList(Mockito.mock(VMInstanceVO.class)));
+        Mockito.lenient().when(_instanceDao.listByHostId(42l)).thenReturn(Arrays.asList(Mockito.mock(VMInstanceVO.class)));
         Mockito.when(_podDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(HostPodVO.class));
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
 
@@ -178,7 +178,7 @@ public class HighAvailabilityManagerImplTest {
         Mockito.when(hostVO.getHypervisorType()).thenReturn(HypervisorType.XenServer);
         List<VMInstanceVO> vms = new ArrayList<VMInstanceVO>();
         VMInstanceVO vm1 = Mockito.mock(VMInstanceVO.class);
-        Mockito.when(vm1.getHostId()).thenReturn(1l);
+        Mockito.lenient().when(vm1.getHostId()).thenReturn(1l);
         Mockito.when(vm1.getInstanceName()).thenReturn("i-2-3-VM");
         Mockito.when(vm1.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(vm1.isHaEnabled()).thenReturn(true);

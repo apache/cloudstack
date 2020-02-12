@@ -22,22 +22,25 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Scanner;
-import org.apache.cloudstack.utils.linux.MemStat;
 import java.util.Map;
-import org.apache.commons.io.IOUtils;
+import java.util.Scanner;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
+import org.apache.cloudstack.utils.linux.MemStat;
+import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
-import com.cloud.agent.api.to.DpdkTO;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.Connect;
@@ -45,8 +48,10 @@ import org.libvirt.StorageVol;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.MigrateCommand;
@@ -54,19 +59,15 @@ import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.DiskType;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.DriverType;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.Source;
+import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.w3c.dom.Document;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(value = {LibvirtConnection.class, LibvirtMigrateCommandWrapper.class, MemStat.class})
+@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
 public class LibvirtMigrateCommandWrapperTest {
     String fullfile =
 "<domain type='kvm' id='4'>\n" +
@@ -648,7 +649,7 @@ public class LibvirtMigrateCommandWrapperTest {
 
         libvirtMigrateCmdWrapper.deleteLocalVolume("localPath");
 
-        PowerMockito.verifyStatic(Mockito.times(1));
+        PowerMockito.verifyStatic(LibvirtConnection.class, Mockito.times(1));
         LibvirtConnection.getConnection();
         InOrder inOrder = Mockito.inOrder(conn, storageVolLookupByPath);
         inOrder.verify(conn, Mockito.times(1)).storageVolLookupByPath("localPath");

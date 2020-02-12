@@ -16,10 +16,16 @@
 // under the License.
 package com.cloud.api;
 
-import com.cloud.domain.DomainVO;
-import com.cloud.usage.UsageVO;
-import com.cloud.user.AccountVO;
-import com.cloud.vm.NicSecondaryIp;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
 
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
@@ -33,16 +39,10 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.lang.reflect.Field;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Mockito.when;
+import com.cloud.domain.DomainVO;
+import com.cloud.usage.UsageVO;
+import com.cloud.user.AccountVO;
+import com.cloud.vm.NicSecondaryIp;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(ApiDBUtils.class)
@@ -85,8 +85,8 @@ public class ApiResponseHelperTest {
     public void testUsageRecordResponse(){
         //Creating the usageVO object to be passed to the createUsageResponse.
         Long zoneId = null;
-        Long accountId = null;
-        Long domainId = null;
+        Long accountId = 1L;
+        Long domainId = 1L;
         String Description = "Test Object";
         String usageDisplay = " ";
         int usageType = -1;

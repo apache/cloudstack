@@ -101,7 +101,7 @@ public class QuotaAlertManagerImplTest extends TestCase {
 
         // Don't test sendQuotaAlert yet
         Mockito.doNothing().when(quotaAlertManager).sendQuotaAlert(Mockito.any(QuotaAlertManagerImpl.DeferredQuotaEmail.class));
-        Mockito.doReturn(true).when(quotaAlertManager).lockAccount(Mockito.anyLong());
+        Mockito.lenient().doReturn(true).when(quotaAlertManager).lockAccount(Mockito.anyLong());
 
         // call real method on send monthly statement
         Mockito.doCallRealMethod().when(quotaAlertManager).checkAndSendQuotaAlertEmails();

@@ -59,7 +59,6 @@ import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.google.gson.Gson;
@@ -317,14 +316,13 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     private void launchConsoleProxy(final byte[] ksBits, final String ksPassword, final String encryptorPassword) {
         final Object resource = this;
         s_logger.info("Building class loader for com.cloud.consoleproxy.ConsoleProxy");
-        final ClassLoader loader = ReflectUtil.getClassLoaderForName("console-proxy");
         if (_consoleProxyMain == null) {
             s_logger.info("Running com.cloud.consoleproxy.ConsoleProxy with encryptor password=" + encryptorPassword);
             _consoleProxyMain = new Thread(new ManagedContextRunnable() {
                 @Override
                 protected void runInContext() {
                     try {
-                        Class<?> consoleProxyClazz = loader.loadClass("com.cloud.consoleproxy.ConsoleProxy");
+                        Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
                         try {
                             s_logger.info("Invoke startWithContext()");
                             Method method = consoleProxyClazz.getMethod("startWithContext", Properties.class, Object.class, byte[].class, String.class, String.class);
@@ -357,7 +355,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
             s_logger.info("com.cloud.consoleproxy.ConsoleProxy is already running");
 
             try {
-                Class<?> consoleProxyClazz = loader.loadClass("com.cloud.consoleproxy.ConsoleProxy");
+                Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
                 Method methodSetup = consoleProxyClazz.getMethod("setEncryptorPassword", String.class);
                 methodSetup.invoke(null, encryptorPassword);
             } catch (SecurityException e) {

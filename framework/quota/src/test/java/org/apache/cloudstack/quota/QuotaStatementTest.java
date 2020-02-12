@@ -16,10 +16,17 @@
 // under the License.
 package org.apache.cloudstack.quota;
 
-import com.cloud.user.AccountVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.db.TransactionLegacy;
-import junit.framework.TestCase;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import javax.mail.MessagingException;
+import javax.naming.ConfigurationException;
+
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.QuotaStatementImpl.QuotaStatementPeriods;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
@@ -33,16 +40,11 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import javax.mail.MessagingException;
-import javax.naming.ConfigurationException;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.db.TransactionLegacy;
 
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Field;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import junit.framework.TestCase;
 
 @RunWith(MockitoJUnitRunner.class)
 public class QuotaStatementTest extends TestCase {
@@ -230,16 +232,16 @@ public class QuotaStatementTest extends TestCase {
         AccountVO accountVO = new AccountVO();
         accountVO.setId(2L);
         accountVO.setDomainId(1L);
-        Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(accountVO);
+        Mockito.lenient().when(accountDao.findById(Mockito.anyLong())).thenReturn(accountVO);
 
         QuotaAccountVO acc = new QuotaAccountVO(2L);
         acc.setQuotaBalance(new BigDecimal(404));
         acc.setLastStatementDate(null);
         List<QuotaAccountVO> accounts = new ArrayList<>();
         accounts.add(acc);
-        Mockito.when(quotaAcc.listAllQuotaAccount()).thenReturn(accounts);
+        Mockito.lenient().when(quotaAcc.listAllQuotaAccount()).thenReturn(accounts);
 
-        Mockito.when(quotaUsage.findTotalQuotaUsage(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyInt(), Mockito.any(Date.class), Mockito.any(Date.class)))
+        Mockito.lenient().when(quotaUsage.findTotalQuotaUsage(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyInt(), Mockito.any(Date.class), Mockito.any(Date.class)))
                 .thenReturn(new BigDecimal(100));
 
         // call real method on send monthly statement

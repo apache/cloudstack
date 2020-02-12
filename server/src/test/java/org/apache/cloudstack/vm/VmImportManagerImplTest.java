@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.vm;
 
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doNothing;
@@ -26,6 +27,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.cloudstack.api.ResponseGenerator;
@@ -261,10 +263,10 @@ public class VmImportManagerImplTest {
         List<StoragePoolVO> pools = new ArrayList<>();
         pools.add(poolVO);
         when(primaryDataStoreDao.listPoolByHostPath(Mockito.anyString(), Mockito.anyString())).thenReturn(pools);
-        when(userVmManager.importVM(Mockito.any(DataCenter.class), Mockito.any(Host.class), Mockito.any(VirtualMachineTemplate.class), Mockito.anyString(), Mockito.anyString(),
-                Mockito.any(Account.class), Mockito.anyString(), Mockito.any(Account.class), Mockito.anyBoolean(), Mockito.anyString(),
-                Mockito.anyLong(), Mockito.anyLong(), Mockito.any(ServiceOffering.class), Mockito.anyString(),
-                Mockito.anyString(), Mockito.any(Hypervisor.HypervisorType.class), Mockito.anyMap(), Mockito.any(VirtualMachine.PowerState.class))).thenReturn(userVm);
+        when(userVmManager.importVM(nullable(DataCenter.class), nullable(Host.class), nullable(VirtualMachineTemplate.class), nullable(String.class), nullable(String.class),
+                nullable(Account.class), nullable(String.class), nullable(Account.class), nullable(Boolean.class), nullable(String.class),
+                nullable(Long.class), nullable(Long.class), nullable(ServiceOffering.class), nullable(String.class),
+                nullable(String.class), nullable(Hypervisor.HypervisorType.class), nullable(Map.class), nullable(VirtualMachine.PowerState.class))).thenReturn(userVm);
         when(volumeApiService.doesTargetStorageSupportDiskOffering(Mockito.any(StoragePool.class), Mockito.anyString())).thenReturn(true);
         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
         when(networkVO.getGuestType()).thenReturn(Network.GuestType.L2);
@@ -279,7 +281,7 @@ public class VmImportManagerImplTest {
         NicProfile profile = Mockito.mock(NicProfile.class);
         Integer deviceId = 100;
         Pair<NicProfile, Integer> pair = new Pair<NicProfile, Integer>(profile, deviceId);
-        when(networkOrchestrationService.importNic(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Network.class), Mockito.anyBoolean(), Mockito.any(VirtualMachine.class), Mockito.any(Network.IpAddresses.class))).thenReturn(pair);
+        when(networkOrchestrationService.importNic(nullable(String.class), nullable(Integer.class), nullable(Network.class), nullable(Boolean.class), nullable(VirtualMachine.class), nullable(Network.IpAddresses.class))).thenReturn(pair);
         when(volumeManager.importVolume(Mockito.any(Volume.Type.class), Mockito.anyString(), Mockito.any(DiskOffering.class), Mockito.anyLong(),
                 Mockito.anyLong(), Mockito.anyLong(), Mockito.any(VirtualMachine.class), Mockito.any(VirtualMachineTemplate.class),
                 Mockito.any(Account.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString())).thenReturn(Mockito.mock(DiskProfile.class));

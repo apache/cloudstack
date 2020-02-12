@@ -2967,7 +2967,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return vmStates;
     }
 
-    public String rebootVM(final Connect conn, final String vmName) {
+    public String rebootVM(final Connect conn, final String vmName) throws LibvirtException{
         Domain dm = null;
         String msg = null;
         try {

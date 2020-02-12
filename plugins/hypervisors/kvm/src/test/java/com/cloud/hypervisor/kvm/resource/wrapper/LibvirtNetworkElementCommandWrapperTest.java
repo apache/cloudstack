@@ -19,11 +19,13 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+
+import java.util.Scanner;
 
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.junit.Before;
@@ -32,6 +34,10 @@ import org.junit.runner.RunWith;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -39,14 +45,10 @@ import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.network.Networks;
 import com.cloud.utils.ExecutionResult;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.util.Scanner;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(value = {MemStat.class})
+@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
 public class LibvirtNetworkElementCommandWrapperTest {
     private static final String fullfile = "<domain type='kvm' id='143'>\n"
             + "  <name>r-3-VM</name>\n"
@@ -245,8 +247,8 @@ public class LibvirtNetworkElementCommandWrapperTest {
         LibvirtUtilitiesHelper helper = mock(LibvirtUtilitiesHelper.class);
 
         when(_domain.getXMLDesc(0)).thenReturn(fullfile);
-        when(conn.domainLookupByName(anyString())).thenReturn(_domain);
-        when(helper.getConnectionByVmName(anyString())).thenReturn(conn);
+        when(conn.domainLookupByName(nullable(String.class))).thenReturn(_domain);
+        when(helper.getConnectionByVmName(nullable(String.class))).thenReturn(conn);
 
         doReturn(helper).when(res).getLibvirtUtilitiesHelper();
     }

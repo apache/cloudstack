@@ -39,7 +39,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 public class VeeamClientTest {
 
     private String adminUsername = "administrator";
-    private String adminPassword = "P@ssword123";
+    private String adminPassword = "password";
     private VeeamClient client;
 
     @Rule

@@ -19,6 +19,19 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -41,9 +54,11 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.UnsupportedAnswer;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuTuneDef;
+import org.apache.cloudstack.storage.command.AttachAnswer;
+import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.utils.linux.CPUStat;
+import org.apache.cloudstack.utils.linux.MemStat;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.commons.lang.SystemUtils;
 import org.joda.time.Duration;
 import org.junit.Assert;
@@ -61,21 +76,16 @@ import org.libvirt.MemoryStatistic;
 import org.libvirt.NodeInfo;
 import org.libvirt.StorageVol;
 import org.libvirt.jna.virDomainMemoryStats;
-import org.mockito.Matchers;
+import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-
-import org.apache.cloudstack.storage.command.AttachAnswer;
-import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.utils.linux.CPUStat;
-import org.apache.cloudstack.utils.linux.MemStat;
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -87,6 +97,7 @@ import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
@@ -129,6 +140,7 @@ import com.cloud.agent.api.SecurityGroupRulesCmd.IpPortAndProto;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UnPlugNicCommand;
+import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
@@ -150,6 +162,7 @@ import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.NfsStoragePool;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuTuneDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
@@ -177,20 +190,9 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.Type;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(value = {MemStat.class})
+@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*"})
 public class LibvirtComputingResourceTest {
 
     @Mock
@@ -492,7 +494,8 @@ public class LibvirtComputingResourceTest {
         nodeInfo.model = "Foo processor";
         Mockito.when(connect.nodeInfo()).thenReturn(nodeInfo);
         // this is testing the interface stats, returns an increasing number of sent and received bytes
-        Mockito.when(domain.interfaceStats(Matchers.anyString())).thenAnswer(new org.mockito.stubbing.Answer<DomainInterfaceStats>() {
+
+        Mockito.when(domain.interfaceStats(nullable(String.class))).thenAnswer(new org.mockito.stubbing.Answer<DomainInterfaceStats>() {
             // increment with less than a KB, so this should be less than 1 KB
             final static int increment = 1000;
             int rxBytes = 1000;
@@ -509,7 +512,8 @@ public class LibvirtComputingResourceTest {
 
         });
 
-        Mockito.when(domain.blockStats(Matchers.anyString())).thenAnswer(new org.mockito.stubbing.Answer<DomainBlockStats>() {
+
+        Mockito.when(domain.blockStats(nullable(String.class))).thenAnswer(new org.mockito.stubbing.Answer<DomainBlockStats>() {
             // a little less than a KB
             final static int increment = 1000;
 
@@ -1000,7 +1004,7 @@ public class LibvirtComputingResourceTest {
 
         when(libvirtComputingResource.getCPUStat()).thenReturn(cpuStat);
         when(libvirtComputingResource.getMemStat()).thenReturn(memStat);
-        when(libvirtComputingResource.getNicStats(Mockito.anyString())).thenReturn(new Pair<Double, Double>(1.0d, 1.0d));
+        when(libvirtComputingResource.getNicStats(nullable(String.class))).thenReturn(new Pair<Double, Double>(1.0d, 1.0d));
         when(cpuStat.getCpuUsedPercent()).thenReturn(0.5d);
         when(memStat.getAvailable()).thenReturn(1500L);
         when(memStat.getTotal()).thenReturn(15000L);
@@ -1247,7 +1251,7 @@ public class LibvirtComputingResourceTest {
         when(vm.getNics()).thenReturn(new NicTO[]{nicTO});
         when(nicTO.getType()).thenReturn(TrafficType.Guest);
 
-        when(libvirtComputingResource.getVifDriver(nicTO.getType(), nicTO.getName())).thenThrow(InternalErrorException.class);
+        BDDMockito.given(libvirtComputingResource.getVifDriver(nicTO.getType(), nicTO.getName())).willAnswer(invocationOnMock -> {throw new InternalErrorException("Exception Occurred");});
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
         try {
             when(libvirtComputingResource.getVolumePath(conn, volume)).thenReturn("/path");
@@ -1535,7 +1539,7 @@ public class LibvirtComputingResourceTest {
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         try {
-            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenThrow(URISyntaxException.class);
+            BDDMockito.given(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).willAnswer(invocationOnMock -> {throw new URISyntaxException("Exception trying to get connection by VM name", vmName);});
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -1564,7 +1568,7 @@ public class LibvirtComputingResourceTest {
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         try {
-            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenThrow(InternalErrorException.class);
+            BDDMockito.given(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).willAnswer(invocationOnMock -> {throw new InternalErrorException("Exception Occurred");});
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -2252,7 +2256,7 @@ public class LibvirtComputingResourceTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Test
+    @Test(expected = Exception.class)
     public void testOvsVpcPhysicalTopologyConfigCommandFailure() {
         final Host[] hosts = null;
         final Tier[] tiers = null;
@@ -2296,7 +2300,7 @@ public class LibvirtComputingResourceTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Test
+    @Test(expected = Exception.class)
     public void testOvsVpcRoutingPolicyConfigCommandFailure() {
         final String id = null;
         final String cidr = null;
@@ -2702,7 +2706,7 @@ public class LibvirtComputingResourceTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Test
+    @Test(expected = Exception.class)
     public void testOvsDestroyTunnelCommandFailure2() {
         final String networkName = "Test";
         final Long networkId = 1l;
@@ -2802,7 +2806,7 @@ public class LibvirtComputingResourceTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Test
+    @Test(expected = Exception.class)
     public void testOvsCreateTunnelCommandFailure2() {
         final String remoteIp = "127.0.0.1";
         final Integer key = 1;

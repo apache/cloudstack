@@ -102,7 +102,7 @@ public class VmwareManagerImplTest {
         host.setDataCenterId(1);
         host.setHypervisorType(Hypervisor.HypervisorType.VMware);
         Mockito.doReturn(Collections.singletonList(host)).when(hostDao).listAllHostsByZoneAndHypervisorType(Mockito.anyLong(), Mockito.any());
-        Mockito.doReturn(hostDetails).when(hostDetailsDao).findDetails(Mockito.anyLong());
+        Mockito.lenient().doReturn(hostDetails).when(hostDetailsDao).findDetails(Mockito.anyLong());
         Mockito.doReturn("some-old-guid").when(hostDetails).get("guid");
         Mockito.doReturn(hostDetails).when(hostDetailsDao).findDetails(Mockito.anyLong());
 

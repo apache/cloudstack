@@ -22,6 +22,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -1421,7 +1422,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                     try {
                         if (_idField != null) {
                             if (id != null) {
-                                _idField.set(entity, id);
+                                if (id instanceof BigInteger) {
+                                    _idField.set(entity, ((BigInteger) id).longValue());
+                                } else {
+                                    _idField.set(entity, id);
+                                }
                             } else {
                                 id = (ID)_idField.get(entity);
                             }

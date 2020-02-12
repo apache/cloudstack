@@ -19,17 +19,18 @@
 
 package org.apache.cloudstack.api.command;
 
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountService;
-import com.cloud.user.User;
-import com.cloud.user.UserAccountVO;
-import com.cloud.user.UserVO;
-import com.cloud.user.dao.UserAccountDao;
-import com.cloud.user.dao.UserDao;
-import com.cloud.utils.HttpUtils;
-import junit.framework.TestCase;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+
+import java.lang.reflect.Field;
+import java.net.InetAddress;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
@@ -45,13 +46,18 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.lang.reflect.Field;
-import java.net.InetAddress;
-import java.util.HashMap;
-import java.util.Map;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+import com.cloud.user.User;
+import com.cloud.user.UserAccountVO;
+import com.cloud.user.UserVO;
+import com.cloud.user.dao.UserAccountDao;
+import com.cloud.user.dao.UserDao;
+import com.cloud.utils.HttpUtils;
+
+import junit.framework.TestCase;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ListAndSwitchSAMLAccountCmdTest extends TestCase {
@@ -91,8 +97,8 @@ public class ListAndSwitchSAMLAccountCmdTest extends TestCase {
         Mockito.when(session.getAttribute("userid")).thenReturn(2L);
         params.put(ApiConstants.USER_ID, new String[]{"2"});
         params.put(ApiConstants.DOMAIN_ID, new String[]{"1"});
-        Mockito.when(userDao.findByUuid(Mockito.anyString())).thenReturn(new UserVO(2L));
-        Mockito.when(domainDao.findByUuid(Mockito.anyString())).thenReturn(new DomainVO());
+        Mockito.when(userDao.findByUuid(anyString())).thenReturn(new UserVO(2L));
+        Mockito.when(domainDao.findByUuid(anyString())).thenReturn(new DomainVO());
 
         // Mock/field setup
         ListAndSwitchSAMLAccountCmd cmd = new ListAndSwitchSAMLAccountCmd();
@@ -181,8 +187,9 @@ public class ListAndSwitchSAMLAccountCmdTest extends TestCase {
         loginCmdResponse.setFirstName("firstName");
         loginCmdResponse.setLastName("lastName");
         loginCmdResponse.setSessionKey("newSessionKeyString");
-        Mockito.when(apiServer.loginUser(Mockito.any(HttpSession.class), Mockito.anyString(), Mockito.anyString(),
-                Mockito.anyLong(), Mockito.anyString(), Mockito.any(InetAddress.class), Mockito.anyMap())).thenReturn(loginCmdResponse);
+        Mockito.when(apiServer.loginUser(nullable(HttpSession.class), nullable(String.class), nullable(String.class),
+                nullable(Long.class), nullable(String.class), nullable(InetAddress.class), nullable(Map.class))).thenReturn(loginCmdResponse);
+        Mockito.doNothing().when(resp).sendRedirect(nullable(String.class));
         try {
             cmd.authenticate("command", params, session, null, HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
         } catch (ServerApiException exception) {
@@ -190,7 +197,7 @@ public class ListAndSwitchSAMLAccountCmdTest extends TestCase {
         } finally {
             // accountService should have been called 4 times by now, for this case twice and 2 for cases above
             Mockito.verify(accountService, Mockito.times(4)).getUserAccountById(Mockito.anyLong());
-            Mockito.verify(resp, Mockito.times(1)).sendRedirect(Mockito.anyString());
+            Mockito.verify(resp, Mockito.times(1)).sendRedirect(anyString());
         }
     }
 
