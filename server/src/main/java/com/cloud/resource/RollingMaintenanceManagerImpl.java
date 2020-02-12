@@ -28,7 +28,9 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.event.ActionEvent;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
@@ -50,9 +52,11 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.gson.Gson;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -129,6 +133,27 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         resourceManager.updateCluster(cluster, "", "", state, "");
     }
 
+    private void generateReportAndFinishingEvent(StartRollingMaintenanceCmd cmd, boolean success, String details,
+                                                 List<HostUpdated> hostsUpdated, List<HostSkipped> hostsSkipped) {
+        Pair<ResourceType, List<Long>> pair = getResourceTypeIdPair(cmd);
+        ResourceType entity = pair.first();
+        List<Long> ids = pair.second();
+
+        String description = String.format("Success: %s, details: %s, hosts updated: %s, hosts skipped: %s", success, details,
+                generateReportHostsUpdated(hostsUpdated), generateReportHostsSkipped(hostsSkipped));
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
+                EventVO.LEVEL_INFO, cmd.getEventType(),
+                "Completed rolling maintenance for entity " + entity + " with IDs: " + ids + " - " + description, 0);
+    }
+
+    private String generateReportHostsUpdated(List<HostUpdated> hostsUpdated) {
+        return new Gson().toJson(hostsUpdated);
+    }
+
+    private String generateReportHostsSkipped(List<HostSkipped> hostsSkipped) {
+        return new Gson().toJson(hostsSkipped);
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_START_ROLLING_MAINTENANCE, eventDescription = "starting rolling maintenance", async = true)
     public Ternary<Boolean, String, Pair<List<HostUpdated>, List<HostSkipped>>> startRollingMaintenance(StartRollingMaintenanceCmd cmd) {
@@ -142,6 +167,8 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         Set<Long> disabledClusters = new HashSet<>();
         Map<Long, String> hostsToAvoidMaintenance = new HashMap<>();
 
+        boolean success = false;
+        String details = null;
         List<HostUpdated> hostsUpdated = new ArrayList<>();
         List<HostSkipped> hostsSkipped = new ArrayList<>();
         try {
@@ -155,8 +182,9 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
                     if (forced) {
                         continue;
                     }
-                    return new Ternary<>(false, "VMs in invalid states in cluster: " + cluster.getUuid(),
-                            new Pair<>(hostsUpdated, hostsSkipped));
+                    success = false;
+                    details = "VMs in invalid states in cluster: " + cluster.getUuid();
+                    return new Ternary<>(success, details, new Pair<>(hostsUpdated, hostsSkipped));
                 }
                 disableClusterIfEnabled(cluster, disabledClusters);
 
@@ -174,7 +202,9 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
                         continue;
                     }
                     if (hostResult.first()) {
-                        return new Ternary<>(false, hostResult.third(), new Pair<>(hostsUpdated, hostsSkipped));
+                        success = false;
+                        details = hostResult.third();
+                        return new Ternary<>(success, details, new Pair<>(hostsUpdated, hostsSkipped));
                     }
                 }
                 enableClusterIfDisabled(cluster, disabledClusters);
@@ -182,7 +212,9 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         } catch (AgentUnavailableException | InterruptedException | CloudRuntimeException e) {
             String err = "Error starting rolling maintenance: " + e.getMessage();
             s_logger.error(err, e);
-            return new Ternary<>(false, err, new Pair<>(hostsUpdated, hostsSkipped));
+            success = false;
+            details = err;
+            return new Ternary<>(success, details, new Pair<>(hostsUpdated, hostsSkipped));
         } finally {
             // Enable back disabled clusters
             for (Long clusterId : disabledClusters) {
@@ -191,8 +223,11 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
                     updateCluster(clusterId, "Enabled");
                 }
             }
+            generateReportAndFinishingEvent(cmd, success, details, hostsUpdated, hostsSkipped);
         }
-        return new Ternary<>(true, "OK", new Pair<>(hostsUpdated, hostsSkipped));
+        success = true;
+        details = "OK";
+        return new Ternary<>(success, details, new Pair<>(hostsUpdated, hostsSkipped));
     }
 
     /**
