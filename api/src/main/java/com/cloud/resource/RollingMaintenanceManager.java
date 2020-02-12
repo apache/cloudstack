@@ -68,11 +68,13 @@ public interface RollingMaintenanceManager extends Configurable {
         private Host host;
         private Date start;
         private Date end;
+        private String outputMsg;
 
-        public HostUpdated(Host host, Date start, Date end) {
+        public HostUpdated(Host host, Date start, Date end, String outputMsg) {
             this.host = host;
             this.start = start;
             this.end = end;
+            this.outputMsg = outputMsg;
         }
 
         public Host getHost() {
@@ -97,6 +99,14 @@ public interface RollingMaintenanceManager extends Configurable {
 
         public void setEnd(Date end) {
             this.end = end;
+        }
+
+        public String getOutputMsg() {
+            return outputMsg;
+        }
+
+        public void setOutputMsg(String outputMsg) {
+            this.outputMsg = outputMsg;
         }
     }
 

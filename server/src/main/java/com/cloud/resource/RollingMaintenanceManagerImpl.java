@@ -285,7 +285,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         cancelHostMaintenance(host);
         Date endTime = new Date();
 
-        HostUpdated hostUpdated = new HostUpdated(host, startTime, endTime);
+        HostUpdated hostUpdated = new HostUpdated(host, startTime, endTime, result.third());
         hostsUpdated.add(hostUpdated);
 
         result = performPostMaintenanceStageOnHost(host, timeout, payload, forced, hostsToAvoidMaintenance, hostsSkipped);
