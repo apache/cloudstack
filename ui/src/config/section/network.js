@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import store from '@/store'
+
 export default {
   name: 'network',
   title: 'Network',
@@ -29,14 +31,6 @@ export default {
       columns: ['name', 'state', 'type', 'cidr', 'ip6cidr', 'broadcasturi', 'account', 'zonename'],
       details: ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'zonename', 'account', 'domain'],
       related: [{
-        name: 'publicip',
-        title: 'IP Addresses',
-        param: 'associatednetworkid'
-      }, {
-        name: 'router',
-        title: 'Routers',
-        param: 'networkid'
-      }, {
         name: 'vm',
         title: 'Instances',
         param: 'networkid'
@@ -47,7 +41,15 @@ export default {
       }, {
         name: 'Egress Rules',
         component: () => import('@/views/network/EgressConfigure.vue'),
-        show: () => true
+        show: (record) => { return record.type === 'Isolated' && 'listEgressFirewallRules' in store.getters.apis }
+      }, {
+        name: 'Public IP Addresses',
+        component: () => import('@/views/network/IpAddressesTab.vue'),
+        show: (record) => { return record.type === 'Isolated' && 'listPublicIpAddresses' in store.getters.apis }
+      }, {
+        name: 'Virtual Routers',
+        component: () => import('@/views/network/RoutersTab.vue'),
+        show: (record) => { return (record.type === 'Isolated' || record.type === 'Shared') && 'listRouters' in store.getters.apis }
       }],
       actions: [
         {

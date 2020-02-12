@@ -28,6 +28,56 @@
       <a-tab-pane :tab="$t('networks')" key="tier">
         <VpcTiersTab :resource="resource" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane tab="Public IP Addresses" key="ip" v-if="'listPublicIpAddresses' in $store.getters.apis">
+        <IpAddressesTab :resource="resource" :loading="loading" />
+      </a-tab-pane>
+      <a-tab-pane tab="Network ACL Lists" key="acl" v-if="'listNetworkACLLists' in $store.getters.apis">
+        <a-button
+          type="dashed"
+          icon="plus"
+          style="width: 100%"
+          @click="() => handleOpenModals('networkAcl')">
+          Add Network ACL List
+        </a-button>
+        <a-table
+          class="table"
+          size="small"
+          :columns="networkAclsColumns"
+          :dataSource="networkAcls"
+          :rowKey="item => item.id"
+          :pagination="false"
+        >
+          <template slot="name" slot-scope="text, item">
+            <router-link :to="{ path: '/acllist/' + item.id }">
+              {{ text }}
+            </router-link>
+          </template>
+        </a-table>
+        <a-pagination
+          class="row-element pagination"
+          size="small"
+          :current="page"
+          :pageSize="pageSize"
+          :total="itemCounts.networkAcls"
+          :showTotal="total => `Total ${total} items`"
+          :pageSizeOptions="['10', '20', '40', '80', '100']"
+          @change="changePage"
+          @showSizeChange="changePageSize"
+          showSizeChanger/>
+        <a-modal
+          v-model="modals.networkAcl"
+          :title="$t('label.add.acl.list')"
+          @ok="handleNetworkAclFormSubmit">
+          <a-form @submit.prevent="handleNetworkAclFormSubmit" :form="networkAclForm">
+            <a-form-item :label="$t('label.add.list.name')">
+              <a-input v-decorator="['name', {rules: [{ required: true, message: 'Required' }]}]"></a-input>
+            </a-form-item>
+            <a-form-item :label="$t('description')">
+              <a-input v-decorator="['description', {rules: [{ required: true, message: 'Required' }]}]"></a-input>
+            </a-form-item>
+          </a-form>
+        </a-modal>
+      </a-tab-pane>
       <a-tab-pane tab="Private Gateways" key="pgw" v-if="'listPrivateGateways' in $store.getters.apis">
         <a-button
           type="dashed"
@@ -110,49 +160,6 @@
           </a-spin>
         </a-modal>
       </a-tab-pane>
-      <a-tab-pane tab="Public IP Addresses" key="ip" v-if="'listPublicIpAddresses' in $store.getters.apis">
-        <a-button type="dashed" icon="plus" style="width: 100%" @click="handleAcquireNewIp">Acquire New IP</a-button>
-        <a-table
-          class="table"
-          size="small"
-          :columns="publicIpAddressesColumns"
-          :dataSource="publicIpAddresses"
-          :rowKey="item => item.id"
-          :pagination="false"
-        >
-          <template slot="ipaddress" slot-scope="text, item">
-            <router-link :to="{ path: '/publicip/' + item.id }">
-              {{ text }}
-              <a-tag v-if="item.issourcenat">source-nat</a-tag>
-              <a-tag v-if="item.isstaticnat">static-nat</a-tag>
-            </router-link>
-          </template>
-          <template slot="state" slot-scope="text, item">
-            <status :text="item.state" displayText></status>
-          </template>
-          <template slot="vm" slot-scope="text, item">
-            <router-link :to="{ path: '/vm/' + item.virtualmachineid }">
-              {{ item.virtualmachinedisplayname || item.virtualmachinename }}
-            </router-link>
-          </template>
-          <template slot="network" slot-scope="text, item">
-            <router-link :to="{ path: '/guestnetwork/' + item.associatednetworkid }">
-              {{ item.associatednetworkname }}
-            </router-link>
-          </template>
-        </a-table>
-        <a-pagination
-          class="row-element pagination"
-          size="small"
-          :current="page"
-          :pageSize="pageSize"
-          :total="itemCounts.publicIpAddresses"
-          :showTotal="total => `Total ${total} items`"
-          :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="changePage"
-          @showSizeChange="changePageSize"
-          showSizeChanger/>
-      </a-tab-pane>
       <a-tab-pane tab="VPN Gateway" key="vpngw" v-if="'listVpnGateways' in $store.getters.apis">
         <a-button
           v-if="vpnGateways.length === 0"
@@ -229,94 +236,8 @@
           </a-spin>
         </a-modal>
       </a-tab-pane>
-      <a-tab-pane tab="Network ACL Lists" key="acl" v-if="'listNetworkACLLists' in $store.getters.apis">
-        <a-button
-          type="dashed"
-          icon="plus"
-          style="width: 100%"
-          @click="() => handleOpenModals('networkAcl')">
-          Add Network ACL List
-        </a-button>
-        <a-table
-          class="table"
-          size="small"
-          :columns="networkAclsColumns"
-          :dataSource="networkAcls"
-          :rowKey="item => item.id"
-          :pagination="false"
-        >
-          <template slot="name" slot-scope="text, item">
-            <router-link :to="{ path: '/acllist/' + item.id }">
-              {{ text }}
-            </router-link>
-          </template>
-        </a-table>
-        <a-pagination
-          class="row-element pagination"
-          size="small"
-          :current="page"
-          :pageSize="pageSize"
-          :total="itemCounts.networkAcls"
-          :showTotal="total => `Total ${total} items`"
-          :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="changePage"
-          @showSizeChange="changePageSize"
-          showSizeChanger/>
-        <a-modal
-          v-model="modals.networkAcl"
-          :title="$t('label.add.acl.list')"
-          @ok="handleNetworkAclFormSubmit">
-          <a-form @submit.prevent="handleNetworkAclFormSubmit" :form="networkAclForm">
-            <a-form-item :label="$t('label.add.list.name')">
-              <a-input v-decorator="['name', {rules: [{ required: true, message: 'Required' }]}]"></a-input>
-            </a-form-item>
-            <a-form-item :label="$t('description')">
-              <a-input v-decorator="['description', {rules: [{ required: true, message: 'Required' }]}]"></a-input>
-            </a-form-item>
-          </a-form>
-        </a-modal>
-      </a-tab-pane>
       <a-tab-pane tab="Virtual Routers" key="vr" v-if="'listRouters' in $store.getters.apis">
-        <a-list>
-          <a-list-item v-for="item in routers" :key="item.id">
-            <div class="list__item">
-              <div class="list__row">
-                <div class="list__col">
-                  <div class="list__label">{{ $t('name') }}</div>
-                  <div>
-                    <router-link :to="{ path: '/router/' + item.id }">
-                      {{ item.name }}
-                    </router-link>
-                  </div>
-                </div>
-                <div class="list__col">
-                  <div class="list__label">{{ $t('state') }}</div>
-                  <div><status :text="item.state" displayText></status></div>
-                </div>
-                <div class="list__col">
-                  <div class="list__label">{{ $t('publicip') }}</div>
-                  <div>{{ item.publicip }}</div>
-                </div>
-                <div class="list__col">
-                  <div class="list__label">{{ $t('redundantrouter') }}</div>
-                  <div>{{ item.isredundantrouter }}</div>
-                </div>
-                <div class="list__col">
-                  <div class="list__label">{{ $t('redundantstate') }}</div>
-                  <div>{{ item.redundantstate }}</div>
-                </div>
-                <div class="list__col">
-                  <div class="list__label">{{ $t('hostname') }}</div>
-                  <div>
-                    <router-link :to="{ path: '/host/' + item.hostid }">
-                      {{ item.hostname }}
-                    </router-link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </a-list-item>
-        </a-list>
+        <RoutersTab :resource="resource" :loading="loading" />
       </a-tab-pane>
     </a-tabs>
   </a-spin>
@@ -324,16 +245,20 @@
 
 <script>
 import { api } from '@/api'
+import { mixinDevice } from '@/utils/mixin.js'
 import DetailsTab from '@/components/view/DetailsTab'
 import Status from '@/components/widgets/Status'
+import IpAddressesTab from './IpAddressesTab'
+import RoutersTab from './RoutersTab'
 import VpcTiersTab from './VpcTiersTab'
-import { mixinDevice } from '@/utils/mixin.js'
 
 export default {
   name: 'VpcTab',
   components: {
     DetailsTab,
     Status,
+    IpAddressesTab,
+    RoutersTab,
     VpcTiersTab
   },
   mixins: [mixinDevice],
@@ -349,10 +274,8 @@ export default {
   },
   data () {
     return {
-      routers: [],
       fetchLoading: false,
       privateGateways: [],
-      publicIpAddresses: [],
       vpnGateways: [],
       vpnConnections: [],
       networkAcls: [],
@@ -415,28 +338,6 @@ export default {
           dataIndex: 'ipsecpsk'
         }
       ],
-      publicIpAddressesColumns: [
-        {
-          title: this.$t('ip'),
-          dataIndex: 'ipaddress',
-          scopedSlots: { customRender: 'ipaddress' }
-        },
-        {
-          title: this.$t('state'),
-          dataIndex: 'state',
-          scopedSlots: { customRender: 'state' }
-        },
-        {
-          title: this.$t('vm'),
-          dataIndex: 'vm',
-          scopedSlots: { customRender: 'vm' }
-        },
-        {
-          title: this.$t('network'),
-          dataIndex: 'network',
-          scopedSlots: { customRender: 'network' }
-        }
-      ],
       networkAclsColumns: [
         {
           title: this.$t('name'),
@@ -450,7 +351,6 @@ export default {
       ],
       itemCounts: {
         privateGateways: 0,
-        publicIpAddresses: 0,
         vpnConnections: 0,
         networkAcls: 0
       },
@@ -486,9 +386,6 @@ export default {
         case 'pgw':
           this.fetchPrivateGateways()
           break
-        case 'ip':
-          this.fetchPublicIpAddresses()
-          break
         case 'vpngw':
           this.fetchVpnGateways()
           break
@@ -498,23 +395,7 @@ export default {
         case 'acl':
           this.fetchAclList()
           break
-        case 'vr':
-          this.fetchRouters()
-          break
       }
-    },
-    fetchRouters () {
-      this.fetchLoading = true
-      api('listRouters', { vpcid: this.resource.id, listAll: true }).then(json => {
-        this.routers = json.listroutersresponse.router
-      }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
-      }).finally(() => {
-        this.fetchLoading = false
-      })
     },
     fetchPrivateGateways () {
       this.fetchLoading = true
@@ -526,26 +407,6 @@ export default {
       }).then(json => {
         this.privateGateways = json.listprivategatewaysresponse.privategateway
         this.itemCounts.privateGateways = json.listprivategatewaysresponse.count
-      }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
-      }).finally(() => {
-        this.fetchLoading = false
-      })
-    },
-    fetchPublicIpAddresses () {
-      this.fetchLoading = true
-      api('listPublicIpAddresses', {
-        vpcid: this.resource.id,
-        listAll: true,
-        page: this.page,
-        pagesize: this.pageSize,
-        forvirtualnetwork: true
-      }).then(json => {
-        this.publicIpAddresses = json.listpublicipaddressesresponse.publicipaddress
-        this.itemCounts.publicIpAddresses = json.listpublicipaddressesresponse.count
       }).catch(error => {
         this.$notification.error({
           message: 'Request Failed',
@@ -724,39 +585,6 @@ export default {
           this.modals.gateway = false
           this.handleFetchData()
         })
-      })
-    },
-    handleAcquireNewIp () {
-      this.fetchLoading = true
-      api('associateIpAddress', { vpcid: this.resource.id }).then(response => {
-        this.$store.dispatch('AddAsyncJob', {
-          title: `Successfully acquired new IP`,
-          jobid: response.associateipaddressresponse.jobid,
-          status: 'progress'
-        })
-        this.$pollJob({
-          jobId: response.associateipaddressresponse.jobid,
-          successMethod: () => {
-            this.fetchPublicIpAddresses()
-          },
-          errorMessage: 'Failed to acquire new IP',
-          errorMethod: () => {
-            this.fetchPublicIpAddresses()
-          },
-          loadingMessage: `Acquiring new IP...`,
-          catchMessage: 'Error encountered while fetching async job result',
-          catchMethod: () => {
-            this.fetchPublicIpAddresses()
-          }
-        })
-      }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
-      }).finally(() => {
-        this.fetchLoading = false
-        this.fetchPublicIpAddresses()
       })
     },
     handleVpnConnectionFormSubmit () {
