@@ -59,10 +59,10 @@ public class KubernetesSupportedVersionVO implements KubernetesSupportedVersion 
     State state = State.Enabled;
 
     @Column(name = "min_cpu")
-    private Integer minimumCpu;
+    private int minimumCpu;
 
     @Column(name = "min_ram_size")
-    private Integer minimumRamSize;
+    private int minimumRamSize;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
@@ -74,12 +74,8 @@ public class KubernetesSupportedVersionVO implements KubernetesSupportedVersion 
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public KubernetesSupportedVersionVO(String name, String semanticVersion, long isoId, Long zoneId) {
-        this(name, semanticVersion, isoId, zoneId, null, null);
-    }
-
     public KubernetesSupportedVersionVO(String name, String semanticVersion, long isoId, Long zoneId,
-                                        Integer minimumCpu, Integer minimumRamSize) {
+                                        int minimumCpu, int minimumRamSize) {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
         this.semanticVersion = semanticVersion;
@@ -145,20 +141,20 @@ public class KubernetesSupportedVersionVO implements KubernetesSupportedVersion 
     }
 
     @Override
-    public Integer getMinimumCpu() {
+    public int getMinimumCpu() {
         return minimumCpu;
     }
 
-    public void setMinimumCpu(Integer minimumCpu) {
+    public void setMinimumCpu(int minimumCpu) {
         this.minimumCpu = minimumCpu;
     }
 
     @Override
-    public Integer getMinimumRamSize() {
+    public int getMinimumRamSize() {
         return minimumRamSize;
     }
 
-    public void setMinimumRamSize(Integer minimumRamSize) {
+    public void setMinimumRamSize(int minimumRamSize) {
         this.minimumRamSize = minimumRamSize;
     }
 

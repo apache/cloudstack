@@ -40,10 +40,10 @@ public interface KubernetesSupportedVersion extends InternalIdentity, Identity {
     /**
      * @return minimum # of cpu.
      */
-    Integer getMinimumCpu();
+    int getMinimumCpu();
 
     /**
      * @return minimum ram size in megabytes
      */
-    Integer getMinimumRamSize();
+    int getMinimumRamSize();
 }

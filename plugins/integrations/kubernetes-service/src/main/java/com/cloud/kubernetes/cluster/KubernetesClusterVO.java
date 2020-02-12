@@ -304,7 +304,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
     }
 
     public KubernetesClusterVO() {
-
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public KubernetesClusterVO(String name, String description, long zoneId, long kubernetesVersionId, long serviceOfferingId, long templateId,

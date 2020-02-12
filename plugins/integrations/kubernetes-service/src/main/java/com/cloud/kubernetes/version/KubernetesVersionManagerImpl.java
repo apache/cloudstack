@@ -277,10 +277,10 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         final String isoChecksum = cmd.getChecksum();
         final Integer minimumCpu = cmd.getMinimumCpu();
         final Integer minimumRamSize = cmd.getMinimumRamSize();
-        if (minimumCpu != null && minimumCpu < KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU) {
+        if (minimumCpu == null || minimumCpu < KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU) {
             throw new InvalidParameterValueException(String.format("Invalid value for %s parameter", ApiConstants.MIN_CPU_NUMBER));
         }
-        if (minimumRamSize != null && minimumRamSize < KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
+        if (minimumRamSize == null || minimumRamSize < KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
             throw new InvalidParameterValueException(String.format("Invalid value for %s parameter", ApiConstants.MIN_MEMORY));
         }
         if (compareSemanticVersions(semanticVersion, MIN_KUBERNETES_VERSION) < 0) {

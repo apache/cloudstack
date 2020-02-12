@@ -1224,12 +1224,14 @@
                                         mincpunumber: {
                                             label: 'label.min.cpu.cores',
                                             validation: {
+                                                required: true,
                                                 number: true
                                             },
                                         },
                                         minmemory: {
                                             label: 'label.memory.minimum.mb',
                                             validation: {
+                                                required: true,
                                                 number: true
                                             }
                                         }
