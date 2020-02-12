@@ -1575,13 +1575,13 @@
                                     if (newDiskOffering != null && newDiskOffering.length > 0) {
                                         array1.push("&diskofferingid=" + encodeURIComponent(newDiskOffering));
                                     }
-                                    if (selectedDiskOfferingObj.iscustomized == true) {
+                                    if (args.context.volumes[0].type == "ROOT" || selectedDiskOfferingObj.iscustomized == true) {
                                         cloudStack.addNewSizeToCommandUrlParameterArrayIfItIsNotNullAndHigherThanZero(array1, args.data.newsize);
                                     }
 
                                     var minIops;
                                     var maxIops
-                                    if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                    if (selectedDiskOfferingObj != null && selectedDiskOfferingObj.iscustomizediops == true) {
                                         minIops = args.data.minIops;
                                         maxIops = args.data.maxIops;
                                     }
@@ -1593,12 +1593,11 @@
                                     if (maxIops != null && maxIops.length > 0) {
                                         array1.push("&maxiops=" + encodeURIComponent(maxIops));
                                     }
-                                    //if original disk size  > new disk size
-                                    if ((args.context.volumes[0].type == "ROOT")
-                                    && (args.context.volumes[0].size > (newSize * (1024 * 1024 * 1024)))) {
+                                    //if original disk size > new disk size
+                                    if (args.context.volumes[0].type == "ROOT" &&
+                                        args.context.volumes[0].size > (args.data.newsize * (1024 * 1024 * 1024))) {
                                         return args.response.error('message.volume.root.shrink.disk.size');
                                     }
-
 
                                     $.ajax({
                                         url: createURL("resizeVolume&id=" + args.context.volumes[0].id + array1.join("")),
