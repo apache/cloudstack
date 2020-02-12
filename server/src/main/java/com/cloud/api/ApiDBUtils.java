@@ -1039,6 +1039,10 @@ public class ApiDBUtils {
         return s_hostDao.findByIdIncludingRemoved(hostId);
     }
 
+    public static HostVO findHostByTypeNameAndZoneId(Long zoneId, String name, Host.Type type) {
+        return s_hostDao.findByTypeNameAndZoneId(zoneId, name, type);
+    }
+
     public static IPAddressVO findIpAddressById(long addressId) {
         return s_ipAddressDao.findById(addressId);
     }

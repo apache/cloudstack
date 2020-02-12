@@ -373,12 +373,14 @@ class TestPrivateGwACL(cloudstackTestCase):
         nat_rule_2 = self.create_natrule(vpc_2, vm2, public_ip_2, network_2)
 
         self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm1.nic[0].ipaddress])
+        self.check_pvt_gw_connectivity(vm2, public_ip_2, [vm2.nic[0].ipaddress, vm1.nic[0].ipaddress])
 
         if restart_with_cleanup:
             self.reboot_vpc_with_cleanup(vpc_1, cleanup = restart_with_cleanup)
             self.reboot_vpc_with_cleanup(vpc_2, cleanup = restart_with_cleanup)
 
             self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm1.nic[0].ipaddress])
+            self.check_pvt_gw_connectivity(vm2, public_ip_2, [vm2.nic[0].ipaddress, vm1.nic[0].ipaddress])
 
     def performPrivateGWInterfaceTests(self, vpc_off):
         self.logger.debug("Creating VPCs with  offering ID %s" % vpc_off.id)
@@ -438,25 +440,32 @@ class TestPrivateGwACL(cloudstackTestCase):
         public_ip_1 = self.acquire_publicip(vpc_1, network_1)
         nat_rule_1 = self.create_natrule(vpc_1, vm1, public_ip_1, network_1)
 
+        public_ip_2 = self.acquire_publicip(vpc_2, network_2)
+        nat_rule_2 = self.create_natrule(vpc_2, vm2, public_ip_2, network_2)
+
         self.check_private_gateway_interfaces()
 
         self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
+        self.check_pvt_gw_connectivity(vm2, public_ip_2, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
 
         self.reboot_vpc_with_cleanup(vpc_1, cleanup = True)
         self.check_routers_state()
 
         self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
+        self.check_pvt_gw_connectivity(vm2, public_ip_2, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
 
         self.stop_router_by_type("MASTER")
         self.check_routers_state()
 
         self.check_private_gateway_interfaces()
         self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
+        self.check_pvt_gw_connectivity(vm2, public_ip_2, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
 
         self.start_routers()
         self.check_routers_state()
         self.check_private_gateway_interfaces()
         self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
+        self.check_pvt_gw_connectivity(vm2, public_ip_2, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
 
         self.deletePvtGw(privateGw_1.id)
         self.check_private_gateway_interfaces(status_to_check = "DOWN")

@@ -9468,7 +9468,7 @@
                                         url: createURL('listSystemVms'),
                                         data: data,
                                         success: function (json) {
-                                            var systemvmObjs = json.listsystemvmsresponse.systemvm;
+                                            var systemvmObjs = json.listsystemvmsresponse.systemvm || [];
                                             $(systemvmObjs).each(function(idx, item) {
                                                 var controlIp = item.linklocalip;
                                                 if (item.hypervisor == "VMware") {
@@ -9477,32 +9477,9 @@
                                                 item.controlip = controlIp;
                                             });
 
-                                            if (systemvmObjs != undefined) {
-                                                $.ajax({
-                                                    url: createURL('listHosts'),
-                                                    data: {
-                                                        details: 'min'
-                                                    },
-                                                    success: function (json) {
-                                                        var hostObjs = json.listhostsresponse.host;
-                                                        for (var i = 0; i < systemvmObjs.length; i++) {
-                                                            for (var k = 0; k < hostObjs.length; k++) {
-                                                                if (hostObjs[k].name == systemvmObjs[i].name) {
-                                                                    systemvmObjs[i].agentstate = hostObjs[k].state;
-                                                                    break;
-                                                                }
-                                                            }
-                                                        }
-                                                        args.response.success({
-                                                            data: systemvmObjs
-                                                        });
-                                                    }
-                                                });
-                                            } else {
-                                                args.response.success({
-                                                    data:[]
-                                                });
-                                            }
+                                            args.response.success({
+                                                data: systemvmObjs
+                                            });
                                         }
                                     });
                                 },

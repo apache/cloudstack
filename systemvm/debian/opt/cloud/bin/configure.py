@@ -793,6 +793,12 @@ class CsForwardingRules(CsDataBag):
 
         return None
 
+    def getGuestIpByIp(self, ipa):
+        for interface in self.config.address().get_interfaces():
+            if interface.ip_in_subnet(ipa):
+                return interface.get_ip()
+        return None
+
     def getDeviceByIp(self, ipa):
         for interface in self.config.address().get_interfaces():
             if interface.ip_in_subnet(ipa):
@@ -930,8 +936,20 @@ class CsForwardingRules(CsDataBag):
         if not rule["internal_ports"] == "any":
             fw_output_rule += ":" + self.portsToString(rule["internal_ports"], "-")
 
+        fw_postrout_rule2 = "-j SNAT --to-source %s -A POSTROUTING -s %s -d %s/32 -o %s -p %s -m %s --dport %s" % \
+            (
+                self.getGuestIpByIp(rule['internal_ip']),
+                self.getNetworkByIp(rule['internal_ip']),
+                rule['internal_ip'],
+                self.getDeviceByIp(rule['internal_ip']),
+                rule['protocol'],
+                rule['protocol'],
+                self.portsToString(rule['internal_ports'], ':')
+            )
+
         self.fw.append(["nat", "", fw_prerout_rule])
         self.fw.append(["nat", "", fw_postrout_rule])
+        self.fw.append(["nat", "", fw_postrout_rule2])
         self.fw.append(["nat", "", fw_output_rule])
 
     def processStaticNatRule(self, rule):

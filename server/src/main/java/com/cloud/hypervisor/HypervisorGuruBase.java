@@ -22,6 +22,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.commons.collections.CollectionUtils;
@@ -77,6 +79,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     private ServiceOfferingDao _serviceOfferingDao;
+    @Inject
+    private NetworkDetailsDao networkDetailsDao;
 
     @Override
     public NicTO toNicTO(NicProfile profile) {
@@ -181,6 +185,10 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
                     details.putIfAbsent(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
                     details.putIfAbsent(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
                     details.putIfAbsent(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
+                }
+                NetworkDetailVO pvlantypeDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.ISOLATED_PVLAN_TYPE);
+                if (pvlantypeDetail != null) {
+                    details.putIfAbsent(NetworkOffering.Detail.pvlanType, pvlantypeDetail.getValue());
                 }
                 nicTo.setDetails(details);
             }

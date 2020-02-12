@@ -55,6 +55,8 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.query.dao.TemplateJoinDao;
+import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.configuration.Resource;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
@@ -111,6 +113,8 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
     private TemplateDataFactory templateFactory;
     @Inject
     private TemplateService templateService;
+    @Inject
+    private TemplateJoinDao templateJoinDao;
 
     private long _nodeId;
     private ScheduledExecutorService _executor = null;
@@ -322,7 +326,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
 
                             // publish usage events
                             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_UPLOAD, tmpVolume.getAccountId(),
-                                    tmpVolumeDataStore.getDataStoreId(), tmpVolume.getId(), tmpVolume.getName(),
+                                    tmpVolume.getDataCenterId(), tmpVolume.getId(), tmpVolume.getName(),
                                     null, null, tmpVolumeDataStore.getPhysicalSize(), tmpVolumeDataStore.getSize(),
                                     Volume.class.getName(), tmpVolume.getUuid());
 
@@ -425,7 +429,9 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             if (tmpTemplate.getFormat() == Storage.ImageFormat.ISO) {
                                 etype = EventTypes.EVENT_ISO_CREATE;
                             }
-                            UsageEventUtils.publishUsageEvent(etype, tmpTemplate.getAccountId(), tmpTemplateDataStore.getDataStoreId(), tmpTemplate.getId(), tmpTemplate.getName(), null, null,
+                            TemplateJoinVO vo = templateJoinDao.findById(tmpTemplate.getId());
+                            assert (vo != null) : "Couldn't find the template view for given template ID";
+                            UsageEventUtils.publishUsageEvent(etype, tmpTemplate.getAccountId(), vo.getDataCenterId(), tmpTemplate.getId(), tmpTemplate.getName(), null, null,
                                     tmpTemplateDataStore.getPhysicalSize(), tmpTemplateDataStore.getSize(), VirtualMachineTemplate.class.getName(), tmpTemplate.getUuid());
 
                             if (s_logger.isDebugEnabled()) {

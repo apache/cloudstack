@@ -213,6 +213,9 @@
                         zonename: {
                             label: 'label.zone'
                         },
+                        vmdisplayname: {
+                            label: 'label.vm.display.name'
+                        },
                         state: {
                             label: 'label.metrics.state',
                             converter: function (str) {
@@ -224,6 +227,7 @@
                                 'Ready': 'on',
                                 'Destroy': 'off',
                                 'Expunging': 'off',
+                                'Expunged': 'off',
                                 'Migrating': 'warning',
                                 'UploadOp': 'warning',
                                 'Snapshotting': 'warning',
@@ -814,6 +818,33 @@
                                     return false;
                                 else
                                     return true;
+                            }
+                        },
+
+                        state: {
+                            label: 'label.state',
+                            select: function(args) {
+                                args.response.success({
+                                    data: [{
+                                        name: '',
+                                        description: ''
+                                    }, {
+                                        name: 'Allocated',
+                                        description: 'state.Allocated'
+                                    }, {
+                                        name: 'Ready',
+                                        description: 'state.Ready'
+                                    }, {
+                                        name: 'Destroy',
+                                        description: 'state.Destroy'
+                                    }, {
+                                        name: 'Expunging',
+                                        description: 'state.Expunging'
+                                    }, {
+                                        name: 'Expunged',
+                                        description: 'state.Expunged'
+                                    }]
+                                });
                             }
                         },
 
@@ -1434,6 +1465,102 @@
                                         url: createURL("deleteVolume&id=" + args.context.volumes[0].id),
                                         dataType: "json",
                                         async: true,
+                                        success: function(json) {
+                                            args.response.success();
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: function(args) {
+                                        args.complete();
+                                    }
+                                }
+                            },
+
+                            destroy: {
+                                label: 'label.action.destroy.volume',
+                                createForm: {
+                                    title: 'label.action.destroy.volume',
+                                    desc: 'message.action.destroy.volume',
+                                    isWarning: true,
+                                    preFilter: function(args) {
+                                        if (!isAdmin() && ! g_allowUserExpungeRecoverVolume) {
+                                            args.$form.find('.form-item[rel=expunge]').hide();
+                                        }
+                                    },
+                                    fields: {
+                                        expunge: {
+                                            label: 'label.expunge',
+                                            isBoolean: true,
+                                            isChecked: false
+                                        }
+                                    }
+                                },
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.action.destroy.volume';
+                                    },
+                                    notification: function(args) {
+                                        return 'label.action.destroy.volume';
+                                    }
+                                },
+                                action: function(args) {
+                                    var data = {
+                                        id: args.context.volumes[0].id
+                                    };
+                                    if (args.data.expunge == 'on') {
+                                        $.extend(data, {
+                                            expunge: true
+                                        });
+                                    }
+                                    $.ajax({
+                                        url: createURL("destroyVolume"),
+                                        data: data,
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.destroyvolumeresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function(json) {
+                                                        if ('volume' in json.queryasyncjobresultresponse.jobresult) { //destroy without expunge
+                                                            var volume = json.queryasyncjobresultresponse.jobresult.volume;
+                                                            if (volume.state == 'Expunged') {
+                                                                return { 'toRemove': true };
+                                                            } else {
+                                                                return volume;
+                                                            }
+                                                        } else //destroy with expunge
+                                                            return { 'toRemove': true };
+                                                    },
+                                                    getActionFilter: function() {
+                                                        return volumeActionfilter;
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+
+                            recover: {
+                                label: 'label.action.recover.volume',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.action.recover.volume';
+                                    },
+                                    notification: function(args) {
+                                        return 'label.action.recover.volume';
+                                    }
+                                },
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("recoverVolume&id=" + args.context.volumes[0].id),
+                                        dataType: "json",
                                         success: function(json) {
                                             args.response.success();
                                         }
@@ -2656,6 +2783,15 @@
         var jsonObj = args.context.item;
         var allowedActions = [];
 
+        if ((isAdmin() || g_allowUserExpungeRecoverVolume) && jsonObj.state == 'Destroy') {
+            return ["recover", "remove"];
+        } else if (jsonObj.state == 'Destroy') {
+            return [];
+        }
+
+        if (jsonObj.state == 'Expunging' || jsonObj.state == 'Expunged') {
+            return ["remove"];
+        }
 
         if (jsonObj.state == 'Destroyed' || jsonObj.state == 'Migrating' || jsonObj.state == 'Uploading') {
             return [];
@@ -2710,7 +2846,12 @@
                         allowedActions.push("detachDisk");
                     }
                 } else { // Disk not attached
-                    allowedActions.push("remove");
+                    if (jsonObj.state == "Allocated" || jsonObj.state == "Uploaded") {
+                        allowedActions.push("remove");
+                    } else {
+                        allowedActions.push("createTemplate");
+                        allowedActions.push("destroy");
+                    }
                     if (jsonObj.state == "Ready" && isAdmin()) {
                         allowedActions.push("migrateToAnotherStorage");
                     }

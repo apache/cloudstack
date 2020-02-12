@@ -163,16 +163,16 @@ public class NfsMountManagerImpl implements NfsMountManager {
 
     private boolean mountExists(String localRootPath) {
         Script script = new Script(true, "mount", timeout, s_logger);
-        ZfsPathParser parser = new ZfsPathParser(localRootPath);
+        PathParser parser = new PathParser(localRootPath);
         script.execute(parser);
         return parser.getPaths().stream().filter(s -> s.contains(localRootPath)).findAny().map(s -> true).orElse(false);
     }
 
-    public static class ZfsPathParser extends OutputInterpreter {
+    public static class PathParser extends OutputInterpreter {
         String _parent;
         List<String> paths = new ArrayList<>();
 
-        public ZfsPathParser(String parent) {
+        public PathParser(String parent) {
             _parent = parent;
         }
 
