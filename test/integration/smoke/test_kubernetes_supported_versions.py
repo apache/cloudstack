@@ -233,7 +233,9 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         addKubernetesSupportedVersionCmd.semanticversion = version
         addKubernetesSupportedVersionCmd.name = name
         addKubernetesSupportedVersionCmd.zoneid = zoneId
-        addKubernetesSupportedVersionCmd.url = isoUrl        
+        addKubernetesSupportedVersionCmd.url = isoUrl
+        addKubernetesSupportedVersionCmd.mincpunumber = 2
+        addKubernetesSupportedVersionCmd.minmemory = 2048
         versionResponse = self.apiclient.addKubernetesSupportedVersion(addKubernetesSupportedVersionCmd)
         if not versionResponse:
             self.cleanup.append(versionResponse)

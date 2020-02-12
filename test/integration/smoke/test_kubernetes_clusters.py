@@ -282,7 +282,9 @@ class TestKubernetesCluster(cloudstackTestCase):
         addKubernetesSupportedVersionCmd = addKubernetesSupportedVersion.addKubernetesSupportedVersionCmd()
         addKubernetesSupportedVersionCmd.semanticversion = semantic_version
         addKubernetesSupportedVersionCmd.name = 'v' + semantic_version + '-' + random_gen()
-        addKubernetesSupportedVersionCmd.url = iso_url 
+        addKubernetesSupportedVersionCmd.url = iso_url
+        addKubernetesSupportedVersionCmd.mincpunumber = 2
+        addKubernetesSupportedVersionCmd.minmemory = 2048
         kubernetes_version = cls.apiclient.addKubernetesSupportedVersion(addKubernetesSupportedVersionCmd)
         cls.debug("Waiting for Kubernetes version with ID %s to be ready" % kubernetes_version.id)
         cls.waitForKubernetesSupportedVersionIsoReadyState(kubernetes_version.id)
