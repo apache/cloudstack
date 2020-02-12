@@ -156,6 +156,17 @@
                                     preFilter: function(args) {
                                         args.$form.find('.form-item[rel=masternodes]').find('input[name=masternodes]').val('2');
                                         args.$form.find('.form-item[rel=size]').find('input[name=size]').val('1');
+                                        var experimentalFeaturesEnabled = false;
+                                        $.ajax({
+                                            url: createURL('listCapabilities'),
+                                            async: false,
+                                            success: function(json) {
+                                                experimentalFeaturesEnabled = json.listcapabilitiesresponse.capability.kubernetesclusterexperimentalfeaturesenabled;
+                                            }
+                                        });
+                                        if (experimentalFeaturesEnabled == true) {
+                                            args.$form.find('.form-item[rel=supportPrivateRegistry]').css('display', 'inline-block');
+                                        }
                                     },
                                     fields: {
                                         name: {
@@ -398,6 +409,7 @@
                                             label: 'label.private.registry',
                                             isBoolean: true,
                                             isChecked: false,
+                                            isHidden: true
                                         },
                                         username: {
                                             label: 'label.username',

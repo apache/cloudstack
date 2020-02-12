@@ -80,6 +80,11 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "3600",
             "Timeout interval (in seconds) in which upgrade operation for a Kubernetes cluster should be completed. Not strictly obeyed while upgrade is in progress on a node",
             true);
+    static final ConfigKey<Boolean> KubernetesClusterExperimentalFeaturesEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
+            "cloud.kubernetes.cluster.experimental.features.enabled",
+            "false",
+            "Indicates whether experimental feature for Kubernetes cluster such as Docker private registry are enabled or not",
+            true);
 
     KubernetesCluster findById(final Long id);
 

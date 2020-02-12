@@ -92,6 +92,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if Kubernetes Service plugin is enabled, false otherwise")
     private boolean kubernetesServiceEnabled;
 
+    @SerializedName("kubernetesclusterexperimentalfeaturesenabled")
+    @Param(description = "true if experimental features for Kubernetes cluster such as Docker private registry are enabled, false otherwise")
+    private boolean kubernetesClusterExperimentalFeaturesEnabled;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -158,5 +162,9 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setKubernetesServiceEnabled(boolean kubernetesServiceEnabled) {
         this.kubernetesServiceEnabled = kubernetesServiceEnabled;
+    }
+
+    public void setKubernetesClusterExperimentalFeaturesEnabled(boolean kubernetesClusterExperimentalFeaturesEnabled) {
+        this.kubernetesClusterExperimentalFeaturesEnabled = kubernetesClusterExperimentalFeaturesEnabled;
     }
 }

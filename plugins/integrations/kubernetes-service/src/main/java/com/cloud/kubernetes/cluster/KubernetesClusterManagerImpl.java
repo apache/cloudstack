@@ -714,6 +714,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 throw new InvalidParameterValueException(String.format("%s parameter must be specified along with %s type of network", ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, Network.GuestType.Shared.toString()));
             }
         }
+
+        if (!KubernetesClusterExperimentalFeaturesEnabled.value() && (!Strings.isNullOrEmpty(dockerRegistryUrl) ||
+                !Strings.isNullOrEmpty(dockerRegistryUserName) || !Strings.isNullOrEmpty(dockerRegistryEmail) || !Strings.isNullOrEmpty(dockerRegistryPassword))) {
+            throw new CloudRuntimeException(String.format("Private registry for the Kubernetes cluster is an experimental feature. Use %s configuration for enabling experimental features", KubernetesClusterExperimentalFeaturesEnabled.key()));
+        }
     }
 
     private Network getKubernetesClusterNetworkIfMissing(final String clusterName, final DataCenter zone,  final Account owner, final int masterNodesCount,
@@ -1434,7 +1439,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 KubernetesClusterNetworkOffering,
                 KubernetesClusterStartTimeout,
                 KubernetesClusterScaleTimeout,
-                KubernetesClusterUpgradeTimeout
+                KubernetesClusterUpgradeTimeout,
+                KubernetesClusterExperimentalFeaturesEnabled
         };
     }
 }
