@@ -52,6 +52,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
+        cls.cks_template_name_key = "cloud.kubernetes.cluster.template.name." + cls.hypervisor.lower()
 
         cls.setup_failed = False
 
@@ -129,9 +130,9 @@ class TestKubernetesCluster(cloudstackTestCase):
                 cls.debug("Failed to get CKS template in ready state, {}, {}".format(cks_template_data["url"], e))
 
             cls.initial_configuration_cks_template_name = Configurations.list(cls.apiclient,
-                                                                              name="cloud.kubernetes.cluster.template.name")[0].value
+                                                                              name=cls.cks_template_name_key)[0].value
             Configurations.update(cls.apiclient,
-                                  "cloud.kubernetes.cluster.template.name",
+                                  cls.cks_template_name_key,
                                   cls.cks_template.name)
 
         cks_offering_data = {
@@ -169,7 +170,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             # Restore original CKS template
             if cls.initial_configuration_cks_template_name != None:
                 Configurations.update(cls.apiclient,
-                                      "cloud.kubernetes.cluster.template.name",
+                                      cls.cks_template_name_key,
                                       cls.initial_configuration_cks_template_name)
             # Delete created CKS template
             if cls.setup_failed == False and cls.cks_template != None:
@@ -571,6 +572,7 @@ class TestKubernetesCluster(cloudstackTestCase):
     def createKubernetesCluster(self, name, version_id, size=1, master_nodes=1):
         createKubernetesClusterCmd = createKubernetesCluster.createKubernetesClusterCmd()
         createKubernetesClusterCmd.name = name
+        createKubernetesClusterCmd.description = name + "-description"
         createKubernetesClusterCmd.kubernetesversionid = version_id
         createKubernetesClusterCmd.size = size
         createKubernetesClusterCmd.masternodes = master_nodes
