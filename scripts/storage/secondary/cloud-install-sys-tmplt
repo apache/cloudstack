@@ -55,7 +55,7 @@ dbHost="localhost"
 dbUser="root"
 dbPassword=
 dbPort=3306
-jasypt='/usr/share/cloudstack-common/lib/jasypt-1.9.2.jar'
+jasypt='/usr/share/cloudstack-common/lib/jasypt-1.9.3.jar'
 
 # check if first parameter is not a dash (-) then print the usage block
 if [[ ! $@ =~ ^\-.+ ]]; then

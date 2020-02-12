@@ -16,15 +16,15 @@
 // under the License.
 package com.cloud.network.lb;
 
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.UUID;
 
-import com.cloud.user.User;
 import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.junit.After;
@@ -53,6 +53,7 @@ import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.MockAccountManagerImpl;
+import com.cloud.user.User;
 import com.cloud.user.UserVO;
 
 public class UpdateLoadBalancerTest {
@@ -94,17 +95,17 @@ public class UpdateLoadBalancerTest {
 
         LoadBalancerVO lb = new LoadBalancerVO(null, null, null, 0L, 0, 0, null, 0L, 0L, domainId, null);
 
-        when(lbDao.findById(anyLong())).thenReturn(lb);
+        when(lbDao.findById(isNull())).thenReturn(lb);
         when(netModel.getPublicIpAddress(anyLong())).thenReturn(Mockito.mock(PublicIpAddress.class));
         when(netDao.findById(anyLong())).thenReturn(Mockito.mock(NetworkVO.class));
         when(lbServiceProvider.validateLBRule(any(Network.class), any(LoadBalancingRule.class))).thenReturn(true);
-        when(lbDao.update(anyLong(), eq(lb))).thenReturn(true);
+        when(lbDao.update(isNull(), eq(lb))).thenReturn(true);
 
         _lbMgr.updateLoadBalancerRule(updateLbRuleCmd);
 
         InOrder inOrder = Mockito.inOrder(lbServiceProvider, lbDao);
         inOrder.verify(lbServiceProvider).validateLBRule(any(Network.class), any(LoadBalancingRule.class));
-        inOrder.verify(lbDao).update(anyLong(), eq(lb));
+        inOrder.verify(lbDao).update(isNull(),eq(lb));
     }
 
     @Test(expected = InvalidParameterValueException.class)

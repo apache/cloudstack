@@ -45,11 +45,11 @@ public class NiciraNvpApiIT {
         final String user = System.getProperty("nvp.admin.user");
         final String pass = System.getProperty("nvp.admin.pwd");
         api = NiciraNvpApi.create()
-            .host(host)
-            .username(user)
-            .password(pass)
-            .httpClient(HttpClientHelper.createHttpClient(5))
-            .build();
+                .host(host)
+                .username(user)
+                .password(pass)
+                .httpClient(HttpClientHelper.createHttpClient(5))
+                .build();
     }
 
     @Test
@@ -209,7 +209,7 @@ public class NiciraNvpApiIT {
         api.updateLogicalSwitchPortAttachment(logicalSwitch.getUuid(), logicalSwitchPort.getUuid(), vifAttachment);
 
         assertEquals("Read a LogicalSwitchPort by vifAttachment different than expected",
-                        api.findLogicalSwitchPortUuidByVifAttachmentUuid(logicalSwitch.getUuid(), vifAttachment.getVifUuid()), logicalSwitchPort.getUuid());
+                api.findLogicalSwitchPortUuidByVifAttachmentUuid(logicalSwitch.getUuid(), vifAttachment.getVifUuid()), logicalSwitchPort.getUuid());
 
         api.deleteLogicalSwitchPort(logicalSwitch.getUuid(), logicalSwitchPort.getUuid());
 
@@ -225,7 +225,7 @@ public class NiciraNvpApiIT {
         logicalRouter.setNatSynchronizationEnabled(true);
         logicalRouter.setReplicationMode(LogicalRouter.REPLICATION_MODE_SERVICE);
         final RoutingConfig routingConfig = new SingleDefaultRouteImplicitRoutingConfig(
-                        new RouterNextHop("192.168.10.20"));
+                new RouterNextHop("192.168.10.20"));
         logicalRouter.setRoutingConfig(routingConfig);
 
         // In the creation we don't get to specify UUID, href or schema: they don't exist yet
@@ -312,7 +312,7 @@ public class NiciraNvpApiIT {
         final ControlClusterStatus controlClusterStatus = api.getControlClusterStatus();
         final String clusterStatus = controlClusterStatus.getClusterStatus();
         final boolean correctStatus = clusterStatus.equalsIgnoreCase("stable") ||
-                        clusterStatus.equalsIgnoreCase("joining") || clusterStatus.equalsIgnoreCase("unstable");
+                clusterStatus.equalsIgnoreCase("joining") || clusterStatus.equalsIgnoreCase("unstable");
         assertTrue("Not recognizable cluster status", correctStatus);
     }
 

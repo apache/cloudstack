@@ -292,8 +292,13 @@ public class Agent implements HandlerFactory, IAgentControl {
             try {
                 _connection.start();
             } catch (final NioConnectionException e) {
-                s_logger.warn("NIO Connection Exception  " + e);
-                s_logger.info("Attempted to connect to the server, but received an unexpected exception, trying again...");
+                _connection.stop();
+                try {
+                    _connection.cleanUp();
+                } catch (final IOException ex) {
+                    s_logger.warn("Fail to clean up old connection. " + ex);
+                }
+                s_logger.info("Attempted to connect to the server, but received an unexpected exception, trying again...", e);
             }
         }
         _shell.updateConnectedHost();
@@ -516,8 +521,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             try {
                 _connection.start();
             } catch (final NioConnectionException e) {
-                s_logger.warn("NIO Connection Exception  " + e);
-                s_logger.info("Attempted to connect to the server, but received an unexpected exception, trying again...");
+                s_logger.info("Attempted to re-connect to the server, but received an unexpected exception, trying again...", e);
                 _connection.stop();
                 try {
                     _connection.cleanUp();

@@ -17,6 +17,11 @@
 
 package com.cloud.network.vpc;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.times;
 
 import java.util.ArrayList;
@@ -161,7 +166,7 @@ public class NetworkACLServiceImplTest {
         Mockito.doNothing().when(networkAclServiceImpl).validateAclRuleNumber(createNetworkAclCmdMock, networkAclMock);
         Mockito.doNothing().when(networkAclServiceImpl).validateNetworkAcl(networkAclMock);
 
-        Mockito.doReturn(Action.Allow).when(networkAclServiceImpl).validateAndCreateNetworkAclRuleAction(Mockito.anyString());
+        Mockito.doReturn(Action.Allow).when(networkAclServiceImpl).validateAndCreateNetworkAclRuleAction(anyString());
         Mockito.when(networkAclItemDaoMock.getMaxNumberByACL(networkAclMockId)).thenReturn(5);
 
         Mockito.doNothing().when(networkAclServiceImpl).validateNetworkACLItem(Mockito.any(NetworkACLItemVO.class));
@@ -176,12 +181,12 @@ public class NetworkACLServiceImplTest {
 
         Assert.assertEquals(number == null ? 6 : number, netowkrAclRuleCreated.getNumber());
 
-        InOrder inOrder = Mockito.inOrder(networkAclManagerMock, networkAclServiceImpl, networkAclItemDaoMock);
+        InOrder inOrder = Mockito.inOrder( networkAclServiceImpl, networkAclManagerMock, networkAclItemDaoMock);
         inOrder.verify(networkAclServiceImpl).createAclListIfNeeded(createNetworkAclCmdMock);
         inOrder.verify(networkAclManagerMock).getNetworkACL(networkAclMockId);
         inOrder.verify(networkAclServiceImpl).validateNetworkAcl(networkAclMock);
         inOrder.verify(networkAclServiceImpl).validateAclRuleNumber(createNetworkAclCmdMock, networkAclMock);
-        inOrder.verify(networkAclServiceImpl).validateAndCreateNetworkAclRuleAction(Mockito.anyString());
+        inOrder.verify(networkAclServiceImpl).validateAndCreateNetworkAclRuleAction(nullable(String.class));
         inOrder.verify(networkAclItemDaoMock, Mockito.times(number == null ? 1 : 0)).getMaxNumberByACL(networkAclMockId);
         inOrder.verify(networkAclServiceImpl).validateNetworkACLItem(Mockito.any(NetworkACLItemVO.class));
         inOrder.verify(networkAclManagerMock).createNetworkACLItem(Mockito.any(NetworkACLItemVO.class));
@@ -415,7 +420,7 @@ public class NetworkACLServiceImplTest {
         Mockito.verify(entityManagerMock).findById(Vpc.class, networkMockVpcMockId);
         Mockito.verify(accountManagerMock).checkAccess(Mockito.any(Account.class), Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
 
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(CallContext.class);
         CallContext.current();
 
     }
@@ -805,19 +810,19 @@ public class NetworkACLServiceImplTest {
 
         networkAclServiceImpl.transferDataToNetworkAclRulePojo(updateNetworkACLItemCmdMock, networkAclItemVoMock, networkAclMock);
 
-        Mockito.verify(networkAclItemVoMock, Mockito.times(0)).setNumber(Mockito.anyInt());
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setSourcePortStart(Mockito.anyInt());
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setSourcePortEnd(Mockito.anyInt());
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setSourceCidrList(Mockito.anyListOf(String.class));
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setProtocol(Mockito.anyString());
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setIcmpCode(Mockito.anyInt());
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setIcmpType(Mockito.anyInt());
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setAction(Mockito.any(Action.class));
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setTrafficType(Mockito.any(TrafficType.class));
-        Mockito.verify(networkAclItemVoMock, Mockito.times(0)).setUuid(Mockito.anyString());
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setReason(Mockito.anyString());
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setDisplay(Mockito.anyBoolean());
-        Mockito.verify(networkAclServiceImpl, Mockito.times(1)).validateAndCreateNetworkAclRuleAction(Mockito.anyString());
+        Mockito.verify(networkAclItemVoMock, Mockito.times(0)).setNumber(nullable(Integer.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setSourcePortStart(nullable(Integer.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setSourcePortEnd(nullable(Integer.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setSourceCidrList(nullable(List.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setProtocol(nullable(String.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setIcmpCode(nullable(Integer.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setIcmpType(nullable(Integer.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setAction(nullable(Action.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setTrafficType(nullable(TrafficType.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.times(0)).setUuid(nullable(String.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setReason(nullable(String.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setDisplay(nullable(Boolean.class));
+        Mockito.verify(networkAclServiceImpl, Mockito.times(1)).validateAndCreateNetworkAclRuleAction(nullable(String.class));
     }
 
     @Test
@@ -877,7 +882,8 @@ public class NetworkACLServiceImplTest {
 
         inOrder.verify(networkAclDaoMock).findById(networkAclListId);
         inOrder.verify(entityManagerMock).findById(Mockito.eq(Vpc.class), Mockito.anyLong());
-        inOrder.verify(accountManagerMock).checkAccess(Mockito.any(Account.class), Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
+        inOrder.verify(accountManagerMock).checkAccess(Mockito.any(Account.class), Mockito.isNull(AccessType.class), Mockito.eq(true), nullable(Vpc.class));
+
 
         inOrder.verify(networkACLVOMock).setName(name);
         inOrder.verify(networkACLVOMock).setDescription(description);
@@ -1072,11 +1078,11 @@ public class NetworkACLServiceImplTest {
 
         networkAclServiceImpl.updateNetworkACL(updateNetworkACLListCmdMock);
 
-        InOrder inOrder = Mockito.inOrder(networkAclDaoMock, entityManagerMock, entityManagerMock, accountManagerMock, networkACLVOMock);
+        InOrder inOrder = Mockito.inOrder(networkAclDaoMock, entityManagerMock, accountManagerMock, networkACLVOMock);
 
         inOrder.verify(networkAclDaoMock).findById(networkAclListId);
-        inOrder.verify(entityManagerMock).findById(Mockito.eq(Vpc.class), Mockito.anyLong());
-        inOrder.verify(accountManagerMock).checkAccess(Mockito.any(Account.class), Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
+        inOrder.verify(entityManagerMock).findById(eq(Vpc.class), Mockito.anyLong());
+        inOrder.verify(accountManagerMock).checkAccess(any(Account.class), isNull(), eq(true), nullable(Vpc.class));
 
         Mockito.verify(networkACLVOMock, Mockito.times(0)).setName(null);
         inOrder.verify(networkACLVOMock, Mockito.times(0)).setDescription(null);

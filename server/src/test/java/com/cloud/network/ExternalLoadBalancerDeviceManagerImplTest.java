@@ -26,7 +26,6 @@ import java.util.Collections;
 
 import javax.inject.Inject;
 
-import com.cloud.host.Host;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Assert;
@@ -45,6 +44,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
@@ -232,8 +232,8 @@ public class ExternalLoadBalancerDeviceManagerImplTest {
     public void testUsageTask()  {
         ExternalDeviceUsageManagerImpl.ExternalDeviceNetworkUsageTask usageTask = Mockito
                 .mock(ExternalDeviceUsageManagerImpl.ExternalDeviceNetworkUsageTask.class);
-        Mockito.when(_hostDao.listByType(Host.Type.ExternalFirewall)).thenReturn(new ArrayList<HostVO>());
-        Mockito.when(_hostDao.listByType(Host.Type.ExternalLoadBalancer)).thenReturn(new ArrayList<HostVO>());
+        Mockito.lenient().when(_hostDao.listByType(Host.Type.ExternalFirewall)).thenReturn(new ArrayList<HostVO>());
+        Mockito.lenient().when(_hostDao.listByType(Host.Type.ExternalLoadBalancer)).thenReturn(new ArrayList<HostVO>());
         usageTask.runInContext();
         Mockito.verify(usageTask, Mockito.times(0)).runExternalDeviceNetworkUsageTask();
     }

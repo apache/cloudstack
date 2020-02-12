@@ -18,23 +18,26 @@
  */
 package com.cloud.storage.template;
 
-import com.cloud.exception.InternalErrorException;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StorageLayer;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StorageLayer;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(QCOW2Processor.class)
 public class QCOW2ProcessorTest {
     QCOW2Processor processor;
 

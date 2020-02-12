@@ -16,23 +16,29 @@
 // under the License.
 package com.cloud.network.security;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
-import junit.framework.TestCase;
+import javax.sql.DataSource;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.utils.Profiler;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentContext;
+
+import junit.framework.TestCase;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/SecurityGroupManagerTestContext.xml")
@@ -40,8 +46,18 @@ public class SecurityGroupManagerImpl2Test extends TestCase {
     @Inject
     SecurityGroupManagerImpl2 _sgMgr = null;
 
+    Connection connection;
+
     @Before
     public void setup() throws Exception {
+        Properties properties = new Properties();
+        PropertiesUtil.loadFromFile(properties, PropertiesUtil.findConfigFile("db.properties"));
+        String cloudDbUrl = properties.getProperty("db.cloud.driver") +"://" +properties.getProperty("db.cloud.host")+
+                ":" + properties.getProperty("db.cloud.port") + "/" +
+                properties.getProperty("db.cloud.name");
+        Class.forName("com.mysql.jdbc.Driver");
+        connection = DriverManager.getConnection(cloudDbUrl, properties.getProperty("db.cloud.username"), properties.getProperty("db.cloud.password"));
+        Mockito.doReturn(connection).when(Mockito.mock(DataSource.class)).getConnection();
         ComponentContext.initComponentsLifeCycle();
     }
 

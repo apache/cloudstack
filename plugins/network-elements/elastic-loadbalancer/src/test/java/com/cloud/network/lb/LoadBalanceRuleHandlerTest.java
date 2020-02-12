@@ -36,8 +36,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.powermock.reflect.Whitebox;
 
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.dao.PodVlanMapDao;

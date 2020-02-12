@@ -168,14 +168,14 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
             "zoneid":self.services["zoneid"],
             "vlan":self.services["vlan"]
         }
-        public_ip_range = PublicIpRange.create(
+        self.public_ip_range = PublicIpRange.create(
             self.apiclient,
             services,
             forsystemvms = True
         )
         created_ip_range_response = PublicIpRange.list(
             self.apiclient,
-            id = public_ip_range.vlan.id
+            id = self.public_ip_range.vlan.id
         )
         self.assertEqual(
             len(created_ip_range_response),
@@ -188,7 +188,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         )
         
         # Delete range
-        public_ip_range.delete(self.apiclient)
+        self.public_ip_range.delete(self.apiclient)
         
     def get_ip_as_number(self, ip_string):
         """ Return numeric value for ip (passed as a string)
@@ -230,7 +230,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
 
         # Create range for system vms
         self.debug("Creating Public IP range for system vms")
-        public_ip_range = PublicIpRange.create(
+        self.public_ip_range = PublicIpRange.create(
             self.apiclient,
             services,
             forsystemvms = True
@@ -241,7 +241,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
             self.apiclient,
             systemvmtype=systemvmtype,
             state='Running',
-            domainid=public_ip_range.vlan.domainid
+            domainid=self.public_ip_range.vlan.domainid
         )
         self.assertTrue(
             isinstance(list_systemvm_response, list),
@@ -262,7 +262,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
 
         # Wait for CPVM to start
         systemvm_id = self.wait_for_system_vm_start(
-            public_ip_range.vlan.domainid,
+            self.public_ip_range.vlan.domainid,
             systemvmtype
         )
         self.assertNotEqual(
@@ -309,8 +309,8 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         cmd.id = systemvm_id
         self.apiclient.destroySystemVm(cmd)
 
-        domain_id = public_ip_range.vlan.domainid
-        public_ip_range.delete(self.apiclient)
+        domain_id = self.public_ip_range.vlan.domainid
+        self.public_ip_range.delete(self.apiclient)
 
         # Enable Zone
         cmd = updateZone.updateZoneCmd()
@@ -417,18 +417,14 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         self.apiclient.updateZone(cmd)
 
         # Delete System VM and IP range, so System VM can get IP from original ranges
-        for v in system_vms:
-            self.debug("Destroying System VM: %s" % v.id)
-            cmd = destroySystemVm.destroySystemVmCmd()
-            cmd.id = v.id
-            self.apiclient.destroySystemVm(cmd)
+        if system_vms:
+            for v in system_vms:
+                self.debug("Destroying System VM: %s" % v.id)
+                cmd = destroySystemVm.destroySystemVmCmd()
+                cmd.id = v.id
+                self.apiclient.destroySystemVm(cmd)
 
-        public_ip_range = PublicIpRange.list(
-            self.apiclient,
-            forsystemvms=True
-        )
-
-        public_ip_range.delete(self.apiclient)
+        self.public_ip_range.delete(self.apiclient)
 
         # Enable Zone
         cmd = updateZone.updateZoneCmd()
