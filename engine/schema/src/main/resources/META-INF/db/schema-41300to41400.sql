@@ -22,6 +22,9 @@
 -- KVM: enable storage data motion on KVM hypervisor_capabilities
 UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported` = 1 WHERE `hypervisor_capabilities`.`hypervisor_type` = 'KVM';
 
+-- Use 'Other Linux 64-bit' as guest os for the default systemvmtemplate for XenServer
+UPDATE `cloud`.`vm_template` SET guest_os_id=99 WHERE id=1;
+
 -- #3659 Fix typo: the past tense of shutdown is shutdown, not shutdowned
 UPDATE `cloud`.`vm_instance` SET state='Shutdown' WHERE state='Shutdowned';
 

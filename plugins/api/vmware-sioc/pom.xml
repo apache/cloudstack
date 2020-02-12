@@ -33,6 +33,12 @@
             <artifactId>cloud-plugin-hypervisor-vmware</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.sun.xml.ws</groupId>
+            <artifactId>jaxws-ri</artifactId>
+            <version>${cs.jaxws.version}</version>
+            <type>pom</type>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

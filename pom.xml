@@ -51,26 +51,26 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- Build properties -->
-        <cs.jdk.version>1.8</cs.jdk.version>
+        <cs.jdk.version>11</cs.jdk.version>
         <cs.target.dir>target</cs.target.dir>
         <cs.replace.properties>build/replace.properties</cs.replace.properties>
 
         <!-- Plugins versions -->
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
         <cs.builder-helper-plugin.version>3.0.0</cs.builder-helper-plugin.version>
-        <cs.checkstyle-plugin.version>3.0.0</cs.checkstyle-plugin.version>
+        <cs.checkstyle-plugin.version>3.1.0</cs.checkstyle-plugin.version>
         <cs.cobertura-plugin.version>2.7</cs.cobertura-plugin.version>
-        <cs.compiler-plugin.version>3.7.0</cs.compiler-plugin.version>
-        <cs.dependency-plugin.version>3.1.0</cs.dependency-plugin.version>
-        <cs.failsafe-plugin.version>2.21.0</cs.failsafe-plugin.version>
+        <cs.compiler-plugin.version>3.8.1</cs.compiler-plugin.version>
+        <cs.dependency-plugin.version>3.1.1</cs.dependency-plugin.version>
+        <cs.failsafe-plugin.version>2.22.2</cs.failsafe-plugin.version>
         <cs.findbugs-plugin.version>3.0.5</cs.findbugs-plugin.version>
-        <cs.jar-plugin.version>3.1.0</cs.jar-plugin.version>
-        <cs.pmd-plugin.version>3.9.0</cs.pmd-plugin.version>
-        <cs.project-info-plugin.version>2.9</cs.project-info-plugin.version>
+        <cs.jar-plugin.version>3.2.0</cs.jar-plugin.version>
+        <cs.pmd-plugin.version>3.12.0</cs.pmd-plugin.version>
+        <cs.project-info-plugin.version>3.0.0</cs.project-info-plugin.version>
         <cs.release-plugin.version>2.5.3</cs.release-plugin.version>
         <cs.resources-plugin.version>3.1.0</cs.resources-plugin.version>
-        <cs.site-plugin.version>3.7.1</cs.site-plugin.version>
-        <cs.surefire-plugin.version>2.21.0</cs.surefire-plugin.version>
+        <cs.site-plugin.version>3.8.2</cs.site-plugin.version>
+        <cs.surefire-plugin.version>2.22.2</cs.surefire-plugin.version>
 
         <!-- Logging versions -->
         <cs.log4j.version>1.2.17</cs.log4j.version>
@@ -78,95 +78,98 @@
         <cs.logging.version>1.1.1</cs.logging.version>
 
         <!-- Apache Commons versions -->
-        <cs.codec.version>1.11</cs.codec.version>
-        <cs.commons-collections.version>4.1</cs.commons-collections.version>
-        <cs.commons-compress.version>1.15</cs.commons-compress.version>
+        <cs.codec.version>1.14</cs.codec.version>
+        <cs.commons-collections.version>4.4</cs.commons-collections.version>
+        <cs.commons-compress.version>1.19</cs.commons-compress.version>
         <cs.commons-exec.version>1.3</cs.commons-exec.version>
-        <cs.commons-fileupload.version>1.3.3</cs.commons-fileupload.version>
+        <cs.commons-fileupload.version>1.4</cs.commons-fileupload.version>
         <cs.commons-httpclient.version>3.1</cs.commons-httpclient.version>
         <cs.commons-io.version>2.6</cs.commons-io.version>
-        <cs.commons-lang3.version>3.6</cs.commons-lang3.version>
+        <cs.commons-lang3.version>3.9</cs.commons-lang3.version>
         <cs.commons-net.version>3.6</cs.commons-net.version>
         <cs.commons-validator.version>1.6</cs.commons-validator.version>
         <cs.configuration.version>1.10</cs.configuration.version>
-        <cs.daemon.version>1.1.0</cs.daemon.version>
-        <cs.dbcp.version>2.2.0</cs.dbcp.version>
+        <cs.daemon.version>1.2.2</cs.daemon.version>
+        <cs.dbcp.version>2.7.0</cs.dbcp.version>
         <cs.discovery.version>0.5</cs.discovery.version>
         <cs.lang.version>2.6</cs.lang.version>
-        <cs.pool.version>2.4.3</cs.pool.version>
+        <cs.pool.version>2.7.0</cs.pool.version>
 
         <!-- Testing versions -->
         <!-- do not forget to also upgrade hamcrest library with junit -->
         <cs.dbunit.version>2.5.4</cs.dbunit.version>
         <cs.hamcrest.version>1.3</cs.hamcrest.version>
-        <cs.junit.version>4.12</cs.junit.version>
+        <cs.junit.version>4.13</cs.junit.version>
         <cs.junit.dataprovider.version>1.13.1</cs.junit.dataprovider.version>
         <cs.guava-testlib.version>18.0</cs.guava-testlib.version>
-        <cs.mockito.version>1.10.19</cs.mockito.version>
-        <cs.powermock.version>1.6.4</cs.powermock.version>
+        <cs.mockito.version>3.2.4</cs.mockito.version>
+        <cs.powermock.version>2.0.5</cs.powermock.version>
         <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
         <cs.selenium-java-client-driver.version>1.0.1</cs.selenium-java-client-driver.version>
-        <cs.testng.version>6.1.1</cs.testng.version>
+        <cs.testng.version>7.1.0</cs.testng.version>
         <cs.wiremock.version>2.11.0</cs.wiremock.version>
         <cs.xercesImpl.version>2.11.0</cs.xercesImpl.version>
 
         <!-- Dependencies versions -->
-        <cs.amqp-client.version>5.1.1</cs.amqp-client.version>
+        <cs.amqp-client.version>5.8.0</cs.amqp-client.version>
         <cs.apache-cloudstack-java-client.version>1.0.9</cs.apache-cloudstack-java-client.version>
-        <cs.aspectjrt.version>1.7.1</cs.aspectjrt.version>
-        <cs.aws.sdk.version>1.11.213</cs.aws.sdk.version>
+        <cs.aspectjrt.version>1.9.5</cs.aspectjrt.version>
+        <cs.aws.sdk.version>1.11.717</cs.aws.sdk.version>
         <cs.axiom.version>1.2.8</cs.axiom.version>
         <cs.axis.version>1.4</cs.axis.version>
         <cs.axis2.version>1.5.6</cs.axis2.version>
-        <cs.batik.version>1.9.1</cs.batik.version>
-        <cs.bcprov.version>1.59</cs.bcprov.version>
-        <cs.cglib.version>3.2.5</cs.cglib.version>
-        <cs.checkstyle-lib.version>8.7</cs.checkstyle-lib.version>
+        <cs.batik.version>1.12</cs.batik.version>
+        <cs.bcprov.version>1.64</cs.bcprov.version>
+        <cs.cglib.version>3.3.0</cs.cglib.version>
+        <cs.checkstyle-lib.version>8.18</cs.checkstyle-lib.version>
         <cs.cxf.version>3.2.0</cs.cxf.version>
         <cs.ehcache.version>2.6.11</cs.ehcache.version>
-        <cs.globodns-client.version>0.0.23</cs.globodns-client.version>
-        <cs.groovy.version>2.4.12</cs.groovy.version>
+        <cs.globodns-client.version>0.0.27</cs.globodns-client.version>
+        <cs.groovy.version>2.4.17</cs.groovy.version>
         <cs.gson.version>1.7.2</cs.gson.version>
-        <cs.guava.version>23.6-jre</cs.guava.version>
-        <cs.httpclient.version>4.5.4</cs.httpclient.version>
-        <cs.httpcore.version>4.4.8</cs.httpcore.version>
-        <cs.influxdb-java.version>2.15</cs.influxdb-java.version>
+        <cs.guava.version>28.2-jre</cs.guava.version>
+        <cs.httpclient.version>4.5.11</cs.httpclient.version>
+        <cs.httpcore.version>4.4.13</cs.httpcore.version>
+        <cs.influxdb-java.version>2.17</cs.influxdb-java.version>
         <cs.jackson.version>2.9.2</cs.jackson.version>
-        <cs.jasypt.version>1.9.2</cs.jasypt.version>
-        <cs.java-ipv6.version>0.16</cs.java-ipv6.version>
-        <cs.javassist.version>3.22.0-GA</cs.javassist.version>
-        <cs.javadoc.version>2.10.3</cs.javadoc.version>
+        <cs.jasypt.version>1.9.3</cs.jasypt.version>
+        <cs.java-ipv6.version>0.17</cs.java-ipv6.version>
+        <cs.javassist.version>3.26.0-GA</cs.javassist.version>
+        <cs.javadoc.version>3.1.1</cs.javadoc.version>
+        <cs.javax.annotation.version>1.3.2</cs.javax.annotation.version>
+        <cs.jaxb.version>2.3.0</cs.jaxb.version>
+        <cs.jaxws.version>2.3.2</cs.jaxws.version>
         <cs.jersey-bundle.version>1.19.4</cs.jersey-bundle.version>
-        <cs.jetty.version>9.4.8.v20171121</cs.jetty.version>
-        <cs.jetty-maven-plugin.version>9.2.22.v20170606</cs.jetty-maven-plugin.version>
+        <cs.jetty.version>9.4.26.v20200117</cs.jetty.version>
+        <cs.jetty-maven-plugin.version>9.4.26.v20200117</cs.jetty-maven-plugin.version>
         <cs.jna.version>4.0.0</cs.jna.version>
         <cs.joda-time.version>2.8.1</cs.joda-time.version>
-        <cs.jpa.version>2.2.0</cs.jpa.version>
-        <cs.jsch.version>0.1.54</cs.jsch.version>
+        <cs.jpa.version>2.2.1</cs.jpa.version>
+        <cs.jsch.version>0.1.55</cs.jsch.version>
         <cs.json.version>20090211</cs.json.version>
         <cs.jstl.version>1.2</cs.jstl.version>
         <cs.jstl-api.version>1.2.1</cs.jstl-api.version>
-        <cs.kafka-clients.version>0.11.0.1</cs.kafka-clients.version>
+        <cs.kafka-clients.version>0.11.0.3</cs.kafka-clients.version>
         <cs.libvirt-java.version>0.5.1</cs.libvirt-java.version>
         <cs.mail.version>1.5.0-b01</cs.mail.version>
-        <cs.mysql.version>5.1.34</cs.mysql.version>
+        <cs.mysql.version>8.0.19</cs.mysql.version>
         <cs.neethi.version>2.0.4</cs.neethi.version>
         <cs.nitro.version>10.1</cs.nitro.version>
         <cs.opensaml.version>2.6.4</cs.opensaml.version>
         <cs.rados-java.version>0.5.0</cs.rados-java.version>
         <cs.rampart.version>1.5.1</cs.rampart.version>
-        <cs.reflections.version>0.9.11</cs.reflections.version>
-        <cs.servicemix.version>2.5.8_1</cs.servicemix.version>
-        <cs.servlet.version>4.0.0</cs.servlet.version>
-        <cs.tomcat-embed-core.version>8.0.30</cs.tomcat-embed-core.version>
-        <cs.trilead.version>1.0.0-build221</cs.trilead.version>
+        <cs.reflections.version>0.9.12</cs.reflections.version>
+        <cs.servicemix.version>3.3.3_1</cs.servicemix.version>
+        <cs.servlet.version>4.0.1</cs.servlet.version>
+        <cs.tomcat-embed-core.version>8.5.47</cs.tomcat-embed-core.version>
+        <cs.trilead.version>1.0.0-build222</cs.trilead.version>
         <cs.vmware.api.version>6.7</cs.vmware.api.version>
         <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
         <cs.xml-apis.version>1.4.01</cs.xml-apis.version>
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
-        <cs.xstream.version>1.4.10</cs.xstream.version>
-        <cs.slf4j.version>1.7.22</cs.slf4j.version>
-        <org.springframework.version>5.0.2.RELEASE</org.springframework.version>
+        <cs.xstream.version>1.4.11.1</cs.xstream.version>
+        <cs.slf4j.version>1.7.29</cs.slf4j.version>
+        <org.springframework.version>5.2.3.RELEASE</org.springframework.version>
     </properties>
 
     <distributionManagement>
@@ -419,7 +422,7 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${cs.mysql.version}</version>
-                <scope>provided,test</scope>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>net.sf.ehcache</groupId>
@@ -645,7 +648,7 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
+            <artifactId>mockito-core</artifactId>
             <version>${cs.mockito.version}</version>
             <scope>test</scope>
             <exclusions>
@@ -675,12 +678,19 @@
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
+            <artifactId>powermock-core</artifactId>
             <version>${cs.powermock.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito</artifactId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <version>${cs.powermock.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito2</artifactId>
             <version>${cs.powermock.version}</version>
             <scope>test</scope>
         </dependency>
@@ -1002,7 +1012,12 @@
                         <fork>true</fork>
                         <meminitial>128m</meminitial>
                         <maxmem>512m</maxmem>
-                        <compilerArgument>-XDignore.symbol.file=true</compilerArgument>
+                        <compilerArgs>
+                          <arg>-XDignore.symbol.file=true</arg>
+                          <arg>--add-opens=java.base/java.lang=ALL-UNNAMED</arg>
+                          <arg>--add-exports=java.base/sun.security.x509=ALL-UNNAMED</arg>
+                          <arg>--add-exports=java.base/sun.security.provider=ALL-UNNAMED</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
                 <plugin>

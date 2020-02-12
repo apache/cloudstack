@@ -22,16 +22,12 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.network.dao.NetworkDetailVO;
-import com.cloud.network.dao.NetworkDetailsDao;
-import com.cloud.network.router.VirtualRouter;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
@@ -44,6 +40,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.ConfigurationManager;
@@ -56,6 +53,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -73,6 +71,8 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.MonitoringServiceDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.OpRouterMonitorServiceDao;
 import com.cloud.network.dao.OvsProviderDao;
@@ -85,6 +85,7 @@ import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
@@ -105,6 +106,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.UserStatsLogDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -119,7 +121,6 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.mockito.stubbing.Answer;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VirtualRouterElementTest {
@@ -320,11 +321,11 @@ public class VirtualRouterElementTest {
      * @param network
      */
     private void mockDAOs(final NetworkVO network, final NetworkOfferingVO offering) {
-        when(_networkDao.acquireInLockTable(network.getId(), NetworkOrchestrationService.NetworkLockTimeout.value())).thenReturn(network);
-        when(_networksDao.acquireInLockTable(network.getId(), NetworkOrchestrationService.NetworkLockTimeout.value())).thenReturn(network);
-        when(_physicalProviderDao.findByServiceProvider(0L, "VirtualRouter")).thenReturn(new PhysicalNetworkServiceProviderVO());
-        when(_vrProviderDao.findByNspIdAndType(0L, Type.VirtualRouter)).thenReturn(new VirtualRouterProviderVO());
-        when(_networkOfferingDao.findById(0L)).thenReturn(offering);
+        lenient().when(_networkDao.acquireInLockTable(network.getId(), NetworkOrchestrationService.NetworkLockTimeout.value())).thenReturn(network);
+        lenient().when(_networksDao.acquireInLockTable(network.getId(), NetworkOrchestrationService.NetworkLockTimeout.value())).thenReturn(network);
+        lenient().when(_physicalProviderDao.findByServiceProvider(0L, "VirtualRouter")).thenReturn(new PhysicalNetworkServiceProviderVO());
+        lenient().when(_vrProviderDao.findByNspIdAndType(0L, Type.VirtualRouter)).thenReturn(new VirtualRouterProviderVO());
+        lenient().when(_networkOfferingDao.findById(0L)).thenReturn(offering);
         // watchit: (in this test) there can be only one
         when(_routerDao.getNextInSequence(Long.class, "id")).thenReturn(0L);
         final ServiceOfferingVO svcoff = new ServiceOfferingVO("name",
@@ -342,8 +343,8 @@ public class VirtualRouterElementTest {
                 /* systemUse */ false,
                 VirtualMachine.Type.DomainRouter,
                 /* defaultUse */ false);
-        when(_serviceOfferingDao.findById(0L)).thenReturn(svcoff);
-        when(_serviceOfferingDao.findByName(Matchers.anyString())).thenReturn(svcoff);
+        lenient().when(_serviceOfferingDao.findById(0L)).thenReturn(svcoff);
+        lenient().when(_serviceOfferingDao.findByName(Matchers.anyString())).thenReturn(svcoff);
         final DomainRouterVO router = new DomainRouterVO(/* id */ 1L,
                 /* serviceOfferingId */ 1L,
                 /* elementId */ 0L,
@@ -435,10 +436,10 @@ public class VirtualRouterElementTest {
         List<DomainRouterVO> routerList3=new ArrayList<>();
         routerList3.add(routerUpdateComplete);
         routerList3.add(routerUpdateInProgress);
-        when(_routerDao.getNextInSequence(Long.class, "id")).thenReturn(1L);
-        when(_templateDao.findRoutingTemplate(HypervisorType.XenServer, "SystemVM Template (XenServer)")).thenReturn(new VMTemplateVO());
-        when(_routerDao.persist(any(DomainRouterVO.class))).thenReturn(router);
-        when(_routerDao.findById(router.getId())).thenReturn(router);
+        lenient().when(_routerDao.getNextInSequence(Long.class, "id")).thenReturn(1L);
+        lenient().when(_templateDao.findRoutingTemplate(HypervisorType.XenServer, "SystemVM Template (XenServer)")).thenReturn(new VMTemplateVO());
+        lenient().when(_routerDao.persist(any(DomainRouterVO.class))).thenReturn(router);
+        lenient().when(_routerDao.findById(router.getId())).thenReturn(router);
         when(_routerDao.listByNetworkAndRole(1l, VirtualRouter.Role.VIRTUAL_ROUTER)).thenReturn(routerList1);
         when(_routerDao.listByNetworkAndRole(2l, VirtualRouter.Role.VIRTUAL_ROUTER)).thenReturn(routerList2);
         when(_routerDao.listByNetworkAndRole(3l, VirtualRouter.Role.VIRTUAL_ROUTER)).thenReturn(routerList1);
@@ -459,10 +460,10 @@ public class VirtualRouterElementTest {
         final long dataCenterId = 33;
 
         when(network.getId()).thenReturn(networkId);
-        when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
-        when(network.getTrafficType()).thenReturn(TrafficType.Guest);
-        when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
-        when(network.getDataCenterId()).thenReturn(dataCenterId);
+        lenient().when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
+        lenient().when(network.getTrafficType()).thenReturn(TrafficType.Guest);
+        lenient().when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
+        lenient().when(network.getDataCenterId()).thenReturn(dataCenterId);
         when(network.getVpcId()).thenReturn(null);
 
         when(virtualRouterElement._networkMdl.getPhysicalNetworkId(network)).thenReturn(physicalNetworkId);
@@ -487,19 +488,19 @@ public class VirtualRouterElementTest {
         final long dataCenterId = 33;
 
         when(network.getId()).thenReturn(networkId);
-        when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
-        when(network.getTrafficType()).thenReturn(TrafficType.Guest);
-        when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
-        when(network.getDataCenterId()).thenReturn(dataCenterId);
+        lenient().when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
+        lenient().when(network.getTrafficType()).thenReturn(TrafficType.Guest);
+        lenient().when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
+        lenient().when(network.getDataCenterId()).thenReturn(dataCenterId);
         when(network.getVpcId()).thenReturn(null);
 
-        when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+        lenient().when(vm.getType()).thenReturn(VirtualMachine.Type.User);
 
         when(virtualRouterElement._networkMdl.getPhysicalNetworkId(network)).thenReturn(physicalNetworkId);
         when(virtualRouterElement._networkMdl.isProviderEnabledInPhysicalNetwork(physicalNetworkId, Network.Provider.VirtualRouter.getName())).thenReturn(true);
         when(virtualRouterElement._networkMdl.isProviderSupportServiceInNetwork(networkId, service, Network.Provider.VirtualRouter)).thenReturn(true);
 
-        when(virtualRouterElement._dcDao.findById(dataCenterId)).thenReturn(Mockito.mock(DataCenterVO.class));
+        lenient().when(virtualRouterElement._dcDao.findById(dataCenterId)).thenReturn(Mockito.mock(DataCenterVO.class));
 
         when(virtualRouterElement.canHandle(network, service)).thenReturn(false);
 

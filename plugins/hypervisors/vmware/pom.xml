@@ -56,6 +56,11 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>com.sun.org.apache.xml.internal</groupId>
+            <artifactId>resolver</artifactId>
+            <version>20050927</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.axis</groupId>
             <artifactId>axis</artifactId>
         </dependency>

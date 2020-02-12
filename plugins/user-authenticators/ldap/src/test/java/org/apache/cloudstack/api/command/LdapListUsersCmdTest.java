@@ -36,6 +36,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -47,9 +48,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
@@ -59,6 +59,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(CallContext.class)
+@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
 public class LdapListUsersCmdTest implements LdapConfigurationChanger {
 
     public static final String LOCAL_DOMAIN_ID = "12345678-90ab-cdef-fedc-ba0987654321";
@@ -133,7 +134,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
 
         ldapListUsersCmd.execute();
 
-        verify(queryService, times(1)).searchForUsers(anyLong(), anyBoolean());
+        verify(queryService, times(1)).searchForUsers(nullable(Long.class), nullable(Boolean.class));
         assertNotEquals(0, ((ListResponse)ldapListUsersCmd.getResponseObject()).getResponses().size());
     }
 
@@ -174,7 +175,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
      */
     @Test
     public void isNotACloudstackUser() {
-        doReturn(new ListResponse<UserResponse>()).when(queryService).searchForUsers(anyLong(), anyBoolean());
+        doReturn(new ListResponse<UserResponse>()).when(queryService).searchForUsers(nullable(Long.class), nullable(Boolean.class));
 
         LdapUser ldapUser = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null);
 
@@ -413,7 +414,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         domainVO.setName(domainName);
         domainVO.setId(domainId);
         domainVO.setUuid(LOCAL_DOMAIN_ID);
-        when(domainService.getDomain(anyLong())).thenReturn(domainVO);
+        when(domainService.getDomain(nullable(Long.class))).thenReturn(domainVO);
         return domainVO;
     }
 
@@ -430,7 +431,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
         ListResponse<UserResponse> queryServiceResponse = new ListResponse<>();
         queryServiceResponse.setResponses(responses);
 
-        doReturn(queryServiceResponse).when(queryService).searchForUsers(anyLong(), anyBoolean());
+        doReturn(queryServiceResponse).when(queryService).searchForUsers(nullable(Long.class), nullable(Boolean.class));
     }
 
     private UserResponse createMockUserResponse(String uid, User.Source source) {

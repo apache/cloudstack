@@ -19,11 +19,19 @@
 
 package org.apache.cloudstack.ca;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+
 import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
+import java.util.List;
 
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.framework.ca.CAProvider;
@@ -36,10 +44,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
 import com.cloud.certificate.CrlVO;
 import com.cloud.certificate.dao.CrlDao;
 import com.cloud.host.Host;
@@ -92,17 +99,17 @@ public class CAManagerImplTest {
     @Test
     public void testIssueCertificate() throws Exception {
         caManager.issueCertificate(null, Collections.singletonList("domain.example"), null, 1, null);
-        Mockito.verify(caProvider, Mockito.times(1)).issueCertificate(Mockito.anyList(), Mockito.anyList(), Mockito.anyInt());
-        Mockito.verify(caProvider, Mockito.times(0)).issueCertificate(Mockito.anyString(), Mockito.anyList(), Mockito.anyList(), Mockito.anyInt());
+        Mockito.verify(caProvider, Mockito.times(1)).issueCertificate(anyList(), nullable(List.class), anyInt());
+        Mockito.verify(caProvider, Mockito.times(0)).issueCertificate(anyString(), anyList(), anyList(), anyInt());
     }
 
     @Test
     public void testRevokeCertificate() throws Exception {
         final CrlVO crl = new CrlVO(CertUtils.generateRandomBigInt(), "some.domain", "some-uuid");
-        Mockito.when(crlDao.revokeCertificate(Mockito.any(BigInteger.class), Mockito.anyString())).thenReturn(crl);
-        Mockito.when(caProvider.revokeCertificate(Mockito.any(BigInteger.class), Mockito.anyString())).thenReturn(true);
+        Mockito.when(crlDao.revokeCertificate(Mockito.any(BigInteger.class), anyString())).thenReturn(crl);
+        Mockito.when(caProvider.revokeCertificate(Mockito.any(BigInteger.class), anyString())).thenReturn(true);
         Assert.assertTrue(caManager.revokeCertificate(crl.getCertSerial(), crl.getCertCn(), null));
-        Mockito.verify(caProvider, Mockito.times(1)).revokeCertificate(Mockito.any(BigInteger.class), Mockito.anyString());
+        Mockito.verify(caProvider, Mockito.times(1)).revokeCertificate(Mockito.any(BigInteger.class), anyString());
     }
 
     @Test
@@ -111,11 +118,13 @@ public class CAManagerImplTest {
         Mockito.when(host.getPrivateIpAddress()).thenReturn("1.2.3.4");
         final KeyPair keyPair = CertUtils.generateRandomKeyPair(1024);
         final X509Certificate certificate = CertUtils.generateV3Certificate(null, keyPair, keyPair.getPublic(), "CN=ca", "SHA256withRSA", 365, null, null);
-        Mockito.when(caProvider.issueCertificate(Mockito.anyString(), Mockito.anyList(), Mockito.anyList(), Mockito.anyInt())).thenReturn(new Certificate(certificate, null, Collections.singletonList(certificate)));
-        Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(SetupKeyStoreCommand.class))).thenReturn(new SetupKeystoreAnswer("someCsr"));
+        Mockito.when(caProvider.issueCertificate(anyString(), anyList(), anyList(), anyInt())).thenReturn(new Certificate(certificate, null, Collections.singletonList(certificate)));
+        Mockito.when(agentManager.send(anyLong(), any(SetupCertificateCommand.class))).thenReturn(new SetupCertificateAnswer(true));
+        Mockito.when(agentManager.send(anyLong(), any(SetupKeyStoreCommand.class))).thenReturn(new SetupKeystoreAnswer("someCsr"));
         Mockito.doNothing().when(agentManager).reconnect(Mockito.anyLong());
         Assert.assertTrue(caManager.provisionCertificate(host, true, null));
-        Mockito.verify(agentManager, Mockito.times(2)).send(Mockito.anyLong(), Mockito.any(Answer.class));
+        Mockito.verify(agentManager, Mockito.times(1)).send(Mockito.anyLong(), any(SetupKeyStoreCommand.class));
+        Mockito.verify(agentManager, Mockito.times(1)).send(Mockito.anyLong(), any(SetupCertificateCommand.class));
         Mockito.verify(agentManager, Mockito.times(1)).reconnect(Mockito.anyLong());
     }
 }

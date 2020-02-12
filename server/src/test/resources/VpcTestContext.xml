@@ -13,7 +13,7 @@
   xmlns:tx="http://www.springframework.org/schema/tx" xmlns:aop="http://www.springframework.org/schema/aop"
   xsi:schemaLocation="http://www.springframework.org/schema/beans
                       http://www.springframework.org/schema/beans/spring-beans.xsd
-                      http://www.springframework.org/schema/tx 
+                      http://www.springframework.org/schema/tx
                       http://www.springframework.org/schema/tx/spring-tx.xsd
                       http://www.springframework.org/schema/aop
                       http://www.springframework.org/schema/aop/spring-aop.xsd
@@ -22,7 +22,7 @@
 
   <context:annotation-config />
 
-    <!-- @DB support -->
+      <!-- @DB support -->
   <bean id="componentContext" class="com.cloud.utils.component.ComponentContext" />
 
   <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />

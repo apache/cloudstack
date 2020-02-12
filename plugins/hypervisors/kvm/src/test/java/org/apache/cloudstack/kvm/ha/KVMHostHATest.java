@@ -18,10 +18,13 @@
  */
 package org.apache.cloudstack.kvm.ha;
 
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.Host;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
+
 import org.apache.cloudstack.ha.provider.HACheckerException;
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,11 +32,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
-
-import org.joda.time.DateTime;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KVMHostHATest {
@@ -53,21 +54,21 @@ public class KVMHostHATest {
 
     @Test
     public void testHostActivityForHealthyHost() throws HACheckerException, StorageUnavailableException {
-        when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        lenient().when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
         when(kvmHostActivityChecker.isHealthy(host)).thenReturn(true);
         assertTrue(kvmHAProvider.isHealthy(host));
     }
 
     @Test
     public void testHostActivityForUnHealthyHost() throws HACheckerException, StorageUnavailableException {
-        when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        lenient().when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
         when(kvmHostActivityChecker.isHealthy(host)).thenReturn(false);
         assertFalse(kvmHAProvider.isHealthy(host));
     }
 
     @Test
     public void testHostActivityForActiveHost() throws HACheckerException, StorageUnavailableException {
-        when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        lenient().when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
         DateTime dt = new DateTime();
         when(kvmHostActivityChecker.isActive(host, dt)).thenReturn(true);
         assertTrue(kvmHAProvider.hasActivity(host, dt));
@@ -75,7 +76,7 @@ public class KVMHostHATest {
 
     @Test
     public void testHostActivityForDownHost() throws HACheckerException, StorageUnavailableException {
-        when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        lenient().when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
         DateTime dt = new DateTime();
         when(kvmHostActivityChecker.isActive(host, dt)).thenReturn(false);
         assertFalse(kvmHAProvider.hasActivity(host, dt));

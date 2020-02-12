@@ -9,16 +9,20 @@
   governing permissions and limitations under the License. -->
 <!-- cloud -->
 <dataset>
-<configuration name="usage.stats.job.aggregation.range" value="600"/>
+<configuration name="usage.stats.job.aggregation.range" value="600" instance="test" />
 
-<vm_instance type="User" id="8" removed="0" />
+    <vm_instance type="User" id="8" account_id="1" domain_id="1" name="test" instance_name="test" state="destoyed" guest_os_id="1" service_offering_id="1" data_center_id="1" vnc_password="xyz"  vm_type="User" created="2019-01-01 00:00:01" removed="2018-01-01 00:00:01" />
 
-<volumes id="16" removed="0"/>
-<volumes id="17" removed="0"/>
+    <volumes id="16" account_id="1" domain_id="1" size="1" data_center_id="1" volume_type="root" disk_offering_id="1" removed="2018-01-01 00:00:01"/>
+    <volumes id="17" account_id="1" domain_id="1" size="1" data_center_id="1" volume_type="root" disk_offering_id="1" removed="2018-01-01 00:00:01"/>
 
-<template_zone_ref template_id="14" zone_id="1" removed="0" />
-<template_zone_ref template_id="15" zone_id="1" removed="0" />
-<template_zone_ref template_id="16" zone_id="1" removed="0" />
+    <vm_template id="14" account_id="1" unique_name="test" name="test" public="1" featured="1" hvm="1" bits="64" guest_os_id="1" format="ova" created="2019-01-01 00:00:01"/>
+    <vm_template id="15" account_id="1" unique_name="test" name="test" public="1" featured="1" hvm="1" bits="64" guest_os_id="1" format="ova" created="2019-01-01 00:00:01"/>
+    <vm_template id="16" account_id="1" unique_name="test" name="test" public="1" featured="1" hvm="1" bits="64" guest_os_id="1" format="ova" created="2019-01-01 00:00:01"/>
 
-<snapshots id="18" removed="0" />
+    <template_zone_ref template_id="14" zone_id="1" created="2019-01-01 00:00:01" removed="2018-01-01 00:00:01" />
+    <template_zone_ref template_id="15" zone_id="1" created="2019-01-01 00:00:01" removed="2019-01-01 00:00:01" />
+    <template_zone_ref template_id="16" zone_id="1" created="2019-01-01 00:00:01" removed="2018-01-01 00:00:01" />
+
+    <snapshots id="18" account_id="1" domain_id="1"  volume_id="1" disk_offering_id="1" name="test" snapshot_type="0" size="10" hypervisor_type="KVM" removed="2018-01-01 00:00:01" data_center_id="1" />
 </dataset>

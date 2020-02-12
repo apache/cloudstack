@@ -30,7 +30,10 @@ import javax.xml.ws.BindingProvider;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
 
+import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
 import org.apache.log4j.Logger;
+import org.w3c.dom.Element;
 
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.InvalidCollectorVersionFaultMsg;
@@ -57,9 +60,7 @@ import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.UpdateSet;
 import com.vmware.vim25.VimPortType;
 import com.vmware.vim25.VimService;
-
-import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
+import com.vmware.vim25.WaitOptions;
 
 /**
  * A wrapper class to handle Vmware vsphere connection and disconnection.
@@ -412,12 +413,13 @@ public class VmwareClient {
      * @throws InvalidPropertyFaultMsg
      * @throws InvalidCollectorVersionFaultMsg
      */
-    private Object[] waitForValues(ManagedObjectReference objmor, String[] filterProps, String[] endWaitProps, Object[][] expectedVals) throws InvalidPropertyFaultMsg,
+    private synchronized Object[] waitForValues(ManagedObjectReference objmor, String[] filterProps, String[] endWaitProps, Object[][] expectedVals) throws InvalidPropertyFaultMsg,
     RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
         // version string is initially null
         String version = "";
         Object[] endVals = new Object[endWaitProps.length];
         Object[] filterVals = new Object[filterProps.length];
+        String stateVal = null;
 
         PropertyFilterSpec spec = new PropertyFilterSpec();
         ObjectSpec oSpec = new ObjectSpec();
@@ -440,7 +442,7 @@ public class VmwareClient {
         List<ObjectUpdate> objupary = null;
         List<PropertyChange> propchgary = null;
         while (!reached) {
-            updateset = vimPort.waitForUpdates(propertyCollector, version);
+            updateset = vimPort.waitForUpdatesEx(propertyCollector, version, new WaitOptions());
             if (updateset == null || updateset.getFilterSet() == null) {
                 continue;
             }
@@ -452,7 +454,6 @@ public class VmwareClient {
             for (PropertyFilterUpdate filtup : filtupary) {
                 objupary = filtup.getObjectSet();
                 for (ObjectUpdate objup : objupary) {
-                    // TODO: Handle all "kind"s of updates.
                     if (objup.getKind() == ObjectUpdateKind.MODIFY || objup.getKind() == ObjectUpdateKind.ENTER || objup.getKind() == ObjectUpdateKind.LEAVE) {
                         propchgary = objup.getChangeSet();
                         for (PropertyChange propchg : propchgary) {
@@ -464,21 +465,38 @@ public class VmwareClient {
             }
 
             Object expctdval = null;
-            // Check if the expected values have been reached and exit the loop
-            // if done.
+            // Check if the expected values have been reached and exit the loop if done.
             // Also exit the WaitForUpdates loop if this is the case.
             for (int chgi = 0; chgi < endVals.length && !reached; chgi++) {
                 for (int vali = 0; vali < expectedVals[chgi].length && !reached; vali++) {
                     expctdval = expectedVals[chgi][vali];
 
-                    reached = expctdval.equals(endVals[chgi]) || reached;
+                    if (endVals[chgi] == null) {
+                        // Do nothing
+                    } else if (endVals[chgi].toString().contains("val: null")) {
+                        // Handle JAX-WS De-serialization issue, by parsing nodes
+                        Element stateElement = (Element) endVals[chgi];
+                        if (stateElement != null && stateElement.getFirstChild() != null) {
+                            stateVal = stateElement.getFirstChild().getTextContent();
+                            reached = expctdval.toString().equalsIgnoreCase(stateVal) || reached;
+                        }
+                    } else {
+                        reached = expctdval.equals(endVals[chgi]) || reached;
+                        stateVal = "filtervals";
+                    }
                 }
             }
         }
 
         // Destroy the filter when we are done.
         vimPort.destroyPropertyFilter(filterSpecRef);
-        return filterVals;
+
+        Object[] retVal = filterVals;
+        if (stateVal != null && stateVal.equalsIgnoreCase("success")) {
+            retVal = new Object[] { TaskInfoState.SUCCESS, null };
+        }
+
+        return retVal;
     }
 
     private void updateValues(String[] props, Object[] vals, PropertyChange propchg) {

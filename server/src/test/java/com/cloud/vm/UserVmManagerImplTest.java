@@ -19,47 +19,87 @@ package com.cloud.vm;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class UserVmManagerImplTest {
 
     @Spy
     @InjectMocks
     private UserVmManagerImpl userVmManagerImpl = new UserVmManagerImpl();
+
+    @Mock
+    private ServiceOfferingDao _serviceOfferingDao;
+
+    @Mock
+    private ServiceOfferingVO serviceOfferingVO;
+
+    @Mock
+    private DataCenterDao _dcDao;
+    @Mock
+    private DataCenterVO _dcMock;
+
+    @Mock
+    protected NicDao nicDao;
+
+    @Mock
+    private NetworkDao _networkDao;
+
+    @Mock
+    private NetworkOrchestrationService _networkMgr;
+
+    @Mock
+    private NetworkVO _networkMock;
 
     @Mock
     private GuestOSDao guestOSDao;
@@ -83,6 +123,9 @@ public class UserVmManagerImplTest {
     private NetworkModel networkModel;
 
     @Mock
+    private Account accountMock;
+
+    @Mock
     private AccountVO callerAccount;
 
     @Mock
@@ -92,7 +135,10 @@ public class UserVmManagerImplTest {
 
     @Before
     public void beforeTest() {
+
         Mockito.when(updateVmCommand.getId()).thenReturn(vmId);
+
+        when(_dcDao.findById(anyLong())).thenReturn(_dcMock);
 
         Mockito.when(userVmDao.findById(Mockito.eq(vmId))).thenReturn(userVmVoMock);
 
@@ -133,32 +179,45 @@ public class UserVmManagerImplTest {
         userVmManagerImpl.validateInputsAndPermissionForUpdateVirtualMachineCommand(updateVmCommand);
     }
 
+    private ServiceOfferingVO getSvcoffering(int ramSize) {
+        String name = "name";
+        String displayText = "displayText";
+        int cpu = 1;
+        int speed = 128;
+
+        boolean ha = false;
+        boolean useLocalStorage = false;
+
+        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, Storage.ProvisioningType.THIN, useLocalStorage, false, null, false, null,
+                false);
+        return serviceOffering;
+    }
+
     @Test
     @PrepareForTest(CallContext.class)
     public void validateInputsAndPermissionForUpdateVirtualMachineCommandTest() {
         Mockito.doNothing().when(userVmManagerImpl).validateGuestOsIdForUpdateVirtualMachineCommand(updateVmCommand);
 
-        Account accountMock = Mockito.mock(Account.class);
         CallContext callContextMock = Mockito.mock(CallContext.class);
 
-        PowerMockito.mockStatic(CallContext.class);
-        BDDMockito.given(CallContext.current()).willReturn(callContextMock);
-        Mockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+        Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
 
-        Mockito.doNothing().when(accountManager).checkAccess(accountMock, null, true, userVmVoMock);
+        ServiceOffering offering = getSvcoffering(512);
+        Mockito.lenient().when(_serviceOfferingDao.findById(Mockito.anyLong(), Mockito.anyLong())).thenReturn((ServiceOfferingVO) offering);
+        Mockito.lenient().doNothing().when(accountManager).checkAccess(accountMock, null, true, userVmVoMock);
         userVmManagerImpl.validateInputsAndPermissionForUpdateVirtualMachineCommand(updateVmCommand);
 
         Mockito.verify(userVmManagerImpl).validateGuestOsIdForUpdateVirtualMachineCommand(updateVmCommand);
-        Mockito.verify(accountManager).checkAccess(accountMock, null, true, userVmVoMock);
+        Mockito.verify(accountManager).checkAccess(callerAccount, null, true, userVmVoMock);
     }
 
     @Test
     public void updateVirtualMachineTestDisplayChanged() throws ResourceUnavailableException, InsufficientCapacityException {
         configureDoNothingForMethodsThatWeDoNotWantToTest();
-
+        ServiceOffering offering = getSvcoffering(512);
+        Mockito.when(_serviceOfferingDao.findById(Mockito.anyLong(), Mockito.anyLong())).thenReturn((ServiceOfferingVO) offering);
         Mockito.when(userVmVoMock.isDisplay()).thenReturn(true);
         Mockito.doNothing().when(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
-
         userVmManagerImpl.updateVirtualMachine(updateVmCommand);
         verifyMethodsThatAreAlwaysExecuted();
 
@@ -169,10 +228,10 @@ public class UserVmManagerImplTest {
     @Test
     public void updateVirtualMachineTestCleanUpTrue() throws ResourceUnavailableException, InsufficientCapacityException {
         configureDoNothingForMethodsThatWeDoNotWantToTest();
-
+        ServiceOffering offering = getSvcoffering(512);
+        Mockito.when(_serviceOfferingDao.findById(Mockito.anyLong(), Mockito.anyLong())).thenReturn((ServiceOfferingVO) offering);
         Mockito.when(updateVmCommand.isCleanupDetails()).thenReturn(true);
-
-        Mockito.doNothing().when(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
+        Mockito.lenient().doNothing().when(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
         Mockito.doNothing().when(userVmDetailVO).removeDetails(vmId);
 
         userVmManagerImpl.updateVirtualMachine(updateVmCommand);
@@ -204,6 +263,17 @@ public class UserVmManagerImplTest {
     private void prepareAndExecuteMethodDealingWithDetails(boolean cleanUpDetails, boolean isDetailsEmpty) throws ResourceUnavailableException, InsufficientCapacityException {
         configureDoNothingForMethodsThatWeDoNotWantToTest();
 
+        ServiceOffering offering = getSvcoffering(512);
+        Mockito.when(_serviceOfferingDao.findById(Mockito.anyLong(), Mockito.anyLong())).thenReturn((ServiceOfferingVO) offering);
+
+        List<NicVO> nics = new ArrayList<>();
+        NicVO nic1 = mock(NicVO.class);
+        NicVO nic2 = mock(NicVO.class);
+        nics.add(nic1);
+        nics.add(nic2);
+        when(this.nicDao.listByVmId(Mockito.anyLong())).thenReturn(nics);
+        when(_networkDao.findById(anyLong())).thenReturn(_networkMock);
+        lenient().doNothing().when(_networkMgr).saveExtraDhcpOptions(anyString(), anyLong(), anyMap());
         HashMap<String, String> details = new HashMap<>();
         if(!isDetailsEmpty) {
             details.put("", "");
@@ -223,7 +293,7 @@ public class UserVmManagerImplTest {
     }
 
     private void configureDoNothingForDetailsMethod() {
-        Mockito.doNothing().when(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
+        Mockito.lenient().doNothing().when(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
         Mockito.doNothing().when(userVmDetailVO).removeDetails(vmId);
         Mockito.doNothing().when(userVmDao).saveDetails(userVmVoMock);
     }
@@ -232,9 +302,11 @@ public class UserVmManagerImplTest {
     private void verifyMethodsThatAreAlwaysExecuted() throws ResourceUnavailableException, InsufficientCapacityException {
         Mockito.verify(userVmManagerImpl).validateInputsAndPermissionForUpdateVirtualMachineCommand(updateVmCommand);
         Mockito.verify(userVmManagerImpl).getSecurityGroupIdList(updateVmCommand);
-        Mockito.verify(userVmManagerImpl).updateVirtualMachine(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyLong(),
-                Mockito.anyString(), Mockito.anyBoolean(), Mockito.any(HTTPMethod.class), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyListOf(Long.class),
-                Mockito.anyMap());
+
+        Mockito.verify(userVmManagerImpl).updateVirtualMachine(nullable(Long.class), nullable(String.class), nullable(String.class), nullable(Boolean.class),
+                nullable(Boolean.class), nullable(Long.class),
+                nullable(String.class), nullable(Boolean.class), nullable(HTTPMethod.class), nullable(String.class), nullable(String.class), nullable(String.class), nullable(List.class),
+                nullable(Map.class));
 
     }
 
@@ -242,7 +314,7 @@ public class UserVmManagerImplTest {
     private void configureDoNothingForMethodsThatWeDoNotWantToTest() throws ResourceUnavailableException, InsufficientCapacityException {
         Mockito.doNothing().when(userVmManagerImpl).validateInputsAndPermissionForUpdateVirtualMachineCommand(updateVmCommand);
         Mockito.doReturn(new ArrayList<Long>()).when(userVmManagerImpl).getSecurityGroupIdList(updateVmCommand);
-        Mockito.doReturn(Mockito.mock(UserVm.class)).when(userVmManagerImpl).updateVirtualMachine(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(),
+        Mockito.lenient().doReturn(Mockito.mock(UserVm.class)).when(userVmManagerImpl).updateVirtualMachine(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(),
                 Mockito.anyBoolean(), Mockito.anyLong(),
                 Mockito.anyString(), Mockito.anyBoolean(), Mockito.any(HTTPMethod.class), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyListOf(Long.class),
                 Mockito.anyMap());

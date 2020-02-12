@@ -72,17 +72,18 @@ sudo service mysql restart
 echo -e "\nInstalling Development tools: "
 RETRY_COUNT=3
 
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1397BC53640DB551
+sudo sh -c 'echo "deb http://mirrors.kernel.org/ubuntu bionic-updates main" >> /etc/apt/sources.list'
+sudo apt-get update -q -y > /dev/null
+sudo apt-get -q -y -t bionic-updates install openjdk-11-jdk
 sudo apt-get -q -y install uuid-runtime genisoimage netcat > /dev/null
 if [[ $? -ne 0 ]]; then
   echo -e "\napt-get packages failed to install"
 fi
 
-# Use latest ipmitool 1.8.16
-sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1397BC53640DB551
-sudo sh -c 'echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" >> /etc/apt/sources.list'
-sudo apt-get update -q -y > /dev/null
 sudo apt-get -q -y -V install freeipmi-common libfreeipmi16 libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 ipmitool libpython-dev libssl-dev libffi-dev python-openssl build-essential --no-install-recommends > /dev/null
 
+echo -e "\nIPMI version"
 ipmitool -V
 
 echo "<settings>

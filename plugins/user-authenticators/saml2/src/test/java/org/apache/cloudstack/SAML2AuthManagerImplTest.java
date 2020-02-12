@@ -19,11 +19,8 @@
 
 package org.apache.cloudstack;
 
-import com.cloud.user.DomainManager;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
-import com.cloud.user.dao.UserDao;
-import junit.framework.TestCase;
+import java.lang.reflect.Field;
+
 import org.apache.cloudstack.framework.security.keystore.KeystoreDao;
 import org.apache.cloudstack.saml.SAML2AuthManagerImpl;
 import org.apache.cloudstack.saml.SAMLTokenDao;
@@ -35,7 +32,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.lang.reflect.Field;
+import com.cloud.user.DomainManager;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.user.dao.UserDao;
+
+import junit.framework.TestCase;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SAML2AuthManagerImplTest extends TestCase {
@@ -164,7 +166,7 @@ public class SAML2AuthManagerImplTest extends TestCase {
         assertTrue(saml2AuthManager.getCommands().size() == 0);
         assertTrue(saml2AuthManager.getAuthCommands().size() == 0);
         // Re-enable the plugin
-        Mockito.doReturn(true).when(saml2AuthManager).isSAMLPluginEnabled();
+        Mockito.lenient().doReturn(true).when(saml2AuthManager).isSAMLPluginEnabled();
     }
 
     @Test

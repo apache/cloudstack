@@ -30,7 +30,7 @@ RUN apt-get -y update && apt-get install -y \
     sudo \
     ipmitool \
     maven \
-    openjdk-8-jdk \
+    openjdk-11-jdk \
     python-dev \
     python-setuptools \
     python-pip \

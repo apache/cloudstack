@@ -14,13 +14,16 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
 sudo: required
-dist: xenial
-group: edge
+dist: bionic
+group: stable
 
 language: java
+
 jdk:
-  - openjdk8
+  - openjdk11
+
 python:
   - "2.7"
 
@@ -46,6 +49,7 @@ env:
              smoke/test_create_list_domain_account_project
              smoke/test_create_network
              smoke/test_deploy_vgpu_enabled_vm
+             smoke/test_deploy_vm_extra_config_data
              smoke/test_deploy_vm_iso
              smoke/test_deploy_vm_root_resize
              smoke/test_deploy_vm_with_userdata
@@ -153,6 +157,7 @@ env:
              component/test_project_resources"
 
     - TESTS="component/test_project_usage
+             component/test_protocol_number_security_group
              component/test_resource_limits"
 
     - TESTS="component/test_regions_accounts

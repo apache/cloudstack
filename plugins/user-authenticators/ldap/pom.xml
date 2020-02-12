@@ -46,6 +46,7 @@
                 <version>${gmaven.version}</version>
                 <configuration>
                     <providerSelection>1.7</providerSelection>
+                    <source/>
                 </configuration>
                 <executions>
                     <execution>
@@ -147,9 +148,20 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
+            <artifactId>mockito-core</artifactId>
             <version>${cs.mockito.version}</version>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>net.bytebuddy</groupId>
+                    <artifactId>byte-buddy</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>1.10.5</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

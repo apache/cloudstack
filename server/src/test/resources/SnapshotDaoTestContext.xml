@@ -36,7 +36,11 @@
     </property>
   </bean>
 
-  <bean id="TestConfiguration" 
+  <bean id="HostGpuGroupDao" class="com.cloud.gpu.dao.HostGpuGroupsDaoImpl"/>
+  <bean id="VGpuTypesDao" class="com.cloud.gpu.dao.VGPUTypesDaoImpl"/>
+  <bean id="MgmtServiceConf" class="com.cloud.configuration.ManagementServiceConfigurationImpl"/>
+  <bean id="ClusterDetailsDao" class="com.cloud.dc.ClusterDetailsDaoImpl"/>
+  <bean id="TestConfiguration"
     class="com.cloud.snapshot.SnapshotDaoTestConfiguration" />
   <bean class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" >
     <property name="requiredParameterValue" value="false" />

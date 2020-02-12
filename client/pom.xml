@@ -61,7 +61,6 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
@@ -537,9 +536,13 @@
                     </dependency>
                 </dependencies>
                 <configuration>
+                    <supportedPackagings>
+                      <supportedPackaging>jar</supportedPackaging>
+                    </supportedPackagings>
                     <scanIntervalSeconds>0</scanIntervalSeconds>
                     <stopPort>9966</stopPort>
                     <stopKey>stop-jetty</stopKey>
+                    <stopWait>10</stopWait>
                     <connectors>
                         <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
                             <port>8080</port>
@@ -548,11 +551,11 @@
                     </connectors>
                     <webXml>${project.build.directory}/classes/META-INF/webapp/WEB-INF/web.xml</webXml>
                     <webAppSourceDirectory>${project.build.directory}/classes/META-INF/webapp/</webAppSourceDirectory>
-                    <webAppConfig>
+                    <webApp>
                         <contextPath>/client</contextPath>
-                        <extraClasspath>${project.build.directory}/conf/;${project.build.directory}/common;${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
+                        <extraClasspath>${project.build.directory}/conf/;${project.build.directory}/common;${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/;${project.build.directory}/cloud-client-ui-${project.version}.jar</extraClasspath>
                         <webInfIncludeJarPattern>.*/cloud.*jar$|.*/classes/.*</webInfIncludeJarPattern>
-                    </webAppConfig>
+                    </webApp>
                     <systemProperties>
                         <systemProperty>
                             <name>log4j.configuration</name>
@@ -698,6 +701,12 @@
                                     <outputDirectory>${project.build.directory}/pythonlibs</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
+                                    <groupId>mysql</groupId>
+                                    <artifactId>mysql-connector-java</artifactId>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
                                     <groupId>org.bouncycastle</groupId>
                                     <artifactId>bcprov-jdk15on</artifactId>
                                     <overWrite>false</overWrite>
@@ -737,7 +746,7 @@
                                     <exclude>org.mockito:mockito-all</exclude>
                                     <exclude>org.hamcrest:hamcrest-all</exclude>
                                     <exclude>org.powermock:powermock-module-junit4</exclude>
-                                    <exclude>org.powermock:powermock-api-mockito</exclude>
+                                    <exclude>org.powermock:powermock-api-mockito2</exclude>
                                     <exclude>org.springframework:spring-test</exclude>
                                     <exclude>org.apache.tomcat.embed:tomcat-embed-core</exclude>
                                     <exclude>org.apache.geronimo.specs:geronimo-servlet_3.0_spec</exclude>

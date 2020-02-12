@@ -30,7 +30,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +41,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -73,7 +74,7 @@ public class LdapAuthenticatorTest {
         final UserAccountVO user = new UserAccountVO();
         user.setSource(User.Source.NATIVE);
 
-        when(userAccountDao.getUserAccount(username, domainId)).thenReturn(user);
+        lenient().when(userAccountDao.getUserAccount(username, domainId)).thenReturn(user);
         Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> rc;
         rc = ldapAuthenticator.authenticate(username, "password", domainId, (Map<String, Object[]>)null);
         assertFalse("authentication succeeded when it should have failed", rc.first());
