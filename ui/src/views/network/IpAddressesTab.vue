@@ -85,9 +85,11 @@ export default {
   },
   data () {
     return {
-      totalIps: 0,
+      fetchLoading: false,
+      ips: [],
       page: 1,
       pageSize: 10,
+      totalIps: 0,
       columns: [
         {
           title: this.$t('ipaddress'),
@@ -112,16 +114,7 @@ export default {
           title: '',
           scopedSlots: { customRender: 'action' }
         }
-      ],
-      fetchLoading: false,
-      ips: [],
-      regions: [],
-      clicked: '',
-      action: {
-        acquire: 'Please confirm that you want to acquire new IP',
-        release: 'Please confirm that you want to release this IP'
-      },
-      visible: false
+      ]
     }
   },
   mounted () {
