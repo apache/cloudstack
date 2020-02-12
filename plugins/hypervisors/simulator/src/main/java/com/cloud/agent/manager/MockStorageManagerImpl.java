@@ -823,12 +823,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
         try {
             txn.start();
             MockVolumeVO template = _mockVolumeDao.findByStoragePathAndType(cmd.getData().getPath());
-            if (template == null) {
-                if(!((VolumeObjectTO)cmd.getData()).getName().startsWith("ROOT-")) {
-                    return new Answer(cmd, false, "can't find object to delete:" + cmd.getData()
-                                                                                      .getPath());
-                }
-            } else {
+            if (template != null) {
                 _mockVolumeDao.remove(template.getId());
             }
             txn.commit();
