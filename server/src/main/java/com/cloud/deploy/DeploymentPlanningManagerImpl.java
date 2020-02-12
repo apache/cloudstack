@@ -274,6 +274,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
         if (plan.getHostId() != null && haVmTag == null) {
             Long hostIdSpecified = plan.getHostId();
+            ServiceOfferingDetailsVO offeringDetails = null;
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("DeploymentPlan has host_id specified, choosing this host and making no checks on this host: " + hostIdSpecified);
             }
@@ -282,7 +283,12 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 s_logger.debug("The specified host cannot be found");
             } else if (avoids.shouldAvoid(host)) {
                 s_logger.debug("The specified host is in avoid set");
-            } else {
+            } else if ((offeringDetails  = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null) {
+                ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
+                if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
+                    s_logger.debug("The last host of this VM does not have required GPU devices available");
+                }
+            }else {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(
                             "Looking for suitable pools for this host under zone: " + host.getDataCenterId() + ", pod: " + host.getPodId() + ", cluster: " + host.getClusterId());
