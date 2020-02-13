@@ -40,7 +40,6 @@ import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
 import org.apache.cloudstack.storage.command.UploadStatusCommand;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -823,12 +822,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
         try {
             txn.start();
             MockVolumeVO template = _mockVolumeDao.findByStoragePathAndType(cmd.getData().getPath());
-            if (template == null) {
-                if(!((VolumeObjectTO)cmd.getData()).getName().startsWith("ROOT-")) {
-                    return new Answer(cmd, false, "can't find object to delete:" + cmd.getData()
-                                                                                      .getPath());
-                }
-            } else {
+            if (template != null) {
                 _mockVolumeDao.remove(template.getId());
             }
             txn.commit();
