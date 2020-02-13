@@ -1006,6 +1006,27 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-toolchains-plugin</artifactId>
+                  <version>1.1</version>
+                  <executions>
+                    <execution>
+                      <goals>
+                        <goal>toolchain</goal>
+                      </goals>
+                    </execution>
+                  </executions>
+                  <configuration>
+                    <!-- https://github.com/apache/infrastructure-puppet/blob/deployment/modules/build_slaves/files/toolchains.xml -->
+                    <toolchains>
+                      <jdk>
+                        <version>${cs.jdk.version}</version>
+                        <vendor>oracle</vendor>
+                      </jdk>
+                    </toolchains>
+                  </configuration>
+                </plugin>
+                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>${cs.jar-plugin.version}</version>
