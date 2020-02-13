@@ -47,7 +47,7 @@ public class VeeamClientTest {
 
     @Before
     public void setUp() throws Exception {
-        wireMockRule.stubFor(post(urlMatching(".*/sessionMngr/"))
+        wireMockRule.stubFor(post(urlMatching(".*/sessionMngr/.*"))
                 .willReturn(aResponse()
                         .withStatus(201)
                         .withHeader("X-RestSvcSessionId", "some-session-auth-id")
@@ -57,7 +57,7 @@ public class VeeamClientTest {
 
     @Test
     public void testBasicAuth() {
-        verify(postRequestedFor(urlMatching(".*/sessionMngr/"))
+        verify(postRequestedFor(urlMatching(".*/sessionMngr/.*"))
                 .withBasicAuth(new BasicCredentials(adminUsername, adminPassword)));
     }
 
