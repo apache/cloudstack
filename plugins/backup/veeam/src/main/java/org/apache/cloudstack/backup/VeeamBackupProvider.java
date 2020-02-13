@@ -57,7 +57,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     public static final String BACKUP_IDENTIFIER = "-CSBKP-";
 
     public ConfigKey<String> VeeamUrl = new ConfigKey<>("Advanced", String.class,
-            "backup.plugin.veeam.url", "http://localhost:9399/api/",
+            "backup.plugin.veeam.url", "https://localhost:9398/api/",
             "The Veeam backup and recovery URL.", true, ConfigKey.Scope.Zone);
 
     private ConfigKey<String> VeeamUsername = new ConfigKey<>("Advanced", String.class,
