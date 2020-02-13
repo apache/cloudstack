@@ -160,8 +160,11 @@ public class VeeamClient {
         final HttpPost request = new HttpPost(apiURI.toString() + "/sessionMngr/?v=v1_4");
         try {
             final HttpResponse response = httpClient.execute(request, httpContext);
-            veeamSessionId = response.getFirstHeader(SESSION_HEADER).getValue();
             checkAuthFailure(response);
+            veeamSessionId = response.getFirstHeader(SESSION_HEADER).getValue();
+            if (Strings.isNullOrEmpty(veeamSessionId)) {
+                throw new CloudRuntimeException("Veeam Session ID is not available to perform API requests");
+            }
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
                 throw new CloudRuntimeException("Failed to create and authenticate Veeam API client, please check the settings.");
             }
@@ -171,9 +174,6 @@ public class VeeamClient {
     }
 
     private void checkAuthFailure(final HttpResponse response) {
-        if (Strings.isNullOrEmpty(veeamSessionId)) {
-            throw new CloudRuntimeException("Veeam Session ID is not available to perform API requests");
-        }
         if (response != null && response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
             final Credentials credentials = httpContext.getCredentialsProvider().getCredentials(AuthScope.ANY);
             LOG.error("Veeam API authentication failed, please check Veeam configuration. Admin auth principal=" + credentials.getUserPrincipal() + ", password=" + credentials.getPassword() + ", API url=" + apiURI.toString());
