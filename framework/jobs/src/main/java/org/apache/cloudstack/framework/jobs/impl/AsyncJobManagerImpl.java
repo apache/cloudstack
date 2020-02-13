@@ -49,6 +49,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJournalDao;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
@@ -130,6 +131,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private AsyncJobMonitor _jobMonitor;
     @Inject
     private VMInstanceDao _vmInstanceDao;
+    @Inject
+    private VmWorkJobDao _vmWorkJobDao;
     @Inject
     private VolumeDetailsDao _volumeDetailsDao;
     @Inject
@@ -898,6 +901,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
+                if ("VmWork".equals(job.getType())) {
+                    _vmWorkJobDao.expunge(job.getId());
+                }
                 _jobDao.expunge(job.getId());
                 // purge corresponding sync queue item
                 _queueMgr.purgeAsyncJobQueueItemId(job.getId());
