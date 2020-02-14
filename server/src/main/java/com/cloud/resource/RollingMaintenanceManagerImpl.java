@@ -23,13 +23,8 @@ import com.cloud.agent.api.RollingMaintenanceCommand;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
-import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -52,7 +47,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.gson.Gson;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceCmd;
@@ -75,12 +69,6 @@ import java.util.stream.Collectors;
 
 public class RollingMaintenanceManagerImpl extends ManagerBase implements RollingMaintenanceManager {
 
-    @Inject
-    private HostPodDao podDao;
-    @Inject
-    private ClusterDao clusterDao;
-    @Inject
-    private DataCenterDao dataCenterDao;
     @Inject
     private HostDao hostDao;
     @Inject
@@ -105,8 +93,6 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
     }
 
     public static final Logger s_logger = Logger.getLogger(RollingMaintenanceManagerImpl.class.getName());
-
-    private static final String unsopportedHypervisorErrorMsg = "Rolling maintenance is currently supported on KVM only";
 
     private Pair<ResourceType, List<Long>> getResourceTypeAndIdPair(List<Long> podIds, List<Long> clusterIds, List<Long> zoneIds, List<Long> hostIds) {
         Pair<ResourceType, List<Long>> pair = CollectionUtils.isNotEmpty(podIds) ? new Pair<>(ResourceType.Pod, podIds) :
@@ -147,15 +133,18 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
     }
 
     private String generateReportHostsUpdated(List<HostUpdated> hostsUpdated) {
-        return new Gson().toJson(hostsUpdated);
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(hostsUpdated.size());
+        return stringBuilder.toString();
     }
 
     private String generateReportHostsSkipped(List<HostSkipped> hostsSkipped) {
-        return new Gson().toJson(hostsSkipped);
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(hostsSkipped.size());
+        return stringBuilder.toString();
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_START_ROLLING_MAINTENANCE, eventDescription = "starting rolling maintenance", async = true)
     public Ternary<Boolean, String, Pair<List<HostUpdated>, List<HostSkipped>>> startRollingMaintenance(StartRollingMaintenanceCmd cmd) {
         Pair<ResourceType, List<Long>> pair = getResourceTypeAndIdPair(cmd.getPodIds(), cmd.getClusterIds(), cmd.getZoneIds(), cmd.getHostIds());
         ResourceType type = pair.first();
