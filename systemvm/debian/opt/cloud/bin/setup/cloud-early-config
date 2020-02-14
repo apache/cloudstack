@@ -89,6 +89,23 @@ start() {
   rm -f /root/.rnd
   echo "" > /root/.ssh/known_hosts
 
+  local root_dev=
+  if [ -e /dev/xvda ]; then
+       root_dev=/dev/xvda
+  elif [ -e /dev/vda ]; then
+       root_dev=/dev/vda
+  elif [ -e /dev/hda ]; then
+       root_dev=/dev/hda
+  elif [ -e /dev/sda ]; then
+       root_dev=/dev/sda
+  fi
+
+  if [ ! -z $root_dev ] && [ `which growpart` ];then
+    growpart $root_dev 2
+    growpart $root_dev 6
+    resize2fs ${root_dev}6
+  fi
+
   patch
   sync
   /opt/cloud/bin/setup/bootstrap.sh
