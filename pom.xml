@@ -63,7 +63,8 @@
         <cs.compiler-plugin.version>3.8.1</cs.compiler-plugin.version>
         <cs.dependency-plugin.version>3.1.1</cs.dependency-plugin.version>
         <cs.failsafe-plugin.version>2.22.2</cs.failsafe-plugin.version>
-        <cs.findbugs-plugin.version>3.0.5</cs.findbugs-plugin.version>
+        <cs.spotbugs.version>3.1.12</cs.spotbugs.version>
+        <cs.spotbugs-maven-plugin.version>3.1.12.2</cs.spotbugs-maven-plugin.version>
         <cs.jar-plugin.version>3.2.0</cs.jar-plugin.version>
         <cs.pmd-plugin.version>3.12.0</cs.pmd-plugin.version>
         <cs.project-info-plugin.version>3.0.0</cs.project-info-plugin.version>
@@ -722,11 +723,12 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${cs.spotbugs-maven-plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>cloudstack-findbugs</id>
+                        <id>cloudstack-spotbugs</id>
                         <phase>none</phase>
                         <goals>
                             <goal>check</goal>
@@ -1082,9 +1084,9 @@
                     <version>${cs.dependency-plugin.version}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>findbugs-maven-plugin</artifactId>
-                    <version>${cs.findbugs-plugin.version}</version>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>${cs.spotbugs-maven-plugin.version}</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.apache.cloudstack</groupId>
@@ -1102,7 +1104,7 @@
                     </configuration>
                     <executions>
                         <execution>
-                            <id>cloudstack-findbugs</id>
+                            <id>cloudstack-spotbugs</id>
                             <goals>
                                 <goal>check</goal>
                             </goals>
@@ -1176,9 +1178,9 @@
     <reporting>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>${cs.findbugs-plugin.version}</version>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${cs.spotbugs-maven-plugin.version}</version>
                 <configuration>
                     <threshold>Low</threshold><!-- High|Normal|Low|Exp|Ignore -->
                     <effort>Default</effort><!-- Min|Default|Max -->
@@ -1296,11 +1298,11 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>findbugs-maven-plugin</artifactId>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>cloudstack-findbugs</id>
+                                <id>cloudstack-spotbugs</id>
                                 <phase>process-classes</phase>
                                 <inherited>true</inherited>
                             </execution>
