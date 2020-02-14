@@ -283,7 +283,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         
         if (plan.getHostId() != null && haVmTag == null) {
             Long hostIdSpecified = plan.getHostId();
-            ServiceOfferingDetailsVO offeringDetails = null;
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("DeploymentPlan has host_id specified, choosing this host and making no checks on this host: " + hostIdSpecified);
             }
@@ -396,7 +395,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             s_logger.debug("This VM has last host_id specified, trying to choose the same host: " + vm.getLastHostId());
 
             HostVO host = _hostDao.findById(vm.getLastHostId());
-            ServiceOfferingDetailsVO offeringDetails = null;
             if (host == null) {
                 s_logger.debug("The last host of this VM cannot be found");
             } else if (avoids.shouldAvoid(host)) {
