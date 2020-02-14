@@ -533,7 +533,6 @@ export default {
           }
           this.supportedServices[i].provider = providers
           this.supportedServices[i].description = serviceDisplayName
-          console.log(this.supportedServices[i])
         }
       })
     },
@@ -673,7 +672,7 @@ export default {
         if (values.guesttype === 'Shared') { // specifyVlan checkbox is disabled, so inputData won't include specifyVlan
           params.specifyvlan = values.specifyvlan
           params.specifyipranges = true
-          delete params.isPersistent // if Persistent checkbox is unchecked, do not pass isPersistent parameter to API call since we need to keep API call's size as small as possible (p.s. isPersistent is defaulted as false at server-side)
+          delete params.ispersistent
         } else if (values.guesttype === 'Isolated') { // specifyVlan checkbox is shown
           if (values.specifyvlan === true) {
             params.specifyvlan = true
@@ -700,7 +699,7 @@ export default {
           params.forvpc = true
         }
         if (values.guesttype === 'Shared' || values.guesttype === 'Isolated') {
-          if (values.conservemode !== true) { // if ConserveMode checkbox is checked, do not pass conservemode parameter to API call since we need to keep API call's size as small as possible (p.s. conservemode is defaulted as true at server-side)
+          if (values.conservemode !== true) {
             params.conservemode = false
           }
         }
@@ -791,7 +790,7 @@ export default {
         }
 
         if ('egressdefaultpolicy' in values && values.egressdefaultpolicy !== 'allow') {
-          params.egressdefaultpolicy = false // do not pass egressdefaultpolicy unnecessarily to API call  since we need to keep API call's size as small as possible (p.s. egressdefaultpolicy is defaulted as true at server-side)
+          params.egressdefaultpolicy = false
         }
         if ('promiscuousmode' in values) {
           params['details[0].promiscuousMode'] = values.promiscuousmode
@@ -829,8 +828,20 @@ export default {
           params.zoneid = zoneId
         }
         params.traffictype = 'GUEST' // traffic type dropdown has been removed since it has only one option ('Guest'). Hardcode traffic type value here.
-
-        console.log(params)
+        api('createNetworkOffering', params).then(json => {
+          this.$notification.success({
+            message: this.$t('label.added.network.offering'),
+            description: this.$t('label.added.network.offering')
+          })
+        }).catch(error => {
+          this.$notification.error({
+            message: 'Request Failed',
+            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
+          })
+        }).finally(() => {
+          this.loading = false
+          this.closeAction()
+        })
       })
     },
     closeAction () {
