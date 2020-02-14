@@ -25,6 +25,7 @@ function resolve (dir) {
 
 // vue.config.js
 module.exports = {
+  publicPath: './',
   /*
     Vue-cli3:
     Crashed when using Webpack `import()` #2463
