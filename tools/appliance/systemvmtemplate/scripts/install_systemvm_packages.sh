@@ -71,13 +71,18 @@ function install_packages() {
     iptables-persistent \
     libtcnative-1 libssl-dev libapr1-dev \
     python-flask \
-    haproxy \
     haveged \
     radvd \
     sharutils genisoimage aria2 \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins strongswan-charon strongswan-starter \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons \
     apt-transport-https ca-certificates curl gnupg  gnupg-agent software-properties-common cloud-init
+
+  apt-get -q -y -t stretch-backports install nftables openjdk-11-jre-headless haproxy
+
+  apt-get -y autoremove --purge
+  apt-get clean
+  apt-get autoclean
 
   apt_clean
   ${apt_get} install links
