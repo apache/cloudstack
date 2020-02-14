@@ -387,6 +387,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     static final ConfigKey<Boolean> HaVmRestartHostUp = new ConfigKey<Boolean>("Advanced", Boolean.class, "ha.vm.restart.hostup", "true",
             "If an out-of-band stop of a VM is detected and its host is up, then power on the VM", true);
 
+    static final ConfigKey<Long> SystemVmRootDiskSize = new ConfigKey<Long>("Advanced",
+            Long.class, "systemvm.root.disk.size", "-1",
+            "root size (in GB) of systemvm and virtual routers", true);
+
     ScheduledExecutorService _executor = null;
 
     private long _nodeId;
@@ -435,6 +439,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmFinal, template, serviceOffering, null, null);
 
+        Long rootDiskSize = rootDiskOfferingInfo.getSize();
+        if (vm.getType().isUsedBySystem() && SystemVmRootDiskSize.value() != null) {
+            rootDiskSize = SystemVmRootDiskSize.value();
+        }
+        final Long rootDiskSizeFinal = rootDiskSize;
+
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) throws InsufficientCapacityException {
@@ -460,7 +470,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } else if (template.getFormat() == ImageFormat.BAREMETAL) {
                     // Do nothing
                 } else {
-                    volumeMgr.allocateTemplatedVolumes(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
+                    volumeMgr.allocateTemplatedVolumes(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskSizeFinal,
                             rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vmFinal, owner);
                 }
 
@@ -4519,7 +4529,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new ConfigKey<?>[] {ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait,
             VmOpLockStateRetry,
             VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, HaVmRestartHostUp,
-            ResoureCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel,
+            ResoureCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel, SystemVmRootDiskSize,
             VmServiceOfferingMaxCPUCores, VmServiceOfferingMaxRAMSize };
     }
 
