@@ -271,7 +271,16 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         }
 
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
-
+        final ServiceOfferingDetailsVO offeringDetails  = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString());
+        ServiceOfferingDetailsVO groupName =null;
+        
+        if(offeringDetails != null ) {
+            groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Deployment requires GPU devices gpuGroup is " + groupName.getValue());
+            }
+        }
+        
         if (plan.getHostId() != null && haVmTag == null) {
             Long hostIdSpecified = plan.getHostId();
             ServiceOfferingDetailsVO offeringDetails = null;
@@ -283,11 +292,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 s_logger.debug("The specified host cannot be found");
             } else if (avoids.shouldAvoid(host)) {
                 s_logger.debug("The specified host is in avoid set");
-            } else if ((offeringDetails  = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null) {
-                ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
-                if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
-                    s_logger.debug("The last host of this VM does not have required GPU devices available");
-                }
+            }else if(groupName !=null && !_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
+                s_logger.debug("The last host of this VM does not have required GPU devices available");
             }else {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(
@@ -402,11 +408,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             } else if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
                 s_logger.debug("The last Host, hostId: " + host.getId() +
                         " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
-            } else if ((offeringDetails  = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null) {
-                ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
-                if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
-                    s_logger.debug("The last host of this VM does not have required GPU devices available");
-                }
+             }else if(groupName !=null && !_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
+                s_logger.debug("The last host of this VM does not have required GPU devices available");
             } else {
                 if (host.getStatus() == Status.Up && host.getResourceState() == ResourceState.Enabled) {
                     boolean hostTagsMatch = true;
