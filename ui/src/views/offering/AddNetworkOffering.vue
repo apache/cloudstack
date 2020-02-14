@@ -50,7 +50,7 @@
             }]"
             :placeholder="this.$t('networkrate')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.guesttype')">
+        <a-form-item :label="$t('guesttype')">
           <a-radio-group
             v-decorator="['guesttype', {
               initialValue: this.guestType
@@ -187,10 +187,10 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('service.SourceNat.redundant.router.capability')" v-if="this.sourceNatServiceChecked && !this.isVpcVirtualRouterForAtLeastOneService">
+        <a-form-item :label="$t('service.SourceNat.redundant.router.capability')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && this.sourceNatServiceChecked && !this.isVpcVirtualRouterForAtLeastOneService">
           <a-switch v-decorator="['redundantroutercapability', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('service.SourceNat.sourceNatType')" v-if="this.sourceNatServiceChecked">
+        <a-form-item :label="$t('service.SourceNat.sourceNatType')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && this.sourceNatServiceChecked">
           <a-radio-group
             v-decorator="['sourcenattype', {
               initialValue: 'peraccount'
@@ -207,7 +207,7 @@
         <a-form-item :label="$t('service.Lb.elasticLb')" v-if="this.guestType == 'shared' && this.lbServiceChecked && this.lbServiceProvider === 'Netscaler'">
           <a-switch v-decorator="['elasticlb', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('service.Lb.inlineMode')" v-if="this.lbServiceChecked && this.firewallServiceChecked && this.lbServiceProvider === 'F5BigIp' && this.firewallServiceProvider === 'JuniperSRX'">
+        <a-form-item :label="$t('service.Lb.inlineMode')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && this.lbServiceChecked && this.firewallServiceChecked && this.lbServiceProvider === 'F5BigIp' && this.firewallServiceProvider === 'JuniperSRX'">
           <a-radio-group
             v-decorator="['inlinemode', {
               initialValue: 'false'
@@ -221,7 +221,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('service.Lb.netscaler.service.packages')" v-if="this.lbServiceChecked && this.lbServiceProvider === 'Netscaler'">
+        <a-form-item :label="$t('service.Lb.netscaler.service.packages')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && this.lbServiceChecked && this.lbServiceProvider === 'Netscaler'">
           <a-select
             v-decorator="['netscalerservicepackages', {}]"
             showSearch
@@ -236,7 +236,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('service.Lb.netscaler.service.packages.description')" v-if="this.lbServiceChecked && this.lbServiceProvider === 'Netscaler'">
+        <a-form-item :label="$t('service.Lb.netscaler.service.packages.description')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && this.lbServiceChecked && this.lbServiceProvider === 'Netscaler'">
           <a-input
             v-decorator="['netscalerservicepackagesdescription', {}]"
             :placeholder="this.$t('netscaler.service.packages.description')"/>
@@ -641,7 +641,7 @@ export default {
           }
         }
         if (prvdr === 'VpcVirtualRouter') {
-          this.isVpcVirtualRouterForAtLeastOneService = true
+          self.isVpcVirtualRouterForAtLeastOneService = true
         }
       })
     },
