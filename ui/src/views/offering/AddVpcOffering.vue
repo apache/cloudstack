@@ -353,8 +353,9 @@ export default {
         }
         var selectedServices = null
         var keys = Object.keys(values)
+        var self = this
         keys.forEach(function (key, keyIndex) {
-          if (this.isSupportedServiceObject(values[key])) {
+          if (self.isSupportedServiceObject(values[key])) {
             if (selectedServices == null) {
               selectedServices = {}
             }

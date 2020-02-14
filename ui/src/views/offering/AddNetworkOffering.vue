@@ -568,6 +568,7 @@ export default {
       })
     },
     handleForVpcChange (forVpc) {
+      var self = this
       this.forVpc = forVpc
       this.supportedServices.forEach(function (svc, index) {
         if (svc === 'Connectivity') {
@@ -589,7 +590,7 @@ export default {
             providers[providerIndex] = provider
           })
           svc.provider = providers
-          this.supportedServices[index] = svc
+          self.supportedServices[index] = svc
         }
       })
     },
@@ -631,11 +632,12 @@ export default {
       var providers = Object.values(this.selectedServiceProviderMap)
       this.isVirtualRouterForAtLeastOneService = false
       this.isVpcVirtualRouterForAtLeastOneService = false
+      var self = this
       providers.forEach(function (prvdr, idx) {
         if (prvdr === 'VirtualRouter') {
-          this.isVirtualRouterForAtLeastOneService = true
-          if (this.serviceOfferings.length === 0) {
-            this.fetchServiceOfferingData()
+          self.isVirtualRouterForAtLeastOneService = true
+          if (self.serviceOfferings.length === 0) {
+            self.fetchServiceOfferingData()
           }
         }
         if (prvdr === 'VpcVirtualRouter') {
@@ -652,11 +654,12 @@ export default {
         console.log(values)
         var params = {}
 
+        var self = this
         var selectedServices = null
         var keys = Object.keys(values)
         var ignoredKeys = ['state', 'status', 'allocationstate', 'forvpc', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'promiscuousmode', 'macaddresschanges', 'forgedtransmits']
         keys.forEach(function (key, keyIndex) {
-          if (this.isSupportedServiceObject(values[key])) {
+          if (self.isSupportedServiceObject(values[key])) {
             if (selectedServices == null) {
               selectedServices = {}
             }
