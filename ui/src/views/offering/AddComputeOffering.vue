@@ -566,7 +566,7 @@ export default {
   created () {
     this.zones = [
       {
-        id: 'all',
+        id: null,
         name: this.$t('label.all.zone')
       }
     ]
@@ -720,7 +720,6 @@ export default {
         if (values.networkRate != null && values.networkRate.length > 0) {
           params.networkrate = values.networkrate
         }
-
         if (values.qostype === 'storage') {
           var customIops = values.iscustomizeddiskiops === true
           params.customizediops = customIops

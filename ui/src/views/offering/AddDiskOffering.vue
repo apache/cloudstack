@@ -340,7 +340,7 @@ export default {
   created () {
     this.zones = [
       {
-        id: 'all',
+        id: null,
         name: this.$t('label.all.zone')
       }
     ]
