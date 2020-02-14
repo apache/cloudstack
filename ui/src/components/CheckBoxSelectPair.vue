@@ -16,20 +16,21 @@
 // under the License.
 
 <template>
-  <div v-decorator="['service.' + resourceTitle, {}]">
-    <a-checkbox class="pair-checkbox" @change="handleCheckChange">
+  <div>
+    <a-checkbox v-decorator="[checkDecorator, {}]" class="pair-checkbox" @change="handleCheckChange">
       {{ resourceTitle }}
     </a-checkbox>
-    <a-form-item class="pair-select-container" :label="$t('label.provider')" v-if="this.checked">
+    <a-form-item class="pair-select-container" :label="$t('serviceprovider')" v-if="this.checked">
       <a-select
-        v-decorator="[resourceTitle + '.provider', {
+        v-decorator="[selectDecorator, {
           initialValue: resourceOptions[0].name
         }]"
         showSearch
         optionFilterProp="children"
         :filterOption="(input, option) => {
           return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-        }">
+        }"
+        @change="val => { this.handleSelectChange(val) }">
         <a-select-option v-for="(opt) in resourceOptions" :key="opt.name" :disabled="!opt.enabled">
           {{ opt.name || opt.description }}
         </a-select-option>
@@ -54,6 +55,14 @@ export default {
     resourceOptions: {
       type: Array,
       required: true
+    },
+    checkDecorator: {
+      type: String,
+      default: ''
+    },
+    selectDecorator: {
+      type: String,
+      default: ''
     }
   },
   data () {
@@ -71,7 +80,10 @@ export default {
       if (this.checked && this.arrayHasItems(this.resourceOptions)) {
         this.selectedOption = this.resourceOptions[0].name
       }
-      this.$emit('handle-check-change', this.resourceKey, this.checked)
+      this.$emit('handle-checkpair-change', this.resourceKey, this.checked, '')
+    },
+    handleSelectChange (val) {
+      this.$emit('handle-checkpair-change', this.resourceKey, this.checked, val)
     }
   }
 }
@@ -79,13 +91,13 @@ export default {
 
 <style scoped lang="scss">
   .pair-checkbox {
-    width: 20vw;
+    width: 18vw;
   }
   .pair-select-container {
     position: relative;
     float: right;
     margin-left: 5vw;
     margin-bottom: 0;
-    width: 25vw
+    width: 20vw;
   }
 </style>

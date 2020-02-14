@@ -44,7 +44,9 @@
                   :resourceKey="item.name"
                   :resourceTitle="item.description"
                   :resourceOptions="item.provider"
-                  @handle-check-change="handleSupportedServiceChange"/>
+                  :checkDecorator="'service.' + item.name"
+                  :selectDecorator="item.name + '.provider'"
+                  @handle-checkpair-change="handleSupportedServiceChange"/>
               </a-list-item>
             </a-list>
           </div>
@@ -78,7 +80,7 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
-            :placeholder="this.$t('label.domain')">
+            :placeholder="this.$t('domain')">
             <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -106,7 +108,7 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
-            :placeholder="this.$t('label.zone')">
+            :placeholder="this.$t('zone')">
             <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -169,6 +171,9 @@ export default {
     },
     isAdmin () {
       return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    isSupportedServiceObject (obj) {
+      return (obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object && 'provider' in obj)
     },
     fetchDomainData () {
       const params = {}
@@ -269,7 +274,7 @@ export default {
       })
       for (var i in this.supportedServices) {
         var serviceName = this.supportedServices[i].name
-        var serviceDisplayName = 'label.' + serviceName
+        var serviceDisplayName = serviceName
         // Sanitize names
         // switch (serviceName) {
         //   case 'Vpn':
@@ -303,7 +308,7 @@ export default {
         this.supportedServices[i].description = serviceDisplayName
       }
     },
-    handleSupportedServiceChange (service, checked) {
+    handleSupportedServiceChange (service, checked, provider) {
       if (service === 'Connectivity') {
         this.connectivityServiceChecked = checked
       }
@@ -346,7 +351,16 @@ export default {
         if (zoneId) {
           params.zoneid = zoneId
         }
-        var selectedServices = values.label
+        var selectedServices = null
+        var keys = Object.keys(values)
+        keys.forEach(function (key, keyIndex) {
+          if (this.isSupportedServiceObject(values[key])) {
+            if (selectedServices == null) {
+              selectedServices = {}
+            }
+            selectedServices[key] = values[key]
+          }
+        })
         if (selectedServices != null) {
           var supportedServices = Object.keys(selectedServices)
           params.supportedservices = supportedServices.join(',')
@@ -401,10 +415,10 @@ export default {
 
 <style scoped lang="scss">
   .form-layout {
-    width: 60vw;
+    width: 50vw;
 
     @media (min-width: 450px) {
-      width: 60vw;
+      width: 50vw;
     }
   }
   .supported-services-container {
