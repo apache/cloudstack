@@ -76,13 +76,13 @@
         <a-form-item :label="$t('label.specifyvlan')">
           <a-switch v-decorator="['specifyvlan', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.vpc')">
-          <a-switch v-decorator="['forvpc', {initialValue: this.isVpc}]" :defaultChecked="this.isVpc" @change="val => { this.isVpc = val }" />
+        <a-form-item :label="$t('label.vpc')" v-if="this.guestType === 'isolated'">
+          <a-switch v-decorator="['forvpc', {initialValue: this.forVpc}]" :defaultChecked="this.forVpc" @change="this.handleForVpcChange(val)" />
         </a-form-item>
-        <a-form-item :label="$t('userdatal2')">
+        <a-form-item :label="$t('userdatal2')" v-if="this.guestType === 'l2'">
           <a-switch v-decorator="['userdatal2', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('load.balancer.type')" v-if="this.isVpc && this.lbServiceChecked">
+        <a-form-item :label="$t('load.balancer.type')" v-if="this.forVpc && this.lbServiceChecked">
           <a-radio-group
             v-decorator="['lbType', {
               initialValue: 'publicLb'
@@ -150,7 +150,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.supported.services')">
+        <a-form-item :label="$t('label.supported.services')" v-if="this.guestType !== 'l2'">
           <div class="supported-services-container" scroll-to="last-child">
             <a-list itemLayout="horizontal" :dataSource="this.supportedServices">
               <a-list-item slot="renderItem" slot-scope="item">
@@ -164,7 +164,7 @@
             </a-list>
           </div>
         </a-form-item>
-        <a-form-item :label="$t('serviceofferingid')" v-if="this.serviceOfferingVisible">
+        <a-form-item :label="$t('serviceofferingid')" v-if="this.isVirtualRouterForAtLeastOneService">
           <a-select
             v-decorator="['serviceofferingid', {
               rules: [
@@ -187,7 +187,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('service.SourceNat.redundant.router.capability')" v-if="this.sourceNatServiceChecked">
+        <a-form-item :label="$t('service.SourceNat.redundant.router.capability')" v-if="this.sourceNatServiceChecked && !this.isVpcVirtualRouterForAtLeastOneService">
           <a-switch v-decorator="['redundantroutercapability', {initialValue: false}]" />
         </a-form-item>
         <a-form-item :label="$t('service.SourceNat.sourceNatType')" v-if="this.sourceNatServiceChecked">
@@ -204,10 +204,10 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('service.Lb.elasticLb')" v-if="this.lbServiceChecked">
+        <a-form-item :label="$t('service.Lb.elasticLb')" v-if="this.guestType == 'shared' && this.lbServiceChecked && this.lbServiceProvider === 'Netscaler'">
           <a-switch v-decorator="['elasticlb', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('service.Lb.inlineMode')" v-if="this.lbServiceChecked">
+        <a-form-item :label="$t('service.Lb.inlineMode')" v-if="this.lbServiceChecked && this.firewallServiceChecked && this.lbServiceProvider === 'F5BigIp' && this.firewallServiceProvider === 'JuniperSRX'">
           <a-radio-group
             v-decorator="['inlinemode', {
               initialValue: 'false'
@@ -221,7 +221,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('service.Lb.netscaler.service.packages')" v-if="this.lbServiceChecked">
+        <a-form-item :label="$t('service.Lb.netscaler.service.packages')" v-if="this.lbServiceChecked && this.lbServiceProvider === 'Netscaler'">
           <a-select
             v-decorator="['netscalerservicepackages', {
               rules: [
@@ -243,7 +243,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('service.Lb.netscaler.service.packages.description')" v-if="this.lbServiceChecked">
+        <a-form-item :label="$t('service.Lb.netscaler.service.packages.description')" v-if="this.lbServiceChecked && this.lbServiceProvider === 'Netscaler'">
           <a-input
             v-decorator="['netscalerservicepackagesdescription', {}]"
             :placeholder="this.$t('netscaler.service.packages.description')"/>
@@ -262,10 +262,10 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('service.StaticNat.elasticIp')" v-if="this.staticNatServiceChecked">
-          <a-switch v-decorator="['elasticip', {initialValue: false}]" />
+        <a-form-item :label="$t('service.StaticNat.elasticIp')" v-if="this.guestType == 'shared' && this.staticNatServiceChecked && this.staticNatServiceProvider === 'Netscaler'">
+          <a-switch v-decorator="['elasticip', {initialValue: this.isElasticIp}]"  :defaultChecked="this.isElasticIp" @change="val => { this.isElasticIp = val }" />
         </a-form-item>
-        <a-form-item :label="$t('service.StaticNat.associatePublicIP')" v-if="this.staticNatServiceChecked">
+        <a-form-item :label="$t('service.StaticNat.associatePublicIP')" v-if="this.isElasticIp && this.staticNatServiceChecked && this.staticNatServiceProvider === 'Netscaler'">
           <a-switch v-decorator="['associatepublicip', {initialValue: false}]" />
         </a-form-item>
         <a-form-item :label="$t('service.Connectivity.supportsstrechedl2subnet')" v-if="this.connectivityServiceChecked">
@@ -274,7 +274,7 @@
         <a-form-item :label="$t('service.Connectivity.supportspublicaccess')" v-if="this.connectivityServiceChecked">
           <a-switch v-decorator="['supportspublicaccess', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.conservemode')">
+        <a-form-item :label="$t('label.conservemode')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && !this.isVpcVirtualRouterForAtLeastOneService">
           <a-switch v-decorator="['isconservemode', {initialValue: true}]" :defaultChecked="true" />
         </a-form-item>
         <a-form-item :label="$t('label.tags')">
@@ -282,7 +282,7 @@
             v-decorator="['tags', {}]"
             :placeholder="this.$t('label.networktags')"/>
         </a-form-item>
-        <a-form-item :label="$t('availability')" v-if="this.availabilityVisible">
+        <a-form-item :label="$t('availability')" v-if="this.requiredNetworkOfferingExists && this.guestType === 'isolated' && this.sourceNatServiceChecked">
           <a-radio-group
             v-decorator="['availability', {
               initialValue: 'optional'
@@ -296,7 +296,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('egressdefaultpolicy')" v-if="this.egressDefaultPolicyVisible">
+        <a-form-item :label="$t('egressdefaultpolicy')" v-if="this.firewallServiceChecked">
           <a-radio-group
             v-decorator="['egressdefaultpolicy', {
               initialValue: 'allow'
@@ -384,24 +384,31 @@ export default {
   },
   data () {
     return {
+      hasAdvanceZone: false,
+      requiredNetworkOfferingExists: false,
       guestType: 'isolated',
       promiscuousMode: '',
       macAddressChanges: '',
       forgedTransmits: '',
       selectedDomains: [],
       selectedZones: [],
-      isVpc: false,
+      forVpc: false,
       supportedServices: [],
       supportedServiceLoading: false,
-      serviceOfferingVisible: false,
+      isVirtualRouterForAtLeastOneService: false,
+      isVpcVirtualRouterForAtLeastOneService: false,
       serviceOfferings: [],
       serviceOfferingLoading: false,
       sourceNatServiceChecked: false,
       lbServiceChecked: false,
+      lbServiceProvider: '',
+      isElasticIp: false,
       staticNatServiceChecked: false,
+      staticNatServiceProvider: '',
       connectivityServiceChecked: false,
-      availbilityVisible: false,
-      egressDefaultPolicyVisible: false,
+      firewallServiceChecked: false,
+      firewallServiceProvider: '',
+      selectedServiceProviderMap: {},
       isPublic: true,
       domains: [],
       domainLoading: false,
@@ -568,22 +575,81 @@ export default {
         this.registeredServicePackageLoading = false
       })
     },
-    handleSupportedServiceChange (service, checked) {
+    handleForVpcChange (forVpc) {
+      this.forVpc = forVpc
+      this.supportedServices.forEach(function (svc, index) {
+        if (svc === 'Connectivity') {
+          var providers = svc.provider
+          providers.forEach(function (provider, providerIndex) {
+            if (this.forVpc) { // *** vpc ***
+              if (provider.name === 'InternalLbVm' || provider.name === 'VpcVirtualRouter' || provider.name === 'Netscaler' || provider.name === 'BigSwitchBcf' || provider.name === 'ConfigDrive') {
+                provider.enabled = true
+              } else {
+                provider.enabled = false
+              }
+            } else { // *** non-vpc ***
+              if (provider.name === 'InternalLbVm' || provider.name === 'VpcVirtualRouter') {
+                provider.enabled = false
+              } else {
+                provider.enabled = true
+              }
+            }
+            providers[providerIndex] = provider
+          })
+          svc.provider = providers
+          this.supportedServices[index] = svc
+        }
+      })
+    },
+    handleSupportedServiceChange (service, checked, provider) {
       if (service === 'SourceNat') {
         this.sourceNatServiceChecked = checked
-      }
-      if (service === 'Lb') {
+      } else if (service === 'Lb') {
         if (checked) {
           this.fetchRegisteredServicePackageData()
+          if (provider != null & provider !== undefined) {
+            this.lbServiceProvider = provider
+          }
+        } else {
+          this.lbServiceProvider = ''
         }
         this.lbServiceChecked = checked
-      }
-      if (service === 'StaticNat') {
+      } else if (service === 'StaticNat') {
         this.staticNatServiceChecked = checked
-      }
-      if (service === 'Connectivity') {
+        if (checked && provider != null & provider !== undefined) {
+          this.staticNatServiceProvider = provider
+        } else {
+          this.staticNatServiceProvider = ''
+        }
+      } else if (service === 'Connectivity') {
         this.connectivityServiceChecked = checked
+      } else if (service === 'Firewall') {
+        this.firewallServiceChecked = checked
+        if (checked && provider != null & provider !== undefined) {
+          this.staticNatServiceProvider = provider
+        } else {
+          this.staticNatServiceProvider = ''
+        }
       }
+      if (checked && provider != null & provider !== undefined) {
+        this.selectedServiceProviderMap[service] = provider
+      } else {
+        delete this.selectedServiceProviderMap[service]
+      }
+      var providers = Object.values(this.selectedServiceProviderMap)
+      this.isVirtualRouterForAtLeastOneService = false
+      this.isVpcVirtualRouterForAtLeastOneService = false
+      providers.forEach(function (prvdr, idx) {
+        if (prvdr === 'VirtualRouter') {
+          this.isVirtualRouterForAtLeastOneService = true
+          if (this.serviceOfferings.length === 0) {
+            this.fetchServiceOfferingData()
+          }
+        }
+        if (prvdr === 'VpcVirtualRouter') {
+          this.isVpcVirtualRouterForAtLeastOneService = true
+        }
+      })
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -594,16 +660,22 @@ export default {
         console.log(values)
         var params = {}
 
+        var selectedServices = null
         var keys = Object.keys(values)
         var ignoredKeys = ['state', 'status', 'allocationstate', 'forvpc', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'promiscuousmode', 'macaddresschanges', 'forgedtransmits']
-        for (var i in keys) {
-          var key = keys[i]
-          if (!ignoredKeys.includes(key) &&
-            !this.isSupportedServiceObject(values[key]) &&
-            (key === 'availability' && values.availability !== 'Optional')) {
-            params[key] = values[key]
+        keys.forEach(function (key, keyIndex) {
+          if (this.isSupportedServiceObject(values[key])) {
+            if (selectedServices == null) {
+              selectedServices = {}
+            }
+            selectedServices[key] = values[key]
+          } else {
+            if (!ignoredKeys.includes(key) &&
+              (key === 'availability' && values.availability !== 'Optional')) {
+              params[key] = values[key]
+            }
           }
-        }
+        })
 
         if (values.guesttype === 'Shared') { // specifyVlan checkbox is disabled, so inputData won't include specifyVlan
           params.specifyvlan = values.specifyvlan
@@ -638,10 +710,6 @@ export default {
           if (values.conservemode !== true) { // if ConserveMode checkbox is checked, do not pass conservemode parameter to API call since we need to keep API call's size as small as possible (p.s. conservemode is defaulted as true at server-side)
             params.conservemode = false
           }
-        }
-        var selectedServices = null
-        if (values.guesttype !== 'L2') {
-          values.label
         }
         if (selectedServices != null) {
           var supportedServices = Object.keys(selectedServices)
@@ -767,7 +835,7 @@ export default {
         if (zoneId) {
           params.zoneid = zoneId
         }
-        values.traffictype = 'GUEST' // traffic type dropdown has been removed since it has only one option ('Guest'). Hardcode traffic type value here.
+        params.traffictype = 'GUEST' // traffic type dropdown has been removed since it has only one option ('Guest'). Hardcode traffic type value here.
 
         console.log(params)
       })
