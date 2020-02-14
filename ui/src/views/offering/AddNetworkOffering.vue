@@ -68,11 +68,11 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('ispersisitent')">
+        <a-form-item :label="$t('ispersisitent')" v-if="this.guestType !== 'shared'">
           <a-switch v-decorator="['ispersisitent', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('specifyvlan')">
-          <a-switch v-decorator="['specifyvlan', {initialValue: false}]" />
+        <a-form-item :label="$t('specifyvlan')" v-if="this.guestType !== 'shared'">
+          <a-switch v-decorator="['specifyvlan', {initialValue: true}]" :defaultChecked="true" />
         </a-form-item>
         <a-form-item :label="$t('forvpc')" v-if="this.guestType === 'isolated'">
           <a-switch v-decorator="['forvpc', {initialValue: this.forVpc}]" :defaultChecked="this.forVpc" @change="this.handleForVpcChange(val)" />
