@@ -37,7 +37,8 @@ export default {
       icon: 'plus',
       label: 'label.add.pod',
       listView: true,
-      args: ['zoneid', 'name', 'gateway', 'netmask', 'startip', 'endip']
+      popup: true,
+      component: () => import('@/views/infra/PodAdd.vue')
     },
     {
       api: 'updatePod',
