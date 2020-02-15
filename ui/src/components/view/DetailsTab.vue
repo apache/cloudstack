@@ -55,15 +55,19 @@ export default {
   },
   data () {
     return {
+      dedicatedRoutes: ['zone', 'pod', 'cluster', 'host'],
       dedicatedSectionActive: false
     }
   },
+  mounted () {
+    this.dedicatedSectionActive = this.dedicatedRoutes.includes(this.$route.meta.name)
+  },
   created () {
-    this.dedicatedSectionActive = ['zone', 'pod', 'cluster', 'host'].includes(this.$route.meta.name)
+    this.dedicatedSectionActive = this.dedicatedRoutes.includes(this.$route.meta.name)
   },
   watch: {
     $route () {
-      this.dedicatedSectionActive = ['zone', 'pod', 'cluster', 'host'].includes(this.$route.meta.name)
+      this.dedicatedSectionActive = this.dedicatedRoutes.includes(this.$route.meta.name)
     }
   }
 }

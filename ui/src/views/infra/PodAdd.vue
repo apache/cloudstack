@@ -101,7 +101,7 @@
 
       <div class="actions">
         <a-button @click="() => this.$parent.$parent.close()">{{ $t('cancel') }}</a-button>
-        <a-button @click="handleSubmit" type="primary">{{ $t('OK') }}</a-button>
+        <a-button @click="handleSubmit" type="primary">{{ $t('ok') }}</a-button>
       </div>
 
     </a-form>
@@ -170,9 +170,9 @@ export default {
       })
     },
     toggleDedicate () {
-      this.showDedicated = !this.showDedicated
       this.dedicatedDomainId = null
       this.dedicatedAccount = null
+      this.showDedicated = !this.showDedicated
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -189,7 +189,7 @@ export default {
           endip: values.endip
         }).then(response => {
           const pod = response.createpodresponse.pod || {}
-          if (pod && pod.id && this.showDedicated) {
+          if (pod.id && this.showDedicated) {
             this.dedicatePod(pod.id)
           }
           this.loading = false

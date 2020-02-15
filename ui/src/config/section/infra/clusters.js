@@ -40,7 +40,8 @@ export default {
       icon: 'plus',
       label: 'label.add.cluster',
       listView: true,
-      args: ['zoneid', 'hypervisor', 'podid', 'clustername']
+      popup: true,
+      component: () => import('@/views/infra/ClusterAdd.vue')
     },
     {
       api: 'updateCluster',
