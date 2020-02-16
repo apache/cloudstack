@@ -71,6 +71,7 @@
         <cs.resources-plugin.version>3.1.0</cs.resources-plugin.version>
         <cs.site-plugin.version>3.8.2</cs.site-plugin.version>
         <cs.surefire-plugin.version>2.22.2</cs.surefire-plugin.version>
+        <cs.clover-maven-plugin.version>4.4.1</cs.clover-maven-plugin.version>
 
         <!-- Logging versions -->
         <cs.log4j.version>1.2.17</cs.log4j.version>
@@ -739,6 +740,38 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${cs.jacoco-plugin.version}</version>
             </plugin>
+            <plugin>
+                <groupId>org.openclover</groupId>
+                <artifactId>clover-maven-plugin</artifactId>
+                <version>${cs.clover-maven-plugin.version}</version>
+                <configuration>
+                    <flushPolicy>threaded</flushPolicy>
+                    <flushInterval>100</flushInterval>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>main</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>instrument</goal>
+                            <goal>aggregate</goal>
+                            <goal>check</goal>
+                            <goal>log</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>site</id>
+                        <phase>pre-site</phase>
+                        <goals>
+                            <goal>instrument</goal>
+                            <goal>aggregate</goal>
+                            <!-- We save a history point in order to have data to generate a historical report -->
+                            <goal>save-history</goal>
+
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -1305,6 +1338,15 @@
                                 <inherited>true</inherited>
                             </execution>
                         </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.openclover</groupId>
+                        <artifactId>clover-maven-plugin</artifactId>
+                        <version>${cs.clover-maven-plugin.version}</version>
+                        <configuration>
+                            <generateHistorical>true</generateHistorical>
+                            <generateHtml>true</generateHtml>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
