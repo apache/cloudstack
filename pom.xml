@@ -67,7 +67,6 @@
         <cs.spotbugs-maven-plugin.version>3.1.12.2</cs.spotbugs-maven-plugin.version>
         <cs.jar-plugin.version>3.2.0</cs.jar-plugin.version>
         <cs.pmd-plugin.version>3.12.0</cs.pmd-plugin.version>
-        <cs.project-info-plugin.version>3.0.0</cs.project-info-plugin.version>
         <cs.release-plugin.version>2.5.3</cs.release-plugin.version>
         <cs.resources-plugin.version>3.1.0</cs.resources-plugin.version>
         <cs.site-plugin.version>3.8.2</cs.site-plugin.version>
@@ -136,7 +135,7 @@
         <cs.jasypt.version>1.9.3</cs.jasypt.version>
         <cs.java-ipv6.version>0.17</cs.java-ipv6.version>
         <cs.javassist.version>3.26.0-GA</cs.javassist.version>
-        <cs.javadoc.version>3.1.1</cs.javadoc.version>
+        <cs.maven-javadoc-plugin.version>3.1.1</cs.maven-javadoc-plugin.version>
         <cs.javax.annotation.version>1.3.2</cs.javax.annotation.version>
         <cs.jaxb.version>2.3.0</cs.jaxb.version>
         <cs.jaxws.version>2.3.2</cs.jaxws.version>
@@ -176,7 +175,6 @@
     <distributionManagement>
         <site>
             <id>apache.cloudstack.site</id>
-            <url>${site.deploy.url}</url>
         </site>
     </distributionManagement>
 
@@ -1172,6 +1170,11 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>${cs.site-plugin.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
@@ -1190,16 +1193,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${cs.javadoc.version}</version>
+                <version>${cs.maven-javadoc-plugin.version}</version>
                 <configuration>
                     <minmemory>128m</minmemory>
                     <maxmemory>1g</maxmemory>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>${cs.project-info-plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
