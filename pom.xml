@@ -747,6 +747,10 @@
                 <configuration>
                     <flushPolicy>threaded</flushPolicy>
                     <flushInterval>100</flushInterval>
+                    <targetPercentage>0%</targetPercentage>
+                    <generateHtml>true</generateHtml>
+                    <generateXml>true</generateXml>
+                    <generateHistorical>true</generateHistorical>
                 </configuration>
                 <executions>
                     <execution>
@@ -767,7 +771,6 @@
                             <goal>aggregate</goal>
                             <!-- We save a history point in order to have data to generate a historical report -->
                             <goal>save-history</goal>
-
                         </goals>
                     </execution>
                 </executions>
