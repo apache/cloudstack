@@ -44,7 +44,7 @@ ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__power_host` FO
 ALTER TABLE `cloud`.`load_balancing_rules` ADD COLUMN `lb_protocol` VARCHAR(40);
 
 DROP TABLE IF EXISTS `cloud`.`vm_snapshot_details`;
-CREATE TABLE `cloud`.`vm_snapshot_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_snapshot_details` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT,
   `vm_snapshot_id` bigint unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE `cloud`.`vm_snapshot_details` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `cloud`.`snapshot_details`;
-CREATE TABLE `cloud`.`snapshot_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`snapshot_details` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT,
   `snapshot_id` bigint unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE `cloud`.`snapshot_details` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`vm_work_job` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_work_job` (
   `id` bigint unsigned UNIQUE NOT NULL,
   `step` char(32) NOT NULL COMMENT 'state',
   `vm_type` char(32) NOT NULL COMMENT 'type of vm',
@@ -72,7 +72,7 @@ CREATE TABLE `cloud`.`vm_work_job` (
   INDEX `i_vm_work_job__step`(`step`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`async_job_journal` (
+CREATE TABLE IF NOT EXISTS `cloud`.`async_job_journal` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `job_id` bigint unsigned NOT NULL,
   `journal_type` varchar(32),
@@ -83,7 +83,7 @@ CREATE TABLE `cloud`.`async_job_journal` (
   CONSTRAINT `fk_async_job_journal__job_id` FOREIGN KEY (`job_id`) REFERENCES `async_job`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`async_job_join_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`async_job_join_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `job_id` bigint unsigned NOT NULL,
   `join_job_id` bigint unsigned NOT NULL,
@@ -479,7 +479,7 @@ CREATE VIEW `cloud`.`storage_pool_view` AS
             and async_job.job_status = 0;
 
 
-CREATE TABLE `sslcerts` (
+CREATE TABLE IF NOT EXISTS `sslcerts` (
       `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
       `uuid` varchar(40) DEFAULT NULL,
       `account_id` bigint(20) unsigned NOT NULL,
@@ -494,7 +494,7 @@ CREATE TABLE `sslcerts` (
       CONSTRAINT `fk_sslcert__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE
 );
 
-CREATE TABLE `load_balancer_cert_map` (
+CREATE TABLE IF NOT EXISTS `load_balancer_cert_map` (
       `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
       `uuid` varchar(40) DEFAULT NULL,
       `load_balancer_id` bigint(20) unsigned NOT NULL,
@@ -579,7 +579,7 @@ CREATE VIEW `cloud`.`host_view` AS
             and async_job.instance_type = 'Host'
             and async_job.job_status = 0;
 
-CREATE TABLE `cloud`.`firewall_rule_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`firewall_rule_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `firewall_rule_id` bigint unsigned NOT NULL COMMENT 'Firewall rule id',
   `name` varchar(255) NOT NULL,
@@ -611,7 +611,7 @@ INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, 
 INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'ldap.truststore', NULL, 'Sets the path to the truststore to use for LDAP SSL', NULL) ON DUPLICATE KEY UPDATE category='Secure';
 INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'ldap.truststore.password', NULL, 'Sets the password for the truststore', NULL) ON DUPLICATE KEY UPDATE category='Secure';
 
-CREATE TABLE `cloud`.`ldap_configuration` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ldap_configuration` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `hostname` varchar(255) NOT NULL COMMENT 'the hostname of the ldap server',
   `port` int(10) COMMENT 'port that the ldap server is listening on',
@@ -620,7 +620,7 @@ CREATE TABLE `cloud`.`ldap_configuration` (
 
 UPDATE `cloud`.`volumes` SET display_volume=1 where id>0;
 
-create table `cloud`.`monitoring_services` (
+CREATE TABLE IF NOT EXISTS `cloud`.`monitoring_services` (
 `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
 `uuid` varchar(40), `service` varchar(255) COMMENT 'Service name',
 `process_name` varchar(255) COMMENT 'running process name',
@@ -637,7 +637,7 @@ insert into cloud.monitoring_services(id, uuid, service, process_name,  service_
 
 ALTER TABLE `cloud`.`service_offering` CHANGE COLUMN `cpu` `cpu` INT(10) UNSIGNED NULL COMMENT '# of cores'  , CHANGE COLUMN `speed` `speed` INT(10) UNSIGNED NULL COMMENT 'speed per core in mhz'  , CHANGE COLUMN `ram_size` `ram_size` BIGINT(20) UNSIGNED NULL  ;
 
-CREATE TABLE `cloud`.`usage_event_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`usage_event_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `usage_event_id` bigint unsigned NOT NULL COMMENT 'usage event id',
   `name` varchar(255) NOT NULL,
@@ -646,7 +646,7 @@ CREATE TABLE `cloud`.`usage_event_details` (
   CONSTRAINT `fk_usage_event_details__usage_event_id` FOREIGN KEY `fk_usage_event_details__usage_event_id`(`usage_event_id`) REFERENCES `usage_event`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud_usage`.`usage_event_details` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_event_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `usage_event_id` bigint unsigned NOT NULL COMMENT 'usage event id',
   `name` varchar(255) NOT NULL,
@@ -655,7 +655,7 @@ CREATE TABLE `cloud_usage`.`usage_event_details` (
   CONSTRAINT `fk_usage_event_details__usage_event_id` FOREIGN KEY `fk_usage_event_details__usage_event_id`(`usage_event_id`) REFERENCES `usage_event`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`user_ip_address_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`user_ip_address_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `user_ip_address_id` bigint unsigned NOT NULL COMMENT 'User ip address id',
   `name` varchar(255) NOT NULL,
@@ -665,7 +665,7 @@ CREATE TABLE `cloud`.`user_ip_address_details` (
   CONSTRAINT `fk_user_ip_address_details__user_ip_address_id` FOREIGN KEY `fk_user_ip_address_details__user_ip_address_id`(`user_ip_address_id`) REFERENCES `user_ip_address`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`remote_access_vpn_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`remote_access_vpn_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `remote_access_vpn_id` bigint unsigned NOT NULL COMMENT 'Remote access vpn id',
   `name` varchar(255) NOT NULL,
@@ -787,7 +787,7 @@ ALTER TABLE `cloud_usage`.`usage_vm_instance` ADD COLUMN `cpu_speed` INT(10) UNS
     ADD COLUMN `cpu_cores` INT(10) UNSIGNED NULL  COMMENT 'number of cpu cores',
     ADD COLUMN  `memory` INT(10) UNSIGNED NULL  COMMENT 'memory in MB';
 
-CREATE TABLE `cloud`.`vpc_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vpc_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vpc_id` bigint unsigned NOT NULL COMMENT 'VPC id',
   `name` varchar(255) NOT NULL,
@@ -798,7 +798,7 @@ CREATE TABLE `cloud`.`vpc_details` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`vpc_gateway_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vpc_gateway_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vpc_gateway_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
   `name` varchar(255) NOT NULL,
@@ -808,7 +808,7 @@ CREATE TABLE `cloud`.`vpc_gateway_details` (
   CONSTRAINT `fk_vpc_gateway_details__vpc_gateway_id` FOREIGN KEY `fk_vpc_gateway_details__vpc_gateway_id`(`vpc_gateway_id`) REFERENCES `vpc_gateways`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_acl_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`network_acl_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `network_acl_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
   `name` varchar(255) NOT NULL,
@@ -818,7 +818,7 @@ CREATE TABLE `cloud`.`network_acl_details` (
   CONSTRAINT `fk_network_acl_details__network_acl_id` FOREIGN KEY `fk_network_acl_details__network_acl_id`(`network_acl_id`) REFERENCES `network_acl`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_acl_item_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`network_acl_item_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `network_acl_item_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
   `name` varchar(255) NOT NULL,
@@ -843,7 +843,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'VMSna
 
 UPDATE `cloud`.`configuration` SET `component` = 'VMSnapshotManager' WHERE `name` IN ("vmsnapshot.create.wait", "vmsnapshot.max");
 
-CREATE TABLE `cloud`.`s2s_vpn_gateway_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`s2s_vpn_gateway_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `s2s_vpn_gateway_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
   `name` varchar(255) NOT NULL,
@@ -872,7 +872,7 @@ INSERT IGNORE INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, c
 
 UPDATE `cloud`.`configuration` SET `component` = 'VMSnapshotManager' WHERE `name` IN ("vmsnapshot.create.wait", "vmsnapshot.max");
 
-CREATE TABLE `cloud`.`s2s_customer_gateway_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`s2s_customer_gateway_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `s2s_customer_gateway_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
   `name` varchar(255) NOT NULL,
@@ -883,7 +883,7 @@ CREATE TABLE `cloud`.`s2s_customer_gateway_details` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`s2s_vpn_connection_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`s2s_vpn_connection_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `s2s_vpn_connection_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
   `name` varchar(255) NOT NULL,

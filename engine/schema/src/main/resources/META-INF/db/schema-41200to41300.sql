@@ -376,7 +376,7 @@ CREATE VIEW `cloud`.`network_offering_view` AS
         `network_offerings`.`id`;
 
 -- Create VPC offering details table
-CREATE TABLE `vpc_offering_details` (
+CREATE TABLE IF NOT EXISTS `vpc_offering_details` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `offering_id` bigint(20) unsigned NOT NULL COMMENT 'vpc offering id',
   `name` varchar(255) NOT NULL,
@@ -496,7 +496,7 @@ CREATE VIEW `cloud`.`project_view` AS
         `cloud`.`project_account` pacct ON projects.id = pacct.project_id;
 
 -- KVM: Add background task to upload certificates for direct download
-CREATE TABLE `cloud`.`direct_download_certificate` (
+CREATE TABLE IF NOT EXISTS `cloud`.`direct_download_certificate` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `uuid` varchar(40) NOT NULL,
   `alias` varchar(255) NOT NULL,
@@ -509,7 +509,7 @@ CREATE TABLE `cloud`.`direct_download_certificate` (
   CONSTRAINT `fk_direct_download_certificate__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`direct_download_certificate_host_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`direct_download_certificate_host_map` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `certificate_id` bigint(20) unsigned NOT NULL,
   `host_id` bigint(20) unsigned NOT NULL,
@@ -522,7 +522,7 @@ CREATE TABLE `cloud`.`direct_download_certificate_host_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- [Vmware] Allow configuring appliances on the VM instance wizard when OVF properties are available
-CREATE TABLE `cloud`.`template_ovf_properties` (
+CREATE TABLE IF NOT EXISTS `cloud`.`template_ovf_properties` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `template_id` bigint(20) unsigned NOT NULL,
   `key` VARCHAR(100) NOT NULL,

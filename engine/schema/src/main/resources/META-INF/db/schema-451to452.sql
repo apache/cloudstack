@@ -24,7 +24,7 @@ DELETE FROM `cloud`.`configuration` WHERE name like 'saml%';
 ALTER TABLE `cloud`.`user` ADD COLUMN `external_entity` text DEFAULT NULL COMMENT "reference to external federation entity";
 
 DROP TABLE IF EXISTS `cloud`.`saml_token`;
-CREATE TABLE `cloud`.`saml_token` (
+CREATE TABLE IF NOT EXISTS `cloud`.`saml_token` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `uuid` varchar(255) UNIQUE NOT NULL COMMENT 'The Authn Unique Id',
   `domain_id` bigint unsigned DEFAULT NULL,

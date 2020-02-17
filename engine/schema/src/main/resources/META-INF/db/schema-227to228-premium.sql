@@ -24,7 +24,7 @@
 --;
 
 
-create table `cloud_usage`.`temp_usage` (  `vol_id` bigint unsigned, `created` DATETIME);
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`temp_usage` (  `vol_id` bigint unsigned, `created` DATETIME);
 
 insert into `cloud_usage`.`temp_usage` (vol_id, created) select id, max(created) from `cloud_usage`.`usage_volume` where deleted is null group by id having count(id) > 1;
 

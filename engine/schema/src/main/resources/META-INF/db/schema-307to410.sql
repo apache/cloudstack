@@ -23,7 +23,7 @@
 SET foreign_key_checks = 0;
 
 -- DB upgrade steps from 302-40 
-CREATE TABLE `cloud`.`external_nicira_nvp_devices` (
+CREATE TABLE IF NOT EXISTS `cloud`.`external_nicira_nvp_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which nicira nvp device is added',
@@ -35,7 +35,7 @@ CREATE TABLE `cloud`.`external_nicira_nvp_devices` (
   CONSTRAINT `fk_external_nicira_nvp_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`nicira_nvp_nic_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `logicalswitch` varchar(255) NOT NULL COMMENT 'nicira uuid of logical switch this port is provisioned on',
   `logicalswitchport` varchar(255) UNIQUE COMMENT 'nicira uuid of this logical switch port',
@@ -108,14 +108,14 @@ alter table cluster add column created datetime COMMENT 'date created';
 alter table cluster add column lastUpdated datetime COMMENT 'last updated';
 alter table cluster add column engine_state varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'the engine state of the zone';
 
-CREATE TABLE `cloud`.`vm_compute_tags` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_compute_tags` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
   `compute_tag` varchar(255) NOT NULL COMMENT 'name of tag',
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`vm_root_disk_tags` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_root_disk_tags` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
   `root_disk_tag` varchar(255) NOT NULL COMMENT 'name of tag',
@@ -123,7 +123,7 @@ CREATE TABLE `cloud`.`vm_root_disk_tags` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`vm_network_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_network_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
   `network_id` bigint unsigned NOT NULL COMMENT 'network id',
@@ -131,7 +131,7 @@ CREATE TABLE `cloud`.`vm_network_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`vm_reservation` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_reservation` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40) NOT NULL COMMENT 'reservation id',
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
@@ -145,7 +145,7 @@ CREATE TABLE `cloud`.`vm_reservation` (
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`volume_reservation` (
+CREATE TABLE IF NOT EXISTS `cloud`.`volume_reservation` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `vm_reservation_id` bigint unsigned NOT NULL COMMENT 'id of the vm reservation',
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
@@ -155,7 +155,7 @@ CREATE TABLE `cloud`.`volume_reservation` (
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`s3` (
+CREATE TABLE IF NOT EXISTS `cloud`.`s3` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40),
   `access_key` varchar(20) NOT NULL COMMENT ' The S3 access key',
@@ -171,7 +171,7 @@ CREATE TABLE `cloud`.`s3` (
   CONSTRAINT `uc_s3__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`template_s3_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`template_s3_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `s3_id` bigint unsigned NOT NULL COMMENT ' Associated S3 instance id',
   `template_id` bigint unsigned NOT NULL COMMENT ' Associated template id',
@@ -290,7 +290,7 @@ CREATE TABLE  `cloud`.`region` (
 
 INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client/');
 
-CREATE TABLE `cloud`.`nicira_nvp_router_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`nicira_nvp_router_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `logicalrouter_uuid` varchar(255) NOT NULL UNIQUE COMMENT 'nicira uuid of logical router',
   `network_id` bigint unsigned NOT NULL UNIQUE COMMENT 'cloudstack id of the network',
@@ -298,7 +298,7 @@ CREATE TABLE `cloud`.`nicira_nvp_router_map` (
   CONSTRAINT `fk_nicira_nvp_router_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`external_bigswitch_vns_devices` (
+CREATE TABLE IF NOT EXISTS `cloud`.`external_bigswitch_vns_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which bigswitch vns device is added',
@@ -1487,7 +1487,7 @@ CREATE VIEW `cloud`.`data_center_view` AS
         `cloud`.`domain` ON data_center.domain_id = domain.id;
 
 
-CREATE TABLE `cloud`.`ucs_blade` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ucs_blade` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40) UNIQUE,
   `ucs_manager_id` bigint unsigned NOT NULL,
@@ -1497,7 +1497,7 @@ CREATE TABLE `cloud`.`ucs_blade` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ucs_manager` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ucs_manager` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40) UNIQUE,
   `zone_id` bigint unsigned NOT NULL,

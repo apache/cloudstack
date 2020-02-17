@@ -33,7 +33,7 @@ ALTER TABLE `cloud`.`op_host_capacity` ADD CONSTRAINT `fk_op_host_capacity__clus
 ALTER TABLE `cloud`.`op_host_capacity` ADD INDEX `i_op_host_capacity__cluster_id`(`cluster_id`);
 ALTER TABLE `cloud`.`usage_event` ADD COLUMN `resource_type` varchar(32);
 
-CREATE TABLE `cloud`.`domain_network_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`domain_network_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
   `network_id` bigint unsigned NOT NULL COMMENT 'network id',
@@ -86,7 +86,7 @@ ALTER TABLE `cloud`.`host` ADD INDEX `i_host__allocation_state`(`allocation_stat
 
 ALTER TABLE `cloud`.`domain` ADD INDEX `i_domain__path`(`path`);
 
-CREATE TABLE `cloud`.`data_center_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`data_center_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `dc_id` bigint unsigned NOT NULL COMMENT 'dc id',
   `name` varchar(255) NOT NULL,

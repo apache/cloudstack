@@ -65,7 +65,7 @@ INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor
 INSERT INTO `cloud`.`guest_os` (id, category_id, name, uuid, display_name) VALUES (206, 6, NULL, '8ceb2da9-62cd-53d4-ac8a-d0563d9bec2d', 'Windows 8(64-bit)');
 
 
-CREATE TABLE `cloud`.`host_updates` (
+CREATE TABLE IF NOT EXISTS `cloud`.`host_updates` (
   `id` bigint unsigned NOT NULL auto_increment,
   `uuid` varchar(40),
   `label` varchar(40),
@@ -77,7 +77,7 @@ CREATE TABLE `cloud`.`host_updates` (
   CONSTRAINT `uc_host_updates__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`host_updates_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`host_updates_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL,
   `patch_id` bigint unsigned NOT NULL,

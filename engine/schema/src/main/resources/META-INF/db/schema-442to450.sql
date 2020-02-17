@@ -86,7 +86,7 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
         disk_offering.state='ACTIVE';
 
 DROP TABLE IF EXISTS `cloud`.`external_nuage_vsp_devices`;
-CREATE TABLE `cloud`.`external_nuage_vsp_devices` (
+CREATE TABLE IF NOT EXISTS `cloud`.`external_nuage_vsp_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which nuage vsp is added',
@@ -266,7 +266,7 @@ CREATE VIEW `cloud`.`volume_view` AS
             and async_job.instance_type = 'Volume'
             and async_job.job_status = 0;
 
-CREATE TABLE `cloud`.`external_brocade_vcs_devices` (
+CREATE TABLE IF NOT EXISTS `cloud`.`external_brocade_vcs_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which brocade vcs switch is added',
@@ -278,7 +278,7 @@ CREATE TABLE `cloud`.`external_brocade_vcs_devices` (
   CONSTRAINT `fk_external_brocade_vcs_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`brocade_network_vlan_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`brocade_network_vlan_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `network_id` bigint unsigned NOT NULL COMMENT 'id of the network',
   `vlan_id` int(10) COMMENT 'vlan id of the network',
@@ -959,7 +959,7 @@ INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hype
 
 update vlan set vlan_id=concat('vlan://', vlan_id) where vlan_type = "VirtualNetwork" and vlan_id not like "vlan://%";
 
-CREATE TABLE `cloud`.`baremetal_rct` (
+CREATE TABLE IF NOT EXISTS `cloud`.`baremetal_rct` (
   `id` bigint unsigned UNIQUE AUTO_INCREMENT,
   `uuid` varchar(40) UNIQUE NOT NULL,
   `url` varchar(2048) NOT NULL,

@@ -80,7 +80,7 @@ DROP TABLE IF EXISTS `cloud`.`ovs_vlan_mapping_dirty`;
 DROP TABLE IF EXISTS `cloud`.`ovs_vm_flow_log`;
 DROP TABLE IF EXISTS `cloud`.`ovs_work`;
 
-CREATE TABLE `cloud`.`ovs_tunnel_interface` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_tunnel_interface` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `ip` varchar(16) DEFAULT NULL,
   `netmask` varchar(16) DEFAULT NULL,
@@ -90,7 +90,7 @@ CREATE TABLE `cloud`.`ovs_tunnel_interface` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ovs_tunnel_network`(
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_tunnel_network`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `from` bigint unsigned COMMENT 'from host id',
   `to` bigint unsigned COMMENT 'to host id',
@@ -143,7 +143,7 @@ CREATE TABLE  `cloud`.`cluster_vsm_map` (
   PRIMARY KEY (`cluster_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`virtual_supervisor_module` (
+CREATE TABLE IF NOT EXISTS `cloud`.`virtual_supervisor_module` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `host_id` bigint NOT NULL,
@@ -162,7 +162,7 @@ CREATE TABLE `cloud`.`virtual_supervisor_module` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`port_profile` (
+CREATE TABLE IF NOT EXISTS `cloud`.`port_profile` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `port_profile_name` varchar(255),
@@ -186,7 +186,7 @@ ALTER TABLE `cloud`.`service_offering` MODIFY `nw_rate` smallint(5) unsigned DEF
 ALTER TABLE `cloud`.`storage_pool` ADD `user_info` VARCHAR( 255 ) NULL COMMENT 'Authorization information for the storage pool. Used by network filesystems' AFTER `host_address`;
 
 -- Resource tags (commit: 62d45b9670520a1ee8b520509393d4258c689b50)
-CREATE TABLE `cloud`.`resource_tags` (
+CREATE TABLE IF NOT EXISTS `cloud`.`resource_tags` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `key` varchar(255),
@@ -205,7 +205,7 @@ CREATE TABLE `cloud`.`resource_tags` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Nicira Integration (commit: 79c7da07abd4294f150851aa0c2d06a28564c5a9)
-CREATE TABLE `cloud`.`external_nicira_nvp_devices` (
+CREATE TABLE IF NOT EXISTS `cloud`.`external_nicira_nvp_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which nicira nvp device is added',
@@ -217,7 +217,7 @@ CREATE TABLE `cloud`.`external_nicira_nvp_devices` (
   CONSTRAINT `fk_external_nicira_nvp_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`nicira_nvp_nic_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `logicalswitch` varchar(255) NOT NULL COMMENT 'nicira uuid of logical switch this port is provisioned on',
   `logicalswitchport` varchar(255) UNIQUE COMMENT 'nicira uuid of this logical switch port',
@@ -254,7 +254,7 @@ UPDATE `cloud`.`configuration` SET description='Do URL encoding for the api resp
 
 
 
-CREATE TABLE `cloud`.`vpc_offerings` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vpc_offerings` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40) NOT NULL,
   `unique_name` varchar(64) UNIQUE COMMENT 'unique name of the vpc offering',
@@ -281,7 +281,7 @@ CREATE TABLE  `cloud`.`vpc_offering_service_map` (
   UNIQUE (`vpc_offering_id`, `service`, `provider`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`vpc` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vpc` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40) NOT NULL,
   `name` varchar(255) COMMENT 'vpc name',
@@ -305,7 +305,7 @@ CREATE TABLE `cloud`.`vpc` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`router_network_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`router_network_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `router_id` bigint unsigned NOT NULL COMMENT 'router id',
   `network_id` bigint unsigned NOT NULL COMMENT 'network id',
@@ -316,7 +316,7 @@ CREATE TABLE `cloud`.`router_network_ref` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`vpc_gateways` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vpc_gateways` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40),
   `ip4_address` char(40) COMMENT 'ip4 address of the gateway',
@@ -342,7 +342,7 @@ CREATE TABLE `cloud`.`vpc_gateways` (
   INDEX `i_vpc_gateways__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`private_ip_address` (
+CREATE TABLE IF NOT EXISTS `cloud`.`private_ip_address` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'primary key',
   `ip_address` char(40) NOT NULL COMMENT 'ip address',
   `network_id` bigint unsigned NOT NULL COMMENT 'id of the network ip belongs to',
@@ -356,7 +356,7 @@ CREATE TABLE `cloud`.`private_ip_address` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`static_routes` (
+CREATE TABLE IF NOT EXISTS `cloud`.`static_routes` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `vpc_gateway_id` bigint unsigned COMMENT 'id of the corresponding ip address',
@@ -400,7 +400,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT'
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'AgentManager', 'ha.workers', 5, 'Number of HA worker threads.');
 
-CREATE TABLE `cloud`.`s2s_vpn_gateway` (
+CREATE TABLE IF NOT EXISTS `cloud`.`s2s_vpn_gateway` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `addr_id` bigint unsigned NOT NULL,
@@ -416,7 +416,7 @@ CREATE TABLE `cloud`.`s2s_vpn_gateway` (
   CONSTRAINT `uc_s2s_vpn_gateway__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`s2s_customer_gateway` (
+CREATE TABLE IF NOT EXISTS `cloud`.`s2s_customer_gateway` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `name` varchar(255) NOT NULL,
@@ -437,7 +437,7 @@ CREATE TABLE `cloud`.`s2s_customer_gateway` (
   CONSTRAINT `uc_s2s_customer_gateway__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`s2s_vpn_connection` (
+CREATE TABLE IF NOT EXISTS `cloud`.`s2s_vpn_connection` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `vpn_gateway_id` bigint unsigned NULL,

@@ -59,14 +59,14 @@ alter table cluster add column created datetime COMMENT 'date created';
 alter table cluster add column lastUpdated datetime COMMENT 'last updated';
 alter table cluster add column engine_state varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'the engine state of the zone';
 
-CREATE TABLE `cloud`.`vm_compute_tags` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_compute_tags` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
   `compute_tag` varchar(255) NOT NULL COMMENT 'name of tag',
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`vm_root_disk_tags` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_root_disk_tags` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
   `root_disk_tag` varchar(255) NOT NULL COMMENT 'name of tag',
@@ -74,7 +74,7 @@ CREATE TABLE `cloud`.`vm_root_disk_tags` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`vm_network_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_network_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
   `network_id` bigint unsigned NOT NULL COMMENT 'network id',
@@ -82,7 +82,7 @@ CREATE TABLE `cloud`.`vm_network_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`vm_reservation` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_reservation` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40) NOT NULL COMMENT 'reservation id',
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
@@ -96,7 +96,7 @@ CREATE TABLE `cloud`.`vm_reservation` (
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`volume_reservation` (
+CREATE TABLE IF NOT EXISTS `cloud`.`volume_reservation` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `vm_reservation_id` bigint unsigned NOT NULL COMMENT 'id of the vm reservation',
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
@@ -106,7 +106,7 @@ CREATE TABLE `cloud`.`volume_reservation` (
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`s3` (
+CREATE TABLE IF NOT EXISTS `cloud`.`s3` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40),
   `access_key` varchar(20) NOT NULL COMMENT ' The S3 access key',
@@ -122,7 +122,7 @@ CREATE TABLE `cloud`.`s3` (
   CONSTRAINT `uc_s3__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`template_s3_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`template_s3_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `s3_id` bigint unsigned NOT NULL COMMENT ' Associated S3 instance id',
   `template_id` bigint unsigned NOT NULL COMMENT ' Associated template id',
@@ -264,7 +264,7 @@ CREATE TABLE  `cloud`.`region` (
 
 INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client/');
 
-CREATE TABLE `cloud`.`nicira_nvp_router_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`nicira_nvp_router_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `logicalrouter_uuid` varchar(255) NOT NULL UNIQUE COMMENT 'nicira uuid of logical router',
   `network_id` bigint unsigned NOT NULL UNIQUE COMMENT 'cloudstack id of the network',
@@ -272,7 +272,7 @@ CREATE TABLE `cloud`.`nicira_nvp_router_map` (
   CONSTRAINT `fk_nicira_nvp_router_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`external_bigswitch_vns_devices` (
+CREATE TABLE IF NOT EXISTS `cloud`.`external_bigswitch_vns_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which bigswitch vns device is added',
@@ -284,7 +284,7 @@ CREATE TABLE `cloud`.`external_bigswitch_vns_devices` (
   CONSTRAINT `fk_external_bigswitch_vns_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`counter` (
+CREATE TABLE IF NOT EXISTS `cloud`.`counter` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40),
   `source` varchar(255) NOT NULL COMMENT 'source e.g. netscaler, snmp',
@@ -298,7 +298,7 @@ CREATE TABLE `cloud`.`counter` (
   INDEX `i_counter__source`(`source`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`conditions` (
+CREATE TABLE IF NOT EXISTS `cloud`.`conditions` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40),
   `counter_id` bigint unsigned NOT NULL COMMENT 'Counter Id',
@@ -316,7 +316,7 @@ CREATE TABLE `cloud`.`conditions` (
   INDEX `i_conditions__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`autoscale_vmprofiles` (
+CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmprofiles` (
   `id` bigint unsigned NOT NULL auto_increment,
   `uuid` varchar(40),
   `zone_id` bigint unsigned NOT NULL,
@@ -338,7 +338,7 @@ CREATE TABLE `cloud`.`autoscale_vmprofiles` (
   INDEX `i_autoscale_vmprofiles__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`autoscale_policies` (
+CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_policies` (
   `id` bigint unsigned NOT NULL auto_increment,
   `uuid` varchar(40),
   `domain_id` bigint unsigned NOT NULL,
@@ -356,7 +356,7 @@ CREATE TABLE `cloud`.`autoscale_policies` (
   INDEX `i_autoscale_policies__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`autoscale_vmgroups` (
+CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmgroups` (
   `id` bigint unsigned NOT NULL auto_increment,
   `uuid` varchar(40),
   `zone_id` bigint unsigned NOT NULL,
@@ -382,7 +382,7 @@ CREATE TABLE `cloud`.`autoscale_vmgroups` (
   INDEX `i_autoscale_vmgroups__load_balancer_id`(`load_balancer_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`autoscale_policy_condition_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_policy_condition_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `policy_id` bigint unsigned NOT NULL,
   `condition_id` bigint unsigned NOT NULL,
@@ -392,7 +392,7 @@ CREATE TABLE `cloud`.`autoscale_policy_condition_map` (
   INDEX `i_autoscale_policy_condition_map__policy_id`(`policy_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmgroup_policy_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vmgroup_id` bigint unsigned NOT NULL,
   `policy_id` bigint unsigned NOT NULL,
@@ -402,7 +402,7 @@ CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
   INDEX `i_autoscale_vmgroup_policy_map__vmgroup_id`(`vmgroup_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`autoscale_vmgroup_vm_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmgroup_vm_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vmgroup_id` bigint unsigned NOT NULL,
   `instance_id` bigint unsigned NOT NULL,
@@ -1596,7 +1596,7 @@ CREATE VIEW `cloud`.`data_center_view` AS
         `cloud`.`domain` ON data_center.domain_id = domain.id;               
         
 
-CREATE TABLE `cloud`.`baremetal_dhcp_devices` (
+CREATE TABLE IF NOT EXISTS `cloud`.`baremetal_dhcp_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40) UNIQUE,
   `nsp_id` bigint unsigned DEFAULT NULL COMMENT 'Network Service Provider ID',
@@ -1607,7 +1607,7 @@ CREATE TABLE `cloud`.`baremetal_dhcp_devices` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`baremetal_pxe_devices` (
+CREATE TABLE IF NOT EXISTS `cloud`.`baremetal_pxe_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40) UNIQUE,
   `nsp_id` bigint unsigned DEFAULT NULL COMMENT 'Network Service Provider ID',
@@ -1619,7 +1619,7 @@ CREATE TABLE `cloud`.`baremetal_pxe_devices` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`ucs_blade` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ucs_blade` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40) UNIQUE,
   `ucs_manager_id` bigint unsigned NOT NULL,
@@ -1629,7 +1629,7 @@ CREATE TABLE `cloud`.`ucs_blade` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ucs_manager` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ucs_manager` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40) UNIQUE,
   `zone_id` bigint unsigned NOT NULL,

@@ -76,7 +76,7 @@ DROP TABLE IF EXISTS `cloud`.`ovs_vlan_mapping_dirty`;
 DROP TABLE IF EXISTS `cloud`.`ovs_vm_flow_log`;
 DROP TABLE IF EXISTS `cloud`.`ovs_work`;
 
-CREATE TABLE `cloud`.`ovs_tunnel_interface` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_tunnel_interface` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `ip` varchar(16) DEFAULT NULL,
   `netmask` varchar(16) DEFAULT NULL,
@@ -86,7 +86,7 @@ CREATE TABLE `cloud`.`ovs_tunnel_interface` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ovs_tunnel_network`(
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_tunnel_network`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `from` bigint unsigned COMMENT 'from host id',
   `to` bigint unsigned COMMENT 'to host id',
@@ -137,7 +137,7 @@ CREATE TABLE  `cloud`.`cluster_vsm_map` (
   PRIMARY KEY (`cluster_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`virtual_supervisor_module` (
+CREATE TABLE IF NOT EXISTS `cloud`.`virtual_supervisor_module` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `host_id` bigint NOT NULL,
@@ -156,7 +156,7 @@ CREATE TABLE `cloud`.`virtual_supervisor_module` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`port_profile` (
+CREATE TABLE IF NOT EXISTS `cloud`.`port_profile` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `port_profile_name` varchar(255),

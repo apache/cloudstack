@@ -82,7 +82,7 @@ UPDATE `cloud`.`nics` SET strategy='Start' where reserver_name='DirectPodBasedNe
 UPDATE `cloud`.`network_offerings` SET lb_service=1 where unique_name='System-Guest-Network';
 
 
-CREATE TABLE `cloud`.`elastic_lb_vm_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`elastic_lb_vm_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `ip_addr_id` bigint unsigned NOT NULL,
   `elb_vm_id` bigint unsigned NOT NULL,

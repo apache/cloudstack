@@ -15,14 +15,14 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
-CREATE TABLE `cloud`.`host_tags` (
+CREATE TABLE IF NOT EXISTS `cloud`.`host_tags` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL COMMENT 'host id',
   `tag` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ovs_host_vlan_alloc`(
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_host_vlan_alloc`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `host_id` bigint unsigned COMMENT 'host id',
   `account_id` bigint unsigned COMMENT 'account id',
@@ -31,7 +31,7 @@ CREATE TABLE `cloud`.`ovs_host_vlan_alloc`(
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ovs_tunnel_alloc`(
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_tunnel_alloc`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `from` bigint unsigned COMMENT 'from host id',
   `to` bigint unsigned COMMENT 'to host id',
@@ -39,14 +39,14 @@ CREATE TABLE `cloud`.`ovs_tunnel_alloc`(
   PRIMARY KEY(`from`, `to`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ovs_vlan_mapping_dirty`(
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_vlan_mapping_dirty`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `account_id` bigint unsigned COMMENT 'account id',
   `dirty` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 means vlan mapping of this account was changed',
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ovs_vm_flow_log` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_vm_flow_log` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance that needs flows to be synced.',
   `created` datetime NOT NULL COMMENT 'time the entry was requested',
@@ -55,7 +55,7 @@ CREATE TABLE `cloud`.`ovs_vm_flow_log` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ovs_work` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_work` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance that needs rules to be synced.',
   `mgmt_server_id` bigint unsigned COMMENT 'management server that has taken up the work of doing rule sync',
@@ -66,7 +66,7 @@ CREATE TABLE `cloud`.`ovs_work` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ssh_keypairs` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ssh_keypairs` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `account_id` bigint unsigned NOT NULL COMMENT 'owner, foreign key to account table',
   `domain_id` bigint unsigned NOT NULL COMMENT 'domain, foreign key to domain table',
@@ -76,7 +76,7 @@ CREATE TABLE `cloud`.`ssh_keypairs` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`user_vm_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`user_vm_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
   `name` varchar(255) NOT NULL,
@@ -84,7 +84,7 @@ CREATE TABLE `cloud`.`user_vm_details` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
     
-CREATE TABLE `cloud`.`cluster_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`cluster_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `cluster_id` bigint unsigned NOT NULL COMMENT 'cluster id',
   `name` varchar(255) NOT NULL,

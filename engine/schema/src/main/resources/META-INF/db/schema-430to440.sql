@@ -234,7 +234,7 @@ CREATE VIEW `cloud`.`volume_view` AS
 UPDATE `cloud`.`configuration` SET `description` = 'If set to true, StartCommand, StopCommand, CopyCommand, MigrateCommand will be synchronized on the agent side. If set to false, these commands become asynchronous. Default value is true.' WHERE `name` = 'execute.in.sequence.hypervisor.commands';
 ALTER TABLE `cloud`.`disk_offering_details` CHANGE `display_detail` `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end user';
 
-CREATE TABLE `cloud`.`user_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`user_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `user_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
   `name` varchar(255) NOT NULL,
@@ -244,7 +244,7 @@ CREATE TABLE `cloud`.`user_details` (
   CONSTRAINT `fk_user_details__user_id` FOREIGN KEY `fk_user_details__user_id`(`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`external_opendaylight_controllers` (
+CREATE TABLE IF NOT EXISTS `cloud`.`external_opendaylight_controllers` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which the device is added',
@@ -467,7 +467,7 @@ ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `cpu_speed` INT(10) UNSIGNED 
 
 
 -- ACL DB schema
-CREATE TABLE `cloud`.`iam_group` (
+CREATE TABLE IF NOT EXISTS `cloud`.`iam_group` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `name` varchar(255) NOT NULL,
   `description` varchar(255) default NULL,
@@ -482,7 +482,7 @@ CREATE TABLE `cloud`.`iam_group` (
   CONSTRAINT `uc_iam_group__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`iam_group_account_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`iam_group_account_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `group_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
@@ -494,7 +494,7 @@ CREATE TABLE `cloud`.`iam_group_account_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`iam_policy` (
+CREATE TABLE IF NOT EXISTS `cloud`.`iam_policy` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `description` varchar(255) DEFAULT NULL,
@@ -510,7 +510,7 @@ CREATE TABLE `cloud`.`iam_policy` (
   KEY `i_iam_policy__removed` (`removed`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`iam_group_policy_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`iam_group_policy_map` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `group_id` bigint(20) unsigned NOT NULL,
   `policy_id` bigint(20) unsigned NOT NULL,
@@ -523,7 +523,7 @@ CREATE TABLE `cloud`.`iam_group_policy_map` (
   CONSTRAINT `fk_iam_group_policy_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `iam_policy` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`iam_account_policy_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`iam_account_policy_map` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `account_id` bigint(20) unsigned NOT NULL,
   `policy_id` bigint(20) unsigned NOT NULL,
@@ -536,7 +536,7 @@ CREATE TABLE `cloud`.`iam_account_policy_map` (
   CONSTRAINT `fk_iam_account_policy_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `iam_policy` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`iam_policy_permission` (
+CREATE TABLE IF NOT EXISTS `cloud`.`iam_policy_permission` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `policy_id` bigint(20) unsigned NOT NULL,
   `action` varchar(100) NOT NULL,
@@ -577,7 +577,7 @@ INSERT INTO `cloud`.`iam_group_policy_map` (group_id, policy_id, created) values
 
 INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('NetworkManager', 'DEFAULT', 'management-server', 'vm.network.nic.max.secondary.ipaddresses', NULL, 'Specify the number of secondary ip addresses per nic per vm', '256') ON DUPLICATE KEY UPDATE category='NetworkManager';
 
-CREATE TABLE `cloud`.`autoscale_vmprofile_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmprofile_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `autoscale_vmprofile_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
   `name` varchar(255) NOT NULL,
@@ -587,7 +587,7 @@ CREATE TABLE `cloud`.`autoscale_vmprofile_details` (
   CONSTRAINT `fk_autoscale_vmprofile_details__autoscale_vmprofile_id` FOREIGN KEY `fk_autoscale_vmprofile_details__autoscale_vmprofile_id`(`autoscale_vmprofile_id`) REFERENCES `autoscale_vmprofiles`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`autoscale_vmgroup_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmgroup_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `autoscale_vmgroup_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
   `name` varchar(255) NOT NULL,
@@ -687,7 +687,7 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'CentOS 6.5 (64-bit)', 228);
 
 
-CREATE TABLE `cloud`.`op_router_monitoring_services` (
+CREATE TABLE IF NOT EXISTS `cloud`.`op_router_monitoring_services` (
   `vm_id` bigint unsigned UNIQUE NOT NULL COMMENT 'Primary Key',
   `router_name` varchar(255) NOT NULL COMMENT 'Name of the Virtual Router',
   `last_alert_timestamp` varchar(255) NOT NULL COMMENT 'Timestamp of the last alert received from Virtual Router',
@@ -740,7 +740,7 @@ CREATE VIEW `cloud`.`event_view` AS
 
 
 DROP TABLE IF EXISTS `cloud`.`host_gpu_groups`;
-CREATE TABLE `cloud`.`host_gpu_groups` (
+CREATE TABLE IF NOT EXISTS `cloud`.`host_gpu_groups` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `group_name` varchar(255) NOT NULL,
   `host_id` bigint(20) unsigned NOT NULL,
@@ -749,7 +749,7 @@ CREATE TABLE `cloud`.`host_gpu_groups` (
 ) ENGINE=InnoDB CHARSET=utf8;
 
 DROP TABLE IF EXISTS `cloud`.`vgpu_types`;
-CREATE TABLE `cloud`.`vgpu_types` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vgpu_types` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `gpu_group_id` bigint(20) unsigned NOT NULL,
   `vgpu_type` varchar(40) NOT NULL COMMENT 'vgpu type supported by this gpu group',
@@ -1660,7 +1660,7 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.2.5', 'Other install media', 203, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.2.5', 'CentOS 5 (32-bit)', 139, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.2.5', 'CentOS 5 (64-bit)', 140, now(), 0);
-CREATE TABLE `cloud`.`op_vpc_distributed_router_sequence_no` (
+CREATE TABLE IF NOT EXISTS `cloud`.`op_vpc_distributed_router_sequence_no` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
   `vpc_id` bigint unsigned NOT NULL COMMENT 'vpc id.',
   `topology_update_sequence_no` bigint unsigned  COMMENT 'sequence number to be sent to hypervisor, uniquely identifies a VPC topology update',
@@ -1671,7 +1671,7 @@ CREATE TABLE `cloud`.`op_vpc_distributed_router_sequence_no` (
 
 INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Advanced', 'DEFAULT', 'NetworkOrchestrationService', 'router.aggregation.command.each.timeout', '3', 'timeout in seconds for each Virtual Router command being aggregated. The final aggregation command timeout would be determined by this timeout * commands counts ', '3') ON DUPLICATE KEY UPDATE category='Advanced';
 
-CREATE TABLE `cloud`.`network_acl_item_cidrs` (
+CREATE TABLE IF NOT EXISTS `cloud`.`network_acl_item_cidrs` (
   `id` bigint unsigned UNIQUE NOT NULL auto_increment,
   `network_acl_item_id` bigint unsigned NOT NULL COMMENT 'Network ACL Item id',
   `cidr` varchar(255) NOT NULL,
@@ -2456,7 +2456,7 @@ alter table `cloud`.`user_ip_address` drop key public_ip_address;
 alter table `cloud`.`user_ip_address` add UNIQUE KEY public_ip_address (public_ip_address,source_network_id, removed);
 
 
-CREATE TABLE `cloud`.`load_balancer_stickiness_policy_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`load_balancer_stickiness_policy_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `lb_policy_id` bigint unsigned NOT NULL COMMENT 'resource id',
   `name` varchar(255) NOT NULL,
@@ -2467,7 +2467,7 @@ CREATE TABLE `cloud`.`load_balancer_stickiness_policy_details` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`load_balancer_healthcheck_policy_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`load_balancer_healthcheck_policy_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `lb_policy_id` bigint NOT NULL COMMENT 'resource id',
   `name` varchar(255) NOT NULL,
@@ -2479,7 +2479,7 @@ CREATE TABLE `cloud`.`load_balancer_healthcheck_policy_details` (
 
 ALTER TABLE `cloud`.`snapshot_policy` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the policy can be displayed to the end user';
 
-CREATE TABLE `cloud`.`snapshot_policy_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`snapshot_policy_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `policy_id` bigint unsigned NOT NULL COMMENT 'snapshot policy id',
   `name` varchar(255) NOT NULL,

@@ -49,7 +49,7 @@ CREATE TABLE  `simulator`.`mockhost` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `simulator`.`mocksecstorage` (
+CREATE TABLE IF NOT EXISTS `simulator`.`mocksecstorage` (
   `id` bigint unsigned NOT NULL auto_increment,
   `url` varchar(255),
   `capacity` bigint unsigned,
@@ -57,7 +57,7 @@ CREATE TABLE `simulator`.`mocksecstorage` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `simulator`.`mockstoragepool` (
+CREATE TABLE IF NOT EXISTS `simulator`.`mockstoragepool` (
   `id` bigint unsigned NOT NULL auto_increment,
   `guid` varchar(255),
   `mount_point` varchar(255),
@@ -68,7 +68,7 @@ CREATE TABLE `simulator`.`mockstoragepool` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `simulator`.`mockvm` (
+CREATE TABLE IF NOT EXISTS `simulator`.`mockvm` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255),
   `host_id` bigint unsigned,
@@ -85,7 +85,7 @@ CREATE TABLE `simulator`.`mockvm` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `simulator`.`mockvolume` (
+CREATE TABLE IF NOT EXISTS `simulator`.`mockvolume` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255),
   `size` bigint unsigned,
@@ -99,7 +99,7 @@ CREATE TABLE `simulator`.`mockvolume` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `simulator`.`mockconfiguration` (
+CREATE TABLE IF NOT EXISTS `simulator`.`mockconfiguration` (
   `id` bigint unsigned NOT NULL auto_increment,
   `data_center_id` bigint unsigned,
   `pod_id` bigint unsigned,
@@ -113,7 +113,7 @@ CREATE TABLE `simulator`.`mockconfiguration` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `simulator`.`mocksecurityrules` (
+CREATE TABLE IF NOT EXISTS `simulator`.`mocksecurityrules` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vmid` bigint unsigned,
   `signature` varchar(255),

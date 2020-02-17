@@ -20,7 +20,7 @@ SET foreign_key_checks = 0;
 --
 -- Schema upgrade from 2.0 to 2.1
 --
-CREATE TABLE `cloud`.`cluster` (
+CREATE TABLE IF NOT EXISTS `cloud`.`cluster` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `name` varchar(255) NOT NULL COMMENT 'name for the cluster',
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod id',
@@ -28,7 +28,7 @@ CREATE TABLE `cloud`.`cluster` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ext_lun_alloc` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ext_lun_alloc` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `size` bigint unsigned NOT NULL COMMENT 'virtual size',
   `portal` varchar(255) NOT NULL COMMENT 'ip or host name to the storage server',
@@ -40,14 +40,14 @@ CREATE TABLE `cloud`.`ext_lun_alloc` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ext_lun_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ext_lun_details` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `ext_lun_id` bigint unsigned NOT NULL COMMENT 'lun id',
   `tag` varchar(255) COMMENT 'tags associated with this vm',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`storage_pool_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`storage_pool_details` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
   `pool_id` bigint unsigned NOT NULL COMMENT 'pool the detail is related to',
   `name` varchar(255) NOT NULL COMMENT 'name of the detail',
@@ -55,7 +55,7 @@ CREATE TABLE `cloud`.`storage_pool_details` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_group` (
+CREATE TABLE IF NOT EXISTS `cloud`.`network_group` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255) NOT NULL,
   `description` varchar(4096) NULL,
@@ -65,7 +65,7 @@ CREATE TABLE `cloud`.`network_group` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_ingress_rule` (
+CREATE TABLE IF NOT EXISTS `cloud`.`network_ingress_rule` (
   `id` bigint unsigned NOT NULL auto_increment,
   `network_group_id` bigint unsigned NOT NULL,
   `start_port` varchar(10) default NULL,
@@ -79,14 +79,14 @@ CREATE TABLE `cloud`.`network_ingress_rule` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_group_vm_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`network_group_vm_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `network_group_id` bigint unsigned NOT NULL,
   `instance_id` bigint unsigned NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`op_nwgrp_work` (
+CREATE TABLE IF NOT EXISTS `cloud`.`op_nwgrp_work` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance that needs rules to be synced.',
   `mgmt_server_id` bigint unsigned COMMENT 'management server that has taken up the work of doing rule sync',
@@ -97,7 +97,7 @@ CREATE TABLE `cloud`.`op_nwgrp_work` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`op_vm_ruleset_log` (
+CREATE TABLE IF NOT EXISTS `cloud`.`op_vm_ruleset_log` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance that needs rules to be synced.',
   `created` datetime NOT NULL COMMENT 'time the entry was requested',
@@ -105,14 +105,14 @@ CREATE TABLE `cloud`.`op_vm_ruleset_log` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`account_vlan_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`account_vlan_map` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `account_id` bigint unsigned NOT NULL COMMENT 'account id. foreign key to account table',
   `vlan_db_id` bigint unsigned NOT NULL COMMENT 'database id of vlan. foreign key to vlan table',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`op_dc_link_local_ip_address_alloc` (
+CREATE TABLE IF NOT EXISTS `cloud`.`op_dc_link_local_ip_address_alloc` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'primary key',
   `ip_address` varchar(15) NOT NULL COMMENT 'ip address',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center it belongs to',
@@ -182,7 +182,7 @@ CREATE TABLE  `cloud`.`service_offering_21` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`disk_offering_21` (
+CREATE TABLE IF NOT EXISTS `cloud`.`disk_offering_21` (
   `id` bigint unsigned NOT NULL auto_increment,
   `domain_id` bigint unsigned,
   `name` varchar(255) NOT NULL,

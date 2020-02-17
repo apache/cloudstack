@@ -17,7 +17,7 @@
 
 #Schema upgrade from 3.0.4 to 3.0.5;
 
-CREATE TABLE `cloud`.`resource_tags` (
+CREATE TABLE IF NOT EXISTS `cloud`.`resource_tags` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `key` varchar(255),
@@ -35,7 +35,7 @@ CREATE TABLE `cloud`.`resource_tags` (
   CONSTRAINT `uc_resource_tags__uuid` UNIQUE (`uuid`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`vpc_offerings` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vpc_offerings` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40) NOT NULL,
   `unique_name` varchar(64) UNIQUE COMMENT 'unique name of the vpc offering',
@@ -62,7 +62,7 @@ CREATE TABLE  `cloud`.`vpc_offering_service_map` (
   UNIQUE (`vpc_offering_id`, `service`, `provider`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`vpc` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vpc` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40) NOT NULL,
   `name` varchar(255) COMMENT 'vpc name',
@@ -86,7 +86,7 @@ CREATE TABLE `cloud`.`vpc` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`router_network_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`router_network_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `router_id` bigint unsigned NOT NULL COMMENT 'router id',
   `network_id` bigint unsigned NOT NULL COMMENT 'network id',
@@ -97,7 +97,7 @@ CREATE TABLE `cloud`.`router_network_ref` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`vpc_gateways` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vpc_gateways` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40),
   `ip4_address` char(40) COMMENT 'ip4 address of the gateway',
@@ -123,7 +123,7 @@ CREATE TABLE `cloud`.`vpc_gateways` (
   INDEX `i_vpc_gateways__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`private_ip_address` (
+CREATE TABLE IF NOT EXISTS `cloud`.`private_ip_address` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'primary key',
   `ip_address` char(40) NOT NULL COMMENT 'ip address',
   `network_id` bigint unsigned NOT NULL COMMENT 'id of the network ip belongs to',
@@ -137,7 +137,7 @@ CREATE TABLE `cloud`.`private_ip_address` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`static_routes` (
+CREATE TABLE IF NOT EXISTS `cloud`.`static_routes` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `vpc_gateway_id` bigint unsigned COMMENT 'id of the corresponding ip address',
@@ -178,7 +178,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vpc.max.networks', '3', 'Maximum number of networks per vpc');
 
 
-CREATE TABLE `cloud`.`counter` (
+CREATE TABLE IF NOT EXISTS `cloud`.`counter` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40),
   `source` varchar(255) NOT NULL COMMENT 'source e.g. netscaler, snmp',
@@ -192,7 +192,7 @@ CREATE TABLE `cloud`.`counter` (
   INDEX `i_counter__source`(`source`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`conditions` (
+CREATE TABLE IF NOT EXISTS `cloud`.`conditions` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40),
   `counter_id` bigint unsigned NOT NULL COMMENT 'Counter Id',
@@ -210,7 +210,7 @@ CREATE TABLE `cloud`.`conditions` (
   INDEX `i_conditions__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`autoscale_vmprofiles` (
+CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmprofiles` (
   `id` bigint unsigned NOT NULL auto_increment,
   `uuid` varchar(40),
   `zone_id` bigint unsigned NOT NULL,
@@ -232,7 +232,7 @@ CREATE TABLE `cloud`.`autoscale_vmprofiles` (
   INDEX `i_autoscale_vmprofiles__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`autoscale_policies` (
+CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_policies` (
   `id` bigint unsigned NOT NULL auto_increment,
   `uuid` varchar(40),
   `domain_id` bigint unsigned NOT NULL,
@@ -249,7 +249,7 @@ CREATE TABLE `cloud`.`autoscale_policies` (
   INDEX `i_autoscale_policies__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`autoscale_vmgroups` (
+CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmgroups` (
   `id` bigint unsigned NOT NULL auto_increment,
   `uuid` varchar(40),
   `zone_id` bigint unsigned NOT NULL,
@@ -275,7 +275,7 @@ CREATE TABLE `cloud`.`autoscale_vmgroups` (
   INDEX `i_autoscale_vmgroups__load_balancer_id`(`load_balancer_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`autoscale_policy_condition_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_policy_condition_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `policy_id` bigint unsigned NOT NULL,
   `condition_id` bigint unsigned NOT NULL,
@@ -285,7 +285,7 @@ CREATE TABLE `cloud`.`autoscale_policy_condition_map` (
   INDEX `i_autoscale_policy_condition_map__policy_id`(`policy_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmgroup_policy_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vmgroup_id` bigint unsigned NOT NULL,
   `policy_id` bigint unsigned NOT NULL,
@@ -300,7 +300,7 @@ INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (2,'snmp'
 INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (3,'snmp','Linux CPU Idle - percentage', '1.3.6.1.4.1.2021.11.11.0', now());
 INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (100,'netscaler','Response Time - microseconds', 'RESPTIME', now());
 
-CREATE TABLE `cloud`.`s2s_vpn_gateway` (
+CREATE TABLE IF NOT EXISTS `cloud`.`s2s_vpn_gateway` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `addr_id` bigint unsigned NOT NULL,
@@ -316,7 +316,7 @@ CREATE TABLE `cloud`.`s2s_vpn_gateway` (
   CONSTRAINT `uc_s2s_vpn_gateway__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`s2s_customer_gateway` (
+CREATE TABLE IF NOT EXISTS `cloud`.`s2s_customer_gateway` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `name` varchar(255) NOT NULL,
@@ -337,7 +337,7 @@ CREATE TABLE `cloud`.`s2s_customer_gateway` (
   CONSTRAINT `uc_s2s_customer_gateway__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`s2s_vpn_connection` (
+CREATE TABLE IF NOT EXISTS `cloud`.`s2s_vpn_connection` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `vpn_gateway_id` bigint unsigned NULL,

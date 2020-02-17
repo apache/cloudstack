@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`version` (
 ALTER TABLE `cloud`.`mshost` DROP KEY `msid`;
 ALTER TABLE `cloud`.`mshost` MODIFY COLUMN `msid` bigint unsigned NOT NULL UNiQUE;
 
-CREATE TABLE `cloud`.`op_it_work` (
+CREATE TABLE IF NOT EXISTS `cloud`.`op_it_work` (
   `id` char(40) COMMENT 'reservation id',
   `mgmt_server_id` bigint unsigned COMMENT 'management server id',
   `created_at` bigint unsigned NOT NULL COMMENT 'when was this work detail created',
@@ -70,7 +70,7 @@ CREATE TABLE `cloud`.`op_it_work` (
   INDEX `i_op_it_work__step`(`step`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_offerings` (
+CREATE TABLE IF NOT EXISTS `cloud`.`network_offerings` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `name` varchar(64) NOT NULL unique COMMENT 'network offering',
   `display_text` varchar(255) NOT NULL COMMENT 'text to display to users',
@@ -96,7 +96,7 @@ CREATE TABLE `cloud`.`network_offerings` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`networks` (
+CREATE TABLE IF NOT EXISTS `cloud`.`networks` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(255) COMMENT 'name for this network',
   `display_text` varchar(255) COMMENT 'display text for this network',
@@ -127,7 +127,7 @@ CREATE TABLE `cloud`.`networks` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`op_networks`(
+CREATE TABLE IF NOT EXISTS `cloud`.`op_networks`(
   `id` bigint unsigned NOT NULL UNIQUE KEY,
   `mac_address_seq` bigint unsigned NOT NULL DEFAULT 1 COMMENT 'mac address',
   `nics_count` int unsigned NOT NULL DEFAULT 0 COMMENT '# of nics',
@@ -137,7 +137,7 @@ CREATE TABLE `cloud`.`op_networks`(
   CONSTRAINT `fk_op_networks__id` FOREIGN KEY (`id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`account_network_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`account_network_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `account_id` bigint unsigned NOT NULL COMMENT 'account id',
   `network_id` bigint unsigned NOT NULL COMMENT 'network id',
@@ -148,7 +148,7 @@ CREATE TABLE `cloud`.`account_network_ref` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`certificate` (
+CREATE TABLE IF NOT EXISTS `cloud`.`certificate` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `certificate` text COMMENT 'the actual custom certificate being stored in the db',
   `updated` varchar(1) COMMENT 'status of the certificate',
@@ -157,7 +157,7 @@ CREATE TABLE `cloud`.`certificate` (
 
 INSERT INTO `cloud`.`certificate` (id,certificate,updated) VALUES ('1',null,'N');
 
-CREATE TABLE `cloud`.`nics` (
+CREATE TABLE IF NOT EXISTS `cloud`.`nics` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `instance_id` bigint unsigned COMMENT 'vm instance id',
   `mac_address` varchar(17) COMMENT 'mac address',
@@ -186,7 +186,7 @@ CREATE TABLE `cloud`.`nics` (
 
 INSERT INTO `network_offerings` VALUES (1,'System-Public-Network','System Offering for System-Public-Network',NULL,NULL,NULL,'Public',NULL,1,0,NULL,now(),NULL,0,'Required',0,0,0,0,0,0,0),(2,'System-Management-Network','System Offering for System-Management-Network',NULL,NULL,NULL,'Management',NULL,1,0,NULL,now(),NULL,0,'Required',0,0,0,0,0,0,0),(3,'System-Control-Network','System Offering for System-Control-Network',NULL,NULL,NULL,'Control',NULL,1,0,NULL,now(),NULL,0,'Required',0,0,0,0,0,0,0),(4,'System-Storage-Network','System Offering for System-Storage-Network',NULL,NULL,NULL,'Storage',NULL,1,0,NULL,now(),NULL,0,'Required',0,0,0,0,0,0,0),(5,'System-Guest-Network','System-Guest-Network',NULL,NULL,NULL,'Guest',NULL,1,0,NULL,now(),NULL,1,'Required',1,0,0,0,1,0,1),(6,'DefaultVirtualizedNetworkOffering','Virtual Vlan',NULL,NULL,NULL,'Guest',NULL,0,0,NULL,now(),NULL,1,'Required',1,1,1,1,1,1,1),(7,'DefaultDirectNetworkOffering','Direct',NULL,NULL,NULL,'Public',NULL,0,0,NULL,now(),NULL,1,'Required',1,0,0,0,1,0,1);
 
-CREATE TABLE `cloud`.`cluster_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`cluster_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `cluster_id` bigint unsigned NOT NULL COMMENT 'cluster id',
   `name` varchar(255) NOT NULL,
@@ -205,7 +205,7 @@ ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `network_id` bigint unsigned;
 
 UPDATE `cloud`.`user_ip_address` set state='Allocated' WHERE allocated IS NOT NULL;
 
-CREATE TABLE `cloud`.`firewall_rules` (
+CREATE TABLE IF NOT EXISTS `cloud`.`firewall_rules` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `ip_address_id` bigint unsigned NOT NULL COMMENT 'id of the corresponding ip address',
   `start_port` int(10) NOT NULL COMMENT 'starting port of a port range',
@@ -226,7 +226,7 @@ CREATE TABLE `cloud`.`firewall_rules` (
   CONSTRAINT `fk_firewall_rules__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`port_forwarding_rules` (
+CREATE TABLE IF NOT EXISTS `cloud`.`port_forwarding_rules` (
   `id` bigint unsigned NOT NULL COMMENT 'id',
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance id',
   `dest_ip_address` char(40) NOT NULL COMMENT 'id_address',
@@ -236,7 +236,7 @@ CREATE TABLE `cloud`.`port_forwarding_rules` (
   CONSTRAINT `fk_port_forwarding_rules__id` FOREIGN KEY(`id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`load_balancing_rules` (
+CREATE TABLE IF NOT EXISTS `cloud`.`load_balancing_rules` (
   `id` bigint unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
   `description` varchar(4096) NULL COMMENT 'description',
@@ -249,14 +249,14 @@ CREATE TABLE `cloud`.`load_balancing_rules` (
 
 ALTER TABLE `cloud`.`load_balancer_vm_map` ADD COLUMN `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0;
 
-CREATE TABLE `cloud`.`op_host` (
+CREATE TABLE IF NOT EXISTS `cloud`.`op_host` (
   `id` bigint unsigned NOT NULL UNIQUE COMMENT 'host id',
   `sequence` bigint unsigned DEFAULT 1 NOT NULL COMMENT 'sequence for the host communication',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_op_host__id` FOREIGN KEY (`id`) REFERENCES `host`(`id`) ON DELETE CASCADE 
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`guest_os_hypervisor` (
+CREATE TABLE IF NOT EXISTS `cloud`.`guest_os_hypervisor` (
   `id` bigint unsigned NOT NULL auto_increment,
   `hypervisor_type` varchar(32) NOT NULL,
   `guest_os_name` varchar(255) NOT NULL,
@@ -329,7 +329,7 @@ ALTER TABLE `cloud`.`template_host_ref` ADD COLUMN `physical_size` bigint unsign
 UPDATE template_host_ref INNER JOIN template_spool_ref ON template_host_ref.template_id=template_spool_ref.template_id SET template_host_ref.physical_size=template_spool_ref.template_size;  
 
 
-CREATE TABLE `cloud`.`user_vm_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`user_vm_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
   `name` varchar(255) NOT NULL,
@@ -385,7 +385,7 @@ ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `public_ip_address` varchar(15)
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `device_id` bigint unsigned NOT NULL default 0;
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `device_type` varchar(32) NOT NULL default 'DomainRouter';
 
-CREATE TABLE `cloud`.`remote_access_vpn` (
+CREATE TABLE IF NOT EXISTS `cloud`.`remote_access_vpn` (
   `vpn_server_addr_id` bigint unsigned UNIQUE NOT NULL,
   `account_id` bigint unsigned NOT NULL,
   `network_id` bigint unsigned NOT NULL,
@@ -401,7 +401,7 @@ CREATE TABLE `cloud`.`remote_access_vpn` (
   CONSTRAINT `fk_remote_access_vpn__vpn_server_addr_id` FOREIGN KEY `fk_remote_access_vpn__vpn_server_addr_id` (`vpn_server_addr_id`) REFERENCES `user_ip_address` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`vpn_users` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vpn_users` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `owner_id` bigint unsigned NOT NULL,
   `domain_id` bigint unsigned NOT NULL,
@@ -454,7 +454,7 @@ ALTER TABLE `cloud`.`security_group_vm_map` ADD CONSTRAINT `fk_security_group_vm
 ALTER TABLE `cloud`.`security_group_vm_map` ADD CONSTRAINT `fk_security_group_vm_map___instance_id` FOREIGN KEY `fk_security_group_vm_map___instance_id` (`instance_id`) REFERENCES `user_vm` (`id`) ON DELETE CASCADE;
 --n/w to sec grps ends --;
 
-CREATE TABLE `cloud`.`instance_group` (
+CREATE TABLE IF NOT EXISTS `cloud`.`instance_group` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `account_id` bigint unsigned NOT NULL COMMENT 'owner.  foreign key to account table',
   `name` varchar(255) NOT NULL,
@@ -463,14 +463,14 @@ CREATE TABLE `cloud`.`instance_group` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`instance_group_vm_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`instance_group_vm_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `group_id` bigint unsigned NOT NULL,
   `instance_id` bigint unsigned NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ssh_keypairs` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ssh_keypairs` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `account_id` bigint unsigned NOT NULL COMMENT 'owner, foreign key to account table',
   `domain_id` bigint unsigned NOT NULL COMMENT 'domain, foreign key to domain table',
@@ -495,7 +495,7 @@ CREATE TABLE  `cloud`.`usage_event` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ovs_host_vlan_alloc`(
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_host_vlan_alloc`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `host_id` bigint unsigned COMMENT 'host id',
   `account_id` bigint unsigned COMMENT 'account id',
@@ -504,7 +504,7 @@ CREATE TABLE `cloud`.`ovs_host_vlan_alloc`(
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ovs_tunnel_alloc`(
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_tunnel_alloc`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `from` bigint unsigned COMMENT 'from host id',
   `to` bigint unsigned COMMENT 'to host id',
@@ -512,7 +512,7 @@ CREATE TABLE `cloud`.`ovs_tunnel_alloc`(
   PRIMARY KEY(`from`, `to`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ovs_tunnel`(
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_tunnel`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `from` bigint unsigned COMMENT 'from host id',
   `to` bigint unsigned COMMENT 'to host id',
@@ -520,7 +520,7 @@ CREATE TABLE `cloud`.`ovs_tunnel`(
   PRIMARY KEY(`from`, `to`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ovs_tunnel_account`(
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_tunnel_account`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `from` bigint unsigned COMMENT 'from host id',
   `to` bigint unsigned COMMENT 'to host id',
@@ -533,14 +533,14 @@ CREATE TABLE `cloud`.`ovs_tunnel_account`(
 
 INSERT INTO `cloud`.`ovs_tunnel_account` (`from`, `to`, `account`, `key`, `port_name`, `state`) VALUES (0, 0, 0, 0, 'lock', 'SUCCESS');
 
-CREATE TABLE `cloud`.`ovs_vlan_mapping_dirty`(
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_vlan_mapping_dirty`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `account_id` bigint unsigned COMMENT 'account id',
   `dirty` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 means vlan mapping of this account was changed',
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ovs_vm_flow_log` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_vm_flow_log` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance that needs flows to be synced.',
   `created` datetime NOT NULL COMMENT 'time the entry was requested',
@@ -550,7 +550,7 @@ CREATE TABLE `cloud`.`ovs_vm_flow_log` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ovs_work` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ovs_work` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance that needs rules to be synced.',
   `mgmt_server_id` bigint unsigned COMMENT 'management server that has taken up the work of doing rule sync',
@@ -561,7 +561,7 @@ CREATE TABLE `cloud`.`ovs_work` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`storage_pool_work` (
+CREATE TABLE IF NOT EXISTS `cloud`.`storage_pool_work` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
   `pool_id` bigint unsigned NOT NULL COMMENT 'storage pool associated with the vm',
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm identifier',

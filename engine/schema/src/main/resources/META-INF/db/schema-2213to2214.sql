@@ -60,7 +60,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'manage
 
 INSERT IGNORE INTO `cloud`.`guest_os` (category_id, name, display_name) VALUES (6, NULL, "Windows PV");
 
-CREATE TABLE `cloud`.`vm_template_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_template_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `template_id` bigint unsigned NOT NULL COMMENT 'template id',
   `name` varchar(255) NOT NULL,

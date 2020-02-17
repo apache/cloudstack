@@ -19,7 +19,7 @@
 
 ALTER TABLE `cloud`.`host` ADD COLUMN `hypervisor_version` varchar(32) COMMENT 'hypervisor version' AFTER hypervisor_type;
 
-CREATE TABLE `cloud`.`hypervisor_capabilities` (
+CREATE TABLE IF NOT EXISTS `cloud`.`hypervisor_capabilities` (
   `id` bigint unsigned NOT NULL auto_increment,
   `hypervisor_type` varchar(32) NOT NULL,
   `hypervisor_version` varchar(32),
@@ -94,7 +94,7 @@ CREATE TABLE  `cloud`.`project_invitations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`load_balancer_stickiness_policies` (
+CREATE TABLE IF NOT EXISTS `cloud`.`load_balancer_stickiness_policies` (
   `id` bigint unsigned NOT NULL auto_increment,
   `uuid` varchar(40),
   `load_balancer_id` bigint unsigned NOT NULL,
@@ -356,7 +356,7 @@ CREATE TABLE  `cloud`.`ntwk_service_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`physical_network` (
+CREATE TABLE IF NOT EXISTS `cloud`.`physical_network` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40),
   `name` varchar(255) NOT NULL,
@@ -375,7 +375,7 @@ CREATE TABLE `cloud`.`physical_network` (
   INDEX `i_physical_network__removed`(`removed`) 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`physical_network_tags` (
+CREATE TABLE IF NOT EXISTS `cloud`.`physical_network_tags` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
   `tag` varchar(255) NOT NULL COMMENT 'tag',
@@ -384,7 +384,7 @@ CREATE TABLE `cloud`.`physical_network_tags` (
   UNIQUE KEY(`physical_network_id`, `tag`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`physical_network_isolation_methods` (
+CREATE TABLE IF NOT EXISTS `cloud`.`physical_network_isolation_methods` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
   `isolation_method` varchar(255) NOT NULL COMMENT 'isolation method(VLAN, L3 or GRE)',
@@ -393,7 +393,7 @@ CREATE TABLE `cloud`.`physical_network_isolation_methods` (
   UNIQUE KEY(`physical_network_id`, `isolation_method`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`physical_network_traffic_types` (
+CREATE TABLE IF NOT EXISTS `cloud`.`physical_network_traffic_types` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40),
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
@@ -410,7 +410,7 @@ CREATE TABLE `cloud`.`physical_network_traffic_types` (
   UNIQUE KEY(`physical_network_id`, `traffic_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`physical_network_service_providers` (
+CREATE TABLE IF NOT EXISTS `cloud`.`physical_network_service_providers` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40),
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
@@ -434,7 +434,7 @@ CREATE TABLE `cloud`.`physical_network_service_providers` (
   UNIQUE KEY(`physical_network_id`, `provider_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`external_load_balancer_devices` (
+CREATE TABLE IF NOT EXISTS `cloud`.`external_load_balancer_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which load balancer device is added',
@@ -454,7 +454,7 @@ CREATE TABLE `cloud`.`external_load_balancer_devices` (
   CONSTRAINT `fk_external_lb_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`external_firewall_devices` (
+CREATE TABLE IF NOT EXISTS `cloud`.`external_firewall_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which firewall device is added',
@@ -470,7 +470,7 @@ CREATE TABLE `cloud`.`external_firewall_devices` (
   CONSTRAINT `fk_external_firewall_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_external_lb_device_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`network_external_lb_device_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `network_id` bigint unsigned NOT NULL COMMENT ' guest network id',
@@ -482,7 +482,7 @@ CREATE TABLE `cloud`.`network_external_lb_device_map` (
   CONSTRAINT `fk_network_external_lb_devices_device_id` FOREIGN KEY (`external_load_balancer_device_id`) REFERENCES `external_load_balancer_devices`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_external_firewall_device_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`network_external_firewall_device_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `network_id` bigint unsigned NOT NULL COMMENT ' guest network id',
@@ -494,7 +494,7 @@ CREATE TABLE `cloud`.`network_external_firewall_device_map` (
   CONSTRAINT `fk_network_external_firewall_devices_device_id` FOREIGN KEY (`external_firewall_device_id`) REFERENCES `external_firewall_devices`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`virtual_router_providers` (
+CREATE TABLE IF NOT EXISTS `cloud`.`virtual_router_providers` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `nsp_id` bigint unsigned NOT NULL COMMENT 'Network Service Provider ID',
   `uuid` varchar(40),
@@ -590,7 +590,7 @@ CREATE TABLE  `cloud`.`ntwk_offering_service_map` (
   UNIQUE (`network_offering_id`, `service`, `provider`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`dc_storage_network_ip_range` (
+CREATE TABLE IF NOT EXISTS `cloud`.`dc_storage_network_ip_range` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `uuid` varchar(40),
   `start_ip` char(40) NOT NULL COMMENT 'start ip address',
@@ -607,7 +607,7 @@ CREATE TABLE `cloud`.`dc_storage_network_ip_range` (
   CONSTRAINT `uc_storage_ip_range__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`op_dc_storage_network_ip_address` (
+CREATE TABLE IF NOT EXISTS `cloud`.`op_dc_storage_network_ip_address` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'primary key',
   `range_id` bigint unsigned NOT NULL COMMENT 'id of ip range in dc_storage_network_ip_range',
   `ip_address` char(40) NOT NULL COMMENT 'ip address',
@@ -672,7 +672,7 @@ ALTER TABLE `cloud`.`volumes` ADD COLUMN `update_count` bigint unsigned NOT NULL
 ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__update_count`(`update_count`);
 ALTER TABLE `cloud`.`firewall_rules` ADD COLUMN `type` varchar(10) NOT NULL DEFAULT 'USER';
 
-CREATE TABLE `cloud`.`account_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`account_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `account_id` bigint unsigned NOT NULL COMMENT 'account id',
   `name` varchar(255) NOT NULL,
