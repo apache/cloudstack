@@ -52,6 +52,7 @@
 
         <!-- Build properties -->
         <cs.jdk.version>14</cs.jdk.version>
+        <cs.jdk.vendor>openjdk</cs.jdk.vendor>
         <cs.target.dir>target</cs.target.dir>
         <cs.replace.properties>build/replace.properties</cs.replace.properties>
 
@@ -1036,7 +1037,7 @@
                     <toolchains>
                       <jdk>
                         <version>${cs.jdk.version}</version>
-                        <vendor>oracle</vendor>
+                        <vendor>${cs.jdk.vendor}</vendor>
                       </jdk>
                     </toolchains>
                   </configuration>
