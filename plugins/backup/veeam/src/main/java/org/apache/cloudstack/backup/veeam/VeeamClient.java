@@ -28,6 +28,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,29 +57,18 @@ import org.apache.cloudstack.backup.veeam.api.RestoreSession;
 import org.apache.cloudstack.backup.veeam.api.Task;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpHost;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.AuthCache;
-import org.apache.http.client.CookieStore;
-import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.BasicAuthCache;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
 
@@ -98,8 +88,6 @@ public class VeeamClient {
     private final URI apiURI;
 
     private final HttpClient httpClient;
-    private final HttpClientContext httpContext = HttpClientContext.create();
-    private final CookieStore httpCookieStore = new BasicCookieStore();
     private static final String RESTORE_VM_SUFFIX = "CS-RSTR-";
     private static final String SESSION_HEADER = "X-RestSvcSessionId";
 
@@ -112,15 +100,6 @@ public class VeeamClient {
     public VeeamClient(final String url, final String username, final String password, final boolean validateCertificate, final int timeout) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
         this.apiURI = new URI(url);
 
-        final CredentialsProvider provider = new BasicCredentialsProvider();
-        provider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
-        final HttpHost adminHost = new HttpHost(this.apiURI.getHost(), this.apiURI.getPort(), this.apiURI.getScheme());
-        final AuthCache authCache = new BasicAuthCache();
-        authCache.put(adminHost, new BasicScheme());
-
-        this.httpContext.setCredentialsProvider(provider);
-        this.httpContext.setAuthCache(authCache);
-
         final RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(timeout * 1000)
                 .setConnectionRequestTimeout(timeout * 1000)
@@ -132,20 +111,16 @@ public class VeeamClient {
             sslcontext.init(null, new X509TrustManager[]{new TrustAllManager()}, new SecureRandom());
             final SSLConnectionSocketFactory factory = new SSLConnectionSocketFactory(sslcontext, NoopHostnameVerifier.INSTANCE);
             this.httpClient = HttpClientBuilder.create()
-                    .setDefaultCredentialsProvider(provider)
-                    .setDefaultCookieStore(httpCookieStore)
                     .setDefaultRequestConfig(config)
                     .setSSLSocketFactory(factory)
                     .build();
         } else {
             this.httpClient = HttpClientBuilder.create()
-                    .setDefaultCredentialsProvider(provider)
-                    .setDefaultCookieStore(httpCookieStore)
                     .setDefaultRequestConfig(config)
                     .build();
         }
 
-        authenticate();
+        authenticate(username, password);
         setVeeamSshCredentials(this.apiURI.getHost(), username, password);
     }
 
@@ -155,11 +130,12 @@ public class VeeamClient {
         this.veeamServerPassword = password;
     }
 
-    private void authenticate() {
+    private void authenticate(final String username, final String password) {
         // https://helpcenter.veeam.com/docs/backup/rest/http_authentication.html?ver=95u4
         final HttpPost request = new HttpPost(apiURI.toString() + "/sessionMngr/?v=v1_4");
+        request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes()));
         try {
-            final HttpResponse response = httpClient.execute(request, httpContext);
+            final HttpResponse response = httpClient.execute(request);
             checkAuthFailure(response);
             veeamSessionId = response.getFirstHeader(SESSION_HEADER).getValue();
             if (Strings.isNullOrEmpty(veeamSessionId)) {
@@ -175,8 +151,6 @@ public class VeeamClient {
 
     private void checkAuthFailure(final HttpResponse response) {
         if (response != null && response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-            final Credentials credentials = httpContext.getCredentialsProvider().getCredentials(AuthScope.ANY);
-            LOG.error("Veeam API authentication failed, please check Veeam configuration. Admin auth principal=" + credentials.getUserPrincipal() + ", password=" + credentials.getPassword() + ", API url=" + apiURI.toString());
             throw new ServerApiException(ApiErrorCode.UNAUTHORIZED, "Veeam B&R API call unauthorized, please ask your administrator to fix integration issues.");
         }
     }
@@ -202,7 +176,7 @@ public class VeeamClient {
     private HttpResponse get(final String path) throws IOException {
         final HttpGet request = new HttpGet(apiURI.toString() + path);
         request.setHeader(SESSION_HEADER, veeamSessionId);
-        final HttpResponse response = httpClient.execute(request, httpContext);
+        final HttpResponse response = httpClient.execute(request);
         checkAuthFailure(response);
         return response;
     }
@@ -225,7 +199,7 @@ public class VeeamClient {
             request.setEntity(new StringEntity(xml));
         }
 
-        final HttpResponse response = httpClient.execute(request, httpContext);
+        final HttpResponse response = httpClient.execute(request);
         checkAuthFailure(response);
         return response;
     }
@@ -233,7 +207,7 @@ public class VeeamClient {
     private HttpResponse delete(final String path) throws IOException {
         final HttpDelete request = new HttpDelete(apiURI.toString() + path);
         request.setHeader(SESSION_HEADER, veeamSessionId);
-        final HttpResponse response = httpClient.execute(request, httpContext);
+        final HttpResponse response = httpClient.execute(request);
         checkAuthFailure(response);
         return response;
     }
