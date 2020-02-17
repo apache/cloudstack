@@ -252,6 +252,7 @@
 "hostId": "Host",
 "hostTags": "Host Tags",
 "hostname": "Host",
+"hostnamelabel": "Host Name",
 "hosts": "Hosts",
 "hosttags": "Host Tags",
 "hypervisor": "Hypervisor",

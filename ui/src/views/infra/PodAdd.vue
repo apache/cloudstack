@@ -230,7 +230,7 @@ export default {
           errorMethod: () => {
             this.loading = false
           },
-          loadingMessage: `Dedicating cluster...`,
+          loadingMessage: `Dedicating pod...`,
           catchMessage: 'Error encountered while fetching async job result',
           catchMethod: () => {
             this.loading = false

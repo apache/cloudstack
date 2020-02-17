@@ -42,7 +42,8 @@ export default {
       icon: 'plus',
       label: 'label.add.host',
       listView: true,
-      args: ['zoneid', 'podid', 'clusterid', 'hypervisor', 'username', 'password', 'url', 'hosttags']
+      popup: true,
+      component: () => import('@/views/infra/HostAdd.vue')
     },
     {
       api: 'updateHost',

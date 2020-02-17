@@ -277,7 +277,7 @@ export default {
             this.$store.dispatch('AddAsyncJob', {
               title: 'Successfully dedicated cluster',
               jobid: response.dedicateclusterresponse.jobid,
-              description: `Domain ID: ${this.dedicateddedicatedDomainId}`,
+              description: `Domain ID: ${this.dedicatedDomainId}`,
               status: 'progress'
             })
           },
