@@ -20,6 +20,23 @@
     <a-button type="dashed" icon="plus" style="width: 100%; margin-bottom: 15px" @click="acquireIpAddress">
       {{ $t("label.acquire.new.ip") }}
     </a-button>
+    <div v-if="$route.path.startsWith('/vpc')">
+      Select Tier:
+      <a-select
+        style="width: 40%; margin-left: 15px;margin-bottom: 15px"
+        :loading="fetchLoading"
+        defaultActiveFirstOption
+        :value="vpcTier"
+        @change="handleTierSelect"
+      >
+        <a-select-option key="all" value="">
+          {{ $t('Show All') }}
+        </a-select-option>
+        <a-select-option v-for="network in networksList" :key="network.id" :value="network.id">
+          {{ network.name }}
+        </a-select-option>
+      </a-select>
+    </div>
     <a-table
       size="small"
       style="overflow-y: auto"
@@ -39,6 +56,10 @@
       <template slot="virtualmachineid" slot-scope="text, record">
         <a-icon type="desktop" v-if="record.virtualmachineid" />
         <router-link :to="{ path: '/vm/' + record.virtualmachineid }" > {{ record.virtualmachinename || record.virtualmachineid }} </router-link>
+      </template>
+
+      <template slot="associatednetworkname" slot-scope="text, record">
+        <router-link :to="{ path: '/guestnetwork/' + record.associatednetworkid }" > {{ record.associatednetworkname || record.associatednetworkid }} </router-link>
       </template>
 
       <template slot="action" slot-scope="text, record">
@@ -87,9 +108,14 @@ export default {
     return {
       fetchLoading: false,
       ips: [],
+      ipsTiers: [],
+      networksList: [],
+      defaultNetwork: '',
+      vpcTier: '',
       page: 1,
       pageSize: 10,
       totalIps: 0,
+      tiersSelect: false,
       columns: [
         {
           title: this.$t('ipaddress'),
@@ -108,7 +134,8 @@ export default {
         },
         {
           title: this.$t('Network'),
-          dataIndex: 'associatednetworkname'
+          dataIndex: 'associatednetworkname',
+          scopedSlots: { customRender: 'associatednetworkname' }
         },
         {
           title: '',
@@ -136,8 +163,12 @@ export default {
         pagesize: this.pageSize
       }
       if (this.$route.path.startsWith('/vpc')) {
+        this.networksList = this.resource.network
         params.vpcid = this.resource.id
         params.forvirtualnetwork = true
+        if (this.vpcTier) {
+          params.associatednetworkid = this.vpcTier
+        }
       } else {
         params.associatednetworkid = this.resource.id
       }
@@ -148,6 +179,10 @@ export default {
       }).finally(() => {
         this.fetchLoading = false
       })
+    },
+    handleTierSelect (tier) {
+      this.vpcTier = tier
+      this.fetchData()
     },
     changePage (page, pageSize) {
       this.page = page
@@ -163,6 +198,9 @@ export default {
       const params = {}
       if (this.$route.path.startsWith('/vpc')) {
         params.vpcid = this.resource.id
+        if (this.vpcTier) {
+          params.networkid = this.vpcTier
+        }
       } else {
         params.networkid = this.resource.id
       }
@@ -222,4 +260,100 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.list {
+    max-height: 95vh;
+    width: 95vw;
+    overflow-y: scroll;
+    margin: -24px;
+
+    @media (min-width: 1000px) {
+      max-height: 70vh;
+      width: 900px;
+    }
+
+    &__header,
+    &__footer {
+      padding: 20px;
+    }
+
+    &__header {
+      display: flex;
+
+      .ant-select {
+        min-width: 200px;
+      }
+
+      &__col {
+
+        &:not(:last-child) {
+          margin-right: 20px;
+        }
+
+        &--full {
+          flex: 1;
+        }
+
+      }
+
+    }
+
+    &__footer {
+      display: flex;
+      justify-content: flex-end;
+
+      button {
+        &:not(:last-child) {
+          margin-right: 10px;
+        }
+      }
+    }
+
+    &__item {
+      padding-right: 20px;
+      padding-left: 20px;
+
+      &--selected {
+        background-color: #e6f7ff;
+      }
+
+    }
+
+    &__title {
+      font-weight: bold;
+    }
+
+    &__outer-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    &__container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      cursor: pointer;
+
+      @media (min-width: 760px) {
+        flex-direction: row;
+        align-items: center;
+      }
+
+    }
+
+    &__row {
+      margin-bottom: 10px;
+
+      @media (min-width: 760px) {
+        margin-right: 20px;
+        margin-bottom: 0;
+      }
+    }
+
+    &__radio {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+  }
 </style>

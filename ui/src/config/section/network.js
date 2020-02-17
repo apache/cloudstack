@@ -430,6 +430,14 @@ export default {
       permission: ['listLoadBalancers'],
       columns: ['name', 'sourceipaddress', 'loadbalancerrule', 'algorithm', 'account', 'domain'],
       details: ['name', 'sourceipaddress', 'loadbalancerrule', 'algorithm', 'account', 'domain'],
+      tabs: [{
+        name: 'details',
+        component: () => import('@/components/view/DetailsTab.vue')
+      }, {
+        name: 'Assigned VMs',
+        component: () => import('@/views/network/InternalLBAssignedVmTab.vue'),
+        show: () => true
+      }],
       actions: [
         {
           api: 'createLoadBalancer',
@@ -458,7 +466,9 @@ export default {
           api: 'assignToLoadBalancerRule',
           icon: 'plus',
           label: 'Assign VMs',
-          dataView: true
+          dataView: true,
+          popup: true,
+          component: () => import('@/views/network/InternalLBAssignVmForm.vue')
         },
         {
           api: 'deleteLoadBalancer',
