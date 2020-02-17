@@ -68,7 +68,7 @@ UPDATE `cloud`.`template_spool_ref` set state='Ready' WHERE download_state = 'DO
 UPDATE `cloud`.`template_spool_ref` set update_count=0;
 
 
-CREATE TABLE  `cloud`.`object_datastore_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`object_datastore_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `datastore_uuid`  varchar(255) NOT NULL,
   `datastore_role` varchar(255) NOT NULL,
@@ -156,7 +156,7 @@ CREATE VIEW `cloud`.`image_store_view` AS
             
 -- here we have to allow null for store_id to accomodate baremetal case to search for ready templates since template state is only stored in this table
 -- FK also commented out due to this            
-CREATE TABLE  `cloud`.`template_store_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`template_store_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `store_id` bigint unsigned,
   `template_id` bigint unsigned NOT NULL,
@@ -196,7 +196,7 @@ CREATE TABLE  `cloud`.`template_store_ref` (
 ALTER TABLE `cloud`.`upload` DROP FOREIGN KEY `fk_upload__host_id`; 
 ALTER TABLE `cloud`.`upload` ADD CONSTRAINT `fk_upload__store_id` FOREIGN KEY(`host_id`) REFERENCES `image_store` (`id`) ON DELETE CASCADE;
 
-CREATE TABLE  `cloud`.`snapshot_store_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`snapshot_store_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `store_id` bigint unsigned NOT NULL,
   `snapshot_id` bigint unsigned NOT NULL,
@@ -220,7 +220,7 @@ CREATE TABLE  `cloud`.`snapshot_store_ref` (
   INDEX `i_snapshot_store_ref__snapshot_id`(`snapshot_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`volume_store_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`volume_store_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `store_id` bigint unsigned NOT NULL,
   `volume_id` bigint unsigned NOT NULL,
@@ -257,7 +257,7 @@ ALTER TABLE `cloud`.`networks` ADD COLUMN `network_cidr` VARCHAR(18) COMMENT 'Th
 ALTER TABLE `cloud`.`networks` CHANGE `cidr` `cidr` varchar(18) COMMENT 'CloudStack managed vms get IP address from cidr.In general this cidr also serves as the network CIDR. But in case IP reservation feature is being used by a Guest network, networkcidr is the Effective network CIDR for that network';
 
 
-CREATE TABLE  `vpc_service_map` (
+CREATE TABLE IF NOT EXISTS `vpc_service_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vpc_id` bigint unsigned NOT NULL COMMENT 'vpc_id',
   `service` varchar(255) NOT NULL COMMENT 'service',

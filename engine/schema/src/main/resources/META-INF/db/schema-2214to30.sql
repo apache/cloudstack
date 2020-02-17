@@ -42,7 +42,7 @@ INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES ('Ovm', '2.3', 25, 1);
 
 
-CREATE TABLE  `cloud`.`projects` (
+CREATE TABLE IF NOT EXISTS `cloud`.`projects` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255) COMMENT 'project name',
   `display_text` varchar(255) COMMENT 'project name',
@@ -58,7 +58,7 @@ CREATE TABLE  `cloud`.`projects` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE  `cloud`.`project_account` (
+CREATE TABLE IF NOT EXISTS `cloud`.`project_account` (
   `id` bigint unsigned NOT NULL auto_increment,
   `account_id` bigint unsigned NOT NULL COMMENT'account id',
   `account_role` varchar(255) NOT NULL DEFAULT 'Regular' COMMENT 'Account role in the project (Owner or Regular)',
@@ -73,7 +73,7 @@ CREATE TABLE  `cloud`.`project_account` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE  `cloud`.`project_invitations` (
+CREATE TABLE IF NOT EXISTS `cloud`.`project_invitations` (
   `id` bigint unsigned NOT NULL auto_increment,
   `uuid` varchar(40),
   `project_id` bigint unsigned NOT NULL COMMENT 'project id',
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`load_balancer_stickiness_policies` (
   CONSTRAINT `fk_load_balancer_stickiness_policies__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`template_swift_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`template_swift_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `swift_id` bigint unsigned NOT NULL,
   `template_id` bigint unsigned NOT NULL,
@@ -281,7 +281,7 @@ UPDATE `cloud`.`configuration` SET description = '[''random'', ''firstfit'', ''u
 --;
 -- Usage db upgrade from 2.2.14 to 3.0;
 --;
-CREATE TABLE  `cloud_usage`.`usage_vpn_user` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_vpn_user` (
  `zone_id` bigint unsigned NOT NULL,
  `account_id` bigint unsigned NOT NULL,
  `domain_id` bigint unsigned NOT NULL,
@@ -344,7 +344,7 @@ update `cloud`.`configuration` set value=NULL where name='xen.storage.network.de
 --NAAS;
 --;
 
-CREATE TABLE  `cloud`.`ntwk_service_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ntwk_service_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `network_id` bigint unsigned NOT NULL COMMENT 'network_id',
   `service` varchar(255) NOT NULL COMMENT 'service',
@@ -518,7 +518,7 @@ ALTER TABLE `cloud`.`networks` ADD COLUMN `restart_required` int(1) unsigned NOT
 DELETE FROM `cloud`.`configuration` where name='cmd.wait';
 
 UPDATE `cloud`.`configuration` set value='true' where name='firewall.rule.ui.enabled';
-CREATE TABLE  `cloud`.`op_user_stats_log` (
+CREATE TABLE IF NOT EXISTS `cloud`.`op_user_stats_log` (
   `user_stats_id` bigint unsigned NOT NULL,
   `net_bytes_received` bigint unsigned NOT NULL default '0',
   `net_bytes_sent` bigint unsigned NOT NULL default '0',
@@ -579,7 +579,7 @@ insert into `cloud`.`network_offerings` (`name`, `unique_name`, `display_text`, 
 UPDATE `cloud`.`network_offerings` set specify_ip_ranges=1 where name in ('System-Public-Network', 'System-Storage-Network', 'DefaultSharedNetworkOfferingWithSGService', 'DefaultSharedNetworkOffering', 'DefaultIsolatedNetworkOffering');
 
 
-CREATE TABLE  `cloud`.`ntwk_offering_service_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ntwk_offering_service_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network_offering_id',
   `service` varchar(255) NOT NULL COMMENT 'service',
@@ -683,7 +683,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`account_details` (
 
 DROP TABLE IF EXISTS `cloud_usage`.`usage_security_group`;
 
-CREATE TABLE  `cloud_usage`.`usage_security_group` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_security_group` (
   `zone_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
   `domain_id` bigint unsigned NOT NULL,

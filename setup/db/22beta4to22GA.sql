@@ -116,7 +116,7 @@ update `cloud_usage`.`usage_event` set size = (size * 1048576) where type = 'VOL
 
 ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `type` varchar(32);
 
-CREATE TABLE  `cloud_usage`.`usage_port_forwarding` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_port_forwarding` (
   `id` bigint unsigned NOT NULL,
   `zone_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
@@ -125,7 +125,7 @@ CREATE TABLE  `cloud_usage`.`usage_port_forwarding` (
   `deleted` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud_usage`.`usage_network_offering` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_network_offering` (
   `zone_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
   `domain_id` bigint unsigned NOT NULL,

@@ -400,7 +400,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`op_lock` (
   INDEX `i_op_lock__mac_ip_thread`(`mac`, `ip`, `thread`)
 ) ENGINE=Memory DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`configuration` (
+CREATE TABLE IF NOT EXISTS `cloud`.`configuration` (
   `category` varchar(255) NOT NULL DEFAULT 'Advanced',
   `instance` varchar(255) NOT NULL,
   `component` varchar(255) NOT NULL DEFAULT 'management-server',
@@ -575,7 +575,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`account_vlan_map` (
   INDEX `i_account_vlan_map__vlan_id`(`vlan_db_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`data_center` (
+CREATE TABLE IF NOT EXISTS `cloud`.`data_center` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `name` varchar(255),
   `uuid` varchar(40),
@@ -672,7 +672,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`op_dc_storage_network_ip_address` (
   CONSTRAINT `fk_storage_ip_address__range_id` FOREIGN KEY (`range_id`) REFERENCES `dc_storage_network_ip_range`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`host_pod_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`host_pod_ref` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `name` varchar(255),
   `uuid` varchar(40),
@@ -740,7 +740,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`firewall_rules` (
   CONSTRAINT `uc_firewall_rules__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`firewall_rules_cidrs` (
+CREATE TABLE IF NOT EXISTS `cloud`.`firewall_rules_cidrs` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `firewall_rule_id` bigint(20) unsigned NOT NULL COMMENT 'firewall rule id',
   `source_cidr` varchar(18) DEFAULT NULL,
@@ -807,7 +807,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`port_forwarding_rules` (
   CONSTRAINT `fk_port_forwarding_rules__instance_id` FOREIGN KEY `fk_port_forwarding_rules__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`host` (
+CREATE TABLE IF NOT EXISTS `cloud`.`host` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255) NOT NULL,
   `uuid` varchar(40) COMMENT 'this uuid is different with guid below, the later one is used by hypervisor resource',
@@ -889,7 +889,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`host_details` (
   CONSTRAINT UNIQUE KEY `uk_host_id_name` (`host_id`, `name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`mshost` (
+CREATE TABLE IF NOT EXISTS `cloud`.`mshost` (
   `id` bigint unsigned NOT NULL auto_increment,
   `msid` bigint unsigned NOT NULL UNIQUE COMMENT 'management server id derived from MAC address',
   `runid` bigint NOT NULL DEFAULT 0 COMMENT 'run id, combined with msid to form a cluster session',
@@ -906,7 +906,7 @@ CREATE TABLE  `cloud`.`mshost` (
   INDEX `i_mshost__last_update`(`last_update`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`mshost_peer` (
+CREATE TABLE IF NOT EXISTS `cloud`.`mshost_peer` (
   `id` bigint unsigned NOT NULL auto_increment,
   `owner_mshost` bigint unsigned NOT NULL,
   `peer_mshost` bigint unsigned NOT NULL,
@@ -928,7 +928,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`host_tags` (
   CONSTRAINT `fk_host_tags__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`user` (
+CREATE TABLE IF NOT EXISTS `cloud`.`user` (
   `id` bigint unsigned NOT NULL auto_increment,
   `uuid` varchar(40),
   `username` varchar(255) NOT NULL,
@@ -955,7 +955,7 @@ CREATE TABLE  `cloud`.`user` (
   CONSTRAINT `uc_user__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`event` (
+CREATE TABLE IF NOT EXISTS `cloud`.`event` (
   `id` bigint unsigned NOT NULL auto_increment,
   `uuid` varchar(40),
   `type` varchar(32) NOT NULL,
@@ -977,7 +977,7 @@ CREATE TABLE  `cloud`.`event` (
   CONSTRAINT `uc_event__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`user_ip_address` (
+CREATE TABLE IF NOT EXISTS `cloud`.`user_ip_address` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `uuid` varchar(40),
   `account_id` bigint unsigned NULL,
@@ -1012,7 +1012,7 @@ CREATE TABLE  `cloud`.`user_ip_address` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE  `cloud`.`user_statistics` (
+CREATE TABLE IF NOT EXISTS `cloud`.`user_statistics` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT,
   `data_center_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
@@ -1033,7 +1033,7 @@ CREATE TABLE  `cloud`.`user_statistics` (
   UNIQUE KEY (`account_id`, `data_center_id`, `public_ip_address`, `device_id`, `device_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`vm_template` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_template` (
   `id` bigint unsigned NOT NULL auto_increment,
   `unique_name` varchar(255) NOT NULL,
   `name` varchar(255) NOT NULL,
@@ -1076,7 +1076,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`vm_template_details` (
   CONSTRAINT `fk_vm_template_details__template_id` FOREIGN KEY `fk_vm_template_details__template_id`(`template_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`vm_instance` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_instance` (
   `id` bigint unsigned UNIQUE NOT NULL,
   `name` varchar(255) NOT NULL,
   `uuid` varchar(40),
@@ -1167,7 +1167,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`domain_router` (
   CONSTRAINT `fk_domain_router__vpc_id` FOREIGN KEY `fk_domain_router__vpc_id`(`vpc_id`) REFERENCES `vpc`(`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT = 'information about the domR instance';
 
-CREATE TABLE  `cloud`.`upload` (
+CREATE TABLE IF NOT EXISTS `cloud`.`upload` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL,
   `type_id` bigint unsigned NOT NULL,
@@ -1187,7 +1187,7 @@ CREATE TABLE  `cloud`.`upload` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`template_host_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`template_host_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL,
   `template_id` bigint unsigned NOT NULL,
@@ -1211,7 +1211,7 @@ CREATE TABLE  `cloud`.`template_host_ref` (
   INDEX `i_template_host_ref__template_id`(`template_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`volume_host_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`volume_host_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL,
   `volume_id` bigint unsigned NOT NULL,
@@ -1237,7 +1237,7 @@ CREATE TABLE  `cloud`.`volume_host_ref` (
   INDEX `i_volume_host_ref__volume_id`(`volume_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`template_swift_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`template_swift_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `swift_id` bigint unsigned NOT NULL,
   `template_id` bigint unsigned NOT NULL,
@@ -1252,7 +1252,7 @@ CREATE TABLE  `cloud`.`template_swift_ref` (
   INDEX `i_template_swift_ref__template_id`(`template_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`template_zone_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`template_zone_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `zone_id` bigint unsigned NOT NULL,
   `template_id` bigint unsigned NOT NULL,
@@ -1267,7 +1267,7 @@ CREATE TABLE  `cloud`.`template_zone_ref` (
   INDEX `i_template_zone_ref__removed`(`removed`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`console_proxy` (
+CREATE TABLE IF NOT EXISTS `cloud`.`console_proxy` (
   `id` bigint unsigned NOT NULL auto_increment,
   `public_mac_address` varchar(17) unique COMMENT 'mac address of the public facing network card',
   `public_ip_address` char(40) COMMENT 'public ip address for the console proxy',
@@ -1279,7 +1279,7 @@ CREATE TABLE  `cloud`.`console_proxy` (
   CONSTRAINT `fk_console_proxy__id` FOREIGN KEY `fk_console_proxy__id`(`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`secondary_storage_vm` (
+CREATE TABLE IF NOT EXISTS `cloud`.`secondary_storage_vm` (
   `id` bigint unsigned NOT NULL auto_increment,
   `public_mac_address` varchar(17)  unique COMMENT 'mac address of the public facing network card',
   `public_ip_address` char(40) COMMENT 'public ip address for the sec storage vm',
@@ -1292,7 +1292,7 @@ CREATE TABLE  `cloud`.`secondary_storage_vm` (
   CONSTRAINT `fk_secondary_storage_vm__id` FOREIGN KEY `fk_secondary_storage_vm__id`(`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`domain` (
+CREATE TABLE IF NOT EXISTS `cloud`.`domain` (
   `id` bigint unsigned NOT NULL auto_increment,
   `parent` bigint unsigned,
   `name` varchar(255),
@@ -1313,7 +1313,7 @@ CREATE TABLE  `cloud`.`domain` (
   CONSTRAINT `uc_domain__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`account` (
+CREATE TABLE IF NOT EXISTS `cloud`.`account` (
   `id` bigint unsigned NOT NULL auto_increment,
   `account_name` varchar(100) COMMENT 'an account name set by the creator of the account, defaults to username for single accounts',
   `uuid` varchar(40),
@@ -1501,7 +1501,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`disk_offering` (
   CONSTRAINT `uc_disk_offering__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`service_offering` (
+CREATE TABLE IF NOT EXISTS `cloud`.`service_offering` (
   `id` bigint unsigned NOT NULL,
   `cpu` int(10) unsigned NOT NULL COMMENT '# of cores',
   `speed` int(10) unsigned NOT NULL COMMENT 'speed per core in mhz',
@@ -1560,7 +1560,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`vpn_users` (
   CONSTRAINT `uc_vpn_users__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`storage_pool` (
+CREATE TABLE IF NOT EXISTS `cloud`.`storage_pool` (
   `id` bigint unsigned UNIQUE NOT NULL,
   `name` varchar(255) COMMENT 'should be NOT NULL',
   `uuid` varchar(255) UNIQUE,
@@ -1595,7 +1595,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`storage_pool_details` (
   INDEX `i_storage_pool_details__name__value`(`name`(128), `value`(128))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`storage_pool_host_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`storage_pool_host_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL,
   `pool_id` bigint unsigned NOT NULL,
@@ -1607,7 +1607,7 @@ CREATE TABLE  `cloud`.`storage_pool_host_ref` (
   CONSTRAINT `fk_storage_pool_host_ref__pool_id` FOREIGN KEY `fk_storage_pool_host_ref__pool_id`(`pool_id`) REFERENCES `storage_pool`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`template_spool_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`template_spool_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `pool_id` bigint unsigned NOT NULL,
   `template_id` bigint unsigned NOT NULL,
@@ -1682,7 +1682,7 @@ INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES ('Ovm', 'default', 25, 1);
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES ('Ovm', '2.3', 25, 1);
 
-CREATE TABLE  `cloud`.`launch_permission` (
+CREATE TABLE IF NOT EXISTS `cloud`.`launch_permission` (
   `id` bigint unsigned NOT NULL auto_increment,
   `template_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
@@ -1704,7 +1704,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`snapshot_policy` (
   CONSTRAINT `uc_snapshot_policy__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`snapshot_schedule` (
+CREATE TABLE IF NOT EXISTS `cloud`.`snapshot_schedule` (
   `id` bigint unsigned NOT NULL auto_increment,
   `uuid` varchar(40),
   `volume_id` bigint unsigned NOT NULL COMMENT 'The volume for which this snapshot is being taken',
@@ -1838,7 +1838,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`ssh_keypairs` (
   CONSTRAINT `fk_ssh_keypairs__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`usage_event` (
+CREATE TABLE IF NOT EXISTS `cloud`.`usage_event` (
   `id` bigint unsigned NOT NULL auto_increment,
   `type` varchar(32) NOT NULL,
   `account_id` bigint unsigned NOT NULL,
@@ -1959,7 +1959,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`op_host_transfer` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE  `cloud`.`projects` (
+CREATE TABLE IF NOT EXISTS `cloud`.`projects` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255) COMMENT 'project name',
   `uuid` varchar(40),
@@ -1977,7 +1977,7 @@ CREATE TABLE  `cloud`.`projects` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE  `cloud`.`project_account` (
+CREATE TABLE IF NOT EXISTS `cloud`.`project_account` (
   `id` bigint unsigned NOT NULL auto_increment,
   `account_id` bigint unsigned NOT NULL COMMENT'account id',
   `account_role` varchar(255) NOT NULL DEFAULT 'Regular' COMMENT 'Account role in the project (Owner or Regular)',
@@ -1992,7 +1992,7 @@ CREATE TABLE  `cloud`.`project_account` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE  `cloud`.`project_invitations` (
+CREATE TABLE IF NOT EXISTS `cloud`.`project_invitations` (
   `id` bigint unsigned NOT NULL auto_increment,
   `uuid` varchar(40),
   `project_id` bigint unsigned NOT NULL COMMENT 'project id',
@@ -2024,7 +2024,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`elastic_lb_vm_map` (
   CONSTRAINT `fk_elastic_lb_vm_map__lb_id` FOREIGN KEY `fk_elastic_lb_vm_map__lb_id` (`lb_id`) REFERENCES `load_balancing_rules` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `ntwk_offering_service_map` (
+CREATE TABLE IF NOT EXISTS `ntwk_offering_service_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network_offering_id',
   `service` varchar(255) NOT NULL COMMENT 'service',
@@ -2035,7 +2035,7 @@ CREATE TABLE  `ntwk_offering_service_map` (
   UNIQUE (`network_offering_id`, `service`, `provider`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `ntwk_service_map` (
+CREATE TABLE IF NOT EXISTS `ntwk_service_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `network_id` bigint unsigned NOT NULL COMMENT 'network_id',
   `service` varchar(255) NOT NULL COMMENT 'service',
@@ -2198,7 +2198,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`virtual_router_providers` (
   CONSTRAINT `uc_virtual_router_providers__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`op_user_stats_log` (
+CREATE TABLE IF NOT EXISTS `cloud`.`op_user_stats_log` (
   `user_stats_id` bigint unsigned NOT NULL,
   `net_bytes_received` bigint unsigned NOT NULL default '0',
   `net_bytes_sent` bigint unsigned NOT NULL default '0',
@@ -2210,7 +2210,7 @@ CREATE TABLE  `cloud`.`op_user_stats_log` (
   UNIQUE KEY (`user_stats_id`, `updated`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`cluster_vsm_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`cluster_vsm_map` (
   `cluster_id` bigint unsigned NOT NULL,
   `vsm_id` bigint unsigned NOT NULL,
   PRIMARY KEY (`cluster_id`)
@@ -2304,7 +2304,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`s2s_vpn_connection` (
   CONSTRAINT `uc_s2s_vpn_connection__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`netscaler_pod_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`netscaler_pod_ref` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `external_load_balancer_device_id` bigint unsigned NOT NULL COMMENT 'id of external load balancer device',
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod id',
@@ -2353,7 +2353,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`vpc_offerings` (
   CONSTRAINT `fk_vpc_offerings__service_offering_id` FOREIGN KEY `fk_vpc_offerings__service_offering_id` (`service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`vpc_offering_service_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vpc_offering_service_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vpc_offering_id` bigint unsigned NOT NULL COMMENT 'vpc_offering_id',
   `service` varchar(255) NOT NULL COMMENT 'service',

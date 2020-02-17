@@ -23,7 +23,7 @@ DROP TABLE IF EXISTS `simulator`.`mockvm`;
 DROP TABLE IF EXISTS `simulator`.`mockvolume`;
 DROP TABLE IF EXISTS `simulator`.`mocksecurityrules`;
 
-CREATE TABLE  `simulator`.`mockhost` (
+CREATE TABLE IF NOT EXISTS `simulator`.`mockhost` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255) NOT NULL,
   `private_ip_address` char(40),

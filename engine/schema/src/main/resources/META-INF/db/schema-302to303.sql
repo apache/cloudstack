@@ -38,7 +38,7 @@ UPDATE `cloud`.`user_vm` SET update_parameters=0 where id>0;
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ha.tag', NULL, 'HA tag defining that the host marked with this tag can be used for HA purposes only');
 
 # Changes for Upload Volume
-CREATE TABLE  `cloud`.`volume_host_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`volume_host_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL,
   `volume_id` bigint unsigned NOT NULL,
@@ -131,7 +131,7 @@ DROP TABLE IF EXISTS `cloud`.`cluster_vsm_map`;
 DROP TABLE IF EXISTS `cloud`.`virtual_supervisor_module`;
 DROP TABLE IF EXISTS `cloud`.`port_profile`;
 
-CREATE TABLE  `cloud`.`cluster_vsm_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`cluster_vsm_map` (
   `cluster_id` bigint unsigned NOT NULL,
   `vsm_id` bigint unsigned NOT NULL,
   PRIMARY KEY (`cluster_id`)

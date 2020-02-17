@@ -255,7 +255,7 @@ ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT UNIQUE `i_op_dc_vnet_alloc
 
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` DROP INDEX i_op_dc_vnet_alloc__vnet__data_center_id__account_id;
 
-CREATE TABLE  `cloud`.`region` (
+CREATE TABLE IF NOT EXISTS `cloud`.`region` (
   `id` int unsigned NOT NULL UNIQUE,
   `name` varchar(255) NOT NULL UNIQUE,
   `end_point` varchar(255) NOT NULL,
@@ -419,7 +419,7 @@ INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (10
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (4, UUID(), 'cpu','Linux User CPU - percentage - native', '1.3.6.1.4.1.2021.11.9.1', now());
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (5, UUID(), 'memory','Linux User RAM - percentage - native', '1.3.6.1.4.1.2021.11.10.1', now());
 
-CREATE TABLE  `cloud`.`user_ipv6_address` (
+CREATE TABLE IF NOT EXISTS `cloud`.`user_ipv6_address` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `uuid` varchar(40),
   `account_id` bigint unsigned NULL,
@@ -1655,7 +1655,7 @@ INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALU
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (164, UUID(), 10, 'Ubuntu 12.04 (64-bit)');
 
 DROP TABLE IF EXISTS `cloud`.`netscaler_pod_ref`;
-CREATE TABLE  `cloud`.`netscaler_pod_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`netscaler_pod_ref` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `external_load_balancer_device_id` bigint unsigned NOT NULL COMMENT 'id of external load balancer device',
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod id',

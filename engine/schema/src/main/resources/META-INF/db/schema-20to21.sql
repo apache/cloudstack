@@ -170,7 +170,7 @@ ALTER TABLE `cloud`.`secondary_storage_vm` ADD COLUMN `guest_mac_address` varcha
 ALTER TABLE `cloud`.`secondary_storage_vm` ADD COLUMN `guest_ip_address`  varchar(15) UNIQUE;
 ALTER TABLE `cloud`.`secondary_storage_vm` ADD COLUMN `guest_netmask` varchar(15);
 
-CREATE TABLE  `cloud`.`service_offering_21` (
+CREATE TABLE IF NOT EXISTS `cloud`.`service_offering_21` (
   `id` bigint unsigned NOT NULL,
   `cpu` int(10) unsigned NOT NULL COMMENT '# of cores',
   `speed` int(10) unsigned NOT NULL COMMENT 'speed per core in mhz',

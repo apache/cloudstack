@@ -33,7 +33,7 @@ DROP TABLE IF EXISTS `cloud_usage`.`usage_event`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_vpn_user`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_security_group`;
 
-CREATE TABLE  `cloud_usage`.`cloud_usage` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`cloud_usage` (
   `id` bigint unsigned NOT NULL auto_increment,
   `zone_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
@@ -60,7 +60,7 @@ ALTER TABLE `cloud_usage`.`cloud_usage` ADD INDEX `i_cloud_usage__domain_id`(`do
 ALTER TABLE `cloud_usage`.`cloud_usage` ADD INDEX `i_cloud_usage__start_date`(`start_date`);
 ALTER TABLE `cloud_usage`.`cloud_usage` ADD INDEX `i_cloud_usage__end_date`(`end_date`);
 
-CREATE TABLE  `cloud_usage`.`usage_vm_instance` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_vm_instance` (
   `usage_type` int(1) unsigned,
   `zone_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
@@ -78,7 +78,7 @@ ALTER TABLE `cloud_usage`.`usage_vm_instance` ADD INDEX `i_usage_vm_instance__ac
 ALTER TABLE `cloud_usage`.`usage_vm_instance` ADD INDEX `i_usage_vm_instance__start_date`(`start_date`);
 ALTER TABLE `cloud_usage`.`usage_vm_instance` ADD INDEX `i_usage_vm_instance__end_date`(`end_date`);
 
-CREATE TABLE  `cloud_usage`.`usage_network` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_network` (
   `account_id` bigint unsigned NOT NULL,
   `zone_id` bigint unsigned NOT NULL,
   `host_id` bigint unsigned NOT NULL,
@@ -92,7 +92,7 @@ CREATE TABLE  `cloud_usage`.`usage_network` (
   PRIMARY KEY (`account_id`, `zone_id`, `host_id`, `event_time_millis`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud_usage`.`usage_ip_address` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_ip_address` (
   `id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
   `domain_id` bigint unsigned NOT NULL,
@@ -109,7 +109,7 @@ ALTER TABLE `cloud_usage`.`usage_ip_address` ADD INDEX `i_usage_ip_address__acco
 ALTER TABLE `cloud_usage`.`usage_ip_address` ADD INDEX `i_usage_ip_address__assigned`(`assigned`);
 ALTER TABLE `cloud_usage`.`usage_ip_address` ADD INDEX `i_usage_ip_address__released`(`released`);
 
-CREATE TABLE  `cloud_usage`.`usage_job` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_job` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host` varchar(255),
   `pid` int(5),
@@ -127,7 +127,7 @@ CREATE TABLE  `cloud_usage`.`usage_job` (
 
 ALTER TABLE `cloud_usage`.`usage_job` ADD INDEX `i_usage_job__end_millis`(`end_millis`);
 
-CREATE TABLE  `cloud_usage`.`account` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`account` (
   `id` bigint unsigned NOT NULL,
   `account_name` varchar(100) COMMENT 'an account name set by the creator of the account, defaults to username for single accounts',
   `uuid` varchar(40),
@@ -144,7 +144,7 @@ CREATE TABLE  `cloud_usage`.`account` (
 
 ALTER TABLE `cloud_usage`.`account` ADD INDEX `i_account__removed`(`removed`);
 
-CREATE TABLE  `cloud_usage`.`user_statistics` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`user_statistics` (
   `id` bigint unsigned UNIQUE NOT NULL,
   `data_center_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
@@ -162,7 +162,7 @@ CREATE TABLE  `cloud_usage`.`user_statistics` (
   UNIQUE KEY (`account_id`, `data_center_id`, `public_ip_address`, `device_id`, `device_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud_usage`.`usage_volume` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_volume` (
   `id` bigint unsigned NOT NULL,
   `zone_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
@@ -179,7 +179,7 @@ ALTER TABLE `cloud_usage`.`usage_volume` ADD INDEX `i_usage_volume__account_id`(
 ALTER TABLE `cloud_usage`.`usage_volume` ADD INDEX `i_usage_volume__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_volume` ADD INDEX `i_usage_volume__deleted`(`deleted`);
 
-CREATE TABLE  `cloud_usage`.`usage_storage` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_storage` (
   `id` bigint unsigned NOT NULL,
   `zone_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
@@ -196,7 +196,7 @@ ALTER TABLE `cloud_usage`.`usage_storage` ADD INDEX `i_usage_storage__account_id
 ALTER TABLE `cloud_usage`.`usage_storage` ADD INDEX `i_usage_storage__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_storage` ADD INDEX `i_usage_storage__deleted`(`deleted`);
 
-CREATE TABLE  `cloud_usage`.`usage_load_balancer_policy` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_load_balancer_policy` (
   `id` bigint unsigned NOT NULL,
   `zone_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
@@ -209,7 +209,7 @@ ALTER TABLE `cloud_usage`.`usage_load_balancer_policy` ADD INDEX `i_usage_load_b
 ALTER TABLE `cloud_usage`.`usage_load_balancer_policy` ADD INDEX `i_usage_load_balancer_policy__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_load_balancer_policy` ADD INDEX `i_usage_load_balancer_policy__deleted`(`deleted`);
 
-CREATE TABLE  `cloud_usage`.`usage_event` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_event` (
   `id` bigint unsigned NOT NULL auto_increment,
   `type` varchar(32) NOT NULL,
   `account_id` bigint unsigned NOT NULL,
@@ -227,7 +227,7 @@ CREATE TABLE  `cloud_usage`.`usage_event` (
 
 ALTER TABLE `cloud_usage`.`usage_event` ADD INDEX `i_usage_event__created`(`created`);
 
-CREATE TABLE  `cloud_usage`.`usage_port_forwarding` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_port_forwarding` (
   `id` bigint unsigned NOT NULL,
   `zone_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
@@ -240,7 +240,7 @@ ALTER TABLE `cloud_usage`.`usage_port_forwarding` ADD INDEX `i_usage_port_forwar
 ALTER TABLE `cloud_usage`.`usage_port_forwarding` ADD INDEX `i_usage_port_forwarding__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_port_forwarding` ADD INDEX `i_usage_port_forwarding__deleted`(`deleted`);
 
-CREATE TABLE  `cloud_usage`.`usage_network_offering` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_network_offering` (
   `zone_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
   `domain_id` bigint unsigned NOT NULL,
@@ -255,7 +255,7 @@ ALTER TABLE `cloud_usage`.`usage_network_offering` ADD INDEX `i_usage_network_of
 ALTER TABLE `cloud_usage`.`usage_network_offering` ADD INDEX `i_usage_network_offering__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_network_offering` ADD INDEX `i_usage_network_offering__deleted`(`deleted`);
 
-CREATE TABLE  `cloud_usage`.`usage_vpn_user` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_vpn_user` (
   `zone_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
   `domain_id` bigint unsigned NOT NULL,
@@ -269,7 +269,7 @@ ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__account_
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__deleted`(`deleted`);
 
-CREATE TABLE  `cloud_usage`.`usage_security_group` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_security_group` (
   `zone_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
   `domain_id` bigint unsigned NOT NULL,

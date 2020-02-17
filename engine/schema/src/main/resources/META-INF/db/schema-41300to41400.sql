@@ -41,7 +41,7 @@ UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=285 AND display_name=
 UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=286 AND display_name="Red Hat Enterprise Linux 8.0";
 
 -- Create table for router health checks. We only save last check result for each.
-CREATE TABLE  `cloud`.`router_health_check` (
+CREATE TABLE IF NOT EXISTS `cloud`.`router_health_check` (
   `id` bigint unsigned NOT NULL auto_increment,
   `router_id` bigint unsigned NOT NULL COMMENT 'router id',
   `check_name` varchar(255) NOT NULL COMMENT 'name of the health check',

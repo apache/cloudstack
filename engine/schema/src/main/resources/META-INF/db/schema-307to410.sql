@@ -281,7 +281,7 @@ ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT UNIQUE `i_op_dc_vnet_alloc
 
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` DROP INDEX i_op_dc_vnet_alloc__vnet__data_center_id__account_id;
 
-CREATE TABLE  `cloud`.`region` (
+CREATE TABLE IF NOT EXISTS `cloud`.`region` (
   `id` int unsigned NOT NULL UNIQUE,
   `name` varchar(255) NOT NULL UNIQUE,
   `end_point` varchar(255) NOT NULL,
@@ -313,7 +313,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`external_bigswitch_vns_devices` (
 
 
 
-CREATE TABLE  `cloud`.`user_ipv6_address` (
+CREATE TABLE IF NOT EXISTS `cloud`.`user_ipv6_address` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `uuid` varchar(40),
   `account_id` bigint unsigned NULL,
@@ -1568,7 +1568,7 @@ DROP TABLE IF EXISTS `cloud`.`host_updates`;
 DROP TABLE IF EXISTS `cloud`.`host_updates_ref`;
 
 DROP TABLE IF EXISTS `cloud`.`netscaler_pod_ref`;
-CREATE TABLE  `cloud`.`netscaler_pod_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`netscaler_pod_ref` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `external_load_balancer_device_id` bigint unsigned NOT NULL COMMENT 'id of external load balancer device',
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod id',

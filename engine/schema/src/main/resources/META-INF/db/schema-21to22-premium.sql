@@ -40,7 +40,7 @@ ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `public_ip_address` varch
 ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `device_id` bigint unsigned NOT NULL default 0;
 ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `device_type` varchar(32) NOT NULL default 'DomainRouter';
 
-CREATE TABLE  `cloud_usage`.`usage_event` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_event` (
   `id` bigint unsigned NOT NULL auto_increment,
   `type` varchar(32) NOT NULL,
   `account_id` bigint unsigned NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE  `cloud_usage`.`usage_event` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud_usage`.`usage_port_forwarding` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_port_forwarding` (
   `id` bigint unsigned NOT NULL,
   `zone_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
@@ -64,7 +64,7 @@ CREATE TABLE  `cloud_usage`.`usage_port_forwarding` (
   `deleted` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud_usage`.`usage_network_offering` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_network_offering` (
   `zone_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
   `domain_id` bigint unsigned NOT NULL,

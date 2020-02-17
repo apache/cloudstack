@@ -342,7 +342,7 @@ ALTER TABLE `cloud`.`domain_router` MODIFY COLUMN `guest_netmask` varchar(15);
 ALTER TABLE `cloud`.`domain_router` MODIFY COLUMN `guest_ip_address` varchar(15);
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN `network_id` bigint unsigned NOT NULL;
 
-CREATE TABLE  `cloud`.`upload` (
+CREATE TABLE IF NOT EXISTS `cloud`.`upload` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL,
   `type_id` bigint unsigned NOT NULL,
@@ -480,7 +480,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`ssh_keypairs` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`usage_event` (
+CREATE TABLE IF NOT EXISTS `cloud`.`usage_event` (
   `id` bigint unsigned NOT NULL auto_increment,
   `type` varchar(32) NOT NULL,
   `account_id` bigint unsigned NOT NULL,
