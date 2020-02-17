@@ -163,6 +163,7 @@ public class VeeamClient {
         if (!(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK ||
                 response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) &&
                 response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
+            LOG.debug("HTTP request failed, status code is " + response.getStatusLine().getStatusCode() + ", response is: " + response.toString());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to get valid response from Veeam B&R API call, please ask your administrator to diagnose and fix issues.");
         }
     }
