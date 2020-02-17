@@ -264,13 +264,13 @@ public class TemplateServiceImpl implements TemplateService {
             List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
 
             for (VMTemplateVO rtngTmplt : rtngTmplts) {
-                if (rtngTmplt.getHypervisorType() == hostHyper) {
+                if (rtngTmplt.getHypervisorType() == hostHyper && !rtngTmplt.isDirectDownload()) {
                     toBeDownloaded.add(rtngTmplt);
                 }
             }
 
             for (VMTemplateVO builtinTmplt : defaultBuiltin) {
-                if (builtinTmplt.getHypervisorType() == hostHyper) {
+                if (builtinTmplt.getHypervisorType() == hostHyper && !builtinTmplt.isDirectDownload()) {
                     toBeDownloaded.add(builtinTmplt);
                 }
             }
