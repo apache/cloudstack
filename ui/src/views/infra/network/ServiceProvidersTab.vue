@@ -17,15 +17,41 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    TODO: implement support for config drive, vpc router, ilbvm, virtual router
     <a-tabs :tabPosition="device === 'mobile' ? 'top' : 'left'" :animated="false">
-      <a-tab-pane v-for="(nsp, index) in nsps" :key="index">
+      <a-tab-pane v-for="nsp in hardcodedNsps" :key="nsp">
         <span slot="tab">
-          {{ nsp.name }}
-          <status :text="nsp.state" style="margin-bottom: 6px" />
+          {{ nsp }}
+          <status :text="nsp in nsps ? nsps[nsp].state : 'Disabled'" style="margin-bottom: 6px; margin-left: 6px" />
         </span>
-        <router-link :to="{ path: '/nsp/' + nsp.id + '?name=' + nsp.name + '&physicalnetworkid=' + resource.id }">{{ nsp.name }} </router-link>
-        {{ nsp }}
+        <a-list size="small" :dataSource="details">
+          <a-list-item
+            slot="renderItem"
+            slot-scope="item">
+            <div>
+              <strong>{{ $t(item) }}</strong>
+              <br />
+              <div v-if="item === 'name'">
+                <span v-if="nsp in nsps">
+                  <router-link :to="{ path: '/nsp/' + nsps[nsp].id + '?name=' + nsps[nsp].name + '&physicalnetworkid=' + resource.id }">
+                    {{ nsps[nsp].name }}
+                  </router-link>
+                </span>
+                <span v-else>
+                  {{ nsp }}
+                </span>
+              </div>
+              <div v-else-if="item === 'state'">
+                <status :text="nsp in nsps ? nsps[nsp].state : 'Disabled'" displayText />
+              </div>
+              <div v-else-if="item === 'id'">
+                <span v-if="nsp in nsps"> {{ nsps[nsp].id }} </span>
+              </div>
+              <div v-else-if="item === 'servicelist'">
+                <span v-if="nsp in nsps"> {{ nsps[nsp].servicelist.join(', ') }} </span>
+              </div>
+            </div>
+          </a-list-item>
+        </a-list>
       </a-tab-pane>
     </a-tabs>
   </a-spin>
@@ -54,7 +80,28 @@ export default {
   },
   data () {
     return {
-      nsps: [],
+      nsps: {},
+      details: ['name', 'state', 'id', 'servicelist'],
+      hardcodedNsps: [
+        'BaremetalDhcpProvider',
+        'BaremetalPxeProvider',
+        'BigSwitchBcf',
+        'BrocadeVcs',
+        'CiscoVnmc',
+        'ConfigDrive',
+        'F5BigIp',
+        'GloboDns',
+        'InternalLbVm',
+        'JuniperSRX',
+        'Netscaler',
+        'NiciraNvp',
+        'Opendaylight',
+        'Ovs',
+        'PaloAlto',
+        'SecurityGroupProvider',
+        'VirtualRouter',
+        'VpcVirtualRouter'
+      ],
       fetchLoading: false
     }
   },
@@ -70,13 +117,22 @@ export default {
   },
   methods: {
     fetchData () {
+      this.fetchServiceProvider()
+    },
+    fetchServiceProvider (name) {
       this.fetchLoading = true
-      api('listNetworkServiceProviders', { physicalnetworkid: this.resource.id }).then(json => {
-        this.nsps = json.listnetworkserviceprovidersresponse.networkserviceprovider || []
+      api('listNetworkServiceProviders', { physicalnetworkid: this.resource.id, name: name }).then(json => {
+        var sps = json.listnetworkserviceprovidersresponse.networkserviceprovider || []
+        if (sps.length > 0) {
+          for (const sp of sps) {
+            this.nsps[sp.name] = sp
+          }
+        }
       }).catch(error => {
         this.$notification.error({
           message: 'Request Failed',
-          description: error.response.headers['x-description']
+          description: error.response.headers['x-description'],
+          duration: 0
         })
       }).finally(() => {
         this.fetchLoading = false
@@ -87,5 +143,4 @@ export default {
 </script>
 
 <style lang="less" scoped>
-
 </style>
