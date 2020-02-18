@@ -41,10 +41,12 @@
             <a-list itemLayout="horizontal" :dataSource="this.supportedServices">
               <a-list-item slot="renderItem" slot-scope="item">
                 <CheckBoxSelectPair
+                  v-decorator="['service.'+item.name, {}]"
                   :resourceKey="item.name"
-                  :resourceTitle="item.description"
-                  :resourceOptions="item.provider"
-                  :checkDecorator="'service.' + item.name"
+                  :checkBoxLabel="item.description"
+                  :checkBoxDecorator="'service.' + item.name"
+                  :selectOptions="item.provider"
+                  :selectLabel="$t('serviceproviders')"
                   :selectDecorator="item.name + '.provider'"
                   @handle-checkpair-change="handleSupportedServiceChange"/>
               </a-list-item>

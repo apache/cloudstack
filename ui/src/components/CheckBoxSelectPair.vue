@@ -17,13 +17,13 @@
 
 <template>
   <div>
-    <a-checkbox v-decorator="[checkDecorator, {}]" class="pair-checkbox" @change="handleCheckChange">
-      {{ resourceTitle }}
+    <a-checkbox v-decorator="[checkBoxDecorator, {}]" class="pair-checkbox" @change="handleCheckChange">
+      {{ checkBoxLabel }}
     </a-checkbox>
-    <a-form-item class="pair-select-container" :label="$t('serviceprovider')" v-if="this.checked">
+    <a-form-item class="pair-select-container" :label="selectLabel" v-if="this.checked">
       <a-select
         v-decorator="[selectDecorator, {
-          initialValue: resourceOptions[0].name
+          initialValue: this.getSelectInitialValue()
         }]"
         showSearch
         optionFilterProp="children"
@@ -31,7 +31,7 @@
           return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }"
         @change="val => { this.handleSelectChange(val) }">
-        <a-select-option v-for="(opt) in resourceOptions" :key="opt.name" :disabled="!opt.enabled">
+        <a-select-option v-for="(opt) in selectOptions" :key="opt.name" :disabled="!opt.enabled">
           {{ opt.name || opt.description }}
         </a-select-option>
       </a-select>
@@ -48,15 +48,19 @@ export default {
       type: String,
       required: true
     },
-    resourceTitle: {
+    checkBoxLabel: {
       type: String,
       required: true
     },
-    resourceOptions: {
+    checkBoxDecorator: {
+      type: String,
+      default: ''
+    },
+    selectOptions: {
       type: Array,
       required: true
     },
-    checkDecorator: {
+    selectLabel: {
       type: String,
       default: ''
     },
@@ -75,10 +79,20 @@ export default {
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
+    getSelectInitialValue () {
+      if (this.arrayHasItems(this.selectOptions)) {
+        for (var i = 0; i < this.selectOptions.length; i++) {
+          if (this.selectOptions[i].enabled === true) {
+            return this.selectOptions[i].name
+          }
+        }
+      }
+      return ''
+    },
     handleCheckChange (e) {
       this.checked = e.target.checked
-      if (this.checked && this.arrayHasItems(this.resourceOptions)) {
-        this.selectedOption = this.resourceOptions[0].name
+      if (this.checked && this.arrayHasItems(this.selectOptions)) {
+        this.selectedOption = this.selectOptions[0].name
       }
       this.$emit('handle-checkpair-change', this.resourceKey, this.checked, '')
     },

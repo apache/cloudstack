@@ -50,9 +50,9 @@
             }]"
             :placeholder="this.$t('networkrate')"/>
         </a-form-item>
-        <a-form-item :label="$t('guesttype')">
+        <a-form-item :label="$t('guestiptype')">
           <a-radio-group
-            v-decorator="['guesttype', {
+            v-decorator="['guestiptype', {
               initialValue: this.guestType
             }]"
             buttonStyle="solid"
@@ -75,7 +75,7 @@
           <a-switch v-decorator="['specifyvlan', {initialValue: true}]" :defaultChecked="true" />
         </a-form-item>
         <a-form-item :label="$t('forvpc')" v-if="this.guestType === 'isolated'">
-          <a-switch v-decorator="['forvpc', {initialValue: this.forVpc}]" :defaultChecked="this.forVpc" @change="this.handleForVpcChange(val)" />
+          <a-switch v-decorator="['forvpc', {initialValue: this.forVpc}]" :defaultChecked="this.forVpc" @change="val => { this.handleForVpcChange(val) }" />
         </a-form-item>
         <a-form-item :label="$t('userdatal2')" v-if="this.guestType === 'l2'">
           <a-switch v-decorator="['userdatal2', {initialValue: false}]" />
@@ -155,9 +155,10 @@
                 <CheckBoxSelectPair
                   v-decorator="['service.'+item.name, {}]"
                   :resourceKey="item.name"
-                  :resourceTitle="item.description"
-                  :resourceOptions="item.provider"
-                  :checkDecorator="'service.' + item.name"
+                  :checkBoxLabel="item.description"
+                  :checkBoxDecorator="'service.' + item.name"
+                  :selectOptions="item.provider"
+                  :selectLabel="$t('serviceproviders')"
                   :selectDecorator="item.name + '.provider'"
                   @handle-checkpair-change="handleSupportedServiceChange"/>
               </a-list-item>
@@ -256,7 +257,7 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item :label="$t('service.StaticNat.elasticIp')" v-if="this.guestType == 'shared' && this.staticNatServiceChecked && this.staticNatServiceProvider === 'Netscaler'">
-          <a-switch v-decorator="['elasticip', {initialValue: this.isElasticIp}]"  :defaultChecked="this.isElasticIp" @change="val => { this.isElasticIp = val }" />
+          <a-switch v-decorator="['elasticip', {initialValue: this.isElasticIp}]" :defaultChecked="this.isElasticIp" @change="val => { this.isElasticIp = val }" />
         </a-form-item>
         <a-form-item :label="$t('service.StaticNat.associatePublicIP')" v-if="this.isElasticIp && this.staticNatServiceChecked && this.staticNatServiceProvider === 'Netscaler'">
           <a-switch v-decorator="['associatepublicip', {initialValue: false}]" />
@@ -571,10 +572,10 @@ export default {
       var self = this
       this.forVpc = forVpc
       this.supportedServices.forEach(function (svc, index) {
-        if (svc === 'Connectivity') {
+        if (svc !== 'Connectivity') {
           var providers = svc.provider
           providers.forEach(function (provider, providerIndex) {
-            if (this.forVpc) { // *** vpc ***
+            if (self.forVpc) { // *** vpc ***
               if (provider.name === 'InternalLbVm' || provider.name === 'VpcVirtualRouter' || provider.name === 'Netscaler' || provider.name === 'BigSwitchBcf' || provider.name === 'ConfigDrive') {
                 provider.enabled = true
               } else {
@@ -593,6 +594,7 @@ export default {
           self.supportedServices[index] = svc
         }
       })
+      console.log(this.supportedServices)
     },
     handleSupportedServiceChange (service, checked, provider) {
       if (service === 'SourceNat') {
@@ -666,17 +668,18 @@ export default {
             selectedServices[key] = values[key]
           } else {
             if (!ignoredKeys.includes(key) &&
-              (key === 'availability' && values.availability !== 'Optional')) {
+              values[key] != null && values[key] !== undefined &&
+              !(key === 'availability' && values[key] === 'Optional')) {
               params[key] = values[key]
             }
           }
         })
 
-        if (values.guesttype === 'Shared') { // specifyVlan checkbox is disabled, so inputData won't include specifyVlan
+        if (values.guestiptype === 'Shared') { // specifyVlan checkbox is disabled, so inputData won't include specifyVlan
           params.specifyvlan = values.specifyvlan
           params.specifyipranges = true
           delete params.ispersistent
-        } else if (values.guesttype === 'Isolated') { // specifyVlan checkbox is shown
+        } else if (values.guestiptype === 'Isolated') { // specifyVlan checkbox is shown
           if (values.specifyvlan === true) {
             params.specifyvlan = true
           }
@@ -685,7 +688,7 @@ export default {
           } else { // Isolated Network with Non-persistent network
             delete params.ispersistent
           }
-        } else if (values.guesttype === 'L2') {
+        } else if (values.guestiptype === 'L2') {
           if (values.specifyvlan === true) {
             params.specifyvlan = true
           }
@@ -701,7 +704,7 @@ export default {
         if (values.forvpc === true) {
           params.forvpc = true
         }
-        if (values.guesttype === 'Shared' || values.guesttype === 'Isolated') {
+        if (values.guestiptype === 'Shared' || values.guestiptype === 'Isolated') {
           if (values.conservemode !== true) {
             params.conservemode = false
           }
