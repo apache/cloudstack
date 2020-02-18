@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import Cookies from 'js-cookie'
 import Vue from 'vue'
 import md5 from 'md5'
 import { login, logout, api } from '@/api'
@@ -82,7 +83,17 @@ const user = {
     Login ({ commit }, userInfo) {
       return new Promise((resolve, reject) => {
         login(userInfo).then(response => {
-          const result = response.loginresponse
+          const result = response.loginresponse || {}
+
+          Cookies.set('account', result.account)
+          Cookies.set('domainid', result.domainid)
+          Cookies.set('role', result.type)
+          Cookies.set('sessionkey', result.sessionkey)
+          Cookies.set('timezone', result.timezone)
+          Cookies.set('timezoneoffset', result.timezoneoffset)
+          Cookies.set('userfullname', result.firstname + ' ' + result.lastname)
+          Cookies.set('userid', result.userid)
+          Cookies.set('username', result.username)
 
           Vue.ls.set(ACCESS_TOKEN, result.sessionkey, 60 * 60 * 1000)
           commit('SET_TOKEN', result.sessionkey)
