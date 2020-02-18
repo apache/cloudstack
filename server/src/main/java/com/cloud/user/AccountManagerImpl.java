@@ -2670,7 +2670,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // set project information
         if (projectId != null) {
             if (!forProjectInvitation) {
-                if (projectId.longValue() == -1) {
+                if (projectId == -1L) {
                     if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                         permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
 
@@ -2680,6 +2680,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                         }
                     } else {
                         domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
+                        if (listAll) {
+                            domainIdRecursiveListProject.third(ListProjectResourcesCriteria.ListAllIncludingProjectResources);
+                        }
                     }
                 } else {
                     Project project = _projectMgr.getProject(projectId);
