@@ -55,8 +55,8 @@ public class InfrastructureResponse extends BaseResponse {
     @Param(description = "Number of routers")
     private Integer routers;
 
-    @SerializedName("internallb")
-    @Param(description = "Number of Internal Load Balancers")
+    @SerializedName("ilbvms")
+    @Param(description = "Number of internal LBs")
     private Integer internalLbs;
 
     @SerializedName("cpusockets")
