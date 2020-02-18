@@ -1996,6 +1996,15 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
+    public Integer countAll() {
+        SearchCriteria<T> sc = null;
+        if (_removed != null) {
+            sc = createSearchCriteria();
+            sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
+        }
+        return getCount(sc);
+    }
+
     public Integer getCount(SearchCriteria<T> sc) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {

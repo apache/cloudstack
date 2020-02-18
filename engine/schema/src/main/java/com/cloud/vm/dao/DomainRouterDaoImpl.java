@@ -186,10 +186,11 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
-    public List<DomainRouterVO> listByRole(final Role role) {
-        final SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
-        sc.setParameters("role", role);
-        return listBy(sc);
+    public Integer countAllByRole(final Role role) {
+        final SearchCriteria<DomainRouterVO> sc = createSearchCriteria();
+        sc.addAnd("role", SearchCriteria.Op.EQ, role);
+        sc.addAnd("removed", Op.NULL);
+        return getCount(sc);
     }
 
     @Override

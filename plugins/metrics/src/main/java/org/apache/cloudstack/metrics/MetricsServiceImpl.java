@@ -138,16 +138,16 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     @Override
     public InfrastructureResponse listInfrastructure() {
         final InfrastructureResponse response = new InfrastructureResponse();
-        response.setZones(dataCenterDao.listAllZones().size());
-        response.setPods(podDao.listAllPods(null).size());
-        response.setClusters(clusterDao.listAllClusters(null).size());
-        response.setHosts(hostDao.listByType(Host.Type.Routing).size());
-        response.setStoragePools(storagePoolDao.listAll().size());
-        response.setImageStores(imageStoreDao.listImageStores().size());
+        response.setZones(dataCenterDao.countAll());
+        response.setPods(podDao.countAll());
+        response.setClusters(clusterDao.countAll());
+        response.setHosts(hostDao.countAllByType(Host.Type.Routing));
+        response.setStoragePools(storagePoolDao.countAll());
+        response.setImageStores(imageStoreDao.countAllImageStores());
         response.setSystemvms(vmInstanceDao.listByTypes(VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm).size());
-        response.setRouters(domainRouterDao.listByRole(VirtualRouter.Role.VIRTUAL_ROUTER).size());
-        response.setInternalLbs(domainRouterDao.listByRole(VirtualRouter.Role.INTERNAL_LB_VM).size());
-        response.setAlerts(alertDao.listAll().size());
+        response.setRouters(domainRouterDao.countAllByRole(VirtualRouter.Role.VIRTUAL_ROUTER));
+        response.setInternalLbs(domainRouterDao.countAllByRole(VirtualRouter.Role.INTERNAL_LB_VM));
+        response.setAlerts(alertDao.countAll());
         int cpuSockets = 0;
         for (final Host host : hostDao.listByType(Host.Type.Routing)) {
             if (host.getCpuSockets() != null) {
