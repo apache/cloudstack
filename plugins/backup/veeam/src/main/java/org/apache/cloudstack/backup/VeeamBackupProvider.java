@@ -149,7 +149,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         for (final BackupOffering job : client.listJobs()) {
             if (job.getName().equals(clonedJobName)) {
                 final Job clonedJob = client.listJob(job.getExternalId());
-                if (backupOffering.isUserDrivenBackupAllowed() && clonedJob.getScheduleEnabled()) {
+                if (clonedJob.getScheduleConfigured() && !clonedJob.getScheduleEnabled()) {
                     client.toggleJobSchedule(clonedJob.getId());
                 }
                 LOG.debug("Veeam job (backup offering) for backup offering ID: " + backupOffering.getExternalId() + " found, now trying to assign the VM to the job.");
