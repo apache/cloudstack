@@ -29,7 +29,8 @@ import iam from '@/config/section/iam'
 import infra from '@/config/section/infra'
 import offering from '@/config/section/offering'
 import config from '@/config/section/config'
-import plugin from '@/config/section/plugin'
+import quota from '@/config/section/plugin/quota'
+import cloudian from '@/config/section/plugin/cloudian'
 
 export function generateRouterMap (section) {
   var map = {
@@ -201,7 +202,8 @@ export const asyncRouterMap = [
       generateRouterMap(infra),
       generateRouterMap(offering),
       generateRouterMap(config),
-      generateRouterMap(plugin),
+      generateRouterMap(quota),
+      generateRouterMap(cloudian),
 
       {
         path: '/exception',

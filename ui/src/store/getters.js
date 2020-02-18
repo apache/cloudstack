@@ -30,7 +30,8 @@ const getters = {
   addRouters: state => state.permission.addRouters,
   multiTab: state => state.app.multiTab,
   asyncJobIds: state => state.user.asyncJobIds,
-  isLdapEnabled: state => state.user.isLdapEnabled
+  isLdapEnabled: state => state.user.isLdapEnabled,
+  cloudian: state => state.user.cloudian
 }
 
 export default getters

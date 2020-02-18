@@ -32,7 +32,8 @@ const user = {
     features: {},
     project: {},
     asyncJobIds: [],
-    isLdapEnabled: false
+    isLdapEnabled: false,
+    cloudian: {}
   },
 
   mutations: {
@@ -65,6 +66,9 @@ const user = {
     },
     SET_LDAP: (state, isLdapEnabled) => {
       state.isLdapEnabled = isLdapEnabled
+    },
+    SET_CLOUDIAN: (state, cloudian) => {
+      state.cloudian = cloudian
     },
     RESET_THEME: (state) => {
       Vue.ls.set(DEFAULT_THEME, 'light')
@@ -137,20 +141,37 @@ const user = {
         }).catch(error => {
           reject(error)
         })
+
+        api('cloudianIsEnabled').then(response => {
+          const cloudian = response.cloudianisenabledresponse.cloudianisenabled || {}
+          commit('SET_CLOUDIAN', cloudian)
+        }).catch(ignored => {
+        })
       })
     },
+
     Logout ({ commit, state }) {
       return new Promise((resolve) => {
+        var cloudianUrl = null
+        if (state.cloudian.url && state.cloudian.enabled) {
+          cloudianUrl = state.cloudian.url + 'logout.htm?redirect=' + encodeURIComponent(window.location.href)
+        }
+
         commit('SET_TOKEN', '')
         commit('SET_PROJECT', {})
         commit('SET_APIS', {})
+        commit('SET_CLOUDIAN', {})
         commit('RESET_THEME')
         Vue.ls.remove(CURRENT_PROJECT)
         Vue.ls.remove(ACCESS_TOKEN)
         Vue.ls.remove(ASYNC_JOB_IDS)
 
         logout(state.token).then(() => {
-          resolve()
+          if (cloudianUrl) {
+            window.location.href = cloudianUrl
+          } else {
+            resolve()
+          }
         }).catch(() => {
           resolve()
         })
