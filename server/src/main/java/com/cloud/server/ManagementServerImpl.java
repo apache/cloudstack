@@ -1248,7 +1248,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
         DataCenterDeployment plan = null;
         if (canMigrateWithStorage) {
-            allHostsPair = searchForServersExcluding(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, srcHostId, keyword, null, null, srcHost.getHypervisorType(),
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, keyword, null, null, srcHost.getHypervisorType(),
                     srcHost.getHypervisorVersion());
             allHosts = allHostsPair.first();
             allHosts.remove(srcHost);
@@ -1296,7 +1296,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Searching for all hosts in cluster " + cluster + " for migrating VM " + vm);
             }
-            allHostsPair = searchForServersExcluding(startIndex, pageSize, null, hostType, null, null, null, cluster, srcHostId, keyword, null, null, null, null);
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, keyword, null, null, null, null);
             // Filter out the current host.
             allHosts = allHostsPair.first();
             allHosts.remove(srcHost);
@@ -1513,89 +1513,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
         return suitablePools;
-    }
-
-
-    private Pair<List<HostVO>, Integer> searchForServersExcluding(final Long startIndex, final Long pageSize, final Object name, final Object type, final Object state, final Object zone, final Object pod,
-                                                         final Object cluster, final Long id, final Object keyword, final Object resourceState, final Object haHosts, final Object hypervisorType, final Object hypervisorVersion) {
-        final Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
-
-        final SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.NEQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("type", sb.entity().getType(), SearchCriteria.Op.LIKE);
-        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
-        sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
-        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
-        sb.and("hypervisorVersion", sb.entity().getHypervisorVersion(), SearchCriteria.Op.GTEQ);
-
-        final String haTag = _haMgr.getHaTag();
-        SearchBuilder<HostTagVO> hostTagSearch = null;
-        if (haHosts != null && haTag != null && !haTag.isEmpty()) {
-            hostTagSearch = _hostTagsDao.createSearchBuilder();
-            if ((Boolean)haHosts) {
-                hostTagSearch.and().op("tag", hostTagSearch.entity().getTag(), SearchCriteria.Op.EQ);
-            } else {
-                hostTagSearch.and().op("tag", hostTagSearch.entity().getTag(), SearchCriteria.Op.NEQ);
-                hostTagSearch.or("tagNull", hostTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
-            }
-
-            hostTagSearch.cp();
-            sb.join("hostTagSearch", hostTagSearch, sb.entity().getId(), hostTagSearch.entity().getHostId(), JoinBuilder.JoinType.LEFTOUTER);
-        }
-
-        final SearchCriteria<HostVO> sc = sb.create();
-
-        if (keyword != null) {
-            final SearchCriteria<HostVO> ssc = _hostDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("status", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("type", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-
-        if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
-        }
-        if (type != null) {
-            sc.setParameters("type", "%" + type);
-        }
-        if (state != null) {
-            sc.setParameters("status", state);
-        }
-        if (zone != null) {
-            sc.setParameters("dataCenterId", zone);
-        }
-        if (pod != null) {
-            sc.setParameters("podId", pod);
-        }
-        if (cluster != null) {
-            sc.setParameters("clusterId", cluster);
-        }
-        if (hypervisorType != null) {
-            sc.setParameters("hypervisorType", hypervisorType);
-        }
-        if (hypervisorVersion != null) {
-            sc.setParameters("hypervisorVersion", hypervisorVersion);
-        }
-
-        if (resourceState != null) {
-            sc.setParameters("resourceState", resourceState);
-        }
-
-        if (haHosts != null && haTag != null && !haTag.isEmpty()) {
-            sc.setJoinParameters("hostTagSearch", "tag", haTag);
-        }
-
-        return _hostDao.searchAndCount(sc, searchFilter);
     }
 
     private Pair<List<HostVO>, Integer> searchForServers(final Long startIndex, final Long pageSize, final Object name, final Object type, final Object state, final Object zone, final Object pod,
