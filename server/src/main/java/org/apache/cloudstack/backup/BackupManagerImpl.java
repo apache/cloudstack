@@ -296,7 +296,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         try {
             if (backupProvider.assignVMToBackupOffering(vm, offering)) {
-                return true;
+                return vmInstanceDao.update(vm.getId(), vm);
             }
         } catch (Exception e) {
             LOG.error("Exception caught while assigning VM to backup offering by the backup provider", e);
