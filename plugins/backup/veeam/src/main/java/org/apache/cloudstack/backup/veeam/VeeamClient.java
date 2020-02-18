@@ -164,7 +164,7 @@ public class VeeamClient {
                 response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) &&
                 response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
             LOG.debug("HTTP request failed, status code is " + response.getStatusLine().getStatusCode() + ", response is: " + response.toString());
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to get valid response from Veeam B&R API call, please ask your administrator to diagnose and fix issues.");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Got invalid API status code returned by the Veeam server");
         }
     }
 
@@ -462,8 +462,8 @@ public class VeeamClient {
     public boolean removeVMFromVeeamJob(final String jobId, final String vmwareInstanceName, final String vmwareDcName) {
         LOG.debug("Trying to remove VM from backup offering that is a Veeam job: " + jobId);
         try {
-            final String heirarchyId = findDCHierarchy(vmwareDcName);
-            final String veeamVmRefId = lookupVM(heirarchyId, vmwareInstanceName);
+            final String hierarchyId = findDCHierarchy(vmwareDcName);
+            final String veeamVmRefId = lookupVM(hierarchyId, vmwareInstanceName);
             final HttpResponse response = get(String.format("/jobs/%s/includes", jobId));
             checkResponseOK(response);
             final ObjectMapper objectMapper = new XmlMapper();
