@@ -2661,7 +2661,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 }
             }
         }
-        return new Pair<>(result.first(), result.first().size());
+        return new Pair<>(result.first(), result.second());
     }
 
     private List<ServiceOfferingJoinVO> filterOfferingsOnCurrentTags(List<ServiceOfferingJoinVO> offerings, ServiceOfferingVO currentVmOffering) {
@@ -2872,7 +2872,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 }
             }
         }
-        return new Pair<>(filteredOfferings, filteredOfferings.size());
+        return new Pair<>(filteredOfferings, result.second());
     }
 
     @Override
@@ -3626,7 +3626,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             affinityGroups.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, domainId));
         }
 
-        return new Pair<List<AffinityGroupJoinVO>, Integer>(affinityGroups, affinityGroups.size());
+        return new Pair<List<AffinityGroupJoinVO>, Integer>(affinityGroups, uniqueGroupsPair.second());
 
     }
 

@@ -38,6 +38,12 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
     public List<DomainRouterVO> listByDataCenter(long dcId);
 
     /**
+     * gets the DomainRouterVO by role of the domain router
+     * @Param role Domain Router role
+     * @return list of DomainRouterVO
+     */
+    public List<DomainRouterVO> listByRole(Role role);
+    /**
      * gets the DomainRouterVO by account id and data center
      * @param account id of the user.
      * @Param dcId data center Id.

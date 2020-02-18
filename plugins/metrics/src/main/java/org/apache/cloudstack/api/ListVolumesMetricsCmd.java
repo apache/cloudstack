@@ -24,6 +24,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.metrics.MetricsService;
 import org.apache.cloudstack.response.VolumeMetricsResponse;
 
@@ -47,9 +48,10 @@ public class ListVolumesMetricsCmd extends ListVolumesCmd {
 
     @Override
     public void execute() {
-        final List<VolumeMetricsResponse> metricsResponses = metricsService.listVolumeMetrics(_queryService.searchForVolumes(this).getResponses());
+        ListResponse<VolumeResponse> volumes = _queryService.searchForVolumes(this);
+        final List<VolumeMetricsResponse> metricsResponses = metricsService.listVolumeMetrics(volumes.getResponses());
         ListResponse<VolumeMetricsResponse> response = new ListResponse<>();
-        response.setResponses(metricsResponses, metricsResponses.size());
+        response.setResponses(metricsResponses, volumes.getCount());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
