@@ -31,7 +31,7 @@
           return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }"
         @change="val => { this.handleSelectChange(val) }">
-        <a-select-option v-for="(opt) in selectOptions" :key="opt.name" :disabled="!opt.enabled">
+        <a-select-option v-for="(opt) in selectOptions" :key="opt.name" :disabled="opt.enabled === false">
           {{ opt.name || opt.description }}
         </a-select-option>
       </a-select>
@@ -82,7 +82,7 @@ export default {
     getSelectInitialValue () {
       if (this.arrayHasItems(this.selectOptions)) {
         for (var i = 0; i < this.selectOptions.length; i++) {
-          if (this.selectOptions[i].enabled === true) {
+          if (this.selectOptions[i].enabled !== false) {
             return this.selectOptions[i].name
           }
         }
