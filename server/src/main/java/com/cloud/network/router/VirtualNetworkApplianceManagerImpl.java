@@ -885,6 +885,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @DB
     protected void updateSite2SiteVpnConnectionState(final List<DomainRouterVO> routers) {
         for (final DomainRouterVO router : routers) {
+            if (router.getRole() == Role.INTERNAL_LB_VM) {
+                continue;
+            }
+
             final List<Site2SiteVpnConnectionVO> conns = _s2sVpnMgr.getConnectionsForRouter(router);
             if (conns == null || conns.isEmpty()) {
                 continue;
