@@ -24,6 +24,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
 
@@ -45,14 +46,12 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
-import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -62,11 +61,7 @@ import com.google.common.base.Strings;
 public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModifierActionWorker {
 
     @Inject
-    protected AccountManager accountManager;
-    @Inject
     protected VMInstanceDao vmInstanceDao;
-    @Inject
-    protected UserVmManager userVmManager;
 
     private ServiceOffering serviceOffering;
     private Long clusterSize;
@@ -316,7 +311,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         List<Long> removedVmIds = new ArrayList<>();
         while (i > kubernetesCluster.getMasterNodeCount()) {
             KubernetesClusterVmMapVO vmMapVO = originalVmList.get(i);
-            UserVm userVM = userVmDao.findById(vmMapVO.getVmId());
+            UserVmVO userVM = userVmDao.findById(vmMapVO.getVmId());
             if (!removeKubernetesClusterNode(publicIpAddress, sshPort, userVM, 3, 30000)) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster ID: %s, failed to remove Kubernetes node: %s running on VM ID: %s", kubernetesCluster.getUuid(), userVM.getHostName(), userVM.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
@@ -324,22 +319,11 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             removedVmIds.add(userVM.getId());
             try {
                 UserVm vm = userVmService.destroyVm(userVM.getId(), true);
-                if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
-                    logMessage(Level.WARN, String.format("VM '%s' is in state '%s' while destroying it during scaling Kubernetes cluster ID: %s. Retrying..."
-                            , vm.getInstanceName()
-                            , vm.getState().toString()
-                            , kubernetesCluster.getUuid()), null);
-                }
-                if (!VirtualMachine.State.Expunging.equals(vm.getState()) ||
-                        Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType())) {
-                    vm = userVmService.expungeVm(userVM.getId());
-                    if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
-                        logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, VM '%s' is now in state '%s'."
-                                , kubernetesCluster.getUuid()
-                                , vm.getInstanceName()
-                                , vm.getState().toString()),
-                                kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
-                    }
+                if (!userVmManager.expunge(userVM, CallContext.current().getCallingUserId(), CallContext.current().getCallingAccount())) {
+                    logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, unable to expunge VM '%s'."
+                            , kubernetesCluster.getUuid()
+                            , vm.getInstanceName()),
+                            kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
                 }
             } catch (ResourceUnavailableException e) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, unable to remove VM ID: %s"

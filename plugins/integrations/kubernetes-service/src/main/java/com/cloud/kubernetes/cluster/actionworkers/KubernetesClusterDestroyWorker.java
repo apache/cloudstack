@@ -30,7 +30,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
@@ -49,7 +48,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VirtualMachine;
 
 public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceModifierActionWorker {
 
@@ -87,21 +85,10 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 }
                 try {
                     UserVm vm = userVmService.destroyVm(vmID, true);
-                    if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
-                        LOGGER.warn(String.format("VM '%s' ID: %s should have been expunging by now but is '%s'. Retrying..."
+                    if (!userVmManager.expunge(userVM, CallContext.current().getCallingUserId(), CallContext.current().getCallingAccount())) {
+                        LOGGER.warn(String.format("Unable to expunge VM '%s' ID: %s, destroying Kubernetes cluster will probably fail"
                                 , vm.getInstanceName()
-                                , vm.getUuid()
-                                , vm.getState().toString()));
-                    }
-                    if (!VirtualMachine.State.Expunging.equals(vm.getState()) ||
-                            Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType())) {
-                        vm = userVmService.expungeVm(vmID);
-                        if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
-                            LOGGER.warn(String.format("VM '%s' ID: %s is in state: %s, Kubernetes cluster will probably fail"
-                                    , vm.getInstanceName()
-                                    , vm.getUuid()
-                                    , vm.getState().toString()));
-                        }
+                                , vm.getUuid()));
                     }
                     kubernetesClusterVmMapDao.expunge(clusterVM.getId());
                     if (LOGGER.isInfoEnabled()) {
@@ -110,26 +97,6 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 } catch (ResourceUnavailableException | ConcurrentOperationException e) {
                     LOGGER.warn(String.format("Failed to destroy VM ID: %s part of the Kubernetes cluster ID: %s cleanup. Moving on with destroying remaining resources provisioned for the Kubernetes cluster", userVM.getUuid(), kubernetesCluster.getUuid()), e);
                     return false;
-                }
-            }
-            final long startTime = System.currentTimeMillis();
-            while (System.currentTimeMillis() - startTime < 10 * 60 * 1000) {
-                vmDestroyed = true;
-                for (KubernetesClusterVmMapVO clusterVM : clusterVMs) {
-                    UserVmVO userVM = userVmDao.findById(clusterVM.getVmId());
-                    if (userVM != null && !userVM.isRemoved()) {
-                        LOGGER.info(String.format("Waiting for Kubernetes cluster ID: %s VMs to get expunged", kubernetesCluster.getUuid()));
-                        vmDestroyed = false;
-                        break;
-                    }
-                }
-                if (vmDestroyed) {
-                    break;
-                }
-                try {
-                    Thread.sleep(15 * 1000);
-                } catch (InterruptedException ie) {
-                    LOGGER.warn(String.format("Error while waiting for Kubernetes cluster ID: %s VMs to get expunged", kubernetesCluster.getUuid()), ie);
                 }
             }
         }

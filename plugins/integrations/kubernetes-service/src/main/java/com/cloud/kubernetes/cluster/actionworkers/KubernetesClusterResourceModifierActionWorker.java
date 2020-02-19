@@ -82,6 +82,7 @@ import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
@@ -110,6 +111,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected LoadBalancerDao loadBalancerDao;
     @Inject
     protected VMInstanceDao vmInstanceDao;
+    @Inject
+    protected UserVmManager userVmManager;
 
     protected String kubernetesClusterNodeNamePrefix;
 
