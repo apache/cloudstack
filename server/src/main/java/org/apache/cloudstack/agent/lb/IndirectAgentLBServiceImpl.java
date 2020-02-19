@@ -34,13 +34,10 @@ import org.apache.cloudstack.agent.lb.algorithm.IndirectAgentLBStaticAlgorithm;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -67,8 +64,6 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
 
     @Inject
     private HostDao hostDao;
-    @Inject
-    private MessageBus messageBus;
     @Inject
     private AgentManager agentManager;
 
@@ -208,7 +203,8 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     /////////////// Agent MSLB Configuration ///////////////////
     ////////////////////////////////////////////////////////////
 
-    private void propagateMSListToAgents() {
+    @Override
+    public void propagateMSListToAgents() {
         LOG.debug("Propagating management server list update to agents");
         final String lbAlgorithm = getLBAlgorithmName();
         final Map<Long, List<Long>> dcOrderedHostsMap = new HashMap<>();
@@ -227,22 +223,6 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         }
     }
 
-    private void configureMessageBusListener() {
-        messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, new MessageSubscriber() {
-            @Override
-            public void onPublishMessage(final String senderAddress, String subject, Object args) {
-                final String globalSettingUpdated = (String) args;
-                if (Strings.isNullOrEmpty(globalSettingUpdated)) {
-                    return;
-                }
-                if (globalSettingUpdated.equals(ApiServiceConfiguration.ManagementServerAddresses.key()) ||
-                        globalSettingUpdated.equals(IndirectAgentLBAlgorithm.key())) {
-                    propagateMSListToAgents();
-                }
-            }
-        });
-    }
-
     private void configureAlgorithmMap() {
         final List<org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm> algorithms = new ArrayList<>();
         algorithms.add(new IndirectAgentLBStaticAlgorithm());
@@ -258,7 +238,6 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         configureAlgorithmMap();
-        configureMessageBusListener();
         return true;
     }
 

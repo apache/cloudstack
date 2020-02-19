@@ -58,4 +58,5 @@
     <bean id="DiskOfferingDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDaoImpl" />
     <bean id="networkOfferingJoinDaoImpl" class="com.cloud.api.query.dao.NetworkOfferingJoinDaoImpl" />
     <bean id="networkOfferingDetailsDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDetailsDaoImpl" />
+    <bean id="indirectAgentLBImpl" class="org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl" />
 </beans>

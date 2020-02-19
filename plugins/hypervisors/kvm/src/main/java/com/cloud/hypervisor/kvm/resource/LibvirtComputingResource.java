@@ -106,6 +106,7 @@ import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.dao.impl.PropertiesStorage;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
@@ -1090,6 +1091,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         IscsiStorageCleanupMonitor isciCleanupMonitor = new IscsiStorageCleanupMonitor();
         final Thread cleanupMonitor = new Thread(isciCleanupMonitor);
         cleanupMonitor.start();
+
+        return true;
+    }
+
+    public boolean configureHostParams(final Map<String, String> params) {
+        final File file = PropertiesUtil.findConfigFile("agent.properties");
+        if (file == null) {
+            s_logger.error("Unable to find the file agent.properties");
+            return false;
+        }
+        // Save configurations in agent.properties
+        PropertiesStorage storage = new PropertiesStorage();
+        storage.configure("Storage", new HashMap<String, Object>());
+        if (params.get("router.aggregation.command.each.timeout") != null) {
+            String value = (String)params.get("router.aggregation.command.each.timeout");
+            Integer intValue = NumbersUtil.parseInt(value, 600);
+            storage.persist("router.aggregation.command.each.timeout", String.valueOf(intValue));
+        }
 
         return true;
     }

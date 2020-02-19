@@ -50,4 +50,7 @@ public interface IndirectAgentLB {
      * @return returns interval in seconds
      */
     Long getLBPreferredHostCheckInterval(Long clusterId);
+
+    void propagateMSListToAgents();
+
 }
