@@ -174,8 +174,8 @@ export default {
       })
     },
     loginSuccess (res) {
-      this.$router.push({ name: 'dashboard' })
       this.$message.loading('Login Successful. Discovering Features...', 5)
+      this.$router.push({ path: '/dashboard' }).catch(() => {})
     },
     requestFailed (err) {
       if (err && err.response && err.response.data && err.response.data.loginresponse) {
