@@ -91,7 +91,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
 
     private void logTransitStateToFailedIfNeededAndThrow(final Level logLevel, final String message, final Exception e) throws CloudRuntimeException {
         KubernetesCluster cluster = kubernetesClusterDao.findById(kubernetesCluster.getId());
-        if (cluster != null && KubernetesCluster.State.Scaling.equals(kubernetesCluster.getState())) {
+        if (cluster != null && KubernetesCluster.State.Scaling.equals(cluster.getState())) {
             logTransitStateAndThrow(logLevel, message, kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
         } else {
             logAndThrow(logLevel, message, e);
