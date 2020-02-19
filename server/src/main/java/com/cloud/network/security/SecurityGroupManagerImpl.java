@@ -59,6 +59,7 @@ import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SecurityGroupRulesCmd.IpPortAndProto;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.configuration.Config;
@@ -114,6 +115,8 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -378,6 +381,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     }
 
     @DB
+    @Override
     public void scheduleRulesetUpdateToHosts(final List<Long> affectedVms, final boolean updateSeqno, Long delayMs) {
         if (affectedVms.size() == 0) {
             return;
@@ -514,8 +518,35 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                 egressResult.add(ipPortAndProto);
             }
         }
-        return new SecurityGroupRulesCmd(guestIp, guestIp6, guestMac, vmName, vmId, signature, seqnum, ingressResult.toArray(new IpPortAndProto[ingressResult.size()]),
+        SecurityGroupRulesCmd cmd = new SecurityGroupRulesCmd(guestIp, guestIp6, guestMac, vmName, vmId, signature, seqnum, ingressResult.toArray(new IpPortAndProto[ingressResult.size()]),
                 egressResult.toArray(new IpPortAndProto[egressResult.size()]), secIps);
+
+        final VirtualMachineTO to = getVmTO(vmId);
+        cmd.setVmTO(to);
+        return cmd;
+    }
+
+    protected VirtualMachineTO getVmTO(Long vmId) {
+        final VMInstanceVO vm = _vmDao.findById(vmId);
+        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        final List<NicVO> nics = _nicDao.listByVmId(profile.getId());
+        Collections.sort(nics, new Comparator<NicVO>() {
+            @Override
+            public int compare(NicVO nic1, NicVO nic2) {
+                Long nicId1 = Long.valueOf(nic1.getDeviceId());
+                Long nicId2 = Long.valueOf(nic2.getDeviceId());
+                return nicId1.compareTo(nicId2);
+            }
+        });
+        for (final NicVO nic : nics) {
+            final Network network = _networkModel.getNetwork(nic.getNetworkId());
+            final NicProfile nicProfile =
+                    new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkModel.isSecurityGroupSupportedInNetwork(network),
+                            _networkModel.getNetworkTag(profile.getHypervisorType(), network));
+            profile.addNic(nicProfile);
+        }
+        final VirtualMachineTO to = _itMgr.toVmTO(profile);
+        return to;
     }
 
     protected void handleVmStopped(VMInstanceVO vm) {
@@ -1019,16 +1050,17 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                         agentId = vm.getHostId();
                         if (agentId != null) {
                             // get nic secondary ip address
-                            String privateIp = vm.getPrivateIpAddress();
-                            NicVO nic = _nicDao.findByIp4AddressAndVmId(privateIp, vm.getId());
+                            NicVO nic = _nicDao.findFirstNicForVM(vm.getId());
                             List<String> nicSecIps = null;
                             if (nic != null) {
                                 if (nic.getSecondaryIp()) {
                                     //get secondary ips of the vm
                                     nicSecIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nic.getId());
                                 }
+                            } else {
+                                return;
                             }
-                            SecurityGroupRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), nic.getIPv6Address(), vm.getPrivateIpAddress(), vm.getPrivateMacAddress(), vm.getId(),
+                            SecurityGroupRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), nic.getIPv4Address(), nic.getIPv6Address(), vm.getPrivateMacAddress(), vm.getId(),
                                     generateRulesetSignature(ingressRules, egressRules), seqnum, ingressRules, egressRules, nicSecIps);
                             Commands cmds = new Commands(cmd);
                             try {
@@ -1416,7 +1448,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             return true;
         }
 
-        String vmMac = vm.getPrivateMacAddress();
+        String vmMac = nic.getMacAddress();
         String vmName = vm.getInstanceName();
         if (vmMac == null || vmName == null) {
             throw new InvalidParameterValueException("vm name or vm mac can't be null");
