@@ -737,6 +737,25 @@
                                                 },
                                                 select: function(args) {
                                                     $.ajax({
+                                                        url: createURL("listKubernetesSupportedVersions"),
+                                                        data: {id: args.context.kubernetesclusters[0].kubernetesversionid},
+                                                        dataType: "json",
+                                                        async: false,
+                                                        success: function(json) {
+                                                            var versionObjs = json.listkubernetessupportedversionsresponse.kubernetessupportedversion;
+                                                            if (versionObjs != null && versionObjs.length > 0) {
+                                                                minCpu = 0;
+                                                                if (versionObjs[0].mincpunumber != null && versionObjs[0].mincpunumber != undefined) {
+                                                                    minCpu = versionObjs[0].mincpunumber;
+                                                                }
+                                                                minRamSize = 0;
+                                                                if (versionObjs[0].minmemory != null && versionObjs[0].minmemory != undefined) {
+                                                                    minRamSize = versionObjs[0].minmemory;
+                                                                }
+                                                            }
+                                                        }
+                                                    });
+                                                    $.ajax({
                                                         url: createURL("listServiceOfferings"),
                                                         dataType: "json",
                                                         async: true,
@@ -745,10 +764,13 @@
                                                             var items = json.listserviceofferingsresponse.serviceoffering;
                                                             if (items != null) {
                                                                 for (var i = 0; i < items.length; i++) {
-                                                                    offeringObjs.push({
-                                                                        id: items[i].id,
-                                                                        description: items[i].name
-                                                                    });
+                                                                    if (items[i].iscustomized == false &&
+                                                                        items[i].cpunumber >= minCpu && items[i].memory >= minRamSize) {
+                                                                        offeringObjs.push({
+                                                                            id: items[i].id,
+                                                                            description: items[i].name
+                                                                        });
+                                                                    }
                                                                 }
                                                             }
                                                             args.response.success({
