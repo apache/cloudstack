@@ -34,7 +34,7 @@ router.beforeEach((to, from, next) => {
   // start progress bar
   NProgress.start()
   to.meta && (typeof to.meta.title !== 'undefined' && setDocumentTitle(`${to.meta.title} - ${domTitle}`))
-  const validLogin = Vue.ls.get(ACCESS_TOKEN) || Cookies.get('sessionkey') || Cookies.get('userid')
+  const validLogin = Vue.ls.get(ACCESS_TOKEN) || Cookies.get('userid') || Cookies.get('userid', { path: '/client' })
   if (validLogin) {
     if (to.path === '/user/login') {
       next({ path: '/dashboard' })
