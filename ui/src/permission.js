@@ -22,6 +22,7 @@ import store from './store'
 
 import NProgress from 'nprogress' // progress bar
 import 'nprogress/nprogress.css' // progress bar style
+import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
 import { setDocumentTitle, domTitle } from '@/utils/domUtil'
 import { ACCESS_TOKEN } from '@/store/mutation-types'
@@ -41,6 +42,7 @@ router.beforeEach((to, from, next) => {
       NProgress.done()
     } else {
       if (Object.keys(store.getters.apis).length === 0) {
+        message.loading('Discovering features...', 5)
         store
           .dispatch('GetInfo')
           .then(apis => {

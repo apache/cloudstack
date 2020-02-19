@@ -28,11 +28,12 @@
       size="large"
       :tabBarStyle="{ textAlign: 'center', borderBottom: 'unset' }"
       @change="handleTabClick"
+      :animated="false"
     >
-      <a-tab-pane key="tab1">
+      <a-tab-pane key="cs">
         <span slot="tab">
           <a-icon type="safety" />
-          <b>CloudStack Login</b>
+          Portal Login
         </span>
         <a-form-item>
           <a-input
@@ -78,11 +79,18 @@
         </a-form-item>
 
       </a-tab-pane>
-      <a-tab-pane key="tab2" disabled>
+      <a-tab-pane key="saml" :disabled="idps.length === 0">
         <span slot="tab">
           <a-icon type="audit" />
-          <b>SAML</b>
+          Single-Sign-On
         </span>
+        <a-form-item>
+          <a-select v-decorator="['idp', { initialValue: selectedIdp } ]">
+            <a-select-option v-for="(idp, idx) in idps" :key="idx" :value="idp.id">
+              {{ idp.orgName }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
       </a-tab-pane>
     </a-tabs>
 
@@ -100,14 +108,18 @@
 </template>
 
 <script>
+import { api } from '@/api'
 import { mapActions } from 'vuex'
+import config from '@/config/settings'
 
 export default {
   components: {
   },
   data () {
     return {
-      customActiveKey: 'tab1',
+      idps: [],
+      selectedIdp: '',
+      customActiveKey: 'cs',
       loginBtn: false,
       loginType: 0,
       form: this.$form.createForm(this),
@@ -120,8 +132,19 @@ export default {
   },
   created () {
   },
+  mounted () {
+    this.fetchData()
+  },
   methods: {
     ...mapActions(['Login', 'Logout']),
+    fetchData () {
+      api('listIdps').then(response => {
+        if (response) {
+          this.idps = response.listidpsresponse.idp || []
+          this.selectedIdp = this.idps[0].id || ''
+        }
+      })
+    },
     // handler
     handleUsernameOrEmail (rule, value, callback) {
       const { state } = this
@@ -148,24 +171,33 @@ export default {
 
       state.loginBtn = true
 
-      const validateFieldsKey = customActiveKey === 'tab1' ? ['username', 'password', 'domain'] : ['mobile', 'captcha']
+      const validateFieldsKey = customActiveKey === 'cs' ? ['username', 'password', 'domain'] : ['idp']
 
       validateFields(validateFieldsKey, { force: true }, (err, values) => {
         if (!err) {
-          const loginParams = { ...values }
-          delete loginParams.username
-          loginParams[!state.loginType ? 'email' : 'username'] = values.username
-          loginParams.password = values.password
-          loginParams.domain = values.domain
-          if (!loginParams.domain) {
-            loginParams.domain = '/'
+          if (customActiveKey === 'cs') {
+            const loginParams = { ...values }
+            delete loginParams.username
+            loginParams[!state.loginType ? 'email' : 'username'] = values.username
+            loginParams.password = values.password
+            loginParams.domain = values.domain
+            if (!loginParams.domain) {
+              loginParams.domain = '/'
+            }
+            Login(loginParams)
+              .then((res) => this.loginSuccess(res))
+              .catch(err => this.requestFailed(err))
+              .finally(() => {
+                state.loginBtn = false
+              })
+          } else if (customActiveKey === 'saml') {
+            state.loginBtn = false
+            var samlUrl = config.apiBase + '?command=samlSso'
+            if (values.idp) {
+              samlUrl += ('&idpid=' + values.idp)
+            }
+            window.location.href = samlUrl
           }
-          Login(loginParams)
-            .then((res) => this.loginSuccess(res))
-            .catch(err => this.requestFailed(err))
-            .finally(() => {
-              state.loginBtn = false
-            })
         } else {
           setTimeout(() => {
             state.loginBtn = false
@@ -174,7 +206,6 @@ export default {
       })
     },
     loginSuccess (res) {
-      this.$message.loading('Login Successful. Discovering Features...', 5)
       this.$router.push({ path: '/dashboard' }).catch(() => {})
     },
     requestFailed (err) {
@@ -204,6 +235,7 @@ export default {
   }
 
   button.login-button {
+    margin-top: 8px;
     padding: 0 15px;
     font-size: 16px;
     height: 40px;

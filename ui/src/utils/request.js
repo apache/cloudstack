@@ -29,15 +29,18 @@ const service = axios.create({
 })
 
 const err = (error) => {
-  if (error.response) {
-    console.log('error has occurred')
-    console.log(error)
+  const response = error.response
+  if (response) {
+    console.log(response)
     const token = Vue.ls.get(ACCESS_TOKEN)
-    if (error.response.status === 403) {
-      const data = error.response.data
+    if (response.status === 403) {
+      const data = response.data
       notification.error({ message: 'Forbidden', description: data.message })
     }
-    if (error.response.status === 401) {
+    if (response.status === 401) {
+      if (response.config && response.config.params && ['listIdps'].includes(response.config.params.command)) {
+        return
+      }
       notification.error({ message: 'Unauthorized', description: 'Authorization verification failed' })
       if (token) {
         store.dispatch('Logout').then(() => {
@@ -47,7 +50,7 @@ const err = (error) => {
         })
       }
     }
-    if (error.response.status === 404) {
+    if (response.status === 404) {
       notification.error({ message: 'Not Found', description: 'Resource not found' })
       this.$router.push({ path: '/exception/404' })
     }
