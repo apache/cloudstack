@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import Cookies from 'js-cookie'
 import Vue from 'vue'
 import router from './router'
 import store from './store'
@@ -33,6 +34,10 @@ router.beforeEach((to, from, next) => {
   // start progress bar
   NProgress.start()
   to.meta && (typeof to.meta.title !== 'undefined' && setDocumentTitle(`${to.meta.title} - ${domTitle}`))
+  const sessionKeyCookie = Cookies.get('sessionkey')
+  if (sessionKeyCookie && !Vue.ls.get(ACCESS_TOKEN)) {
+    Vue.ls.set(ACCESS_TOKEN, sessionKeyCookie, 24 * 60 * 60 * 1000)
+  }
   if (Vue.ls.get(ACCESS_TOKEN)) {
     if (to.path === '/user/login') {
       next({ path: '/dashboard' })
