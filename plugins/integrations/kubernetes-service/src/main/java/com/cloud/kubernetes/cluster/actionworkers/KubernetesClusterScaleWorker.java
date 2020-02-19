@@ -329,6 +329,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                             , vm.getInstanceName()
                             , vm.getState().toString()
                             , kubernetesCluster.getUuid()), null);
+                }
+                if (!VirtualMachine.State.Expunging.equals(vm.getState()) ||
+                        Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType())) {
                     vm = userVmService.expungeVm(userVM.getId());
                     if (!VirtualMachine.State.Expunging.equals(vm.getState())) {
                         logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, VM '%s' is now in state '%s'."
