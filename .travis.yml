@@ -103,6 +103,7 @@ env:
              smoke/test_ssvm
              smoke/test_staticroles
              smoke/test_templates
+             smoke/test_update_security_group
              smoke/test_usage
              smoke/test_usage_events"
 
