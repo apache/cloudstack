@@ -140,9 +140,6 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackWithException;
-import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
@@ -1385,23 +1382,18 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         String[] vmNetworkNames = vmToImport.getNetworks();
         VirtualDevice[] nicDevices = vmToImport.getNicDevices();
 
-        return Transaction.execute(new TransactionCallbackWithException<VMInstanceVO, Exception>() {
-            @Override
-            public VMInstanceVO doInTransaction(TransactionStatus status) throws Exception {
-                Map<VirtualDisk, VolumeVO> disksMapping = getDisksMapping(backup, virtualDisks);
-                Map<String, NetworkVO> networksMapping = getNetworksMapping(vmNetworkNames, accountId, zoneId, domainId);
+        Map<VirtualDisk, VolumeVO> disksMapping = getDisksMapping(backup, virtualDisks);
+        Map<String, NetworkVO> networksMapping = getNetworksMapping(vmNetworkNames, accountId, zoneId, domainId);
 
-                long guestOsId = getImportingVMGuestOs(configSummary);
-                long serviceOfferingId = getImportingVMServiceOffering(configSummary, runtimeInfo);
-                long templateId = getImportingVMTemplate(virtualDisks, dcMo, vmInternalName, guestOsId, accountId, disksMapping, backup);
+        long guestOsId = getImportingVMGuestOs(configSummary);
+        long serviceOfferingId = getImportingVMServiceOffering(configSummary, runtimeInfo);
+        long templateId = getImportingVMTemplate(virtualDisks, dcMo, vmInternalName, guestOsId, accountId, disksMapping, backup);
 
-                VMInstanceVO vm = getVM(vmInternalName, templateId, guestOsId,
-                        serviceOfferingId, zoneId, accountId, userId, domainId);
-                syncVMVolumes(vm, virtualDisks, disksMapping, vmToImport, backup);
-                syncVMNics(nicDevices, dcMo, networksMapping, vm);
-                return vm;
-            }
-        });
+        VMInstanceVO vm = getVM(vmInternalName, templateId, guestOsId, serviceOfferingId, zoneId, accountId, userId, domainId);
+        syncVMVolumes(vm, virtualDisks, disksMapping, vmToImport, backup);
+        syncVMNics(nicDevices, dcMo, networksMapping, vm);
+
+        return vm;
     }
 
     @Override
