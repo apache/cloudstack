@@ -1201,19 +1201,17 @@ public class TemplateServiceImpl implements TemplateService {
         for (VMTemplateVO tmplt : rtngTmplts) {
             TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
             if (tmpltStore == null) {
-                if (tmplt.isDirectDownload()) {
-                    TemplateDataStoreVO directDownloadEntry = _vmTemplateStoreDao.createTemplateDirectDownloadEntry(tmplt.getId(), tmplt.getSize());
-                    _vmTemplateStoreDao.persist(directDownloadEntry);
-                } else {
-                    tmpltStore =
-                            new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null,
-                                    TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + '/', tmplt.getUrl());
-                    tmpltStore.setSize(0L);
-                    tmpltStore.setPhysicalSize(0); // no size information for
-                    // pre-seeded system vm templates
-                    tmpltStore.setDataStoreRole(store.getRole());
-                    _vmTemplateStoreDao.persist(tmpltStore);
+                if (_vmTemplateStoreDao.isTemplateMarkedForDirectDownload(tmplt.getId())) {
+                    continue;
                 }
+                tmpltStore =
+                        new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null,
+                                TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + '/', tmplt.getUrl());
+                tmpltStore.setSize(0L);
+                tmpltStore.setPhysicalSize(0); // no size information for
+                // pre-seeded system vm templates
+                tmpltStore.setDataStoreRole(store.getRole());
+                _vmTemplateStoreDao.persist(tmpltStore);
             }
         }
     }
