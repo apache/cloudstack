@@ -107,6 +107,7 @@ import com.cloud.agent.dao.impl.PropertiesStorage;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
@@ -147,6 +148,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.hypervisor.kvm.storage.KVMStorageProcessor;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.RequestWrapper;
@@ -3567,7 +3569,117 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    public boolean defaultNetworkRules(final Connect conn, final String vmName, final NicTO nic, final Long vmId, final String secIpStr) {
+    /**
+     * Function to destroy the security group rules applied to the nic's
+     * @param conn
+     * @param vmName
+     * @param nic
+     * @return
+     *      true   : If success
+     *      false  : If failure
+     */
+    public boolean destroyNetworkRulesForNic(final Connect conn, final String vmName, final NicTO nic) {
+        if (!_canBridgeFirewall) {
+            return false;
+        }
+        final List<String> nicSecIps = nic.getNicSecIps();
+        String secIpsStr;
+        final StringBuilder sb = new StringBuilder();
+        if (nicSecIps != null) {
+            for (final String ip : nicSecIps) {
+                sb.append(ip).append(SecurityGroupRulesCmd.RULE_COMMAND_SEPARATOR);
+            }
+            secIpsStr = sb.toString();
+        } else {
+            secIpsStr = "0" + SecurityGroupRulesCmd.RULE_COMMAND_SEPARATOR;
+        }
+        final List<InterfaceDef> intfs = getInterfaces(conn, vmName);
+        if (intfs.size() == 0 || intfs.size() < nic.getDeviceId()) {
+            return false;
+        }
+
+        final InterfaceDef intf = intfs.get(nic.getDeviceId());
+        final String brname = intf.getBrName();
+        final String vif = intf.getDevName();
+
+        final Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
+        cmd.add("destroy_network_rules_for_vm");
+        cmd.add("--vmname", vmName);
+        if (nic.getIp() != null) {
+            cmd.add("--vmip", nic.getIp());
+        }
+        cmd.add("--vmmac", nic.getMac());
+        cmd.add("--vif", vif);
+        cmd.add("--nicsecips", secIpsStr);
+
+        final String result = cmd.execute();
+        if (result != null) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Function to apply default network rules for a VM
+     * @param conn
+     * @param vm
+     * @param checkBeforeApply
+     * @return
+     */
+    public boolean applyDefaultNetworkRules(final Connect conn, final VirtualMachineTO vm, final boolean checkBeforeApply) {
+        NicTO[] nicTOs = new NicTO[] {};
+        if (vm != null && vm.getNics() != null) {
+            s_logger.debug("Checking default network rules for vm " + vm.getName());
+            nicTOs = vm.getNics();
+        }
+        for (NicTO nic : nicTOs) {
+            if (vm.getType() != VirtualMachine.Type.User) {
+                nic.setPxeDisable(true);
+            }
+        }
+        boolean isFirstNic = true;
+        for (final NicTO nic : nicTOs) {
+            if (nic.isSecurityGroupEnabled() || nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
+                if (vm.getType() != VirtualMachine.Type.User) {
+                    configureDefaultNetworkRulesForSystemVm(conn, vm.getName());
+                    break;
+                }
+                if (!applyDefaultNetworkRulesOnNic(conn, vm.getName(), vm.getId(), nic, isFirstNic, checkBeforeApply)) {
+                    s_logger.error("Unable to apply default network rule for nic " + nic.getName() + " for VM " + vm.getName());
+                    return false;
+                }
+                isFirstNic = false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Function to apply default network rules for a NIC
+     * @param conn
+     * @param vmName
+     * @param vmId
+     * @param nic
+     * @param isFirstNic
+     * @param checkBeforeApply
+     * @return
+     */
+    public boolean applyDefaultNetworkRulesOnNic(final Connect conn, final String vmName, final Long vmId, final NicTO nic, boolean isFirstNic, boolean checkBeforeApply) {
+        final List<String> nicSecIps = nic.getNicSecIps();
+        String secIpsStr;
+        final StringBuilder sb = new StringBuilder();
+        if (nicSecIps != null) {
+            for (final String ip : nicSecIps) {
+                sb.append(ip).append(SecurityGroupRulesCmd.RULE_COMMAND_SEPARATOR);
+            }
+            secIpsStr = sb.toString();
+        } else {
+            secIpsStr = "0" + SecurityGroupRulesCmd.RULE_COMMAND_SEPARATOR;
+        }
+        return defaultNetworkRules(conn, vmName, nic, vmId, secIpsStr, isFirstNic, checkBeforeApply);
+    }
+
+    public boolean defaultNetworkRules(final Connect conn, final String vmName, final NicTO nic, final Long vmId, final String secIpStr, final boolean isFirstNic, final boolean checkBeforeApply) {
         if (!_canBridgeFirewall) {
             return false;
         }
@@ -3595,6 +3707,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.add("--vif", vif);
         cmd.add("--brname", brname);
         cmd.add("--nicsecips", secIpStr);
+        if (isFirstNic) {
+            cmd.add("--isFirstNic");
+        }
+        if (checkBeforeApply) {
+            cmd.add("--check");
+        }
         final String result = cmd.execute();
         if (result != null) {
             return false;
@@ -3684,7 +3802,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    public boolean configureNetworkRulesVMSecondaryIP(final Connect conn, final String vmName, final String secIp, final String action) {
+    public boolean configureNetworkRulesVMSecondaryIP(final Connect conn, final String vmName, final String vmMac, final String secIp, final String action) {
 
         if (!_canBridgeFirewall) {
             return false;
@@ -3693,6 +3811,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
         cmd.add("network_rules_vmSecondaryIp");
         cmd.add("--vmname", vmName);
+        cmd.add("--vmmac", vmMac);
         cmd.add("--nicsecips", secIp);
         cmd.add("--action=" + action);
 

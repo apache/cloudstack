@@ -3354,6 +3354,16 @@
                                 label: 'label.description'
                             }
                         }],
+                        viewAll: {
+                            path: 'network.securityGroups',
+                            attachTo: 'id',
+                            label: 'label.security.groups',
+                            title: function(args) {
+                                var title = _l('label.security.groups');
+
+                                return title;
+                            }
+                        },
                         dataProvider: function(args) {
                             // args.response.success({data: args.context.instances[0].securitygroup});
                             $.ajax({

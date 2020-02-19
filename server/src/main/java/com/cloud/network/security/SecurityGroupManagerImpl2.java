@@ -177,16 +177,17 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
             Map<PortAndProto, Set<String>> egressRules = generateRulesForVM(userVmId, SecurityRuleType.EgressRule);
             Long agentId = vm.getHostId();
             if (agentId != null) {
-                String privateIp = vm.getPrivateIpAddress();
-                NicVO nic = _nicDao.findByIp4AddressAndVmId(privateIp, vm.getId());
+                NicVO nic = _nicDao.findFirstNicForVM(vm.getId());
                 List<String> nicSecIps = null;
                 if (nic != null) {
                     if (nic.getSecondaryIp()) {
                         nicSecIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nic.getId());
                     }
+                } else {
+                    return;
                 }
                 SecurityGroupRulesCmd cmd =
-                    generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), nic.getIPv6Address(), vm.getPrivateMacAddress(), vm.getId(), null, work.getLogsequenceNumber(),
+                    generateRulesetCmd(vm.getInstanceName(), nic.getIPv4Address(), nic.getIPv6Address(), vm.getPrivateMacAddress(), vm.getId(), null, work.getLogsequenceNumber(),
                         ingressRules, egressRules, nicSecIps);
                 cmd.setMsId(_serverId);
                 if (s_logger.isDebugEnabled()) {
