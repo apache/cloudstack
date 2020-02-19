@@ -168,6 +168,11 @@ const user = {
           cloudianUrl = state.cloudian.url + 'logout.htm?redirect=' + encodeURIComponent(window.location.href)
         }
 
+        Object.keys(Cookies.get()).forEach(cookieName => {
+          Cookies.remove(cookieName)
+          Cookies.remove(cookieName, { path: '/client' })
+        })
+
         commit('SET_TOKEN', '')
         commit('SET_PROJECT', {})
         commit('SET_APIS', {})
@@ -178,16 +183,6 @@ const user = {
         Vue.ls.remove(ASYNC_JOB_IDS)
 
         logout(state.token).then(() => {
-          Cookies.remove('account')
-          Cookies.remove('domainid')
-          Cookies.remove('role')
-          Cookies.remove('sessionkey')
-          Cookies.remove('timezone')
-          Cookies.remove('timezoneoffset')
-          Cookies.remove('userfullname')
-          Cookies.remove('userid')
-          Cookies.remove('username')
-
           if (cloudianUrl) {
             window.location.href = cloudianUrl
           } else {

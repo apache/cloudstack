@@ -34,11 +34,8 @@ router.beforeEach((to, from, next) => {
   // start progress bar
   NProgress.start()
   to.meta && (typeof to.meta.title !== 'undefined' && setDocumentTitle(`${to.meta.title} - ${domTitle}`))
-  const sessionKeyCookie = Cookies.get('sessionkey')
-  if (sessionKeyCookie && !Vue.ls.get(ACCESS_TOKEN)) {
-    Vue.ls.set(ACCESS_TOKEN, sessionKeyCookie, 24 * 60 * 60 * 1000)
-  }
-  if (Vue.ls.get(ACCESS_TOKEN)) {
+  const validLogin = Vue.ls.get(ACCESS_TOKEN) || Cookies.get('sessionkey') || Cookies.get('userid')
+  if (validLogin) {
     if (to.path === '/user/login') {
       next({ path: '/dashboard' })
       NProgress.done()
@@ -60,7 +57,7 @@ router.beforeEach((to, from, next) => {
           .catch(() => {
             notification.error({
               message: 'Error',
-              description: 'Exception caught while trying to discover APIs'
+              description: 'Exception caught while discoverying features'
             })
             store.dispatch('Logout').then(() => {
               next({ path: '/user/login', query: { redirect: to.fullPath } })
