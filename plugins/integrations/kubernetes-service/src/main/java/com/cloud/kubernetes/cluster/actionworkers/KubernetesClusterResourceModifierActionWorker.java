@@ -83,6 +83,7 @@ import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
 
 public class KubernetesClusterResourceModifierActionWorker extends KubernetesClusterActionWorker {
@@ -107,6 +108,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected ResourceManager resourceManager;
     @Inject
     protected LoadBalancerDao loadBalancerDao;
+    @Inject
+    protected VMInstanceDao vmInstanceDao;
 
     protected String kubernetesClusterNodeNamePrefix;
 
@@ -307,7 +310,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
-        String hostName = String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, nodeInstance);
+        String hostName = getKubernetesClusterNodeAvailableName(String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, nodeInstance));
         String k8sNodeConfig = null;
         try {
             k8sNodeConfig = getKubernetesNodeConfig(joinIp);
@@ -490,5 +493,15 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             prefix = prefix.substring(0, 40);
         }
         return prefix;
+    }
+
+    protected String getKubernetesClusterNodeAvailableName(final String hostName) {
+        String name = hostName;
+        int suffix = 1;
+        while (vmInstanceDao.findVMByHostName(name) != null) {
+            name = String.format("%s-%d", hostName, suffix);
+            suffix++;
+        }
+        return name;
     }
 }
