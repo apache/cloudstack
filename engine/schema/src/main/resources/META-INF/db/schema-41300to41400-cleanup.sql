@@ -23,3 +23,6 @@ DELETE FROM `cloud`.`configuration` WHERE name = 'host.maintenance.retries';
 
 -- Stop asking user (in the upgraded documentation) to remove a trailing slash for local KVM pool
 UPDATE `cloud`.`storage_pool` SET path="/var/lib/libvirt/images" WHERE path="/var/lib/libvirt/images/";
+
+-- remove (one of) duplicate unique indexes from Region table
+ALTER TABLE `region` DROP INDEX `id_3`;

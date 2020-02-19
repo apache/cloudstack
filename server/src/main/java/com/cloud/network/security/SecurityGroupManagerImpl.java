@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.command.user.securitygroup.CreateSecurityGroupC
 import org.apache.cloudstack.api.command.user.securitygroup.DeleteSecurityGroupCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupEgressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupIngressCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.UpdateSecurityGroupCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -879,6 +880,10 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
 
+        if (StringUtils.isBlank(name)) {
+            throw new InvalidParameterValueException("Security group name cannot be empty");
+        }
+
         if (_securityGroupDao.isNameInUse(owner.getId(), owner.getDomainId(), cmd.getSecurityGroupName())) {
             throw new InvalidParameterValueException("Unable to create security group, a group with name " + name + " already exists.");
         }
@@ -1115,6 +1120,60 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
         });
         s_logger.debug("Security group mappings are removed successfully for vm id=" + userVmId);
+    }
+
+    @DB
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_SECURITY_GROUP_UPDATE, eventDescription = "updating security group")
+    public SecurityGroup updateSecurityGroup(UpdateSecurityGroupCmd cmd) {
+        final Long groupId = cmd.getId();
+        final String newName = cmd.getName();
+        Account caller = CallContext.current().getCallingAccount();
+
+        SecurityGroupVO group = _securityGroupDao.findById(groupId);
+        if (group == null) {
+            throw new InvalidParameterValueException("Unable to find security group: " + groupId + "; failed to update security group.");
+        }
+
+        if (newName == null) {
+            s_logger.debug("security group name is not changed. id=" + groupId);
+            return group;
+        }
+
+        if (StringUtils.isBlank(newName)) {
+            throw new InvalidParameterValueException("Security group name cannot be empty");
+        }
+
+        // check permissions
+        _accountMgr.checkAccess(caller, null, true, group);
+
+        return Transaction.execute(new TransactionCallback<SecurityGroupVO>() {
+            @Override
+            public SecurityGroupVO doInTransaction(TransactionStatus status) {
+                SecurityGroupVO group = _securityGroupDao.lockRow(groupId, true);
+                if (group == null) {
+                    throw new InvalidParameterValueException("Unable to find security group by id " + groupId);
+                }
+
+                if (newName.equals(group.getName())) {
+                    s_logger.debug("security group name is not changed. id=" + groupId);
+                    return group;
+                } else if (newName.equalsIgnoreCase(SecurityGroupManager.DEFAULT_GROUP_NAME)) {
+                    throw new InvalidParameterValueException("The security group name " + SecurityGroupManager.DEFAULT_GROUP_NAME + " is reserved");
+                }
+
+                if (group.getName().equalsIgnoreCase(SecurityGroupManager.DEFAULT_GROUP_NAME)) {
+                    throw new InvalidParameterValueException("The default security group cannot be renamed");
+                }
+
+                group.setName(newName);
+                _securityGroupDao.update(groupId, group);
+
+                s_logger.debug("Updated security group id=" + groupId);
+
+                return group;
+            }
+        });
     }
 
     @DB

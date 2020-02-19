@@ -327,6 +327,7 @@ public class EventTypes {
     public static final String EVENT_SECURITY_GROUP_DELETE = "SG.DELETE";
     public static final String EVENT_SECURITY_GROUP_ASSIGN = "SG.ASSIGN";
     public static final String EVENT_SECURITY_GROUP_REMOVE = "SG.REMOVE";
+    public static final String EVENT_SECURITY_GROUP_UPDATE = "SG.UPDATE";
 
     // Host
     public static final String EVENT_HOST_RECONNECT = "HOST.RECONNECT";
