@@ -49,7 +49,7 @@ public interface DirectDownloadManager extends DirectDownloadService, PluggableS
             "Socket timeout (SO_TIMEOUT) in milliseconds for direct download",
             true);
 
-    static final ConfigKey<Integer> DirectDownloadConnectionRequestTimeout = new ConfigKey<Integer>("Advanced", Integer.class,
+    static final ConfigKey<Integer> DirectDownloadConnectionRequestTimeout = new ConfigKey<Integer>("Hidden", Integer.class,
             "direct.download.connection.request.timeout",
             String.valueOf(DEFAULT_DIRECT_DOWNLOAD_CONNECTION_REQUEST_TIMEOUT),
             "Requesting a connection from connection manager timeout in milliseconds for direct download",
