@@ -524,7 +524,7 @@ public class VeeamClient {
             Pair<Boolean, String> pairResult = SshHelper.sshExecute(veeamServerIp, veeamServerPort,
                     veeamServerUsername, null, veeamServerPassword,
                     transformPowerShellCommandList(cmds),
-                    120000, 120000, 900000);
+                    120000, 120000, 3600000);
             return pairResult;
         } catch (Exception e) {
             throw new CloudRuntimeException("Error while executing PowerShell commands due to: " + e.getMessage());
@@ -636,10 +636,11 @@ public class VeeamClient {
         final String datastoreId = dataStoreUuid.replace("-","");
         final List<String> cmds = Arrays.asList(
                 "$points = Get-VBRRestorePoint",
-                String.format("foreach($point in $points) { if ($point.Id -eq '%s') { break; } }",restorePointId),
+                String.format("foreach($point in $points) { if ($point.Id -eq '%s') { break; } }", restorePointId),
                 String.format("$server = Get-VBRServer -Name \"%s\"", hostIp),
                 String.format("$ds = Find-VBRViDatastore -Server:$server -Name \"%s\"", datastoreId),
-                String.format("Start-VBRRestoreVM -RestorePoint:$point -Server:$server -Datastore:$ds -VMName \"%s\"", restoreLocation)
+                String.format("$job = Start-VBRRestoreVM -RestorePoint:$point -Server:$server -Datastore:$ds -VMName \"%s\" -RunAsync", restoreLocation),
+                "while (-not (Get-VBRRestoreSession -Id $job.Id).IsCompleted) { Start-Sleep -Seconds 10 }"
         );
         Pair<Boolean, String> result = executePowerShellCommands(cmds);
         if (result == null || !result.first()) {
