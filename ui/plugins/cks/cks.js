@@ -696,12 +696,18 @@
                                                 if (json.getkubernetesclusterconfigresponse.clusterconfig != null &&
                                                     json.getkubernetesclusterconfigresponse.clusterconfig.configdata != null ) {
                                                     jsonObj = json.getkubernetesclusterconfigresponse.clusterconfig;
-                                                    clusterKubeConfig = jsonObj.configdata ;
+                                                    clusterKubeConfig = jsonObj.configdata;
+                                                    downloadClusterKubeConfig();
+                                                    args.response.success({});
+                                                } else {
+                                                    args.response.error("Unable to retrieve Kubernetes cluster config");
                                                 }
+                                            },
+                                            error: function(XMLHttpResponse) {
+                                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                args.response.error(errorMsg);
                                             }
                                         });
-                                        downloadClusterKubeConfig();
-                                        args.response.success({});
                                     },
                                     notification: {
                                         poll: function(args) {
