@@ -19,17 +19,17 @@ package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.KubernetesClusterResponse;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -40,7 +40,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListKubernetesClustersCmd extends BaseListCmd {
+public class ListKubernetesClustersCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger LOGGER = Logger.getLogger(ListKubernetesClustersCmd.class.getName());
     public static final String APINAME = "listKubernetesClusters";
 

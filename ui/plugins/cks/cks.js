@@ -1062,6 +1062,13 @@
                                                         ids: vmlist.join()
                                                     });
 
+                                                    if (items && items.length > 0 && items[0].projectid != null &&
+                                                        items[0].projectid != undefined && items[0].projectid.length > 0) {
+                                                        $.extend(data, {
+                                                            projectid: items[0].projectid
+                                                        });
+                                                    }
+
                                                     if (data.ids.length == 0) {
                                                         args.response.success({
                                                             data: []
@@ -1099,9 +1106,21 @@
                                 firewall: {
                                     title: 'label.firewall',
                                     custom: function(args) {
+                                        var data = {
+                                            id: args.context.kubernetesclusters[0].networkid,
+                                            listAll: true
+                                        }
+                                        if (args.context.kubernetesclusters[0].projectid != null &&
+                                            args.context.kubernetesclusters[0].projectid != undefined &&
+                                            args.context.kubernetesclusters[0].projectid.length > 0) {
+                                            $.extend(data, {
+                                                projectid: args.context.kubernetesclusters[0].projectid
+                                            });
+                                            $.extend(args.context, {"projectid": args.context.kubernetesclusters[0].projectid});
+                                        }
                                         $.ajax({
                                             url: createURL('listNetworks'),
-                                            data: {id: args.context.kubernetesclusters[0].networkid, listAll: true},
+                                            data: data,
                                             async: false,
                                             dataType: "json",
                                             success: function(json) {
@@ -1109,10 +1128,21 @@
                                                 $.extend(args.context, {"networks": [network]});
                                             }
                                         });
-
+                                        data = {
+                                            associatedNetworkId: args.context.kubernetesclusters[0].networkid,
+                                            listAll: true,
+                                            forvirtualnetwork: true
+                                        }
+                                        if (args.context.kubernetesclusters[0].projectid != null &&
+                                            args.context.kubernetesclusters[0].projectid != undefined &&
+                                            args.context.kubernetesclusters[0].projectid.length > 0) {
+                                            $.extend(data, {
+                                                projectid: args.context.kubernetesclusters[0].projectid
+                                            });
+                                        }
                                         $.ajax({
                                             url: createURL('listPublicIpAddresses'),
-                                            data: {associatedNetworkId: args.context.kubernetesclusters[0].networkid, listAll: true, forvirtualnetwork: true},
+                                            data: data,
                                             async: false,
                                             dataType: "json",
                                             success: function(json) {

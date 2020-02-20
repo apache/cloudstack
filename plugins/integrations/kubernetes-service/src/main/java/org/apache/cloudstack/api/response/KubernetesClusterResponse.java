@@ -34,92 +34,107 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "Name of the Kubernetes cluster")
+    @Param(description = "the name of the Kubernetes cluster")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "Description of the Kubernetes cluster")
+    @Param(description = "the description of the Kubernetes cluster")
     private String description;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "zone id")
+    @Param(description = "the name of the zone of the Kubernetes cluster")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "zone name")
+    @Param(description = "the name of the zone of the Kubernetes cluster")
     private String zoneName;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
-    @Param(description = "Service Offering id")
+    @Param(description = "the ID of the service offering of the Kubernetes cluster")
     private String serviceOfferingId;
 
     @SerializedName("serviceofferingname")
-    @Param(description = "the name of the service offering of the virtual machine")
+    @Param(description = "the name of the service offering of the Kubernetes cluster")
     private String serviceOfferingName;
 
     @SerializedName(ApiConstants.TEMPLATE_ID)
-    @Param(description = "template id")
+    @Param(description = "the ID of the template of the Kubernetes cluster")
     private String templateId;
 
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "network id details")
+    @Param(description = "the ID of the network of the Kubernetes cluster")
     private String networkId;
 
     @SerializedName(ApiConstants.ASSOCIATED_NETWORK_NAME)
-    @Param(description = "the name of the Network associated with the IP address")
+    @Param(description = "the name of the network of the Kubernetes cluster")
     private String associatedNetworkName;
 
     @SerializedName(ApiConstants.KUBERNETES_VERSION_ID)
-    @Param(description = "the ID of the Kubernetes version for the cluster")
+    @Param(description = "the ID of the Kubernetes version for the Kubernetes cluster")
     private String kubernetesVersionId;
 
     @SerializedName(ApiConstants.KUBERNETES_VERSION_NAME)
-    @Param(description = "the name of the Kubernetes version for the cluster")
+    @Param(description = "the name of the Kubernetes version for the Kubernetes cluster")
     private String kubernetesVersionName;
+
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account associated with the Kubernetes cluster")
+    private String accountName;
+
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the Kubernetes cluster")
+    private String projectId;
+
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the Kubernetes cluster")
+    private String projectName;
+
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the ID of the domain in which the Kubernetes cluster exists")
+    private String domainId;
+
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the name of the domain in which the Kubernetes cluster exists")
+    private String domainName;
 
     @SerializedName(ApiConstants.SSH_KEYPAIR)
     @Param(description = "keypair details")
     private String keypair;
 
     @SerializedName(ApiConstants.MASTER_NODES)
-    @Param(description = "master nodes count")
+    @Param(description = "the master nodes count for the Kubernetes cluster")
     private Long masterNodes;
 
     @SerializedName(ApiConstants.SIZE)
-    @Param(description = "cluster size")
+    @Param(description = "the size (worker nodes count) of the Kubernetes cluster")
     private Long clusterSize;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "state of the cluster")
+    @Param(description = "the state of the Kubernetes cluster")
     private String state;
 
     @SerializedName(ApiConstants.CPU_NUMBER)
-    @Param(description = "cluster cpu cores")
+    @Param(description = "the cpu cores of the Kubernetes cluster")
     private String cores;
 
     @SerializedName(ApiConstants.MEMORY)
-    @Param(description = "cluster size")
+    @Param(description = "the memory the Kubernetes cluster")
     private String memory;
 
     @SerializedName(ApiConstants.END_POINT)
-    @Param(description = "URL end point for the cluster")
+    @Param(description = "URL end point for the Kubernetes cluster")
     private String endpoint;
 
     @SerializedName(ApiConstants.CONSOLE_END_POINT)
-    @Param(description = "URL end point for the cluster UI")
+    @Param(description = "URL end point for the Kubernetes cluster dashboard UI")
     private String consoleEndpoint;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_IDS)
-    @Param(description = "the list of virtualmachine ids associated with this Kubernetes cluster")
+    @Param(description = "the list of virtualmachine IDs associated with this Kubernetes cluster")
     private List<String> virtualMachineIds;
 
-    @SerializedName(ApiConstants.USERNAME)
-    @Param(description = "Username with which Kubernetes cluster is setup")
-    private String username;
-
-    @SerializedName(ApiConstants.PASSWORD)
-    @Param(description = "Password with which Kubernetes cluster is setup")
-    private String password;
+    public KubernetesClusterResponse() {
+    }
 
     public String getName() {
         return name;
@@ -177,6 +192,59 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
         this.networkId = networkId;
     }
 
+    public String getAssociatedNetworkName() {
+        return associatedNetworkName;
+    }
+
+    public void setAssociatedNetworkName(String associatedNetworkName) {
+        this.associatedNetworkName = associatedNetworkName;
+    }
+
+    public String getKubernetesVersionId() {
+        return kubernetesVersionId;
+    }
+
+    public void setKubernetesVersionId(String kubernetesVersionId) {
+        this.kubernetesVersionId = kubernetesVersionId;
+    }
+
+    public String getKubernetesVersionName() {
+        return kubernetesVersionName;
+    }
+
+    public void setKubernetesVersionName(String kubernetesVersionName) {
+        this.kubernetesVersionName = kubernetesVersionName;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    @Override
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    @Override
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
+    @Override
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
+    }
+
+    @Override
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
+    }
+
     public String getKeypair() {
         return keypair;
     }
@@ -217,13 +285,21 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
         this.memory = memory;
     }
 
-    public String getState() { return  state;}
+    public String getState() {
+        return state;
+    }
 
-    public void setState(String state) {this.state = state;}
+    public void setState(String state) {
+        this.state = state;
+    }
 
-    public String getEndpoint() { return  endpoint;}
+    public String getEndpoint() {
+        return endpoint;
+    }
 
-    public void setEndpoint(String endpoint) {this.endpoint = endpoint;}
+    public void setEndpoint(String endpoint) {
+        this.endpoint = endpoint;
+    }
 
     public String getId() {
         return this.id;
@@ -241,74 +317,13 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
         this.serviceOfferingName = serviceOfferingName;
     }
 
-    public void setVirtualMachineIds(List<String> virtualMachineIds) { this.virtualMachineIds = virtualMachineIds;};
-
-    public void setUsername(String userName) { this.username = userName;}
-
-    public String getPassword() {
-        return password;
+    public void setVirtualMachineIds(List<String> virtualMachineIds) {
+        this.virtualMachineIds = virtualMachineIds;
     }
 
-    public void setPassword(String password) { this.password = password;}
-
-    public String getUsername() {
-        return username;
-    }
+    ;
 
     public List<String> getVirtualMachineIds() {
         return virtualMachineIds;
-    }
-
-    public String getAssociatedNetworkName() {
-        return associatedNetworkName;
-    }
-
-    public void setAssociatedNetworkName(String associatedNetworkName) {
-        this.associatedNetworkName = associatedNetworkName;
-    }
-
-    public String getKubernetesVersionId() {
-        return kubernetesVersionId;
-    }
-
-    public void setKubernetesVersionId(String kubernetesVersionId) {
-        this.kubernetesVersionId = kubernetesVersionId;
-    }
-
-    public String getKubernetesVersionName() {
-        return kubernetesVersionName;
-    }
-
-    public void setKubernetesVersionName(String kubernetesVersionName) {
-        this.kubernetesVersionName = kubernetesVersionName;
-    }
-
-    public KubernetesClusterResponse() {
-
-    }
-
-    @Override
-    public void setAccountName(String accountName) {
-
-    }
-
-    @Override
-    public void setProjectId(String projectId) {
-
-    }
-
-    @Override
-    public void setProjectName(String projectName) {
-
-    }
-
-    @Override
-    public void setDomainId(String domainId) {
-
-    }
-
-    @Override
-    public void setDomainName(String domainName) {
-
     }
 }

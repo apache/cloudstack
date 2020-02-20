@@ -72,6 +72,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -113,6 +114,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
+import com.cloud.projects.Project;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -126,11 +128,13 @@ import com.cloud.user.AccountService;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
@@ -577,6 +581,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             response.setKubernetesVersionId(version.getUuid());
             response.setKubernetesVersionName(version.getName());
         }
+        Account account = ApiDBUtils.findAccountById(kubernetesCluster.getAccountId());
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+            response.setProjectId(project.getUuid());
+            response.setProjectName(project.getName());
+        } else {
+            response.setAccountName(account.getAccountName());
+        }
+        Domain domain = ApiDBUtils.findDomainById(kubernetesCluster.getDomainId());
+        response.setDomainId(domain.getUuid());
+        response.setDomainName(domain.getName());
         response.setKeypair(kubernetesCluster.getKeyPair());
         response.setState(kubernetesCluster.getState().toString());
         response.setCores(String.valueOf(kubernetesCluster.getCores()));
@@ -1097,41 +1112,39 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final Long clusterId = cmd.getId();
         final String state = cmd.getState();
         final String name = cmd.getName();
-
+        final String keyword = cmd.getKeyword();
         List<KubernetesClusterResponse> responsesList = new ArrayList<KubernetesClusterResponse>();
-        if (state != null && !state.isEmpty()) {
-            if (!KubernetesCluster.State.Running.toString().equals(state) &&
-                    !KubernetesCluster.State.Stopped.toString().equals(state) &&
-                    !KubernetesCluster.State.Destroyed.toString().equals(state)) {
-                throw new InvalidParameterValueException("Invalid value for Kubernetes cluster state specified");
-            }
+        List<Long> permittedAccounts = new ArrayList<Long>();
+        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, Project.ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        accountManager.buildACLSearchParameters(caller, clusterId, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        Filter searchFilter = new Filter(KubernetesClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<KubernetesClusterVO> sb = kubernetesClusterDao.createSearchBuilder();
+        accountManager.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.IN);
+        SearchCriteria<KubernetesClusterVO> sc = sb.create();
+        accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        if (state != null) {
+            sc.setParameters("state", state);
+        }
+        if(keyword != null){
+            sc.setParameters("keyword", "%" + keyword + "%");
         }
         if (clusterId != null) {
-            KubernetesClusterVO cluster = kubernetesClusterDao.findById(clusterId);
-            if (cluster == null) {
-                throw new InvalidParameterValueException("Invalid Kubernetes cluster ID specified");
-            }
-            accountManager.checkAccess(caller, SecurityChecker.AccessType.ListEntry, false, cluster);
-            responsesList.add(createKubernetesClusterResponse(clusterId));
-        } else {
-            SearchCriteria<KubernetesClusterVO> sc = kubernetesClusterDao.createSearchCriteria();
-            Filter searchFilter = new Filter(KubernetesClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-            if (state != null && !state.isEmpty()) {
-                sc.addAnd("state", SearchCriteria.Op.EQ, state);
-            }
-            if (accountManager.isNormalUser(caller.getId())) {
-                sc.addAnd("accountId", SearchCriteria.Op.EQ, caller.getAccountId());
-            } else if (accountManager.isDomainAdmin(caller.getId())) {
-                sc.addAnd("domainId", SearchCriteria.Op.EQ, caller.getDomainId());
-            }
-            if (name != null && !name.isEmpty()) {
-                sc.addAnd("name", SearchCriteria.Op.LIKE, name);
-            }
-            List<KubernetesClusterVO> kubernetesClusters = kubernetesClusterDao.search(sc, searchFilter);
-            for (KubernetesClusterVO cluster : kubernetesClusters) {
-                KubernetesClusterResponse clusterResponse = createKubernetesClusterResponse(cluster.getId());
-                responsesList.add(clusterResponse);
-            }
+            sc.setParameters("id", clusterId);
+        }
+        if (name != null) {
+            sc.setParameters("name", name);
+        }
+        List<KubernetesClusterVO> kubernetesClusters = kubernetesClusterDao.search(sc, searchFilter);
+        for (KubernetesClusterVO cluster : kubernetesClusters) {
+            KubernetesClusterResponse clusterResponse = createKubernetesClusterResponse(cluster.getId());
+            responsesList.add(clusterResponse);
         }
         ListResponse<KubernetesClusterResponse> response = new ListResponse<KubernetesClusterResponse>();
         response.setResponses(responsesList);
