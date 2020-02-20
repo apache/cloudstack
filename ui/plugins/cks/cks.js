@@ -966,36 +966,32 @@
                                     custom : function (args) {
                                         var showAccess = function() {
                                             var state = args.context.kubernetesclusters[0].state;
-
-                                            if (state == "Created" || state == "Starting") { // Starting
+                                            if (state == "Created") { // Created
                                                 return jQuery('<br><p>').html("Kubernetes cluster setup is under progress, please check again in few minutes.");
+                                            } else if (state == "Error") { // Error
+                                                return jQuery('<br><p>').html("Kubernetes cluster is in error state, it cannot be accessed.");
+                                            } else if (state == "Destroying") { // Destroying
+                                                return jQuery('<br><p>').html("Kubernetes cluster is in destroying state, it cannot be accessed.");
+                                            } else if (state == "Destroyed") { // Destroyed
+                                                return jQuery('<br><p>').html("Kubernetes cluster is already destroyed, it cannot be accessed.");
                                             }
-
-                                            if (state == "Stopped" || state == "Stopping") { // Starting
-                                                return jQuery('<br><p>').html("Kubernetes cluster setup is under progress, please check again in few minutes.");
+                                            var data = {
+                                                id: args.context.kubernetesclusters[0].kubernetesversionid
                                             }
-
-                                            if (state == "Running") { // Running
-                                                var data = {
-                                                    id: args.context.kubernetesclusters[0].kubernetesversionid
-                                                }
-                                                var version = '';
-                                                $.ajax({
-                                                    url: createURL("listKubernetesSupportedVersions"),
-                                                    dataType: "json",
-                                                    data: data,
-                                                    async: false,
-                                                    success: function(json) {
-                                                        var jsonObj;
-                                                        if (json.listkubernetessupportedversionsresponse.kubernetessupportedversion != null) {
-                                                            version = json.listkubernetessupportedversionsresponse.kubernetessupportedversion[0].semanticversion;
-                                                        }
+                                            var version = '';
+                                            $.ajax({
+                                                url: createURL("listKubernetesSupportedVersions"),
+                                                dataType: "json",
+                                                data: data,
+                                                async: false,
+                                                success: function(json) {
+                                                    var jsonObj;
+                                                    if (json.listkubernetessupportedversionsresponse.kubernetessupportedversion != null) {
+                                                        version = json.listkubernetessupportedversionsresponse.kubernetessupportedversion[0].semanticversion;
                                                     }
-                                                });
-                                                return jQuery('<br><p>').html("Access Kubernetes cluster<br><br>Download cluster's kubeconfig file using action from Details tab.<br>Download kubectl tool for cluster's Kubernetes version from,<br>Linux: <a href='https://storage.googleapis.com/kubernetes-release/release/v" + version + "/bin/linux/amd64/kubectl'>https://storage.googleapis.com/kubernetes-release/release/v" + version + "/bin/linux/amd64/kubectl</a><br>MacOS: <a href='https://storage.googleapis.com/kubernetes-release/release/v" + version + "/bin/darwin/amd64/kubectl'>https://storage.googleapis.com/kubernetes-release/release/v" + version + "/bin/darwin/amd64/kubectl</a><br>Windows: <a href='https://storage.googleapis.com/kubernetes-release/release/v" + version + "/bin/windows/amd64/kubectl.exe'>https://storage.googleapis.com/kubernetes-release/release/v" + version + "/bin/windows/amd64/kubectl.exe</a><br><br>Using kubectl and kubeconfig file to access cluster<br><code>kubectl --kubeconfig /custom/path/kube.conf {COMMAND}</code><br><br>List pods<br><code>kubectl --kubeconfig /custom/path/kube.conf get pods --all-namespaces</code><br>List nodes<br><code>kubectl --kubeconfig /custom/path/kube.conf get nodes --all-namespaces</code><br>List services<br><code>kubectl --kubeconfig /custom/path/kube.conf get services --all-namespaces</code><br><br>Access dashboard web UI<br>Run proxy locally<br><code>kubectl --kubeconfig /custom/path/kube.conf proxy</code><br>Open URL in browser<br><code><a href='http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/'>http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/</a></code><br><br>Token for dashboard login can be retrieved using following command<br><code>kubectl --kubeconfig /custom/path/kube.conf describe secret $(kubectl --kubeconfig /custom/path/kube.conf get secrets -n kubernetes-dashboard | grep kubernetes-dashboard-token | awk '{print $1}') -n kubernetes-dashboard</code><br><br>More about accessing dashboard UI, https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui");
-                                            }
-
-                                            return jQuery('<br><p>').html("Kubernetes cluster is not in a stable state, please check again in few minutes.");
+                                                }
+                                            });
+                                            return jQuery('<br><p>').html("Access Kubernetes cluster<br><br>Download cluster's kubeconfig file using action from Details tab.<br>Download kubectl tool for cluster's Kubernetes version from,<br>Linux: <a href='https://storage.googleapis.com/kubernetes-release/release/v" + version + "/bin/linux/amd64/kubectl'>https://storage.googleapis.com/kubernetes-release/release/v" + version + "/bin/linux/amd64/kubectl</a><br>MacOS: <a href='https://storage.googleapis.com/kubernetes-release/release/v" + version + "/bin/darwin/amd64/kubectl'>https://storage.googleapis.com/kubernetes-release/release/v" + version + "/bin/darwin/amd64/kubectl</a><br>Windows: <a href='https://storage.googleapis.com/kubernetes-release/release/v" + version + "/bin/windows/amd64/kubectl.exe'>https://storage.googleapis.com/kubernetes-release/release/v" + version + "/bin/windows/amd64/kubectl.exe</a><br><br>Using kubectl and kubeconfig file to access cluster<br><code>kubectl --kubeconfig /custom/path/kube.conf {COMMAND}</code><br><br>List pods<br><code>kubectl --kubeconfig /custom/path/kube.conf get pods --all-namespaces</code><br>List nodes<br><code>kubectl --kubeconfig /custom/path/kube.conf get nodes --all-namespaces</code><br>List services<br><code>kubectl --kubeconfig /custom/path/kube.conf get services --all-namespaces</code><br><br>Access dashboard web UI<br>Run proxy locally<br><code>kubectl --kubeconfig /custom/path/kube.conf proxy</code><br>Open URL in browser<br><code><a href='http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/'>http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/</a></code><br><br>Token for dashboard login can be retrieved using following command<br><code>kubectl --kubeconfig /custom/path/kube.conf describe secret $(kubectl --kubeconfig /custom/path/kube.conf get secrets -n kubernetes-dashboard | grep kubernetes-dashboard-token | awk '{print $1}') -n kubernetes-dashboard</code><br><br>More about accessing dashboard UI, https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui");
                                         };
                                         return showAccess();
                                     }
