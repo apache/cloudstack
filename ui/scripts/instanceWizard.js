@@ -168,11 +168,16 @@
                 });
             }
 
-            return $.grep(selectedNetworks, function(network) {
+            var total = $.grep(selectedNetworks, function(network) {
                 return $.grep(network.service, function(service) {
                     return service.name == 'SecurityGroup';
                 }).length;
             }).length; //return total number of selected sg networks
+
+            if (total > 0 && selectedHypervisor == "KVM") {
+                return -1; // vm with multiple IPs is supported in KVM
+            }
+            return total;
         },
 
         // Data providers for each wizard step
@@ -1284,8 +1289,10 @@
 
                 if (selectedZoneObj.networktype == "Advanced" && selectedZoneObj.securitygroupsenabled == true) { // Advanced SG-enabled zone
                     var array2 = [];
+                    var array3 = [];
                     var myNetworks = $('.multi-wizard:visible form').data('my-networks'); //widget limitation: If using an advanced security group zone, get the guest networks like this
-                    var defaultNetworkId = $('.multi-wizard:visible form').find('input[name=defaultNetwork]:checked').val();
+                    var defaultNetworkId = $('.multi-wizard:visible form').data('defaultNetwork');
+                    //var defaultNetworkId = $('.multi-wizard:visible form').find('input[name=defaultNetwork]:checked').val();
 
                     var checkedNetworkIdArray;
                     if (typeof(myNetworks) == "object" && myNetworks.length != null) { //myNetworks is an array of string, e.g. ["203", "202"],
@@ -1302,17 +1309,43 @@
                         array2.push(defaultNetworkId);
                     }
 
-                    //then, add other checked networks
+                    var myNetworkIps = $('.multi-wizard:visible form').data('my-network-ips');
                     if (checkedNetworkIdArray.length > 0) {
                         for (var i = 0; i < checkedNetworkIdArray.length; i++) {
-                            if (checkedNetworkIdArray[i] != defaultNetworkId) //exclude defaultNetworkId that has been added to array2
+                            if (checkedNetworkIdArray[i] == defaultNetworkId) {
+                                array2.unshift(defaultNetworkId);
+
+                                var ipToNetwork = {
+                                    networkid: defaultNetworkId
+                                };
+                                if (myNetworkIps[i] != null && myNetworkIps[i].length > 0) {
+                                    $.extend(ipToNetwork, {
+                                        ip: myNetworkIps[i]
+                                    });
+                                }
+                                array3.unshift(ipToNetwork);
+                            } else {
                                 array2.push(checkedNetworkIdArray[i]);
+
+                                var ipToNetwork = {
+                                    networkid: checkedNetworkIdArray[i]
+                                };
+                                if (myNetworkIps[i] != null && myNetworkIps[i].length > 0) {
+                                    $.extend(ipToNetwork, {
+                                        ip: myNetworkIps[i]
+                                    });
+                                }
+                                array3.push(ipToNetwork);
+                            }
                         }
                     }
 
-                    $.extend(deployVmData, {
-                        networkids : array2.join(",")
-                    });
+                    for (var k = 0; k < array3.length; k++) {
+                        deployVmData["iptonetworklist[" + k + "].networkid"] = array3[k].networkid;
+                        if (array3[k].ip != undefined && array3[k].ip.length > 0) {
+                            deployVmData["iptonetworklist[" + k + "].ip"] = array3[k].ip;
+                        }
+                    }
                 }
             } else if (step6ContainerType == 'nothing-to-select') {
                 if ("vpc" in args.context) { //from VPC tier

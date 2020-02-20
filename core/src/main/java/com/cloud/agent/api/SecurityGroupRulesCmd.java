@@ -30,12 +30,13 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.utils.net.NetUtils;
 
 public class SecurityGroupRulesCmd extends Command {
     private static final String CIDR_LENGTH_SEPARATOR = "/";
-    private static final char RULE_TARGET_SEPARATOR = ',';
-    private static final char RULE_COMMAND_SEPARATOR = ';';
+    public static final char RULE_TARGET_SEPARATOR = ',';
+    public static final char RULE_COMMAND_SEPARATOR = ';';
     protected static final String EGRESS_RULE = "E:";
     protected static final String INGRESS_RULE = "I:";
     private static final Logger LOGGER = Logger.getLogger(SecurityGroupRulesCmd.class);
@@ -51,6 +52,7 @@ public class SecurityGroupRulesCmd extends Command {
     private List<IpPortAndProto> ingressRuleSet;
     private List<IpPortAndProto> egressRuleSet;
     private final List<String> secIps;
+    private VirtualMachineTO vmTO;
 
     public static class IpPortAndProto {
         private final String proto;
@@ -250,6 +252,14 @@ public class SecurityGroupRulesCmd extends Command {
 
     public Long getVmId() {
         return vmId;
+    }
+
+    public void setVmTO(VirtualMachineTO vmTO) {
+        this.vmTO = vmTO;
+    }
+
+    public VirtualMachineTO getVmTO() {
+        return vmTO;
     }
 
     /**

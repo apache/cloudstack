@@ -28,6 +28,7 @@ import org.libvirt.LibvirtException;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.SecurityGroupRuleAnswer;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.resource.CommandWrapper;
@@ -50,6 +51,12 @@ public final class LibvirtSecurityGroupRulesCommandWrapper extends CommandWrappe
 
             vif = nics.get(0).getDevName();
             brname = nics.get(0).getBrName();
+
+            final VirtualMachineTO vm = command.getVmTO();
+            if (!libvirtComputingResource.applyDefaultNetworkRules(conn, vm, true)) {
+                s_logger.warn("Failed to program default network rules for vm " + command.getVmName());
+                return new SecurityGroupRuleAnswer(command, false, "programming default network rules failed");
+            }
         } catch (final LibvirtException e) {
             return new SecurityGroupRuleAnswer(command, false, e.toString());
         }

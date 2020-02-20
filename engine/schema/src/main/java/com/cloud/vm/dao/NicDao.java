@@ -50,6 +50,8 @@ public interface NicDao extends GenericDao<NicVO, Long> {
 
     NicVO findDefaultNicForVM(long instanceId);
 
+    NicVO findFirstNicForVM(long instanceId);
+
     /**
      * @param networkId
      * @param instanceId

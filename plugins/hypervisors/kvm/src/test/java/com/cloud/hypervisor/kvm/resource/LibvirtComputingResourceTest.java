@@ -2413,7 +2413,7 @@ public class LibvirtComputingResourceTest {
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
-        when(libvirtComputingResource.configureNetworkRulesVMSecondaryIP(conn, command.getVmName(), command.getVmSecIp(), command.getAction())).thenReturn(true);
+        when(libvirtComputingResource.configureNetworkRulesVMSecondaryIP(conn, command.getVmName(), command.getVmMac(), command.getVmSecIp(), command.getAction())).thenReturn(true);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -2427,7 +2427,7 @@ public class LibvirtComputingResourceTest {
             fail(e.getMessage());
         }
         verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
-        verify(libvirtComputingResource, times(1)).configureNetworkRulesVMSecondaryIP(conn, command.getVmName(), command.getVmSecIp(), command.getAction());
+        verify(libvirtComputingResource, times(1)).configureNetworkRulesVMSecondaryIP(conn, command.getVmName(), command.getVmMac(), command.getVmSecIp(), command.getAction());
     }
 
     @SuppressWarnings("unchecked")
@@ -3021,6 +3021,8 @@ public class LibvirtComputingResourceTest {
         cidrs.add("0.0.0.0/0");
 
         final SecurityGroupRulesCmd command = new SecurityGroupRulesCmd(guestIp, guestIp6, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
+        final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+        command.setVmTO(vm);
 
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
         final Connect conn = Mockito.mock(Connect.class);
@@ -3053,6 +3055,7 @@ public class LibvirtComputingResourceTest {
         when(egressRuleSet[0].getEndPort()).thenReturn(22);
         when(egressRuleSet[0].getAllowedCidrs()).thenReturn(cidrs);
 
+        when(libvirtComputingResource.applyDefaultNetworkRules(conn, vm, true)).thenReturn(true);
         when(libvirtComputingResource.addNetworkRules(command.getVmName(), Long.toString(command.getVmId()), command.getGuestIp(), command.getGuestIp6(), command.getSignature(),
                 Long.toString(command.getSeqNum()), command.getGuestMac(), command.stringifyRules(), vif, brname, command.getSecIpsString())).thenReturn(true);
 

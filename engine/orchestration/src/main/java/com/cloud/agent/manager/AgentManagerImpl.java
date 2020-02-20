@@ -1790,4 +1790,45 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     }
 
+    protected Map<Long, List<Long>> getHostsPerZone() {
+        List<HostVO> allHosts = _resourceMgr.listAllHostsInAllZonesByType(Host.Type.Routing);
+        if (allHosts == null) {
+            return null;
+        }
+        Map<Long, List<Long>> hostsByZone = new HashMap<Long, List<Long>>();
+        for (HostVO host : allHosts) {
+            if (host.getHypervisorType() == HypervisorType.KVM || host.getHypervisorType() == HypervisorType.LXC) {
+                Long zoneId = host.getDataCenterId();
+                List<Long> hostIds = hostsByZone.get(zoneId);
+                if (hostIds == null) {
+                    hostIds = new ArrayList<Long>();
+                }
+                hostIds.add(host.getId());
+                hostsByZone.put(zoneId, hostIds);
+            }
+        }
+        return hostsByZone;
+    }
+
+    private void sendCommandToAgents(Map<Long, List<Long>> hostsPerZone, Map<String, String> params) {
+        SetHostParamsCommand cmds = new SetHostParamsCommand(params);
+        for (Long zoneId : hostsPerZone.keySet()) {
+            List<Long> hostIds = hostsPerZone.get(zoneId);
+            for (Long hostId : hostIds) {
+                Answer answer = easySend(hostId, cmds);
+                if (answer == null || !answer.getResult()) {
+                    s_logger.error("Error sending parameters to agent " + hostId);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void propagateChangeToAgents() {
+        s_logger.debug("Propagating changes on host parameters to the agents");
+        Map<Long, List<Long>> hostsPerZone = getHostsPerZone();
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("router.aggregation.command.each.timeout", _configDao.getValue("router.aggregation.command.each.timeout"));
+        sendCommandToAgents(hostsPerZone, params);
+    }
 }
