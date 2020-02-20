@@ -1805,7 +1805,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "creating VPC private gateway", create = true)
     public PrivateGateway createVpcPrivateGateway(final long vpcId, Long physicalNetworkId, final String broadcastUri, final String ipAddress, final String gateway,
-            final String netmask, final long gatewayOwnerId, final Long networkOfferingId, final Boolean isSourceNat, final Long aclId) throws ResourceAllocationException,
+            final String netmask, final long gatewayOwnerId, final Long networkOfferingId, final Boolean isSourceNat, final Long aclId, final Boolean bypassVlanOverlapCheck) throws ResourceAllocationException,
             ConcurrentOperationException, InsufficientCapacityException {
 
         // Validate parameters
@@ -1846,7 +1846,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     Network privateNtwk = null;
                     if (BroadcastDomainType.getSchemeValue(BroadcastDomainType.fromString(broadcastUri)) == BroadcastDomainType.Lswitch) {
                         final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
-                        privateNtwk = _ntwkDao.getPrivateNetwork(broadcastUri, cidr, gatewayOwnerId, dcId, networkOfferingId);
+                        privateNtwk = _ntwkDao.getPrivateNetwork(broadcastUri, cidr, gatewayOwnerId, dcId, networkOfferingId, vpcId);
                         // if the dcid is different we get no network so next we
                         // try to create it
                     }
@@ -1854,7 +1854,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         s_logger.info("creating new network for vpc " + vpc + " using broadcast uri: " + broadcastUri);
                         final String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
                         privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkIdFinal, broadcastUri, ipAddress, null, gateway, netmask,
-                                gatewayOwnerId, vpcId, isSourceNat, networkOfferingId);
+                                gatewayOwnerId, vpcId, isSourceNat, networkOfferingId, bypassVlanOverlapCheck);
                     } else { // create the nic/ip as createPrivateNetwork
                         // doesn''t do that work for us now
                         s_logger.info("found and using existing network for vpc " + vpc + ": " + broadcastUri);

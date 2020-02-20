@@ -40,6 +40,8 @@ import com.cloud.network.Network.State;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.vpc.VpcGatewayVO;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -79,6 +81,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     SearchBuilder<NetworkVO> OfferingAccountNetworkSearch;
 
     GenericSearchBuilder<NetworkVO, Long> GarbageCollectedSearch;
+    SearchBuilder<NetworkVO> PrivateNetworkSearch;
 
     @Inject
     ResourceTagDao _tagsDao;
@@ -96,6 +99,8 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     NetworkOpDao _ntwkOpDao;
     @Inject
     NetworkDetailsDao networkDetailsDao;
+    @Inject
+    VpcGatewayDao _vpcGatewayDao;
 
     TableGenerator _tgMacAddress;
 
@@ -251,6 +256,15 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         GarbageCollectedSearch.join("ntwkOffGC", join8, GarbageCollectedSearch.entity().getNetworkOfferingId(), join8.entity().getId(), JoinBuilder.JoinType.INNER);
         GarbageCollectedSearch.done();
 
+        PrivateNetworkSearch = createSearchBuilder();
+        PrivateNetworkSearch.and("cidr", PrivateNetworkSearch.entity().getCidr(), Op.EQ);
+        PrivateNetworkSearch.and("offering", PrivateNetworkSearch.entity().getNetworkOfferingId(), Op.EQ);
+        PrivateNetworkSearch.and("datacenter", PrivateNetworkSearch.entity().getDataCenterId(), Op.EQ);
+        PrivateNetworkSearch.and("broadcastUri", PrivateNetworkSearch.entity().getBroadcastUri(), Op.EQ);
+        final SearchBuilder<VpcGatewayVO> join10 = _vpcGatewayDao.createSearchBuilder();
+        join10.and("vpc", join10.entity().getVpcId(), Op.EQ);
+        PrivateNetworkSearch.join("vpcgateways", join10, PrivateNetworkSearch.entity().getId(), join10.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        PrivateNetworkSearch.done();
     }
 
     @Override
@@ -597,16 +611,17 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     }
 
     @Override
-    public NetworkVO getPrivateNetwork(final String broadcastUri, final String cidr, final long accountId, final long zoneId, Long networkOfferingId) {
+    public NetworkVO getPrivateNetwork(final String broadcastUri, final String cidr, final long accountId, final long zoneId, Long networkOfferingId, Long vpcId) {
         if (networkOfferingId == null) {
             networkOfferingId = _ntwkOffDao.findByUniqueName(NetworkOffering.SystemPrivateGatewayNetworkOffering).getId();
         }
-        final SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        final SearchCriteria<NetworkVO> sc = PrivateNetworkSearch.create();
         sc.setParameters("datacenter", zoneId);
         sc.setParameters("broadcastUri", broadcastUri);
         sc.setParameters("cidr", cidr);
         sc.setParameters("account", accountId);
         sc.setParameters("offering", networkOfferingId);
+        sc.setJoinParameters("vpcgateways", "vpc", vpcId);
         return findOneBy(sc);
     }
 
