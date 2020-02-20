@@ -587,6 +587,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
             } else {
                 template = _tmplFactory.getTemplate(vm.getIsoId(), DataStoreRole.Primary, dest.getDataCenter().getId());
+                if (template.isDirectDownload() && template.getInstallPath() == null) {
+                    s_logger.error("Error getting ISO for direct download");
+                    throw new CloudRuntimeException("Error getting ISO for direct download");
+                }
             }
 
             if (template == null){
