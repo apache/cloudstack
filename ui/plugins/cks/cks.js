@@ -1000,6 +1000,13 @@
                                     title: 'label.instances',
                                     listView: {
                                         section: 'clusterinstances',
+                                        preFilter: function(args) {
+                                            var hiddenFields = [];
+                                            if (!isAdmin()) {
+                                                hiddenFields.push('instancename');
+                                            }
+                                            return hiddenFields;
+                                        },
                                         fields: {
                                             name: {
                                                 label: 'label.name',
