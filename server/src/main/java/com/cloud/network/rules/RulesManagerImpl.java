@@ -24,6 +24,12 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.network.element.UserDataServiceProvider;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -145,6 +151,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     LoadBalancerVMMapDao _loadBalancerVMMapDao;
     @Inject
     VpcService _vpcSvc;
+    @Inject
+    VMTemplateDao _templateDao;
 
     protected void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller, Boolean ignoreVmState) {
         if (ipAddress == null || ipAddress.getAllocatedTime() == null || ipAddress.getAllocatedToAccountId() == null) {
@@ -597,6 +605,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 // enable static nat on the backend
                 s_logger.trace("Enabling static nat for ip address " + ipAddress + " and vm id=" + vmId + " on the backend");
                 if (applyStaticNatForIp(ipId, false, caller, false)) {
+                    applyUserData(vmId, network, guestNic);
                     performedIpAssoc = false; // ignor unassignIPFromVpcNetwork in finally block
                     return true;
                 } else {
@@ -618,6 +627,24 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             }
         }
         return false;
+    }
+
+    protected void applyUserData(long vmId, Network network, Nic guestNic) throws ResourceUnavailableException {
+        UserVmVO vm = _vmDao.findById(vmId);
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+        NicProfile nicProfile = new NicProfile(guestNic, network, null, null, null,
+                    _networkModel.isSecurityGroupSupportedInNetwork(network),
+                    _networkModel.getNetworkTag(template.getHypervisorType(), network));
+        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
+        UserDataServiceProvider element = _networkModel.getUserDataUpdateProvider(network);
+        if (element == null) {
+            s_logger.error("Can't find network element for " + Service.UserData.getName() + " provider needed for UserData update");
+        } else {
+            boolean result = element.saveUserData(network, nicProfile, vmProfile);
+            if (!result) {
+                    s_logger.error("Failed to update userdata for vm " + vm + " and nic " + guestNic);
+                }
+        }
     }
 
     protected void isIpReadyForStaticNat(long vmId, IPAddressVO ipAddress, String vmIp, Account caller, long callerUserId) throws NetworkRuleConflictException,
@@ -1243,7 +1270,12 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             }
         }
 
-        return disableStaticNat(ipId, caller, ctx.getCallingUserId(), false);
+        if (disableStaticNat(ipId, caller, ctx.getCallingUserId(), false)) {
+            Nic guestNic = _networkModel.getNicInNetworkIncludingRemoved(vmId, guestNetwork.getId());
+            applyUserData(vmId, guestNetwork, guestNic);
+            return true;
+        }
+        return false;
     }
 
     @Override
