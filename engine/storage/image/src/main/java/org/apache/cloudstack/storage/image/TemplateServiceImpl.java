@@ -629,6 +629,15 @@ public class TemplateServiceImpl implements TemplateService {
         }
     }
 
+    // mark template_zone_ref entries as removed for zone
+    @Override
+    public void dissociateTemplatesFromZone(long zoneId) {
+        List<VMTemplateZoneVO> zoneTemplates = _vmTemplateZoneDao.listByZoneId(zoneId);
+        for (VMTemplateZoneVO zoneTemplate : zoneTemplates) {
+            _vmTemplateZoneDao.remove(zoneTemplate.getId());
+        }
+    }
+
     protected Void createTemplateAsyncCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, TemplateApiResult> callback,
                                                TemplateOpContext<TemplateApiResult> context) {
         TemplateInfo template = context.template;
