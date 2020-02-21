@@ -1516,14 +1516,29 @@
 
                                 if (advSGFilter == 0) { //when total number of selected sg networks is 0, then 'Select Security Group' is skipped, go to step 6 directly
                                     showStep(6);
-                                } else { //when total number of selected sg networks > 0
+                                } else if (advSGFilter > 0) { //when total number of selected sg networks > 0
                                     if ($activeStep.find('input[type=checkbox]:checked').length > 1) { //when total number of selected networks > 1
                                         cloudStack.dialog.notice({
                                             message: "Can't create a vm with multiple networks one of which is Security Group enabled"
                                         });
                                         return false;
                                     }
+                                } else if (advSGFilter == -1) { // vm with multiple IPs is supported in KVM
+                                    var $selectNetwork = $activeStep.find('input[type=checkbox]:checked');
+                                    var myNetworkIps = [];
+                                    $selectNetwork.each(function() {
+                                        var $specifyIp = $(this).parent().find('.specify-ip input[type=text]');
+                                        myNetworkIps.push($specifyIp.val() == -1 ? null : $specifyIp.val());
+                                    });
+                                    $activeStep.closest('form').data('my-network-ips', myNetworkIps);
+                                    $selectNetwork.each(function() {
+                                        if ($(this).parent().find('input[type=radio]').is(':checked')) {
+                                            $activeStep.closest('form').data('defaultNetwork', $(this).val());
+                                            return;
+                                        }
+                                    })
                                 }
+
                             }
                         }
 

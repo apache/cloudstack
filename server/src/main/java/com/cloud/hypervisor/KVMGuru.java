@@ -132,7 +132,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
             guestOsMapping = _guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), getHypervisorType().toString(), host.getHypervisorVersion());
         }
         if (guestOsMapping == null || host == null) {
-            to.setPlatformEmulator("Other");
+            to.setPlatformEmulator(guestOS.getDisplayName() == null ? "Other" : guestOS.getDisplayName());
         } else {
             to.setPlatformEmulator(guestOsMapping.getGuestOsName());
         }

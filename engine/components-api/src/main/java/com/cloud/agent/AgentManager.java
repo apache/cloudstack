@@ -152,4 +152,6 @@ public interface AgentManager {
     void notifyMonitorsOfHostAboutToBeRemoved(long hostId);
 
     void notifyMonitorsOfRemovedHost(long hostId, long clusterId);
+
+    void propagateChangeToAgents();
 }

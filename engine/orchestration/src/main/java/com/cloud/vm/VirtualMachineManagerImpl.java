@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -166,6 +167,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.NetworkOffering;
@@ -333,6 +335,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private NetworkOfferingDetailsDao networkOfferingDetailsDao;
     @Inject
     private NetworkDetailsDao networkDetailsDao;
+    @Inject
+    private SecurityGroupManager _securityGroupManager;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -3140,11 +3144,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
 
             final Commands cmds = new Commands(Command.OnError.Stop);
-            cmds.addCommand(new RebootCommand(vm.getInstanceName(), getExecuteInSequence(vm.getHypervisorType())));
+            RebootCommand rebootCmd = new RebootCommand(vm.getInstanceName(), getExecuteInSequence(vm.getHypervisorType()));
+            rebootCmd.setVirtualMachine(getVmTO(vm.getId()));
+            cmds.addCommand(rebootCmd);
             _agentMgr.send(host.getId(), cmds);
 
             final Answer rebootAnswer = cmds.getAnswer(RebootAnswer.class);
             if (rebootAnswer != null && rebootAnswer.getResult()) {
+                if (dc.isSecurityGroupEnabled() && vm.getType() == VirtualMachine.Type.User) {
+                    List<Long> affectedVms = new ArrayList<Long>();
+                    affectedVms.add(vm.getId());
+                    _securityGroupManager.scheduleRulesetUpdateToHosts(affectedVms, true, null);
+                }
                 return;
             }
             s_logger.info("Unable to reboot VM " + vm + " on " + dest.getHost() + " due to " + (rebootAnswer == null ? " no reboot answer" : rebootAnswer.getDetails()));
@@ -3152,6 +3163,29 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.warn("Unable to send the reboot command to host " + dest.getHost() + " for the vm " + vm + " due to operation timeout", e);
             throw new CloudRuntimeException("Failed to reboot the vm on host " + dest.getHost());
         }
+    }
+
+    protected VirtualMachineTO getVmTO(Long vmId) {
+        final VMInstanceVO vm = _vmDao.findById(vmId);
+        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        final List<NicVO> nics = _nicsDao.listByVmId(profile.getId());
+        Collections.sort(nics, new Comparator<NicVO>() {
+            @Override
+            public int compare(NicVO nic1, NicVO nic2) {
+                Long nicId1 = Long.valueOf(nic1.getDeviceId());
+                Long nicId2 = Long.valueOf(nic2.getDeviceId());
+                return nicId1.compareTo(nicId2);
+            }
+        });
+        for (final NicVO nic : nics) {
+            final Network network = _networkModel.getNetwork(nic.getNetworkId());
+            final NicProfile nicProfile =
+                    new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkModel.isSecurityGroupSupportedInNetwork(network),
+                            _networkModel.getNetworkTag(profile.getHypervisorType(), network));
+            profile.addNic(nicProfile);
+        }
+        final VirtualMachineTO to = toVmTO(profile);
+        return to;
     }
 
     public Command cleanup(final VirtualMachine vm, Map<String, DpdkTO> dpdkInterfaceMapping) {
@@ -3670,7 +3704,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         //3) Remove the nic
         _networkMgr.removeNic(vmProfile, nic);
-        _nicsDao.expunge(nic.getId());
+        _nicsDao.remove(nic.getId());
         return true;
     }
 
