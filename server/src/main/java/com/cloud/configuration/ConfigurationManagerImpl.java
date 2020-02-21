@@ -73,7 +73,6 @@ import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -204,6 +203,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
@@ -375,7 +375,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     MessageBus messageBus;
     @Inject
-    private TemplateService templateService;
+    private VMTemplateZoneDao templateZoneDao;
 
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
@@ -1812,7 +1812,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
 
                 // delete template refs for this zone
-                templateService.dissociateTemplatesFromZone(zoneId);
+                templateZoneDao.deleteByZoneId(zoneId);
 
                 final boolean success = _zoneDao.remove(zoneId);
 
