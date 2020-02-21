@@ -151,26 +151,30 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     /**
      * Extract downloaded template into installPath, remove compressed file
      */
-    private void extractDownloadedTemplate(String downloadedTemplateFile, KVMStoragePool destPool, String templateUuid) {
-        String destinationFile = destPool.getLocalPath() + File.separator + templateUuid;
+    private void extractDownloadedTemplate(String downloadedTemplateFile, KVMStoragePool destPool, String destinationFile) {
         String extractCommand = getExtractCommandForDownloadedFile(downloadedTemplateFile, destinationFile);
         Script.runSimpleBashScript(extractCommand);
         Script.runSimpleBashScript("rm -f " + downloadedTemplateFile);
     }
 
     @Override
-    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, KVMStoragePool destPool) {
+    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, KVMStoragePool destPool, boolean isIso) {
         File sourceFile = new File(templateFilePath);
         if (!sourceFile.exists()) {
             throw new CloudRuntimeException("Direct download template file " + sourceFile + " does not exist on this host");
         }
         String templateUuid = UUID.randomUUID().toString();
+        if (isIso) {
+            templateUuid += ".iso";
+        }
+        String destinationFile = destPool.getLocalPath() + File.separator + templateUuid;
+
         if (destPool.getType() == StoragePoolType.NetworkFilesystem || destPool.getType() == StoragePoolType.Filesystem
             || destPool.getType() == StoragePoolType.SharedMountPoint) {
-            if (isTemplateExtractable(templateFilePath)) {
-                extractDownloadedTemplate(templateFilePath, destPool, templateUuid);
+            if (!isIso && isTemplateExtractable(templateFilePath)) {
+                extractDownloadedTemplate(templateFilePath, destPool, destinationFile);
             } else {
-                Script.runSimpleBashScript("mv " + templateFilePath + " " + templateUuid);
+                Script.runSimpleBashScript("mv " + templateFilePath + " " + destinationFile);
             }
         }
         return destPool.getPhysicalDisk(templateUuid);
