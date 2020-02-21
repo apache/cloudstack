@@ -60,18 +60,19 @@ public class MetalinkDirectTemplateDownloader extends HttpDirectTemplateDownload
         }
         boolean downloaded = false;
         int i = 0;
+        String downloadDir = getDirectDownloadTempPath(getTemplateId());
         do {
             if (!isRedownload()) {
                 setUrl(metalinkUrls.get(i));
             }
             s_logger.info("Trying to download template from url: " + getUrl());
             try {
+                setDownloadedFilePath(downloadDir + File.separator + getFileNameFromUrl());
                 File f = new File(getDownloadedFilePath());
                 if (f.exists()) {
                     f.delete();
                     f.createNewFile();
                 }
-                setDownloadedFilePath(f.getAbsolutePath());
                 request = createRequest(getUrl(), reqHeaders);
                 Pair<Boolean, String> downloadResult = super.downloadTemplate();
                 downloaded = downloadResult.first();
