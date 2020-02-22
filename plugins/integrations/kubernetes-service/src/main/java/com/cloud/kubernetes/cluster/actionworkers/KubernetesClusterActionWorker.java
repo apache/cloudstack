@@ -246,6 +246,15 @@ public class KubernetesClusterActionWorker {
         return userVmDao.findById(vmIds.get(0));
     }
 
+    protected String getMasterVmPrivateIp() {
+        String ip = null;
+        UserVm vm = fetchMasterVmIfMissing(null);
+        if (vm != null) {
+            ip = vm.getPrivateIpAddress();
+        }
+        return ip;
+    }
+
     protected Pair<String, Integer> getKubernetesClusterServerIpSshPort(UserVm masterVm) {
         int port = CLUSTER_NODES_DEFAULT_START_SSH_PORT;
         KubernetesClusterDetailsVO detail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS);
