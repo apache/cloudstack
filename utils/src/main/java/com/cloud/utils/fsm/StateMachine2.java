@@ -50,7 +50,11 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
     }
 
     public void addTransition(S currentState, E event, S toState) {
-      addTransition(new Transition<S, E>(currentState, event, toState, null));
+      addTransition(currentState, event, toState, false);
+    }
+
+    public void addTransition(S currentState, E event, S toState, boolean alertFlag) {
+      addTransition(new Transition<S, E>(currentState, event, toState, null, alertFlag));
     }
 
     @SafeVarargs
@@ -92,6 +96,10 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
 
     public S getNextState(S s, E e) throws NoTransitionException {
         return getTransition(s, e).getToState();
+    }
+
+    public boolean getTransitionAlertFlag(S s, E e) throws NoTransitionException {
+        return getTransition(s, e).getAlertFlag();
     }
 
     public Transition<S, E> getTransition(S s, E e) throws NoTransitionException {
@@ -171,15 +179,22 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
 
       private List<Impact> impacts;
 
+      private boolean alertFlag;
+
       public static enum Impact {
         USAGE
       }
 
       public Transition(S currentState, E event, S toState, List<Impact> impacts) {
+        this(currentState, event, toState, impacts, false);
+      }
+
+      public Transition(S currentState, E event, S toState, List<Impact> impacts, boolean alertFlag) {
         this.currentState = currentState;
         this.event = event;
         this.toState = toState;
         this.impacts = impacts;
+        this.alertFlag = alertFlag;
       }
 
       public S getCurrentState() {
@@ -199,6 +214,10 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
           return false;
         }
         return impacts.contains(impact);
+      }
+
+      public boolean getAlertFlag() {
+        return alertFlag;
       }
 
       @Override
