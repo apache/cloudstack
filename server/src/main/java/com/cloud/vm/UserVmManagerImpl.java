@@ -3225,21 +3225,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
             }
             // Only one network can be specified, and it should be security group enabled
-            if (networkIdList.size() > 1) {
+            if (networkIdList.size() > 1 && template.getHypervisorType() != HypervisorType.KVM && hypervisor != HypervisorType.KVM) {
                 throw new InvalidParameterValueException("Only support one network per VM if security group enabled");
             }
 
-            NetworkVO network = _networkDao.findById(networkIdList.get(0));
+            for (Long networkId : networkIdList) {
+                NetworkVO network = _networkDao.findById(networkId);
 
-            if (network == null) {
-                throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
+                if (network == null) {
+                    throw new InvalidParameterValueException("Unable to find network by id " + networkId);
+                }
+
+                if (!_networkModel.isSecurityGroupSupportedInNetwork(network)) {
+                    throw new InvalidParameterValueException("Network is not security group enabled: " + network.getId());
+                }
+
+                networkList.add(network);
             }
-
-            if (!_networkModel.isSecurityGroupSupportedInNetwork(network)) {
-                throw new InvalidParameterValueException("Network is not security group enabled: " + network.getId());
-            }
-
-            networkList.add(network);
             isSecurityGroupEnabledNetworkUsed = true;
 
         } else {
@@ -3253,10 +3255,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 boolean isSecurityGroupEnabled = _networkModel.isSecurityGroupSupportedInNetwork(network);
                 if (isSecurityGroupEnabled) {
-                    if (networkIdList.size() > 1) {
-                        throw new InvalidParameterValueException("Can't create a vm with multiple networks one of" + " which is Security Group enabled");
-                    }
-
                     isSecurityGroupEnabledNetworkUsed = true;
                 }
 

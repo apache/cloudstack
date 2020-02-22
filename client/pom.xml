@@ -30,7 +30,7 @@
     <repositories>
         <repository>
             <id>juniper-contrail</id>
-            <url>http://juniper.github.io/contrail-maven/snapshots</url>
+            <url>https://juniper.github.io/contrail-maven/snapshots</url>
         </repository>
     </repositories>
     <dependencies>

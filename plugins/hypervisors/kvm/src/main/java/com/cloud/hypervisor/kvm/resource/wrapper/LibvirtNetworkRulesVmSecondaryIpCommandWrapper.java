@@ -41,7 +41,7 @@ public final class LibvirtNetworkRulesVmSecondaryIpCommandWrapper extends Comman
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName());
-            result = libvirtComputingResource.configureNetworkRulesVMSecondaryIP(conn, command.getVmName(), command.getVmSecIp(), command.getAction());
+            result = libvirtComputingResource.configureNetworkRulesVMSecondaryIP(conn, command.getVmName(), command.getVmMac(), command.getVmSecIp(), command.getAction());
         } catch (final LibvirtException e) {
             s_logger.debug("Could not configure VM secondary IP! => " + e.getLocalizedMessage());
         }

@@ -803,7 +803,6 @@ class TestVMLifeCycle(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.small_offering.id,
-            mode=self.services["mode"]
         )
         vol1 = Volume.create(
             self.apiclient,
