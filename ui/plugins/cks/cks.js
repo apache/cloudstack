@@ -852,8 +852,16 @@
                                                             var items = [];
                                                             var versionObjs = json.listkubernetessupportedversionsresponse.kubernetessupportedversion;
                                                             if (versionObjs != null) {
+                                                                var clusterVersion = null;
+                                                                for (var j = 0; j < versionObjs.length; j++) {
+                                                                    if (versionObjs[j].id != args.context.kubernetesclusters[0].kubernetesversionid) {
+                                                                        clusterVersion = versionObjs[j];
+                                                                        break;
+                                                                    }
+                                                                }
                                                                 for (var i = 0; i < versionObjs.length; i++) {
                                                                     if (versionObjs[i].id != args.context.kubernetesclusters[0].kubernetesversionid &&
+                                                                        (clusterVersion == null || (clusterVersion != null && versionObjs[i].semanticversion != clusterVersion.semanticversion)) &&
                                                                         versionObjs[i].state == 'Enabled' && versionObjs[i].isostate == 'Ready') {
                                                                         items.push({
                                                                             id: versionObjs[i].id,
