@@ -106,15 +106,18 @@ class TestKubernetesCluster(cloudstackTestCase):
             "hypervisor": "kvm",
             "ostype": "CoreOS",
             "url": "http://staging.yadav.xyz/cks/templates/coreos_production_cloudstack_image-kvm.qcow2.bz2",
-            "requireshvm": "True",
             "ispublic": "True",
             "isextractable": "True"
         }
         # "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2"
         if cls.hypervisor.lower() == "vmware":
             cks_template_data["url"] = "http://staging.yadav.xyz/cks/templates/coreos_production_cloudstack_image-vmware.ova" # "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova"
+            cks_template_data["format"] = "OVA"
         elif cls.hypervisor.lower() == "xenserver":
             cks_template_data["url"] = "http://staging.yadav.xyz/cks/templates/coreos_production_cloudstack_image-xen.vhd.bz2" # "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2"
+            cks_template_data["format"] = "VHD"
+        elif cls.hypervisor.lower() == "kvm":
+            cks_template_data["requireshvm"] = "True"
         if cls.setup_failed == False:
             cls.cks_template = Template.register(
                                              cls.apiclient,
