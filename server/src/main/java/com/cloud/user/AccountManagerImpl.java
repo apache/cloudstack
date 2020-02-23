@@ -2680,7 +2680,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                         }
                     } else {
                         domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
-                        if (listAll) {
+                        if (listAll && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
                             domainIdRecursiveListProject.third(ListProjectResourcesCriteria.ListAllIncludingProjectResources);
                         }
                     }
