@@ -50,6 +50,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
@@ -125,11 +126,12 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         kubernetesClusterNodeNamePrefix = getKubernetesClusterNodeNamePrefix();
     }
 
-    private String getKubernetesNodeConfig(final String joinIp) throws IOException {
+    private String getKubernetesNodeConfig(final String joinIp, final boolean ejectIso) throws IOException {
         String k8sNodeConfig = readResourceFile("/conf/k8s-node.yml");
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
         final String joinIpKey = "{{ k8s_master.join_ip }}";
         final String clusterTokenKey = "{{ k8s_master.cluster.token }}";
+        final String ejectIsoKey = "{{ k8s.eject.iso }}";
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (!Strings.isNullOrEmpty(sshKeyPair)) {
@@ -141,6 +143,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         k8sNodeConfig = k8sNodeConfig.replace(sshPubKey, pubKey);
         k8sNodeConfig = k8sNodeConfig.replace(joinIpKey, joinIp);
         k8sNodeConfig = k8sNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
+        k8sNodeConfig = k8sNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
         /* genarate /.docker/config.json file on the nodes only if Kubernetes cluster is created to
          * use docker private registry */
         String dockerUserName = null;
@@ -316,7 +319,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         String hostName = getKubernetesClusterNodeAvailableName(String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, nodeInstance));
         String k8sNodeConfig = null;
         try {
-            k8sNodeConfig = getKubernetesNodeConfig(joinIp);
+            k8sNodeConfig = getKubernetesNodeConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(template.getHypervisorType()));
         } catch (IOException e) {
             logAndThrow(Level.ERROR, "Failed to read Kubernetes node configuration file", e);
         }

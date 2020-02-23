@@ -62,6 +62,7 @@ write-files:
       MAX_OFFLINE_INSTALL_ATTEMPTS=40
       offline_attempts=1
       MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
+      EJECT_ISO_FROM_OS={{ k8s.eject.iso }}
       crucial_cmd_attempts=1
       iso_drive_path=""
       while true; do
@@ -147,7 +148,7 @@ write-files:
         mkdir -p "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
         cp ${BINARIES_DIR}/*.yaml "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
         umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
-        if [ "$iso_drive_path" != "" ]; then
+        if [ "$EJECT_ISO_FROM_OS" = true ] && [ "$iso_drive_path" != "" ]; then
           eject "${iso_drive_path}"
         fi
       fi

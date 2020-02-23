@@ -17,9 +17,9 @@
 # under the License.
 
 # Version 1.14 and below needs extra flags with kubeadm upgrade node
-if [ $# -lt 2 ]; then
-    echo "Invalid input. Valid usage: ./upgrade-kubernetes.sh UPGRADE_VERSION IS_MASTER IS_OLD_VERSION"
-    echo "eg: ./upgrade-kubernetes.sh 1.16.3 true false"
+if [ $# -lt 4 ]; then
+    echo "Invalid input. Valid usage: ./upgrade-kubernetes.sh UPGRADE_VERSION IS_MASTER IS_OLD_VERSION IS_EJECT_ISO"
+    echo "eg: ./upgrade-kubernetes.sh 1.16.3 true false false"
     exit 1
 fi
 UPGRADE_VERSION="${1}"
@@ -30,6 +30,10 @@ fi
 IS_OLD_VERSION=""
 if [ $# -gt 2 ]; then
   IS_OLD_VERSION="${3}"
+fi
+EJECT_ISO_FROM_OS=false
+if [ $# -gt 3 ]; then
+  EJECT_ISO_FROM_OS="${4}"
 fi
 
 export PATH=$PATH:/opt/bin
@@ -123,7 +127,7 @@ if [ -d "$BINARIES_DIR" ]; then
   fi
 
   umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
-  if [ "$iso_drive_path" != "" ]; then
+  if [ "$EJECT_ISO_FROM_OS" = true ] && [ "$iso_drive_path" != "" ]; then
     eject "${iso_drive_path}"
   fi
 fi

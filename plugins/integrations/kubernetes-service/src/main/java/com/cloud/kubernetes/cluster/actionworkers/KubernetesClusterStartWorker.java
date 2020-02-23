@@ -44,6 +44,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
@@ -117,7 +118,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     }
 
     private String getKubernetesMasterConfig(final String masterIp, final String serverIp,
-                                             final String hostName, final boolean haSupported) throws IOException {
+                                             final String hostName, final boolean haSupported,
+                                             final boolean ejectIso) throws IOException {
         String k8sMasterConfig = readResourceFile("/conf/k8s-master.yml");
         final String apiServerCert = "{{ k8s_master.apiserver.crt }}";
         final String apiServerKey = "{{ k8s_master.apiserver.key }}";
@@ -125,6 +127,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
         final String clusterToken = "{{ k8s_master.cluster.token }}";
         final String clusterInitArgsKey = "{{ k8s_master.cluster.initargs }}";
+        final String ejectIsoKey = "{{ k8s.eject.iso }}";
         final List<String> addresses = new ArrayList<>();
         addresses.add(masterIp);
         if (!serverIp.equals(masterIp)) {
@@ -158,6 +161,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         initArgs += String.format("--apiserver-cert-extra-sans=%s", serverIp);
         k8sMasterConfig = k8sMasterConfig.replace(clusterInitArgsKey, initArgs);
+        k8sMasterConfig = k8sMasterConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
         return k8sMasterConfig;
     }
 
@@ -189,7 +193,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         boolean haSupported = isKubernetesVersionSupportsHA();
         String k8sMasterConfig = null;
         try {
-            k8sMasterConfig = getKubernetesMasterConfig(masterIp, serverIp, hostName, haSupported);
+            k8sMasterConfig = getKubernetesMasterConfig(masterIp, serverIp, hostName, haSupported, Hypervisor.HypervisorType.VMware.equals(template.getHypervisorType()));
         } catch (IOException e) {
             logAndThrow(Level.ERROR, "Failed to read Kubernetes master configuration file", e);
         }
@@ -204,12 +208,13 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return masterVm;
     }
 
-    private String getKubernetesAdditionalMasterConfig(final String joinIp) throws IOException {
+    private String getKubernetesAdditionalMasterConfig(final String joinIp, final boolean ejectIso) throws IOException {
         String k8sMasterConfig = readResourceFile("/conf/k8s-master-add.yml");
         final String joinIpKey = "{{ k8s_master.join_ip }}";
         final String clusterTokenKey = "{{ k8s_master.cluster.token }}";
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
         final String clusterHACertificateKey = "{{ k8s_master.cluster.ha.certificate.key }}";
+        final String ejectIsoKey = "{{ k8s.eject.iso }}";
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (!Strings.isNullOrEmpty(sshKeyPair)) {
@@ -222,6 +227,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         k8sMasterConfig = k8sMasterConfig.replace(joinIpKey, joinIp);
         k8sMasterConfig = k8sMasterConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
         k8sMasterConfig = k8sMasterConfig.replace(clusterHACertificateKey, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
+        k8sMasterConfig = k8sMasterConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
         return k8sMasterConfig;
     }
 
@@ -242,7 +248,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         String hostName = getKubernetesClusterNodeAvailableName(String.format("%s-master-%d", kubernetesClusterNodeNamePrefix, additionalMasterNodeInstance + 1));
         String k8sMasterConfig = null;
         try {
-            k8sMasterConfig = getKubernetesAdditionalMasterConfig(joinIp);
+            k8sMasterConfig = getKubernetesAdditionalMasterConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(template.getHypervisorType()));
         } catch (IOException e) {
             logAndThrow(Level.ERROR, "Failed to read Kubernetes master configuration file", e);
         }

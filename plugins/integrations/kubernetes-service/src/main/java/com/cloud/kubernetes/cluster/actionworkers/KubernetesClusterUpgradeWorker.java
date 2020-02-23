@@ -27,6 +27,7 @@ import java.util.List;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
@@ -71,9 +72,12 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         String nodeAddress = (index > 0 && sshPort == 22) ? vm.getPrivateIpAddress() : publicIpAddress;
         SshHelper.scpTo(nodeAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
                 "~/", upgradeScriptFile.getAbsolutePath(), "0755");
-        String cmdStr = String.format("sudo ./%s %s %s %s", upgradeScriptFile.getName(),
-                upgradeVersion.getSemanticVersion(), index == 0 ? "true" : "false",
-                KubernetesVersionManagerImpl.compareSemanticVersions(upgradeVersion.getSemanticVersion(), "1.15.0") < 0 ? "true" : "false");
+        String cmdStr = String.format("sudo ./%s %s %s %s %s",
+                upgradeScriptFile.getName(),
+                upgradeVersion.getSemanticVersion(),
+                index == 0 ? "true" : "false",
+                KubernetesVersionManagerImpl.compareSemanticVersions(upgradeVersion.getSemanticVersion(), "1.15.0") < 0 ? "true" : "false",
+                Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType()));
         return SshHelper.sshExecute(publicIpAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
                 cmdStr,
                 10000, 10000, 10 * 60 * 1000);
