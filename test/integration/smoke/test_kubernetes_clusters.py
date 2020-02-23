@@ -110,9 +110,11 @@ class TestKubernetesCluster(cloudstackTestCase):
             "isextractable": "True"
         }
         # "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2"
+        cks_template_data_details = []
         if cls.hypervisor.lower() == "vmware":
             cks_template_data["url"] = "http://staging.yadav.xyz/cks/templates/coreos_production_cloudstack_image-vmware.ova" # "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova"
             cks_template_data["format"] = "OVA"
+            cks_template_data_details = [{"keyboard":"us","nicAdapter":"Vmxnet3","rootDiskController":"pvscsi"}]
         elif cls.hypervisor.lower() == "xenserver":
             cks_template_data["url"] = "http://staging.yadav.xyz/cks/templates/coreos_production_cloudstack_image-xen.vhd.bz2" # "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2"
             cks_template_data["format"] = "VHD"
@@ -123,7 +125,8 @@ class TestKubernetesCluster(cloudstackTestCase):
                                              cls.apiclient,
                                              cks_template_data,
                                              zoneid=cls.zone.id,
-                                             hypervisor=cls.hypervisor
+                                             hypervisor=cls.hypervisor,
+                                             details=cks_template_data_details
                                             )
             cls.debug("Waiting for CKS template with ID %s to be ready" % cls.cks_template.id)
             try:
