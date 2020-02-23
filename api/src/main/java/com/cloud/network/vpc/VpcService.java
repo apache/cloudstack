@@ -166,7 +166,7 @@ public interface VpcService {
      * @throws ResourceAllocationException
      */
     public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, String gateway, String netmask, long gatewayOwnerId,
-            Long networkOfferingId, Boolean isSoruceNat, Long aclId) throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
+            Long networkOfferingId, Boolean isSoruceNat, Long aclId, Boolean bypassVlanOverlapCheck) throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
 
     /**
      * Applies VPC private gateway on the backend, so it becomes functional

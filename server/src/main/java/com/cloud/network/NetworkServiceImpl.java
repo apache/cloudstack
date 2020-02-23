@@ -4411,7 +4411,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Override
     @DB
     public Network createPrivateNetwork(final String networkName, final String displayText, long physicalNetworkId, String broadcastUriString, final String startIp, String endIp, final String gateway,
-            String netmask, final long networkOwnerId, final Long vpcId, final Boolean sourceNat, final Long networkOfferingId)
+            String netmask, final long networkOwnerId, final Long vpcId, final Boolean sourceNat, final Long networkOfferingId, final Boolean bypassVlanOverlapCheck)
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
 
         final Account owner = _accountMgr.getAccount(networkOwnerId);
@@ -4469,11 +4469,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     DataCenterVO dc = _dcDao.lockRow(pNtwk.getDataCenterId(), true);
 
                     //check if we need to create guest network
-                    Network privateNetwork = _networksDao.getPrivateNetwork(uriString, cidr, networkOwnerId, pNtwk.getDataCenterId(), networkOfferingId);
+                    Network privateNetwork = _networksDao.getPrivateNetwork(uriString, cidr, networkOwnerId, pNtwk.getDataCenterId(), networkOfferingId, vpcId);
                     if (privateNetwork == null) {
                         //create Guest network
-                        privateNetwork = _networkMgr.createGuestNetwork(ntwkOffFinal.getId(), networkName, displayText, gateway, cidr, uriString, false, null, owner, null, pNtwk,
-                                pNtwk.getDataCenterId(), ACLType.Account, null, vpcId, null, null, true, null, null,null);
+                        privateNetwork = _networkMgr.createPrivateNetwork(ntwkOffFinal.getId(), networkName, displayText, gateway, cidr, uriString, bypassVlanOverlapCheck, owner, pNtwk, vpcId);
                         if (privateNetwork != null) {
                             s_logger.debug("Successfully created guest network " + privateNetwork);
                         } else {
@@ -4482,10 +4481,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     } else {
                         s_logger.debug("Private network already exists: " + privateNetwork);
                         //Do not allow multiple private gateways with same Vlan within a VPC
-                        if (vpcId != null && vpcId.equals(privateNetwork.getVpcId())) {
-                            throw new InvalidParameterValueException("Private network for the vlan: " + uriString + " and cidr  " + cidr + "  already exists " + "for Vpc " + vpcId + " in zone "
+                        throw new InvalidParameterValueException("Private network for the vlan: " + uriString + " and cidr  " + cidr + "  already exists " + "for Vpc " + vpcId + " in zone "
                                     + _entityMgr.findById(DataCenter.class, pNtwk.getDataCenterId()).getName());
-                        }
                     }
                     if (vpcId != null) {
                         //add entry to private_ip_address table
