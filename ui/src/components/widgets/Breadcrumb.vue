@@ -26,7 +26,7 @@
         {{ $t(item.meta.title) }}
       </router-link>
       <span v-else-if="$route.params.id">
-        {{ $route.params.id }}
+        {{ resource.displayname || resource.displaytext || resource.name || resource.hostname || resource.username || resource.ipaddress || $route.params.id }}
       </span>
       <span v-else>
         {{ $t(item.meta.title) }}
@@ -56,6 +56,14 @@ import config from '@/config/settings'
 
 export default {
   name: 'Breadcrumb',
+  props: {
+    resource: {
+      type: Object,
+      default: function () {
+        return {}
+      }
+    }
+  },
   data () {
     return {
       name: '',

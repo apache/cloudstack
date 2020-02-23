@@ -20,7 +20,7 @@
     <a-card class="breadcrumb-card">
       <a-row>
         <a-col :span="14" style="padding-left: 6px">
-          <breadcrumb>
+          <breadcrumb :resource="resource">
             <a-tooltip placement="bottom" slot="end">
               <template slot="title">
                 {{ "Refresh" }}
