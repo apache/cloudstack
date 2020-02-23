@@ -325,19 +325,7 @@ export default {
   },
   watch: {
     '$route' (to, from) {
-      // The route config creates two groups of section components one for each
-      // related paths. Once these two groups of components are mounted, on
-      // route changes this method is called twice causing multiple API calls.
-      // The following fixes this issue by using logical XOR to identify the
-      // current component against related `to` route and the path the component
-      // was in and only calls fetchData if `to` route and currentPath are of
-      // the same group of routes.
-
-      const related = ['/project', '/event', '/dashboard']
-      const toPath = related.map(o => to.fullPath.includes(o)).includes(true)
-      const inPath = related.map(o => this.currentPath.includes(o)).includes(true)
-      this.needToFetchData = ((toPath ^ inPath) === 0)
-      if (this.needToFetchData && to.fullPath !== from.fullPath && !to.fullPath.includes('action/')) {
+      if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/')) {
         this.searchQuery = ''
         this.page = 1
         this.itemCount = 0

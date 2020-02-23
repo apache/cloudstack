@@ -37,7 +37,7 @@ export function generateRouterMap (section) {
     name: section.name,
     path: '/' + section.name,
     hidden: section.hidden,
-    meta: { title: section.title, keepAlive: true, icon: section.icon, docHelp: section.docHelp },
+    meta: { title: section.title, icon: section.icon, docHelp: section.docHelp },
     component: RouteView
   }
 
@@ -54,7 +54,6 @@ export function generateRouterMap (section) {
         meta: {
           title: child.title,
           name: child.name,
-          keepAlive: true,
           icon: child.icon,
           docHelp: child.docHelp,
           permission: child.permission,
@@ -76,7 +75,6 @@ export function generateRouterMap (section) {
             meta: {
               title: child.title,
               name: child.name,
-              keepAlive: true,
               icon: child.icon,
               docHelp: child.docHelp,
               permission: child.permission,
@@ -104,7 +102,6 @@ export function generateRouterMap (section) {
             meta: {
               title: child.title,
               name: child.name,
-              keepAlive: true,
               permission: [action.api]
             },
             component: action.component
@@ -122,7 +119,6 @@ export function generateRouterMap (section) {
       meta: {
         title: section.title,
         name: section.name,
-        keepAlive: true,
         icon: section.icon,
         docHelp: section.docHelp,
         hidden: section.hidden,
@@ -170,7 +166,6 @@ export const asyncRouterMap = [
         name: 'dashboard',
         meta: {
           title: 'Dashboard',
-          keepAlive: true,
           icon: 'dashboard',
           tabs: [
             {
