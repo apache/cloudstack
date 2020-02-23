@@ -39,9 +39,9 @@ export default {
           icon: 'plus',
           label: 'Create Volume',
           listView: true,
-          args: ['name', 'zoneid', 'diskofferingid']
-        },
-        {
+          popup: true,
+          component: () => import('@/views/storage/CreateVolume.vue')
+        }, {
           api: 'getUploadParamsForVolume',
           icon: 'cloud-upload',
           label: 'Upload Local Volume',
