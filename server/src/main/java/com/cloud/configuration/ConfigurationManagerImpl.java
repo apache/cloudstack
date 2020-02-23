@@ -1838,12 +1838,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     _vlanDao.remove(vlan.getId());
                 }
 
-                // delete template refs for this zone
-                templateZoneDao.deleteByZoneId(zoneId);
-
                 final boolean success = _zoneDao.remove(zoneId);
 
                 if (success) {
+                    // delete template refs for this zone
+                    templateZoneDao.deleteByZoneId(zoneId);
                     // delete all capacity records for the zone
                     _capacityDao.removeBy(null, zoneId, null, null, null);
                     // remove from dedicated resources
