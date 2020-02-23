@@ -506,7 +506,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      */
     @Override
     public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan, String startIp, String endIP, String gateway,
-        String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId) throws ResourceAllocationException, ConcurrentOperationException,
+        String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId, Boolean bypassVlanOverlapCheck) throws ResourceAllocationException, ConcurrentOperationException,
         InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
@@ -633,6 +633,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     public boolean destroyNetwork(long networkId, ReservationContext context, boolean forced) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    public Network createPrivateNetwork(final long networkOfferingId, final String name, final String displayText, final String gateway, final String cidr, final String vlanId, final boolean bypassVlanOverlapCheck, final Account owner, final PhysicalNetwork pNtwk, final Long vpcId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     /* (non-Javadoc)
