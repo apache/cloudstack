@@ -693,8 +693,11 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
      */
     private void waitForHostInMaintenance(long hostId) throws CloudRuntimeException, InterruptedException {
         HostVO host = hostDao.findById(hostId);
-        while (host.getResourceState() == ResourceState.PrepareForMaintenance) {
-            Thread.sleep(10000L);
+        long timeout = 1800 * 1000L;
+        long timeSpent = 0;
+        while (timeSpent < timeout && host.getResourceState() == ResourceState.PrepareForMaintenance) {
+            Thread.sleep(20000L);
+            timeSpent += 20000L;
             host = hostDao.findById(hostId);
         }
         if (host.getResourceState() == ResourceState.ErrorInMaintenance) {
