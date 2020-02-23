@@ -17,26 +17,32 @@
 
 <template>
   <a-spin :spinning="loading">
-    <div v-show="!showAddDetail">
-      <a-button type="dashed" style="width: 100%" icon="plus" @click="showAddDetail = true">Add Setting</a-button>
-    </div>
-    <div v-show="showAddDetail">
-      <a-auto-complete
-        style="width: 100%"
-        :filterOption="filterOption"
-        :value="newKey"
-        :dataSource="Object.keys(detailOptions)"
-        placeholder="Name"
-        @change="e => onAddInputChange(e, 'newKey')" />
-      <a-auto-complete
-        style="width: 100%"
-        :filterOption="filterOption"
-        :value="newValue"
-        :dataSource="detailOptions[newKey]"
-        placeholder="Value"
-        @change="e => onAddInputChange(e, 'newValue')" />
-      <a-button type="primary" style="width: 25%" icon="plus" @click="addDetail">Add Setting</a-button>
-      <a-button type="dashed" style="width: 25%" icon="close" @click="showAddDetail = false">Cancel</a-button>
+    <a-alert
+      v-if="disableSettings"
+      banner
+      message="Please stop the virtual machine to access settings" />
+    <div v-else>
+      <div v-show="!showAddDetail">
+        <a-button type="dashed" style="width: 100%" icon="plus" @click="showAddDetail = true">Add Setting</a-button>
+      </div>
+      <div v-show="showAddDetail">
+        <a-auto-complete
+          style="width: 100%"
+          :filterOption="filterOption"
+          :value="newKey"
+          :dataSource="Object.keys(detailOptions)"
+          placeholder="Name"
+          @change="e => onAddInputChange(e, 'newKey')" />
+        <a-auto-complete
+          style="width: 100%"
+          :filterOption="filterOption"
+          :value="newValue"
+          :dataSource="detailOptions[newKey]"
+          placeholder="Value"
+          @change="e => onAddInputChange(e, 'newValue')" />
+        <a-button type="primary" style="width: 25%" icon="plus" @click="addDetail">Add Setting</a-button>
+        <a-button type="dashed" style="width: 25%" icon="close" @click="showAddDetail = false">Cancel</a-button>
+      </div>
     </div>
     <a-list size="large">
       <a-list-item :key="index" v-for="(item, index) in details">
@@ -56,7 +62,7 @@
             <span v-else @click="showEditDetail(index)">{{ item.value }}</span>
           </span>
         </a-list-item-meta>
-        <div slot="actions">
+        <div slot="actions" v-if="!disableSettings">
           <a-button shape="circle" size="default" @click="updateDetail(index)" v-if="item.edit">
             <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
           </a-button>
@@ -67,7 +73,7 @@
             <a-icon type="edit" />
           </a-button>
         </div>
-        <div slot="actions">
+        <div slot="actions" v-if="!disableSettings">
           <a-popconfirm
             title="Delete setting?"
             @confirm="deleteDetail(index)"
@@ -101,6 +107,7 @@ export default {
       details: [],
       detailOptions: {},
       showAddDetail: false,
+      disableSettings: false,
       newKey: '',
       newValue: '',
       loading: false,
@@ -136,6 +143,7 @@ export default {
       api('listDetailOptions', { resourcetype: this.resourceType, resourceid: this.resource.id }).then(json => {
         this.detailOptions = json.listdetailoptionsresponse.detailoptions.details
       })
+      this.disableSettings = (this.$route.meta.name === 'vm' && this.resource.state !== 'Stopped')
     },
     showEditDetail (index) {
       this.details[index].edit = true
