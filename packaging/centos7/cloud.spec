@@ -402,6 +402,12 @@ chown -R cloud:cloud /var/log/cloudstack/management
 
 systemctl daemon-reload
 
+JAVA11_NAME=$(alternatives --display java | grep 'family java-11' | grep -Eo '^[^ ]+')
+if [ -z $JDK11_NAME ]; then
+  echo "Setting default Java to $JDK11_NAME"
+  alternatives --set java $JDK11_NAME
+fi
+
 %preun agent
 /sbin/service cloudstack-agent stop || true
 if [ "$1" == "0" ] ; then
@@ -439,6 +445,12 @@ fi
 
 systemctl daemon-reload
 
+JAVA11_NAME=$(alternatives --display java | grep 'family java-11' | grep -Eo '^[^ ]+')
+if [ -z $JDK11_NAME ]; then
+  echo "Setting default Java to $JDK11_NAME"
+  alternatives --set java $JDK11_NAME
+fi
+
 %pre usage
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
@@ -465,6 +477,12 @@ fi
 
 if [ ! -f "%{_sysconfdir}/%{name}/usage/key" ]; then
     ln -s %{_sysconfdir}/%{name}/management/key %{_sysconfdir}/%{name}/usage/key
+fi
+
+JAVA11_NAME=$(alternatives --display java | grep 'family java-11' | grep -Eo '^[^ ]+')
+if [ -z $JDK11_NAME ]; then
+  echo "Setting default Java to $JDK11_NAME"
+  alternatives --set java $JDK11_NAME
 fi
 
 %post marvin
