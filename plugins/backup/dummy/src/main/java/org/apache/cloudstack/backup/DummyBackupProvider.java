@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 
 public class DummyBackupProvider extends AdapterBase implements BackupProvider {
@@ -66,6 +67,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Override
     public boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering) {
         s_logger.debug("Creating VM backup for VM " + vm.getInstanceName() + " from backup offering " + backupOffering.getName());
+        ((VMInstanceVO) vm).setBackupExternalId("dummy-external-backup-id");
         return true;
     }
 
