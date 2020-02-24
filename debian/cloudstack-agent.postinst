@@ -53,6 +53,13 @@ case "$1" in
         fi
         cp -a /usr/share/cloudstack-agent/lib/libvirtqemuhook /etc/libvirt/hooks/qemu
 
+        # Check and switch to Java 11
+        JDK11_NAME=$(update-java-alternatives --list | grep 11 | head -1 |  grep -Eo '^[^ ]+')
+        if [ -z ${JDK11_NAME} ]; then
+          echo "Setting default JAVA to ${JDK11_NAME}"
+          update-java-alternatives -s ${JDK11_NAME} > /dev/null
+        fi
+
         ;;
 esac
 

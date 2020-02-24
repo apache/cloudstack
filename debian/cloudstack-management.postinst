@@ -63,6 +63,13 @@ if [ "$1" = configure ]; then
     grep -s -q "db.cloud.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.cloud.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
     grep -s -q "db.usage.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.usage.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
     grep -s -q "db.simulator.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.simulator.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
+
+    # Check and switch to Java 11
+    JDK11_NAME=$(update-java-alternatives --list | grep 11 | head -1 |  grep -Eo '^[^ ]+')
+    if [ -z ${JDK11_NAME} ]; then
+      echo "Setting default JAVA to ${JDK11_NAME}"
+      update-java-alternatives -s ${JDK11_NAME} > /dev/null
+    fi
 fi
 
 #DEBHELPER#
