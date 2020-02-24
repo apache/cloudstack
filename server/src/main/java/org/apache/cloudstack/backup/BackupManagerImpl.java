@@ -17,6 +17,7 @@
 package org.apache.cloudstack.backup;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -264,6 +265,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final VMInstanceVO vm = vmInstanceDao.findById(vmId);
         if (vm == null) {
             throw new CloudRuntimeException("Did not find VM by provided ID");
+        }
+
+        if (!Arrays.asList(VirtualMachine.State.Running, VirtualMachine.State.Stopped, VirtualMachine.State.Shutdown).contains(vm.getState())) {
+            throw new CloudRuntimeException("VM is not in running or stopped state");
         }
 
         validateForZone(vm.getDataCenterId());
