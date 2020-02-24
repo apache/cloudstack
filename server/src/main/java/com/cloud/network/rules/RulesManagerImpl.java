@@ -1123,6 +1123,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             revokeStaticNatRuleInternal(rule.getId(), caller, userId, false);
         }
 
+        IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
+        Long vmId = ipAddress.getAssociatedWithVmId();
+        Long networkId = ipAddress.getAssociatedWithNetworkId();
+
         boolean success = true;
 
         // revoke all port forwarding rules
@@ -1132,7 +1136,17 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         success = success && applyStaticNatRulesForIp(ipId,  _ipAddrMgr.RulesContinueOnError.value(), caller, true);
 
         // revoke static nat for the ip address
-        success = success && applyStaticNatForIp(ipId, false, caller, true);
+        if (vmId != null && networkId != null) {
+            Network guestNetwork = _networkModel.getNetwork(networkId);
+            Nic guestNic = _networkModel.getNicInNetwork(vmId, guestNetwork.getId());
+            if (applyStaticNatForIp(ipId, false, caller, true)) {
+                if (ipAddress.getState() == IpAddress.State.Releasing) {
+                    applyUserData(vmId, guestNetwork, guestNic);
+                }
+            } else {
+                success = false;
+            }
+        }
 
         // Now we check again in case more rules have been inserted.
         rules.addAll(_portForwardingDao.listByIpAndNotRevoked(ipId));

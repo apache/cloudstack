@@ -192,7 +192,7 @@ public class CommandSetupHelper {
         cmds.addCommand(
                 "vmdata",
                 generateVmDataCommand(router, nic.getIPv4Address(), vm.getUserData(), serviceOffering, zoneName,
-                        staticNatIp == null ? null : staticNatIp.getAddress().addr(), vm.getHostName(), vm.getInstanceName(),
+                        staticNatIp == null || staticNatIp.getState() != IpAddress.State.Allocated ? null : staticNatIp.getAddress().addr(), vm.getHostName(), vm.getInstanceName(),
                         vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId()));
     }
 
