@@ -2448,10 +2448,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // Fetch firewall Egress rules.
         if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
             firewallRulesEgress.addAll(_rulesDao.listByNetworkPurposeTrafficType(guestNetworkId, Purpose.Firewall, FirewallRule.TrafficType.Egress));
-            if (firewallRulesEgress.isEmpty()) {
-                //create egress default rule for VR
-                createDefaultEgressFirewallRule(firewallRulesEgress, guestNetworkId);
-            }
+            //create egress default rule for VR
+            createDefaultEgressFirewallRule(firewallRulesEgress, guestNetworkId);
         }
 
         // Re-apply firewall Egress rules
