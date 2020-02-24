@@ -124,6 +124,7 @@ Traffic Legend:
             raise self.server.EClose('Not accepted: Invalid signature')
         # Check client ip address
         if self.client_ip != self.client_address[0]:
+            self.log_message("Mismatched client ip (%s to management and %s to console)" % (self.client_ip, self.client_address[0]))
             self.send_close()
             raise self.server.EClose('Not accepted: Invalid client ip address')
         # Check timestamp

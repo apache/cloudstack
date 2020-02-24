@@ -64,7 +64,7 @@ function install_packages() {
     ipset \
     iptables-persistent \
     libtcnative-1 libssl-dev libapr1-dev \
-    python-flask \
+    python-flask python-numpy \
     haproxy \
     haveged \
     radvd \

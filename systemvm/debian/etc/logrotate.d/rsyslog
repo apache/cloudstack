@@ -21,6 +21,7 @@
 /var/log/lpr.log
 /var/log/cron.log
 /var/log/debug
+/var/log/novnc.log
 /var/log/messages
 {
 	rotate 10
