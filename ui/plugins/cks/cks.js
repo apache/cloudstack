@@ -854,7 +854,7 @@
                                                             if (versionObjs != null) {
                                                                 var clusterVersion = null;
                                                                 for (var j = 0; j < versionObjs.length; j++) {
-                                                                    if (versionObjs[j].id != args.context.kubernetesclusters[0].kubernetesversionid) {
+                                                                    if (versionObjs[j].id == args.context.kubernetesclusters[0].kubernetesversionid) {
                                                                         clusterVersion = versionObjs[j];
                                                                         break;
                                                                     }
