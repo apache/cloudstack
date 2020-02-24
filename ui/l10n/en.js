@@ -594,7 +594,7 @@ var dictionary = {
 "label.cpu.limits":"CPU limits",
 "label.cpu.mhz":"CPU (in MHz)",
 "label.cpu.utilized":"CPU Utilized",
-"label.create.backup":"Create Backup",
+"label.create.backup":"Start Backup",
 "label.create.VPN.connection":"Create VPN Connection",
 "label.create.nfs.secondary.staging.storage":"Create NFS Secondary Staging Store",
 "label.create.nfs.secondary.staging.store":"Create NFS secondary staging store",

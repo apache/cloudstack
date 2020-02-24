@@ -3234,7 +3234,6 @@
 
         var allowedActions = [];
         allowedActions.push("remove");
-        allowedActions.push("startBackup");
         allowedActions.push("restoreBackup");
         allowedActions.push("restoreBackupVolume");
         allowedActions.push("removeBackupChain");
