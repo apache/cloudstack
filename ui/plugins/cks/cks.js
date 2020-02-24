@@ -946,14 +946,6 @@
                                         },
                                         keypair: {
                                             label: 'label.ssh.key.pair'
-                                        },
-                                        username: {
-                                            label: 'label.username',
-                                            isCopyPaste: true
-                                        },
-                                        password: {
-                                            label: 'label.password',
-                                            isCopyPaste: true
                                         }
                                     }],
 
