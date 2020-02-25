@@ -23,6 +23,10 @@ For development, install tools and dependencies system-wide:
 
 ## Development
 
+Clone the repository:
+
+    git clone https://github.com/apache/cloudstack-primate.git
+
 Override the default `CS_URL` to a running CloudStack management server:
 
     cp .env.local.example .env.local
