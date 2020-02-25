@@ -26,6 +26,8 @@ For development, install tools and dependencies system-wide:
 Clone the repository:
 
     git clone https://github.com/apache/cloudstack-primate.git
+    cd cloudstack-primate
+    npm install
 
 Override the default `CS_URL` to a running CloudStack management server:
 
