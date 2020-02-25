@@ -2996,15 +2996,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         // If tags are null, then check if there are any other networks with null tags
         // of the same traffic type. If so then dont update the tags
         if (tags != null && tags.size() == 0) {
-            // Get all physical networks according to traffic type
-            Pair<List<PhysicalNetworkTrafficTypeVO>, Integer> result = _pNTrafficTypeDao
-                    .listAndCountBy(network.getId());
-            if (result.second() > 0) {
-                for (PhysicalNetworkTrafficTypeVO physicalNetworkTrafficTypeVO : result.first()) {
-                    TrafficType trafficType = physicalNetworkTrafficTypeVO.getTrafficType();
-                    checkForPhysicalNetworksWithoutTag(network, trafficType);
-                }
-            }
+            checkForPhysicalNetworksWithoutTag(network);
         }
 
         PhysicalNetwork.State networkState = null;
@@ -3035,6 +3027,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         _physicalNetworkDao.update(id, network);
         return network;
 
+    }
+
+    private void checkForPhysicalNetworksWithoutTag(PhysicalNetworkVO network) {
+        // Get all physical networks according to traffic type
+        Pair<List<PhysicalNetworkTrafficTypeVO>, Integer> result = _pNTrafficTypeDao
+                .listAndCountBy(network.getId());
+        if (result.second() > 0) {
+            for (PhysicalNetworkTrafficTypeVO physicalNetworkTrafficTypeVO : result.first()) {
+                TrafficType trafficType = physicalNetworkTrafficTypeVO.getTrafficType();
+                checkForPhysicalNetworksWithoutTag(network, trafficType);
+            }
+        }
     }
 
     @DB
@@ -3917,40 +3921,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
     @Override
     public long findPhysicalNetworkId(long zoneId, String tag, TrafficType trafficType) {
-        List<PhysicalNetworkVO> pNtwks = new ArrayList<PhysicalNetworkVO>();
-        if (trafficType != null) {
-            pNtwks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, trafficType);
-        } else {
-            pNtwks = _physicalNetworkDao.listByZone(zoneId);
-        }
-
-        if (pNtwks.isEmpty()) {
-            throw new InvalidParameterValueException("Unable to find physical network in zone id=" + zoneId);
-        }
-
-        if (pNtwks.size() > 1) {
-            Long pNtwkId = null;
-            for (PhysicalNetwork pNtwk : pNtwks) {
-                if (pNtwk.getTags().isEmpty() && tag == null) {
-                    s_logger.debug("Found physical network id=" + pNtwk.getId() + " with null tag");
-                    if (pNtwkId != null) {
-                        throw new CloudRuntimeException("There is more than 1 physical network with empty tag in the zone id=" + zoneId);
-                    }
-                    pNtwkId = pNtwk.getId();
-                }
-                if (pNtwk.getTags().contains(tag)) {
-                    s_logger.debug("Found physical network id=" + pNtwk.getId() + " based on requested tags " + tag);
-                    pNtwkId = pNtwk.getId();
-                    break;
-                }
-            }
-            if (pNtwkId == null) {
-                throw new InvalidParameterValueException("Unable to find physical network which match the tags " + tag);
-            }
-            return pNtwkId;
-        } else {
-            return pNtwks.get(0).getId();
-        }
+        return _networkModel.findPhysicalNetworkId(zoneId, tag, trafficType);
     }
 
     /**

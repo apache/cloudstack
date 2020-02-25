@@ -1154,28 +1154,31 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         }
 
         if (pNtwks.size() > 1) {
-            Long pNtwkId = null;
-            for (PhysicalNetwork pNtwk : pNtwks) {
-                if (pNtwk.getTags().isEmpty() && tag == null) {
-                    s_logger.debug("Found physical network id=" + pNtwk.getId() + " with null tag");
-                    if (pNtwkId != null) {
-                        throw new CloudRuntimeException("There is more than 1 physical network with empty tag in the zone id=" + zoneId);
-                    }
-                    pNtwkId = pNtwk.getId();
-                }
-                if (pNtwk.getTags().contains(tag)) {
-                    s_logger.debug("Found physical network id=" + pNtwk.getId() + " based on requested tags " + tag);
-                    pNtwkId = pNtwk.getId();
-                    break;
-                }
-            }
-            if (pNtwkId == null) {
-                throw new InvalidParameterValueException("Unable to find physical network which match the tags " + tag);
-            }
-            return pNtwkId;
+            return getPhysicalNetworkId(zoneId, pNtwks, tag);
         } else {
             return pNtwks.get(0).getId();
         }
+    }
+
+    private Long getPhysicalNetworkId(long zoneId, List<PhysicalNetworkVO> pNtwks, String tag) {
+        Long pNtwkId = null;
+        for (PhysicalNetwork pNtwk : pNtwks) {
+            if (tag == null && pNtwk.getTags().isEmpty()) {
+                s_logger.debug("Found physical network id=" + pNtwk.getId() + " with null tag");
+                if (pNtwkId != null) {
+                    throw new CloudRuntimeException("There is more than 1 physical network with empty tag in the zone id=" + zoneId);
+                }
+                pNtwkId = pNtwk.getId();
+            } else if (tag != null && pNtwk.getTags().contains(tag)) {
+                s_logger.debug("Found physical network id=" + pNtwk.getId() + " based on requested tags " + tag);
+                pNtwkId = pNtwk.getId();
+                break;
+            }
+        }
+        if (pNtwkId == null) {
+            throw new InvalidParameterValueException("Unable to find physical network which match the tags " + tag);
+        }
+        return pNtwkId;
     }
 
     @Override
