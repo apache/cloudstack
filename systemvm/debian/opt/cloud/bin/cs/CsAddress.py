@@ -627,11 +627,14 @@ class CsIP:
         return ip in self.address.values()
 
     def arpPing(self):
-        cmd = "arping -c 1 -I %s -A -U -s %s %s" % (
-            self.dev, self.address['public_ip'], self.address['gateway'])
+        #bit of logging added inside the command itself, to make sure whether it's executed or not (due to possible race/timeout conditions
+        cmd = "arping -c 1 -I %s -A -U -s %s %s >> /tmp/arpping.log" % (self.dev, self.address['public_ip'], self.address['gateway'])
         if not self.cl.is_redundant() and (not self.address['gateway'] or self.address['gateway'] == "None"):
-            cmd = "arping -c 1 -I %s -A -U %s" % (self.dev, self.address['public_ip'])
+                cmd = "arping -c 1 -I %s -A -U %s >> /tmp/arpping1.log" % (self.dev, self.address['public_ip'])
         CsHelper.execute2(cmd, False)
+        # This is only for logging/troubleshooting purposes, not functional...
+        cmd = "ping -c 2 %s >> /tmp/pingGtw.log; ping -c 2 8.8.8.8 >> /tmp/ping8888.log" % (self.address['gateway'])
+        CsHelper.execute2(cmd, False)u
 
     # Delete any ips that are configured but not in the bag
     def compare(self, bag):
