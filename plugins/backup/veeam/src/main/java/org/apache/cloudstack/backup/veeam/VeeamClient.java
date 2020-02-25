@@ -372,6 +372,9 @@ public class VeeamClient {
             final ObjectMapper objectMapper = new XmlMapper();
             final EntityReferences entityReferences = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
             final List<BackupOffering> policies = new ArrayList<>();
+            if (entityReferences == null || entityReferences.getRefs() == null) {
+                return policies;
+            }
             for (final Ref ref : entityReferences.getRefs()) {
                 policies.add(new VeeamBackupOffering(ref.getName(), ref.getUid()));
             }
