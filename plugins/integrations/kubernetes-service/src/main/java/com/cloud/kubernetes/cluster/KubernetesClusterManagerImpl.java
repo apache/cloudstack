@@ -1444,9 +1444,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         NetworkOfferingVO defaultKubernetesServiceNetworkOffering =
                 new NetworkOfferingVO(DEFAULT_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME,
-                        "Network Offering used for CloudStack Kubernetes service", Networks.TrafficType.Guest, false, false, null, null, true, NetworkOffering.Availability.Required, null,
-                        Network.GuestType.Isolated, true, false, false, false, true, false);
-
+                        "Network Offering used for CloudStack Kubernetes service", Networks.TrafficType.Guest,
+                        false, false, null, null, true,
+                        NetworkOffering.Availability.Required, null, Network.GuestType.Isolated, true,
+                        true, false, false, false, false,
+                        false, false, false, true, true, false,
+                        false, true, false, false);
         defaultKubernetesServiceNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultKubernetesServiceNetworkOffering = networkOfferingDao.persistDefaultNetworkOffering(defaultKubernetesServiceNetworkOffering);
 
