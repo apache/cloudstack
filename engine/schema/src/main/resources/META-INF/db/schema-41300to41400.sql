@@ -125,28 +125,3 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster_details` (
     PRIMARY KEY(`id`),
     CONSTRAINT `fk_kubernetes_cluster_details__cluster_id` FOREIGN KEY `fk_kubernetes_cluster_details__cluster_id`(`cluster_id`) REFERENCES `kubernetes_cluster`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-INSERT IGNORE INTO `cloud`.`network_offerings` (name, uuid, unique_name, display_text, nw_rate, mc_rate, traffic_type,
-    tags, system_only, specify_vlan, service_offering_id, conserve_mode, created, availability, dedicated_lb_service,
-    shared_source_nat_service, sort_key, redundant_router_service, state, guest_type, elastic_ip_service,
-    eip_associate_public_ip, elastic_lb_service, specify_ip_ranges, inline, is_persistent, internal_lb, public_lb,
-    egress_default_policy, concurrent_connections, keep_alive_enabled, supports_streched_l2, `default`, removed) VALUES (
-    'DefaultNetworkOfferingforKubernetesService', UUID(), 'DefaultNetworkOfferingforKubernetesService', 'Network Offering used for CloudStack Kubernetes service', NULL,NULL,'Guest',
-    NULL, 0, 0, NULL, 1, now(),'Required', 1,
-    0, 0, 0, 'Enabled', 'Isolated', 0,
-    1, 0, 0, 0, 0, 0, 1,
-    1, NULL, 0, 0, 0, NULL);
-
-UPDATE `cloud`.`network_offerings` SET removed=NULL WHERE unique_name='DefaultNetworkOfferingforKubernetesService';
-
-SET @kubernetesnetwork = (select id from network_offerings where name='DefaultNetworkOfferingforKubernetesService' and removed IS NULL);
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'Dhcp','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'Dns','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'Firewall','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'Gateway','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'Lb','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'PortForwarding','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'SourceNat','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'StaticNat','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'UserData','VirtualRouter',now());
-INSERT IGNORE INTO ntwk_offering_service_map (network_offering_id, service, provider, created) VALUES (@kubernetesnetwork, 'Vpn','VirtualRouter',now());

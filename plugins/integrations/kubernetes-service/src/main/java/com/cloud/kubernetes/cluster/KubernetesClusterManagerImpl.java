@@ -22,6 +22,7 @@ import java.net.URL;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -100,6 +101,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
+import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.NetworkDao;
@@ -109,6 +111,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
@@ -154,6 +157,7 @@ import com.google.common.base.Strings;
 public class KubernetesClusterManagerImpl extends ManagerBase implements KubernetesClusterService {
 
     private static final Logger LOGGER = Logger.getLogger(KubernetesClusterManagerImpl.class);
+    private static final String DEFAULT_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME = "DefaultNetworkOfferingforKubernetesService";
 
     protected StateMachine2<KubernetesCluster.State, KubernetesCluster.Event, KubernetesCluster> _stateMachine = KubernetesCluster.State.getStateMachine();
 
@@ -197,6 +201,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     @Inject
     protected NetworkOfferingJoinDao networkOfferingJoinDao;
     @Inject
+    protected NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
+    @Inject
     protected NetworkService networkService;
     @Inject
     protected NetworkModel networkModel;
@@ -206,8 +212,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected NetworkOrchestrationService networkMgr;
     @Inject
     protected NetworkDao networkDao;
-    @Inject
-    protected NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
     @Inject
     protected CapacityManager capacityManager;
     @Inject
@@ -1426,6 +1430,34 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     @Override
     public boolean start() {
+        final Map<Network.Service, Network.Provider> defaultKubernetesServiceNetworkOfferingProviders = new HashMap<Service, Network.Provider>();
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.Dhcp, Network.Provider.VirtualRouter);
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.Dns, Network.Provider.VirtualRouter);
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.UserData, Network.Provider.VirtualRouter);
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.Firewall, Network.Provider.VirtualRouter);
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.Gateway, Network.Provider.VirtualRouter);
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.Lb, Network.Provider.VirtualRouter);
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.SourceNat, Network.Provider.VirtualRouter);
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.StaticNat, Network.Provider.VirtualRouter);
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.PortForwarding, Network.Provider.VirtualRouter);
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.Vpn, Network.Provider.VirtualRouter);
+
+        NetworkOfferingVO defaultKubernetesServiceNetworkOffering =
+                new NetworkOfferingVO(DEFAULT_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME,
+                        "Network Offering used for CloudStack Kubernetes service", Networks.TrafficType.Guest, false, false, null, null, true, NetworkOffering.Availability.Required, null,
+                        Network.GuestType.Isolated, true, false, false, false, true, false);
+
+        defaultKubernetesServiceNetworkOffering.setState(NetworkOffering.State.Enabled);
+        defaultKubernetesServiceNetworkOffering = networkOfferingDao.persistDefaultNetworkOffering(defaultKubernetesServiceNetworkOffering);
+
+        for (Service service : defaultKubernetesServiceNetworkOfferingProviders.keySet()) {
+            NetworkOfferingServiceMapVO offService =
+                    new NetworkOfferingServiceMapVO(defaultKubernetesServiceNetworkOffering.getId(), service,
+                            defaultKubernetesServiceNetworkOfferingProviders.get(service));
+            networkOfferingServiceMapDao.persist(offService);
+            LOGGER.trace("Added service for the network offering: " + offService);
+        }
+
         _gcExecutor.scheduleWithFixedDelay(new KubernetesClusterGarbageCollector(), 300, 300, TimeUnit.SECONDS);
         _stateScanner.scheduleWithFixedDelay(new KubernetesClusterStatusScanner(), 300, 30, TimeUnit.SECONDS);
 
