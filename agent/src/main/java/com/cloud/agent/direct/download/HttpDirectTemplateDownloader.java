@@ -19,22 +19,23 @@
 
 package com.cloud.agent.direct.download;
 
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
 
@@ -44,10 +45,10 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     protected GetMethod request;
     protected Map<String, String> reqHeaders = new HashMap<>();
 
-    public HttpDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers) {
+    public HttpDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers, Integer connectTimeout, Integer soTimeout) {
         super(url, destPoolPath, templateId, checksum);
-        s_httpClientManager.getParams().setConnectionTimeout(5000);
-        s_httpClientManager.getParams().setSoTimeout(5000);
+        s_httpClientManager.getParams().setConnectionTimeout(connectTimeout == null ? 5000 : connectTimeout);
+        s_httpClientManager.getParams().setSoTimeout(soTimeout == null ? 5000 : soTimeout);
         client = new HttpClient(s_httpClientManager);
         request = createRequest(url, headers);
         String downloadDir = getDirectDownloadTempPath(templateId);

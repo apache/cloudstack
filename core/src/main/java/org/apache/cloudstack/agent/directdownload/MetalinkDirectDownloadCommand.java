@@ -18,14 +18,14 @@
 //
 package org.apache.cloudstack.agent.directdownload;
 
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-
 import java.util.Map;
+
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 public class MetalinkDirectDownloadCommand extends DirectDownloadCommand {
 
-    public MetalinkDirectDownloadCommand(String url, Long templateId, PrimaryDataStoreTO destPool, String checksum, Map<String, String> headers) {
-        super(url, templateId, destPool, checksum, headers);
+    public MetalinkDirectDownloadCommand(String url, Long templateId, PrimaryDataStoreTO destPool, String checksum, Map<String, String> headers, int connectTimeout, int soTimeout) {
+        super(url, templateId, destPool, checksum, headers, connectTimeout, soTimeout, null);
     }
 
 }
