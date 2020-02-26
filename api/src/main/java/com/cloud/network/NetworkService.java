@@ -180,7 +180,7 @@ public interface NetworkService {
      * @throws ResourceAllocationException
      */
     Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String broadcastUri, String startIp, String endIP, String gateway,
-        String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId) throws ResourceAllocationException, ConcurrentOperationException,
+        String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId, Boolean bypassVlanOverlapCheck) throws ResourceAllocationException, ConcurrentOperationException,
         InsufficientCapacityException;
 
     /**
