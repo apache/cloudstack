@@ -183,9 +183,9 @@ class CsDhcp(CsDataBag):
 
         if entry['default_entry']:
             self.cloud.add("%s,%s,%s,%s" % (entry['mac_address'],
-                                             entry['ipv4_address'],
-                                             entry['host_name'],
-                                             lease))
+                                            entry['ipv4_address'],
+                                            entry['host_name'],
+                                            lease))
         else:
             tag = entry['ipv4_address'].replace(".", "_")
             self.cloud.add("%s,set:%s,%s,%s,%sh" % (entry['mac_address'],
