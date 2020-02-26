@@ -51,6 +51,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.commons.beanutils.BeanUtils;
 
 import com.cloud.alert.AlertManager;
+import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -68,11 +69,13 @@ import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -105,6 +108,8 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     private AccountManager accountMgr;
     @Inject
     private ManagementServerHostDao managementServerHostDao;
+    @Inject
+    private AlertDao alertDao;
 
     protected MetricsServiceImpl() {
         super();
@@ -133,14 +138,16 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     @Override
     public InfrastructureResponse listInfrastructure() {
         final InfrastructureResponse response = new InfrastructureResponse();
-        response.setZones(dataCenterDao.listAllZones().size());
-        response.setPods(podDao.listAllPods(null).size());
-        response.setClusters(clusterDao.listAllClusters(null).size());
-        response.setHosts(hostDao.listByType(Host.Type.Routing).size());
-        response.setStoragePools(storagePoolDao.listAll().size());
-        response.setImageStores(imageStoreDao.listImageStores().size());
+        response.setZones(dataCenterDao.countAll());
+        response.setPods(podDao.countAll());
+        response.setClusters(clusterDao.countAll());
+        response.setHosts(hostDao.countAllByType(Host.Type.Routing));
+        response.setStoragePools(storagePoolDao.countAll());
+        response.setImageStores(imageStoreDao.countAllImageStores());
         response.setSystemvms(vmInstanceDao.listByTypes(VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm).size());
-        response.setRouters(domainRouterDao.listAll().size());
+        response.setRouters(domainRouterDao.countAllByRole(VirtualRouter.Role.VIRTUAL_ROUTER));
+        response.setInternalLbs(domainRouterDao.countAllByRole(VirtualRouter.Role.INTERNAL_LB_VM));
+        response.setAlerts(alertDao.countAll());
         int cpuSockets = 0;
         for (final Host host : hostDao.listByType(Host.Type.Routing)) {
             if (host.getCpuSockets() != null) {
@@ -308,9 +315,9 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     }
 
     @Override
-    public List<ClusterMetricsResponse> listClusterMetrics(List<ClusterResponse> clusterResponses) {
+    public List<ClusterMetricsResponse> listClusterMetrics(Pair<List<ClusterResponse>, Integer> clusterResponses) {
         final List<ClusterMetricsResponse> metricsResponses = new ArrayList<>();
-        for (final ClusterResponse clusterResponse: clusterResponses) {
+        for (final ClusterResponse clusterResponse: clusterResponses.first()) {
             ClusterMetricsResponse metricsResponse = new ClusterMetricsResponse();
 
             try {

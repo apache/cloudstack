@@ -55,6 +55,10 @@ public class InfrastructureResponse extends BaseResponse {
     @Param(description = "Number of routers")
     private Integer routers;
 
+    @SerializedName("ilbvms")
+    @Param(description = "Number of internal LBs")
+    private Integer internalLbs;
+
     @SerializedName("cpusockets")
     @Param(description = "Number of cpu sockets")
     private Integer cpuSockets;
@@ -62,6 +66,10 @@ public class InfrastructureResponse extends BaseResponse {
     @SerializedName("managementservers")
     @Param(description = "Number of management servers")
     private Integer managementServers;
+
+    @SerializedName("alerts")
+    @Param(description = "Number of Alerts")
+    private Integer alerts;
 
     public InfrastructureResponse() {
         setObjectName("infrastructure");
@@ -106,4 +114,8 @@ public class InfrastructureResponse extends BaseResponse {
     public void setManagementServers(Integer managementServers) {
         this.managementServers = managementServers;
     }
+
+    public void setAlerts(Integer alerts) { this.alerts = alerts; }
+
+    public void setInternalLbs(Integer internalLbs) { this.internalLbs = internalLbs; }
 }

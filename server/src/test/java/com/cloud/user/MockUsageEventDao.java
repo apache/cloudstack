@@ -284,6 +284,11 @@ public class MockUsageEventDao implements UsageEventDao{
     }
 
     @Override
+    public Integer countAll() {
+        return null;
+    }
+
+    @Override
     public List<UsageEventVO> listLatestEvents(Date endDate) {
         return null;
     }

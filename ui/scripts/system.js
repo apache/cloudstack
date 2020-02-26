@@ -2455,7 +2455,7 @@
                                                  */
                                                 if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                                 $.ajax({
-                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     data: data2,
                                                         async: false,
                                                     success: function (json) {
@@ -3039,7 +3039,7 @@
 
                                                 // Get project routers
                                                 $.ajax({
-                                                    url: createURL("listInternalLoadBalancerVMs&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                    url: createURL("listInternalLoadBalancerVMs&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     success: function (json) {
                                                         var items = json.listinternallbvmsresponse.internalloadbalancervm ?
                                                         json.listinternallbvmsresponse.internalloadbalancervm:[];
@@ -3592,7 +3592,7 @@
                                                  */
                                                 if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                                 $.ajax({
-                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     dataType: 'json',
                                                     data: data2,
                                                         async: false,
@@ -6521,7 +6521,7 @@
 
                                                 // Get project routers
                                                 $.ajax({
-                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     data: data2,
                                                     success: function (json) {
                                                         var items = json.listroutersresponse.router ?
@@ -9454,7 +9454,7 @@
                                                              */
                                                             if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                                             $.ajax({
-                                                                    url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
+                                                                    url: createURL("listRouters&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
                                                                 async: false,
                                                                 success: function (json) {
                                                                     var items = json.listroutersresponse.router ? json.listroutersresponse.router:[];
@@ -9877,7 +9877,7 @@
                                     }
 
                                     $.ajax({
-                                            url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                            url: createURL("listRouters&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                             data: data2,
                                         async: false,
                                             success: function (json) {
