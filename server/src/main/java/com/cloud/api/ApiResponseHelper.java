@@ -4296,6 +4296,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             r.setHostName(h.getHost().getName());
             r.setStartDate(getDateStringInternal(h.getStart()));
             r.setEndDate(getDateStringInternal(h.getEnd()));
+            r.setOutput(h.getOutputMsg());
             updated.add(r);
         }
         List<RollingMaintenanceHostSkippedResponse> skipped = new ArrayList<>();

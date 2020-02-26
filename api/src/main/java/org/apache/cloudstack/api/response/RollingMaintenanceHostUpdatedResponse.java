@@ -39,6 +39,10 @@ public class RollingMaintenanceHostUpdatedResponse extends BaseResponse {
     @Param(description = "end date of the update on the host")
     private String endDate;
 
+    @SerializedName(ApiConstants.OUTPUT)
+    @Param(description = "output of the maintenance script on the host")
+    private String output;
+
     public String getHostId() {
         return hostId;
     }
@@ -69,5 +73,13 @@ public class RollingMaintenanceHostUpdatedResponse extends BaseResponse {
 
     public void setEndDate(String endDate) {
         this.endDate = endDate;
+    }
+
+    public String getOutput() {
+        return output;
+    }
+
+    public void setOutput(String output) {
+        this.output = output;
     }
 }

@@ -258,6 +258,7 @@ public class ApiConstants {
     public static final String OS_NAME_FOR_HYPERVISOR = "osnameforhypervisor";
     public static final String OUTOFBANDMANAGEMENT_POWERSTATE = "outofbandmanagementpowerstate";
     public static final String OUTOFBANDMANAGEMENT_ENABLED = "outofbandmanagementenabled";
+    public static final String OUTPUT = "output";
     public static final String OVF_PROPERTIES = "ovfproperties";
     public static final String PARAMS = "params";
     public static final String PARENT_ID = "parentid";
