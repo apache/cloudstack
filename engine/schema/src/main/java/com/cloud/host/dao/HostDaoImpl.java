@@ -105,6 +105,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
     protected SearchBuilder<HostVO> UnmanagedApplianceSearch;
     protected SearchBuilder<HostVO> MaintenanceCountSearch;
+    protected SearchBuilder<HostVO> HostTypeCountSearch;
     protected SearchBuilder<HostVO> ClusterStatusSearch;
     protected SearchBuilder<HostVO> TypeNameZoneSearch;
     protected SearchBuilder<HostVO> AvailHypevisorInZone;
@@ -158,6 +159,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         MaintenanceCountSearch.and("cluster", MaintenanceCountSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         MaintenanceCountSearch.and("resourceState", MaintenanceCountSearch.entity().getResourceState(), SearchCriteria.Op.IN);
         MaintenanceCountSearch.done();
+
+        HostTypeCountSearch = createSearchBuilder();
+        HostTypeCountSearch.and("type", HostTypeCountSearch.entity().getType(), SearchCriteria.Op.EQ);
+        HostTypeCountSearch.and("removed", HostTypeCountSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        HostTypeCountSearch.done();
 
         TypePodDcStatusSearch = createSearchBuilder();
         HostVO entity = TypePodDcStatusSearch.entity();
@@ -427,6 +433,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         List<HostVO> hosts = listBy(sc);
         return hosts.size();
+    }
+
+    @Override
+    public Integer countAllByType(final Host.Type type) {
+        SearchCriteria<HostVO> sc = HostTypeCountSearch.create();
+        sc.setParameters("type", type);
+        return getCount(sc);
     }
 
     @Override
