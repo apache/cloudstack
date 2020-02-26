@@ -707,6 +707,11 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         for (final VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
                 final boolean result = networkTopology.savePasswordToRouter(network, nic, uservm, router);
+                if (!result) {
+                    s_logger.error("Unable to save password for VM " + vm.getInstanceName() +
+                            " on router " + router.getInstanceName());
+                    return false;
+                }
                 isVrRunning = true;
                 savePasswordResult = savePasswordResult && result;
             }
