@@ -20,6 +20,53 @@ package org.apache.cloudstack.direct.download;
 
 import static com.cloud.storage.Storage.ImageFormat;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
+import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand.DownloadProtocol;
+import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.RevokeDirectDownloadCertificateCommand;
+import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificateCommand;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.poll.BackgroundPollManager;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.dc.DataCenterVO;
@@ -43,52 +90,8 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
 import com.cloud.utils.security.CertificateHelper;
-import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
-import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
-import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand.DownloadProtocol;
-import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
-import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
-import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
-import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
-import org.apache.cloudstack.agent.directdownload.RevokeDirectDownloadCertificateCommand;
-import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificateCommand;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.poll.BackgroundPollManager;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+
 import sun.security.x509.X509CertImpl;
 
 public class DirectDownloadManagerImpl extends ManagerBase implements DirectDownloadManager {
@@ -119,6 +122,8 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     private BackgroundPollManager backgroundPollManager;
     @Inject
     private DataCenterDao dataCenterDao;
+    @Inject
+    private ConfigurationDao configDao;
 
     protected ScheduledExecutorService executorService;
 
@@ -320,14 +325,17 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
      */
     private DirectDownloadCommand getDirectDownloadCommandFromProtocol(DownloadProtocol protocol, String url, Long templateId, PrimaryDataStoreTO destPool,
                                                                        String checksum, Map<String, String> httpHeaders) {
+        int connectTimeout = DirectDownloadConnectTimeout.value();
+        int soTimeout = DirectDownloadSocketTimeout.value();
+        int connectionRequestTimeout = DirectDownloadConnectionRequestTimeout.value();
         if (protocol.equals(DownloadProtocol.HTTP)) {
-            return new HttpDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
+            return new HttpDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout, soTimeout);
         } else if (protocol.equals(DownloadProtocol.HTTPS)) {
-            return new HttpsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
+            return new HttpsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout, soTimeout, connectionRequestTimeout);
         } else if (protocol.equals(DownloadProtocol.NFS)) {
             return new NfsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
         } else if (protocol.equals(DownloadProtocol.METALINK)) {
-            return new MetalinkDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
+            return new MetalinkDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout, soTimeout);
         } else {
             return null;
         }
@@ -549,7 +557,10 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{
-                DirectDownloadCertificateUploadInterval
+                DirectDownloadCertificateUploadInterval,
+                DirectDownloadConnectTimeout,
+                DirectDownloadSocketTimeout,
+                DirectDownloadConnectionRequestTimeout
         };
     }
 

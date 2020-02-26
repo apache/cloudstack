@@ -19,10 +19,10 @@
 
 package org.apache.cloudstack.agent.directdownload;
 
+import java.util.Map;
+
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-
-import java.util.Map;
 
 public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
 
@@ -35,13 +35,19 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
     private PrimaryDataStoreTO destPool;
     private String checksum;
     private Map<String, String> headers;
+    private Integer connectTimeout;
+    private Integer soTimeout;
+    private Integer connectionRequestTimeout;
 
-    protected DirectDownloadCommand (final String url, final Long templateId, final PrimaryDataStoreTO destPool, final String checksum, final Map<String, String> headers) {
+    protected DirectDownloadCommand (final String url, final Long templateId, final PrimaryDataStoreTO destPool, final String checksum, final Map<String, String> headers, final Integer connectTimeout, final Integer soTimeout, final Integer connectionRequestTimeout) {
         this.url = url;
         this.templateId = templateId;
         this.destPool = destPool;
         this.checksum = checksum;
         this.headers = headers;
+        this.connectTimeout = connectTimeout;
+        this.soTimeout = soTimeout;
+        this.connectionRequestTimeout = connectionRequestTimeout;
     }
 
     public String getUrl() {
@@ -62,6 +68,30 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
 
     public Map<String, String> getHeaders() {
         return headers;
+    }
+
+    public Integer getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public void setConnectTimeout(Integer connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public Integer getSoTimeout() {
+        return soTimeout;
+    }
+
+    public void setSoTimeout(Integer soTimeout) {
+        this.soTimeout = soTimeout;
+    }
+
+    public Integer getConnectionRequestTimeout() {
+        return connectionRequestTimeout;
+    }
+
+    public void setConnectionRequestTimeout(Integer connectionRequestTimeout) {
+        this.connectionRequestTimeout = connectionRequestTimeout;
     }
 
     @Override
