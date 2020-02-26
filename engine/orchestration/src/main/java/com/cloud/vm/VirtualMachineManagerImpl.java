@@ -2997,6 +2997,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         while (true) {
 
             try {
+                plan.setMigrationPlan(true);
                 dest = _dpMgr.planDeployment(profile, plan, excludes, planner);
             } catch (final AffinityConflictException e2) {
                 s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
