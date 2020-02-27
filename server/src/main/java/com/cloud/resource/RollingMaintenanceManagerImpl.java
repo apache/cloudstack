@@ -693,24 +693,21 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
      */
     private void waitForHostInMaintenance(long hostId) throws CloudRuntimeException, InterruptedException {
         HostVO host = hostDao.findById(hostId);
-        long timeout = 1800 * 1000L;
+        long timeout = KvmRollingMaintenanceWaitForMaintenanceTimeout.value() * 1000L;
         long timeSpent = 0;
-        while (timeSpent < timeout && host.getResourceState() == ResourceState.PrepareForMaintenance) {
-            Thread.sleep(20000L);
-            timeSpent += 20000L;
+        long step = 30 * 1000L;
+        while (timeSpent < timeout && host.getResourceState() != ResourceState.Maintenance) {
+            Thread.sleep(step);
+            timeSpent += step;
             host = hostDao.findById(hostId);
         }
-        if (host.getResourceState() == ResourceState.ErrorInMaintenance) {
-            String errorMsg = "Could not put host " + host.getUuid() + " in maintenance, it is in ErrorInMaintenance state";
-            s_logger.error(errorMsg);
-            throw new CloudRuntimeException(errorMsg);
-        } else if (host.getResourceState() != ResourceState.Maintenance) {
-            String errorMsg = "Maintenance state expected, but got " + host.getResourceState().toString();
+
+        if (host.getResourceState() != ResourceState.Maintenance) {
+            String errorMsg = "Maintenance state expected, but got " + host.getResourceState().toString() + " for host " + host.getUuid() + "(" + host.getName() + ")";
             s_logger.error(errorMsg);
             throw new CloudRuntimeException(errorMsg);
         }
-        assert host.getResourceState() == ResourceState.Maintenance;
-        s_logger.debug("Host " + hostId + " is in maintenance");
+        s_logger.debug("Host " + host.getUuid() + "(" + host.getName() + ") is in maintenance");
     }
 
     @Override
@@ -720,6 +717,6 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {KvmRollingMaintenanceStageTimeout, KvmRollingMaintenancePingInterval};
+        return new ConfigKey<?>[] {KvmRollingMaintenanceStageTimeout, KvmRollingMaintenancePingInterval, KvmRollingMaintenanceWaitForMaintenanceTimeout};
     }
 }
