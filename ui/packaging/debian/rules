@@ -1,0 +1,58 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+DEBVERS := $(shell dpkg-parsechangelog | sed -n -e 's/^Version: //p')
+PACKAGE = $(shell dh_listpackages|head -n 1|cut -d '-' -f 1)
+CLOUDSTACK = "cloudstack"
+SYSCONFDIR = "/etc"
+USRBINDIR = "/usr/bin"
+DESTDIR = "debian/tmp"
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+
+# This has to be exported to make some magic below work.
+export DH_OPTIONS
+
+configure: configure-stamp
+configure-stamp:
+	dh_testdir
+
+build: build-indep
+
+build-indep: build-indep-stamp
+
+build-indep-stamp: configure
+	cd .. && npm install && npm run build
+	touch $@
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f build-arch-stamp build-indep-stamp
+	dh_clean
+
+install:
+	dh_testdir
+	dh_testroot
+	dh_prep -s
+
+	# cloudstack-primate
+	mkdir -p $(DESTDIR)/usr/share/$(CLOUDSTACK)-management/webapp/primate
+	cp -vr ../dist/* $(DESTDIR)/usr/share/$(CLOUDSTACK)-management/webapp/primate/
+
+	dh_installdirs
+	dh_install
+
+binary: install
+	dh_install
+	dh_installchangelogs
+	dh_installman
+	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms
+	dh_makeshlibs
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb

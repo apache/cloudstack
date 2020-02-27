@@ -1,0 +1,13 @@
+Source: cloudstack-primate
+Section: libs
+Priority: extra
+Maintainer: Apache CloudStack <dev@cloudstack.apache.org>
+Build-Depends: debhelper (>= 7), npm, nodejs
+Standards-Version: 3.8.1
+Homepage: https://cloudstack.apache.org/
+
+Package: cloudstack-primate
+Architecture: all
+Depends: cloudstack-management (>= 4.13.0)
+Description: CloudStack Primate
+ The modern CloudStack UI - Primate
