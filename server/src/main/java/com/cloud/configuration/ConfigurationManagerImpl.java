@@ -400,17 +400,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
 
-    public static ConfigKey<Long> iopsMaximumRateLength = new ConfigKey<Long>(Long.class, "iops.maximum.rate.length", "Advanced", "0",
-            "Sets the maximum IOPS read/write length (seconds) accepted; thus, preventing irrealistic values for a disk offering (e.g. hours or days of burst IOPS)."
-                    + " The default value is 0 (zero) and allows any IOPS maximum rate length."
-                    + " Example: iops.maximum.rate.length = 3600 sets the maximum IOPS length accepted for a disk offering as 3600 seconds (60 minutes).",
-            false, ConfigKey.Scope.Global, null);
+    public final static ConfigKey<Long> BYTES_MAX_READ_LENGTH= new ConfigKey<Long>(Long.class, "vm.disk.bytes.maximum.read.length", "Advanced", "0",
+            "Maximum Bytes read burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
+    public final static ConfigKey<Long> BYTES_MAX_WRITE_LENGTH = new ConfigKey<Long>(Long.class, "vm.disk.bytes.maximum.write.length", "Advanced", "0",
+            "Maximum Bytes write burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
+    public final static ConfigKey<Long> IOPS_MAX_READ_LENGTH = new ConfigKey<Long>(Long.class, "vm.disk.iops.maximum.read.length", "Advanced", "0",
+            "Maximum IOPS read burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
+    public final static ConfigKey<Long> IOPS_MAX_WRITE_LENGTH = new ConfigKey<Long>(Long.class, "vm.disk.iops.maximum.write.length", "Advanced", "0",
+            "Maximum IOPS write burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
 
-    public static ConfigKey<Long> iopsMaximumBytes = new ConfigKey<Long>(Long.class, "iops.maximum.rate.length", "Advanced", "0",
-            "Sets the maximum rate length (bytes) accepted; thus, preventing irrealistic values for a disk offering (e.g. Petabytes)."
-                    + " The default value is 0 (zero) and allows any IOPS maximum bytes rate."
-                    + " Example: iops.maximum.rate.length = 3600 sets the maximum IOPS length accepted for a disk offering as 3600 seconds (60 minutes).",
-            false, ConfigKey.Scope.Global, null);
+    private static final String IOPS_READ_RATE = "IOPS Read";
+    private static final String IOPS_WRITE_RATE = "IOPS Write";
+    private static final String BYTES_READ_RATE = "Bytes Read";
+    private static final String BYTES_WRITE_RATE = "Bytes Write";
 
     private static final String DefaultForSystemVmsForPodIpRange = "0";
     private static final String DefaultVlanForPodIpRange = Vlan.UNTAGGED.toString();
@@ -3008,7 +3010,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long iopsWriteRateMaxLength = cmd.getIopsWriteRateMaxLength();
         final Integer hypervisorSnapshotReserve = cmd.getHypervisorSnapshotReserve();
 
-        valildateIopsRateOfferings(iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength);
+        validateMaxRateEqualsOrGreater(iopsReadRate, iopsReadRateMax, IOPS_READ_RATE);
+        validateMaxRateEqualsOrGreater(iopsWriteRate, iopsWriteRateMax, IOPS_WRITE_RATE);
+        validateMaxRateEqualsOrGreater(bytesReadRate, bytesReadRateMax, BYTES_READ_RATE);
+        validateMaxRateEqualsOrGreater(bytesWriteRate, bytesWriteRateMax, BYTES_WRITE_RATE);
+
+        validateMaximumIopsAndBytesLength(iopsReadRateMaxLength, iopsWriteRateMaxLength, bytesReadRateMaxLength, bytesWriteRateMaxLength);
 
         final Long userId = CallContext.current().getCallingUserId();
         return createDiskOffering(userId, domainIds, zoneIds, name, description, provisioningType, numGibibytes, tags, isCustomized,
@@ -3019,60 +3026,52 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     /**
-     * Validates IOPS read and write rate offerings. It throws InvalidParameterValueException in case of one of the following cases is not respected: </br>
+     * Validates rate offerings, being flexible about which rate is being validated (e.g. read/write Bytes, read/write IOPS).</br>
+     * It throws InvalidParameterValueException if normal rate is greater than maximum rate
+     */
+    protected void validateMaxRateEqualsOrGreater(Long normalRate, Long maxRate, String rateType) {
+        if (normalRate != null && maxRate != null && maxRate < normalRate) {
+            throw new InvalidParameterValueException(
+                    String.format("%s rate (%d) cannot be greater than %s maximum rate (%d)", rateType, normalRate, rateType, maxRate));
+        }
+    }
+
+    /**
+     *  Throws InvalidParameterValueException if At least one of the VM disk Bytes/IOPS Read/Write length are smaller than the respective disk offering max length.</br>
+     *  It will ignore verification in case of default values (zero):
      * <ul>
-     *  <li>IOPS write rate cannot be greater than IOPS write maximum rate</li>
-     *  <li>IOPS read rate cannot be greater than IOPS read maximum rate</li>
-     *  <li>IOPS read rate max length (seconds) must be greater than zero</li>
-     *  <li>IOPS write rate max length (seconds) must be greater than zero</li>
-     *  <li>If iops.maximum.rate.length is not 0 (zero), blank or null, IOPS write/read maximum rate length (seconds) cannot be bigger than thevalue from iops.maximum.rate.length</li>
+     *  <li>vm.disk.bytes.maximum.read.length = 0</li>
+     *  <li>vm.disk.bytes.maximum.write.length = 0</li>
+     *  <li>vm.disk.iops.maximum.read.length = 0</li>
+     *  <li>vm.disk.iops.maximum.write.length = 0</li>
      * </ul>
      */
-    protected void valildateIopsRateOfferings(final Long iopsReadRate, final Long iopsReadRateMax, final Long iopsReadRateMaxLength, final Long iopsWriteRate,
-            final Long iopsWriteRateMax, final Long iopsWriteRateMaxLength) {
-        if (iopsWriteRateMax != null && iopsWriteRate != null && iopsWriteRateMax < iopsWriteRate) {
-            throw new InvalidParameterValueException(
-                    String.format("IOPS write rate (rate: %d) cannot be greater than IOPS write maximum rate (maximum rate: %d)", iopsWriteRate, iopsWriteRateMax));
-        }
-
-        if (iopsReadRateMax != null && iopsReadRate != null && iopsReadRateMax < iopsReadRate) {
-            throw new InvalidParameterValueException(
-                    String.format("IOPS read rate (rate: %d) cannot be greater than IOPS read maximum rate (maximum rate: %d)", iopsReadRate, iopsReadRateMax));
-        }
-
-        if (iopsReadRateMaxLength != null && iopsReadRateMaxLength <= 0) {
-            throw new InvalidParameterValueException(String.format("IOPS read rate max length (max length: %d seconds) must be greater than zero", iopsReadRateMaxLength));
-        }
-
-        if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength <= 0) {
-            throw new InvalidParameterValueException(String.format("IOPS write rate max length (max length: %d seconds) must be greater than zero", iopsWriteRateMaxLength));
-        }
-
-        verifyMaximumLength(iopsReadRateMaxLength, iopsWriteRateMaxLength);
-        verifyMaximumBytesRate(iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRateMax, iopsWriteRateMaxLength);
-    }
-
-    private void verifyMaximumBytesRate(final Long iopsReadRateMax, final Long iopsReadRateMaxLength, final Long iopsWriteRateMax, final Long iopsWriteRateMaxLength) {
-        if (iopsMaximumBytes.value() != null && !iopsMaximumBytes.value().equals(0L)) {
-            if (iopsReadRateMax != null && iopsReadRateMax > iopsMaximumBytes.value()) {
-                throw new InvalidParameterValueException(String.format("IOPS read max rate (%d bytes) cannot be greater than iops.maximum.rate.length (%d bytes)", iopsReadRateMaxLength, iopsMaximumBytes.value()));
-            }
-            if (iopsWriteRateMax != null && iopsWriteRateMax > iopsMaximumBytes.value()) {
-                throw new InvalidParameterValueException(String.format("IOPS write max length (%d bytes) cannot be greater than sane.iops.maximum.rate.length (%d bytes)", iopsWriteRateMaxLength, iopsMaximumBytes.value()));
+    protected void validateMaximumIopsAndBytesLength(final Long iopsReadRateMaxLength, final Long iopsWriteRateMaxLength, Long bytesReadRateMaxLength, Long bytesWriteRateMaxLength) {
+        if (IOPS_MAX_READ_LENGTH.value() != null && IOPS_MAX_READ_LENGTH.value() != 0l) {
+            if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > IOPS_MAX_READ_LENGTH.value()) {
+                throw new InvalidParameterValueException(String.format("IOPS read max length (%d seconds) cannot be greater than vm.disk.iops.maximum.read.length (%d seconds)",
+                        iopsReadRateMaxLength, IOPS_MAX_READ_LENGTH.value()));
             }
         }
-    }
 
-    private void verifyMaximumLength(final Long iopsReadRateMaxLength, final Long iopsWriteRateMaxLength) {
-        if (iopsMaximumRateLength.value() != null && !iopsMaximumRateLength.value().equals(0L)) {
-            if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > iopsMaximumRateLength.value()) {
-                throw new InvalidParameterValueException(String.format("IOPS read max length (%d seconds) cannot be greater than iops.maximum.rate.length (%d seconds)",
-                        iopsReadRateMaxLength, iopsMaximumRateLength.value()));
+        if (IOPS_MAX_WRITE_LENGTH.value() != null && IOPS_MAX_WRITE_LENGTH.value() != 0l) {
+            if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > IOPS_MAX_WRITE_LENGTH.value()) {
+                throw new InvalidParameterValueException(String.format("IOPS write max length (%d seconds) cannot be greater than vm.disk.iops.maximum.write.length (%d seconds)",
+                        iopsWriteRateMaxLength, IOPS_MAX_WRITE_LENGTH.value()));
             }
+        }
 
-            if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > iopsMaximumRateLength.value()) {
-                throw new InvalidParameterValueException(String.format("IOPS write max length (%d seconds) cannot be greater than sane.iops.maximum.rate.length (%d seconds)",
-                        iopsWriteRateMaxLength, iopsMaximumRateLength.value()));
+        if (BYTES_MAX_READ_LENGTH.value() != null && BYTES_MAX_READ_LENGTH.value() != 0l) {
+            if (bytesReadRateMaxLength != null && bytesReadRateMaxLength > BYTES_MAX_READ_LENGTH.value()) {
+                throw new InvalidParameterValueException(String.format("Bytes read max length (%d seconds) cannot be greater than vm.disk.bytes.maximum.read.length (%d seconds)",
+                        bytesReadRateMaxLength, BYTES_MAX_READ_LENGTH.value()));
+            }
+        }
+
+        if (BYTES_MAX_WRITE_LENGTH.value() != null && BYTES_MAX_WRITE_LENGTH.value() != 0l) {
+            if (bytesReadRateMaxLength != null && bytesReadRateMaxLength > BYTES_MAX_WRITE_LENGTH.value()) {
+                throw new InvalidParameterValueException(String.format("Bytes write max length (%d seconds) cannot be greater than vm.disk.bytes.maximum.write.length (%d seconds)",
+                        bytesReadRateMaxLength, BYTES_MAX_WRITE_LENGTH.value()));
             }
         }
     }
@@ -6354,6 +6353,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {SystemVMUseLocalStorage, iopsMaximumRateLength};
+        return new ConfigKey<?>[] {SystemVMUseLocalStorage, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH, BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH};
     }
 }

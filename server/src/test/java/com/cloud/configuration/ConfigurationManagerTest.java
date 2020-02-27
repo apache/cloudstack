@@ -19,11 +19,11 @@ package com.cloud.configuration;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -44,7 +44,6 @@ import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -57,7 +56,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
 
 import com.cloud.api.query.dao.NetworkOfferingJoinDao;
 import com.cloud.api.query.vo.NetworkOfferingJoinVO;
@@ -168,7 +166,7 @@ public class ConfigurationManagerTest {
 
     VlanVO vlan = new VlanVO(Vlan.VlanType.VirtualNetwork, "vlantag", "vlangateway", "vlannetmask", 1L, "iprange", 1L, 1L, null, null, null);
 
-    private static final String MAXIMUM_LENGTH_ALLOWED = "3600";
+    private static final String MAXIMUM_DURATION_ALLOWED = "3600";
 
     @Mock
     Network network;
@@ -907,100 +905,37 @@ public class ConfigurationManagerTest {
     }
 
     @Test
-    public void valildateIopsRateOfferingsTestAllGood() {
-        //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 1, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3
-        configurationMgr.valildateIopsRateOfferings(1L, 2L, 1L, 1L, 2L, 3L);
+    public void validateMaxRateEqualsOrGreaterTestAllGood() {
+        configurationMgr.validateMaxRateEqualsOrGreater(1l, 2l, "IOPS Read");
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void valildateIopsRateOfferingsTestIopsReadGreaterThanMax() {
-        //iopsReadRate = 3, iopsReadRateMax = 2, iopsReadRateMaxLength = 1, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3
-        configurationMgr.valildateIopsRateOfferings(3L, 2L, 1L, 1L, 2L, 3L);
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void valildateIopsRateOfferingsTestIopsReadLengthZero() {
-        //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 0, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3
-        configurationMgr.valildateIopsRateOfferings(1L, 2L, 0L, 1L, 2L, 3L);
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void valildateIopsRateOfferingsTestIopsReadLengthNegative() {
-        //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = -1, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3
-        configurationMgr.valildateIopsRateOfferings(1L, 2L, -1L, 1L, 2L, 3L);
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void valildateIopsWriteOfferingsTestIopsWriteLengthZero() {
-        //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 3, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 0
-        configurationMgr.valildateIopsRateOfferings(1L, 2L, 3L, 1L, 2L, 0L);
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void valildateIopsRateOfferingsTestIopsWriteLengthNegative() {
-        //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 3, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = -1
-        configurationMgr.valildateIopsRateOfferings(1L, 2L, 3L, 1L, 2L, -1L);
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void valildateIopsRateOfferingsTestIopsWriteGreaterThanMax() {
-        //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 3, iopsWriteRate = 3, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 4
-        configurationMgr.valildateIopsRateOfferings(1L, 2L, 3L, 3L, 2L, 4L);
+    public void validateMaxRateEqualsOrGreaterTestNormalRateGreaterThanMax() {
+        configurationMgr.validateMaxRateEqualsOrGreater(3l, 2l, "IOPS Read");
     }
 
     @Test
-    public void valildateIopsRateOfferingsTestAllnull() {
-        configurationMgr.valildateIopsRateOfferings(null, null, null, null, null, null);
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void valildateIopsWriteOfferingsTestIopsWriteLengthGreaterThanMaxAllowed() throws Exception {
-        staticPowerMockConfigKeyParameter(MAXIMUM_LENGTH_ALLOWED);
-        //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 9999, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3, saneIopsMaximumLength=3600
-        configurationMgr.valildateIopsRateOfferings(1L, 2L, 9999L, 1L, 2L, 3L);
+    public void validateMaxRateNull() {
+        configurationMgr.validateMaxRateEqualsOrGreater(3l, null, "IOPS Read");
     }
 
     @Test
-    public void valildateIopsWriteOfferingsTestIopsWriteLengthSmallerThanMaxAllowed() throws Exception {
-        staticPowerMockConfigKeyParameter(MAXIMUM_LENGTH_ALLOWED);
-        //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 3599, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3, saneIopsMaximumLength=3600
-        configurationMgr.valildateIopsRateOfferings(1L, 2L, 3599L, 1L, 2L, 3L);
+    public void validateNormalRateNull() {
+        configurationMgr.validateMaxRateEqualsOrGreater(null, 3l, "IOPS Read");
     }
 
     @Test
-    public void valildateIopsWriteOfferingsTestIopsWriteLengthEqualsThanMaxAllowed() throws Exception {
-        staticPowerMockConfigKeyParameter(MAXIMUM_LENGTH_ALLOWED);
-        //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 3600L, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3, saneIopsMaximumLength=3600
-        configurationMgr.valildateIopsRateOfferings(1L, 2L, 3600L, 1L, 2L, 3L);
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void valildateIopsWriteOfferingsTestIopsReadLengthGreaterThanMaxAllowed() throws Exception {
-        staticPowerMockConfigKeyParameter(MAXIMUM_LENGTH_ALLOWED);
-        //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 3, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3, saneIopsMaximumLength=3600
-        configurationMgr.valildateIopsRateOfferings(1L, 2L, 3L, 1L, 2L, 3601L);
+    public void validateAllNull() {
+        configurationMgr.validateMaxRateEqualsOrGreater(null, 3l, "IOPS Read");
     }
 
     @Test
-    public void valildateIopsWriteOfferingsTestIopsReadLengthSmallerThanMaxAllowed() throws Exception {
-        staticPowerMockConfigKeyParameter(MAXIMUM_LENGTH_ALLOWED);
-        //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 3, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3, saneIopsMaximumLength=3600
-        configurationMgr.valildateIopsRateOfferings(1L, 2L, 3L, 1L, 2L, 3599L);
+    public void validateMaximumIopsAndBytesLengthTestAllNull() {
+        configurationMgr.validateMaximumIopsAndBytesLength(null, null, null, null);
     }
 
     @Test
-    public void valildateIopsWriteOfferingsTestIopsReadLengthEqualsThanMaxAllowed() throws Exception {
-        staticPowerMockConfigKeyParameter(MAXIMUM_LENGTH_ALLOWED);
-        //iopsReadRate = 1, iopsReadRateMax = 2, iopsReadRateMaxLength = 3, iopsWriteRate = 1, iopsWriteRateMax = 2, iopsWriteRateMaxLength = 3, saneIopsMaximumLength=3600
-        configurationMgr.valildateIopsRateOfferings(1L, 2L, 3L, 1L, 2L, 3600L);
+    public void validateMaximumIopsAndBytesLengthTestDefaultLengthConfigs() {
+        configurationMgr.validateMaximumIopsAndBytesLength(36000l, 36000l, 36000l, 36000l);
     }
-
-    private void staticPowerMockConfigKeyParameter(String configValue) {
-        PowerMockito.mockStatic(ConfigurationManagerImpl.class);
-        ConfigurationManagerImpl.iopsMaximumRateLength = new ConfigKey<Long>(Long.class, "sane.iops.maximum.rate.length", "Advanced", configValue,
-                "Indicates the maximum IOPS read/write length (seconds) accepted to prevent irrealistigs values for a disk offering. Default (0) allows any IOPS maximum rate length."
-                        + " Example: sane.iops.maximum.rate.length = 3600 sets the maximum IOPS length accepted for a disk offering is of 3600 seconds (60 minutes).",
-                false, ConfigKey.Scope.Global, null);
-    }
-
 }
