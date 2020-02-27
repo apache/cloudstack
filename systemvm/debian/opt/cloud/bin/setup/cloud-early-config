@@ -88,9 +88,11 @@ start() {
   rm -f /root/.rnd
   echo "" > /root/.ssh/known_hosts
 
-  growpart /dev/vda 2
-  growpart /dev/vda 6
-  resize2fs /dev/vda6
+  if which growpart > /dev/null; then
+    growpart /dev/vda 2
+    growpart /dev/vda 6
+    resize2fs /dev/vda6
+  fi
 
   patch
   sync
