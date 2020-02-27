@@ -47,6 +47,7 @@ echo "Starting Primate build..."
 %build
 
 echo "Executing npm build..."
+rm -fr node_modules
 npm install
 npm run build
 

@@ -60,7 +60,6 @@ function package_rpm() {
     else
         echo "RPM Build Done"
     fi
-    exit
 }
 
 case "$1" in
