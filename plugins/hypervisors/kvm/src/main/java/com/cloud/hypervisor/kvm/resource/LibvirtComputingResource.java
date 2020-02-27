@@ -2334,11 +2334,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (dataStore instanceof NfsTO) {
                     NfsTO nfsStore = (NfsTO)data.getDataStore();
                     dataStoreUrl = nfsStore.getUrl();
-                } else if (dataStore instanceof PrimaryDataStoreTO && ((PrimaryDataStoreTO) dataStore).getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+                } else if (dataStore instanceof PrimaryDataStoreTO) {
                     //In order to support directly downloaded ISOs
-                    String psHost = ((PrimaryDataStoreTO) dataStore).getHost();
-                    String psPath = ((PrimaryDataStoreTO) dataStore).getPath();
-                    dataStoreUrl = "nfs://" + psHost + File.separator + psPath;
+                    PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) dataStore;
+                    if (primaryDataStoreTO.getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+                        String psHost = primaryDataStoreTO.getHost();
+                        String psPath = primaryDataStoreTO.getPath();
+                        dataStoreUrl = "nfs://" + psHost + File.separator + psPath;
+                    } else if (primaryDataStoreTO.getPoolType().equals(StoragePoolType.SharedMountPoint) ||
+                            primaryDataStoreTO.getPoolType().equals(StoragePoolType.Filesystem)) {
+                        dataStoreUrl = primaryDataStoreTO.getPath();
+                    }
                 }
                 final String volPath = dataStoreUrl + File.separator + data.getPath();
                 final int index = volPath.lastIndexOf("/");
