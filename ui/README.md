@@ -67,8 +67,16 @@ This creates a static webpack application in `dist/`, which can then be served
 from any web server or CloudStack management server (jetty).
 
 To use CloudStack management server (jetty), you may copy the built Primate build
-to a new/existing webapp directory on the management server host. If the webapp
-directory is changed, please change the `webapp.dir` in the
+to a new/existing webapp directory on the management server host. For example:
+
+    npm install
+    npm run build
+    cd dist
+    mkdir -p /usr/share/cloudstack-management/webapp/primate
+    cp -vr . /usr/share/cloudstack-management/webapp/primate/
+    # Use Primate at {management-server}:8080/client/primate in browser
+
+If the webapp directory is changed, please change the `webapp.dir` in the
 `/etc/cloudstack/management/server.properties` and restart the management server host.
 
 To use a separate webserver, note that the API server is accessed through the path
