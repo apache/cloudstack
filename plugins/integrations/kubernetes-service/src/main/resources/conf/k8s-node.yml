@@ -38,7 +38,7 @@ write-files:
       ATTEMPT_ONLINE_INSTALL=false
       setup_complete=false
 
-      OFFLINE_INSTALL_ATTEMPT_SLEEP=15
+      OFFLINE_INSTALL_ATTEMPT_SLEEP=30
       MAX_OFFLINE_INSTALL_ATTEMPTS=40
       offline_attempts=1
       MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3

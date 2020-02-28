@@ -59,7 +59,7 @@ write-files:
       setup_complete=false
 
       OFFLINE_INSTALL_ATTEMPT_SLEEP=15
-      MAX_OFFLINE_INSTALL_ATTEMPTS=40
+      MAX_OFFLINE_INSTALL_ATTEMPTS=100
       offline_attempts=1
       MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
       EJECT_ISO_FROM_OS={{ k8s.eject.iso }}
