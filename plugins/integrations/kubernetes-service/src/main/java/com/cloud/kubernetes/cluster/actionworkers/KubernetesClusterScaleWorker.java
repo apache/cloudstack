@@ -309,7 +309,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         final List<KubernetesClusterVmMapVO> originalVmList  = getKubernetesClusterVMMaps();
         int i = originalVmList.size() - 1;
         List<Long> removedVmIds = new ArrayList<>();
-        while (i > kubernetesCluster.getMasterNodeCount()) {
+        while (i > kubernetesCluster.getMasterNodeCount() + clusterSize) {
             KubernetesClusterVmMapVO vmMapVO = originalVmList.get(i);
             UserVmVO userVM = userVmDao.findById(vmMapVO.getVmId());
             if (!removeKubernetesClusterNode(publicIpAddress, sshPort, userVM, 3, 30000)) {
