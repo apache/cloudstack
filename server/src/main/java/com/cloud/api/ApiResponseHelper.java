@@ -2271,7 +2271,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                         String capabilityValue = ser_cap_entries.getValue();
                         capabilityResponse.setName(capability.getName());
                         if (Service.Lb == service && capability.getName().equals(Capability.SupportedLBIsolation.getName())) {
-                            // capabilityResponse.setValue(networkOffering.getDedicatedLB() ? "dedicated" : "shared");
+                             capabilityResponse.setValue(networkOffering.isDedicatedLB() ? "dedicated" : "shared");
                         } else {
                             capabilityResponse.setValue(capabilityValue);
                         }
