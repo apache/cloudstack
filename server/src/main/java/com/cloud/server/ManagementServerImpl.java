@@ -3762,8 +3762,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (keyword != null) {
-            sc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addOr("fingerprint", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            final SearchCriteria<SSHKeyPairVO> ssc = _sshKeyPairDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("fingerprint", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
         final Pair<List<SSHKeyPairVO>, Integer> result = _sshKeyPairDao.searchAndCount(sc, searchFilter);
