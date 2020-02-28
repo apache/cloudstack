@@ -3069,9 +3069,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (BYTES_MAX_WRITE_LENGTH.value() != null && BYTES_MAX_WRITE_LENGTH.value() != 0l) {
-            if (bytesReadRateMaxLength != null && bytesReadRateMaxLength > BYTES_MAX_WRITE_LENGTH.value()) {
+            if (bytesWriteRateMaxLength != null && bytesWriteRateMaxLength > BYTES_MAX_WRITE_LENGTH.value()) {
                 throw new InvalidParameterValueException(String.format("Bytes write max length (%d seconds) cannot be greater than vm.disk.bytes.maximum.write.length (%d seconds)",
-                        bytesReadRateMaxLength, BYTES_MAX_WRITE_LENGTH.value()));
+                        bytesWriteRateMaxLength, BYTES_MAX_WRITE_LENGTH.value()));
             }
         }
     }
