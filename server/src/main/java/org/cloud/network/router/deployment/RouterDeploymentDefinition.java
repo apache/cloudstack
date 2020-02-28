@@ -54,6 +54,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.router.NetworkHelper;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.ServiceOffering;
@@ -389,8 +390,24 @@ public class RouterDeploymentDefinition {
         serviceOfferingId = serviceOffering.getId();
     }
 
+    protected void findAccountServiceOfferingId() {
+        String accountRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.valueIn(guestNetwork.getAccountId());
+        if (accountRouterOffering != null) {
+            ServiceOfferingVO serviceOffering = serviceOfferingDao.findByUuid(accountRouterOffering);
+            if (serviceOffering != null && serviceOffering.isSystemUse()) {
+                boolean isLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
+                if (isLocalStorage == serviceOffering.isUseLocalStorage()) {
+                    serviceOfferingId = serviceOffering.getId();
+                }
+            }
+        }
+    }
+
     protected void findServiceOfferingId() {
         serviceOfferingId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
+        if (serviceOfferingId == null) {
+            findAccountServiceOfferingId();
+        }
         if (serviceOfferingId == null) {
             findDefaultServiceOfferingId();
         }

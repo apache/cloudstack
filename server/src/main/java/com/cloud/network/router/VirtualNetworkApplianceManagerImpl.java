@@ -3248,6 +3248,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 UseExternalDnsServers,
                 RouterVersionCheckEnabled,
                 SetServiceMonitor,
+                VirtualRouterServiceOffering,
                 RouterAlertsCheckInterval,
                 RouterHealthChecksEnabled,
                 RouterHealthChecksBasicInterval,
