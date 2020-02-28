@@ -194,10 +194,15 @@ class CsRedundant(object):
         heartbeat_cron.commit()
 
         proc = CsProcess(['/usr/sbin/keepalived'])
-        if not proc.find() or keepalived_conf.is_changed() or force_keepalived_restart:
+        if not proc.find():
+            force_keepalived_restart = True
+        if keepalived_conf.is_changed() or force_keepalived_restart:
             keepalived_conf.commit()
             os.chmod(self.KEEPALIVED_CONF, 0o644)
-            CsHelper.service("keepalived", "restart")
+            if force_keepalived_restart or not self.cl.is_master():
+                CsHelper.service("keepalived", "restart")
+            else:
+                CsHelper.service("keepalived", "reload")
 
     def release_lock(self):
         try:
@@ -339,7 +344,8 @@ class CsRedundant(object):
 
         interfaces = [interface for interface in self.address.get_interfaces() if interface.needs_vrrp()]
         for interface in interfaces:
-            CsPasswdSvc(interface.get_gateway() + "," + interface.get_ip()).restart()
+            if interface.is_added():
+                CsPasswdSvc(interface.get_gateway() + "," + interface.get_ip()).restart()
 
         CsHelper.service("dnsmasq", "restart")
         self.cl.set_master_state(True)
