@@ -1793,17 +1793,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         try {
             conn = getLibvirtUtilitiesHelper().getConnectionByVmName(routerName);
+            Pair<Map<String, Integer>, Integer> macAddressToNicNumPair = getMacAddressToNicNumPair(conn, routerName);
+            final Map<String, Integer> macAddressToNicNum = macAddressToNicNumPair.first();
+            Integer devNum = macAddressToNicNumPair.second();
+
             final IpAddressTO[] ips = cmd.getIpAddresses();
-            Integer devNum = 0;
-            final List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
-            final Map<String, Integer> macAddressToNicNum = new HashMap<>(pluggedNics.size());
-
-            for (final InterfaceDef pluggedNic : pluggedNics) {
-                final String pluggedVlan = pluggedNic.getBrName();
-                macAddressToNicNum.put(pluggedNic.getMacAddress(), devNum);
-                devNum++;
-            }
-
             for (final IpAddressTO ip : ips) {
                 ip.setNicDevId(macAddressToNicNum.get(ip.getVifMacAddress()));
             }
@@ -1820,35 +1814,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         Connect conn;
         try {
-            conn = LibvirtConnection.getConnectionByVmName(routerName);
-            final List<InterfaceDef> nics = getInterfaces(conn, routerName);
-            final Map<String, Integer> broadcastUriAllocatedToVM = new HashMap<String, Integer>();
-            Integer nicPos = 0;
-            for (final InterfaceDef nic : nics) {
-                if (nic.getBrName().equalsIgnoreCase(_linkLocalBridgeName)) {
-                    broadcastUriAllocatedToVM.put("LinkLocal", nicPos);
-                } else {
-                    if (nic.getBrName().equalsIgnoreCase(_publicBridgeName) || nic.getBrName().equalsIgnoreCase(_privBridgeName) ||
-                            nic.getBrName().equalsIgnoreCase(_guestBridgeName)) {
-                        broadcastUriAllocatedToVM.put(BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString(), nicPos);
-                    } else {
-                        final String broadcastUri = getBroadcastUriFromBridge(nic.getBrName());
-                        broadcastUriAllocatedToVM.put(broadcastUri, nicPos);
-                    }
-                }
-                nicPos++;
-            }
+            conn = getLibvirtUtilitiesHelper().getConnectionByVmName(routerName);
+            Pair<Map<String, Integer>, Integer> macAddressToNicNumPair = getMacAddressToNicNumPair(conn, routerName);
+            final Map<String, Integer> macAddressToNicNum = macAddressToNicNumPair.first();
+            Integer devNum = macAddressToNicNumPair.second();
+
             final IpAddressTO[] ips = cmd.getIpAddresses();
             int nicNum = 0;
             for (final IpAddressTO ip : ips) {
                 boolean newNic = false;
-                if (!broadcastUriAllocatedToVM.containsKey(ip.getBroadcastUri())) {
+                if (!macAddressToNicNum.containsKey(ip.getVifMacAddress())) {
                     /* plug a vif into router */
                     VifHotPlug(conn, routerName, ip.getBroadcastUri(), ip.getVifMacAddress());
-                    broadcastUriAllocatedToVM.put(ip.getBroadcastUri(), nicPos++);
+                    macAddressToNicNum.put(ip.getVifMacAddress(), devNum++);
                     newNic = true;
                 }
-                nicNum = broadcastUriAllocatedToVM.get(ip.getBroadcastUri());
+                nicNum = macAddressToNicNum.get(ip.getVifMacAddress());
                 networkUsage(routerIp, "addVif", "eth" + nicNum);
 
                 ip.setNicDevId(nicNum);
@@ -1870,39 +1851,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         final String lastIp = cmd.getAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP);
         Connect conn;
-
-
-        try{
-            conn = LibvirtConnection.getConnectionByVmName(routerName);
-            final List<InterfaceDef> nics = getInterfaces(conn, routerName);
-            final Map<String, Integer> broadcastUriAllocatedToVM = new HashMap<String, Integer>();
-
-            Integer nicPos = 0;
-            for (final InterfaceDef nic : nics) {
-                if (nic.getBrName().equalsIgnoreCase(_linkLocalBridgeName)) {
-                    broadcastUriAllocatedToVM.put("LinkLocal", nicPos);
-                } else {
-                    if (nic.getBrName().equalsIgnoreCase(_publicBridgeName) || nic.getBrName().equalsIgnoreCase(_privBridgeName) ||
-                            nic.getBrName().equalsIgnoreCase(_guestBridgeName)) {
-                        broadcastUriAllocatedToVM.put(BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString(), nicPos);
-                    } else {
-                        final String broadcastUri = getBroadcastUriFromBridge(nic.getBrName());
-                        broadcastUriAllocatedToVM.put(broadcastUri, nicPos);
-                    }
-                }
-                nicPos++;
-            }
+        try {
+            conn = getLibvirtUtilitiesHelper().getConnectionByVmName(routerName);
+            Pair<Map<String, Integer>, Integer> macAddressToNicNumPair = getMacAddressToNicNumPair(conn, routerName);
+            final Map<String, Integer> macAddressToNicNum = macAddressToNicNumPair.first();
+            Integer devNum = macAddressToNicNumPair.second();
 
             final IpAddressTO[] ips = cmd.getIpAddresses();
             int nicNum = 0;
             for (final IpAddressTO ip : ips) {
-
-                if (!broadcastUriAllocatedToVM.containsKey(ip.getBroadcastUri())) {
+                if (!macAddressToNicNum.containsKey(ip.getVifMacAddress())) {
                     /* plug a vif into router */
                     VifHotPlug(conn, routerName, ip.getBroadcastUri(), ip.getVifMacAddress());
-                    broadcastUriAllocatedToVM.put(ip.getBroadcastUri(), nicPos++);
+                    macAddressToNicNum.put(ip.getVifMacAddress(), devNum++);
                 }
-                nicNum = broadcastUriAllocatedToVM.get(ip.getBroadcastUri());
+                nicNum = macAddressToNicNum.get(ip.getVifMacAddress());
 
                 if (org.apache.commons.lang.StringUtils.equalsIgnoreCase(lastIp, "true") && !ip.isAdd()) {
                     // in isolated network eth2 is the default public interface. We don't want to delete it.
@@ -1922,6 +1885,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return new ExecutionResult(true, null);
+    }
+
+
+    private Pair<Map<String, Integer>, Integer> getMacAddressToNicNumPair(Connect conn, String routerName) {
+        Integer devNum = 0;
+        final List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
+        final Map<String, Integer> macAddressToNicNum = new HashMap<>(pluggedNics.size());
+        for (final InterfaceDef pluggedNic : pluggedNics) {
+            final String pluggedVlan = pluggedNic.getBrName();
+            macAddressToNicNum.put(pluggedNic.getMacAddress(), devNum);
+            devNum++;
+        }
+        return new Pair<Map<String, Integer>, Integer>(macAddressToNicNum, devNum);
     }
 
     protected PowerState convertToPowerState(final DomainState ps) {
