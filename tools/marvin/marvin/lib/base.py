@@ -3078,13 +3078,15 @@ class Network:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return (apiclient.updateNetwork(cmd))
 
-    def restart(self, apiclient, cleanup=None):
+    def restart(self, apiclient, cleanup=None, makeredundant=None):
         """Restarts the network"""
 
         cmd = restartNetwork.restartNetworkCmd()
         cmd.id = self.id
         if cleanup:
             cmd.cleanup = cleanup
+        if makeredundant:
+            cmd.makeredundant = makeredundant
         return (apiclient.restartNetwork(cmd))
 
     def migrate(self, apiclient, network_offering_id, resume=False):
@@ -4487,11 +4489,15 @@ class VPC:
         cmd.id = self.id
         return apiclient.deleteVPC(cmd)
 
-    def restart(self, apiclient):
+    def restart(self, apiclient, cleanup=None, makeredundant=None):
         """Restarts the VPC connections"""
 
         cmd = restartVPC.restartVPCCmd()
         cmd.id = self.id
+        if cleanup:
+            cmd.cleanup = cleanup
+        if makeredundant:
+            cmd.makeredundant = makeredundant
         return apiclient.restartVPC(cmd)
 
     @classmethod

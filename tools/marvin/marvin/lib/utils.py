@@ -68,7 +68,9 @@ def _execute_ssh_command(hostip, port, username, password, ssh_command):
     # Ensure the SSH login is successful
     while True:
         res = ssh.execute(ssh_command)
-        if "Connection refused".lower() in res[0].lower():
+        if len(res) == 0:
+            return res
+        elif "Connection refused".lower() in res[0].lower():
             pass
         elif res[0] != "Host key verification failed.":
             break
