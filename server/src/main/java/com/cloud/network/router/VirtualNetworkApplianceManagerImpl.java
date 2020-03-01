@@ -17,7 +17,6 @@
 
 package com.cloud.network.router;
 
-import java.io.StringReader;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
@@ -268,10 +267,8 @@ import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
-import com.google.gson.stream.JsonReader;
 
 /**
  * VirtualNetworkApplianceManagerImpl manages the different types of virtual
@@ -1522,16 +1519,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         try {
             s_logger.debug("Parsing and updating DB health check data for router: " + routerId + " with data: " + monitoringResult) ;
             final Type t = new TypeToken<Map<String, Map<String, Map<String, String>>>>() {}.getType();
-            JsonReader jsonReader = new JsonReader(new StringReader(monitoringResult));
-            jsonReader.setLenient(true);
-            final Map<String, Map<String, Map<String, String>>> checks = GsonHelper.getGson().fromJson(jsonReader, t);
+            final Map<String, Map<String, Map<String, String>>> checks = GsonHelper.getGson().fromJson(monitoringResult, t);
             return parseHealthCheckResults(checks, routerId);
         } catch (JsonSyntaxException ex) {
             s_logger.error("Unable to parse the result of health checks due to " + ex.getLocalizedMessage(), ex);
-        } catch (JsonIOException ex) {
-            s_logger.error("Unable to read json data " + monitoringResult + " due to: " + ex.getLocalizedMessage());
         }
-
         return Collections.emptyList();
     }
 
