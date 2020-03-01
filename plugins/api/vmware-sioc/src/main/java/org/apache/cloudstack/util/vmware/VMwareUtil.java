@@ -553,6 +553,7 @@ public class VMwareUtil {
         HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
      }
 
+    /** this is not secure*/
     private static class TrustAllTrustManager implements TrustManager, X509TrustManager {
         @Override
         public X509Certificate[] getAcceptedIssuers() {
