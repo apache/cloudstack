@@ -1,5 +1,5 @@
 cloudstack-primate (VERSION) unstable; urgency=low
 
-  * CloudStack Primate technical preview version 0.1.0
+  * CloudStack Primate version VERSION
 
  -- Rohit Yadav <rohit@apache.org>  Thu, 27 Feb 2020 12:00:00 +0530
