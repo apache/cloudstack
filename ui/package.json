@@ -1,7 +1,7 @@
 {
   "name": "primate",
   "description": "Modern role-based Apache CloudStack UI",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "homepage": "https://cloudstack.apache.org/",
   "repository": {
     "type": "git",
@@ -47,15 +47,15 @@
     "md5": "^2.2.1",
     "moment": "^2.24.0",
     "node-emoji": "^1.10.0",
-    "npm-check-updates": "^4.0.1",
+    "npm-check-updates": "^4.0.3",
     "nprogress": "^0.2.0",
     "viser-vue": "^2.4.8",
     "vue": "^2.6.11",
     "vue-clipboard2": "^0.3.1",
     "vue-cropper": "0.5.0",
-    "vue-i18n": "^8.15.3",
+    "vue-i18n": "^8.15.4",
     "vue-ls": "^3.2.1",
-    "vue-router": "^3.1.5",
+    "vue-router": "^3.1.6",
     "vue-svg-component-runtime": "^1.0.1",
     "vuedraggable": "^2.23.2",
     "vuex": "^3.1.2"
@@ -68,7 +68,7 @@
     "@vue/cli-plugin-unit-jest": "^4.2.2",
     "@vue/cli-service": "^4.2.2",
     "@vue/eslint-config-standard": "^5.1.2",
-    "@vue/test-utils": "^1.0.0-beta.20",
+    "@vue/test-utils": "^1.0.0-beta.31",
     "babel-core": "7.0.0-bridge.0",
     "babel-eslint": "^10.0.3",
     "babel-jest": "^25.1.0",
@@ -87,7 +87,7 @@
     "vue-cli-plugin-i18n": "^0.6.1",
     "vue-svg-icon-loader": "^2.1.1",
     "vue-template-compiler": "^2.6.11",
-    "webpack": "^4.41.6"
+    "webpack": "^4.42.0"
   },
   "eslintConfig": {
     "root": true,
