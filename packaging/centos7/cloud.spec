@@ -403,7 +403,7 @@ chown -R cloud:cloud /var/log/cloudstack/management
 systemctl daemon-reload
 
 JAVA11_NAME=$(alternatives --display java | grep 'family java-11' | grep -Eo '^[^ ]+')
-if [ -z $JDK11_NAME ]; then
+if [ -n $JDK11_NAME ]; then
   echo "Setting default Java to $JDK11_NAME"
   alternatives --set java $JDK11_NAME
 fi
@@ -446,7 +446,7 @@ fi
 systemctl daemon-reload
 
 JAVA11_NAME=$(alternatives --display java | grep 'family java-11' | grep -Eo '^[^ ]+')
-if [ -z $JDK11_NAME ]; then
+if [ -n $JDK11_NAME ]; then
   echo "Setting default Java to $JDK11_NAME"
   alternatives --set java $JDK11_NAME
 fi
@@ -480,7 +480,7 @@ if [ ! -f "%{_sysconfdir}/%{name}/usage/key" ]; then
 fi
 
 JAVA11_NAME=$(alternatives --display java | grep 'family java-11' | grep -Eo '^[^ ]+')
-if [ -z $JDK11_NAME ]; then
+if [ -n $JDK11_NAME ]; then
   echo "Setting default Java to $JDK11_NAME"
   alternatives --set java $JDK11_NAME
 fi

@@ -66,9 +66,9 @@ if [ "$1" = configure ]; then
 
     # Check and switch to Java 11
     JDK11_NAME=$(update-java-alternatives --list | grep 11 | head -1 |  grep -Eo '^[^ ]+')
-    if [ -z ${JDK11_NAME} ]; then
+    if [ -n ${JDK11_NAME} ]; then
       echo "Setting default JAVA to ${JDK11_NAME}"
-      update-java-alternatives -s ${JDK11_NAME} > /dev/null
+      update-java-alternatives --jre-headless -s ${JDK11_NAME} > /dev/null
     fi
 fi
 
