@@ -33,6 +33,9 @@ public class ApiConstants {
     public static final String APPLIED = "applied";
     public static final String LIST_LB_VMIPS = "lbvmips";
     public static final String AVAILABLE = "available";
+    public static final String BACKUP_ID = "backupid";
+    public static final String BACKUP_OFFERING_NAME = "backupofferingname";
+    public static final String BACKUP_OFFERING_ID = "backupofferingid";
     public static final String BITS = "bits";
     public static final String BOOTABLE = "bootable";
     public static final String BIND_DN = "binddn";
@@ -144,6 +147,7 @@ public class ApiConstants {
     public static final String EXTRA_DHCP_OPTION_NAME = "extradhcpoptionname";
     public static final String EXTRA_DHCP_OPTION_CODE = "extradhcpoptioncode";
     public static final String EXTRA_DHCP_OPTION_VALUE = "extradhcpvalue";
+    public static final String EXTERNAL = "external";
     public static final String FENCE = "fence";
     public static final String FETCH_LATEST = "fetchlatest";
     public static final String FIRSTNAME = "firstname";
@@ -366,6 +370,7 @@ public class ApiConstants {
     public static final String VALUE = "value";
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
+    public static final String VIRTUAL_MACHINE_NAME = "virtualmachinename";
     public static final String VIRTUAL_MACHINE_ID_IP = "vmidipmap";
     public static final String VIRTUAL_MACHINE_COUNT = "virtualmachinecount";
     public static final String USAGE_ID = "usageid";
@@ -385,6 +390,7 @@ public class ApiConstants {
     public static final String VNET = "vnet";
     public static final String IS_VOLATILE = "isvolatile";
     public static final String VOLUME_ID = "volumeid";
+    public static final String VOLUMES = "volumes";
     public static final String ZONE = "zone";
     public static final String ZONE_ID = "zoneid";
     public static final String ZONE_NAME = "zonename";
@@ -531,6 +537,7 @@ public class ApiConstants {
     public static final String REQUIRED = "required";
     public static final String RESTART_REQUIRED = "restartrequired";
     public static final String ALLOW_USER_CREATE_PROJECTS = "allowusercreateprojects";
+    public static final String ALLOW_USER_DRIVEN_BACKUPS = "allowuserdrivenbackups";
     public static final String CONSERVE_MODE = "conservemode";
     public static final String TRAFFIC_TYPE_IMPLEMENTOR = "traffictypeimplementor";
     public static final String KEYWORD = "keyword";
@@ -780,7 +787,7 @@ public class ApiConstants {
     }
 
     public enum VMDetails {
-        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, iso, volume, min, affgrp;
+        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp;
     }
 
     public enum DomainDetails {

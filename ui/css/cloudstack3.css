@@ -12277,22 +12277,26 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .stop .icon,
 .removeVmwareDc .icon,
+.removeBackupChain .icon,
 .release .icon {
   background-position: 0 -31px;
 }
 
 .stop:hover .icon,
 .removeVmwareDc:hover .icon,
+.removeBackupChain:hover .icon,
 .release:hover .icon {
   background-position: 0 -613px;
 }
 
 .restart .icon,
+.restoreBackup .icon,
 .releaseDedicatedZone .icon {
   background-position: 0 -63px;
 }
 
 .restart:hover .icon,
+.restoreBackup:hover .icon,
 .releaseDedicatedZone:hover .icon {
   background-position: 0 -645px;
 }
@@ -12354,14 +12358,16 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .attach .icon,
 .attachISO .icon,
 .attachDisk .icon,
+.restoreBackupVolume .icon,
 .associateProfileToBlade .icon {
   background-position: -104px -3px;
 }
 
 .attach:hover .icon,
 .attachISO:hover .icon,
+.restoreBackupVolume:hover .icon,
 .attachDisk:hover .icon {
-  background-position: -101px -585px;
+  background-position: -104px -585px;
 }
 
 .detach .icon,
@@ -12408,21 +12414,25 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .snapshot .icon,
 .takeSnapshot .icon,
+.startBackup .icon,
 .storageSnapshot .icon {
   background-position: -36px -91px;
 }
 
 .snapshot:hover .icon,
 .takeSnapshot:hover .icon,
+.startBackup:hover .icon,
 .storageSnapshot:hover .icon {
   background-position: -36px -673px;
 }
 
-.recurringSnapshot .icon {
+.recurringSnapshot .icon,
+.configureBackupSchedule .icon {
   background-position: -69px -95px;
 }
 
-.recurringSnapshot:hover .icon {
+.recurringSnapshot:hover .icon,
+.configureBackupSchedule:hover .icon {
   background-position: -69px -677px;
 }
 
@@ -12504,6 +12514,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .createTemplate .icon,
 .enableSwift .icon,
 .addVM .icon,
+.assignToBackupOffering .icon,
 .dedicateZone .icon,
 .dedicate .icon {
   background-position: -69px -63px;
@@ -12513,6 +12524,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .createTemplate:hover .icon,
 .enableSwift:hover .icon,
 .addVM:hover .icon,
+.assignToBackupOffering:hover .icon,
 .dedicateZone:hover .icon {
   background-position: -69px -645px;
 }
@@ -12631,11 +12643,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -138px -647px;
 }
 
-.cancelMaintenanceMode .icon {
+.cancelMaintenanceMode .icon,
+.removeFromBackupOffering .icon {
   background-position: -138px -123px;
 }
 
-.cancelMaintenanceMode:hover .icon {
+.cancelMaintenanceMode:hover .icon,
+.removeFromBackupOffering .icon {
   background-position: -138px -705px;
 }
 
@@ -12745,10 +12759,12 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -197px -647px;
 }
 
+.createBackup .icon,
 .forceReconnect .icon {
   background-position: -196px -95px;
 }
 
+.createBackup:hover .icon,
 .forceReconnect:hover .icon {
   background-position: -196px -677px;
 }

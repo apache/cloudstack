@@ -103,7 +103,7 @@ public class VmwareClient {
             vimService = new VimService();
         } catch (Exception e) {
             s_logger.info("[ignored]"
-                    + "failed to trust all certificates blindly: " + e.getLocalizedMessage());
+                    + "failed to trust all certificates blindly: ", e);
         }
     }
 

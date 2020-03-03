@@ -121,7 +121,7 @@
         <cs.bcprov.version>1.64</cs.bcprov.version>
         <cs.cglib.version>3.3.0</cs.cglib.version>
         <cs.checkstyle-lib.version>8.18</cs.checkstyle-lib.version>
-        <cs.cxf.version>3.2.0</cs.cxf.version>
+        <cs.cxf.version>3.2.6</cs.cxf.version>
         <cs.ehcache.version>2.6.11</cs.ehcache.version>
         <cs.globodns-client.version>0.0.27</cs.globodns-client.version>
         <cs.groovy.version>2.4.17</cs.groovy.version>
@@ -130,7 +130,7 @@
         <cs.httpclient.version>4.5.11</cs.httpclient.version>
         <cs.httpcore.version>4.4.13</cs.httpcore.version>
         <cs.influxdb-java.version>2.17</cs.influxdb-java.version>
-        <cs.jackson.version>2.9.2</cs.jackson.version>
+        <cs.jackson.version>2.9.6</cs.jackson.version>
         <cs.jasypt.version>1.9.3</cs.jasypt.version>
         <cs.java-ipv6.version>0.17</cs.java-ipv6.version>
         <cs.javassist.version>3.26.0-GA</cs.javassist.version>
@@ -161,6 +161,7 @@
         <cs.tomcat-embed-core.version>8.5.47</cs.tomcat-embed-core.version>
         <cs.trilead.version>1.0.0-build222</cs.trilead.version>
         <cs.vmware.api.version>6.7</cs.vmware.api.version>
+        <cs.winrm4j.version>0.5.0</cs.winrm4j.version>
         <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
         <cs.xstream.version>1.4.11.1</cs.xstream.version>

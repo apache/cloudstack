@@ -5278,3 +5278,106 @@ class ResourceDetails:
         cmd.resourceid = resourceid
         cmd.resourcetype = resourcetype
         return (apiclient.removeResourceDetail(cmd))
+
+# Backup and Recovery
+
+class BackupOffering:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def importExisting(self, apiclient, zoneid, externalid, name, description, allowuserdrivenbackups=True):
+        """Import existing backup offering from the provider"""
+
+        cmd = importBackupOffering.importBackupOfferingCmd()
+        cmd.zoneid = zoneid
+        cmd.externalid = externalid
+        cmd.name = name
+        cmd.description = description
+        cmd.allowuserdrivenbackups = allowuserdrivenbackups
+        return BackupOffering(apiclient.importBackupOffering(cmd).__dict__)
+
+    @classmethod
+    def listById(self, apiclient, id):
+        """List imported backup policies by id"""
+
+        cmd = listBackupOfferings.listBackupOfferingsCmd()
+        cmd.id = id
+        return (apiclient.listBackupOfferings(cmd))
+
+    @classmethod
+    def listByZone(self, apiclient, zoneid):
+        """List imported backup policies"""
+
+        cmd = listBackupOfferings.listBackupOfferingsCmd()
+        cmd.zoneid = zoneid
+        return (apiclient.listBackupOfferings(cmd))
+
+    @classmethod
+    def listExternal(self, apiclient, zoneid):
+        """List external backup policies"""
+
+        cmd = listBackupProviderOfferings.listBackupProviderOfferingsCmd()
+        cmd.zoneid = zoneid
+        return (apiclient.listBackupProviderOfferings(cmd))
+
+    def delete(self, apiclient):
+        """Delete an imported backup offering"""
+
+        cmd = deleteBackupOffering.deleteBackupOfferingCmd()
+        cmd.id = self.id
+        return (apiclient.deleteBackupOffering(cmd))
+
+    def assignOffering(self, apiclient, vmid):
+        """Add a VM to a backup offering"""
+
+        cmd = assignVirtualMachineToBackupOffering.assignVirtualMachineToBackupOfferingCmd()
+        cmd.backupofferingid = self.id
+        cmd.virtualmachineid = vmid
+        return (apiclient.assignVirtualMachineToBackupOffering(cmd))
+
+    def removeOffering(self, apiclient, vmid, forced=True):
+        """Remove a VM from a backup offering"""
+
+        cmd = removeVirtualMachineFromBackupOffering.removeVirtualMachineFromBackupOfferingCmd()
+        cmd.virtualmachineid = vmid
+        cmd.forced = forced
+        return (apiclient.removeVirtualMachineFromBackupOffering(cmd))
+
+class Backup:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(self, apiclient, vmid):
+        """Create VM backup"""
+
+        cmd = createBackup.createBackupCmd()
+        cmd.virtualmachineid = vmid
+        return (apiclient.createBackup(cmd))
+
+    @classmethod
+    def delete(self, apiclient, id):
+        """Delete VM backup"""
+
+        cmd = deleteBackup.deleteBackupCmd()
+        cmd.id = id
+        return (apiclient.deleteBackup(cmd))
+
+    @classmethod
+    def list(self, apiclient, vmid):
+        """List VM backups"""
+
+        cmd = listBackups.listBackupsCmd()
+        cmd.virtualmachineid = vmid
+        cmd.listall = True
+        return (apiclient.listBackups(cmd))
+
+    def restoreVM(self, apiclient):
+        """Restore VM from backup"""
+
+        cmd = restoreBackup.restoreBackupCmd()
+        cmd.id = self.id
+        return (apiclient.restoreBackup(cmd))

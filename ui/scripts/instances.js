@@ -796,6 +796,9 @@
                     path: 'storage.vmsnapshots',
                     label: 'label.snapshots'
                 }, {
+                    path: 'storage.backups',
+                    label: 'label.backup'
+                }, {
                     path: 'affinityGroups',
                     label: 'label.affinity.groups'
                 }, {
@@ -1257,6 +1260,422 @@
                         poll: pollAsyncJobResult
                       }
                     },
+
+                    createBackup: {
+                      messages: {
+                        confirm: function(args) {
+                            return 'label.create.backup';
+                        },
+                        notification: function() {
+                            return 'label.create.backup';
+                        }
+                      },
+                      label: 'label.create.backup',
+                      action: function(args) {
+                        var data = {
+                          virtualmachineid: args.context.instances[0].id
+                        };
+                        $.ajax({
+                          url: createURL('createBackup'),
+                          data: data,
+                          dataType: 'json',
+                          success: function(json) {
+                            var jid = json.createbackupresponse.jobid;
+                            args.response.success({
+                              _custom: {
+                                jobId: jid
+                              }
+                            });
+                          }
+                        });
+                      },
+                      notification: {
+                        poll: pollAsyncJobResult
+                      }
+                    },
+
+                    configureBackupSchedule: {
+                      label: 'Backup Schedule',
+                      action: {
+                          custom: cloudStack.uiCustom.backupSchedule({
+                              desc: 'Configure VM backup schedule',
+                              dataProvider: function(args) {
+                                  $.ajax({
+                                      url: createURL('listBackupSchedule'),
+                                      data: {
+                                          virtualmachineid: args.context.instances[0].id
+                                      },
+                                      async: true,
+                                      dataType: 'json',
+                                      success: function(data) {
+                                          var schedule = {}
+                                          if (data && data.listbackupscheduleresponse && data.listbackupscheduleresponse.backupschedule) {
+                                            schedule = data.listbackupscheduleresponse.backupschedule;
+                                            schedule.id = schedule.virtualmachineid;
+                                            if (schedule.intervaltype == 'HOURLY') {
+                                              schedule.type = 0;
+                                              schedule.time = schedule.schedule;
+                                            } else if (schedule.intervaltype == 'DAILY') {
+                                              schedule.type = 1;
+                                              schedule.time = schedule.schedule.split(':')[1] + ':' + schedule.schedule.split(':')[0];
+                                            } else if (schedule.intervaltype == 'WEEKLY') {
+                                              schedule.type = 2;
+                                              schedule.time = schedule.schedule.split(':')[1] + ':' + schedule.schedule.split(':')[0];
+                                              schedule['day-of-week'] = schedule.schedule.split(':')[2];
+                                            } else if (schedule.intervaltype == 'MONTHLY') {
+                                              schedule.type = 3;
+                                              schedule.time = schedule.schedule.split(':')[1] + ':' + schedule.schedule.split(':')[0];
+                                              schedule['day-of-month'] = schedule.schedule.split(':')[2];
+                                            }
+                                            schedule.time = '(' + schedule.intervaltype + ') ' + schedule.time
+                                          }
+                                          args.response.success({
+                                              data: [schedule]
+                                          });
+                                      },
+                                      error: function(data) {
+                                      }
+                                  });
+                              },
+                              actions: {
+                                  add: function(args) {
+                                      var snap = args.snapshot;
+
+                                      var data = {
+                                          virtualmachineid: args.context.instances[0].id,
+                                          intervaltype: snap['snapshot-type'],
+                                          timezone: snap.timezone
+                                      };
+
+                                      var convertTime = function(minute, hour, meridiem, extra) {
+                                          var convertedHour = meridiem == 'PM' ?
+                                              (hour != 12 ? parseInt(hour) + 12 : 12) : (hour != 12 ? hour : '00');
+                                          var time = minute + ':' + convertedHour;
+                                          if (extra) time += ':' + extra;
+
+                                          return time;
+                                      };
+
+                                      switch (snap['snapshot-type']) {
+                                          case 'hourly': // Hourly
+                                              $.extend(data, {
+                                                  schedule: snap.schedule
+                                              });
+                                              break;
+
+                                          case 'daily': // Daily
+                                              $.extend(data, {
+                                                  schedule: convertTime(
+                                                      snap['time-minute'],
+                                                      snap['time-hour'],
+                                                      snap['time-meridiem']
+                                                  )
+                                              });
+                                              break;
+
+                                          case 'weekly': // Weekly
+                                              $.extend(data, {
+                                                  schedule: convertTime(
+                                                      snap['time-minute'],
+                                                      snap['time-hour'],
+                                                      snap['time-meridiem'],
+                                                      snap['day-of-week']
+                                                  )
+                                              });
+                                              break;
+
+                                          case 'monthly': // Monthly
+                                              $.extend(data, {
+                                                  schedule: convertTime(
+                                                      snap['time-minute'],
+                                                      snap['time-hour'],
+                                                      snap['time-meridiem'],
+                                                      snap['day-of-month']
+                                                  )
+                                              });
+                                              break;
+                                      }
+
+                                      $.ajax({
+                                          url: createURL('createBackupSchedule'),
+                                          data: data,
+                                          dataType: 'json',
+                                          async: true,
+                                          success: function(data) {
+                                              var schedule = {}
+                                              if (data && data.createbackupscheduleresponse && data.createbackupscheduleresponse.backupschedule) {
+                                                schedule = data.createbackupscheduleresponse.backupschedule;
+                                                schedule.id = schedule.virtualmachineid;
+                                                if (schedule.intervaltype == 'HOURLY') {
+                                                  schedule.type = 0;
+                                                  schedule.time = schedule.schedule;
+                                                } else if (schedule.intervaltype == 'DAILY') {
+                                                  schedule.type = 1;
+                                                  schedule.time = schedule.schedule.split(':')[1] + ':' + schedule.schedule.split(':')[0];
+                                                } else if (schedule.intervaltype == 'WEEKLY') {
+                                                  schedule.type = 2;
+                                                  schedule.time = schedule.schedule.split(':')[1] + ':' + schedule.schedule.split(':')[0];
+                                                  schedule['day-of-week'] = schedule.schedule.split(':')[2];
+                                                } else if (schedule.intervaltype == 'MONTHLY') {
+                                                  schedule.type = 3;
+                                                  schedule.time = schedule.schedule.split(':')[1] + ':' + schedule.schedule.split(':')[0];
+                                                  schedule['day-of-month'] = schedule.schedule.split(':')[2];
+                                                }
+                                                schedule.time = schedule.time + ' (' + schedule.intervaltype + ')'
+                                              }
+                                              args.response.success({
+                                                  data: schedule
+                                              });
+                                          }
+                                      });
+                                  },
+                                  remove: function(args) {
+                                      console.log(args);
+                                      $.ajax({
+                                          url: createURL('deleteBackupSchedule'),
+                                          data: {
+                                              virtualmachineid: args.context.instances[0].id
+                                          },
+                                          dataType: 'json',
+                                          async: true,
+                                          success: function(data) {
+                                              args.response.success();
+                                          }
+                                      });
+                                  }
+                              },
+
+                              // Select data
+                              selects: {
+                                  schedule: function(args) {
+                                      var time = [];
+
+                                      for (var i = 1; i <= 59; i++) {
+                                          time.push({
+                                              id: i,
+                                              name: i
+                                          });
+                                      }
+
+                                      args.response.success({
+                                          data: time
+                                      });
+                                  },
+                                  timezone: function(args) {
+                                      args.response.success({
+                                          data: $.map(timezoneMap, function(value, key) {
+                                              return {
+                                                  id: key,
+                                                  name: value
+                                              };
+                                          })
+                                      });
+                                  },
+                                  'day-of-week': function(args) {
+                                      args.response.success({
+                                          data: [{
+                                              id: 1,
+                                              name: 'label.sunday'
+                                          }, {
+                                              id: 2,
+                                              name: 'label.monday'
+                                          }, {
+                                              id: 3,
+                                              name: 'label.tuesday'
+                                          }, {
+                                              id: 4,
+                                              name: 'label.wednesday'
+                                          }, {
+                                              id: 5,
+                                              name: 'label.thursday'
+                                          }, {
+                                              id: 6,
+                                              name: 'label.friday'
+                                          }, {
+                                              id: 7,
+                                              name: 'label.saturday'
+                                          }]
+                                      });
+                                  },
+
+                                  'day-of-month': function(args) {
+                                      var time = [];
+
+                                      for (var i = 1; i <= 28; i++) {
+                                          time.push({
+                                              id: i,
+                                              name: i
+                                          });
+                                      }
+
+                                      args.response.success({
+                                          data: time
+                                      });
+                                  },
+
+                                  'time-hour': function(args) {
+                                      var time = [];
+
+                                      for (var i = 1; i <= 12; i++) {
+                                          time.push({
+                                              id: i,
+                                              name: i
+                                          });
+                                      }
+
+                                      args.response.success({
+                                          data: time
+                                      });
+                                  },
+
+                                  'time-minute': function(args) {
+                                      var time = [];
+
+                                      for (var i = 0; i <= 59; i++) {
+                                          time.push({
+                                              id: i < 10 ? '0' + i : i,
+                                              name: i < 10 ? '0' + i : i
+                                          });
+                                      }
+
+                                      args.response.success({
+                                          data: time
+                                      });
+                                  },
+
+                                  'time-meridiem': function(args) {
+                                      args.response.success({
+                                          data: [{
+                                              id: 'AM',
+                                              name: 'AM'
+                                          }, {
+                                              id: 'PM',
+                                              name: 'PM'
+                                          }]
+                                      });
+                                  }
+                              }
+                          })
+                      },
+                      messages: {
+                          notification: function(args) {
+                              return 'Backup Schedule';
+                          }
+                      }
+                    },
+
+                    assignToBackupOffering: {
+                      messages: {
+                        confirm: function(args) {
+                            return 'label.backup.offering.assign';
+                        },
+                        notification: function() {
+                            return 'label.backup.offering.assign';
+                        }
+                      },
+                      label: 'label.backup.offering.assign',
+                      createForm: {
+                          title: 'label.backup.offering.assign',
+                          fields: {
+                              backupofferingid: {
+                                  label: 'label.backup.offering',
+                                  select: function(args) {
+                                      var data = {
+                                          zoneid: args.context.instances[0].zoneid
+                                      };
+                                      $.ajax({
+                                          url: createURL('listBackupOfferings'),
+                                          data: data,
+                                          async: false,
+                                          success: function(json) {
+                                              var offerings = json.listbackupofferingsresponse.backupoffering;
+                                              var items = [{
+                                                  id: -1,
+                                                  description: ''
+                                              }];
+                                              $(offerings).each(function() {
+                                                  items.push({
+                                                      id: this.id,
+                                                      description: this.name
+                                                  });
+                                              });
+                                              args.response.success({
+                                                  data: items
+                                              });
+                                          }
+                                      });
+                                  }
+                              }
+                          }
+                      },
+                      action: function(args) {
+                        var data = {
+                          virtualmachineid: args.context.instances[0].id,
+                          backupofferingid: args.data.backupofferingid
+                        };
+                        $.ajax({
+                          url: createURL('assignVirtualMachineToBackupOffering'),
+                          data: data,
+                          dataType: 'json',
+                          success: function(json) {
+                            var jid = json.assignvirtualmachinetobackupofferingresponse.jobid;
+                            args.response.success({
+                              _custom: {
+                                jobId: jid
+                              }
+                            });
+                          }
+                        });
+                      },
+                      notification: {
+                        poll: pollAsyncJobResult
+                      }
+                    },
+
+                    removeFromBackupOffering: {
+                      messages: {
+                        confirm: function(args) {
+                            return 'label.backup.offering.remove';
+                        },
+                        notification: function() {
+                            return 'label.backup.offering.remove';
+                        }
+                      },
+                      label: 'label.backup.offering.remove',
+                      createForm: {
+                          title: 'label.backup.offering.remove',
+                          fields: {
+                              forced: {
+                                  label: 'force.remove',
+                                  isBoolean: true,
+                                  isChecked: false
+                              }
+                          }
+                      },
+                      action: function(args) {
+                        var data = {
+                          virtualmachineid: args.context.instances[0].id,
+                          forced: args.data.forced === "on"
+                        };
+                        $.ajax({
+                          url: createURL('removeVirtualMachineFromBackupOffering'),
+                          data: data,
+                          dataType: 'json',
+                          success: function(json) {
+                            var jid = json.removevirtualmachinefrombackupofferingresponse.jobid;
+                            args.response.success({
+                              _custom: {
+                                jobId: jid
+                              }
+                            });
+                          }
+                        });
+                      },
+                      notification: {
+                        poll: pollAsyncJobResult
+                      }
+                    },
+
                     destroy: vmDestroyAction(),
                     expunge: {
                         label: 'label.action.expunge.instance',
@@ -2884,6 +3303,9 @@
                             keypair: {
                                 label: 'label.ssh.key.pair'
                             },
+                            backupofferingname: {
+                                label: 'label.backup.offering'
+                            },
                             domain: {
                                 label: 'label.domain'
                             },
@@ -3734,6 +4156,13 @@
             if (g_allowUserExpungeRecoverVm) {
                 allowedActions.push("expunge");
             }
+        }
+        if (jsonObj.backupofferingid) {
+            allowedActions.push("createBackup");
+            allowedActions.push("configureBackupSchedule");
+            allowedActions.push("removeFromBackupOffering");
+        } else {
+            allowedActions.push("assignToBackupOffering");
         }
 
         if (jsonObj.state == 'Starting' || jsonObj.state == 'Stopping' || jsonObj.state == 'Migrating') {
