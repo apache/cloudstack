@@ -201,6 +201,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "true if template requires HVM enabled, false otherwise")
     private Boolean requiresHvm;
 
+    @SerializedName(ApiConstants.URL)
+    @Param(description = "the URL which the template/iso is registered from")
+    private String url;
+
     public TemplateResponse() {
         tags = new LinkedHashSet<>();
     }
@@ -401,5 +405,9 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setRequiresHvm(Boolean requiresHvm) {
         this.requiresHvm = requiresHvm;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 }
