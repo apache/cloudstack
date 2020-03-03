@@ -136,7 +136,10 @@ public interface IpAddressManager {
 
     AcquirePodIpCmdResponse allocatePodIp(String zoneId, String podId) throws ConcurrentOperationException, ResourceAllocationException;
 
-    public boolean isIpEqualsGatewayOrNetworkOfferingsEmpty(Network network, String requestedIp);
+    /**
+     * Returns true if the given IP address is equals the gateway or there is no network offerrings for the given network
+     */
+    boolean isIpEqualsGatewayOrNetworkOfferingsEmpty(Network network, String requestedIp);
 
     void releasePodIp(Long id) throws CloudRuntimeException;
 }

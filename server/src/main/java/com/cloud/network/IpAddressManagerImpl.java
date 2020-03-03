@@ -37,6 +37,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.ip.StaticNatter;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpVO;
@@ -109,7 +110,6 @@ import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.IpDeployingRequester;
 import com.cloud.network.element.NetworkElement;
-import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.FirewallManager;
@@ -175,6 +175,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class IpAddressManagerImpl extends ManagerBase implements IpAddressManager, Configurable {
     private static final Logger s_logger = Logger.getLogger(IpAddressManagerImpl.class);
+    private final StaticNatter staticNatter = new StaticNatter(this);
 
     @Inject
     NetworkOrchestrationService _networkMgr;
@@ -1873,95 +1874,25 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @Override
     public boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError, boolean forRevoke) throws ResourceUnavailableException {
-        if (staticNats == null || staticNats.size() == 0) {
-            s_logger.debug("There are no static nat rules for the network elements");
-            return true;
-        }
-
-        Network network = _networksDao.findById(staticNats.get(0).getNetworkId());
-        boolean success = true;
 
         // Check if the StaticNat service is supported
-        if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
-            s_logger.debug("StaticNat service is not supported in specified network id");
-            return true;
-        }
-
-        List<IPAddressVO> userIps = getStaticNatSourceIps(staticNats);
-
-        List<PublicIp> publicIps = new ArrayList<PublicIp>();
-        if (userIps != null && !userIps.isEmpty()) {
-            for (IPAddressVO userIp : userIps) {
-                PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
-                publicIps.add(publicIp);
-            }
-        }
 
         // static NAT rules can not programmed unless IP is associated with source NAT service provider, so run IP
         // association for the network so as to ensure IP is associated before applying rules
-        if (checkStaticNatIPAssocRequired(network, false, forRevoke, publicIps)) {
-            applyIpAssociations(network, false, continueOnError, publicIps);
-        }
 
         // get provider
-        StaticNatServiceProvider element = _networkMgr.getStaticNatProviderForNetwork(network);
-        try {
-            success = element.applyStaticNats(network, staticNats);
-        } catch (ResourceUnavailableException e) {
-            if (!continueOnError) {
-                throw e;
-            }
-            s_logger.warn("Problems with " + element.getName() + " but pushing on", e);
-            success = false;
-        }
 
         // For revoked static nat IP, set the vm_id to null, indicate it should be revoked
-        for (StaticNat staticNat : staticNats) {
-            if (staticNat.isForRevoke()) {
-                for (PublicIp publicIp : publicIps) {
-                    if (publicIp.getId() == staticNat.getSourceIpAddressId()) {
-                        publicIps.remove(publicIp);
-                        IPAddressVO ip = _ipAddressDao.findByIdIncludingRemoved(staticNat.getSourceIpAddressId());
-                        // ip can't be null, otherwise something wrong happened
-                        ip.setAssociatedWithVmId(null);
-                        publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
-                        publicIps.add(publicIp);
-                        break;
-                    }
-                }
-            }
-        }
 
         // if the static NAT rules configured on public IP is revoked then, dis-associate IP with static NAT service provider
-        if (checkStaticNatIPAssocRequired(network, true, forRevoke, publicIps)) {
-            applyIpAssociations(network, true, continueOnError, publicIps);
-        }
 
-        return success;
+        return staticNatter.applyStaticNats(staticNats, continueOnError, forRevoke);
     }
 
     // checks if there are any public IP assigned to network, that are marked for one-to-one NAT that
     // needs to be associated/dis-associated with static-nat provider
     boolean checkStaticNatIPAssocRequired(Network network, boolean postApplyRules, boolean forRevoke, List<PublicIp> publicIps) {
-        for (PublicIp ip : publicIps) {
-            if (ip.isOneToOneNat()) {
-                Long activeFwCount = null;
-                activeFwCount = _firewallDao.countRulesByIpIdAndState(ip.getId(), FirewallRule.State.Active);
-
-                if (!postApplyRules && !forRevoke) {
-                    if (activeFwCount > 0) {
-                        continue;
-                    } else {
-                        return true;
-                    }
-                } else if (postApplyRules && forRevoke) {
-                    return true;
-                }
-            } else {
-                continue;
-            }
-        }
-        return false;
+        return staticNatter.checkStaticNatIPAssocRequired(network, postApplyRules, forRevoke, publicIps);
     }
 
     @Override
@@ -2149,9 +2080,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         return new ConfigKey<?>[] {UseSystemPublicIps, RulesContinueOnError, SystemVmPublicIpReservationModeStrictness};
     }
 
-    /**
-     * Returns true if the given IP address is equals the gateway or there is no network offerrings for the given network
-     */
     @Override
     public boolean isIpEqualsGatewayOrNetworkOfferingsEmpty(Network network, String requestedIp) {
         if (requestedIp.equals(network.getGateway()) || requestedIp.equals(network.getIp6Gateway())) {
