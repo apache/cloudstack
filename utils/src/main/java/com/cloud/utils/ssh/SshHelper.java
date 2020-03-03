@@ -34,7 +34,6 @@ import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
 import com.cloud.utils.Pair;
-import com.trilead.ssh2.StreamGobbler;
 
 public class SshHelper {
     private static final int DEFAULT_CONNECT_TIMEOUT = 180000;
@@ -185,11 +184,11 @@ public class SshHelper {
 
             sess.execCommand(command);
 
-            StreamGobbler stdout = new StreamGobbler(sess.getStdout());
-            StreamGobbler stderr = new StreamGobbler(sess.getStderr());
+            InputStream stdout = sess.getStdout();
+            InputStream stderr = sess.getStderr();
 
-            byte[] buffer = new byte[16384];
-            StringBuffer sbResult = new StringBuffer(214748364);
+            byte[] buffer = new byte[8192];
+            StringBuffer sbResult = new StringBuffer();
             int currentReadBytes = 0;
             while (true) {
                 throwSshExceptionIfStdoutOrStdeerIsNull(stdout, stderr);
@@ -207,15 +206,13 @@ public class SshHelper {
                     if (canEndTheSshConnection(waitResultTimeoutInMs, sess, conditions)) {
                         break;
                     }
-
                 }
 
-                while (stdout.available() > 0) {
-                    currentReadBytes = stdout.read(buffer);
-                    sbResult.append(new String(buffer, 0, currentReadBytes));
+               while((currentReadBytes = stdout.read(buffer)) != -1) {
+                    sbResult.append(new String(buffer, 0 , currentReadBytes));
                 }
-                while (stderr.available() > 0) {
-                    currentReadBytes = stderr.read(buffer);
+
+                while((currentReadBytes = stderr.read(buffer)) != -1) {
                     sbResult.append(new String(buffer, 0, currentReadBytes));
                 }
             }
