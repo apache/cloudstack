@@ -478,6 +478,17 @@ public class EventTypes {
     public static final String EVENT_VM_SNAPSHOT_OFF_PRIMARY = "VMSNAPSHOT.OFF_PRIMARY";
     public static final String EVENT_VM_SNAPSHOT_REVERT = "VMSNAPSHOT.REVERTTO";
 
+    // Backup and Recovery events
+    public static final String EVENT_VM_BACKUP_IMPORT_OFFERING = "BACKUP.IMPORT.OFFERING";
+    public static final String EVENT_VM_BACKUP_OFFERING_ASSIGN = "BACKUP.OFFERING.ASSIGN";
+    public static final String EVENT_VM_BACKUP_OFFERING_REMOVE = "BACKUP.OFFERING.REMOVE";
+    public static final String EVENT_VM_BACKUP_CREATE = "BACKUP.CREATE";
+    public static final String EVENT_VM_BACKUP_RESTORE = "BACKUP.RESTORE";
+    public static final String EVENT_VM_BACKUP_DELETE = "BACKUP.DELETE";
+    public static final String EVENT_VM_BACKUP_RESTORE_VOLUME_TO_VM = "BACKUP.RESTORE.VOLUME.TO.VM";
+    public static final String EVENT_VM_BACKUP_SCHEDULE_CONFIGURE = "BACKUP.SCHEDULE.CONFIGURE";
+    public static final String EVENT_VM_BACKUP_SCHEDULE_DELETE = "BACKUP.SCHEDULE.DELETE";
+
     // external network device events
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_ADD = "PHYSICAL.NVPCONTROLLER.ADD";
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_DELETE = "PHYSICAL.NVPCONTROLLER.DELETE";

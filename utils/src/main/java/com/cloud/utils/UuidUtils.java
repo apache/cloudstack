@@ -19,6 +19,7 @@
 
 package com.cloud.utils;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.xerces.impl.xpath.regex.RegularExpression;
 
 public class UuidUtils {
@@ -30,5 +31,26 @@ public class UuidUtils {
     public static boolean validateUUID(String uuid) {
         RegularExpression regex = new RegularExpression("[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}");
         return regex.matches(uuid);
+    }
+
+    /**
+     * Returns a valid UUID in string format from a 32 digit UUID string without hyphens.
+     * Example: 24abcb8f4211374fa2e1e5c0b7e88a2d -> 24abcb8f-4211-374f-a2e1-e5c0b7e88a2d
+     */
+    public static String normalize(String noHyphen) {
+        if (noHyphen.length() != 32 || noHyphen.contains("-")) {
+            throw new CloudRuntimeException("Invalid string format");
+        }
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(noHyphen.substring(0, 8)).append("-")
+                .append(noHyphen.substring(8, 12)).append("-")
+                .append(noHyphen.substring(12, 16)).append("-")
+                .append(noHyphen.substring(16, 20)).append("-")
+                .append(noHyphen.substring(20, 32));
+        String uuid = stringBuilder.toString();
+        if (!validateUUID(uuid)) {
+            throw new CloudRuntimeException("Error generating UUID");
+        }
+        return uuid;
     }
 }

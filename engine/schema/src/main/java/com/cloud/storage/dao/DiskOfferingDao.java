@@ -19,6 +19,7 @@ package com.cloud.storage.dao;
 import java.util.List;
 
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage;
 import com.cloud.utils.db.GenericDao;
 
 public interface DiskOfferingDao extends GenericDao<DiskOfferingVO, Long> {
@@ -30,5 +31,7 @@ public interface DiskOfferingDao extends GenericDao<DiskOfferingVO, Long> {
     DiskOfferingVO findByUniqueName(String uniqueName);
 
     DiskOfferingVO persistDeafultDiskOffering(DiskOfferingVO offering);
+
+    List<DiskOfferingVO> listAllBySizeAndProvisioningType(long size, Storage.ProvisioningType provisioningType);
 
 }

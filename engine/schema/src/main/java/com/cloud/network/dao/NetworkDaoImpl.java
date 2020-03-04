@@ -719,6 +719,14 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     }
 
     @Override
+    public NetworkVO findByVlan(String vlan) {
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("broadcastType", BroadcastDomainType.Vlan);
+        sc.setParameters("broadcastUri", BroadcastDomainType.Vlan.toUri(vlan));
+        return findOneBy(sc);
+    }
+
+    @Override
     public List<NetworkVO> listByAccountIdNetworkName(final long accountId, final String name) {
         final SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("account", accountId);

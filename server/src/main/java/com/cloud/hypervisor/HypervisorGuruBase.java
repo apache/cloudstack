@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -268,6 +269,17 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     }
 
     @Override
+    public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId,
+                                                         String vmInternalName, Backup backup) throws Exception {
+        return null;
+    }
+
+    @Override
+    public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo,
+                                                        VirtualMachine vm, long poolId, Backup backup) throws Exception {
+        return false;
+    }
+
     public List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination) {
         return null;
     }

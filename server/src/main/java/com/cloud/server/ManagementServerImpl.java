@@ -1310,7 +1310,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
         }
 
-        final Pair<List<? extends Host>, Integer> otherHosts = new Pair<List<? extends Host>, Integer>(allHosts, new Integer(allHosts.size()));
+        final Pair<List<? extends Host>, Integer> otherHosts = new Pair<List<? extends Host>, Integer>(allHosts, allHostsPair.second());
         List<Host> suitableHosts = new ArrayList<Host>();
         final ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
@@ -3767,8 +3767,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (keyword != null) {
-            sc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addOr("fingerprint", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            final SearchCriteria<SSHKeyPairVO> ssc = _sshKeyPairDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("fingerprint", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
         final Pair<List<SSHKeyPairVO>, Integer> result = _sshKeyPairDao.searchAndCount(sc, searchFilter);

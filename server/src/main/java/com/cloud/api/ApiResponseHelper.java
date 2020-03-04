@@ -49,6 +49,9 @@ import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.CapabilityResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -141,6 +144,10 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.backup.BackupSchedule;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -378,6 +385,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     NetworkDetailsDao networkDetailsDao;
     @Inject
     private VMSnapshotDao vmSnapshotDao;
+    @Inject
+    private BackupOfferingDao backupOfferingDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -3660,6 +3669,25 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
+        } else if (usageRecord.getUsageType() == UsageTypes.BACKUP) {
+            resourceType = ResourceObjectType.Backup;
+            final StringBuilder builder = new StringBuilder();
+            builder.append("Backup usage of size ").append(usageRecord.getUsageDisplay());
+            if (vmInstance != null) {
+                resourceId = vmInstance.getId();
+                usageRecResponse.setResourceName(vmInstance.getInstanceName());
+                usageRecResponse.setUsageId(vmInstance.getUuid());
+                builder.append(" for VM ").append(vmInstance.getHostName())
+                        .append(" (").append(vmInstance.getUuid()).append(")");
+                final BackupOffering backupOffering = backupOfferingDao.findByIdIncludingRemoved(usageRecord.getOfferingId());
+                if (backupOffering != null) {
+                    builder.append(" and backup offering ").append(backupOffering.getName())
+                            .append(" (").append(backupOffering.getUuid()).append(", user ad-hoc/scheduled backup allowed: ")
+                            .append(backupOffering.isUserDrivenBackupAllowed()).append(")");
+                }
+
+            }
+            usageRecResponse.setDescription(builder.toString());
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
             resourceType = ResourceObjectType.VMSnapshot;
             VMSnapshotVO vmSnapshotVO = null;
@@ -3672,6 +3700,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
             usageRecResponse.setSize(usageRecord.getSize());
+            if (usageRecord.getVirtualSize() != null) {
+                usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
+            }
             if (usageRecord.getOfferingId() != null) {
                 usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
             }
@@ -4210,6 +4241,22 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDomainName(domain.getName());
         return response;
     }
+
+    @Override
+    public BackupResponse createBackupResponse(Backup backup) {
+        return ApiDBUtils.newBackupResponse(backup);
+    }
+
+    @Override
+    public BackupScheduleResponse createBackupScheduleResponse(BackupSchedule schedule) {
+        return ApiDBUtils.newBackupScheduleResponse(schedule);
+    }
+
+    @Override
+    public BackupOfferingResponse createBackupOfferingResponse(BackupOffering policy) {
+        return ApiDBUtils.newBackupOfferingResponse(policy);
+    }
+
     public ManagementServerResponse createManagementResponse(ManagementServerHost mgmt) {
         ManagementServerResponse response = new ManagementServerResponse();
         response.setId(mgmt.getUuid());

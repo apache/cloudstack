@@ -20,6 +20,7 @@ package org.apache.cloudstack.api;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.metrics.MetricsService;
 import org.apache.cloudstack.response.StoragePoolMetricsResponse;
 
@@ -42,9 +43,10 @@ public class ListStoragePoolsMetricsCmd extends ListStoragePoolsCmd {
 
     @Override
     public void execute() {
-        final List<StoragePoolMetricsResponse> metricsResponses = metricsService.listStoragePoolMetrics(_queryService.searchForStoragePools(this).getResponses());
+        ListResponse<StoragePoolResponse> storagePools = _queryService.searchForStoragePools(this);
+        final List<StoragePoolMetricsResponse> metricsResponses = metricsService.listStoragePoolMetrics(storagePools.getResponses());
         ListResponse<StoragePoolMetricsResponse> response = new ListResponse<>();
-        response.setResponses(metricsResponses, metricsResponses.size());
+        response.setResponses(metricsResponses, storagePools.getCount());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

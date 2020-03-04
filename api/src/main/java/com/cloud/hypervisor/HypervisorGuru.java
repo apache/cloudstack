@@ -19,13 +19,14 @@ package com.cloud.hypervisor;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.storage.StoragePool;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.StoragePool;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.NicProfile;
@@ -86,6 +87,11 @@ public interface HypervisorGuru extends Adapter {
 
     Map<String, String> getClusterSettings(long vmId);
 
+    VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId,
+                                                  String vmInternalName, Backup backup) throws Exception;
+
+    boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo,
+                                                 VirtualMachine vm, long poolId, Backup backup) throws Exception;
     /**
      * Will generate commands to migrate a vm to a pool. For now this will only work for stopped VMs on Vmware.
      *

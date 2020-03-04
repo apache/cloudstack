@@ -19,12 +19,15 @@ package org.apache.cloudstack.api;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
+import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.metrics.MetricsService;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
 
 import javax.inject.Inject;
 import java.util.List;
+
+import com.cloud.utils.Pair;
 
 @APICommand(name = ListClustersMetricsCmd.APINAME, description = "Lists clusters metrics", responseObject = ClusterMetricsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
@@ -42,9 +45,10 @@ public class ListClustersMetricsCmd extends ListClustersCmd {
 
     @Override
     public void execute() {
-        final List<ClusterMetricsResponse> metricsResponses = metricsService.listClusterMetrics(getClusterResponses());
+        Pair<List<ClusterResponse>, Integer> clusterResponses = getClusterResponses();
+        final List<ClusterMetricsResponse> metricsResponses = metricsService.listClusterMetrics(clusterResponses);
         ListResponse<ClusterMetricsResponse> response = new ListResponse<>();
-        response.setResponses(metricsResponses, metricsResponses.size());
+        response.setResponses(metricsResponses, clusterResponses.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

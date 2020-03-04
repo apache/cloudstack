@@ -1637,6 +1637,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Unable to attach volume, please specify a VM that does not have VM snapshots");
         }
 
+        // if target VM has backups
+        if (vm.getBackupOfferingId() != null || vm.getBackupVolumeList().size() > 0) {
+            throw new InvalidParameterValueException("Unable to attach volume, please specify a VM that does not have any backups");
+        }
+
         // permission check
         _accountMgr.checkAccess(caller, null, true, volumeToAttach, vm);
 
@@ -1875,6 +1880,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
         if (vmSnapshots.size() > 0) {
             throw new InvalidParameterValueException("Unable to detach volume, please specify a VM that does not have VM snapshots");
+        }
+
+        if (vm.getBackupOfferingId() != null || vm.getBackupVolumeList().size() > 0) {
+            throw new InvalidParameterValueException("Unable to detach volume, cannot detach volume from a VM that has backups. First remove the VM from the backup offering.");
         }
 
         AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();

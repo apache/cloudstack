@@ -16,6 +16,28 @@
 // under the License.
 package com.cloud.usage;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
+import org.apache.cloudstack.api.response.UsageTypeResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.usage.Usage;
+import org.apache.cloudstack.usage.UsageService;
+import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.configuration.Config;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -55,26 +77,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
-import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
-import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
-import org.apache.cloudstack.api.response.UsageTypeResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.usage.Usage;
-import org.apache.cloudstack.usage.UsageService;
-import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
 
 @Component
 public class UsageServiceImpl extends ManagerBase implements UsageService, Manager {
@@ -267,6 +269,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
                 case UsageTypes.RUNNING_VM:
                 case UsageTypes.ALLOCATED_VM:
                 case UsageTypes.VM_SNAPSHOT:
+                case UsageTypes.BACKUP:
                     VMInstanceVO vm = _vmDao.findByUuidIncludingRemoved(usageId);
                     if (vm != null) {
                         usageDbId = vm.getId();

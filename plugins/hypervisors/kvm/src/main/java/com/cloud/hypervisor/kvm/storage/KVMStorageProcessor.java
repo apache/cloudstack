@@ -1678,13 +1678,13 @@ public class KVMStorageProcessor implements StorageProcessor {
      */
     private DirectTemplateDownloader getDirectTemplateDownloaderFromCommand(DirectDownloadCommand cmd, KVMStoragePool destPool) {
         if (cmd instanceof HttpDirectDownloadCommand) {
-            return new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders());
+            return new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders(), cmd.getConnectTimeout(), cmd.getSoTimeout());
         } else if (cmd instanceof HttpsDirectDownloadCommand) {
-            return new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders());
+            return new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders(), cmd.getConnectTimeout(), cmd.getSoTimeout(), cmd.getConnectionRequestTimeout());
         } else if (cmd instanceof NfsDirectDownloadCommand) {
             return new NfsDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum());
         } else if (cmd instanceof MetalinkDirectDownloadCommand) {
-            return new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), cmd.getHeaders());
+            return new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), cmd.getHeaders(), cmd.getConnectTimeout(), cmd.getSoTimeout());
         } else {
             throw new IllegalArgumentException("Unsupported protocol, please provide HTTP(S), NFS or a metalink");
         }

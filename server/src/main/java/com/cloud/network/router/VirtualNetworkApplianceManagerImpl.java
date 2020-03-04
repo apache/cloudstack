@@ -1120,7 +1120,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             for (final DomainRouterVO router : routers) {
                 final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
 
-                for (final Long routerGuestNtwkId : routerGuestNtwkIds) {
+                final Long vpcId = router.getVpcId();
+                if (vpcId != null || routerGuestNtwkIds.size() > 0) {
+                    Long routerGuestNtwkId = vpcId != null ? vpcId : routerGuestNtwkIds.get(0);
                     if (router.getRedundantState() == RedundantState.MASTER) {
                         if (networkRouterMaps.containsKey(routerGuestNtwkId)) {
                             final DomainRouterVO dupRouter = networkRouterMaps.get(routerGuestNtwkId);
@@ -1129,7 +1131,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                             final String context = "Virtual router (name: " + router.getHostName() + ", id: " + router.getId() + " and router (name: " + dupRouter.getHostName()
                                     + ", id: " + router.getId() + ") are both in MASTER state! If the problem persist, restart both of routers. ";
                             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
-                            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, dupRouter.getDataCenterId(), dupRouter.getPodIdToDeployIn(), title, context);
                             s_logger.warn(context);
                         } else {
                             networkRouterMaps.put(routerGuestNtwkId, router);
@@ -1213,8 +1214,14 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                 updateSite2SiteVpnConnectionState(routers);
 
-                List<NetworkVO> networks = _networkDao.listVpcNetworks();
-                s_logger.debug("Found " + networks.size() + " VPC networks to update Redundant State. ");
+                List<NetworkVO> networks = new ArrayList<>();
+                for (Vpc vpc : _vpcDao.listAll()) {
+                    List<NetworkVO> vpcNetworks = _networkDao.listByVpc(vpc.getId());
+                    if (vpcNetworks.size() > 0) {
+                        networks.add(vpcNetworks.get(0));
+                    }
+                }
+                s_logger.debug("Found " + networks.size() + " VPC's to update Redundant State. ");
                 pushToUpdateQueue(networks);
 
                 networks = _networkDao.listRedundantNetworks();

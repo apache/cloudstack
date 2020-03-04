@@ -94,6 +94,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> HostAndStateSearch;
     protected SearchBuilder<VMInstanceVO> StartingWithNoHostSearch;
     protected SearchBuilder<VMInstanceVO> NotMigratingSearch;
+    protected SearchBuilder<VMInstanceVO> BackupSearch;
     protected SearchBuilder<VMInstanceVO> LastHostAndStatesSearch;
 
     @Inject
@@ -288,6 +289,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         NotMigratingSearch.and("state", NotMigratingSearch.entity().getState(), Op.NEQ);
         NotMigratingSearch.done();
 
+        BackupSearch = createSearchBuilder();
+        BackupSearch.and("zone_id", BackupSearch.entity().getDataCenterId(), Op.EQ);
+        BackupSearch.and("backup_offering_not_null", BackupSearch.entity().getBackupOfferingId(), Op.NNULL);
+        BackupSearch.and("backup_offering_id", BackupSearch.entity().getBackupOfferingId(), Op.EQ);
+        BackupSearch.done();
+
         LastHostAndStatesSearch = createSearchBuilder();
         LastHostAndStatesSearch.and("lastHost", LastHostAndStatesSearch.entity().getLastHostId(), Op.EQ);
         LastHostAndStatesSearch.and("states", LastHostAndStatesSearch.entity().getState(), Op.IN);
@@ -457,6 +464,13 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
+    public VMInstanceVO findVMByInstanceNameIncludingRemoved(String name) {
+        SearchCriteria<VMInstanceVO> sc = InstanceNameSearch.create();
+        sc.setParameters("instanceName", name);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
     public VMInstanceVO findVMByHostName(String hostName) {
         SearchCriteria<VMInstanceVO> sc = HostNameSearch.create();
         sc.setParameters("hostName", hostName);
@@ -588,6 +602,16 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = AllFieldsSearch.create();
         sc.setParameters("lastHost", hostId);
         sc.setParameters("state", State.Migrating);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VMInstanceVO> listByZoneWithBackups(Long zoneId, Long backupOfferingId) {
+        SearchCriteria<VMInstanceVO> sc = BackupSearch.create();
+        sc.setParameters("zone_id", zoneId);
+        if (backupOfferingId != null) {
+            sc.setParameters("backup_offering_id", backupOfferingId);
+        }
         return listBy(sc);
     }
 

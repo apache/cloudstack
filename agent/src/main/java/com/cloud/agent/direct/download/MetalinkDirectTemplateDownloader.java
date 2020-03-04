@@ -18,16 +18,17 @@
 //
 package com.cloud.agent.direct.download;
 
-import com.cloud.utils.UriUtils;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.cloud.utils.UriUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class MetalinkDirectTemplateDownloader extends HttpDirectTemplateDownloader {
 
@@ -37,8 +38,8 @@ public class MetalinkDirectTemplateDownloader extends HttpDirectTemplateDownload
     private Random random = new Random();
     private static final Logger s_logger = Logger.getLogger(MetalinkDirectTemplateDownloader.class.getName());
 
-    public MetalinkDirectTemplateDownloader(String url, String destPoolPath, Long templateId, String checksum, Map<String, String> headers) {
-        super(url, templateId, destPoolPath, checksum, headers);
+    public MetalinkDirectTemplateDownloader(String url, String destPoolPath, Long templateId, String checksum, Map<String, String> headers, Integer connectTimeout, Integer soTimeout) {
+        super(url, templateId, destPoolPath, checksum, headers, connectTimeout, soTimeout);
         metalinkUrl = url;
         metalinkUrls = UriUtils.getMetalinkUrls(metalinkUrl);
         metalinkChecksums = UriUtils.getMetalinkChecksums(metalinkUrl);

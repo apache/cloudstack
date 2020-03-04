@@ -156,6 +156,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the name of the disk offering of the virtual machine", since = "4.4")
     private String diskOfferingName;
 
+    @SerializedName(ApiConstants.BACKUP_OFFERING_ID)
+    @Param(description = "the ID of the backup offering of the virtual machine", since = "4.14")
+    private String backupOfferingId;
+
+    @SerializedName(ApiConstants.BACKUP_OFFERING_NAME)
+    @Param(description = "the name of the backup offering of the virtual machine", since = "4.14")
+    private String backupOfferingName;
+
     @SerializedName("forvirtualnetwork")
     @Param(description = "the virtual network for the service offering")
     private Boolean forVirtualNetwork;
@@ -439,6 +447,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return diskOfferingName;
     }
 
+    public String getBackupOfferingId() {
+        return backupOfferingId;
+    }
+
+    public String getBackupOfferingName() {
+        return backupOfferingName;
+    }
+
     public Boolean getForVirtualNetwork() {
         return forVirtualNetwork;
     }
@@ -695,6 +711,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setDiskOfferingName(String diskOfferingName) {
         this.diskOfferingName = diskOfferingName;
+    }
+
+    public void setBackupOfferingId(String backupOfferingId) {
+        this.backupOfferingId = backupOfferingId;
+    }
+
+    public void setBackupOfferingName(String backupOfferingName) {
+        this.backupOfferingName = backupOfferingName;
     }
 
     public void setCpuNumber(Integer cpuNumber) {

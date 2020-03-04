@@ -37,6 +37,8 @@ import com.cloud.utils.fsm.StateDao;
 public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Status.Event, Host> {
     long countBy(long clusterId, ResourceState... states);
 
+    Integer countAllByType(final Host.Type type);
+
     /**
      * Mark all hosts associated with a certain management server
      * as disconnected.
