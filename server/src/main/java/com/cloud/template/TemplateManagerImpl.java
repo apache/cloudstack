@@ -586,7 +586,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 }
                 template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
             } else {
-                template = _tmplFactory.getTemplate(vm.getIsoId(), DataStoreRole.Primary, dest.getDataCenter().getId());
+                template = _tmplFactory.getTemplate(vm.getIsoId(), DataStoreRole.Image, dest.getDataCenter().getId());
             }
 
             if (template == null){
