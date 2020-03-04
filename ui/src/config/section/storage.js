@@ -107,7 +107,8 @@ export default {
           icon: 'fullscreen',
           label: 'Resize Volume',
           dataView: true,
-          args: ['size']
+          popup: true,
+          component: () => import('@/views/storage/ResizeVolume.vue')
         },
         {
           api: 'migrateVolume',
