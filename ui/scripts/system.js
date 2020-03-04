@@ -9996,7 +9996,7 @@
                                             }
 
                                             $.ajax({
-                                                url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                url: createURL("listRouters&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                 data: data2,
                                                 async: false,
                                                 success: function (json) {
