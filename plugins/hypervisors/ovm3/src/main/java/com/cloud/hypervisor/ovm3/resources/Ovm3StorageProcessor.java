@@ -826,6 +826,11 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         return null;
     }
 
+    @Override
+    public Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd) {
+        return null;
+    }
+
     /**
      * Attach disks
      * @param cmd

@@ -1742,6 +1742,41 @@ public class KVMStorageProcessor implements StorageProcessor {
         return new DirectDownloadAnswer(true, template.getSize(), template.getName());
     }
 
+    @Override
+    public Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd) {
+        final DataTO srcData = cmd.getSrcTO();
+        final DataTO destData = cmd.getDestTO();
+        final VolumeObjectTO srcVol = (VolumeObjectTO)srcData;
+        final VolumeObjectTO destVol = (VolumeObjectTO)destData;
+        final ImageFormat srcFormat = srcVol.getFormat();
+        final ImageFormat destFormat = destVol.getFormat();
+        final DataStoreTO srcStore = srcData.getDataStore();
+        final DataStoreTO destStore = destData.getDataStore();
+        final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)srcStore;
+        final PrimaryDataStoreTO primaryStoreDest = (PrimaryDataStoreTO)destStore;
+        final String srcVolumePath = srcData.getPath();
+        final String destVolumePath = destData.getPath();
+        KVMStoragePool destPool = null;
+
+        try {
+            final String volumeName = UUID.randomUUID().toString();
+
+            final String destVolumeName = volumeName + "." + destFormat.getFileExtension();
+            final KVMPhysicalDisk volume = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), srcVolumePath);
+            volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
+
+            destPool = storagePoolMgr.getStoragePool(primaryStoreDest.getPoolType(), primaryStoreDest.getUuid());
+            storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
+            final VolumeObjectTO newVol = new VolumeObjectTO();
+            newVol.setPath(destVolumePath + File.separator + destVolumeName);
+            newVol.setFormat(destFormat);
+            return new CopyCmdAnswer(newVol);
+        } catch (final CloudRuntimeException e) {
+            s_logger.debug("Failed to copyVolumeFromPrimaryToPrimary: ", e);
+            return new CopyCmdAnswer(e.toString());
+        }
+    }
+
     /**
      * True if location exists
      */
