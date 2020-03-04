@@ -44,10 +44,7 @@ import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenter;
@@ -59,17 +56,13 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
-import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
-import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -78,7 +71,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.host.dao.HostDao;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
@@ -89,19 +81,11 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.dao.AccountGuestVlanMapDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.LoadBalancerDao;
-import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkDomainDao;
-import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
-import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
-import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.IpDeployingRequester;
 import com.cloud.network.element.NetworkElement;
@@ -113,19 +97,14 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.rules.dao.PortForwardingRulesDao;
-import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -157,11 +136,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.NicIpAliasDao;
-import com.cloud.vm.dao.NicSecondaryIpDao;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
 
 public class IpAddressManagerImpl extends ManagerBase implements IpAddressManager, Configurable {
     private static final Logger s_logger = Logger.getLogger(IpAddressManagerImpl.class);
@@ -182,19 +156,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Inject
     AccountDao _accountDao;
     @Inject
-    DomainDao _domainDao;
-    @Inject
     UserDao _userDao;
     @Inject
     ConfigurationDao _configDao;
     @Inject
-    UserVmDao _userVmDao;
-    @Inject
-    AlertManager _alertMgr;
-    @Inject
     AccountManager _accountMgr;
-    @Inject
-    ConfigurationManager _configMgr;
     @Inject
     AccountVlanMapDao _accountVlanMapDao;
     @Inject
@@ -202,31 +168,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Inject
     NetworkDao _networksDao;
     @Inject
-    NicDao _nicDao;
-    @Inject
     RulesManager _rulesMgr;
     @Inject
     LoadBalancingRulesManager _lbMgr;
     @Inject
     RemoteAccessVpnService _vpnMgr;
-    @Inject
-    PodVlanMapDao _podVlanMapDao;
-    @Inject
-    NetworkOfferingDetailsDao _ntwkOffDetailsDao;
-    @Inject
-    AccountGuestVlanMapDao _accountGuestVlanMapDao;
-    @Inject
-    DataCenterVnetDao _datacenterVnetDao;
-    @Inject
-    NetworkAccountDao _networkAccountDao;
-    @Inject
-    protected NicIpAliasDao _nicIpAliasDao;
-    @Inject
-    protected IPAddressDao _publicIpAddressDao;
-    @Inject
-    NetworkDomainDao _networkDomainDao;
-    @Inject
-    VMInstanceDao _vmDao;
     @Inject
     FirewallManager _firewallMgr;
     @Inject
@@ -235,39 +181,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     ResourceLimitService _resourceLimitMgr;
 
     @Inject
-    NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
-    @Inject
     PhysicalNetworkDao _physicalNetworkDao;
-    @Inject
-    PhysicalNetworkServiceProviderDao _pNSPDao;
-    @Inject
-    PortForwardingRulesDao _portForwardingRulesDao;
-    @Inject
-    LoadBalancerDao _lbDao;
-    @Inject
-    PhysicalNetworkTrafficTypeDao _pNTrafficTypeDao;
-    @Inject
-    AgentManager _agentMgr;
-    @Inject
-    HostDao _hostDao;
-    @Inject
-    NetworkServiceMapDao _ntwkSrvcDao;
-    @Inject
-    StorageNetworkManager _stnwMgr;
     @Inject
     VpcManager _vpcMgr;
     @Inject
-    PrivateIpDao _privateIpDao;
-    @Inject
-    NetworkACLManager _networkACLMgr;
-    @Inject
-    UsageEventDao _usageEventDao;
-    @Inject
     NetworkModel _networkModel;
-    @Inject
-    NicSecondaryIpDao _nicSecondaryIpDao;
-    @Inject
-    UserIpv6AddressDao _ipv6Dao;
     @Inject
     Ipv6AddressManager _ipv6Mgr;
     @Inject
