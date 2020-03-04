@@ -38,7 +38,7 @@
     "@fortawesome/free-regular-svg-icons": "^5.12.1",
     "@fortawesome/free-solid-svg-icons": "^5.12.1",
     "@fortawesome/vue-fontawesome": "^0.1.9",
-    "ant-design-vue": "~1.4.11",
+    "ant-design-vue": "~1.4.12",
     "axios": "^0.19.2",
     "core-js": "^3.6.4",
     "enquire.js": "^2.1.6",
