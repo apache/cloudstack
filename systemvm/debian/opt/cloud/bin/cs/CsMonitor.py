@@ -16,6 +16,7 @@
 # under the License.
 import logging
 from cs.CsDatabag import CsDataBag
+from cs.CsConfig import CsConfig
 from CsFile import CsFile
 import json
 
@@ -45,6 +46,8 @@ class CsMonitor(CsDataBag):
             file.commit()
 
     def setupHealthCheckCronJobs(self):
+        config = CsConfig()
+        is_vpc = str(config.is_vpc()).lower()
         cron_rep_basic = self.get_basic_check_interval()
         cron_rep_advanced = self.get_advanced_check_interval()
         cron = CsFile("/etc/cron.d/process")
@@ -52,9 +55,9 @@ class CsMonitor(CsDataBag):
         cron.add("SHELL=/bin/bash", 0)
         cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
         if cron_rep_basic > 0:
-            cron.add("*/" + str(cron_rep_basic) + " * * * * root /usr/bin/python /root/monitorServices.py basic", -1)
+            cron.add("*/" + str(cron_rep_basic) + " * * * * root /usr/bin/python /root/monitorServices.py " + is_vpc + " basic", -1)
         if cron_rep_advanced > 0:
-            cron.add("*/" + str(cron_rep_advanced) + " * * * * root /usr/bin/python /root/monitorServices.py advanced", -1)
+            cron.add("*/" + str(cron_rep_advanced) + " * * * * root /usr/bin/python /root/monitorServices.py " + is_vpc + " advanced", -1)
         cron.commit()
 
     def setupHealthChecksConfigFile(self):

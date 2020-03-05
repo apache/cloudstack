@@ -289,9 +289,11 @@ def monitProcess( processes_info ):
     return service_status, failing_services
 
 
-def execute(script, checkType = "basic"):
+def execute(script, isVpcRouter, checkType = "basic"):
     checkStartTime = time.time()
     cmd = "./" + script + " " + checkType
+    if script == Config.HEALTH_CHECKS_DIR+"/iptables_check.py":
+        cmd += " "+isVpcRouter
     printd ("Executing health check script command: " + cmd)
 
     pout = Popen(cmd, shell=True, stdout=PIPE)
@@ -318,7 +320,7 @@ def execute(script, checkType = "basic"):
             "message": output
         }
 
-def main(checkType = "basic"):
+def main(isVpcRouter, checkType = "basic"):
     startTime = time.time()
     '''
     Step1 : Get Services Config
@@ -346,7 +348,7 @@ def main(checkType = "basic"):
                 continue
             fpath = path.join(Config.HEALTH_CHECKS_DIR, f)
             if path.isfile(fpath) and os.access(fpath, os.X_OK):
-                ret = execute(fpath, checkType)
+                ret = execute(fpath, isVpcRouter, checkType)
                 if len(ret) == 0:
                     continue
                 if "success" in ret and ret["success"].lower() == "false":
@@ -380,13 +382,14 @@ def main(checkType = "basic"):
 
 if __name__ == "__main__":
     checkType = "basic"
-    if len(sys.argv) == 2:
-        if sys.argv[1] == "advanced":
-            main("advanced")
-        elif sys.argv[1] == "basic":
-            main("basic")
+    isVpcRouter = sys.argv[1]
+    if len(sys.argv) == 3:
+        if sys.argv[2] == "advanced":
+            main(isVpcRouter, "advanced")
+        elif sys.argv[2] == "basic":
+            main(isVpcRouter, "basic")
         else:
-            printd("Error: Unknown type of test: " + sys.argv)
+            printd("Error: Unknown type of test: ", ' '.join(map(str, sys.argv)))
     else:
-        main("basic")
-        main("advanced")
+        main(isVpcRouter, "basic")
+        main(isVpcRouter, "advanced")

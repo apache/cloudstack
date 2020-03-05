@@ -21,13 +21,17 @@ from subprocess import *
 from utility import getHealthChecksData, formatPort
 
 
-def main():
+def main(isVpcRouter):
     portForwards = getHealthChecksData("portForwarding")
     if portForwards is None or len(portForwards) == 0:
         print "No portforwarding rules provided to check, skipping"
         exit(0)
 
     failedCheck = False
+    algorithms = [["PREROUTING", "--to-destination"],
+                  ["OUTPUT", "--to-destination"]]
+    if isVpcRouter == 'true':
+        algorithms.extend([["POSTROUTING", "--to-source"]])
     failureMessage = "Missing port forwarding rules in Iptables-\n "
     for portForward in portForwards:
         entriesExpected = []
@@ -35,9 +39,7 @@ def main():
         srcIpText = "-d " + portForward["sourceIp"]
         srcPortText = "--dport " + formatPort(portForward["sourcePortStart"], portForward["sourcePortEnd"], ":")
         dstText = destIp + ":" + formatPort(portForward["destPortStart"], portForward["destPortEnd"], "-")
-        for algo in [["PREROUTING", "--to-destination"],
-                     ["OUTPUT", "--to-destination"],
-                     ["POSTROUTING", "--to-source"]]:
+        for algo in algorithms:
             entriesExpected.append([algo[0], srcIpText, srcPortText, algo[1] + " " + dstText])
 
         fetchIpTableEntriesCmd = "iptables-save | grep " + destIp
@@ -77,5 +79,6 @@ def main():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2 and sys.argv[1] == "advanced":
-        main()
+    if len(sys.argv) == 3 and sys.argv[1] == "advanced":
+        main(sys.argv[2])
+

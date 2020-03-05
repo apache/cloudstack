@@ -1,4 +1,4 @@
-// Licensed to the Apache Software Foundation (ASF) under one
+    // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -1540,11 +1540,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return null;
         }
 
+        Long vpcId = router.getVpcId();
         String controlIP = getRouterControlIP(router);
         if (StringUtils.isNotBlank(controlIP) && !controlIP.equals("0.0.0.0")) {
             final GetRouterMonitorResultsCommand command = new GetRouterMonitorResultsCommand(performFreshChecks);
             command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlIP);
             command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+            command.setAccessDetail(NetworkElementCommand.IS_VPC, ( vpcId != null  ? "true" : "false"));
             try {
                 final Answer answer = _agentMgr.easySend(router.getHostId(), command);
 

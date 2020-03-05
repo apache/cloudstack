@@ -20,7 +20,7 @@
 
 if [ "$1" == "true" ]
 then
-    python /root/monitorServices.py > /dev/null
+    python /root/monitorServices.py $2 > /dev/null
 fi
 
 printf "FAILING CHECKS:\n"

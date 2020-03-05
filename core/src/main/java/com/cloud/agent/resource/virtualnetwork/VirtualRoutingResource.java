@@ -312,6 +312,7 @@ public class VirtualRoutingResource {
     private GetRouterMonitorResultsAnswer execute(GetRouterMonitorResultsCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String args = cmd.shouldPerformFreshChecks() ? "true" : "false";
+        args = args + (" " + cmd.getAccessDetail(NetworkElementCommand.IS_VPC));
         s_logger.info("Fetching health check result for " + routerIp + " and executing fresh checks: " + args);
         ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.ROUTER_MONITOR_RESULTS, args);
 
