@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.agent;
 
+import java.util.Map;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Answer;
@@ -153,5 +155,5 @@ public interface AgentManager {
 
     void notifyMonitorsOfRemovedHost(long hostId, long clusterId);
 
-    void propagateChangeToAgents();
+    void propagateChangeToAgents(Map<String, String> params);
 }

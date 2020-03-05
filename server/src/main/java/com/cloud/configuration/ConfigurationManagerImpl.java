@@ -486,7 +486,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         globalSettingUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBAlgorithm.key())) {
                     _indirectAgentLB.propagateMSListToAgents();
                 } else if (globalSettingUpdated.equals(Config.RouterAggregationCommandEachTimeout.toString())) {
-                    _agentManager.propagateChangeToAgents();
+                    Map<String, String> params = new HashMap<String, String>();
+                    params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+                    _agentManager.propagateChangeToAgents(params);
                 }
             }
         });
