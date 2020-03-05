@@ -389,7 +389,7 @@ if __name__ == "__main__":
         elif sys.argv[2] == "basic":
             main(isVpcRouter, "basic")
         else:
-            printd("Error: Unknown type of test: ", ' '.join(map(str, sys.argv)))
+            printd("Error: Unknown type of test: " + ' '.join(map(str, sys.argv)))
     else:
         main(isVpcRouter, "basic")
         main(isVpcRouter, "advanced")
