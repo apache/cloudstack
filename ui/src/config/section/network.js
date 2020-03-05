@@ -518,7 +518,6 @@ export default {
       title: 'VPN Customer Gateway',
       icon: 'lock',
       permission: ['listVpnCustomerGateways'],
-      resourceType: 'VpnGateway',
       columns: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'account', 'domain'],
       details: ['name', 'id', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'esppolicy', 'esplifetime', 'dpd', 'forceencap', 'account', 'domain'],
       actions: [
