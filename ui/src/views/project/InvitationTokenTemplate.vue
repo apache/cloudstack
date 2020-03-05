@@ -40,7 +40,7 @@
         </a-form-item>
         <div class="card-footer">
           <!-- ToDo extract as component -->
-          <a-button @click="() => this.$router.back()">{{ this.$t('cancel') }}</a-button>
+          <a-button @click="() => $emit('close-action')">{{ this.$t('cancel') }}</a-button>
           <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('OK') }}</a-button>
         </div>
       </a-form>
