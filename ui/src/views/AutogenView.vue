@@ -360,10 +360,6 @@ export default {
         Object.assign(params, this.$route.meta.params)
       }
 
-      if (this.searchQuery !== '') {
-        params.keyword = this.searchQuery
-      }
-
       this.treeView = this.$route && this.$route.meta && this.$route.meta.treeView
 
       if (this.$route && this.$route.params && this.$route.params.id) {
@@ -387,6 +383,14 @@ export default {
 
       if (this.apiName === '' || this.apiName === undefined) {
         return
+      }
+
+      if (this.searchQuery !== '') {
+        if (this.apiName === 'listRoles') {
+          params.name = this.searchQuery
+        } else {
+          params.keyword = this.searchQuery
+        }
       }
 
       if (!this.columnKeys || this.columnKeys.length === 0) {
