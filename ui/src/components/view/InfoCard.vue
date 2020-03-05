@@ -387,7 +387,8 @@
           <div class="resource-detail-item__label">{{ $t('zone') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="global" />
-            <router-link :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zonename || resource.zoneid }}</router-link>
+            <router-link v-if="!resource.zoneid.includes(',')" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zonename || resource.zoneid }}</router-link>
+            <span v-else>{{ resource.zone || resource.zonename }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.account">
@@ -408,7 +409,8 @@
           <div class="resource-detail-item__label">{{ $t('domain') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="block" />
-            <router-link :to="{ path: '/domain/' + resource.domainid }">{{ resource.domain || resource.domainid }}</router-link>
+            <router-link v-if="!resource.domainid.includes(',')" :to="{ path: '/domain/' + resource.domainid }">{{ resource.domain || resource.domainid }}</router-link>
+            <span v-else>{{ resource.domain }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.managementserverid">
