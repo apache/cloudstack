@@ -390,8 +390,8 @@ public class RouterDeploymentDefinition {
         serviceOfferingId = serviceOffering.getId();
     }
 
-    protected void findAccountServiceOfferingId() {
-        String accountRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.valueIn(guestNetwork.getAccountId());
+    protected void findAccountServiceOfferingId(long accountId) {
+        String accountRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.valueIn(accountId);
         if (accountRouterOffering != null) {
             ServiceOfferingVO serviceOffering = serviceOfferingDao.findByUuid(accountRouterOffering);
             if (serviceOffering != null && serviceOffering.isSystemUse()) {
@@ -406,7 +406,7 @@ public class RouterDeploymentDefinition {
     protected void findServiceOfferingId() {
         serviceOfferingId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
         if (serviceOfferingId == null) {
-            findAccountServiceOfferingId();
+            findAccountServiceOfferingId(guestNetwork.getAccountId());
         }
         if (serviceOfferingId == null) {
             findDefaultServiceOfferingId();
