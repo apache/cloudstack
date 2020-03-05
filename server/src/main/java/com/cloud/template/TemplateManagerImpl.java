@@ -584,10 +584,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     }
                     poolId = storagePool.getId();
                 }
-                template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
-            } else {
-                template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), null);
             }
+            template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
 
             if (template == null){
                 s_logger.error("Failed to prepare ISO on secondary or cache storage");
