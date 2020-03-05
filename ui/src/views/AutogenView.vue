@@ -506,6 +506,7 @@ export default {
     },
     onSearch (value) {
       this.searchQuery = value
+      this.page = 1
       this.fetchData()
     },
     closeAction () {
