@@ -195,6 +195,9 @@ public class PublicIpFetcher {
             if (possibleAddr.getState() != IpAddress.State.Free) {
                 continue;
             }
+            if (LOG.isInfoEnabled()) {
+                LOG.info(String.format("trying to acquire %s for %s", possibleAddr.getAddress().addr(), owner.getAccountName()));
+            }
 
             final IPAddressVO addr;
             addr = createIpAddressWithCorrectProperties(possibleAddr,
