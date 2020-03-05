@@ -188,9 +188,11 @@ public class CommandSetupHelper {
     public void createVmDataCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, final String publicKey, final Commands cmds) {
         final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
         final String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
+        final IPAddressVO staticNatIp = _ipAddressDao.findByVmIdAndNetworkId(nic.getNetworkId(), vm.getId());
         cmds.addCommand(
                 "vmdata",
-                generateVmDataCommand(router, nic.getIPv4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIPv4Address(), vm.getHostName(), vm.getInstanceName(),
+                generateVmDataCommand(router, nic.getIPv4Address(), vm.getUserData(), serviceOffering, zoneName,
+                        staticNatIp == null || staticNatIp.getState() != IpAddress.State.Allocated ? null : staticNatIp.getAddress().addr(), vm.getHostName(), vm.getInstanceName(),
                         vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId()));
     }
 
@@ -1035,7 +1037,7 @@ public class CommandSetupHelper {
     }
 
     private VmDataCommand generateVmDataCommand(final VirtualRouter router, final String vmPrivateIpAddress, final String userData, final String serviceOffering,
-            final String zoneName, final String guestIpAddress, final String vmName, final String vmInstanceName, final long vmId, final String vmUuid, final String publicKey,
+            final String zoneName, final String publicIpAddress, final String vmName, final String vmInstanceName, final long vmId, final String vmUuid, final String publicKey,
             final long guestNetworkId) {
         final VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName, _networkModel.getExecuteInSeqNtwkElmtCmd());
 
@@ -1049,18 +1051,21 @@ public class CommandSetupHelper {
         cmd.addVmData("userdata", "user-data", userData);
         cmd.addVmData("metadata", "service-offering", StringUtils.unicodeEscape(serviceOffering));
         cmd.addVmData("metadata", "availability-zone", StringUtils.unicodeEscape(zoneName));
-        cmd.addVmData("metadata", "local-ipv4", guestIpAddress);
+        cmd.addVmData("metadata", "local-ipv4", vmPrivateIpAddress);
         cmd.addVmData("metadata", "local-hostname", StringUtils.unicodeEscape(vmName));
-        if (dcVo.getNetworkType() == NetworkType.Basic) {
-            cmd.addVmData("metadata", "public-ipv4", guestIpAddress);
+
+        Network network = _networkDao.findById(guestNetworkId);
+        if (dcVo.getNetworkType() == NetworkType.Basic || network.getGuestType() == Network.GuestType.Shared) {
+            cmd.addVmData("metadata", "public-ipv4", vmPrivateIpAddress);
             cmd.addVmData("metadata", "public-hostname", StringUtils.unicodeEscape(vmName));
         } else {
-            if (router.getPublicIpAddress() == null) {
-                cmd.addVmData("metadata", "public-ipv4", guestIpAddress);
-            } else {
+            if (publicIpAddress != null) {
+                cmd.addVmData("metadata", "public-ipv4", publicIpAddress);
+                cmd.addVmData("metadata", "public-hostname", publicIpAddress);
+            } else if (router.getPublicIpAddress() != null) {
                 cmd.addVmData("metadata", "public-ipv4", router.getPublicIpAddress());
+                cmd.addVmData("metadata", "public-hostname", router.getPublicIpAddress());
             }
-            cmd.addVmData("metadata", "public-hostname", router.getPublicIpAddress());
         }
         if (vmUuid == null) {
             cmd.addVmData("metadata", "instance-id", vmInstanceName);
