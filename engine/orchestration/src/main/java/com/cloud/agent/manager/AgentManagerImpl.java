@@ -1822,11 +1822,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public void propagateChangeToAgents() {
-        s_logger.debug("Propagating changes on host parameters to the agents");
-        Map<Long, List<Long>> hostsPerZone = getHostsPerZone();
-        Map<String, String> params = new HashMap<String, String>();
-        params.put("router.aggregation.command.each.timeout", _configDao.getValue("router.aggregation.command.each.timeout"));
-        sendCommandToAgents(hostsPerZone, params);
+    public void propagateChangeToAgents(Map<String, String> params) {
+        if (params != null && ! params.isEmpty()) {
+            s_logger.debug("Propagating changes on host parameters to the agents");
+            Map<Long, List<Long>> hostsPerZone = getHostsPerZone();
+            sendCommandToAgents(hostsPerZone, params);
+        }
     }
 }
