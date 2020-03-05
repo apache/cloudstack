@@ -126,9 +126,17 @@ export default {
         {
           api: 'updateAccount',
           icon: 'edit',
-          label: 'label.update.account',
+          label: 'Update Account',
           dataView: true,
-          args: ['newname', 'domainid', 'roleid', 'networkdomain', 'details']
+          args: ['newname', 'account', 'domainid', 'networkdomain'],
+          mapping: {
+            account: {
+              value: (record) => { return record.name }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
+            }
+          }
         },
         {
           api: 'updateResourceCount',
