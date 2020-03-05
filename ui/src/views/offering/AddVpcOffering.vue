@@ -158,7 +158,7 @@ export default {
     this.zones = [
       {
         id: null,
-        name: this.$t('label.all.zone')
+        name: this.$t('all.zone')
       }
     ]
   },
@@ -278,35 +278,6 @@ export default {
         var serviceName = this.supportedServices[i].name
         var serviceDisplayName = serviceName
         // Sanitize names
-        // switch (serviceName) {
-        //   case 'Vpn':
-        //     serviceDisplayName = this.$t('label.vpn')
-        //     break
-        //   case 'Dhcp':
-        //     serviceDisplayName = this.$t('label.dhcp')
-        //     break
-        //   case 'Dns':
-        //     serviceDisplayName = this.$t('label.dns')
-        //     break
-        //   case 'Lb':
-        //     serviceDisplayName = this.$t('label.load.balancer')
-        //     break
-        //   case 'SourceNat':
-        //     serviceDisplayName = this.$t('label.source.nat')
-        //     break
-        //   case 'StaticNat':
-        //     serviceDisplayName = this.$t('label.static.nat')
-        //     break
-        //   case 'PortForwarding':
-        //     serviceDisplayName = this.$t('label.port.forwarding')
-        //     break
-        //   case 'UserData':
-        //     serviceDisplayName = this.$t('label.user.data')
-        //     break
-        //   default:
-        //     serviceDisplayName = 'label.' + serviceName
-        //     break
-        // }
         this.supportedServices[i].description = serviceDisplayName
       }
     },

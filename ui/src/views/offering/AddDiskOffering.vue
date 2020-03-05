@@ -44,10 +44,10 @@
             buttonStyle="solid"
             @change="selected => { this.handleStorageTypeChange(selected.target.value) }">
             <a-radio-button value="shared">
-              {{ $t('label.shared') }}
+              {{ $t('shared') }}
             </a-radio-button>
             <a-radio-button value="local">
-              {{ $t('label.local') }}
+              {{ $t('local') }}
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
@@ -59,13 +59,13 @@
             buttonStyle="solid"
             @change="selected => { this.handleProvisioningTypeChange(selected.target.value) }">
             <a-radio-button value="thin">
-              {{ $t('label.thin') }}
+              {{ $t('thin') }}
             </a-radio-button>
             <a-radio-button value="sparse">
-              {{ $t('label.sparse') }}
+              {{ $t('sparse') }}
             </a-radio-button>
             <a-radio-button value="fat">
-              {{ $t('label.fat') }}
+              {{ $t('fat') }}
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
@@ -96,13 +96,13 @@
             buttonStyle="solid"
             @change="selected => { this.handleQosTypeChange(selected.target.value) }">
             <a-radio-button value="">
-              {{ $t('label.none') }}
+              {{ $t('none') }}
             </a-radio-button>
             <a-radio-button value="hypervisor">
-              {{ $t('label.hypervisor') }}
+              {{ $t('hypervisor') }}
             </a-radio-button>
             <a-radio-button value="storage">
-              {{ $t('label.storage') }}
+              {{ $t('storage') }}
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
@@ -215,13 +215,13 @@
             buttonStyle="solid"
             @change="selected => { this.handleWriteCacheTypeChange(selected.target.value) }">
             <a-radio-button value="nodiskcache">
-              {{ $t('label.nodiskcache') }}
+              {{ $t('nodiskcache') }}
             </a-radio-button>
             <a-radio-button value="writebackdiskcaching">
-              {{ $t('label.writebackdiskcaching') }}
+              {{ $t('writebackdiskcaching') }}
             </a-radio-button>
             <a-radio-button value="writethroughdiskcaching">
-              {{ $t('label.writethroughdiskcaching') }}
+              {{ $t('writethroughdiskcaching') }}
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
@@ -341,7 +341,7 @@ export default {
     this.zones = [
       {
         id: null,
-        name: this.$t('label.all.zone')
+        name: this.$t('all.zone')
       }
     ]
   },

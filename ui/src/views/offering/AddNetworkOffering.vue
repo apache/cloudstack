@@ -418,7 +418,7 @@ export default {
     this.zones = [
       {
         id: null,
-        name: this.$t('label.all.zone')
+        name: this.$t('all.zone')
       }
     ]
   },
@@ -488,31 +488,31 @@ export default {
           // Sanitize names
           // switch (serviceName) {
           //   case 'Vpn':
-          //     serviceDisplayName = this.$t('label.vpn')
+          //     serviceDisplayName = this.$t('vpn')
           //     break
           //   case 'Dhcp':
-          //     serviceDisplayName = this.$t('label.dhcp')
+          //     serviceDisplayName = this.$t('dhcp')
           //     break
           //   case 'Dns':
-          //     serviceDisplayName = this.$t('label.dns')
+          //     serviceDisplayName = this.$t('dns')
           //     break
           //   case 'Lb':
-          //     serviceDisplayName = this.$t('label.load.balancer')
+          //     serviceDisplayName = this.$t('load.balancer')
           //     break
           //   case 'SourceNat':
-          //     serviceDisplayName = this.$t('label.source.nat')
+          //     serviceDisplayName = this.$t('source.nat')
           //     break
           //   case 'StaticNat':
-          //     serviceDisplayName = this.$t('label.static.nat')
+          //     serviceDisplayName = this.$t('static.nat')
           //     break
           //   case 'PortForwarding':
-          //     serviceDisplayName = this.$t('label.port.forwarding')
+          //     serviceDisplayName = this.$t('port.forwarding')
           //     break
           //   case 'UserData':
-          //     serviceDisplayName = this.$t('label.user.data')
+          //     serviceDisplayName = this.$t('user.data')
           //     break
           //   case 'Connectivity':
-          //     serviceDisplayName = this.$t('label.virtual.networking')
+          //     serviceDisplayName = this.$t('virtual.networking')
           //     break
           //   default:
           //     serviceDisplayName = serviceName
