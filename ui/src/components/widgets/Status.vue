@@ -81,6 +81,7 @@ export default {
         case 'Allocated':
         case 'Created':
         case 'Pending':
+        case 'Maintenance':
           status = 'warning'
           break
       }

@@ -20,7 +20,7 @@ export default {
   title: 'Zones',
   icon: 'global',
   permission: ['listZonesMetrics', 'listZones'],
-  columns: ['name', 'state', 'networktype', 'clusters', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'order'],
+  columns: ['name', 'state', 'allocationstate', 'networktype', 'clusters', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'order'],
   details: ['name', 'id', 'allocationstate', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2'],
   related: [{
     name: 'pod',

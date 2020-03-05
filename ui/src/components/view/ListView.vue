@@ -96,6 +96,15 @@
     <template slot="state" slot-scope="text">
       <status :text="text ? text : ''" displayText />
     </template>
+    <template slot="allocationstate" slot-scope="text">
+      <status :text="text ? text : ''" displayText />
+    </template>
+    <template slot="resourcestate" slot-scope="text">
+      <status :text="text ? text : ''" displayText />
+    </template>
+    <template slot="powerstate" slot-scope="text">
+      <status :text="text ? text : ''" displayText />
+    </template>
     <template slot="agentstate" slot-scope="text">
       <status :text="text ? text : ''" displayText />
     </template>

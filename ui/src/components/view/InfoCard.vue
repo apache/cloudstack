@@ -73,6 +73,21 @@
             <span>{{ resource.state || resource.status }}</span>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.allocationstate">
+          <div class="resource-detail-item__label">{{ $t('allocationstate') }}</div>
+          <div class="resource-detail-item__details">
+            <status class="status" :text="resource.allocationstate"/>
+            <span>{{ resource.allocationstate }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.resourcestate">
+          <div class="resource-detail-item__label">{{ $t('resourcestate') }}</div>
+          <div class="resource-detail-item__details">
+            <status class="status" :text="resource.resourcestate"/>
+            <span>{{ resource.resourcestate }}</span>
+          </div>
+        </div>
+
         <div class="resource-detail-item" v-if="resource.id">
           <div class="resource-detail-item__label">{{ $t('id') }}</div>
           <div class="resource-detail-item__details">
