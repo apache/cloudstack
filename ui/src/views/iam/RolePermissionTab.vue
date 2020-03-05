@@ -255,7 +255,7 @@ export default {
 
   .rules-list {
     max-height: 600px;
-    overflow: scroll;
+    overflow: auto;
 
     &--overflow-hidden {
       overflow: hidden;
