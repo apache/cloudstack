@@ -52,7 +52,13 @@ export default {
       icon: 'play-circle',
       label: 'label.action.enable.pod',
       dataView: true,
-      show: (record) => { return record.allocationstate === 'Disabled' }
+      show: (record) => { return record.allocationstate === 'Disabled' },
+      args: ['allocationstate'],
+      mapping: {
+        allocationstate: {
+          value: (record) => 'Enabled'
+        }
+      }
     },
     {
       api: 'updatePod',
@@ -60,7 +66,12 @@ export default {
       label: 'label.action.disable.pod',
       dataView: true,
       show: (record) => { return record.allocationstate === 'Enabled' },
-      defaultArgs: { allocationstate: 'Disabled' }
+      args: ['allocationstate'],
+      mapping: {
+        allocationstate: {
+          value: (record) => 'Disabled'
+        }
+      }
     },
     {
       api: 'deletePod',
