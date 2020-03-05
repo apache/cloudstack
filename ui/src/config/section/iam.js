@@ -83,7 +83,7 @@ export default {
       title: 'Accounts',
       icon: 'team',
       permission: ['listAccounts'],
-      columns: ['name', 'state', 'firstname', 'lastname', 'rolename', 'roletype', 'domain'],
+      columns: ['name', 'state', 'rolename', 'roletype', 'domain'],
       details: ['name', 'id', 'rolename', 'roletype', 'domain', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
       related: [{
         name: 'accountuser',
