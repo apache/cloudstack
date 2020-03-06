@@ -33,6 +33,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.agent.api.GetVolumeStatsAnswer;
 import com.cloud.agent.api.GetVolumeStatsCommand;
 import com.cloud.agent.api.VolumeStatsEntry;
@@ -52,7 +53,7 @@ public final class LibvirtGetVolumeStatsCommandWrapper extends CommandWrapper<Ge
                 statEntry.put(volumeUuid, getVolumeStat(libvirtComputingResource, conn, volumeUuid, storeUuid, poolType));
             }
             return new GetVolumeStatsAnswer(cmd, "", statEntry);
-        } catch (LibvirtException e) {
+        } catch (LibvirtException | CloudRuntimeException e) {
             return new GetVolumeStatsAnswer(cmd, "Can't get vm disk stats: " + e.getMessage(), null);
         }
     }
