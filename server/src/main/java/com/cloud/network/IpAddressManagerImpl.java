@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Collections;
 
 import javax.inject.Inject;
 
@@ -1862,10 +1863,27 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
         Set<Long> availableIps = _networkModel.getAvailableIps(network, null);
         if (availableIps == null || availableIps.isEmpty()) {
-            s_logger.debug("There are no free ips in the  network " + network);
+            s_logger.debug("There are no free ips in the network " + network);
             return null;
         }
         return NetUtils.long2Ip(availableIps.iterator().next());
+    }
+
+    @Override
+    public String acquireLastGuestIpAddress(Network network) {
+        if (_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty() && network.getCidr() == null) {
+            return null;
+        }
+        Set<Long> availableIps = _networkModel.getAvailableIps(network, null);
+        if (availableIps == null || availableIps.isEmpty()) {
+            s_logger.debug("There are no free ips in the network " + network);
+            return null;
+        }
+
+        List<Long> availableIpsReverse = new ArrayList(availableIps);
+        Collections.sort(availableIpsReverse, Collections.reverseOrder());
+
+        return NetUtils.long2Ip(availableIpsReverse.iterator().next());
     }
 
     /**
