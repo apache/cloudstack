@@ -5352,7 +5352,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Object keyword = cmd.getKeyword();
 
         if (keyword != null) {
-            final SearchCriteria<NetworkOfferingVO> ssc = _networkOfferingDao.createSearchCriteria();
+            final SearchCriteria<NetworkOfferingJoinVO> ssc = networkOfferingJoinDao.createSearchCriteria();
             ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
