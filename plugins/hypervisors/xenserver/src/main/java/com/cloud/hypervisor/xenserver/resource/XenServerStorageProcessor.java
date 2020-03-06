@@ -210,6 +210,11 @@ public class XenServerStorageProcessor implements StorageProcessor {
     }
 
     @Override
+    public Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd) {
+        return null;
+    }
+
+    @Override
     public AttachAnswer attachIso(final AttachCommand cmd) {
         final DiskTO disk = cmd.getDisk();
         final DataTO data = disk.getData();

@@ -36,6 +36,7 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
@@ -89,7 +90,6 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.direct.download.DirectTemplateDownloader;
-import com.cloud.agent.direct.download.DirectTemplateDownloader.DirectTemplateInformation;
 import com.cloud.agent.direct.download.HttpDirectTemplateDownloader;
 import com.cloud.agent.direct.download.HttpsDirectTemplateDownloader;
 import com.cloud.agent.direct.download.MetalinkDirectTemplateDownloader;
@@ -1676,15 +1676,20 @@ public class KVMStorageProcessor implements StorageProcessor {
     /**
      * Get direct template downloader from direct download command and destination pool
      */
-    private DirectTemplateDownloader getDirectTemplateDownloaderFromCommand(DirectDownloadCommand cmd, KVMStoragePool destPool) {
+    private DirectTemplateDownloader getDirectTemplateDownloaderFromCommand(DirectDownloadCommand cmd,
+                                                                            KVMStoragePool destPool,
+                                                                            String temporaryDownloadPath) {
         if (cmd instanceof HttpDirectDownloadCommand) {
-            return new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders(), cmd.getConnectTimeout(), cmd.getSoTimeout());
+            return new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders(),
+                    cmd.getConnectTimeout(), cmd.getSoTimeout(), temporaryDownloadPath);
         } else if (cmd instanceof HttpsDirectDownloadCommand) {
-            return new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders(), cmd.getConnectTimeout(), cmd.getSoTimeout(), cmd.getConnectionRequestTimeout());
+            return new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders(),
+                    cmd.getConnectTimeout(), cmd.getSoTimeout(), cmd.getConnectionRequestTimeout(), temporaryDownloadPath);
         } else if (cmd instanceof NfsDirectDownloadCommand) {
-            return new NfsDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum());
+            return new NfsDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), temporaryDownloadPath);
         } else if (cmd instanceof MetalinkDirectDownloadCommand) {
-            return new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), cmd.getHeaders(), cmd.getConnectTimeout(), cmd.getSoTimeout());
+            return new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), cmd.getHeaders(),
+                    cmd.getConnectTimeout(), cmd.getSoTimeout(), temporaryDownloadPath);
         } else {
             throw new IllegalArgumentException("Unsupported protocol, please provide HTTP(S), NFS or a metalink");
         }
@@ -1693,38 +1698,112 @@ public class KVMStorageProcessor implements StorageProcessor {
     @Override
     public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
         final PrimaryDataStoreTO pool = cmd.getDestPool();
-        if (!pool.getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
-            return new DirectDownloadAnswer(false, "Unsupported pool type " + pool.getPoolType().toString(), true);
-        }
-        KVMStoragePool destPool = storagePoolMgr.getStoragePool(pool.getPoolType(), pool.getUuid());
         DirectTemplateDownloader downloader;
+        KVMPhysicalDisk template;
 
         try {
-            downloader = getDirectTemplateDownloaderFromCommand(cmd, destPool);
-        } catch (IllegalArgumentException e) {
-            return new DirectDownloadAnswer(false, "Unable to create direct downloader: " + e.getMessage(), true);
-        }
+            s_logger.debug("Verifying temporary location for downloading the template exists on the host");
+            String temporaryDownloadPath = resource.getDirectDownloadTemporaryDownloadPath();
+            if (!isLocationAccessible(temporaryDownloadPath)) {
+                String msg = "The temporary location path for downloading templates does not exist: " +
+                        temporaryDownloadPath + " on this host";
+                s_logger.error(msg);
+                return new DirectDownloadAnswer(false, msg, true);
+            }
 
-        try {
-            s_logger.info("Trying to download template");
-            if (!downloader.downloadTemplate()) {
+            s_logger.debug("Checking for free space on the host for downloading the template");
+            if (!isEnoughSpaceForDownloadTemplateOnTemporaryLocation(cmd.getTemplateSize())) {
+                String msg = "Not enough space on the defined temporary location to download the template " + cmd.getTemplateId();
+                s_logger.error(msg);
+                return new DirectDownloadAnswer(false, msg, true);
+            }
+
+            KVMStoragePool destPool = storagePoolMgr.getStoragePool(pool.getPoolType(), pool.getUuid());
+            downloader = getDirectTemplateDownloaderFromCommand(cmd, destPool, temporaryDownloadPath);
+            s_logger.debug("Trying to download template");
+            Pair<Boolean, String> result = downloader.downloadTemplate();
+            if (!result.first()) {
                 s_logger.warn("Couldn't download template");
                 return new DirectDownloadAnswer(false, "Unable to download template", true);
             }
+            String tempFilePath = result.second();
             if (!downloader.validateChecksum()) {
                 s_logger.warn("Couldn't validate template checksum");
                 return new DirectDownloadAnswer(false, "Checksum validation failed", false);
             }
-            if (!downloader.extractAndInstallDownloadedTemplate()) {
-                s_logger.warn("Couldn't extract and install template");
-                return new DirectDownloadAnswer(false, "Extraction and installation failed", false);
-            }
+            template = storagePoolMgr.createPhysicalDiskFromDirectDownloadTemplate(tempFilePath, destPool, cmd.isIso());
         } catch (CloudRuntimeException e) {
             s_logger.warn("Error downloading template " + cmd.getTemplateId() + " due to: " + e.getMessage());
             return new DirectDownloadAnswer(false, "Unable to download template: " + e.getMessage(), true);
+        } catch (IllegalArgumentException e) {
+            return new DirectDownloadAnswer(false, "Unable to create direct downloader: " + e.getMessage(), true);
         }
 
-        DirectTemplateInformation info = downloader.getTemplateInformation();
-        return new DirectDownloadAnswer(true, info.getSize(), info.getInstallPath());
+        return new DirectDownloadAnswer(true, template.getSize(), template.getName());
+    }
+
+    @Override
+    public Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd) {
+        final DataTO srcData = cmd.getSrcTO();
+        final DataTO destData = cmd.getDestTO();
+        final VolumeObjectTO srcVol = (VolumeObjectTO)srcData;
+        final VolumeObjectTO destVol = (VolumeObjectTO)destData;
+        final ImageFormat srcFormat = srcVol.getFormat();
+        final ImageFormat destFormat = destVol.getFormat();
+        final DataStoreTO srcStore = srcData.getDataStore();
+        final DataStoreTO destStore = destData.getDataStore();
+        final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)srcStore;
+        final PrimaryDataStoreTO primaryStoreDest = (PrimaryDataStoreTO)destStore;
+        final String srcVolumePath = srcData.getPath();
+        final String destVolumePath = destData.getPath();
+        KVMStoragePool destPool = null;
+
+        try {
+            final String volumeName = UUID.randomUUID().toString();
+
+            final String destVolumeName = volumeName + "." + destFormat.getFileExtension();
+            final KVMPhysicalDisk volume = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), srcVolumePath);
+            volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
+
+            destPool = storagePoolMgr.getStoragePool(primaryStoreDest.getPoolType(), primaryStoreDest.getUuid());
+            storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
+            final VolumeObjectTO newVol = new VolumeObjectTO();
+            newVol.setPath(destVolumePath + File.separator + destVolumeName);
+            newVol.setFormat(destFormat);
+            return new CopyCmdAnswer(newVol);
+        } catch (final CloudRuntimeException e) {
+            s_logger.debug("Failed to copyVolumeFromPrimaryToPrimary: ", e);
+            return new CopyCmdAnswer(e.toString());
+        }
+    }
+
+    /**
+     * True if location exists
+     */
+    private boolean isLocationAccessible(String temporaryDownloadPath) {
+        File dir = new File(temporaryDownloadPath);
+        return dir.exists();
+    }
+
+    /**
+     * Perform a free space check on the host for downloading the direct download templates
+     * @param templateSize template size obtained from remote server when registering the template (in bytes)
+     */
+    protected boolean isEnoughSpaceForDownloadTemplateOnTemporaryLocation(Long templateSize) {
+        if (templateSize == null || templateSize == 0L) {
+            s_logger.info("The server did not provide the template size, assuming there is enough space to download it");
+            return true;
+        }
+        String cmd = String.format("df --output=avail %s -B 1 | tail -1", resource.getDirectDownloadTemporaryDownloadPath());
+        String resultInBytes = Script.runSimpleBashScript(cmd);
+        Long availableBytes;
+        try {
+            availableBytes = Long.parseLong(resultInBytes);
+        } catch (NumberFormatException e) {
+            String msg = "Could not parse the output " + resultInBytes + " as a number, therefore not able to check for free space";
+            s_logger.error(msg, e);
+            return false;
+        }
+        return availableBytes >= templateSize;
     }
 }

@@ -20,6 +20,7 @@
 package com.cloud.storage.resource;
 
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -95,7 +96,9 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             //copy volume from image cache to primary
             return processor.copyVolumeFromImageCacheToPrimary(cmd);
         } else if (srcData.getObjectType() == DataObjectType.VOLUME && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
-            if (destData.getObjectType() == DataObjectType.VOLUME) {
+            if (destData.getObjectType() == DataObjectType.VOLUME && srcData instanceof VolumeObjectTO && ((VolumeObjectTO)srcData).isDirectDownload()) {
+                return processor.copyVolumeFromPrimaryToPrimary(cmd);
+            } else if (destData.getObjectType() == DataObjectType.VOLUME) {
                 return processor.copyVolumeFromPrimaryToSecondary(cmd);
             } else if (destData.getObjectType() == DataObjectType.TEMPLATE) {
                 return processor.createTemplateFromVolume(cmd);

@@ -478,6 +478,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return _ovsPvlanVmPath;
     }
 
+    public String getDirectDownloadTemporaryDownloadPath() {
+        return directDownloadTemporaryDownloadPath;
+    }
+
     public String getResizeVolumePath() {
         return _resizeVolumePath;
     }
@@ -530,6 +534,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
+    protected String directDownloadTemporaryDownloadPath;
 
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
         final String[] tokens = startIp.split("[.]");
@@ -575,6 +580,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (final IOException ex) {
             throw new CloudRuntimeException("IOException in reading " + file.getAbsolutePath(), ex);
         }
+    }
+
+    private String getDefaultDirectDownloadTemporaryPath() {
+        return "/var/lib/libvirt/images";
     }
 
     protected String getDefaultNetworkScriptsDir() {
@@ -654,6 +663,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (dpdkOvsPath != null && !dpdkOvsPath.endsWith("/")) {
                 dpdkOvsPath += "/";
             }
+        }
+
+        directDownloadTemporaryDownloadPath = (String) params.get("direct.download.temporary.download.location");
+        if (org.apache.commons.lang.StringUtils.isBlank(directDownloadTemporaryDownloadPath)) {
+            directDownloadTemporaryDownloadPath = getDefaultDirectDownloadTemporaryPath();
         }
 
         params.put("domr.scripts.dir", domrScriptsDir);
@@ -2320,18 +2334,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (dataStore instanceof NfsTO) {
                     NfsTO nfsStore = (NfsTO)data.getDataStore();
                     dataStoreUrl = nfsStore.getUrl();
-                } else if (dataStore instanceof PrimaryDataStoreTO && ((PrimaryDataStoreTO) dataStore).getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+                    physicalDisk = getPhysicalDiskFromNfsStore(dataStoreUrl, data);
+                } else if (dataStore instanceof PrimaryDataStoreTO) {
                     //In order to support directly downloaded ISOs
-                    String psHost = ((PrimaryDataStoreTO) dataStore).getHost();
-                    String psPath = ((PrimaryDataStoreTO) dataStore).getPath();
-                    dataStoreUrl = "nfs://" + psHost + File.separator + psPath;
+                    PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) dataStore;
+                    if (primaryDataStoreTO.getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+                        String psHost = primaryDataStoreTO.getHost();
+                        String psPath = primaryDataStoreTO.getPath();
+                        dataStoreUrl = "nfs://" + psHost + File.separator + psPath;
+                        physicalDisk = getPhysicalDiskFromNfsStore(dataStoreUrl, data);
+                    } else if (primaryDataStoreTO.getPoolType().equals(StoragePoolType.SharedMountPoint) ||
+                            primaryDataStoreTO.getPoolType().equals(StoragePoolType.Filesystem)) {
+                        physicalDisk = getPhysicalDiskPrimaryStore(primaryDataStoreTO, data);
+                    }
                 }
-                final String volPath = dataStoreUrl + File.separator + data.getPath();
-                final int index = volPath.lastIndexOf("/");
-                final String volDir = volPath.substring(0, index);
-                final String volName = volPath.substring(index + 1);
-                final KVMStoragePool secondaryStorage = _storagePoolMgr.getStoragePoolByURI(volDir);
-                physicalDisk = secondaryStorage.getPhysicalDisk(volName);
             } else if (volume.getType() != Volume.Type.ISO) {
                 final PrimaryDataStoreTO store = (PrimaryDataStoreTO)data.getDataStore();
                 physicalDisk = _storagePoolMgr.getPhysicalDisk(store.getPoolType(), store.getUuid(), data.getPath());
@@ -2470,6 +2486,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
+    }
+
+    private KVMPhysicalDisk getPhysicalDiskPrimaryStore(PrimaryDataStoreTO primaryDataStoreTO, DataTO data) {
+        KVMStoragePool storagePool = _storagePoolMgr.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+        return storagePool.getPhysicalDisk(data.getPath());
+    }
+
+    private KVMPhysicalDisk getPhysicalDiskFromNfsStore(String dataStoreUrl, DataTO data) {
+        final String volPath = dataStoreUrl + File.separator + data.getPath();
+        final int index = volPath.lastIndexOf("/");
+        final String volDir = volPath.substring(0, index);
+        final String volName = volPath.substring(index + 1);
+        final KVMStoragePool storage = _storagePoolMgr.getStoragePoolByURI(volDir);
+        return storage.getPhysicalDisk(volName);
     }
 
     private void setBurstProperties(final VolumeObjectTO volumeObjectTO, final DiskDef disk ) {
