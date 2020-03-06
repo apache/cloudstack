@@ -703,7 +703,8 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         }
 
         if (host.getResourceState() != ResourceState.Maintenance) {
-            String errorMsg = "Maintenance state expected, but got " + host.getResourceState().toString() + " for host " + host.getUuid() + "(" + host.getName() + ")";
+            String errorMsg = "Timeout: waited " + timeout + "ms for host " + host.getUuid() + "(" + host.getName() + ")" +
+                    " to be in Maintenance state, but after timeout it is in " + host.getResourceState().toString() + " state";
             s_logger.error(errorMsg);
             throw new CloudRuntimeException(errorMsg);
         }
