@@ -43,9 +43,12 @@ public class NetworkOfferingJoinDaoImpl extends GenericDaoBase<NetworkOfferingJo
     }
 
     @Override
-    public List<NetworkOfferingJoinVO> findByDomainId(long domainId) {
+    public List<NetworkOfferingJoinVO> findByDomainId(long domainId, Boolean includeAllDomainOffering) {
         SearchBuilder<NetworkOfferingJoinVO> sb = createSearchBuilder();
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.FIND_IN_SET);
+        if (includeAllDomainOffering) {
+            sb.or("dId", sb.entity().getDomainId(), SearchCriteria.Op.NULL);
+        }
         sb.done();
 
         SearchCriteria<NetworkOfferingJoinVO> sc = sb.create();
@@ -54,9 +57,12 @@ public class NetworkOfferingJoinDaoImpl extends GenericDaoBase<NetworkOfferingJo
     }
 
     @Override
-    public List<NetworkOfferingJoinVO> findByZoneId(long zoneId) {
+    public List<NetworkOfferingJoinVO> findByZoneId(long zoneId, Boolean includeAllZoneOffering) {
         SearchBuilder<NetworkOfferingJoinVO> sb = createSearchBuilder();
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.FIND_IN_SET);
+        if (includeAllZoneOffering) {
+            sb.or("zId", sb.entity().getZoneId(), SearchCriteria.Op.NULL);
+        }
         sb.done();
 
         SearchCriteria<NetworkOfferingJoinVO> sc = sb.create();

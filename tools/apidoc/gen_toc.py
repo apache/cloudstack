@@ -191,7 +191,9 @@ known_categories = {
     'Management': 'Management',
     'Backup' : 'Backup and Recovery',
     'Restore' : 'Backup and Recovery',
-    'UnmanagedInstance': 'Virtual Machine'
+    'UnmanagedInstance': 'Virtual Machine',
+    'KubernetesSupportedVersion': 'Kubernetes Service',
+    'KubernetesCluster': 'Kubernetes Service'
     }
 
 

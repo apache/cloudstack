@@ -304,3 +304,74 @@ CREATE TABLE  `cloud`.`router_health_check` (
   UNIQUE `i_router_health_checks__router_id__check_name__check_type`(`router_id`, `check_name`, `check_type`),
   INDEX `i_router_health_checks__router_id`(`router_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+-- Kubernetes service
+CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_supported_version` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `uuid` varchar(40) DEFAULT NULL,
+    `name` varchar(255) NOT NULL COMMENT 'the name of this Kubernetes version',
+    `semantic_version` varchar(32) NOT NULL COMMENT 'the semantic version for this Kubernetes version',
+    `iso_id` bigint unsigned NOT NULL COMMENT 'the ID of the binaries ISO for this Kubernetes version',
+    `zone_id` bigint unsigned DEFAULT NULL COMMENT 'the ID of the zone for which this Kubernetes version is made available',
+    `state` char(32) DEFAULT NULL COMMENT 'the enabled or disabled state for this Kubernetes version',
+    `min_cpu` int(10) unsigned NOT NULL COMMENT 'the minimum CPU needed by cluster nodes for using this Kubernetes version',
+    `min_ram_size` bigint(20) unsigned NOT NULL COMMENT 'the minimum RAM in MB needed by cluster nodes for this Kubernetes version',
+    `created` datetime NOT NULL COMMENT 'date created',
+    `removed` datetime COMMENT 'date removed or null, if still present',
+
+    PRIMARY KEY(`id`),
+    CONSTRAINT `fk_kubernetes_supported_version__iso_id` FOREIGN KEY `fk_kubernetes_supported_version__iso_id`(`iso_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kubernetes_supported_version__zone_id` FOREIGN KEY `fk_kubernetes_supported_version__zone_id`(`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `uuid` varchar(40) DEFAULT NULL,
+    `name` varchar(255) NOT NULL,
+    `description` varchar(4096) COMMENT 'display text for this Kubernetes cluster',
+    `zone_id` bigint unsigned NOT NULL COMMENT 'the ID of the zone in which this Kubernetes cluster is deployed',
+    `kubernetes_version_id` bigint unsigned NOT NULL COMMENT 'the ID of the Kubernetes version of this Kubernetes cluster',
+    `service_offering_id` bigint unsigned COMMENT 'service offering id for the cluster VM',
+    `template_id` bigint unsigned COMMENT 'the ID of the template used by this Kubernetes cluster',
+    `network_id` bigint unsigned COMMENT 'the ID of the network used by this Kubernetes cluster',
+    `master_node_count` bigint NOT NULL default '0' COMMENT 'the number of the master nodes deployed for this Kubernetes cluster',
+    `node_count` bigint NOT NULL default '0' COMMENT 'the number of the worker nodes deployed for this Kubernetes cluster',
+    `account_id` bigint unsigned NOT NULL COMMENT 'the ID of owner account of this Kubernetes cluster',
+    `domain_id` bigint unsigned NOT NULL COMMENT 'the ID of the domain of this cluster',
+    `state` char(32) NOT NULL COMMENT 'the current state of this Kubernetes cluster',
+    `key_pair` varchar(40),
+    `cores` bigint unsigned NOT NULL COMMENT 'total number of CPU cores used by this Kubernetes cluster',
+    `memory` bigint unsigned NOT NULL COMMENT 'total memory used by this Kubernetes cluster',
+    `node_root_disk_size` bigint(20) unsigned DEFAULT 0 COMMENT 'root disk size of root disk for each node',
+    `endpoint` varchar(255) COMMENT 'url endpoint of the Kubernetes cluster manager api access',
+    `created` datetime NOT NULL COMMENT 'date created',
+    `removed` datetime COMMENT 'date removed or null, if still present',
+    `gc` tinyint unsigned NOT NULL DEFAULT 1 COMMENT 'gc this Kubernetes cluster or not',
+
+    PRIMARY KEY(`id`),
+    CONSTRAINT `fk_cluster__zone_id` FOREIGN KEY `fk_cluster__zone_id`(`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_cluster__kubernetes_version_id` FOREIGN KEY `fk_cluster__kubernetes_version_id`(`kubernetes_version_id`) REFERENCES `kubernetes_supported_version` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_cluster__service_offering_id` FOREIGN KEY `fk_cluster__service_offering_id`(`service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_cluster__template_id` FOREIGN KEY `fk_cluster__template_id`(`template_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_cluster__network_id` FOREIGN KEY `fk_cluster__network_id`(`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster_vm_map` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `cluster_id` bigint unsigned NOT NULL COMMENT 'the ID of the Kubernetes cluster',
+    `vm_id` bigint unsigned NOT NULL COMMENT 'the ID of the VM',
+
+    PRIMARY KEY(`id`),
+    CONSTRAINT `fk_kubernetes_cluster_vm_map__cluster_id` FOREIGN KEY `fk_kubernetes_cluster_vm_map__cluster_id`(`cluster_id`) REFERENCES `kubernetes_cluster`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster_details` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `cluster_id` bigint unsigned NOT NULL COMMENT 'the ID of the Kubernetes cluster',
+    `name` varchar(255) NOT NULL,
+    `value` varchar(10240) NOT NULL,
+    `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user else false',
+
+    PRIMARY KEY(`id`),
+    CONSTRAINT `fk_kubernetes_cluster_details__cluster_id` FOREIGN KEY `fk_kubernetes_cluster_details__cluster_id`(`cluster_id`) REFERENCES `kubernetes_cluster`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

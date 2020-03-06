@@ -88,6 +88,7 @@
 
         <module>integrations/cloudian</module>
         <module>integrations/prometheus</module>
+        <module>integrations/kubernetes-service</module>
 
         <module>metrics</module>
 

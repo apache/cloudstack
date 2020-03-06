@@ -225,8 +225,8 @@ public class ApiConstants {
     public static final String LOCK = "lock";
     public static final String LUN = "lun";
     public static final String LBID = "lbruleid";
-    public static final String MAX = "max";
     public static final String MAC_ADDRESS = "macaddress";
+    public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MAX_CPU_NUMBER = "maxcpunumber";
     public static final String MAX_MEMORY = "maxmemory";
@@ -781,6 +781,23 @@ public class ApiConstants {
     public static final String ROUTER_CHECK_TYPE = "checktype";
     public static final String LAST_UPDATED = "lastupdated";
     public static final String PERFORM_FRESH_CHECKS = "performfreshchecks";
+
+    public static final String CONSOLE_END_POINT = "consoleendpoint";
+    public static final String EXTERNAL_LOAD_BALANCER_IP_ADDRESS = "externalloadbalanceripaddress";
+    public static final String DOCKER_REGISTRY_USER_NAME = "dockerregistryusername";
+    public static final String DOCKER_REGISTRY_PASSWORD = "dockerregistrypassword";
+    public static final String DOCKER_REGISTRY_URL = "dockerregistryurl";
+    public static final String DOCKER_REGISTRY_EMAIL = "dockerregistryemail";
+    public static final String ISO_NAME = "isoname";
+    public static final String ISO_STATE = "isostate";
+    public static final String SEMANTIC_VERSION = "semanticversion";
+    public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
+    public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";
+    public static final String MASTER_NODES = "masternodes";
+    public static final String MIN_SEMANTIC_VERSION = "minimumsemanticversion";
+    public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
+    public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
+    public static final String SUPPORTS_HA = "supportsha";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

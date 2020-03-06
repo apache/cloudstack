@@ -127,8 +127,16 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
         return bootable;
     }
 
+    public void setBootable(Boolean bootable) {
+        this.bootable = bootable;
+    }
+
     public String getDisplayText() {
         return displayText;
+    }
+
+    public void setDisplayText(String displayText) {
+        this.displayText = displayText;
     }
 
     public Boolean isFeatured() {
@@ -139,12 +147,20 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
         return publicIso;
     }
 
+    public void setPublic(Boolean publicIso) {
+        this.publicIso = publicIso;
+    }
+
     public Boolean isExtractable() {
         return extractable;
     }
 
     public String getIsoName() {
         return isoName;
+    }
+
+    public void setIsoName(String isoName) {
+        this.isoName = isoName;
     }
 
     public Long getOsTypeId() {
@@ -155,20 +171,40 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
         return url;
     }
 
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
     }
 
     public Long getDomainId() {
         return domainId;
     }
 
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
     public String getAccountName() {
         return accountName;
     }
 
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
     public String getChecksum() {
         return checksum;
+    }
+
+    public void setChecksum(String checksum) {
+        this.checksum = checksum;
     }
 
     public String getImageStoreUuid() {
