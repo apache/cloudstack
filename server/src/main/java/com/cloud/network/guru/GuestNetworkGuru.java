@@ -376,21 +376,17 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
                 if (isGateway) {
                     guestIp = network.getGateway();
+                } else if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
+                    guestIp = this.acquireGuestIpAddressForVrouterRedundant(network, nic.getRequestedIPv4());
                 } else {
-                    if (nic.getRequestedIPv4() == null && vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
-                        guestIp = this.acquireGuestIpAddressForVrouterRedundant(
-                                VrouterPlacement.fromString(VrouterRedundantTiersPlacement.valueIn(network.getAccountId())),
-                                network, nic.getRequestedIPv4()
-                        );
-                    } else {
-                        guestIp = _ipAddrMgr.acquireGuestIpAddress(network, nic.getRequestedIPv4());
-                    }
-                    if (guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
-                        throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP" + " address for network " + network, DataCenter.class,
-                                dc.getId());
-                    }
+                    guestIp = _ipAddrMgr.acquireGuestIpAddress(network, nic.getRequestedIPv4());
                 }
 
+                if (!isGateway && guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
+                    throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP" + " address for network " + network, DataCenter.class,
+                            dc.getId());
+                }
+                
                 nic.setIPv4Address(guestIp);
                 if (network.getCidr() != null) {
                     nic.setIPv4Netmask(NetUtils.cidr2Netmask(_networkModel.getValidNetworkCidr(network)));
@@ -414,14 +410,18 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         return nic;
     }
 
-    public String acquireGuestIpAddressForVrouterRedundant(VrouterPlacement placement, Network network, String requestedIp) {
+    public String acquireGuestIpAddressForVrouterRedundant(Network network, String requestedIp) {
+        if (requestedIp != null) {
+            return _ipAddrMgr.acquireGuestIpAddress(network, requestedIp);
+        }
+        VrouterPlacement placement = VrouterPlacement.fromString(VrouterRedundantTiersPlacement.valueIn(network.getAccountId()));
         switch (placement) {
             case Last:
                 return _ipAddrMgr.acquireLastGuestIpAddress(network);
             case First:
                 return _ipAddrMgr.acquireFirstGuestIpAddress(network);
         }
-        return _ipAddrMgr.acquireGuestIpAddress(network, requestedIp);
+        return _ipAddrMgr.acquireGuestIpAddress(network, null);
     }
 
     @Override
