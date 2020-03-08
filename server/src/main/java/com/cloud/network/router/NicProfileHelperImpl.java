@@ -21,6 +21,7 @@ import java.net.URI;
 
 import javax.inject.Inject;
 
+import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 
@@ -118,7 +119,7 @@ public class NicProfileHelperImpl implements NicProfileHelper {
         final NicProfile guestNic = new NicProfile();
 
         if (vpcRouterDeploymentDefinition.isRedundant()) {
-            guestNic.setIPv4Address(_ipAddrMgr.acquireFirstGuestIpAddress(guestNetwork));
+            guestNic.setIPv4Address(this.acquireGuestIpAddressForVrouterRedundant(guestNetwork));
         } else {
             guestNic.setIPv4Address(guestNetwork.getGateway());
         }
@@ -131,6 +132,12 @@ public class NicProfileHelperImpl implements NicProfileHelper {
         guestNic.setIPv4Netmask(NetUtils.getCidrNetmask(gatewayCidr));
 
         return guestNic;
+    }
+
+    public String acquireGuestIpAddressForVrouterRedundant(Network network) {
+        return _ipAddrMgr.acquireGuestIpAddressByPlacement(
+                GuestNetworkGuru.ipPlacementFromConfig(network), network, null
+        );
     }
 
 }

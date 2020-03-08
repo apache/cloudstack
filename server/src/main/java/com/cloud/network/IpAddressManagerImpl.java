@@ -1886,6 +1886,20 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         return NetUtils.long2Ip(availableIpsReverse.iterator().next());
     }
 
+    @Override
+    public String acquireGuestIpAddressByPlacement(IpPlacement ipPlacement, Network network, String requestedIp) {
+        if (requestedIp != null) {
+            return this.acquireGuestIpAddress(network, requestedIp);
+        }
+        switch (ipPlacement) {
+            case Last:
+                return this.acquireLastGuestIpAddress(network);
+            case First:
+                return this.acquireFirstGuestIpAddress(network);
+        }
+        return this.acquireGuestIpAddress(network, null);
+    }
+
     /**
      * Get the list of public IPs that need to be applied for a static NAT enable/disable operation.
      * Manipulating only these ips prevents concurrency issues when disabling static nat at the same time.

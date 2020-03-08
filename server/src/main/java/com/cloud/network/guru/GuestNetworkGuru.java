@@ -22,6 +22,7 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
+import com.cloud.network.IpPlacement;
 import com.cloud.network.Network.GuestType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -411,17 +412,12 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     }
 
     public String acquireGuestIpAddressForVrouterRedundant(Network network, String requestedIp) {
-        if (requestedIp != null) {
-            return _ipAddrMgr.acquireGuestIpAddress(network, requestedIp);
-        }
-        VrouterPlacement placement = VrouterPlacement.fromString(VrouterRedundantTiersPlacement.valueIn(network.getAccountId()));
-        switch (placement) {
-            case Last:
-                return _ipAddrMgr.acquireLastGuestIpAddress(network);
-            case First:
-                return _ipAddrMgr.acquireFirstGuestIpAddress(network);
-        }
-        return _ipAddrMgr.acquireGuestIpAddress(network, null);
+        return _ipAddrMgr.acquireGuestIpAddressByPlacement(ipPlacementFromConfig(network), network, requestedIp);
+    }
+
+    public static IpPlacement ipPlacementFromConfig(Network network) {
+        String placementConfig = VrouterRedundantTiersPlacement.valueIn(network.getAccountId());
+        return IpPlacement.fromString(placementConfig);
     }
 
     @Override

@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.network.guru.GuestNetworkGuru;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 
@@ -747,7 +748,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             final NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, defaultNetworkStartIpv6);
             if (routerDeploymentDefinition.isPublicNetwork()) {
                 if (routerDeploymentDefinition.isRedundant()) {
-                    gatewayNic.setIPv4Address(_ipAddrMgr.acquireFirstGuestIpAddress(guestNetwork));
+                    gatewayNic.setIPv4Address(this.acquireGuestIpAddressForVrouterRedundant(guestNetwork));
                 } else {
                     gatewayNic.setIPv4Address(guestNetwork.getGateway());
                 }
@@ -882,5 +883,11 @@ public class NetworkHelperImpl implements NetworkHelper {
             return false;
         }
         return true;
+    }
+
+    public String acquireGuestIpAddressForVrouterRedundant(Network network) {
+        return _ipAddrMgr.acquireGuestIpAddressByPlacement(
+                GuestNetworkGuru.ipPlacementFromConfig(network), network, null
+        );
     }
 }

@@ -107,6 +107,8 @@ public interface IpAddressManager {
 
     String acquireLastGuestIpAddress(Network network);
 
+    String acquireGuestIpAddressByPlacement(IpPlacement ipPlacement, Network network, String requestedIp);
+
     boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError, boolean forRevoke) throws ResourceUnavailableException;
 
     IpAddress assignSystemIp(long networkId, Account owner, boolean forElasticLb, boolean forElasticIp) throws InsufficientAddressCapacityException;

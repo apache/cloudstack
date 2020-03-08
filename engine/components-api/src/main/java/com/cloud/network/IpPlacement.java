@@ -1,4 +1,4 @@
-package com.cloud.network.guru;
+package com.cloud.network;
 
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
@@ -16,13 +16,13 @@ package com.cloud.network.guru;
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-public enum VrouterPlacement {
+public enum IpPlacement {
     Random,
     First,
     Last;
 
 
-    public static VrouterPlacement fromString(String param) {
+    public static IpPlacement fromString(String param) {
         switch (param.trim().toLowerCase()) {
             case "first":
                 return First;
