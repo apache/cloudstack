@@ -386,7 +386,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                     throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP" + " address for network " + network, DataCenter.class,
                             dc.getId());
                 }
-                
+
                 nic.setIPv4Address(guestIp);
                 if (network.getCidr() != null) {
                     nic.setIPv4Netmask(NetUtils.cidr2Netmask(_networkModel.getValidNetworkCidr(network)));
