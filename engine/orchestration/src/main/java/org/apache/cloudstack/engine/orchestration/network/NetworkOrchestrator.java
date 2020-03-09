@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.engine.orchestration;
+package org.apache.cloudstack.engine.orchestration.network;
 
 
 import java.net.URI;
@@ -45,8 +45,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
-import org.apache.cloudstack.engine.orchestration.network.GuestNetworkDirector;
-import org.apache.cloudstack.engine.orchestration.network.NetworkOrchestrationUtility;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
@@ -2204,17 +2202,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
    * @param bypassVlanOverlapCheck bypass VLAN id/range overlap check
    * @param ntwkOff network offering
    */
-  public boolean hasGuestBypassVlanOverlapCheck(final boolean bypassVlanOverlapCheck, final NetworkOfferingVO ntwkOff, final boolean isPrivateNetwork) {
+  boolean hasGuestBypassVlanOverlapCheck(final boolean bypassVlanOverlapCheck, final NetworkOfferingVO ntwkOff, final boolean isPrivateNetwork) {
     return bypassVlanOverlapCheck && (ntwkOff.getGuestType() == GuestType.Shared || isPrivateNetwork);
   }
 
   /**
-     * Checks for L2 network offering services. Only 2 cases allowed:
-     * - No services
-     * - User Data service only, provided by ConfigDrive
-     * @param ntwkOff network offering
-     */
-    public void checkL2OfferingServices(NetworkOfferingVO ntwkOff) {
+    * Checks for L2 network offering services. Only 2 cases allowed:
+    * - No services
+    * - User Data service only, provided by ConfigDrive
+    * @param ntwkOff network offering
+    */
+  void checkL2OfferingServices(NetworkOfferingVO ntwkOff) {
         if (ntwkOff.getGuestType() == GuestType.L2 && !_networkModel.listNetworkOfferingServices(ntwkOff.getId()).isEmpty() &&
                 (!_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.UserData) ||
                         (_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.UserData) &&
@@ -2828,7 +2826,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return true;
     }
 
-    public boolean cleanupNetworkResources(final long networkId, final Account caller, final long callerUserId) {
+    boolean cleanupNetworkResources(final long networkId, final Account caller, final long callerUserId) {
         boolean success = true;
         final Network network = _networksDao.findById(networkId);
 
@@ -3387,7 +3385,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return accessDetails;
     }
 
-    public boolean stateTransitTo(final NetworkVO network, final Network.Event e) throws NoTransitionException {
+    boolean stateTransitTo(final NetworkVO network, final Network.Event e) throws NoTransitionException {
         return _stateMachine.transitTo(network, e, null, _networksDao);
     }
 
@@ -3596,7 +3594,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 GuestDomainSuffix, NetworkThrottlingRate, MinVRVersion,
                 PromiscuousMode, MacAddressChanges, ForgedTransmits, RollingRestartEnabled};
     }
-    public void publishNetworkRemoval (long netId) {
+    void publishNetworkRemoval (long netId) {
         final Pair<Class<?>, Long> networkMsg = new Pair<Class<?>, Long>(Network.class, netId);
         // remove its related ACL permission
         _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, networkMsg);

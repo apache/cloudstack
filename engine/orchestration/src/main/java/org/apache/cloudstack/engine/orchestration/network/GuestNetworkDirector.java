@@ -74,7 +74,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.NetworkOrchestrator;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -526,7 +525,7 @@ public class GuestNetworkDirector {
                             throw new CloudRuntimeException("Failed to trash network.");
                         }
 
-                        if (!networkOrchestrator.guestNetworkDirector.deleteVlansInNetwork(networkFinal.getId(), context.getCaller().getId(), callerAccount, networkOrchestrator)) {
+                        if (!deleteVlansInNetwork(networkFinal.getId(), context.getCaller().getId(), callerAccount)) {
                             LOG.warn("Failed to delete network " + networkFinal + "; was unable to cleanup corresponding ip ranges");
                             throw new CloudRuntimeException("Failed to delete network " + networkFinal + "; was unable to cleanup corresponding ip ranges");
                         } else {
@@ -569,7 +568,7 @@ public class GuestNetworkDirector {
         return success;
     }
 
-    protected boolean deleteVlansInNetwork(final long networkId, final long userId, final Account callerAccount, NetworkOrchestrator networkOrchestrator) {
+    protected boolean deleteVlansInNetwork(final long networkId, final long userId, final Account callerAccount) {
 
         //cleanup Public vlans
         final List<VlanVO> publicVlans = vlanDao.listVlansByNetworkId(networkId);

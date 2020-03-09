@@ -79,7 +79,7 @@
   </bean>
 
   <bean id="networkOrchestrator"
-        class="org.apache.cloudstack.engine.orchestration.NetworkOrchestrator">
+        class="org.apache.cloudstack.engine.orchestration.network.NetworkOrchestrator">
     <property name="networkGurus" value="#{networkGurusRegistry.registered}" />
     <property name="networkElements" value="#{networkElementsRegistry.registered}" />
     <property name="ipDeployers" value="#{ipDeployersRegistry.registered}" />
