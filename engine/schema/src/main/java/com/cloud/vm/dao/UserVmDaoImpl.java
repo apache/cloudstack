@@ -1,4 +1,4 @@
-// Licensed to the Apache Software Foundation (ASF) under one
+    // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -358,8 +358,10 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
     @Override
     public void loadDetails(UserVmVO vm) {
-        Map<String, String> details = _detailsDao.listDetailsKeyPairs(vm.getId());
-        vm.setDetails(details);
+        if (vm != null ) {
+            Map<String, String> details = _detailsDao.listDetailsKeyPairs(vm.getId());
+            vm.setDetails(details);
+        }
     }
 
     @Override

@@ -1289,10 +1289,11 @@ public class LibvirtComputingResourceTest {
         final boolean isWindows = false;
         final VirtualMachineTO vmTO = Mockito.mock(VirtualMachineTO.class);
         final boolean executeInSequence = false;
-
+        DiskTO[] diskTOS = new DiskTO[]{};
         final MigrateCommand command = new MigrateCommand(vmName, destIp, isWindows, vmTO, executeInSequence );
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        when(vmTO.getDisks()).thenReturn(diskTOS);
         try {
             when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
             when(libvirtUtilitiesHelper.retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system")).thenReturn(dconn);

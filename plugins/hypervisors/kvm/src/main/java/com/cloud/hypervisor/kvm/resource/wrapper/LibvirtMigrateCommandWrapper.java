@@ -22,6 +22,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,6 +44,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.DpdkTO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
@@ -64,6 +66,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
@@ -115,6 +118,30 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
             ifaces = libvirtComputingResource.getInterfaces(conn, vmName);
             disks = libvirtComputingResource.getDisks(conn, vmName);
+
+            String oldIsoVolumePath = null;
+            for (DiskDef disk : disks) {
+                if (disk.getDiskPath() != null && disk.getDiskPath().contains(vmName)) {
+                    oldIsoVolumePath = disk.getDiskPath();
+                    break;
+                }
+            }
+
+            VirtualMachineTO to = command.getVirtualMachine();
+
+            DiskTO newDisk = null;
+            for (DiskTO disk : to.getDisks()) {
+                if (disk.getPath() != null && disk.getPath().contains("configdrive")) {
+                    newDisk = disk;
+                    break;
+                }
+            }
+
+            String newIsoVolumePath = null;
+            if (newDisk != null) {
+                 newIsoVolumePath = libvirtComputingResource.getVolumePath(conn, newDisk);
+            }
+
             dm = conn.domainLookupByName(vmName);
             /*
                 We replace the private IP address with the address of the destination host.
@@ -141,6 +168,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             xmlDesc = dm.getXMLDesc(xmlFlag);
             xmlDesc = replaceIpForVNCInDescFile(xmlDesc, target);
 
+            if (newIsoVolumePath != null && oldIsoVolumePath != newIsoVolumePath) {
+                s_logger.debug("editing mount path");
+                xmlDesc = replaceDiskSourceFile(xmlDesc, newIsoVolumePath, vmName);
+            }
             // delete the metadata of vm snapshots before migration
             vmsnapshots = libvirtComputingResource.cleanVMSnapshotMetadata(dm);
 
@@ -249,6 +280,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             result = e.getMessage();
         } catch (final TransformerException e) {
             s_logger.debug("TransformerException: " + e.getMessage());
+            result = e.getMessage();
+        } catch (URISyntaxException e) {
+            s_logger.debug("UriSyntaxException: "+ e.getMessage());
             result = e.getMessage();
         } finally {
             try {
@@ -571,5 +605,50 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         transformer.transform(source, result);
 
         return byteArrayOutputStream.toString();
+    }
+
+    private String replaceDiskSourceFile(String xmlDesc, String isoPath, String vmName) throws IOException, SAXException, ParserConfigurationException, TransformerException {
+        InputStream in = IOUtils.toInputStream(xmlDesc);
+
+        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(in);
+
+        // Get the root element
+        Node domainNode = doc.getFirstChild();
+
+        NodeList domainChildNodes = domainNode.getChildNodes();
+
+        for (int i = 0; i < domainChildNodes.getLength(); i++) {
+            Node domainChildNode = domainChildNodes.item(i);
+
+            if ("devices".equals(domainChildNode.getNodeName())) {
+                NodeList devicesChildNodes = domainChildNode.getChildNodes();
+
+                for (int x = 0; x < devicesChildNodes.getLength(); x++) {
+                    Node deviceChildNode = devicesChildNodes.item(x);
+                    if ("disk".equals(deviceChildNode.getNodeName())) {
+                        Node diskNode = deviceChildNode;
+                        String sourceText = getSourceText(diskNode);
+                        NodeList diskChildNodes = diskNode.getChildNodes();
+                        for (int z = 0; z < diskChildNodes.getLength(); z++) {
+                            Node diskChildNode = diskChildNodes.item(z);
+                            if ("source".equals(diskChildNode.getNodeName())) {
+                                Node sourceNode = diskChildNode;
+                                NamedNodeMap sourceNodeAttributes = sourceNode.getAttributes();
+                                Node sourceNodeAttribute = sourceNodeAttributes.getNamedItem("file");
+                                if ( sourceNodeAttribute.getNodeValue().contains(vmName)) {
+                                    diskNode.removeChild(diskChildNode);
+                                    Element newChildSourceNode = doc.createElement("source");
+                                    newChildSourceNode.setAttribute("file", isoPath);
+                                    diskNode.appendChild(newChildSourceNode);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return getXml(doc);
     }
 }

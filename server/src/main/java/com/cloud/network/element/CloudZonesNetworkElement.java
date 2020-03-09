@@ -22,6 +22,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -49,12 +50,14 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -147,7 +150,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
 
     private VmDataCommand generateVmDataCommand(String vmPrivateIpAddress, String userData, String serviceOffering, String zoneName, String guestIpAddress,
-        String vmName, String vmInstanceName, long vmId, String vmUuid, String publicKey) {
+        String vmName, String vmInstanceName, long vmId, String vmUuid, String publicKey, String hostname) {
         VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName, _networkMgr.getExecuteInSeqNtwkElmtCmd());
         // if you add new metadata files, also edit systemvm/patches/debian/config/var/www/html/latest/.htaccess
         cmd.addVmData("userdata", "user-data", userData);
@@ -163,7 +166,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
             setVmInstanceId(vmUuid, cmd);
         }
         cmd.addVmData("metadata", "public-keys", publicKey);
-
+        cmd.addVmData("metadata", "hypervisor-host-name", hostname);
         return cmd;
     }
 
@@ -217,11 +220,12 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
             }
             String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(uservm.getServiceOfferingId()).getDisplayText();
             String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
-
+            final Account caller = CallContext.current().getCallingAccount();
+            String destHostname = (VirtualMachineManager.AllowExposeHypervisorHostname.value() && VirtualMachineManager.AllowExposeHypervisorHostnameAccoutLevel.valueIn(caller.getId())) ? dest.getHost().getName() : null;
             cmds.addCommand(
                 "vmdata",
                 generateVmDataCommand(nic.getIPv4Address(), userData, serviceOffering, zoneName, nic.getIPv4Address(), uservm.getHostName(), uservm.getInstanceName(),
-                    uservm.getId(), uservm.getUuid(), sshPublicKey));
+                    uservm.getId(), uservm.getUuid(), sshPublicKey, destHostname));
             try {
                 _agentManager.send(dest.getHost().getId(), cmds);
             } catch (OperationTimedoutException e) {
@@ -252,6 +256,11 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
 
     @Override
+    public boolean addNewDisk(NicProfile profile, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
     public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile vm) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
@@ -261,5 +270,4 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     public boolean verifyServicesCombination(Set<Service> services) {
         return true;
     }
-
 }
