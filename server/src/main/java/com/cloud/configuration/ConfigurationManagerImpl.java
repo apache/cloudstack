@@ -245,6 +245,7 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.common.base.Enums;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -2353,6 +2354,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        // check if cache_mode parameter is valid
+        validateCacheMode(cmd.getCacheMode());
+
         final Boolean offerHA = cmd.isOfferHa();
 
         boolean localStorageRequired = false;
@@ -2433,7 +2437,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
-                cmd.getHypervisorSnapshotReserve());
+                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode());
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
@@ -2444,7 +2448,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
             Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
             Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-            final Integer hypervisorSnapshotReserve) {
+            final Integer hypervisorSnapshotReserve, String cacheMode) {
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
 
@@ -2540,6 +2544,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > 0) {
             offering.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
+        }
+        if(cacheMode != null) {
+            offering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
         }
 
         if (hypervisorSnapshotReserve != null && hypervisorSnapshotReserve < 0) {
@@ -2799,7 +2806,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                 Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
                                                 Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
                                                 Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-                                                final Integer hypervisorSnapshotReserve) {
+                                                final Integer hypervisorSnapshotReserve, String cacheMode) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && numGibibytes <= 0) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
@@ -2905,6 +2912,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > 0) {
             newDiskOffering.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
         }
+        if (cacheMode != null) {
+            newDiskOffering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
+        }
 
         if (hypervisorSnapshotReserve != null && hypervisorSnapshotReserve < 0) {
             throw new InvalidParameterValueException("If provided, Hypervisor Snapshot Reserve must be greater than or equal to 0.");
@@ -2971,6 +2981,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Disksize is not allowed for a customized disk offering");
         }
 
+        // check if cache_mode parameter is valid
+        validateCacheMode(cmd.getCacheMode());
+
         boolean localStorageRequired = false;
         final String storageType = cmd.getStorageType();
         if (storageType != null) {
@@ -2997,13 +3010,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long iopsWriteRateMax = cmd.getIopsWriteRateMax();
         final Long iopsWriteRateMaxLength = cmd.getIopsWriteRateMaxLength();
         final Integer hypervisorSnapshotReserve = cmd.getHypervisorSnapshotReserve();
+        final String cacheMode = cmd.getCacheMode();
 
         final Long userId = CallContext.current().getCallingUserId();
         return createDiskOffering(userId, domainIds, zoneIds, name, description, provisioningType, numGibibytes, tags, isCustomized,
                 localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops,
                 maxIops, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
                 iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength,
-                hypervisorSnapshotReserve);
+                hypervisorSnapshotReserve, cacheMode);
     }
 
     @Override
@@ -6265,6 +6279,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
         return filteredDomainIds;
+    }
+
+    protected void validateCacheMode(String cacheMode){
+        if(cacheMode != null &&
+                !Enums.getIfPresent(DiskOffering.DiskCacheMode.class,
+                        cacheMode.toUpperCase()).isPresent()) {
+            throw new InvalidParameterValueException(String.format("Invalid cache mode (%s). Please specify one of the following " +
+                    "valid cache mode parameters: none, writeback or writethrough", cacheMode));
+        }
     }
 
     public List<SecurityChecker> getSecChecker() {

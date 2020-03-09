@@ -781,6 +781,7 @@ public class ApiConstants {
     public static final String ROUTER_CHECK_TYPE = "checktype";
     public static final String LAST_UPDATED = "lastupdated";
     public static final String PERFORM_FRESH_CHECKS = "performfreshchecks";
+    public static final String CACHE_MODE = "cachemode";
 
     public static final String CONSOLE_END_POINT = "consoleendpoint";
     public static final String EXTERNAL_LOAD_BALANCER_IP_ADDRESS = "externalloadbalanceripaddress";
