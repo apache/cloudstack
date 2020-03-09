@@ -67,12 +67,10 @@
         <cs.jar-plugin.version>3.2.0</cs.jar-plugin.version>
         <cs.pmd-plugin.version>3.12.0</cs.pmd-plugin.version>
         <cs.project-info-plugin.version>3.0.0</cs.project-info-plugin.version>
-        <cs.owasp.dependency-checker-plugin.version>3.1.1</cs.owasp.dependency-checker-plugin.version>
         <cs.release-plugin.version>2.5.3</cs.release-plugin.version>
         <cs.resources-plugin.version>3.1.0</cs.resources-plugin.version>
         <cs.site-plugin.version>3.8.2</cs.site-plugin.version>
         <cs.surefire-plugin.version>2.22.2</cs.surefire-plugin.version>
-
 
         <!-- Logging versions -->
         <cs.log4j.version>1.2.17</cs.log4j.version>
@@ -156,7 +154,6 @@
         <cs.neethi.version>2.0.4</cs.neethi.version>
         <cs.nitro.version>10.1</cs.nitro.version>
         <cs.opensaml.version>2.6.4</cs.opensaml.version>
-        <cs.owasp.esapi.version>2.1.0.1</cs.owasp.esapi.version>
         <cs.rados-java.version>0.5.0</cs.rados-java.version>
         <cs.reflections.version>0.9.12</cs.reflections.version>
         <cs.servicemix.version>3.3.3_1</cs.servicemix.version>
@@ -587,7 +584,7 @@
             <dependency>
                 <groupId>org.owasp.esapi</groupId>
                 <artifactId>esapi</artifactId>
-                <version>${cs.owasp.esapi.version}</version>
+                <version>2.1.0.1</version>
             </dependency>
             <!-- Test dependency in mysql for db tests -->
             <dependency>
@@ -728,22 +725,6 @@
                     <execution>
                         <id>cloudstack-findbugs</id>
                         <phase>none</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <version>${cs.owasp.dependency-checker-plugin.version}</version>
-                <configuration>
-                    <skipProvidedScope>true</skipProvidedScope>
-                    <skipRuntimeScope>true</skipRuntimeScope>
-                </configuration>
-                <executions>
-                    <execution>
                         <goals>
                             <goal>check</goal>
                         </goals>
@@ -1155,18 +1136,6 @@
     </build>
     <reporting>
         <plugins>
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <version>${cs.owasp.dependency-checker-plugin.version}</version>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>aggregate</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
