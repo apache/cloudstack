@@ -43,11 +43,11 @@
         var $toolbar = $listView.find('> .toolbar');
         var $table = $listView.find('> .data-table');
 
-        equal($listView.size(), 1, 'List view present');
-        equal($toolbar.size(), 1, 'Toolbar present');
-        equal($table.size(), 1, 'Data table div present');
-        equal($table.find('> .fixed-header table thead tr').size(), 1, 'Fixed header present');
-        equal($table.find('> table.body tbody').size(), 1, 'Body table present');
+        equal($listView.length, 1, 'List view present');
+        equal($toolbar.length, 1, 'Toolbar present');
+        equal($table.length, 1, 'Data table div present');
+        equal($table.find('> .fixed-header table thead tr').length, 1, 'Fixed header present');
+        equal($table.find('> table.body tbody').length, 1, 'Body table present');
     });
 
     test('Fields: basic', function() {
@@ -60,7 +60,7 @@
         });
         var $fields = $listView.find('.fixed-header table thead tr th');
 
-        equal($fields.size(), 1, 'Column present');
+        equal($fields.length, 1, 'Column present');
         ok($fields.hasClass('fieldA'), 'Has ID as classname');
         equal($fields.html(), 'TestFieldA', 'Has correct label');
     });
@@ -82,7 +82,7 @@
         $.each(testFields, function(k, v) {
             var $field = $fields.filter('.' + k);
 
-            equal($field.size(), 1, k + '-> Column present');
+            equal($field.length, 1, k + '-> Column present');
             equal($field.html(), v.label, k + '-> Has correct label');
         });
     });
@@ -90,8 +90,8 @@
     test('Data loading state', function() {
         var $listView = listView();
 
-        equal($listView.find('table.body tr.loading').size(), 1, 'Row has loading state');
-        equal($listView.find('table.body tr.loading td.loading.icon').size(), 1, 'Row cell has loading icon');
+        equal($listView.find('table.body tr.loading').length, 1, 'Row has loading state');
+        equal($listView.find('table.body tr.loading td.loading.icon').length, 1, 'Row cell has loading icon');
     });
 
     asyncTest('Data provider: basic', function() {
@@ -111,7 +111,7 @@
             }
         });
 
-        equal($listView.find('.data-table table.body tbody tr.empty td').size(), 1, 'Body table has empty table row');
+        equal($listView.find('.data-table table.body tbody tr.empty td').length, 1, 'Body table has empty table row');
         equal($listView.find('.data-table table.body tbody tr.empty td').html(), 'label.no.data', 'Empty contents notice displayed');
     });
 
@@ -134,8 +134,8 @@
             }
         });
 
-        equal($listView.find('table.body tbody tr').size(), 1, 'Body table has table row');
-        equal($listView.find('table.body tbody tr td').size(), 2, 'Body table has table cells');
+        equal($listView.find('table.body tbody tr').length, 1, 'Body table has table row');
+        equal($listView.find('table.body tbody tr td').length, 2, 'Body table has table cells');
         equal($listView.find('table.body tbody tr td.fieldA > span').html(), 'FieldDataA', 'FieldDataA content present');
         equal($listView.find('table.body tbody tr td.fieldB > span').html(), 'FieldDataB', 'FieldDataB content present');
     });
@@ -163,7 +163,7 @@
             }
         });
 
-        equal($listView.find('table.body tbody tr').size(), 3, 'Body table has correct # of table rows');
+        equal($listView.find('table.body tbody tr').length, 3, 'Body table has correct # of table rows');
 
         $(testData).map(function(index, data) {
             var $tr = $listView.find('table.body tbody tr').filter(function() {
@@ -198,9 +198,9 @@
             }
         });
 
-        equal($listView.find('table tr th').size(), 2, 'Correct number of header columns present');
-        equal($listView.find('table.body tbody tr td').size(), 2, 'Correct number of data body columns present');
-        ok(!$listView.find('table.body tbody td.fieldHidden').size(), 'Hidden field not present');
+        equal($listView.find('table tr th').length, 2, 'Correct number of header columns present');
+        equal($listView.find('table.body tbody tr td').length, 2, 'Correct number of data body columns present');
+        ok(!$listView.find('table.body tbody td.fieldHidden').length, 'Hidden field not present');
     });
 
     test('Filter dropdown', function() {
@@ -229,7 +229,7 @@
         var $filters = $listView.find('.filters select');
 
         var testFilterDropdownContent = function() {
-            equal($filters.find('option').size(), 2, 'Correct # of filters present');
+            equal($filters.find('option').length, 2, 'Correct # of filters present');
             equal($filters.find('option:first').html(), 'FilterOnLabel', 'Filter on label present');
             equal($filters.find('option:last').html(), 'FilterOffLabel', 'Filter off label present');
         };

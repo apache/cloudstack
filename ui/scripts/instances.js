@@ -15,7 +15,331 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
-    var vmMigrationHostObjs, ostypeObjs;
+    var vmMigrationHostObjs, ostypeObjs, zoneWideStorage;
+
+    var vmStartAction = function(args) {
+      var action = {
+        messages: {
+          confirm: function() {
+            return 'message.action.start.instance';
+          },
+          notification: function() {
+            return 'label.action.start.instance';
+          }
+        },
+        label: 'label.action.start.instance',
+        compactLabel: 'label.start',
+        addRow: 'false',
+        createForm: {
+          title: 'notification.start.instance',
+          desc: 'message.action.start.instance',
+          fields: {
+            hostId: {
+              label: 'label.host',
+              isHidden: function() {
+                return !isAdmin();
+              },
+              select: function(args) {
+                if (isAdmin()) {
+                  $.ajax({
+                    url: createURL("listHosts&state=Up&type=Routing&zoneid=" + args.context.instances[0].zoneid),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      if (json.listhostsresponse.host != undefined) {
+                        hostObjs = json.listhostsresponse.host;
+                        var items = [{
+                          id: -1,
+                          description: 'Default'
+                        }];
+                        $(hostObjs).each(function() {
+                          items.push({
+                            id: this.id,
+                            description: this.name
+                          });
+                        });
+                        args.response.success({
+                          data: items
+                        });
+                      } else {
+                        cloudStack.dialog.notice({
+                          message: _l('No Hosts are avaialble')
+                        });
+                      }
+                    }
+                  });
+                } else {
+                  args.response.success({
+                    data: null
+                  });
+                }
+              }
+            }
+          }
+        },
+        action: function(args) {
+          var instances = args.context.instances;
+          var skippedInstances = 0;
+          $(instances).each(function(index, instance) {
+            if (instance.state === 'Running' || instance.state === "Starting") {
+              skippedInstances++;
+            } else {
+              var data = {
+                id: instance.id
+              };
+              if (args.$form.find('.form-item[rel=hostId]').css("display") != "none" && args.data.hostId != -1) {
+                $.extend(data, {
+                  hostid: args.data.hostId
+                });
+              }
+              $.ajax({
+                url: createURL("startVirtualMachine"),
+                data: data,
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var jid = json.startvirtualmachineresponse.jobid;
+                  args.response.success({
+                    _custom: {
+                      jobId: jid,
+                      getUpdatedItem: function(json) {
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                      },
+                      getActionFilter: function() {
+                        return cloudStack.actionFilter.vmActionFilter;
+                      }
+                    }
+                  });
+                },
+                error: function(json) {
+                  args.response.error(parseXMLHttpResponse(json));
+                }
+              });
+            }
+          });
+          if (skippedInstances === instances.length) {
+            args.response.error();
+          }
+        },
+        notification: {
+          poll: pollAsyncJobResult
+        }
+      };
+
+
+      if (args && args.listView) {
+        $.extend(action, {
+          isHeader: true,
+          isMultiSelectAction: true
+        });
+      }
+
+      return action;
+    };
+
+    var vmStopAction = function(args) {
+        var action = {
+            messages: {
+                confirm: function(args) {
+                    return 'message.action.stop.instance';
+                },
+                notification: function(args) {
+                    return 'label.action.stop.instance';
+                }
+            },
+            label: 'label.action.stop.instance',
+            compactLabel: 'label.stop',
+            addRow: 'false',
+            createForm: {
+                title: 'notification.stop.instance',
+                desc: 'message.action.stop.instance',
+                fields: {
+                    forced: {
+                        label: 'force.stop',
+                        isBoolean: true,
+                        isChecked: false
+                    }
+                }
+            },
+            action: function(args) {
+                var instances = args.context.instances;
+                var skippedInstances = 0;
+                $(instances).each(function(index, instance) {
+                    if (instance.state === 'Stopped' || instance.state === 'Stopping') {
+                        skippedInstances++;
+                    } else {
+                        var data = {
+                            id: instance.id,
+                            forced: (args.data.forced == "on")
+                        };
+                        $.ajax({
+                            url: createURL("stopVirtualMachine"),
+                            data: data,
+                            dataType: "json",
+                            success: function(json) {
+                                var jid = json.stopvirtualmachineresponse.jobid;
+                                args.response.success({
+                                    _custom: {
+                                        jobId: jid,
+                                        getUpdatedItem: function(json) {
+                                            return $.extend(json.queryasyncjobresultresponse.jobresult.virtualmachine, { hostid: null });
+                                        },
+                                        getActionFilter: function() {
+                                            return vmActionfilter;
+                                        }
+                                    }
+                                });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
+                            }
+                        });
+                    }
+                });
+                if (skippedInstances === instances.length) {
+                    args.response.error();
+                }
+            },
+            notification: {
+                poll: pollAsyncJobResult
+            }
+        };
+
+
+        if (args && args.listView) {
+            $.extend(action, {
+                isHeader: true,
+                isMultiSelectAction: true
+            });
+        }
+
+        return action;
+    };
+
+    var vmDestroyAction = function(args) {
+        var action = {
+            messages: {
+                notification: function(args) {
+                    return 'label.action.destroy.instance';
+                }
+            },
+            label: 'label.action.destroy.instance',
+            compactLabel: 'label.destroy',
+            addRow: 'false',
+            createForm: {
+                title: 'label.action.destroy.instance',
+                desc: 'label.action.destroy.instance',
+                isWarning: true,
+                preFilter: function(args) {
+                    if (! g_allowUserExpungeRecoverVm) {
+                        args.$form.find('.form-item[rel=expunge]').hide();
+                    }
+                },
+                fields: {
+                    expunge: {
+                        label: 'label.expunge',
+                        isBoolean: true,
+                        isChecked: false
+                    },
+                    volumes: {
+                        label: 'label.delete.volumes',
+                        isBoolean: true,
+                        isChecked: true,
+                        isHidden: true,
+                    },
+                    volumeids: {
+                        label: 'label.delete.volumes',
+                        dependsOn: 'volumes',
+                        isBoolean: true,
+                        isHidden: false,
+                        emptyMessage: 'label.volume.empty',
+                        multiDataArray: true,
+                        multiData: function(args) {
+                            $.ajax({
+                                url: createURL("listVolumes&virtualMachineId=" + args.context.instances[0].id) + "&type=DATADISK",
+                                  dataType: "json",
+                                  async: true,
+                                  success: function(json) {
+                                    var volumes = json.listvolumesresponse.volume;
+                                    args.response.success({
+                                        descriptionField: 'name',
+                                        valueField: 'id',
+                                        data: volumes
+                                    });
+                                  }
+                            });
+                        }
+                    }
+                }
+            },
+            action: function(args) {
+                var instances = args.context.instances;
+                $(instances).map(function(index, instance) {
+                    var data = {
+                        id: instance.id
+                    };
+                    if (args.data.expunge == 'on') {
+                        $.extend(data, {
+                            expunge: true
+                        });
+                    }
+                    if (args.data.volumes == 'on') {
+
+                        var regex = RegExp('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+
+                        var selectedVolumes = [];
+
+                        for (var key in args.data) {
+                            var matches = key.match(regex);
+
+                            if (matches != null) {
+                                selectedVolumes.push(key);
+                            }
+                        }
+
+                        $.extend(data, {
+                            volumeids: $(selectedVolumes).map(function(index, volume) {
+                                return volume;
+                            }).toArray().join(',')
+                        });
+                    }
+                    $.ajax({
+                        url: createURL('destroyVirtualMachine'),
+                        data: data,
+                        success: function(json) {
+                            var jid = json.destroyvirtualmachineresponse.jobid;
+                            args.response.success({
+                                _custom: {
+                                    jobId: jid,
+                                    getUpdatedItem: function(json) {
+                                        if ('virtualmachine' in json.queryasyncjobresultresponse.jobresult) //destroy without expunge
+                                            return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                        else //destroy with expunge
+                                            return { 'toRemove': true };
+                                    },
+                                    getActionFilter: function() {
+                                        return vmActionfilter;
+                                    }
+                                }
+                            });
+                        }
+                    });
+                });
+            },
+            notification: {
+                poll: pollAsyncJobResult
+            }
+        };
+
+        if (args && args.listView) {
+            $.extend(action, {
+                isHeader: true,
+                isMultiSelectAction: true
+            });
+        }
+
+        return action;
+    };
 
     var vmSnapshotAction = function(args) {
         var action = {
@@ -81,14 +405,7 @@
                     var array1 = [];
                     array1.push("&snapshotmemory=" + (args.data.snapshotMemory == "on"));
                     array1.push("&quiescevm=" + (args.data.quiescevm == "on"));
-                    var displayname = args.data.name;
-                    if (displayname != null && displayname.length > 0) {
-                        array1.push("&name=" + todb(displayname));
-                    }
-                    var description = args.data.description;
-                    if (description != null && description.length > 0) {
-                        array1.push("&description=" + todb(description));
-                    }
+                    cloudStack.addNameAndDescriptionToCommandUrlParameterArray(array1, args.data);
                     $.ajax({
                         url: createURL("createVMSnapshot&virtualmachineid=" + instance.id + array1.join("")),
                         dataType: "json",
@@ -162,6 +479,7 @@
                 var hiddenFields = [];
                 if (!isAdmin()) {
                     hiddenFields.push('instancename');
+                    hiddenFields.push('account');
                 }
                 return hiddenFields;
             },
@@ -180,16 +498,26 @@
                 ipaddress: {
                     label: 'label.ip.address'
                 },
+                account: {
+                    label: 'label.account'
+                },
                 zonename: {
                     label: 'label.zone.name'
                 },
                 state: {
-                    label: 'label.state',
+                    label: 'label.metrics.state',
+                    converter: function (str) {
+                        // For localization
+                        return str;
+                    },
                     indicator: {
                         'Running': 'on',
                         'Stopped': 'off',
+                        'Error': 'off',
                         'Destroyed': 'off',
-                        'Error': 'off'
+                        'Expunging': 'off',
+                        'Stopping': 'warning',
+                        'Shutdown': 'warning'
                     }
                 }
             },
@@ -304,6 +632,9 @@
                         poll: pollAsyncJobResult
                     }
                 },
+                destroy: vmDestroyAction({ listView: true }),
+                stop: vmStopAction({ listView: true }),
+                start: vmStartAction({ listView: true }),
                 snapshot: vmSnapshotAction({ listView: true }),
                 viewMetrics: {
                     label: 'label.metrics',
@@ -379,6 +710,31 @@
                     });
                 }
 
+                if ("routers" in args.context) {
+                    if ("vpcid" in args.context.routers[0]) {
+                        $.extend(data, {
+                            vpcid: args.context.routers[0].vpcid
+                        });
+                    } else {
+                        if ("guestnetworkid" in args.context.routers[0]) {
+                            $.extend(data, {
+                                networkid: args.context.routers[0].guestnetworkid
+                            });
+                        }
+                    }
+                    if ("projectid" in args.context.routers[0]) {
+                        $.extend(data, {
+                            projectid: args.context.routers[0].projectid
+                        });
+                    }
+                }
+
+                if ("networks" in args.context) {
+                    $.extend(data, {
+                        networkid: args.context.networks[0].id
+                    });
+                }
+
                 if ("templates" in args.context) {
                     $.extend(data, {
                         templateid: args.context.templates[0].id
@@ -394,9 +750,13 @@
                 if ("sshkeypairs" in args.context) {
                     $.extend(data, {
                         domainid: args.context.sshkeypairs[0].domainid,
-                        account: args.context.sshkeypairs[0].account,
                         keypair: args.context.sshkeypairs[0].name
                     });
+                    if (!cloudStack.context || !cloudStack.context.projects) {
+                        // In case we are in project mode sshkeypairs provides project account name which
+                        // should not be passed as part of API params. So only extend if NOT in project mode.
+                        $.extend(data, { account: args.context.sshkeypairs[0].account});
+                    }
                 }
 
                 $.ajax({
@@ -406,6 +766,9 @@
                         var items = json.listvirtualmachinesresponse.virtualmachine;
                         if (items) {
                             $.each(items, function(idx, vm) {
+                                if (! vm.ipaddress) {
+                                    vm['ipaddress'] = "N/A";
+                                }
                                 if (vm.nic && vm.nic.length > 0 && vm.nic[0].ipaddress) {
                                     items[idx].ipaddress = vm.nic[0].ipaddress;
                                 }
@@ -432,6 +795,9 @@
                 }, {
                     path: 'storage.vmsnapshots',
                     label: 'label.snapshots'
+                }, {
+                    path: 'storage.backups',
+                    label: 'label.backup'
                 }, {
                     path: 'affinityGroups',
                     label: 'label.affinity.groups'
@@ -504,10 +870,6 @@
                     if (includingSecurityGroupService == false) {
                         hiddenTabs.push("securityGroups");
                     }
-					
-					if (args.context.instances[0].state == 'Running') {
-						hiddenTabs.push("settings");
-					}
 
                     return hiddenTabs;
                 },
@@ -560,55 +922,149 @@
                             title: 'label.action.start.instance',
                             desc: 'message.action.start.instance',
                             fields: {
-                                hostId: {
-                                    label: 'label.host',
-                                    isHidden: function(args) {
-                                        if (isAdmin())
-                                            return false;
-                                        else
-                                            return true;
-                                    },
-                                    select: function(args) {
-                                        if (isAdmin()) {
-                                            $.ajax({
-                                                url: createURL("listHosts&state=Up&type=Routing&zoneid=" + args.context.instances[0].zoneid),
-                                                dataType: "json",
-                                                async: true,
-                                                success: function(json) {
-                                                    if (json.listhostsresponse.host != undefined) {
-                                                        hostObjs = json.listhostsresponse.host;
-                                                        var items = [{
-                                                            id: -1,
-                                                            description: 'Default'
-                                                        }];
-                                                        $(hostObjs).each(function() {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.name
-                                                            });
+                                podId: {
+                                  label: 'label.pod',
+                                  isHidden: function(args) {
+                                      return !isAdmin();
+                                  },
+                                  select: function(args) {
+                                    if (isAdmin()) {
+                                        $.ajax({
+                                            url: createURL("listPods&zoneid=" + args.context.instances[0].zoneid),
+                                            dataType: "json",
+                                            async: true,
+                                            success: function(json) {
+                                                if (json.listpodsresponse.pod != undefined) {
+                                                    podObjs = json.listpodsresponse.pod;
+                                                    var items = [{
+                                                        id: -1,
+                                                        description: 'Default'
+                                                    }];
+                                                    $(podObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.name
                                                         });
-                                                        args.response.success({
-                                                            data: items
-                                                        });
-                                                    } else {
-                                                        cloudStack.dialog.notice({
-                                                            message: _l('No Hosts are avaialble')
-                                                        });
-                                                    }
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                } else {
+                                                    cloudStack.dialog.notice({
+                                                        message: _l('No Pods are available')
+                                                    });
                                                 }
-                                            });
-                                        } else {
-                                            args.response.success({
-                                                data: null
-                                            });
-                                        }
+                                            }
+                                        });
+                                    } else {
+                                        args.response.success({
+                                            data: null
+                                        });
                                     }
+                                  }
+                                },
+                                clusterId: {
+                                  label: 'label.cluster',
+                                  dependsOn: 'podId',
+                                  select: function(args) {
+                                      if (isAdmin()) {
+                                          var urlString = "listClusters&zoneid=" + args.context.instances[0].zoneid;
+                                          if (args.podId != -1) {
+                                             urlString += '&podid=' + args.podId;
+                                          }
+                                          $.ajax({
+                                              url: createURL(urlString),
+                                              dataType: "json",
+                                              async: true,
+                                              success: function(json) {
+                                                  if (json.listclustersresponse.cluster != undefined) {
+                                                      clusterObjs = json.listclustersresponse.cluster;
+                                                      var items = [{
+                                                          id: -1,
+                                                          description: 'Default'
+                                                      }];
+                                                      $(clusterObjs).each(function() {
+                                                          items.push({
+                                                              id: this.id,
+                                                              description: this.name
+                                                          });
+                                                      });
+                                                      args.response.success({
+                                                          data: items
+                                                      });
+                                                  } else {
+                                                      cloudStack.dialog.notice({
+                                                          message: _l('No Clusters are avaialble')
+                                                      });
+                                                  }
+                                              }
+                                          });
+
+                                      } else {
+                                          args.response.success({
+                                              data: null
+                                          });
+                                      }
+                                  }
+                                },
+                                hostId: {
+                                  label: 'label.host',
+                                  dependsOn: 'clusterId',
+                                  select: function(args) {
+                                      var urlString = "listHosts&state=Up&type=Routing&zoneid=" + args.context.instances[0].zoneid;
+                                      if (args.clusterId != -1) {
+                                          urlString += "&clusterid=" + args.clusterId;
+                                      }
+                                      if (isAdmin()) {
+                                          $.ajax({
+                                              url: createURL(urlString),
+                                              dataType: "json",
+                                              async: true,
+                                              success: function(json) {
+                                                  if (json.listhostsresponse.host != undefined) {
+                                                      hostObjs = json.listhostsresponse.host;
+                                                      var items = [{
+                                                          id: -1,
+                                                          description: 'Default'
+                                                      }];
+                                                      $(hostObjs).each(function() {
+                                                          items.push({
+                                                              id: this.id,
+                                                              description: this.name
+                                                          });
+                                                      });
+                                                      args.response.success({
+                                                          data: items
+                                                      });
+                                                  } else {
+                                                      cloudStack.dialog.notice({
+                                                          message: _l('No Hosts are avaialble')
+                                                      });
+                                                  }
+                                              }
+                                          });
+                                      } else {
+                                          args.response.success({
+                                              data: null
+                                          });
+                                      }
+                                  }
                                 }
                             }
                         },
                         action: function(args) {
                             var data = {
                                 id: args.context.instances[0].id
+                            }
+                            if (args.$form.find('.form-item[rel=podId]').css("display") != "none" && args.data.podId != -1) {
+                                $.extend(data, {
+                                    podid: args.data.podId
+                                });
+                            }
+                            if (args.$form.find('.form-item[rel=clusterId]').css("display") != "none" && args.data.clusterId != -1) {
+                                $.extend(data, {
+                                    clusterid: args.data.clusterId
+                                });
                             }
                             if (args.$form.find('.form-item[rel=hostId]').css("display") != "none" && args.data.hostId != -1) {
                                 $.extend(data, {
@@ -655,55 +1111,7 @@
                             poll: pollAsyncJobResult
                         }
                     },
-                    stop: {
-                        label: 'label.action.stop.instance',
-                        compactLabel: 'label.stop',
-                        createForm: {
-                            title: 'notification.stop.instance',
-                            desc: 'message.action.stop.instance',
-                            fields: {
-                                forced: {
-                                    label: 'force.stop',
-                                    isBoolean: true,
-                                    isChecked: false
-                                }
-                            }
-                        },
-                        action: function(args) {
-                            var array1 = [];
-                            array1.push("&forced=" + (args.data.forced == "on"));
-                            $.ajax({
-                                url: createURL("stopVirtualMachine&id=" + args.context.instances[0].id + array1.join("")),
-                                dataType: "json",
-                                async: true,
-                                success: function(json) {
-                                    var jid = json.stopvirtualmachineresponse.jobid;
-                                    args.response.success({
-                                        _custom: {
-                                            jobId: jid,
-                                            getUpdatedItem: function(json) {
-                                                return $.extend(json.queryasyncjobresultresponse.jobresult.virtualmachine, { hostid: null });
-                                            },
-                                            getActionFilter: function() {
-                                                return vmActionfilter;
-                                            }
-                                        }
-                                    });
-                                }
-                            });
-                        },
-                        messages: {
-                            confirm: function(args) {
-                                return 'message.action.stop.instance';
-                            },
-                            notification: function(args) {
-                                return 'label.action.stop.instance';
-                            }
-                        },
-                        notification: {
-                            poll: pollAsyncJobResult
-                        }
-                    },
+                    stop: vmStopAction(),
                     restart: {
                         label: 'label.action.reboot.instance',
                         compactLabel: 'label.reboot',
@@ -747,66 +1155,528 @@
                         }
                     },
                     snapshot: vmSnapshotAction(),
-                    destroy: {
-                        label: 'label.action.destroy.instance',
-                        compactLabel: 'label.destroy',
-                        createForm: {
-                            title: 'label.action.destroy.instance',
-                            desc: 'label.action.destroy.instance',
-                            isWarning: true,
-                            preFilter: function(args) {
-                                if (! g_allowUserExpungeRecoverVm) {
-                                    args.$form.find('.form-item[rel=expunge]').hide();
-                                }
-                            },
-                            fields: {
-                                expunge: {
-                                    label: 'label.expunge',
-                                    isBoolean: true,
-                                    isChecked: false
-                                }
-                            }
-                        },
-                        messages: {
-                            notification: function(args) {
-                                return 'label.action.destroy.instance';
-                            }
-                        },
-                        action: function(args) {
-                            var data = {
-                                id: args.context.instances[0].id
-                            };
-                            if (args.data.expunge == 'on') {
-                                $.extend(data, {
-                                    expunge: true
-                                });
-                            }
-                            $.ajax({
-                                url: createURL('destroyVirtualMachine'),
-                                data: data,
-                                success: function(json) {
-                                    var jid = json.destroyvirtualmachineresponse.jobid;
-                                    args.response.success({
-                                        _custom: {
-                                            jobId: jid,
-                                            getUpdatedItem: function(json) {
-                                                if ('virtualmachine' in json.queryasyncjobresultresponse.jobresult) //destroy without expunge
-                                                    return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                                                else //destroy with expunge
-                                                    return { 'toRemove': true };
-                                            },
-                                            getActionFilter: function() {
-                                                return vmActionfilter;
-                                            }
-                                        }
-                                    });
-                                }
-                            });
-                        },
-                        notification: {
-                            poll: pollAsyncJobResult
+                    storageSnapshot: {
+                      messages: {
+                        notification: function() {
+                          return 'label.action.take.snapshot';
                         }
+                      },
+                      label: 'label.action.vmstoragesnapshot.create',
+                      createForm: {
+                        title: 'label.action.vmstoragesnapshot.create',
+                        desc: 'message.action.vmstoragesnapshot.create',
+                        fields: {
+                          volume: {
+                            label: 'label.volume',
+                            docID: 'helpCreateInstanceStorageSnapshotVolume',
+                            select: function(args) {
+                              var items = [];
+                              var data = {
+                                virtualMachineId: args.context.instances[0].id
+                              };
+
+                              $.ajax({
+                                url: createURL('listVolumes'),
+                                data: data,
+                                dataType: 'json',
+                                async: false,
+                                success: function(json) {
+                                  var volumes = json.listvolumesresponse.volume;
+                                  args.context['volumes'] = volumes;
+                                  $(volumes).each(function(index, volume) {
+                                    items.push({
+                                      id: volume.id,
+                                      description: volume.name
+                                    });
+                                  });
+
+                                  args.response.success({
+                                    data: items
+                                  });
+                                }
+                              });
+                            }
+                          },
+                          quiescevm: {
+                            label: 'label.quiesce.vm',
+                            isBoolean: true,
+                            dependsOn: 'volume',
+                            isHidden: function(args) {
+                              var selectedVolumeId = $('div[role=dialog] form .form-item[rel=volume] select').val();
+                              for (var i = 0; i < args.context.volumes.length; i++) {
+                                var volume = args.context.volumes[i];
+                                if (volume.id === selectedVolumeId) {
+                                  return volume.quiescevm !== true;
+                                }
+                              }
+                              return false;
+                            }
+                          },
+                          name: {
+                            label: 'label.name',
+                            docID: 'helpCreateInstanceStorageSnapshotName',
+                            isInput: true
+                          },
+                          asyncBackup: {
+                            label: 'label.async.backup',
+                            isBoolean: true
+                          }
+                        }
+                      },
+                      action: function(args) {
+                        var data = {
+                          volumeId: args.data.volume,
+                          quiescevm: args.data.quiescevm === 'on',
+                          asyncBackup:  args.data.asyncBackup === 'on'
+                        };
+                        if (args.data.name != null && args.data.name.length > 0) {
+                          $.extend(data, {
+                            name: args.data.name
+                          });
+                        }
+                        $.ajax({
+                          url: createURL('createSnapshot'),
+                          data: data,
+                          dataType: 'json',
+                          async: true,
+                          success: function(json) {
+                            var jid = json.createsnapshotresponse.jobid;
+                            args.response.success({
+                              _custom: {
+                                jobId: jid,
+                                onComplete: function(json) {
+                                  var volumeId = json.queryasyncjobresultresponse.jobresult.snapshot.volumeid;
+                                  var snapshotId = json.queryasyncjobresultresponse.jobresult.snapshot.id;
+                                  cloudStack.dialog.notice({
+                                    message: 'Created snapshot for volume ' + volumeId + ' with snapshot ID ' + snapshotId
+                                  });
+                                }
+                              }
+                            });
+                          }
+                        });
+                      },
+                      notification: {
+                        poll: pollAsyncJobResult
+                      }
                     },
+
+                    createBackup: {
+                      messages: {
+                        confirm: function(args) {
+                            return 'label.create.backup';
+                        },
+                        notification: function() {
+                            return 'label.create.backup';
+                        }
+                      },
+                      label: 'label.create.backup',
+                      action: function(args) {
+                        var data = {
+                          virtualmachineid: args.context.instances[0].id
+                        };
+                        $.ajax({
+                          url: createURL('createBackup'),
+                          data: data,
+                          dataType: 'json',
+                          success: function(json) {
+                            var jid = json.createbackupresponse.jobid;
+                            args.response.success({
+                              _custom: {
+                                jobId: jid
+                              }
+                            });
+                          }
+                        });
+                      },
+                      notification: {
+                        poll: pollAsyncJobResult
+                      }
+                    },
+
+                    configureBackupSchedule: {
+                      label: 'Backup Schedule',
+                      action: {
+                          custom: cloudStack.uiCustom.backupSchedule({
+                              desc: 'Configure VM backup schedule',
+                              dataProvider: function(args) {
+                                  $.ajax({
+                                      url: createURL('listBackupSchedule'),
+                                      data: {
+                                          virtualmachineid: args.context.instances[0].id
+                                      },
+                                      async: true,
+                                      dataType: 'json',
+                                      success: function(data) {
+                                          var schedule = {}
+                                          if (data && data.listbackupscheduleresponse && data.listbackupscheduleresponse.backupschedule) {
+                                            schedule = data.listbackupscheduleresponse.backupschedule;
+                                            schedule.id = schedule.virtualmachineid;
+                                            if (schedule.intervaltype == 'HOURLY') {
+                                              schedule.type = 0;
+                                              schedule.time = schedule.schedule;
+                                            } else if (schedule.intervaltype == 'DAILY') {
+                                              schedule.type = 1;
+                                              schedule.time = schedule.schedule.split(':')[1] + ':' + schedule.schedule.split(':')[0];
+                                            } else if (schedule.intervaltype == 'WEEKLY') {
+                                              schedule.type = 2;
+                                              schedule.time = schedule.schedule.split(':')[1] + ':' + schedule.schedule.split(':')[0];
+                                              schedule['day-of-week'] = schedule.schedule.split(':')[2];
+                                            } else if (schedule.intervaltype == 'MONTHLY') {
+                                              schedule.type = 3;
+                                              schedule.time = schedule.schedule.split(':')[1] + ':' + schedule.schedule.split(':')[0];
+                                              schedule['day-of-month'] = schedule.schedule.split(':')[2];
+                                            }
+                                            schedule.time = '(' + schedule.intervaltype + ') ' + schedule.time
+                                          }
+                                          args.response.success({
+                                              data: [schedule]
+                                          });
+                                      },
+                                      error: function(data) {
+                                      }
+                                  });
+                              },
+                              actions: {
+                                  add: function(args) {
+                                      var snap = args.snapshot;
+
+                                      var data = {
+                                          virtualmachineid: args.context.instances[0].id,
+                                          intervaltype: snap['snapshot-type'],
+                                          timezone: snap.timezone
+                                      };
+
+                                      var convertTime = function(minute, hour, meridiem, extra) {
+                                          var convertedHour = meridiem == 'PM' ?
+                                              (hour != 12 ? parseInt(hour) + 12 : 12) : (hour != 12 ? hour : '00');
+                                          var time = minute + ':' + convertedHour;
+                                          if (extra) time += ':' + extra;
+
+                                          return time;
+                                      };
+
+                                      switch (snap['snapshot-type']) {
+                                          case 'hourly': // Hourly
+                                              $.extend(data, {
+                                                  schedule: snap.schedule
+                                              });
+                                              break;
+
+                                          case 'daily': // Daily
+                                              $.extend(data, {
+                                                  schedule: convertTime(
+                                                      snap['time-minute'],
+                                                      snap['time-hour'],
+                                                      snap['time-meridiem']
+                                                  )
+                                              });
+                                              break;
+
+                                          case 'weekly': // Weekly
+                                              $.extend(data, {
+                                                  schedule: convertTime(
+                                                      snap['time-minute'],
+                                                      snap['time-hour'],
+                                                      snap['time-meridiem'],
+                                                      snap['day-of-week']
+                                                  )
+                                              });
+                                              break;
+
+                                          case 'monthly': // Monthly
+                                              $.extend(data, {
+                                                  schedule: convertTime(
+                                                      snap['time-minute'],
+                                                      snap['time-hour'],
+                                                      snap['time-meridiem'],
+                                                      snap['day-of-month']
+                                                  )
+                                              });
+                                              break;
+                                      }
+
+                                      $.ajax({
+                                          url: createURL('createBackupSchedule'),
+                                          data: data,
+                                          dataType: 'json',
+                                          async: true,
+                                          success: function(data) {
+                                              var schedule = {}
+                                              if (data && data.createbackupscheduleresponse && data.createbackupscheduleresponse.backupschedule) {
+                                                schedule = data.createbackupscheduleresponse.backupschedule;
+                                                schedule.id = schedule.virtualmachineid;
+                                                if (schedule.intervaltype == 'HOURLY') {
+                                                  schedule.type = 0;
+                                                  schedule.time = schedule.schedule;
+                                                } else if (schedule.intervaltype == 'DAILY') {
+                                                  schedule.type = 1;
+                                                  schedule.time = schedule.schedule.split(':')[1] + ':' + schedule.schedule.split(':')[0];
+                                                } else if (schedule.intervaltype == 'WEEKLY') {
+                                                  schedule.type = 2;
+                                                  schedule.time = schedule.schedule.split(':')[1] + ':' + schedule.schedule.split(':')[0];
+                                                  schedule['day-of-week'] = schedule.schedule.split(':')[2];
+                                                } else if (schedule.intervaltype == 'MONTHLY') {
+                                                  schedule.type = 3;
+                                                  schedule.time = schedule.schedule.split(':')[1] + ':' + schedule.schedule.split(':')[0];
+                                                  schedule['day-of-month'] = schedule.schedule.split(':')[2];
+                                                }
+                                                schedule.time = schedule.time + ' (' + schedule.intervaltype + ')'
+                                              }
+                                              args.response.success({
+                                                  data: schedule
+                                              });
+                                          }
+                                      });
+                                  },
+                                  remove: function(args) {
+                                      console.log(args);
+                                      $.ajax({
+                                          url: createURL('deleteBackupSchedule'),
+                                          data: {
+                                              virtualmachineid: args.context.instances[0].id
+                                          },
+                                          dataType: 'json',
+                                          async: true,
+                                          success: function(data) {
+                                              args.response.success();
+                                          }
+                                      });
+                                  }
+                              },
+
+                              // Select data
+                              selects: {
+                                  schedule: function(args) {
+                                      var time = [];
+
+                                      for (var i = 1; i <= 59; i++) {
+                                          time.push({
+                                              id: i,
+                                              name: i
+                                          });
+                                      }
+
+                                      args.response.success({
+                                          data: time
+                                      });
+                                  },
+                                  timezone: function(args) {
+                                      args.response.success({
+                                          data: $.map(timezoneMap, function(value, key) {
+                                              return {
+                                                  id: key,
+                                                  name: value
+                                              };
+                                          })
+                                      });
+                                  },
+                                  'day-of-week': function(args) {
+                                      args.response.success({
+                                          data: [{
+                                              id: 1,
+                                              name: 'label.sunday'
+                                          }, {
+                                              id: 2,
+                                              name: 'label.monday'
+                                          }, {
+                                              id: 3,
+                                              name: 'label.tuesday'
+                                          }, {
+                                              id: 4,
+                                              name: 'label.wednesday'
+                                          }, {
+                                              id: 5,
+                                              name: 'label.thursday'
+                                          }, {
+                                              id: 6,
+                                              name: 'label.friday'
+                                          }, {
+                                              id: 7,
+                                              name: 'label.saturday'
+                                          }]
+                                      });
+                                  },
+
+                                  'day-of-month': function(args) {
+                                      var time = [];
+
+                                      for (var i = 1; i <= 28; i++) {
+                                          time.push({
+                                              id: i,
+                                              name: i
+                                          });
+                                      }
+
+                                      args.response.success({
+                                          data: time
+                                      });
+                                  },
+
+                                  'time-hour': function(args) {
+                                      var time = [];
+
+                                      for (var i = 1; i <= 12; i++) {
+                                          time.push({
+                                              id: i,
+                                              name: i
+                                          });
+                                      }
+
+                                      args.response.success({
+                                          data: time
+                                      });
+                                  },
+
+                                  'time-minute': function(args) {
+                                      var time = [];
+
+                                      for (var i = 0; i <= 59; i++) {
+                                          time.push({
+                                              id: i < 10 ? '0' + i : i,
+                                              name: i < 10 ? '0' + i : i
+                                          });
+                                      }
+
+                                      args.response.success({
+                                          data: time
+                                      });
+                                  },
+
+                                  'time-meridiem': function(args) {
+                                      args.response.success({
+                                          data: [{
+                                              id: 'AM',
+                                              name: 'AM'
+                                          }, {
+                                              id: 'PM',
+                                              name: 'PM'
+                                          }]
+                                      });
+                                  }
+                              }
+                          })
+                      },
+                      messages: {
+                          notification: function(args) {
+                              return 'Backup Schedule';
+                          }
+                      }
+                    },
+
+                    assignToBackupOffering: {
+                      messages: {
+                        confirm: function(args) {
+                            return 'label.backup.offering.assign';
+                        },
+                        notification: function() {
+                            return 'label.backup.offering.assign';
+                        }
+                      },
+                      label: 'label.backup.offering.assign',
+                      createForm: {
+                          title: 'label.backup.offering.assign',
+                          fields: {
+                              backupofferingid: {
+                                  label: 'label.backup.offering',
+                                  select: function(args) {
+                                      var data = {
+                                          zoneid: args.context.instances[0].zoneid
+                                      };
+                                      $.ajax({
+                                          url: createURL('listBackupOfferings'),
+                                          data: data,
+                                          async: false,
+                                          success: function(json) {
+                                              var offerings = json.listbackupofferingsresponse.backupoffering;
+                                              var items = [{
+                                                  id: -1,
+                                                  description: ''
+                                              }];
+                                              $(offerings).each(function() {
+                                                  items.push({
+                                                      id: this.id,
+                                                      description: this.name
+                                                  });
+                                              });
+                                              args.response.success({
+                                                  data: items
+                                              });
+                                          }
+                                      });
+                                  }
+                              }
+                          }
+                      },
+                      action: function(args) {
+                        var data = {
+                          virtualmachineid: args.context.instances[0].id,
+                          backupofferingid: args.data.backupofferingid
+                        };
+                        $.ajax({
+                          url: createURL('assignVirtualMachineToBackupOffering'),
+                          data: data,
+                          dataType: 'json',
+                          success: function(json) {
+                            var jid = json.assignvirtualmachinetobackupofferingresponse.jobid;
+                            args.response.success({
+                              _custom: {
+                                jobId: jid
+                              }
+                            });
+                          }
+                        });
+                      },
+                      notification: {
+                        poll: pollAsyncJobResult
+                      }
+                    },
+
+                    removeFromBackupOffering: {
+                      messages: {
+                        confirm: function(args) {
+                            return 'label.backup.offering.remove';
+                        },
+                        notification: function() {
+                            return 'label.backup.offering.remove';
+                        }
+                      },
+                      label: 'label.backup.offering.remove',
+                      createForm: {
+                          title: 'label.backup.offering.remove',
+                          fields: {
+                              forced: {
+                                  label: 'force.remove',
+                                  isBoolean: true,
+                                  isChecked: false
+                              }
+                          }
+                      },
+                      action: function(args) {
+                        var data = {
+                          virtualmachineid: args.context.instances[0].id,
+                          forced: args.data.forced === "on"
+                        };
+                        $.ajax({
+                          url: createURL('removeVirtualMachineFromBackupOffering'),
+                          data: data,
+                          dataType: 'json',
+                          success: function(json) {
+                            var jid = json.removevirtualmachinefrombackupofferingresponse.jobid;
+                            args.response.success({
+                              _custom: {
+                                jobId: jid
+                              }
+                            });
+                          }
+                        });
+                      },
+                      notification: {
+                        poll: pollAsyncJobResult
+                      }
+                    },
+
+                    destroy: vmDestroyAction(),
                     expunge: {
                         label: 'label.action.expunge.instance',
                         compactLabel: 'label.expunge',
@@ -901,7 +1771,7 @@
                                     label: 'label.select.a.template',
                                     select: function(args) {
                                         var data = {
-                                            templatefilter: 'featured'
+                                            templatefilter: 'executable'
                                         };
                                         $.ajax({
                                             url: createURL('listTemplates'),
@@ -1118,6 +1988,11 @@
                             if (args.data.displayname != args.context.instances[0].displayname) {
                                 $.extend(data, {
                                     displayName: args.data.displayname
+                                });
+                            }
+                            if (args.data.name != args.context.instances[0].name) {
+                                $.extend(data, {
+                                    name: args.data.name
                                 });
                             }
                             $.ajax({
@@ -1540,6 +2415,7 @@
                                                                 id: this.id,
                                                                 availableHostName: this.name,
                                                                 availableHostSuitability: suitability,
+                                                                requiresStorageMotion: this.requiresStorageMotion,
                                                                 cpuused: this.cpuused,
                                                                 memoryused: (parseFloat(this.memoryused)/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB'
                                                             });
@@ -1547,14 +2423,10 @@
                                                         args.response.success({
                                                             data: items
                                                         });
-                                                    } else if(args.page == 1) {
+                                                    } else {
                                                         args.response.success({
                                                             data: null
                                                         });
-                                                    } else {
-                                                         cloudStack.dialog.notice({
-                                                             message: _l('message.no.more.hosts.available')
-                                                         });
                                                     }
                                                 }
                                             });
@@ -2024,6 +2896,7 @@
                                         };
                                         $.ajax({
                                             url: createURL('listAccounts', {
+                                                details: 'min',
                                                 ignoreProject: true
                                             }),
                                             data: dataObj,
@@ -2057,6 +2930,7 @@
                                         var dataObj = {
                                             domainId: args.domainid,
                                             state: 'Active',
+                                            details: 'min',
                                             listAll: true,
                                         };
                                         $.ajax({
@@ -2429,6 +3303,9 @@
                             keypair: {
                                 label: 'label.ssh.key.pair'
                             },
+                            backupofferingname: {
+                                label: 'label.backup.offering'
+                            },
                             domain: {
                                 label: 'label.domain'
                             },
@@ -2440,7 +3317,8 @@
                                 converter: cloudStack.converters.toLocalDate
                             },
                             name: {
-                                label: 'label.name'
+                                label: 'label.name',
+                                isEditable: true
                             },
                             id: {
                                 label: 'label.id'
@@ -2560,16 +3438,29 @@
                                                     }
                                                 });
                                             }
+                                        },
+                                        ipaddress: {
+                                            label: 'label.ip.address',
+                                            validation: {
+                                                required: false,
+                                                ipv4: true
+                                            }
                                         }
                                     }
                                 },
                                 action: function(args) {
+                                    var dataObj = {
+                                        virtualmachineid: args.context.instances[0].id,
+                                        networkid: args.data.networkid,
+                                    };
+
+                                    if (args.data.ipaddress) {
+                                        dataObj.ipaddress = args.data.ipaddress;
+                                    }
+
                                     $.ajax({
                                         url: createURL('addNicToVirtualMachine'),
-                                        data: {
-                                            virtualmachineid: args.context.instances[0].id,
-                                            networkid: args.data.networkid
-                                        },
+                                        data: dataObj,
                                         success: function(json) {
                                             args.response.success({
                                                 _custom: {
@@ -2753,6 +3644,16 @@
                                 }
                             }
                         },
+                        preFilter: function(args) {
+                            var hiddenFields;
+                            if (isAdmin()) {
+                                hiddenFields = [];
+                            } else {
+                                hiddenFields = ["broadcasturi", "isolationuri"];
+                            }
+
+                            return hiddenFields;
+                        },
                         fields: [{
                             id: {
                                 label: 'label.id'
@@ -2766,6 +3667,9 @@
                             },
                             type: {
                                 label: 'label.type'
+                            },
+                            macaddress: {
+                              label: 'label.mac.address'
                             },
                             ipaddress: {
                                 label: 'label.ip.address'
@@ -2789,7 +3693,12 @@
                             ip6cidr: {
                                 label: 'label.ipv6.CIDR'
                             },
-
+                            broadcasturi : {
+                                label: 'label.broadcast.uri'
+                            },
+                            isolationuri : {
+                                label: 'label.isolation.uri'
+                            },
                             isdefault: {
                                 label: 'label.is.default',
                                 converter: function(data) {
@@ -2867,6 +3776,16 @@
                                 label: 'label.description'
                             }
                         }],
+                        viewAll: {
+                            path: 'network.securityGroups',
+                            attachTo: 'id',
+                            label: 'label.security.groups',
+                            title: function(args) {
+                                var title = _l('label.security.groups');
+
+                                return title;
+                            }
+                        },
                         dataProvider: function(args) {
                             // args.response.success({data: args.context.instances[0].securitygroup});
                             $.ajax({
@@ -2894,6 +3813,9 @@
                             },
                             cpuused: {
                                 label: 'label.cpu.utilized'
+                            },
+                            memorykbs: {
+                                label: 'label.memory.used'
                             },
                             networkkbsread: {
                                 label: 'label.network.read'
@@ -2925,6 +3847,7 @@
                                         data: {
                                             totalCPU: jsonObj.cpunumber + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
                                             cpuused: jsonObj.cpuused,
+                                            memorykbs: jsonObj.memorykbs + " of "+ cloudStack.converters.convertBytes(jsonObj.memory * 1024.0 * 1024.0),
                                             networkkbsread: (jsonObj.networkkbsread == null) ? "N/A" : cloudStack.converters.convertBytes(jsonObj.networkkbsread * 1024),
                                             networkkbswrite: (jsonObj.networkkbswrite == null) ? "N/A" : cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024),
                                             diskkbsread: (jsonObj.diskkbsread == null) ? "N/A" : ((jsonObj.hypervisor == "KVM") ? cloudStack.converters.convertBytes(jsonObj.diskkbsread * 1024) : ((jsonObj.hypervisor == "XenServer") ? cloudStack.converters.convertBytes(jsonObj.diskkbsread * 1024) + "/s" : "N/A")),
@@ -2944,14 +3867,43 @@
 					settings: {
 						title: 'label.settings',
 						custom: cloudStack.uiCustom.granularDetails({
+                        resourceType: 'UserVm',
 							dataProvider: function(args) {
+							    // no paging for listVirtualMachines details
+							    if (args.page > 1) {
+							        args.response.success({
+							            data: []
+							        });
+							        return;
+							    }
 								$.ajax({
 									url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
 									success: function(json) {
-										var details = json.listvirtualmachinesresponse.virtualmachine[0].details;
-										args.response.success({
-											data: parseDetails(details)
-										});
+                                        var virtualMachine = json.listvirtualmachinesresponse.virtualmachine[0];
+                                        args.response.success({
+                                            data: parseDetails(virtualMachine.details)
+                                        });
+
+                                        if (virtualMachine.state != 'Stopped') {
+                                            $('#details-tab-settings').append($('<div>').addClass('blocking-overlay'));
+                                            cloudStack.dialog.notice({
+                                                message: _l('message.action.settings.warning.vm.running')
+                                            });
+                                        } else {
+                                            if(virtualMachine && virtualMachine.readonlyuidetails && virtualMachine.readonlyuidetails.length > 0) {
+                                                var readOnlyUIDetails = []
+                                                $.each(virtualMachine.readonlyuidetails.split(","), function(){
+                                                    readOnlyUIDetails.push($.trim(this));
+                                                });
+                                                $('#details-tab-settings tr').each(function() {
+                                                    if($.inArray($.trim($(this).find('td:first').text()), readOnlyUIDetails) >= 0) {
+                                                        $(this).find('td:last div.action').each(function() {
+                                                            $(this).addClass("disabled")
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        };
 									},
 
 									error: function(json) {
@@ -2966,85 +3918,99 @@
 										name: args.data.jsonObj.name,
 										value: args.data.value
 									};
-									var existingDetails;
+									var virtualMachine;
 									$.ajax({
 										url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
 										async:false,
 										success: function(json) {
-											var details = json.listvirtualmachinesresponse.virtualmachine[0].details;
-											console.log(details);
-											existingDetails = details;
+											virtualMachine = json.listvirtualmachinesresponse.virtualmachine[0];
 										},
 
 										error: function(json) {
 											args.response.error(parseXMLHttpResponse(json));
 										}
 									});
-									console.log(existingDetails);
-									var newDetails = '';
-									for (d in existingDetails) {
-										if (d != data.name) {
-											newDetails += 'details[0].' + d + '=' + existingDetails[d] + '&';
-										}
-									}
-									newDetails += 'details[0].' + data.name + '=' + data.value;
-									
-									$.ajax({
-										url: createURL('updateVirtualMachine&id=' + args.context.instances[0].id + '&' + newDetails),
-										async:false,
-										success: function(json) {
-											var items = json.updatevirtualmachineresponse.virtualmachine.details;
-											args.response.success({
-												data: parseDetails(items)
-											});
-										},
-
-										error: function(json) {
-											args.response.error(parseXMLHttpResponse(json));
-										}
-									});
-								},
+                                    if (virtualMachine && virtualMachine.state == "Stopped") {
+                                        // It could happen that a stale web page has been opened up when VM was stopped but
+                                        // vm was turned on through another route - UI or API. so we should check again.
+                                        var existingDetails = virtualMachine.details;
+                                        var newDetails = {};
+                                        for (d in existingDetails) {
+                                            if (d != data.name) {
+                                                newDetails['details[0].' + d] = existingDetails[d];
+                                            }
+                                        }
+                                        newDetails['details[0].' + data.name] = data.value;
+                                        var postData = {'id' : args.context.instances[0].id};
+                                        $.extend(postData, newDetails);
+                                        $.ajax({
+                                            url: createURL('updateVirtualMachine'),
+                                            data: postData,
+                                            async:false,
+                                            success: function(json) {
+                                                var items = json.updatevirtualmachineresponse.virtualmachine.details;
+                                                args.response.success({
+                                                    data: parseDetails(items)
+                                                });
+                                            },
+                                            error: function(json) {
+                                                args.response.error(parseXMLHttpResponse(json));
+                                            }
+                                        });
+                                    } else {
+                                        $('#details-tab-settings').append($('<div>').addClass('blocking-overlay'));
+                                        cloudStack.dialog.notice({
+                                            message: _l('message.action.settings.warning.vm.started')
+                                        });
+                                    }
+                                },
 								remove: function(args) {
-									var existingDetails;
+									var virtualMachine;
 									$.ajax({
 										url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
 										async:false,
 										success: function(json) {
-											var details = json.listvirtualmachinesresponse.virtualmachine[0].details;
-											existingDetails = details;
+											virtualMachine = json.listvirtualmachinesresponse.virtualmachine[0];
 										},
 
 										error: function(json) {
 											args.response.error(parseXMLHttpResponse(json));
 										}
 									});
-									
-									var detailToDelete = args.data.jsonObj.name;
-									var newDetails = ''
-									for (detail in existingDetails) {
-										if (detail != detailToDelete) {
-											newDetails += 'details[0].' + detail + '=' + existingDetails[detail] + '&';
-										}
-									}
-									if (newDetails != '') {
-										newDetails = newDetails.substring(0, newDetails.length - 1);
-									}
-									else {
-										newDetails += 'cleanupdetails=true'
-									}
-									$.ajax({
-										url: createURL('updateVirtualMachine&id=' + args.context.instances[0].id + '&' + newDetails),
-										async:false,
-										success: function(json) {
-											var items = json.updatevirtualmachineresponse.virtualmachine.details;
-											args.response.success({
-												data: parseDetails(items)
-											});
-										},
-										error: function(json) {
-											args.response.error(parseXMLHttpResponse(json));
-										}
-									});
+                                    if (virtualMachine && virtualMachine.state == "Stopped") {
+                                        // It could happen that a stale web page has been opened up when VM was stopped but
+                                        // vm was turned on through another route - UI or API. so we should check again.
+                                        var detailToDelete = args.data.jsonObj.name;
+                                        var existingDetails = virtualMachine.details;
+                                        var newDetails = {};
+                                        for (detail in existingDetails) {
+                                            if (detail != detailToDelete) {
+                                                newDetails['details[0].' + detail] = existingDetails[detail];
+                                            }
+                                        }
+
+                                        var postData = $.isEmptyObject(newDetails) ? {'cleanupdetails': true} : newDetails;
+                                        $.extend(postData, {'id' : args.context.instances[0].id});
+                                        $.ajax({
+                                            url: createURL('updateVirtualMachine'),
+                                            data: postData,
+                                            async:false,
+                                            success: function(json) {
+                                                var items = json.updatevirtualmachineresponse.virtualmachine.details;
+                                                args.response.success({
+                                                    data: parseDetails(items)
+                                                });
+                                            },
+                                            error: function(json) {
+                                                args.response.error(parseXMLHttpResponse(json));
+                                            }
+                                        });
+                                    } else {
+                                        $('#details-tab-settings').append($('<div>').addClass('blocking-overlay'));
+                                        cloudStack.dialog.notice({
+                                            message: _l('message.action.settings.warning.vm.started')
+                                        });
+                                    }
 								},
 								add: function(args) {
 									var name = args.data.name;
@@ -3121,6 +4087,7 @@
 
             if (jsonObj.hypervisor != 'LXC') {
                 allowedActions.push("snapshot");
+                allowedActions.push("storageSnapshot");
             }
 
             allowedActions.push("destroy");
@@ -3146,6 +4113,7 @@
             }
 
             allowedActions.push("viewConsole");
+            allowedActions.push("resetSSHKeyForVirtualMachine");
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("edit");
             if (isAdmin())
@@ -3157,6 +4125,7 @@
 
             if (jsonObj.hypervisor != 'KVM' && jsonObj.hypervisor != 'LXC') {
                 allowedActions.push("snapshot");
+                allowedActions.push("storageSnapshot");
             }
 
             allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors
@@ -3188,6 +4157,18 @@
                 allowedActions.push("expunge");
             }
         }
+        if (jsonObj.backupofferingid) {
+            allowedActions.push("createBackup");
+            allowedActions.push("configureBackupSchedule");
+            allowedActions.push("removeFromBackupOffering");
+        } else {
+            allowedActions.push("assignToBackupOffering");
+        }
+
+        if (jsonObj.state == 'Starting' || jsonObj.state == 'Stopping' || jsonObj.state == 'Migrating') {
+            allowedActions.push("viewConsole");
+        }
+
         return allowedActions;
     }
 

@@ -26,13 +26,25 @@
             tags: elem.tags
         };
 
-        if (elemData.startport == 0 && elemData.endport) {
-            elemData.startport = '0';
-        } else if (elem.icmptype && elem.icmpcode) {
-            elemData.startport = elem.icmptype;
-            elemData.endport = elem.icmpcode;
+        if (typeof elem.icmptype != 'undefined') {
+             var icmptype = elem.icmptype.toString()
         }
 
+        if (typeof elem.icmpcode != 'undefined') {
+             var icmpcode = elem.icmpcode.toString()
+        }
+
+        if (elemData.startport == 0 && elemData.endport) {
+            elemData.startport = '0';
+        } else if (icmptype && icmpcode) {
+            elemData.startport = icmptype;
+            elemData.endport = icmpcode;
+        }
+
+        if (elemData.protocol != 'tcp' && elemData.protocol != 'udp' && elemData.protocol != 'icmp') {
+            elemData.startport = 'all';
+            elemData.endport = 'all';
+        }
         return elemData;
     };
 
@@ -78,18 +90,12 @@
             });
 
         } else { //non-portable IP which has only one NIC
-            /*
-            var nic = $.grep(instance.nic, function(nic) {
-                return nic.networkid == network.id;
-            })[0];
-            */
-
             // Get NIC IPs
             $.ajax({
                 url: createURL('listNics'),
                 data: {
                     virtualmachineid: instance.id,
-                    networkId: network.id
+                    networkid: (args.context.networkid != undefined) ? args.context.networkid : network.id
                 },
                 success: function(json) {
                     var nic = json.listnicsresponse.nic[0];
@@ -162,12 +168,6 @@
             });
 
         } else { //non-portable IP which has only one NIC
-            /*
-            var nic = $.grep(instance.nic, function(nic) {
-                return nic.networkid == network.id;
-            })[0];
-            */
-
             // Get NIC IPs
             $.ajax({
                 url: createURL('listNics'),
@@ -250,11 +250,11 @@
                 disallowedActions.push('remove');
             } else { //non-sourceNAT IP supports staticNAT
                 disallowedActions.push('enableVPN');
-                 if (ipObj.isstaticnat) {
-                     disallowedActions.push('enableStaticNAT');
-                 } else {
-                     disallowedActions.push('disableStaticNAT');
-                 }
+                if (ipObj.isstaticnat) {
+                    disallowedActions.push('enableStaticNAT');
+                } else {
+                    disallowedActions.push('disableStaticNAT');
+                }
             }
             //***** apply to both Isolated Guest Network IP, VPC IP (end) *****
 
@@ -262,20 +262,20 @@
             if (!('vpc' in args.context)) { //***** Guest Network section > Guest Network page > IP Address page *****
                 if (args.context.networks[0].networkofferingconservemode == false) {
                     /*
-                    (1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added.
-                    */
+                     (1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added.
+                     */
                     if (ipObj.issourcenat == true) {
                         disallowedActions.push('enableStaticNAT');
                         disallowedActions.push('enableVPN');
                     }
 
                     /*
-                    (2) If IP is non-SourceNat, show StaticNat/VPN/PortForwarding/LoadBalancer at first.
-                    1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
-                    2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
-                    3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
-                    4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
-                    */
+                     (2) If IP is non-SourceNat, show StaticNat/VPN/PortForwarding/LoadBalancer at first.
+                     1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
+                     2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
+                     3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
+                     4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
+                     */
                     else { //ipObj.issourcenat == false
                         if (ipObj.isstaticnat) { //1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
                             disallowedActions.push('enableVPN');
@@ -361,6 +361,7 @@
                 args.context.item.state != 'Destroyed' &&
                 args.context.item.name != 'default') {
                 allowedActions.push('remove');
+                allowedActions.push('edit');
             }
 
             return allowedActions;
@@ -400,6 +401,21 @@
                                 }
                             }
                         }
+                        //Ajax call to check if VPN is enabled.
+                        $.ajax({
+                            url: createURL('listRemoteAccessVpns'),
+                            data: {
+                                listAll: true
+                            },
+                            async: false,
+                            success: function(vpnResponse) {
+                                var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
+
+                                if (isVPNEnabled) {
+                                    sectionsToShow.push('vpnuser');
+                                }
+                            }
+                        });
                     }
                 });
 
@@ -493,12 +509,60 @@
                                             });
                                         }
                                     },
+                                    domain: {
+                                        label: 'label.domain',
+                                        isHidden: function(args) {
+                                            if (isAdmin() || isDomainAdmin())
+                                                return false;
+                                            else
+                                                return true;
+                                        },
+                                        select: function(args) {
+                                            if (isAdmin() || isDomainAdmin()) {
+                                                $.ajax({
+                                                    url: createURL("listDomains&listAll=true"),
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        items.push({
+                                                            id: "",
+                                                            description: ""
+                                                        });
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                                args.$select.change(function() {
+                                                    var $form = $(this).closest('form');
+                                                    if ($(this).val() == "") {
+                                                        $form.find('.form-item[rel=account]').hide();
+                                                    } else {
+                                                        $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                                    }
+                                                });
+                                            } else {
+                                                args.response.success({
+                                                    data: null
+                                                });
+                                            }
+                                        }
+                                    },
                                     networkOfferingId: {
                                         label: 'label.network.offering',
                                         validation: {
                                             required: true
                                         },
-                                        dependsOn: 'zoneId',
+                                        dependsOn: (isAdmin() || isDomainAdmin()) ? ['zoneId', 'domain'] : 'zoneId', // domain is visible only for admins
                                         docID: 'helpGuestNetworkNetworkOffering',
                                         select: function(args) {
                                             var data = {
@@ -507,6 +571,12 @@
                                                 supportedServices: 'SourceNat',
                                                 state: 'Enabled'
                                             };
+
+                                            if ((isAdmin() || isDomainAdmin())) { // domain is visible only for admins
+                                                $.extend(data, {
+                                                    domainid: args.domain
+                                                });
+                                            }
 
                                             if ('vpc' in args.context) { //from VPC section
                                                 $.extend(data, {
@@ -632,7 +702,9 @@
                                             }
                                         }
                                     },
-
+                                    externalId: {
+                                        label: 'label.guest.externalId'
+                                    },
                                     guestGateway: {
                                         label: 'label.guest.gateway',
                                         docID: 'helpGuestNetworkGateway'
@@ -643,54 +715,6 @@
                                     },
                                     networkDomain: {
                                         label: 'label.network.domain'
-                                    },
-                                    domain: {
-                                        label: 'label.domain',
-                                        isHidden: function(args) {
-                                            if (isAdmin() || isDomainAdmin())
-                                                return false;
-                                            else
-                                                return true;
-                                        },
-                                        select: function(args) {
-                                            if (isAdmin() || isDomainAdmin()) {
-                                                $.ajax({
-                                                    url: createURL("listDomains&listAll=true"),
-                                                    success: function(json) {
-                                                        var items = [];
-                                                        items.push({
-                                                            id: "",
-                                                            description: ""
-                                                        });
-                                                        var domainObjs = json.listdomainsresponse.domain;
-                                                        $(domainObjs).each(function() {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.path
-                                                            });
-                                                        });
-                                                        items.sort(function(a, b) {
-                                                            return a.description.localeCompare(b.description);
-                                                        });
-                                                        args.response.success({
-                                                            data: items
-                                                        });
-                                                    }
-                                                });
-                                                args.$select.change(function() {
-                                                    var $form = $(this).closest('form');
-                                                    if ($(this).val() == "") {
-                                                        $form.find('.form-item[rel=account]').hide();
-                                                    } else {
-                                                        $form.find('.form-item[rel=account]').css('display', 'inline-block');
-                                                    }
-                                                });
-                                            } else {
-                                                args.response.success({
-                                                data: null
-                                                });
-                                            }
-                                        }
                                     },
                                     account: {
                                         label: 'label.account',
@@ -722,6 +746,11 @@
                                 if (args.data.guestNetmask != null && args.data.guestNetmask.length > 0) {
                                     $.extend(dataObj, {
                                         netmask: args.data.guestNetmask
+                                    });
+                                }
+                                if (args.data.externalId != null && args.data.externalId.length > 0) {
+                                    $.extend(dataObj, {
+                                        externalid: args.data.externalId
                                     });
                                 }
                                 if (args.$form.find('.form-item[rel=vpcid]').css("display") != "none") {
@@ -775,16 +804,23 @@
 
                         rootAdminAddGuestNetwork: $.extend({}, addGuestNetworkDialog.def, {
                             isHeader: true
+                        }),
+
+                        AddL2Network: $.extend({}, addL2GuestNetwork.def, {
+                            isHeader: true
                         })
 
                     },
                     id: 'networks',
+                    preFilter: function(args) {
+                        if (isAdmin() || isDomainAdmin()) {
+                            return []
+                        }
+                        return ['account']
+                    },
                     fields: {
                         name: {
                             label: 'label.name'
-                        },
-                        account: {
-                            label: 'label.account'
                         },
                         type: {
                             label: 'label.type'
@@ -794,6 +830,27 @@
                         },
                         ip6cidr: {
                             label: 'label.ipv6.CIDR'
+                        },
+                        account: {
+                            label: 'label.account'
+                        },
+                        zonename: {
+                            label: 'label.zone'
+                        },
+                        state: {
+                            converter: function(str) {
+                                // For localization
+                                return str;
+                            },
+                            label: 'label.state',
+                            indicator: {
+                                'Allocated': 'on',
+                                'Released': 'off',
+                                'Destroy': 'off',
+                                'Shutdown': 'off',
+                                'Setup': 'on',
+                                'Implemented': 'on'
+                            }
                         }
                     },
 
@@ -889,6 +946,25 @@
                         var data = {};
                         listViewDataProvider(args, data);
 
+                        if ("routers" in args.context) {
+                            if ("vpcid" in args.context.routers[0]) {
+                                $.extend(data, {
+                                    vpcid: args.context.routers[0].vpcid
+                                });
+                            } else {
+                                if ("guestnetworkid" in args.context.routers[0]) {
+                                    $.extend(data, {
+                                        id: args.context.routers[0].guestnetworkid
+                                    });
+                                }
+                            }
+                            if ("projectid" in args.context.routers[0]) {
+                                $.extend(data, {
+                                    projectid: args.context.routers[0].projectid
+                                });
+                            }
+                        }
+
                         $.ajax({
                             url: createURL('listNetworks'),
                             data: data,
@@ -906,16 +982,20 @@
 
                     detailView: {
                         name: 'label.guest.network.details',
-                        viewAll: {
+                        viewAll: [{
                             path: 'network.ipAddresses',
                             label: 'label.menu.ipaddresses',
                             preFilter: function(args) {
-                                if (args.context.networks[0].state == 'Destroyed')
+                                if (args.context.networks[0].state == 'Destroyed' ||
+                                    args.context.networks[0].type == 'L2')
                                     return false;
 
                                 return true;
                             }
-                        },
+                        }, {
+                            label: 'label.instances',
+                            path: 'instances'
+                        }],
                         actions: {
                             edit: {
                                 label: 'label.edit',
@@ -923,6 +1003,11 @@
                                     notification: function(args) {
                                         return 'label.edit.network.details';
                                     }
+                                },
+                                preFilter: function(args) {
+                                    if (args.context.networks[0].state == 'Destroyed')
+                                        return false;
+                                    return true;
                                 },
                                 action: function(args) {
                                     var data = {
@@ -1004,8 +1089,13 @@
                                 }
                             },
 
-                            'restart': {
+                            restart: {
                                 label: 'label.restart.network',
+                                preFilter: function(args) {
+                                    if (args.context.networks[0].state == 'Destroyed')
+                                        return false;
+                                    return true;
+                                },
                                 createForm: {
                                     title: 'label.restart.network',
                                     desc: 'message.restart.network',
@@ -1021,10 +1111,22 @@
                                         });
                                         args.$form.find('.form-item[rel=cleanup]').find('input').attr('checked', 'checked'); //checked
                                         args.$form.find('.form-item[rel=cleanup]').css('display', 'inline-block'); //shown
+                                        args.$form.find('.form-item[rel=makeredundant]').find('input').attr('checked', 'checked'); //checked
+                                        args.$form.find('.form-item[rel=makeredundant]').css('display', 'inline-block'); //shown
+
+                                        if (Boolean(args.context.networks[0].redundantrouter)) {
+                                            args.$form.find('.form-item[rel=makeredundant]').hide();
+                                        } else {
+                                            args.$form.find('.form-item[rel=makeredundant]').show();
+                                        }
                                     },
                                     fields: {
                                         cleanup: {
                                             label: 'label.clean.up',
+                                            isBoolean: true
+                                        },
+                                        makeredundant: {
+                                            label: 'label.make.redundant',
                                             isBoolean: true
                                         }
                                     }
@@ -1035,10 +1137,13 @@
                                     }
                                 },
                                 action: function(args) {
-                                    var array1 = [];
-                                    array1.push("&cleanup=" + (args.data.cleanup == "on"));
                                     $.ajax({
-                                        url: createURL("restartNetwork&id=" + args.context.networks[0].id + array1.join("")),
+                                        url: createURL("restartNetwork"),
+                                        data: {
+                                            id: args.context.networks[0].id,
+                                            cleanup: (args.data.cleanup == "on"),
+                                            makeredundant: (args.data.makeredundant == "on")
+                                        },
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
@@ -1061,11 +1166,16 @@
 
                             remove: {
                                 label: 'label.action.delete.network',
+                                preFilter: function(args) {
+                                    if (args.context.networks[0].state == 'Destroyed')
+                                        return false;
+                                    return true;
+                                },
                                 messages: {
                                     confirm: function(args) {
                                         return 'message.action.delete.network';
                                     },
-                    isWarning: true,
+                                    isWarning: true,
                                     notification: function(args) {
                                         return 'label.action.delete.network';
                                     }
@@ -1332,10 +1442,20 @@
                                         label: 'label.reserved.ip.range'
                                     },
 
+                                    redundantrouter: {
+                                        label: 'label.redundant.router',
+                                        converter: function(booleanValue) {
+                                            if (booleanValue == true) {
+                                                return "Yes";
+                                            }
+                                            return "No";
+                                        }
+                                    },
 
                                     networkdomaintext: {
                                         label: 'label.network.domain.text'
                                     },
+
                                     networkdomain: {
                                         label: 'label.network.domain',
                                         isEditable: true
@@ -1568,11 +1688,14 @@
                                                     networkid: args.context.networks[0].id
                                                 },
                                                 dataType: 'json',
-                                                async: true,
+                                                async: false,
                                                 success: function(json) {
                                                     var response = json.listegressfirewallrulesresponse.firewallrule ?
                                                         json.listegressfirewallrulesresponse.firewallrule : [];
 
+                                                    if (response.length > 0) {
+                                                        isConfigRulesMsgShown = true;
+                                                    }
                                                     args.response.success({
                                                         data: $.map(response, function(rule) {
                                                             if (rule.protocol == 'all') {
@@ -1609,7 +1732,7 @@
                                                     async: true,
                                                     success: function(json) {
                                                         var response = json.listnetworkofferingsresponse.networkoffering ?
-                                                        json.listnetworkofferingsresponse.networkoffering[0] : null;
+                                                            json.listnetworkofferingsresponse.networkoffering[0] : null;
 
                                                         if (response != null) {
                                                             if (response.egressdefaultpolicy == true) {
@@ -1670,7 +1793,7 @@
                                         label: 'label.ip.address',
                                         validation: {
                                             required: false,
-                                            ipv4: true
+                                            ipv4AndIpv6AddressValidator: true
                                         }
                                     }
                                 }
@@ -1832,6 +1955,12 @@
                 listView: {
                     id: 'ipAddresses',
                     label: 'label.ips',
+                    preFilter: function(args) {
+                        if (isAdmin()) {
+                            return ['account']
+                        }
+                        return []
+                    },
                     fields: {
                         ipaddress: {
                             label: 'label.ips',
@@ -1843,11 +1972,17 @@
                                 return text;
                             }
                         },
-                        zonename: {
-                            label: 'label.zone'
+                        associatednetworkname: {
+                            label: 'label.network'
                         },
                         virtualmachinedisplayname: {
                             label: 'label.vm.name'
+                        },
+                        account: {
+                            label: 'label.account'
+                        },
+                        zonename: {
+                            label: 'label.zone'
                         },
                         state: {
                             converter: function(str) {
@@ -1882,8 +2017,6 @@
                                 $.ajax({
                                     url: createURL('listZones'),
                                     data: dataObj,
-                                    //      id: args.context.networks[0].zoneid
-                                    //    },
                                     async: false,
                                     success: function(json) {
                                         zoneObj = json.listzonesresponse.zone[0];
@@ -1993,6 +2126,47 @@
                                             });
                                         },
                                         isHidden: true
+                                    },
+                                    ipaddress: {
+                                        label: 'label.ip.address',
+                                        select: function(args) {
+                                            var data = {
+                                                forvirtualnetwork : true,
+                                                allocatedonly: false
+                                            };
+                                            if ('vpc' in args.context) { //from VPC section
+                                                $.extend(data, {
+                                                    zoneid: args.context.vpc[0].zoneid,
+                                                    domainid: args.context.vpc[0].domainid,
+                                                    account: args.context.vpc[0].account
+                                                });
+                                            } else if ('networks' in args.context) { //from Guest Network section
+                                                $.extend(data, {
+                                                    zoneid: args.context.networks[0].zoneid,
+                                                    domainid: args.context.networks[0].domainid,
+                                                    account: args.context.networks[0].account
+                                                });
+                                            }
+                                            $.ajax({
+                                                url: createURL('listPublicIpAddresses'),
+                                                data: data,
+                                                success: function(json) {
+                                                    var ips = json.listpublicipaddressesresponse.publicipaddress;
+                                                    var items = [];
+                                                    $(ips).each(function() {
+                                                        if (this.state == "Free") {
+                                                            items.push({
+                                                                id: this.ipaddress,
+                                                                description: this.ipaddress
+                                                            });
+                                                        }
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            })
+                                        }
                                     }
                                 }
                             },
@@ -2021,6 +2195,11 @@
                                     }
                                 }
 
+                                if (args.data.ipaddress != null && args.data.ipaddress.length > 0) {
+                                    $.extend(dataObj, {
+                                        ipaddress: args.data.ipaddress
+                                    });
+                                }
                                 $.ajax({
                                     url: createURL('associateIpAddress'),
                                     data: dataObj,
@@ -2323,7 +2502,7 @@
                                                     var $tierSelect = $(".ui-dialog-content").find('.tier-select select');
 
                                                     // if $tierSelect is not initialized, return; tierSelect() will refresh listView and come back here later
-                                                    if ($tierSelect.size() == 0) {
+                                                    if ($tierSelect.length == 0) {
                                                         args.response.success({
                                                             data: null
                                                         });
@@ -2340,6 +2519,10 @@
 
                                                     if ('vpc' in args.context) {
                                                         $.extend(data, {
+                                                            networkid: $tierSelect.val(),
+                                                            vpcid: args.context.vpc[0].id
+                                                        });
+                                                        $.extend(args.context, {
                                                             networkid: $tierSelect.val(),
                                                             vpcid: args.context.vpc[0].id
                                                         });
@@ -2365,7 +2548,7 @@
                                                             args.response.success({
                                                                 data: $.grep(
                                                                     data.listvirtualmachinesresponse.virtualmachine ?
-                                                                    data.listvirtualmachinesresponse.virtualmachine : [],
+                                                                        data.listvirtualmachinesresponse.virtualmachine : [],
                                                                     function(instance) {
                                                                         return $.inArray(instance.state, [
                                                                             'Destroyed', 'Expunging'
@@ -2651,7 +2834,7 @@
 
                                             var network = $.grep(
                                                 args.context.vpc ?
-                                                args.context.vpc[0].network : args.context.networks,
+                                                    args.context.vpc[0].network : args.context.networks,
                                                 function(network) {
                                                     return network.id = ipObj.associatednetworkid;
                                                 })[0];
@@ -2730,8 +2913,8 @@
 
                                                         if (networkObj.networkofferingconservemode == false) {
                                                             /*
-                                                            (1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added.
-                                                            */
+                                                             (1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added.
+                                                             */
                                                             if (args.context.ipAddresses[0].issourcenat) {
                                                                 if (havingFirewallService == false) { //firewall is not supported in IP from VPC section (because ACL has already supported in tier from VPC section)
                                                                     disallowedActions.push("firewall");
@@ -2742,12 +2925,12 @@
                                                             }
 
                                                             /*
-                                                            (2) If IP is non-SourceNat, show StaticNat/VPN/PortForwarding/LoadBalancer at first.
-                                                            1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
-                                                            2. If VPN service is supported (i.e. IP comes from Guest Network section, not from VPC section), once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
-                                                            3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
-                                                            4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
-                                                            */
+                                                             (2) If IP is non-SourceNat, show StaticNat/VPN/PortForwarding/LoadBalancer at first.
+                                                             1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
+                                                             2. If VPN service is supported (i.e. IP comes from Guest Network section, not from VPC section), once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
+                                                             3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
+                                                             4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
+                                                             */
                                                             else { //args.context.ipAddresses[0].issourcenat == false
                                                                 if (havingFirewallService == false)
                                                                     disallowedActions.push("firewall");
@@ -3089,7 +3272,7 @@
                                                         success: function(data) {
                                                             var vmData = $.grep(
                                                                 data.listvirtualmachinesresponse.virtualmachine ?
-                                                                data.listvirtualmachinesresponse.virtualmachine : [],
+                                                                    data.listvirtualmachinesresponse.virtualmachine : [],
                                                                 function(instance) {
                                                                     //Hiding the autoScale VMs
                                                                     var nonAutoScale = 0;
@@ -3224,18 +3407,18 @@
                                                 isEditable: true,
                                                 select: function(args) {
                                                     var data = [{
-                                                            id: 'roundrobin',
-                                                            name: 'roundrobin',
-                                                            description: _l('label.lb.algorithm.roundrobin')
-                                                        }, {
-                                                            id: 'leastconn',
-                                                            name: 'leastconn',
-                                                            description: _l('label.lb.algorithm.leastconn')
-                                                        }, {
-                                                            id: 'source',
-                                                            name: 'source',
-                                                            description: _l('label.lb.algorithm.source')
-                                                        }];
+                                                        id: 'roundrobin',
+                                                        name: 'roundrobin',
+                                                        description: _l('label.lb.algorithm.roundrobin')
+                                                    }, {
+                                                        id: 'leastconn',
+                                                        name: 'leastconn',
+                                                        description: _l('label.lb.algorithm.leastconn')
+                                                    }, {
+                                                        id: 'source',
+                                                        name: 'source',
+                                                        description: _l('label.lb.algorithm.source')
+                                                    }];
                                                     if (typeof args.context != 'undefined') {
                                                         var lbAlgs = getLBAlgorithms(args.context.networks[0]);
                                                         data = (lbAlgs.length == 0) ? data : lbAlgs;
@@ -3259,10 +3442,6 @@
                                                 isEditable: true,
                                                 select: function(args) {
                                                     var data = [{
-                                                            id: 'ssl',
-                                                            name: 'ssl',
-                                                            description: _l('label.lb.protocol.ssl')
-                                                        }, {
                                                             id: 'tcp',
                                                             name: 'tcp',
                                                             description: _l('label.lb.protocol.tcp')
@@ -3270,6 +3449,14 @@
                                                             id: 'udp',
                                                             name: 'udp',
                                                             description: _l('label.lb.protocol.udp')
+                                                        }, {
+                                                            id: 'tcp-proxy',
+                                                            name: 'tcp-proxy',
+                                                            description: _l('label.lb.protocol.tcp.proxy')
+                                                        }, {
+                                                            id: 'ssl',
+                                                            name: 'ssl',
+                                                            description: _l('label.lb.protocol.ssl')
                                                         }];
                                                     if (typeof args.context != 'undefined') {
                                                         var lbProtocols = getLBProtocols(args.context.networks[0]);
@@ -3411,8 +3598,8 @@
 
                                                 var stickyData = $.extend(true, {}, args.data.sticky);
                                                 var certificateData = $.extend(true, {}, args.data.sslcertificate);
-                                                  
-                                              //***** create new LB rule > Add VMs *****
+
+                                                //***** create new LB rule > Add VMs *****
                                                 $.ajax({
                                                     url: createURL('createLoadBalancerRule'),
                                                     data: data,
@@ -3424,70 +3611,27 @@
                                                         var lbID = data.createloadbalancerruleresponse.id;
 
                                                         var inputData = {
-                                                        	id: data.createloadbalancerruleresponse.id	
-                                                        };    
-                                                        
+                                                        	id: data.createloadbalancerruleresponse.id
+                                                        };
+
                                                         var selectedVMs = args.itemData;
                                                         if (selectedVMs != null) {
                                                         	var vmidipmapIndex = 0;
-                                                    		for (var vmIndex = 0; vmIndex < selectedVMs.length; vmIndex++) {      
+                                                    		for (var vmIndex = 0; vmIndex < selectedVMs.length; vmIndex++) {
                                                     			var selectedIPs = selectedVMs[vmIndex]._subselect;
                                                     			for (var ipIndex = 0; ipIndex < selectedIPs.length; ipIndex++) {
                                                     				inputData['vmidipmap[' + vmidipmapIndex + '].vmid'] = selectedVMs[vmIndex].id;
-                                                        			
+
                                                     				if (args.context.ipAddresses[0].isportable) {
-                                                        			    inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex].split(',')[1];  
+                                                        			    inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex].split(',')[1];
                                                         			} else {
                                                         				inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
                                                         			}
-                                                    				
+
                                                     				vmidipmapIndex++;
-                                                    			}                                                			
+                                                    			}
                                                     		}
-                                                    	}   
-                                                        
-                                                        /*$.ajax({
-                                                            url: createURL('assignCertToLoadBalancer'),
-                                                            data: {certid: certificateData.certificate, lbruleid: lbID},
-                                                            success: function(data) {
-                                                                var jobID = data.assigncerttoloadbalancerresponse.jobid;
-                                                                var lbProtocolCreated = false;
-
-                                                                args.response.success({
-                                                                    _custom: {
-                                                                        jobId: jobID 
-                                                                    },
-                                                                    notification: {
-                                                                        label: 'label.add.certificate',
-                                                                        poll: function(args) {
-                                                                            var complete = args.complete;
-                                                                            var error = args.error;
-
-                                                                            pollAsyncJobResult({
-                                                                                _custom: {
-                                                                                    jobId: jobID
-                                                                                },
-                                                                                complete: function(args) {
-                                                                                    if (lbProtocolCreated) return;
-
-                                                                                    lbProtocolCreated = true;
-
-                                                                                    if (certificateData && certificateData.certificate) {
-                                                                                        cloudStack.lbCertificatePolicy.actions.add(lbID, certificateData, complete, error);
-                                                                                    } else {
-                                                                                        complete();
-                                                                                    }
-                                                                                },
-                                                                                error: error
-                                                                            });
-                                                                        }
-                                                                    }
-                                                                });
-                                                            },
-                                                            error: function(data) {
-                                                                args.response.error(parseXMLHttpResponse(data));
-                                                            }
-                                                        });*/
+                                                    	}
 
                                                         $.ajax({
                                                             url: createURL('assignToLoadBalancerRule'),
@@ -3980,7 +4124,7 @@
                                                             args.response.success({
                                                                 data: $.grep(
                                                                     data.listvirtualmachinesresponse.virtualmachine ?
-                                                                    data.listvirtualmachinesresponse.virtualmachine : [],
+                                                                        data.listvirtualmachinesresponse.virtualmachine : [],
                                                                     function(instance) {
                                                                         return $.inArray(instance.state, [
                                                                             'Destroyed', 'Expunging'
@@ -4248,110 +4392,22 @@
 
                                     return $('<div>')
                                         .append(
-                                            $('<ul>').addClass('info')
+                                        $('<ul>').addClass('info')
                                             .append(
-                                                // VPN IP
-                                                $('<li>').addClass('ip').html(_l('message.enabled.vpn') + ' ')
+                                            // VPN IP
+                                            $('<li>').addClass('ip').html(_l('message.enabled.vpn') + ' ')
                                                 .append($('<strong>').html(ipAddress))
-                                            )
+                                        )
                                             .append(
-                                                // PSK
-                                                $('<li>').addClass('psk').html(_l('message.enabled.vpn.ip.sec') + ' ')
+                                            // PSK
+                                            $('<li>').addClass('psk').html(_l('message.enabled.vpn.ip.sec') + ' ')
                                                 .append($('<strong>').html(psk))
+                                        )
+                                            .append(
+                                                //Note
+                                                $('<li>').html(_l('message.enabled.vpn.note'))
                                             )
-                                    ).multiEdit({
-                                        context: args.context,
-                                        noSelect: true,
-                                        fields: {
-                                            'username': {
-                                                edit: true,
-                                                label: 'label.username'
-                                            },
-                                            'password': {
-                                                edit: true,
-                                                isPassword: true,
-                                                label: 'label.password'
-                                            },
-                                            'add-user': {
-                                                addButton: true,
-                                                label: 'label.add.user'
-                                            }
-                                        },
-                                        add: {
-                                            label: 'label.add.user',
-                                            action: function(args) {
-                                                $.ajax({
-                                                    url: createURL('addVpnUser'),
-                                                    data: $.extend(args.data, {
-                                                        domainid: args.context.ipAddresses[0].domainid,
-                                                        account: args.context.ipAddresses[0].account
-                                                    }),
-                                                    dataType: 'json',
-                                                    type: "POST",
-                                                    success: function(data) {
-                                                        args.response.success({
-                                                            _custom: {
-                                                                jobId: data.addvpnuserresponse.jobid
-                                                            },
-                                                            notification: {
-                                                                label: 'label.add.vpn.user',
-                                                                poll: pollAsyncJobResult
-                                                            }
-                                                        });
-                                                    },
-                                                    error: function(data) {
-                                                        args.response.error(parseXMLHttpResponse(data));
-                                                    }
-                                                });
-                                            }
-                                        },
-                                        actions: {
-                                            destroy: {
-                                                label: 'label.action.delete.user',
-                                                action: function(args) {
-                                                    $.ajax({
-                                                        url: createURL('removeVpnUser'),
-                                                        data: {
-                                                            domainid: args.context.multiRule[0].domainid,
-                                                            account: args.context.multiRule[0].account,
-                                                            username: args.context.multiRule[0].username
-                                                        },
-                                                        dataType: 'json',
-                                                        async: true,
-                                                        success: function(data) {
-                                                            var jobID = data.removevpnuserresponse.jobid;
-
-                                                            args.response.success({
-                                                                _custom: {
-                                                                    jobId: jobID
-                                                                },
-                                                                notification: {
-                                                                    label: 'label.delete.vpn.user',
-                                                                    poll: pollAsyncJobResult
-                                                                }
-                                                            });
-                                                        }
-                                                    });
-                                                }
-                                            }
-                                        },
-                                        dataProvider: function(args) {
-                                            $.ajax({
-                                                url: createURL('listVpnUsers'),
-                                                data: {
-                                                    domainid: args.context.ipAddresses[0].domainid,
-                                                    account: args.context.ipAddresses[0].account
-                                                },
-                                                dataType: 'json',
-                                                async: true,
-                                                success: function(data) {
-                                                    args.response.success({
-                                                        data: data.listvpnusersresponse.vpnuser
-                                                    });
-                                                }
-                                            });
-                                        }
-                                    });
+                                    )
                                 }
                             }
                         }
@@ -4448,6 +4504,14 @@
                         var data = {};
                         listViewDataProvider(args, data);
 
+                        if (args.context != null) {
+                            if ("securityGroups" in args.context) {
+                                $.extend(data, {
+                                    id: args.context.securityGroups[0].id
+                                });
+                            }
+                        }
+
                         $.ajax({
                             url: createURL('listSecurityGroups'),
                             data: data,
@@ -4468,7 +4532,11 @@
                                 title: 'label.details',
                                 fields: [{
                                     name: {
-                                        label: 'label.name'
+                                        label: 'label.name',
+                                        isEditable: true,
+                                        validation: {
+                                            required: true
+                                        }
                                     }
                                 }, {
                                     id: {
@@ -4530,7 +4598,8 @@
                                                     var $otherFields = $inputs.filter(function() {
                                                         var name = $(this).attr('rel');
 
-                                                        return name != 'icmptype' &&
+                                                        return name != 'protocolnumber' &&
+                                                            name != 'icmptype' &&
                                                             name != 'icmpcode' &&
                                                             name != 'protocol' &&
                                                             name != 'add-rule' &&
@@ -4539,12 +4608,35 @@
                                                             name != 'securitygroup';
                                                     });
 
-                                                    if ($(this).val() == 'icmp') {
-                                                        $icmpFields.show();
-                                                        $otherFields.hide();
-                                                    } else {
+                                                    $portFields = $inputs.filter(function() {
+                                                        var name = $(this).attr('rel');
+                                                        return $.inArray(name, [
+                                                            'startport',
+                                                            'endport'
+                                                        ]) > -1;
+                                                    });
+                                                    $protocolFields = $inputs.filter(function() {
+                                                        var name = $(this).attr('rel');
+
+                                                        return $.inArray(name, ['protocolnumber']) > -1;
+                                                    });
+
+                                                    if ($(this).val() == 'protocolnumber') {
                                                         $icmpFields.hide();
+                                                        $portFields.hide();
+                                                        $protocolFields.show();
+                                                    } else if ($(this).val() == 'icmp') {
+                                                        $icmpFields.show();
+                                                        $protocolFields.hide();
+                                                        $portFields.hide();
+                                                    } else if ($(this).val() == 'all') {
+                                                        $portFields.hide();
+                                                        $icmpFields.hide();
+                                                        $protocolFields.hide();
+                                                    } else {
                                                         $otherFields.show();
+                                                        $icmpFields.hide();
+                                                        $protocolFields.hide();
                                                     }
                                                 });
 
@@ -4558,9 +4650,21 @@
                                                     }, {
                                                         name: 'icmp',
                                                         description: 'ICMP'
+                                                    }, {
+                                                        name: 'all',
+                                                        description: 'ALL'
+                                                    }, {
+                                                        name: 'protocolnumber',
+                                                        description: 'Protocol Number'
                                                     }]
                                                 });
                                             }
+                                        },
+                                        'protocolnumber': {
+                                            label: 'label.protocol.number',
+                                            edit: true,
+                                            isHidden: true,
+                                            isEditable: true
                                         },
                                         'startport': {
                                             edit: true,
@@ -4593,7 +4697,7 @@
                                             label: 'label.cidr',
                                             isHidden: true,
                                             validation: {
-                                                ipv46cidr: true
+                                                ipv46cidrs: true
                                             }
                                         },
                                         'accountname': {
@@ -4612,10 +4716,19 @@
                                         action: function(args) {
                                             var data = {
                                                 securitygroupid: args.context.securityGroups[0].id,
-                                                protocol: args.data.protocol,
                                                 domainid: args.context.securityGroups[0].domainid,
                                                 account: args.context.securityGroups[0].account
                                             };
+
+                                            if (args.data.protocol == 'protocolnumber') {
+                                                $.extend(data, {
+                                                    protocol: args.data.protocolnumber
+                                                });
+                                            } else {
+                                                $.extend(data, {
+                                                    protocol: args.data.protocol
+                                                });
+                                            }
 
                                             if (args.data.icmptype && args.data.icmpcode) { // ICMP
                                                 $.extend(data, {
@@ -4708,7 +4821,7 @@
                                                 args.response.success({
                                                     data: $.map(
                                                         data.listsecuritygroupsresponse.securitygroup[0].ingressrule ?
-                                                        data.listsecuritygroupsresponse.securitygroup[0].ingressrule : [],
+                                                            data.listsecuritygroupsresponse.securitygroup[0].ingressrule : [],
                                                         ingressEgressDataMap
                                                     )
                                                 });
@@ -4740,7 +4853,8 @@
                                                     var $otherFields = $inputs.filter(function() {
                                                         var name = $(this).attr('rel');
 
-                                                        return name != 'icmptype' &&
+                                                        return name != 'protocolnumber' &&
+                                                            name != 'icmptype' &&
                                                             name != 'icmpcode' &&
                                                             name != 'protocol' &&
                                                             name != 'add-rule' &&
@@ -4749,12 +4863,35 @@
                                                             name != 'securitygroup';
                                                     });
 
-                                                    if ($(this).val() == 'icmp') {
-                                                        $icmpFields.show();
-                                                        $otherFields.hide();
-                                                    } else {
+                                                    $portFields = $inputs.filter(function() {
+                                                        var name = $(this).attr('rel');
+                                                        return $.inArray(name, [
+                                                            'startport',
+                                                            'endport'
+                                                        ]) > -1;
+                                                    });
+                                                    $protocolFields = $inputs.filter(function() {
+                                                        var name = $(this).attr('rel');
+
+                                                        return $.inArray(name, ['protocolnumber']) > -1;
+                                                    });
+
+                                                    if ($(this).val() == 'protocolnumber') {
                                                         $icmpFields.hide();
+                                                        $portFields.hide();
+                                                        $protocolFields.show();
+                                                    } else if ($(this).val() == 'icmp') {
+                                                        $icmpFields.show();
+                                                        $protocolFields.hide();
+                                                        $portFields.hide();
+                                                    } else if ($(this).val() == 'all') {
+                                                        $portFields.hide();
+                                                        $icmpFields.hide();
+                                                        $protocolFields.hide();
+                                                    } else {
                                                         $otherFields.show();
+                                                        $icmpFields.hide();
+                                                        $protocolFields.hide();
                                                     }
                                                 });
 
@@ -4768,9 +4905,21 @@
                                                     }, {
                                                         name: 'icmp',
                                                         description: 'ICMP'
+                                                    }, {
+                                                        name: 'all',
+                                                        description: 'ALL'
+                                                    }, {
+                                                        name: 'protocolnumber',
+                                                        description: 'Protocol Number'
                                                     }]
                                                 });
                                             }
+                                        },
+                                        'protocolnumber': {
+                                            label: 'label.protocol.number',
+                                            edit: true,
+                                            isHidden: true,
+                                            isEditable: true
                                         },
                                         'startport': {
                                             edit: true,
@@ -4803,7 +4952,7 @@
                                             label: 'label.cidr',
                                             isHidden: true,
                                             validation: {
-                                                ipv46cidr: true
+                                                ipv46cidrs: true
                                             }
                                         },
                                         'accountname': {
@@ -4822,10 +4971,19 @@
                                         action: function(args) {
                                             var data = {
                                                 securitygroupid: args.context.securityGroups[0].id,
-                                                protocol: args.data.protocol,
                                                 domainid: args.context.securityGroups[0].domainid,
                                                 account: args.context.securityGroups[0].account
                                             };
+
+                                            if (args.data.protocol == 'protocolnumber') {
+                                                $.extend(data, {
+                                                    protocol: args.data.protocolnumber
+                                                });
+                                            } else {
+                                                $.extend(data, {
+                                                    protocol: args.data.protocol
+                                                });
+                                            }
 
                                             if (args.data.icmptype && args.data.icmpcode) { // ICMP
                                                 $.extend(data, {
@@ -4918,7 +5076,7 @@
                                                 args.response.success({
                                                     data: $.map(
                                                         data.listsecuritygroupsresponse.securitygroup[0].egressrule ?
-                                                        data.listsecuritygroupsresponse.securitygroup[0].egressrule : [],
+                                                            data.listsecuritygroupsresponse.securitygroup[0].egressrule : [],
                                                         ingressEgressDataMap
                                                     )
                                                 });
@@ -4930,6 +5088,30 @@
                         },
 
                         actions: {
+                            edit: {
+                                label: 'label.edit',
+                                action: function(args) {
+                                    var data = {
+                                        id: args.context.securityGroups[0].id
+                                    };
+                                    if (args.data.name != args.context.securityGroups[0].name) {
+                                        $.extend(data, {
+                                            name: args.data.name
+                                        });
+                                    };
+                                    $.ajax({
+                                        url: createURL('updateSecurityGroup'),
+                                        data: data,
+                                        success: function(json) {
+                                            var item = json.updatesecuritygroupresponse.securitygroup;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                }
+                            },
+
                             remove: {
                                 label: 'label.action.delete.security.group',
                                 messages: {
@@ -5110,7 +5292,7 @@
                                         items,
                                         function (vpc, i) {
                                             return vpc.regionlevelvpc;
-                                    });
+                                        });
 
                                 args.response.success({
                                     data: items
@@ -5121,7 +5303,7 @@
                                     message: parseXMLHttpResponse(XMLHttpResponse)
                                 });
                                 args.response.error();
-                             }
+                            }
                         });
                     },
                     actions: {
@@ -5170,6 +5352,7 @@
                                                     var advZones = $.grep(zones, function(zone) {
                                                         return zone.networktype == 'Advanced' && !zone.securitygroupsenabled;
                                                     });
+
                                                     args.response.success({
                                                         data: $.map(advZones, function(zone) {
                                                             return {
@@ -5197,20 +5380,22 @@
                                     },
                                     vpcoffering: {
                                         label: 'label.vpc.offering',
+                                        dependsOn: 'zoneid',
                                         validation: {
                                             required: true
                                         },
-
                                         select: function(args) {
-                                            var data = {};
+                                            var data = {
+                                                zoneid: args.zoneid
+                                            };
                                             $.ajax({
                                                 url: createURL('listVPCOfferings'),
-                                                data: {},
+                                                data: data,
                                                 success: function(json) {
-                                                      var offerings  = json.listvpcofferingsresponse.vpcoffering ? json.listvpcofferingsresponse.vpcoffering : [];
-                                                      var filteredofferings = $.grep(offerings, function(offering) {
-                                                          return offering.state == 'Enabled';
-                                                      });
+                                                    var offerings  = json.listvpcofferingsresponse.vpcoffering ? json.listvpcofferingsresponse.vpcoffering : [];
+                                                    var filteredofferings = $.grep(offerings, function(offering) {
+                                                        return offering.state == 'Enabled';
+                                                    });
                                                     args.response.success({
                                                         data: $.map(filteredofferings, function(vpco) {
                                                             return {
@@ -5226,41 +5411,40 @@
                                 }
                             },
                             action: function(args) {
-                                var vpcOfferingName = args.data.vpcoffering
-                                        var dataObj = {
-                                            name: args.data.name,
-                                            displaytext: args.data.displaytext,
-                                            zoneid: args.data.zoneid,
-                                            cidr: args.data.cidr,
-                                            vpcofferingid: args.data.vpcoffering
-                                        };
+                                var vpcOfferingName = args.data.vpcoffering;
+                                var dataObj = {
+                                    name: args.data.name,
+                                    displaytext: args.data.displaytext,
+                                    zoneid: args.data.zoneid,
+                                    cidr: args.data.cidr,
+                                    vpcofferingid: args.data.vpcoffering
+                                };
 
-                                        if (args.data.networkdomain != null && args.data.networkdomain.length > 0)
-                                            $.extend(dataObj, {
-                                                networkdomain: args.data.networkdomain
-                                            });
+                                if (args.data.networkdomain != null && args.data.networkdomain.length > 0)
+                                    $.extend(dataObj, {
+                                        networkdomain: args.data.networkdomain
+                                    });
 
-                                        $.ajax({
-                                            url: createURL("createVPC"),
-                                            dataType: "json",
-                                            data: dataObj,
-                                            async: true,
-                                            success: function(json) {
-                                                var jid = json.createvpcresponse.jobid;
-                                                args.response.success({
-                                                    _custom: {
-                                                        jobId: jid,
-                                                        getUpdatedItem: function(json) {
-                                                            return json.queryasyncjobresultresponse.jobresult.vpc;
-                                                        }
-                                                    }
-                                                });
-                                            },
-                                            error: function(data) {
-                                                args.response.error(parseXMLHttpResponse(data));
+                                $.ajax({
+                                    url: createURL("createVPC"),
+                                    dataType: "json",
+                                    data: dataObj,
+                                    async: true,
+                                    success: function(vpcjson) {
+                                        var jid = vpcjson.createvpcresponse.jobid;
+                                        args.response.success({
+                                            _custom: {
+                                                jobId: jid,
+                                                getUpdatedItem: function(json) {
+                                                    return json.queryasyncjobresultresponse.jobresult.vpc;
+                                                }
                                             }
                                         });
-
+                                    },
+                                    error: function(data) {
+                                        args.response.error(parseXMLHttpResponse(data));
+                                    }
+                                });
                             },
                             notification: {
                                 poll: pollAsyncJobResult
@@ -5329,45 +5513,45 @@
                                     title: 'label.restart.vpc',
                                     desc: function(args) {
                                         if (Boolean(args.context.vpc[0].redundantvpcrouter)) {
-                                           return 'message.restart.vpc';
-                                       } else {
-                                           return 'message.restart.vpc.remark';
-                                       }
+                                            return 'message.restart.vpc';
+                                        } else {
+                                            return 'message.restart.vpc.remark';
+                                        }
                                     },
 
                                     preFilter: function(args) {
-                                       var zoneObj;
-                                       $.ajax({
-                                           url: createURL("listZones&id=" + args.context.vpc[0].zoneid),
-                                           dataType: "json",
-                                           async: false,
-                                           success: function(json) {
-                                               zoneObj = json.listzonesresponse.zone[0];
-                                           }
-                                       });
+                                        var zoneObj;
+                                        $.ajax({
+                                            url: createURL("listZones&id=" + args.context.vpc[0].zoneid),
+                                            dataType: "json",
+                                            async: false,
+                                            success: function(json) {
+                                                zoneObj = json.listzonesresponse.zone[0];
+                                            }
+                                        });
 
 
-                                       args.$form.find('.form-item[rel=cleanup]').find('input').attr('checked', 'checked'); //checked
-                                       args.$form.find('.form-item[rel=cleanup]').css('display', 'inline-block'); //shown
-                                       args.$form.find('.form-item[rel=makeredundant]').find('input').attr('checked', 'checked'); //checked
-                                       args.$form.find('.form-item[rel=makeredundant]').css('display', 'inline-block'); //shown
+                                        args.$form.find('.form-item[rel=cleanup]').find('input').attr('checked', 'checked'); //checked
+                                        args.$form.find('.form-item[rel=cleanup]').css('display', 'inline-block'); //shown
+                                        args.$form.find('.form-item[rel=makeredundant]').find('input').attr('checked', 'checked'); //checked
+                                        args.$form.find('.form-item[rel=makeredundant]').css('display', 'inline-block'); //shown
 
-                                       if (Boolean(args.context.vpc[0].redundantvpcrouter)) {
-                                           args.$form.find('.form-item[rel=makeredundant]').hide();
-                                       } else {
-                                           args.$form.find('.form-item[rel=makeredundant]').show();
-                                       }
-                                   },
-                                   fields: {
-                                       cleanup: {
-                                           label: 'label.clean.up',
-                                           isBoolean: true
-                                       },
-                                       makeredundant: {
-                                           label: 'label.make.redundant',
-                                           isBoolean: true
-                                       }
-                                   }
+                                        if (Boolean(args.context.vpc[0].redundantvpcrouter)) {
+                                            args.$form.find('.form-item[rel=makeredundant]').hide();
+                                        } else {
+                                            args.$form.find('.form-item[rel=makeredundant]').show();
+                                        }
+                                    },
+                                    fields: {
+                                        cleanup: {
+                                            label: 'label.clean.up',
+                                            isBoolean: true
+                                        },
+                                        makeredundant: {
+                                            label: 'label.make.redundant',
+                                            isBoolean: true
+                                        }
+                                    }
                                 },
                                 messages: {
                                     confirm: function(args) {
@@ -5645,6 +5829,66 @@
                         }
                     },
 
+                    advSearchFields: {
+                        keyword: {
+                            label: 'label.name'
+                        },
+                        domainid: {
+                            label: 'label.domain',
+                            select: function(args) {
+                                if (isAdmin() || isDomainAdmin()) {
+                                    $.ajax({
+                                        url: createURL('listDomains'),
+                                        data: {
+                                            listAll: true,
+                                            details: 'min'
+                                        },
+                                        success: function(json) {
+                                            var array1 = [{
+                                                id: '',
+                                                description: ''
+                                            }];
+                                            var domains = json.listdomainsresponse.domain;
+                                            if (domains != null && domains.length > 0) {
+                                                for (var i = 0; i < domains.length; i++) {
+                                                    array1.push({
+                                                        id: domains[i].id,
+                                                        description: domains[i].path
+                                                    });
+                                                }
+                                            }
+                                            array1.sort(function(a, b) {
+                                                return a.description.localeCompare(b.description);
+                                            });
+                                            args.response.success({
+                                                data: array1
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    args.response.success({
+                                        data: null
+                                    });
+                                }
+                            },
+                            isHidden: function(args) {
+                                if (isAdmin() || isDomainAdmin())
+                                    return false;
+                                else
+                                    return true;
+                            }
+                        },
+                        account: {
+                            label: 'Account',
+                            isHidden: function(args) {
+                                if (isAdmin() || isDomainAdmin())
+                                    return false;
+                                else
+                                    return true;
+                            }
+                        }
+                    },
+
                     dataProvider: function(args) {
                         var data = {};
                         listViewDataProvider(args, data);
@@ -5778,11 +6022,6 @@
                                         docID: 'helpVPNGatewayIKEDH',
                                         select: function(args) {
                                             var items = [];
-                                            //  StrongSwan now requires a DH group to be specified...
-                                            //items.push({
-                                            //    id: '',
-                                            //    description: _l('label.none')
-                                            //});
                                             items.push({
                                                 id: 'modp1536',
                                                 description: 'Group 5(modp1536)'
@@ -6349,6 +6588,283 @@
                         }
                     }
                 }
+            },
+            vpnuser: {
+                type: 'select',
+                title: 'label.vpn.users',
+                listView: {
+                    id: 'vpnUsers',
+                    label: 'label.vpn.users',
+                    fields: {
+                        username: {
+                            label: 'label.name'
+                        },
+                        domain: {
+                            label: 'label.domain'
+                        },
+                        state: {
+                            label: 'label.state'
+                        }
+                    },
+
+                    dataProvider: function(args) {
+                        var data = {};
+                        listViewDataProvider(args, data);
+
+                        $.ajax({
+                            url: createURL('listVpnUsers'),
+                            data: data,
+                            dataType: 'json',
+                            success: function(json) {
+                                var items = json.listvpnusersresponse.vpnuser;
+                                args.response.success({
+                                    data: items
+                                });
+                            }
+                        });
+                    },
+
+                    actions:{
+                        destroy: {
+                            label: 'label.action.delete.user',
+                            messages: {
+                                confirm: function(args) {
+                                    return 'message.action.delete.vpn.user'
+                                },
+                                notification: function(args) {
+                                    return 'label.delete.vpn.user'
+                                }
+                            },
+                            action: function(args) {
+                                $.ajax({
+                                    url: createURL('removeVpnUser'),
+                                    data: {
+                                        domainid: args.context.vpnuser[0].domainid,
+                                        account: args.context.vpnuser[0].account,
+                                        username: args.context.vpnuser[0].username
+                                    },
+                                    dataType: 'json',
+                                    async: true,
+                                    success: function(json) {
+                                        var jobID = json.removevpnuserresponse.jobid;
+                                        args.response.success({
+                                            _custom: {
+                                                jobId: jobID
+                                            }
+                                        });
+                                    }
+                                });
+                            },
+                            notification: {
+                                poll: pollAsyncJobResult
+                            }
+                        },
+                        add: {
+                            label: 'label.add.user',
+                            messages: {
+                                notification: function(args) {
+                                    return 'label.add.vpn.user';
+                                }
+                            },
+                            createForm:{
+                                title: 'label.add.vpn.user',
+                                fields: {
+                                    username: {
+                                        edit: true,
+                                        label: 'label.username',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    password: {
+                                        edit: true,
+                                        isPassword: true,
+                                        label: 'label.password',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    domain: {
+                                        label: 'label.domain',
+                                        isHidden: function(args) {
+                                            if (isAdmin() || isDomainAdmin())
+                                                return false;
+                                            else
+                                                return true;
+                                        },
+                                        select: function(args) {
+                                            if (isAdmin() || isDomainAdmin()) {
+                                                $.ajax({
+                                                    url: createURL("listDomains&listAll=true"),
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        items.push({
+                                                            id: "",
+                                                            description: ""
+                                                        });
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                                args.$select.change(function() {
+                                                    var $form = $(this).closest('form');
+                                                    if ($(this).val() == "") {
+                                                        $form.find('.form-item[rel=account]').hide();
+                                                    } else {
+                                                        $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                                    }
+                                                });
+                                            } else {
+                                                args.response.success({
+                                                    data: null
+                                                });
+                                            }
+                                        }
+                                    },
+                                    account: {
+                                        label: 'label.account',
+                                        validation: {
+                                            required: true
+                                        },
+                                        isHidden: function(args) {
+                                            if (isAdmin() || isDomainAdmin()) {
+                                                return false;
+                                            } else {
+                                                return true;
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            action: function(args) {
+                                var data = {
+                                    username: args.data.username,
+                                    password: args.data.password
+                                };
+
+                                if (args.data.domain != null && args.data.domain.length > 0) {
+                                    $.extend(data, {
+                                        domainid: args.data.domain
+                                    });
+                                    if (args.data.account != null && args.data.account.length > 0) {
+                                        $.extend(data, {
+                                            account: args.data.account
+                                        });
+                                    }
+                                }
+
+                                $.ajax({
+                                    url: createURL('addVpnUser'),
+                                    data: data,
+                                    dataType: 'json',
+                                    async: true,
+                                    success: function(json) {
+                                        var jid = json.addvpnuserresponse.jobid;
+                                        args.response.success({
+                                            _custom: {
+                                                jobId: jid,
+                                                getUpdatedItem: function(json) {
+                                                    return json.queryasyncjobresultresponse.jobresult.vpnuser;
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                            },
+                            notification: {
+                                poll: pollAsyncJobResult
+                            }
+                        }
+                    },
+
+                    detailView: {
+                        name: 'label.details',
+                        actions: {
+                            destroy: {
+                                label: 'label.action.delete.user',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.action.delete.vpn.user';
+                                    },
+                                    notification: function(args) {
+                                        return 'label.delete.vpn.user';
+                                    }
+                                },
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("removeVpnUser"),
+                                        data: {
+                                            domainid: args.context.vpnuser[0].domainid,
+                                            account: args.context.vpnuser[0].account,
+                                            username: args.context.vpnuser[0].username
+                                        },
+                                        dataType: 'json',
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.removevpnuserresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        },
+
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+                                fields: [{
+                                    username: {
+                                        label: 'label.name',
+                                        validation: {
+                                            required: true
+                                        }
+                                    }
+                                }, {
+                                    domain: {
+                                        label: 'label.domain'
+                                    },
+                                    state: {
+                                        label: 'label.state'
+                                    },
+                                }],
+
+                                dataProvider: function(args) {
+                                    $.ajax({
+                                        url: createURL("listVpnUsers"),
+                                        data: {
+                                            id: args.context.vpnuser[0].id
+                                        },
+                                        success: function(json) {
+                                            var item = json.listvpnusersresponse.vpnuser[0];
+
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     };
@@ -6564,7 +7080,8 @@
             return [];
         }
 
-        var protocols = protocolCapabilities.value.split(',');
+        // make sure protocols are found in a script compatible way: i.e. "tcp,udp,tcp.proxy" , no minus sign or spaces
+        var protocols = protocolCapabilities.value.replace(/\s/g,'').replace('-','.').split(',');
 
         if (!protocols) {
             return [];

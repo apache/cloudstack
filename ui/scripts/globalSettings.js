@@ -41,11 +41,11 @@
                                     data: data,
                                     success: function(json) {
                                         var item = json.updateconfigurationresponse.configuration;
-                                        if (item.category == "Usage")
+                                        if (item.category == "Usage" && item.isdynamic == false)
                                             cloudStack.dialog.notice({
                                                 message: _l('message.restart.mgmt.usage.server')
                                             });
-                                        else
+                                        else if (item.isdynamic == false)
                                             cloudStack.dialog.notice({
                                                 message: _l('message.restart.mgmt.server')
                                             });
@@ -168,7 +168,6 @@
                                 }],
                                 dataProvider: function(args) {
                                     var items = [];
-                                    console.log(args);
                                     $.ajax({
                                         url: createURL("listLdapConfigurations&hostname=" + args.context.ldapConfiguration[0].hostname),
                                         dataType: "json",
@@ -214,8 +213,8 @@
                             },
                             action: function(args) {
                                 var array = [];
-                                array.push("&hostname=" + todb(args.data.hostname));
-                                array.push("&port=" + todb(args.data.port));;
+                                array.push("&hostname=" + encodeURIComponent(args.data.hostname));
+                                array.push("&port=" + encodeURIComponent(args.data.port));
                                 $.ajax({
                                     url: createURL("addLdapConfiguration" + array.join("")),
                                     dataType: "json",

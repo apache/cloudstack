@@ -270,12 +270,12 @@
             $tabs.find('ul li:first').addClass('first');
             $tabs.find('ul li:last').addClass('last');
 
-            $tabs.bind('tabsshow', function(event, ui) {
-                var $panel = $(ui.panel);
+            $tabs.bind('tabsactivate', function(event, ui) {
+                var $panel = $(ui.newPanel);
                 var $management = $panel.find('.management');
                 var $managementInvite = $panel.find('.management-invite');
 
-                if ($management.size()) {
+                if ($management.length) {
                     $management.children().remove();
                     $management.append(pageElems.userManagement({
                         context: cloudStack.context
@@ -284,7 +284,7 @@
                     return true;
                 }
 
-                if ($managementInvite.size()) {
+                if ($managementInvite.length) {
                     $managementInvite.children().remove();
                     $managementInvite.append(pageElems.userManagement({
                         context: cloudStack.context,
@@ -635,7 +635,7 @@
 
             // Initial load
             loadData(function() {
-                if (!$list.find('li').size()) {
+                if (!$list.find('li').length) {
                     cloudStack.dialog.notice({
                         message: isAdmin() || isDomainAdmin() || g_userProjectsEnabled ? _l('message.no.projects') : _l('message.no.projects.adminOnly')
                     }).closest('.ui-dialog');
@@ -705,11 +705,12 @@
      * Initiate new project flow
      */
     var addProject = function() {
-        pageElems.newProjectForm().dialog({
+        var $dialog = pageElems.newProjectForm().dialog({
             title: _l('label.new.project'),
             closeOnEscape: false,
             width: 760
-        }).closest('.ui-dialog').overlay();
+        });
+        cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
     };
 
     var deleteProject = function(args) {

@@ -58,11 +58,16 @@ public class HypervisorUtilsTest {
         System.out.print("Testing block on modified files - ");
         String filePath = "./testfileinactive";
         int timeoutSeconds = 8;
-        long thresholdMilliseconds = 2000;
+        long thresholdMilliseconds = 1000;
         File file = new File(filePath);
 
         long startTime = setupcheckVolumeFileForActivityFile(file, _minFileSize);
-        HypervisorUtils.checkVolumeFileForActivity(filePath, timeoutSeconds, thresholdMilliseconds, _minFileSize);
+        try {
+            HypervisorUtils.checkVolumeFileForActivity(filePath, timeoutSeconds, thresholdMilliseconds, _minFileSize);
+        } catch (CloudRuntimeException ex) {
+            System.out.println("fail");
+            return;
+        }
         long duration = System.currentTimeMillis() - startTime;
 
         Assert.assertFalse("Didn't block long enough, expected at least " + thresholdMilliseconds + " and got " + duration, duration < thresholdMilliseconds);

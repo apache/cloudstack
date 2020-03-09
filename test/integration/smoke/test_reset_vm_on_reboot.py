@@ -38,15 +38,16 @@ class TestResetVmOnReboot(cloudstackTestCase):
         # Get Zone, Domain and templates
         domain = get_domain(cls.apiclient)
         zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        hypervisor = testClient.getHypervisorInfo()
         cls.services['mode'] = zone.networktype
 
-        template = get_template(
+        template = get_test_template(
             cls.apiclient,
             zone.id,
-            cls.services["ostype"]
+            hypervisor
         )
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_test_template() failed to return template"
 
         # Set Zones and disk offerings ??
         cls.services["small"]["zoneid"] = zone.id

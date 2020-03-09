@@ -31,7 +31,12 @@ import static org.junit.Assert.assertNotNull;
 public final class CloudStackVersionTest {
 
     @Test
-    @DataProvider({ "1.2.3, 1.2.3", "1.2.3.4, 1.2.3.4", "1.2.3-12, 1.2.3", "1.2.3.4-14, 1.2.3.4" })
+    @DataProvider({
+        "1.2.3, 1.2.3",
+        "1.2.3.4, 1.2.3.4",
+        "1.2.3-12, 1.2.3",
+        "1.2.3.4-14, 1.2.3.4"
+    })
     public void testValidParse(final String inputValue, final String expectedVersion) {
         final CloudStackVersion version = CloudStackVersion.parse(inputValue);
         assertNotNull(version);
@@ -39,13 +44,26 @@ public final class CloudStackVersionTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    @DataProvider({ "1.2", "1", "1.2.3.4.5", "aaaa", "", "  ", "1.2.3.4.5"})
+    @DataProvider({
+        "1.2",
+        "1",
+        "1.2.3.4.5",
+        "aaaa",
+        "",
+        "  ",
+        "1.2.3.4.5"
+    })
     public void testInvalidParse(final String invalidValue) {
         CloudStackVersion.parse(invalidValue);
     }
 
     @Test
-    @DataProvider({ "1.0.0", "1.0.0.0", "1.2.3", "1.2.3.4" })
+    @DataProvider({
+        "1.0.0",
+        "1.0.0.0",
+        "1.2.3",
+        "1.2.3.4"
+    })
     public void testEquals(final String value) {
 
         final CloudStackVersion version = CloudStackVersion.parse(value);
@@ -62,16 +80,19 @@ public final class CloudStackVersionTest {
 
     @Test
     @DataProvider({
-            "1.0.0.0, 1.0.0.0",
-            "1.0.0, 1.0.0",
-            "1.0.0.0, 1.0.0",
-            "1.0.0-10, 1.0.0-10",
-            "1.0.0-10, 1.0.0",
-            "1.0.0.0, 1.0.0-10",
-            "1.0.0.0, 1.0.0.0-10",
-            "1.0.0-10, 1.0.0-11",
-            "1.0.0-10, 1.0.0.0-14",
-            "1.0.0.0-14, 1.0.0.0-15"
+        "1.0.0.0, 1.0.0.0",
+        "1.0.0, 1.0.0",
+        "1.0.0.0, 1.0.0",
+        "1.0.0-10, 1.0.0-10",
+        "1.0.0-10, 1.0.0",
+        "1.0.0.0, 1.0.0-10",
+        "1.0.0.0, 1.0.0.0-10",
+        "1.0.0-10, 1.0.0-11",
+        "1.0.0-10, 1.0.0.0-14",
+        "1.0.0.0-14, 1.0.0.0-15",
+        "1.0.0.0-SNAPSHOT, 1.0.0.0-SNAPSHOT",
+        "1.0.0.0-branding, 1.0.0.0-branding",
+        "1.0.0.0-1518453362, 1.0.0.0-1519453362"
     })
     public void testEqualCompareTo(final String value, final String thatValue) {
 
@@ -88,21 +109,44 @@ public final class CloudStackVersionTest {
 
     @Test
     @DataProvider({
-            "1.2.3.4, 1.2.3",
-            "1.2.3, 1.0.0.0",
-            "1.2.3.4, 1.0.0",
-            "2.0.0, 1.2.3",
-            "2.0.0, 1.2.3.4",
-            "2.0.0.0, 1.2.3",
-            "2.0.0.0, 1.2.3.4",
-            "2.0.0.0, 1.2.3",
-            "1.3.0, 1.2.3.4",
-            "1.3.0.0, 1.2.3.4",
-            "1.3.0.0, 1.2.3",
-            "1.2.3.4-10, 1.0.0.0-5",
-            "1.2.3-10, 1.0.0-5",
-            "1.2.3.4, 1.0.0.0-5",
-            "1.2.3.4-10, 1.0.0"
+        "1.0.0.0, 1.0.0.0",
+        "1.0.0, 1.0.0",
+        "1.0.0.0, 1.0.0",
+        "1.0.0-10, 1.0.0-10",
+        "1.0.0-10, 1.0.0",
+        "1.0.0.0, 1.0.0-10",
+        "1.0.0.0, 1.0.0.0-10",
+        "1.0.0-10, 1.0.0-11",
+        "1.0.0-10, 1.0.0.0-14",
+        "1.0.0.0-14, 1.0.0.0-15",
+        "1.0.0.0-SNAPSHOT, 1.0.0.0-SNAPSHOT",
+        "1.0.0.0-branding, 1.0.0.0-branding",
+        "1.0.0.0-1518453362, 1.0.0.0-1519453362"
+    })
+    public void testEqualCompareDirect(final String value, final String thatValue) {
+
+        assertEquals(0, CloudStackVersion.compare(value, thatValue));
+        assertEquals(0, CloudStackVersion.compare(thatValue, value));
+
+    }
+
+    @Test
+    @DataProvider({
+        "1.2.3.4, 1.2.3",
+        "1.2.3, 1.0.0.0",
+        "1.2.3.4, 1.0.0",
+        "2.0.0, 1.2.3",
+        "2.0.0, 1.2.3.4",
+        "2.0.0.0, 1.2.3",
+        "2.0.0.0, 1.2.3.4",
+        "2.0.0.0, 1.2.3",
+        "1.3.0, 1.2.3.4",
+        "1.3.0.0, 1.2.3.4",
+        "1.3.0.0, 1.2.3",
+        "1.2.3.4-10, 1.0.0.0-5",
+        "1.2.3-10, 1.0.0-5",
+        "1.2.3.4, 1.0.0.0-5",
+        "1.2.3.4-10, 1.0.0"
     })
     public void testGreaterThanAndLessThanCompareTo(final String value, final String thatValue) {
 
@@ -117,4 +161,47 @@ public final class CloudStackVersionTest {
 
     }
 
+    @Test
+    @DataProvider({
+        "1.2.3.4, 1.2.3",
+        "1.2.3, 1.0.0.0",
+        "1.2.3.4, 1.0.0",
+        "2.0.0, 1.2.3",
+        "2.0.0, 1.2.3.4",
+        "2.0.0.0, 1.2.3",
+        "2.0.0.0, 1.2.3.4",
+        "2.0.0.0, 1.2.3",
+        "1.3.0, 1.2.3.4",
+        "1.3.0.0, 1.2.3.4",
+        "1.3.0.0, 1.2.3",
+        "1.2.3.4-10, 1.0.0.0-5",
+        "1.2.3-10, 1.0.0-5",
+        "1.2.3.4, 1.0.0.0-5",
+        "1.2.3.4-10, 1.0.0"
+    })
+    public void testGreaterThanAndLessThanCompareDirect(final String value, final String thatValue) {
+
+        assertEquals(1, CloudStackVersion.compare(value, thatValue));
+        assertEquals(-1, CloudStackVersion.compare(thatValue, value));
+
+    }
+
+    @Test
+    @DataProvider({
+        "Cloudstack Release 1.2.3 Mon Jan  1 10:10:10 UTC 2018, 1.2.3",
+        "Cloudstack Release 1.2.3.4 Mon Jan  1 10:10:10 UTC 2018, 1.2.3.4",
+        "Cloudstack Release 1.2.3-SNAPSHOT Mon Jan  1 10:10:10 UTC 2018, 1.2.3-SNAPSHOT",
+        "Cloudstack Release 1.2.3.4-SNAPSHOT Mon Jan  1 10:10:10 UTC 2018, 1.2.3.4-SNAPSHOT",
+        "Cloudstack Release 1.2.3.4-1519453362 Mon Jan  1 10:10:10 UTC 2018, 1.2.3.4-1519453362",
+        "Cloudstack Release 1.2.3.4-brnading-SNAPSHOT Mon Jan  1 10:10:10 UTC 2018, 1.2.3.4-brnading-SNAPSHOT",
+        "Cloudstack Release 1.2.3.4-brnading-1519453362 Mon Jan  1 10:10:10 UTC 2018, 1.2.3.4-brnading-1519453362",
+        "Cloudstack Release 1.2 Mon Jan  1 10:10:10 UTC 2018, 0",
+        "Cloudstack Release 1.2-SNAPSHOT Mon Jan  1 10:10:10 UTC 2018, 0",
+        "Cloud stack Release 1.2.3.4 Mon Jan  1 10:10:10 UTC 2018, 0"
+    })
+    public void testTrimRouterVersion(final String value, final String expected) {
+
+        assertEquals(expected, CloudStackVersion.trimRouterVersion(value));
+
+    }
 }

@@ -54,7 +54,7 @@
                 $plugin.click(function() {
                     var $mainSection = $('#navigation ul li').filter('.' + plugin.id);
 
-                    if ($mainSection.size()) {
+                    if ($mainSection.length) {
                         $mainSection.click();
 
                         return;

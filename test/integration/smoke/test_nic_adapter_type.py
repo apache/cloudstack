@@ -33,7 +33,7 @@ from marvin.lib.base import (
                              )
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template
+                               get_test_template
                                )
 from marvin.lib.utils import (
                               get_hypervisor_type,
@@ -57,10 +57,10 @@ class TestAdapterTypeForNic(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.testdata["ostype"])
+            cls.hypervisor)
 
         # Create Accounts & networks
         cls.testdata["isolated_network"]["zoneid"] = cls.zone.id

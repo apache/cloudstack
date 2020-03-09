@@ -18,6 +18,7 @@
 """
 
 # Import Local Modules
+from marvin.config.test_data import test_data
 from marvin.cloudstackAPI import (listConfigurations,
                                   listPhysicalNetworks,
                                   listRegions,
@@ -62,6 +63,9 @@ from marvin.sshClient import SshClient
 from marvin.codes import (PASS, FAILED, ISOLATED_NETWORK, VPC_NETWORK,
                           BASIC_ZONE, FAIL, NAT_RULE, STATIC_NAT_RULE,
                           RESOURCE_PRIMARY_STORAGE, RESOURCE_SECONDARY_STORAGE,
+                          RESOURCE_USER_VM, RESOURCE_PUBLIC_IP, RESOURCE_VOLUME,
+                          RESOURCE_SNAPSHOT, RESOURCE_TEMPLATE, RESOURCE_PROJECT,
+                          RESOURCE_NETWORK, RESOURCE_VPC,
                           RESOURCE_CPU, RESOURCE_MEMORY, PUBLIC_TRAFFIC,
                           GUEST_TRAFFIC, MANAGEMENT_TRAFFIC, STORAGE_TRAFFIC,
                           VMWAREDVS)
@@ -76,6 +80,7 @@ from marvin.lib.base import (PhysicalNetwork,
                              NATRule,
                              StaticNATRule,
                              Volume,
+                             Template,
                              Account,
                              Project,
                              Snapshot,
@@ -296,6 +301,7 @@ def get_pod(apiclient, zone_id=None, pod_id=None, pod_name=None):
     if validateList(cmd_out)[0] != PASS:
         return FAILED
     return cmd_out[0]
+
 def get_template(
         apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='BUILTIN',
         template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
@@ -341,6 +347,52 @@ def get_template(
     '''
     return list_templatesout[0]
 
+
+def get_test_template(apiclient, zone_id=None, hypervisor=None, test_templates=None):
+    """
+    @Name : get_test_template
+    @Desc : Retrieves the test template used to running tests. When the template
+            is missing it will be download at most one in a zone for a hypervisor.
+    @Input : returns a template
+    """
+
+    if test_templates is None:
+        test_templates = test_data["test_templates"]
+
+    if hypervisor is None:
+        return FAILED
+
+    hypervisor = hypervisor.lower()
+
+    # Return built-in template for simulator
+    if hypervisor == 'simulator':
+        return get_template(apiclient, zone_id)
+
+    if hypervisor not in test_templates.keys():
+        print "Provided hypervisor has no test template"
+        return FAILED
+
+    test_template = test_templates[hypervisor]
+
+    cmd = listTemplates.listTemplatesCmd()
+    cmd.name = test_template['name']
+    cmd.templatefilter = 'all'
+    if zone_id is not None:
+        cmd.zoneid = zone_id
+    if hypervisor is not None:
+        cmd.hypervisor = hypervisor
+    templates = apiclient.listTemplates(cmd)
+
+    if validateList(templates)[0] != PASS:
+        template = Template.register(apiclient, test_template, zoneid=zone_id, hypervisor=hypervisor.lower(), randomize_name=False)
+        template.download(apiclient)
+        return template
+
+    for template in templates:
+        if template.isready and template.ispublic:
+            return template
+
+    return FAILED
 
 
 def get_windows_template(
@@ -1343,6 +1395,20 @@ def matchResourceCount(apiclient, expectedCount, resourceType,
             resourceCount = resourceholderlist[0].cputotal
         elif resourceType == RESOURCE_MEMORY:
             resourceCount = resourceholderlist[0].memorytotal
+        elif resourceType == RESOURCE_USER_VM:
+            resourceCount = resourceholderlist[0].vmtotal
+        elif resourceType == RESOURCE_PUBLIC_IP:
+            resourceCount = resourceholderlist[0].iptotal
+        elif resourceType == RESOURCE_VOLUME:
+            resourceCount = resourceholderlist[0].volumetotal
+        elif resourceType == RESOURCE_SNAPSHOT:
+            resourceCount = resourceholderlist[0].snapshottotal
+        elif resourceType == RESOURCE_TEMPLATE:
+            resourceCount = resourceholderlist[0].templatetotal
+        elif resourceType == RESOURCE_NETWORK:
+            resourceCount = resourceholderlist[0].networktotal
+        elif resourceType == RESOURCE_VPC:
+            resourceCount = resourceholderlist[0].vpctotal
         assert str(resourceCount) == str(expectedCount),\
                 "Resource count %s should match with the expected resource count %s" %\
                 (resourceCount, expectedCount)
@@ -1403,7 +1469,36 @@ def isDomainResourceCountEqualToExpectedCount(apiclient, domainid, expectedcount
         isExceptionOccured = True
         return [isExceptionOccured, reasonForException, isResourceCountEqual]
 
-    resourcecount = (response[0].resourcecount / (1024**3))
+    if resourcetype == RESOURCE_PRIMARY_STORAGE or resourcetype == RESOURCE_SECONDARY_STORAGE:
+        resourcecount = (response[0].resourcecount / (1024**3))
+    else:
+        resourcecount = response[0].resourcecount
+
+    if resourcecount == expectedcount:
+        isResourceCountEqual = True
+    return [isExceptionOccured, reasonForException, isResourceCountEqual]
+
+def isAccountResourceCountEqualToExpectedCount(apiclient, domainid, account, expectedcount,
+                                              resourcetype):
+    """Get the resource count of specific account and match
+    it with the expected count
+    Return list [isExceptionOccured, reasonForException, isResourceCountEqual]"""
+    isResourceCountEqual = False
+    isExceptionOccured = False
+    reasonForException = None
+    try:
+        response = Resources.updateCount(apiclient, domainid=domainid, account=account,
+                                         resourcetype=resourcetype)
+    except Exception as e:
+        reasonForException = "Failed while updating resource count: %s" % e
+        isExceptionOccured = True
+        return [isExceptionOccured, reasonForException, isResourceCountEqual]
+
+    if resourcetype == RESOURCE_PRIMARY_STORAGE or resourcetype == RESOURCE_SECONDARY_STORAGE:
+        resourcecount = (response[0].resourcecount / (1024**3))
+    else:
+        resourcecount = response[0].resourcecount
+
     if resourcecount == expectedcount:
         isResourceCountEqual = True
     return [isExceptionOccured, reasonForException, isResourceCountEqual]

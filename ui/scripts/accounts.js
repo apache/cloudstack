@@ -45,7 +45,7 @@
                         roletype: {
                             label: 'label.roletype'
                         },
-                        domain: {
+                        domainpath: {
                             label: 'label.domain'
                         },
                         state: {
@@ -97,7 +97,6 @@
                             label: 'label.add.ldap.account',
                             isHeader: true,
                             preFilter: function(args) {
-                                //if (isAdmin() && true) { //for testing only
                                 if (isAdmin() && isLdapEnabled()) {
                                     return true;
                                 } else {
@@ -136,6 +135,23 @@
                                 domainid: args.context.domains[0].id
                             });
                         }
+
+                        if ("routers" in args.context) {
+                            if ("account" in args.context.routers[0]) {
+                                $.extend(data, {
+                                    name: args.context.routers[0].account
+                                });
+                            }
+                            if ("domainid" in args.context.routers[0]) {
+                                $.extend(data, {
+                                    domainid: args.context.routers[0].domainid
+                                });
+                            }
+                        }
+
+                        $.extend(data, {
+                            details: 'min'
+                        });
 
                         $.ajax({
                             url: createURL('listAccounts'),
@@ -685,7 +701,7 @@
                                     roletype: {
                                         label: 'label.roletype'
                                     },
-                                    domain: {
+                                    domainpath: {
                                         label: 'label.domain'
                                     },
                                     state: {
@@ -1002,6 +1018,7 @@
 
                                                 $.ajax({
                                                     url: createURL('uploadSslCert'),
+                                                    type: "POST",
                                                     data: data,
                                                     success: function(json) {
                                                         var item = json.uploadsslcertresponse.sslcert;
@@ -1346,9 +1363,6 @@
                                 };
 
                                 var password = args.data.password;
-                                if (md5Hashed) {
-                                    password = $.md5(password);
-                                }
                                 $.extend(data, {
                                     password: password
                                 });
@@ -1466,6 +1480,14 @@
                                                 form: {
                                                     title: 'label.action.change.password',
                                                     fields: {
+                                                        currentPassword: {
+                                                            label: 'label.current.password',
+                                                            isPassword: true,
+                                                            validation: {
+                                                                required: !(isAdmin() || isDomainAdmin())
+                                                            },
+                                                            id: 'currentPassword'
+                                                        },
                                                         newPassword: {
                                                             label: 'label.new.password',
                                                             isPassword: true,
@@ -1486,16 +1508,13 @@
                                                 },
                                                 after: function(args) {
                                                     start();
-
+                                                    var currentPassword = args.data.currentPassword;
                                                     var password = args.data.newPassword;
-
-                                                    if (md5Hashed)
-                                                        password = $.md5(password);
-
                                                     $.ajax({
                                                         url: createURL('updateUser'),
                                                         data: {
                                                             id: context.users[0].id,
+                                                            currentPassword: currentPassword,
                                                             password: password
                                                         },
                                                         type: "POST",
@@ -1508,6 +1527,9 @@
                                                     });
                                                 }
                                             });
+                                            if(isAdmin() || isDomainAdmin()){
+                                                $('div[rel=currentPassword]').hide();
+                                            }
                                         } else {
                                             cloudStack.dialog.notice({ message: _l('error.could.not.change.your.password.because.non.native.user') });
                                         }

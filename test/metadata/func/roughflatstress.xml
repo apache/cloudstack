@@ -619,7 +619,7 @@ under the License.
 	<command>
 		<name>destroyVirtualMachine</name>
 		<usercommand>true</usercommand>
-		<testcase>Destroying virutal machine</testcase>
+		<testcase>Destroying virtual machine</testcase>
 		<parameters>
 			<item getparam="true">
 				<name>id</name>
@@ -643,7 +643,7 @@ under the License.
 	<command>
 		<name>destroyVirtualMachine</name>
 		<usercommand>true</usercommand>
-		<testcase>Destroying virutal machine</testcase>
+		<testcase>Destroying virtual machine</testcase>
 		<parameters>
 			<item getparam="true">
 				<name>id</name>

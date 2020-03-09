@@ -43,6 +43,12 @@ class jsonLoader(object):
         else:
             return None
 
+    def __getitem__(self, val):
+        if val in self.__dict__:
+            return self.__dict__[val]
+        else:
+            return None
+
     def __repr__(self):
         return '{%s}' % str(', '.join('%s : %s' % (k, repr(v)) for (k, v)
                                       in self.__dict__.iteritems()))

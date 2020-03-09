@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-build/replace.properties
 build/build.number
 .lock-wscript
 .waf-*
@@ -29,11 +28,12 @@ dist/
 cloud-*.tar.bz2
 *.log
 *.pyc
+*.patch
 *.egginfo/
 *.egg-info/
 *.prefs
 build.number
-*.log.*.gz
+*.log.*
 cloud.log.*.*
 unittest
 deps/cloud.userlibraries
@@ -54,6 +54,8 @@ tools/cli/build/
 *.iso
 *.tar.gz
 *.tgz
+*.vscode
+*.css.map
 
 # this ignores _all files starting with '.'. Don't do that!
 #.*
@@ -97,3 +99,8 @@ systemvm/.pydevproject
 test/.pydevprojec
 plugins/hypervisors/kvm/.pydevproject
 scripts/.pydevproject
+*.qcow2
+*.raw
+venv
+node_modules
+.vscode

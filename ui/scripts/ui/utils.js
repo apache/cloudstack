@@ -145,4 +145,18 @@
             min: $.validator.format(_l('messgae.validate.min'))
         });
     };
+    
+    var applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton = function($dialog, customZindex){
+        var defaultZindex = 5000;
+        if(!customZindex){
+            customZindex = defaultZindex;
+        }
+        $('button.ui-dialog-titlebar-close').remove()
+        
+        var $dialogDiv = $dialog.closest('.ui-dialog');
+        $dialogDiv.css('z-index', customZindex);
+        
+        return $dialogDiv.overlay();
+    };
+    cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton = applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton;
 })(jQuery, cloudStack);

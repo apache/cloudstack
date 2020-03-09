@@ -293,8 +293,6 @@
                         'Disconnected': 'off',
                         'Removed': 'off',
                         'Error': 'off',
-                        'Connecting': 'transition',
-                        'Rebalancing': 'transition',
                         'Alert': 'warning'
                     },
                     compact: true
@@ -448,10 +446,8 @@
                         'Error': 'off',
                         'Destroyed': 'off',
                         'Expunging': 'off',
-                        'Stopping': 'transition',
-                        'Starting': 'transition',
-                        'Migrating': 'transition',
-                        'Shutdowned': 'warning'
+                        'Stopping': 'warning',
+                        'Shutdown': 'warning'
                     },
                     compact: true
                 },
@@ -482,6 +478,9 @@
                     columns: {
                         memorytotal: {
                             label: 'label.metrics.allocated'
+                        },
+                        memoryused: {
+                            label: 'label.metrics.memory.used.avg'
                         }
                     }
                 },
@@ -529,6 +528,12 @@
                     url: createURL('listVirtualMachinesMetrics'),
                     data: data,
                     success: function(json) {
+                        json.listvirtualmachinesmetricsresponse.virtualmachine.forEach(function(vm) {
+                            var memUsedPercent = (vm.memorykbs && vm.memoryintfreekbs) ? (Math.round((vm.memorykbs - vm.memoryintfreekbs) * 10000 / vm.memorykbs) / 100).toString() + "%" : "";
+                            $.extend(vm,{
+                                memoryused: memUsedPercent
+                            })
+                        });
                         args.response.success({
                             data: json.listvirtualmachinesmetricsresponse.virtualmachine
                         });
@@ -548,6 +553,15 @@
     cloudStack.sections.metrics.volumes = {
         title: 'label.metrics',
         listView: {
+            preFilter: function(args) {
+                var hiddenFields = [];
+                if (!isAdmin()) {
+                    hiddenFields.push('physicalsize');
+                    hiddenFields.push('storage');
+                    hiddenFields.push('storagetype');
+                }
+                return hiddenFields;
+            },
             id: 'volumes',
             fields: {
                 name: {
@@ -560,13 +574,12 @@
                         return str;
                     },
                     indicator: {
-                        'Allocated': 'transition',
-                        'Creating': 'transition',
+                        'Allocated': 'on',
                         'Ready': 'on',
                         'Destroy': 'off',
                         'Expunging': 'off',
                         'Migrating': 'warning',
-                        'UploadOp': 'transition',
+                        'UploadOp': 'warning',
                         'Snapshotting': 'warning',
                     },
                     compact: true
@@ -577,12 +590,39 @@
                 sizegb: {
                     label: 'label.metrics.disk.size'
                 },
+                physicalsize: {
+                    label: 'label.disk.physicalsize',
+                    converter: function(args) {
+                        if (args == null || args == 0)
+                            return "";
+                        else
+                            return cloudStack.converters.convertBytes(args);
+                    }
+                },
+                utilization: {
+                    label: 'label.disk.utilisation'
+                },
                 storagetype: {
                     label: 'label.metrics.disk.storagetype'
                 },
                 storage: {
                     label: 'label.metrics.storagepool'
                 },
+                disk: {
+                    label: 'label.metrics.disk.usage',
+                    collapsible: true,
+                    columns: {
+                        diskioread: {
+                            label: 'label.metrics.disk.read'
+                        },
+                        diskiowrite: {
+                            label: 'label.metrics.disk.write'
+                        },
+                        diskiopstotal: {
+                            label: 'label.metrics.disk.iops.total'
+                        }
+                    }
+                }
             },
             dataProvider: function(args) {
                 var data = {listAll: true};
@@ -639,7 +679,8 @@
                                 'Down': 'off',
                                 'Removed': 'off',
                                 'ErrorInMaintenance': 'off',
-                                'PrepareForMaintenance': 'transition',
+                                'ErrorInPrepareForMaintenance': 'warning',
+                                'PrepareForMaintenance': 'warning',
                                 'CancelMaintenance': 'warning',
                                 'Maintenance': 'warning',
                             },

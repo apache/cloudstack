@@ -94,7 +94,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         guru.niciraNvpDao = nvpdao;
         guru._dcDao = dcdao;
         guru.ntwkOfferingSrvcDao = nosd;
-        guru.networkModel = netmodel;
+        ((GuestNetworkGuru)guru)._networkModel = netmodel;
         guru.hostDao = hostdao;
         guru.agentMgr = agentmgr;
         guru.networkDao = netdao;
@@ -161,6 +161,8 @@ public class NiciraNvpGuestNetworkGuruTest {
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
+
+        when(netmodel.listNetworkOfferingServices(NETWORK_ID)).thenReturn(Arrays.asList(Service.Connectivity));
 
         final DeploymentPlan plan = mock(DeploymentPlan.class);
         final Network network = mock(Network.class);
@@ -467,7 +469,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         final NetworkProfile implementednetwork = mock(NetworkProfile.class);
         when(implementednetwork.getId()).thenReturn(NETWORK_ID);
         when(implementednetwork.getBroadcastUri()).thenReturn(new URI("lswitch:aaaa"));
-        when(offering.getSpecifyVlan()).thenReturn(false);
+        when(offering.isSpecifyVlan()).thenReturn(false);
 
         guru.shutdown(implementednetwork, offering);
         verify(agentmgr, times(1)).easySend(eq(NETWORK_ID), (Command)any());

@@ -759,7 +759,7 @@ class SetupLiveMigration(ConfigTask):
 			if os.path.exists("/etc/init/libvirt-bin.conf"):
 				replace_line("/etc/init/libvirt-bin.conf", "exec /usr/sbin/libvirtd","exec /usr/sbin/libvirtd -d -l")
 			else:
-				replace_or_add_line("/etc/default/libvirt-bin","libvirtd_opts=","libvirtd_opts='-l -d'")
+				replace_or_add_line("/etc/default/libvirt-bin","libvirtd_opts=","libvirtd_opts='-l'")
 			
 		else:
 			raise AssertionError("Unsupported distribution")
@@ -802,9 +802,9 @@ class SetupFirewall(ConfigTask):
 		rule = "-p tcp -m tcp --dport 16509 -j ACCEPT"
 		if rule in iptablessave().stdout: return True
 		return False
-	
+
 	def execute(self):
-		ports = "22 1798 16509".split()
+		ports = "22 1798 16509 16514".split()
 		if distro in (Fedora , CentOS, RHEL6):
 			for p in ports: iptables("-I","INPUT","1","-p","tcp","--dport",p,'-j','ACCEPT')
 			o = service.iptables.save() ; print o.stdout + o.stderr

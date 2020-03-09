@@ -35,7 +35,7 @@ from marvin.lib.base import (ServiceOffering,
                              Network,
                              Router)
 from marvin.lib.common import (get_zone,
-                               get_template,
+                               get_test_template,
                                get_domain,
                                list_virtual_machines,
                                list_networks,
@@ -69,11 +69,12 @@ class TestIsolatedNetworksPasswdServer(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
-        template = get_template(
+        template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -232,12 +233,8 @@ class TestIsolatedNetworksPasswdServer(cloudstackTestCase):
                     self._testMethodName)
 
         self.logger.debug("cat /var/cache/cloud/passwords-%s | grep %s | sed 's/=/ /g' | awk '{print $1}' RESULT IS ==> %s" % (vm.nic[0].gateway, vm.nic[0].ipaddress, result))
-        res = str(result)
-        
-        self.assertEqual(
-            res.count(vm.nic[0].ipaddress),
-            1,
-            "Password file is empty or doesn't exist!")
+
+        self.assertTrue(vm.nic[0].ipaddress in result, "Password file is empty or doesn't exist!")
 
     @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="true")
     def test_isolate_network_password_server(self):

@@ -1,0 +1,47 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# The binding interface for the management server
+# The management server will listen on all interfaces by default
+# bind.interface=::
+
+# The service context path where URL requests should be served
+context.path=/client
+
+# The HTTP port to be used by the management server
+http.enable=true
+http.port=8080
+
+# Max inactivity time in minutes for the session
+session.timeout=30
+
+# Options to configure and enable HTTPS on management server
+#
+# For management server to pickup these configuration settings, the configured
+# keystore file should exists and be readable by the management server.
+https.enable=false
+https.port=8443
+
+# The keystore and manager passwords are assumed to be same.
+https.keystore=/etc/cloudstack/management/cloud.jks
+https.keystore.password=vmops.com
+
+# The path to webapp directory
+webapp.dir=/usr/share/cloudstack-management/webapp
+
+# The path to access log file
+access.log=/var/log/cloudstack/management/access.log

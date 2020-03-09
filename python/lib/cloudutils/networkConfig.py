@@ -103,6 +103,9 @@ class networkConfig:
 
     @staticmethod
     def isOvsBridge(devName):
+        cmd = bash("which ovs-vsctl")
+        if not cmd.isSuccess():
+            return False
         try:
             return 0==subprocess.check_call(("ovs-vsctl", "br-exists", devName))
         except subprocess.CalledProcessError:
@@ -154,7 +157,7 @@ class networkConfig:
 
         if networkConfig.isBridgePort(dev):
             type = "brport"
-        elif networkConfig.isBridge(dev):
+        elif networkConfig.isBridge(dev) or networkConfig.isOvsBridge(dev):
             type = "bridge"
         else:
             type = "dev"

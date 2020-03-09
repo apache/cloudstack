@@ -40,16 +40,17 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
-                            
-        cls.template = get_template(
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
+        cls.template = get_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
-            
+            assert False, "get_test_template() failed to return template"
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = cls.template.id

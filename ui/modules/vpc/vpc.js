@@ -384,7 +384,7 @@
                 args.complete($chart);
               }
 
-              if ($chart.find('.connector-line.highlighted').size()) {
+              if ($chart.find('.connector-line.highlighted').length) {
                 $info.appendTo($chart).append(
                   $('<span>').addClass('color-key'),
                   $('<span>').html('= Contains a public network')

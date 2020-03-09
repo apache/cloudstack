@@ -40,6 +40,9 @@ from marvin.lib.utils import cleanup_resources
 #  Only one zone
 #  Only one pod
 #  Two clusters (have system VMs (including the VR) running on local or NFS storage)
+#
+# Running the tests:
+#  Verify the "xen_server_hostname_src" and "xen_server_hostname_dest" variables are correct.
 
 
 class TestData():
@@ -81,14 +84,17 @@ class TestData():
     xenServer = "xenserver"
     zoneId = "zoneid"
 
+    xen_server_hostname_src = "XenServer-6.5-1"
+    xen_server_hostname_dest = "XenServer-6.5-3"
+
     def __init__(self):
         self.testdata = {
             TestData.solidFire: {
-                TestData.mvip: "192.168.139.112",
+                TestData.mvip: "10.117.40.120",
                 TestData.username: "admin",
                 TestData.password: "admin",
                 TestData.port: 443,
-                TestData.url: "https://192.168.139.112:443"
+                TestData.url: "https://10.117.40.120:443"
             },
             TestData.xenServer: {
                 TestData.username: "root",
@@ -118,7 +124,7 @@ class TestData():
             TestData.primaryStorage: {
                 TestData.name: "SolidFire-%d" % random.randint(0, 100),
                 TestData.scope: "ZONE",
-                TestData.url: "MVIP=192.168.139.112;SVIP=10.10.8.112;" +
+                TestData.url: "MVIP=10.117.40.120;SVIP=10.117.41.120;" +
                        "clusterAdminUsername=admin;clusterAdminPassword=admin;" +
                        "clusterDefaultMinIops=10000;clusterDefaultMaxIops=15000;" +
                        "clusterDefaultBurstIopsPercentOfMaxIops=1.5;",
@@ -132,7 +138,7 @@ class TestData():
             TestData.primaryStorage2: {
                 TestData.name: "SolidFireShared-%d" % random.randint(0, 100),
                 TestData.scope: "CLUSTER",
-                TestData.url: "MVIP=192.168.139.112;SVIP=10.10.8.112;" +
+                TestData.url: "MVIP=10.117.40.120;SVIP=10.117.41.120;" +
                         "clusterAdminUsername=admin;clusterAdminPassword=admin;" +
                         "minIops=5000;maxIops=50000;burstIops=75000",
                 TestData.provider: "SolidFireShared",
@@ -211,7 +217,7 @@ class TestData():
             TestData.clusterId1: 1,
             TestData.clusterId2: 2,
             TestData.domainId: 1,
-            TestData.url: "192.168.129.50"
+            TestData.url: "10.117.40.114"
         }
 
 
@@ -233,7 +239,7 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
 
         # Set up xenAPI connection
         host_ip = "https://" + \
-                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId1], name="XenServer-6.5-1")[0].ipaddress
+                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId1], name=TestData.xen_server_hostname_src)[0].ipaddress
 
         # Set up XenAPI connection
         cls.xen_session_1 = XenAPI.Session(host_ip)
@@ -242,7 +248,7 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
 
         # Set up xenAPI connection
         host_ip = "https://" + \
-                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId2], name="XenServer-6.5-3")[0].ipaddress
+                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId2], name=TestData.xen_server_hostname_dest)[0].ipaddress
 
         # Set up XenAPI connection
         cls.xen_session_2 = XenAPI.Session(host_ip)
@@ -532,9 +538,9 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
         hosts = list_hosts(self.apiClient)
 
         for host in hosts:
-            if host.name == "XenServer-6.5-1":
+            if host.name == TestData.xen_server_hostname_src:
                 src_host = host
-            elif host.name == "XenServer-6.5-3":
+            elif host.name == TestData.xen_server_hostname_dest:
                 dest_host = host
 
         self.assertIsNotNone(src_host, "Could not locate the source host")

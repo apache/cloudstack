@@ -21,7 +21,8 @@ from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import (stopVirtualMachine,
                                   stopRouter,
-                                  startRouter)
+                                  startRouter,
+                                  getRouterHealthCheckResults)
 from marvin.lib.utils import (cleanup_resources,
                               get_process_status)
 from marvin.lib.base import (ServiceOffering,
@@ -594,6 +595,75 @@ class TestRouterServices(cloudstackTestCase):
 
         return
 
+    @attr(tags=["advanced"], required_hardware="true")
+    def test_04_RouterHealthChecksResults(self):
+        """Test advanced zone router list contains health check records
+        """
+
+        routers = list_routers(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            fetchhealthcheckresults=True
+        )
+
+        self.assertEqual(isinstance(routers, list), True,
+            "Check for list routers response return valid data"
+        )
+        self.assertNotEqual(
+            len(routers), 0,
+            "Check list router response"
+        )
+
+        router = routers[0]
+        self.info("Router ID: %s & Router state: %s" % (
+            router.id, router.state
+        ))
+
+        self.assertEqual(isinstance(router.healthcheckresults, list), True,
+            "Router response should contain it's health check result as list"
+        )
+
+        cmd = getRouterHealthCheckResults.getRouterHealthCheckResultsCmd()
+        cmd.routerid = router.id
+        cmd.performfreshchecks = True # Perform fresh checks as a newly created router may not have results
+        healthData = self.api_client.getRouterHealthCheckResults(cmd)
+        self.info("Router ID: %s & Router state: %s" % (
+            router.id, router.state
+        ))
+
+        self.assertEqual(router.id, healthData.routerid,
+            "Router response should contain it's health check result so id should match"
+        )
+        self.assertEqual(isinstance(healthData.healthchecks, list), True,
+            "Router response should contain it's health check result as list"
+        )
+
+        self.verifyCheckTypes(healthData.healthchecks)
+        self.verifyCheckNames(healthData.healthchecks)
+
+    def verifyCheckTypes(self, healthChecks):
+        for checkType in ["basic", "advanced"]:
+            foundType = False
+            for check in healthChecks:
+                if check.checktype == checkType:
+                    foundType = True
+                    break
+            self.assertTrue(foundType,
+                "Router should contain health check results info for type: " + checkType
+            )
+
+    def verifyCheckNames(self, healthChecks):
+        for checkName in ["dns_check.py", "dhcp_check.py", "haproxy_check.py", "disk_space_check.py", "iptables_check.py", "gateways_check.py", "router_version_check.py"]:
+            foundCheck = False
+            for check in healthChecks:
+                if check.checkname == checkName:
+                    foundCheck = True
+                    break
+            self.assertTrue(foundCheck,
+                "Router should contain health check results info for check name: " + checkName
+            )
+
 
 class TestRouterStopCreatePF(cloudstackTestCase):
 
@@ -1055,6 +1125,8 @@ class TestRouterStopCreateFW(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.services["service_offering"]
@@ -1219,13 +1291,13 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         )
         self.assertEqual(
             fw_rules[0].startport,
-            str(self.services["fwrule"]["startport"]),
+            self.services["fwrule"]["startport"],
             "Check start port of firewall rule"
         )
 
         self.assertEqual(
             fw_rules[0].endport,
-            str(self.services["fwrule"]["endport"]),
+            self.services["fwrule"]["endport"],
             "Check end port of firewall rule"
         )
         # For DNS and DHCP check 'dnsmasq' process status
@@ -1250,15 +1322,14 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                 True,
                 "Check for list hosts response return valid data"
             )
+
             host = hosts[0]
-            host.user = self.services["configurableData"]["host"]["username"]
-            host.passwd = self.services["configurableData"]["host"]["password"]
             try:
                 result = get_process_status(
                     host.ipaddress,
                     22,
-                    host.user,
-                    host.passwd,
+                    self.hostConfig['username'],
+                    self.hostConfig['password'],
                     router.linklocalip,
                     'iptables -t nat -L'
                 )

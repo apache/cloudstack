@@ -113,7 +113,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
 
     public NiciraNvpGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] { IsolationMethod.STT, IsolationMethod.VXLAN };
+        _isolationMethods = new IsolationMethod[] { new IsolationMethod("STT", "NiciraNvp"), new IsolationMethod("VXLAN","NiciraNvp") };
     }
 
     @Override
@@ -182,7 +182,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
         }
 
         final NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(),
-                State.Allocated, network.getDataCenterId(), physicalNetworkId, offering.getRedundantRouter());
+                State.Allocated, network.getDataCenterId(), physicalNetworkId, offering.isRedundantRouter());
 
         if (network.getGateway() != null) {
             implemented.setGateway(network.getGateway());

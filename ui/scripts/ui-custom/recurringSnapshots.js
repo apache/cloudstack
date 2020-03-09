@@ -61,6 +61,10 @@
                 }
             });
 
+            $($snapshots.find('.taggerContainer')).each(function() {
+                $('<div>').taggerInForm().appendTo(this);
+            });
+
             // Form validation
             $snapshots.find('form').validate();
 
@@ -70,7 +74,7 @@
 
                 if (!$form.valid()) return false;
 
-                var formData = cloudStack.serializeForm($form);
+                var formData = $.extend(cloudStack.serializeForm($form), {'tags' : cloudStack.getTagsFromForm($form)});
 
                 actions.add({
                     context: context,
@@ -117,7 +121,7 @@
                         return $(this).index() == index;
                     });
 
-                    if ($tr.size() && $tr.hasClass('active')) {
+                    if ($tr.length && $tr.hasClass('active')) {
                         $(this).addClass('disabled ui-state-disabled');
                     } else {
                         $(this).removeClass('disabled ui-state-disabled');
@@ -126,7 +130,7 @@
                     if ($(this).is('.ui-tabs-selected.ui-state-disabled')) {
                         $snapshots.find('form').show();
 
-                        if ($snapshots.find('li.ui-state-disabled').size() == $snapshots.find('li').size()) {
+                        if ($snapshots.find('li.ui-state-disabled').length == $snapshots.find('li').length) {
                             $snapshots.find('form').hide();
                         } else {
                             $snapshots.find('li:not(.ui-state-disabled):first a').click();
@@ -207,9 +211,9 @@
                         });
                     }
                 }]
-            }).closest('.ui-dialog').overlay();
+            });
 
-            return $dialog;
+            return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
         };
     };
 }(cloudStack, jQuery));

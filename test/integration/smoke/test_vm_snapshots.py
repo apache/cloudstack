@@ -513,7 +513,8 @@ class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
             virtual_machine.stop(self.apiclient)
         except Exception as e:
             self.fail("Failed to stop VM: %s" % e)
-        
+
+        time.sleep(30)
         # 8) Revert to VM Snapshot
         self.debug("Revert to vm snapshot: %s" % vm_snapshot.id)
         try:

@@ -68,10 +68,43 @@
                     required: true
                 },
                 docID: 'helpAccountLastName'
-            }
+            },
+            conflictingusersource: {
+                 label: 'label.user.conflict',
+                 validation: {
+                     required: true
+                 },
+                 docID: 'helpConflictSource'
+             }
         },
 
         informationNotInLdap: {
+            filter: {
+                label: 'label.filterBy',
+                docID: 'helpLdapUserFilter',
+                select: function(args) {
+                    var items = [];
+                    items.push({
+                        id: "NoFilter",
+                        description: "No filter"
+                    });
+                    items.push({
+                        id: "LocalDomain",
+                        description: "Local domain"
+                    });
+                    items.push({
+                        id: "AnyDomain",
+                        description: "Any domain"
+                    });
+                    items.push({
+                        id: "PotentialImport",
+                        description: "Potential import"
+                    });
+                    args.response.success({
+                        data: items
+                    });
+                }
+            },
             domainid: {
                 label: 'label.domain',
                 docID: 'helpAccountDomain',
@@ -205,21 +238,11 @@
             }
 
             if (!ldapStatus) {
-                var password = args.data.password;
-                if (md5Hashed) {
-                    password = $.md5(password);
-                }
                 array1.push("&email=" + args.data.email);
                 array1.push("&firstname=" + args.data.firstname);
                 array1.push("&lastname=" + args.data.lastname);
 
-                password = args.data.password;
-                if (md5Hashed) {
-                    password = $.md5(password);
-                } else {
-                    password = todb(password);
-                }
-                array1.push("&password=" + password);
+                cloudStack.addPasswordToCommandUrlParameterArray(array1, args.data.password);
             }
 
             array1.push("&domainid=" + args.data.domainid);

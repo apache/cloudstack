@@ -70,7 +70,7 @@
                 listView: listView
             }).dialog({
                 dialogClass: 'multi-edit-add-list panel',
-                width: 825,
+                width: 875,
                 title: _l('label.select.vm.for.static.nat'),
                 buttons: [{
                     text: _l('label.apply'),
@@ -85,7 +85,7 @@
 
                         if (!$dataList.find(
                             'input[type=radio]:checked, input[type=checkbox]:checked'
-                        ).size()) {
+                        ).length) {
                             cloudStack.dialog.notice({
                                 message: _l('message.select.instance')
                             });
@@ -138,7 +138,9 @@
                         });
                     }
                 }]
-            }).parent('.ui-dialog').overlay();
+            });
+            
+            cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dataList);
 
             // Add tier select dialog
             if (tierSelect) {

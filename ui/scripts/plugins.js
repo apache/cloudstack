@@ -32,7 +32,7 @@
                 href: path
             });
 
-            $('html head').append($link);
+            $('html head > link:last').before($link);
         }
     };
 

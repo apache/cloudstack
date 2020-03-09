@@ -17,6 +17,5 @@
 
 /usr/share/cloudstack-usage/lib/*
 /usr/share/cloudstack-usage/plugins
-/etc/init.d/cloudstack-usage
 /etc/cloudstack/usage/*
 /etc/default/cloudstack-usage

@@ -110,6 +110,11 @@ cloudStack.docs = {
     },
 
     //Ldap
+    helpLdapUserFilter: {
+        desc: 'Filter to apply to listing of ldap accounts\n\t"NoFilter": no filtering is done\n\t"LocalDomain": shows only users not in the current or requested domain\n\t"AnyDomain": shows only users not currently known to cloudstack (in any domain)\n\t"PotentialImport": shows all users that (would be) automatically imported to cloudstack with their current usersource',
+        externalLink: ''
+    },
+
     helpLdapQueryFilter: {
 
         desc: 'Query filter is used to find a mapped user in the external LDAP server.Cloudstack provides some wildchars to represent the unique attributes in its database . Example - If Cloudstack account-name is same as the LDAP uid, then following will be a valid filter: Queryfilter :  (&(uid=%u) ,  Queryfilter: .incase of Active Directory , Email _ID :(&(mail=%e)) , displayName :(&(displayName=%u)',
@@ -127,7 +132,7 @@ cloudStack.docs = {
 
     helpIPReservationNetworkCidr: {
         desc: 'The CIDR of the entire network when IP reservation is configured',
-        externalLink: ' '
+        externalLink: ''
 
     },
 
@@ -298,7 +303,11 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpComputeOfferingDomain: {
-        desc: 'The domain to associate this compute offering with'
+        desc: 'Select the domains in which this offering is available (Tip: Use Ctrl to choose multiple domains)',
+    },
+    helpComputeOfferingZone: {
+        desc: 'Select the zones in which this offering is available (Tip: Use Ctrl to choose multiple zones)',
+        externalLink: ''
     },
     // Create Instance Snapshot
     helpCreateInstanceSnapshotName: {
@@ -309,6 +318,13 @@ cloudStack.docs = {
     },
     helpCreateInstanceSnapshotMemory: {
         desc: 'Check this to include CPU/memory state. Does not quiesce the VM. If not checked, the snapshot contain only volumes.'
+    },
+    // Create instance storage snapshot
+    helpCreateInstanceStorageSnapshotVolume: {
+        desc: 'Choose a volume that you want to take a snapshot of'
+    },
+    helpCreateInstanceStorageSnapshotName: {
+        desc: 'Give the snapshot a name. A unique name will be automatically generated if you leave this blank'
     },
     // Add disk offering
     helpDiskOfferingName: {
@@ -383,7 +399,11 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpDiskOfferingDomain: {
-        desc: 'Select the subdomain in which this offering is available',
+        desc: 'Select the domains in which this offering is available (Tip: Use Ctrl to choose multiple domains)',
+        externalLink: ''
+    },
+    helpDiskOfferingZone: {
+        desc: 'Select the zones in which this offering is available (Tip: Use Ctrl to choose multiple zones)',
         externalLink: ''
     },
     // Add domain
@@ -393,6 +413,10 @@ cloudStack.docs = {
     },
     helpDomainNetworkDomain: {
         desc: 'If you want to assign a special domain name to this domain\'s guest VM network, specify the DNS suffix',
+        externalLink: ''
+    },
+    helpDomainId: {
+        desc: 'A valid domain id. CloudStack will generate one for you if empty.',
         externalLink: ''
     },
     // Add F5
@@ -500,6 +524,10 @@ cloudStack.docs = {
     },
     helpGuestNetworkZoneNetworkDomain: {
         desc: 'If you want to assign a special domain name to this guest VM network, specify the DNS suffix',
+        externalLink: ''
+    },
+    helpGuestNetworkHideIpAddressUsage: {
+        desc: 'If you want the IP address usage records hidden for the network',
         externalLink: ''
     },
     // Add host
@@ -627,6 +655,17 @@ cloudStack.docs = {
     },
     helpNetworkOfferingTags: {
         desc: 'Network tag to specify which physical network to use',
+        externalLink: ''
+    },
+    helpNetworkOfferingPublic: {
+        desc: 'Yes makes the offering available to all domains. No limits the scope to a subdomain; you will be prompted for the subdomain\'s name.',
+        externalLink: ''
+    },
+    helpNetworkOfferingDomain: {
+        desc: 'Select the domains in which this offering is available (Tip: Use Ctrl to choose multiple domains)',
+    },
+    helpNetworkOfferingZone: {
+        desc: 'Select the zones in which this offering is available (Tip: Use Ctrl to choose multiple zones)',
         externalLink: ''
     },
     // Add pod
@@ -1163,6 +1202,10 @@ cloudStack.docs = {
         desc: 'The Management Server will download the file from the specified URL, such as http://my.web.server/filename.iso',
         externalLink: ''
     },
+    helpRegisterISODirectDownload: {
+        desc: 'KVM Only: Secondary Storage is bypassed and ISO is downloaded to Primary Storage on deployment',
+        externalLink: ''
+    },
     helpRegisterISOZone: {
         desc: 'Choose the zone where you want the ISO to be available, or All Zones to make it available throughout the cloud',
         externalLink: ''
@@ -1198,6 +1241,10 @@ cloudStack.docs = {
     },
     helpRegisterTemplateURL: {
         desc: 'The Management Server will download the file from the specified URL, such as http://my.web.server/filename.vhd.gz',
+        externalLink: ''
+    },
+    helpRegisterTemplateDirectDownload: {
+        desc: 'KVM Only: Secondary Storage is bypassed and template/ISO is downloaded to Primary Storage on deployment',
         externalLink: ''
     },
     helpRegisterTemplateZone: {
@@ -1285,33 +1332,15 @@ cloudStack.docs = {
         desc: 'A short description of the offering that can be displayed to users',
         externalLink: ''
     },
-    // Add Nuage VSP
-    helpVspHostname: {
-        desc: 'The hostname/IP address of Nuage VSD',
+    helpVpcOfferingPublic: {
+        desc: 'Yes makes the offering available to all domains. No limits the scope to a subdomain; you will be prompted for the subdomain\'s name.',
         externalLink: ''
     },
-    helpVspUsername: {
-        desc: 'A name of the CMS user in Nuage VSD.',
-        externalLink: ''
+    helpVpcOfferingDomain: {
+        desc: 'Select the domains in which this offering is available (Tip: Use Ctrl to choose multiple domains)',
     },
-    helpVspPassword: {
-        desc: 'The password for the CMS user in Nuage VSD.',
-        externalLink: ''
-    },
-    helpVspPort: {
-        desc: 'The port to communicate with Nuage VSD. e.g. Unspecified/0 if using HAProxy for load balancing or 8443 if connecting directly to a VSD server.',
-        externalLink: ''
-    },
-    helpVspApiVersion: {
-        desc: 'The API version of Nuage VSD',
-        externalLink: ''
-    },
-    helpVspRetries: {
-        desc: 'Number of times to attempt a command on Nuage VSD before considering the operation failed.  Valid values [1 - 10].',
-        externalLink: ''
-    },
-    helpVspRetryInterval: {
-        desc: 'The interval of time in milliseconds to wait on failure before attempting to resend the command to Nuage VSD.  Valid values [0 - 10000].',
+    helpVpcOfferingZone: {
+        desc: 'Select the zones in which this offering is available (Tip: Use Ctrl to choose multiple zones)',
         externalLink: ''
     },
     helpOvm3pool: {
@@ -1336,5 +1365,49 @@ cloudStack.docs = {
     },
     helpLdapLinkDomainAdmin: {
         desc: 'domain admin of the linked domain. Specify a username in GROUP/OU of LDAP'
+    },
+    helpSetReservationSystemVms: {
+        desc: 'If enabled, IP range reservation is set for SSVM & CPVM. Global setting "system.vm.public.ip.reservation.mode.strictness" is used to control whether reservation is strict or not (preferred)'
+    },
+    helpL2UserData: {
+        desc: 'Pass user and meta data to VMs (via ConfigDrive)',
+        externalLink: ''
+    },
+    helpComputeOfferingMinCPUCores: {
+        desc: 'This will be used for the setting the range (min-max) of the number of cpu cores that should be allowed for VMs using this custom offering.',
+        externalLink: ''
+    },
+    helpComputeOfferingMaxCPUCores: {
+        desc: 'This will be used for the setting the range (min-max) of the number of cpu cores that should be allowed for VMs using this custom offering.',
+        externalLink: ''
+    },
+    helpComputeOfferingMinMemory: {
+        desc: 'This will be used for the setting the range (min-max) amount of memory that should be allowed for VMs using this custom offering.',
+        externalLink: ''
+    },
+    helpComputeOfferingMaxMemory: {
+        desc: 'This will be used for the setting the range (min-max) amount of memory that should be allowed for VMs using this custom offering.',
+        externalLink: ''
+    },
+    helpComputeOfferingType: {
+        desc: 'This will be used for setting the type of compute offering - whether it is fixed, custom constrained or custom unconstrained.',
+        externalLink: ''
+    },
+
+    // Update Template Permissions Helper
+    helpUpdateTemplateOperation: {
+        desc: 'Select the permission operator. Add is for sharing with user/project and Reset simply removes all the accounts and projects which template has been shared with.'
+    },
+    helpUpdateTemplateShareWith: {
+        desc: 'Select account or project with which template is to be shared with.'
+    },
+    helpUpdateTemplateAccounts: {
+        desc: 'Choose one or more accounts to share this template. Ctrl+Click to select multiple accounts to share with. Selecting "Add > Accounts" shows list of accounts that do not have permissions. Selecting "Remove > Accounts" shows list of accounts that already have permissions.'
+    },
+    helpUpdateTemplateProjectIds: {
+        desc: 'Choose one or more projects to share this template. Ctrl+Click to select multiple projects to share with. Selecting "Add > Projects" shows list of projects that do not have permissions. Selecting "Remove > Projects" shows list of projects that already have permissions.'
+    },
+    helpUpdateTemplateAccountList: {
+        desc: 'A comma seperated list of accounts to share the template with. Must be specified with the Add/Remove operation, leave Project ID blank if this is specified.'
     }
 };

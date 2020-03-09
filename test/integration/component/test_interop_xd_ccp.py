@@ -95,7 +95,7 @@ class TestXDCCPInterop(cloudstackTestCase):
                     break
 
         if cls.uploadtemplateformat=="KVM":
-            assert False, "Interop is not supported on KVM"
+            raise unittest.SkipTest("Interop is not supported on KVM")
 
         cls.uploadurl=cls.services["interop"][cls.uploadtemplateformat]["url"]
   

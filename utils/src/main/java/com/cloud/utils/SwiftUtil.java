@@ -24,26 +24,29 @@ import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
-import java.util.Map;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Formatter;
+import java.util.Map;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.apache.commons.codec.binary.Hex;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
 public class SwiftUtil {
     private static Logger logger = Logger.getLogger(SwiftUtil.class);
-    private static final long SWIFT_MAX_SIZE = 5L * 1024L * 1024L * 1024L;
+    protected static final long SWIFT_MAX_SIZE = 5L * 1024L * 1024L * 1024L;
     private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
-
-
+    private static final String CD_SRC = "cd %s;";
+    private static final String SWIFT_CMD= "/usr/bin/python %s -A %s -U %s:%s -K %s %s";
+    private static final String WITH_STORAGE_POLICY = " --storage-policy \"%s\"";
+    private static final String WITH_SEGMENTS = " -S "+SWIFT_MAX_SIZE;
+    private static final String[] OPERATIONS_WITH_STORAGE_POLICIES = {"post","upload"};
 
     public interface SwiftClientCfg {
         String getAccount();
@@ -53,6 +56,8 @@ public class SwiftUtil {
         String getKey();
 
         String getEndPoint();
+
+        String getStoragePolicy();
     }
 
     private static String getSwiftCLIPath() {
@@ -65,19 +70,10 @@ public class SwiftUtil {
     }
 
     public static boolean postMeta(SwiftClientCfg cfg, String container, String object, Map<String, String> metas) {
-        String swiftCli = getSwiftCLIPath();
-        StringBuilder cms = new StringBuilder();
-        for (Map.Entry<String, String> entry : metas.entrySet()) {
-            cms.append(" -m ");
-            cms.append(entry.getKey());
-            cms.append(":");
-            cms.append(entry.getValue());
-            cms.append(" ");
-        }
         Script command = new Script("/bin/bash", logger);
         command.add("-c");
-        command.add("/usr/bin/python " + swiftCli + " -A " + cfg.getEndPoint() + " -U " + cfg.getAccount() + ":" + cfg.getUserName() + " -K " + cfg.getKey() + " post " +
-            container + " " + object + " " + cms.toString());
+        command.add(getSwiftObjectCmd(cfg, getSwiftCLIPath(),"post", container, object) + getMeta(metas));
+
         OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
         String result = command.execute(parser);
         if (result != null) {
@@ -87,21 +83,14 @@ public class SwiftUtil {
     }
 
     public static String putObject(SwiftClientCfg cfg, File srcFile, String container, String fileName) {
-        String swiftCli = getSwiftCLIPath();
         if (fileName == null) {
             fileName = srcFile.getName();
         }
-        String srcDirectory = srcFile.getParent();
+
         Script command = new Script("/bin/bash", logger);
-        long size = srcFile.length();
         command.add("-c");
-        if (size <= SWIFT_MAX_SIZE) {
-            command.add("cd " + srcDirectory + ";/usr/bin/python " + swiftCli + " -A " + cfg.getEndPoint() + " -U " + cfg.getAccount() + ":" + cfg.getUserName() +
-                " -K " + cfg.getKey() + " upload " + container + " " + fileName);
-        } else {
-            command.add("cd " + srcDirectory + ";/usr/bin/python " + swiftCli + " -A " + cfg.getEndPoint() + " -U " + cfg.getAccount() + ":" + cfg.getUserName() +
-                " -K " + cfg.getKey() + " upload -S " + SWIFT_MAX_SIZE + " " + container + " " + fileName);
-        }
+        command.add(String.format(CD_SRC, srcFile.getParent())+getUploadObjectCommand(cfg, getSwiftCLIPath(), container,fileName, srcFile.length()));
+
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result != null) {
@@ -120,38 +109,19 @@ public class SwiftUtil {
         return container + File.separator + srcFile.getName();
     }
 
-    private static StringBuilder buildSwiftCmd(SwiftClientCfg swift) {
-        String swiftCli = getSwiftCLIPath();
-        StringBuilder sb = new StringBuilder();
-        sb.append(" /usr/bin/python ");
-        sb.append(swiftCli);
-        sb.append(" -A ");
-        sb.append(swift.getEndPoint());
-        sb.append(" -U ");
-        sb.append(swift.getAccount());
-        sb.append(":");
-        sb.append(swift.getUserName());
-        sb.append(" -K ");
-        sb.append(swift.getKey());
-        sb.append(" ");
-        return sb;
-    }
-
     public static String[] list(SwiftClientCfg swift, String container, String rFilename) {
-        getSwiftCLIPath();
-        Script command = new Script("/bin/bash", logger);
-        command.add("-c");
-
-        StringBuilder swiftCmdBuilder = buildSwiftCmd(swift);
-        swiftCmdBuilder.append(" list ");
-        swiftCmdBuilder.append(container);
+        StringBuilder swiftCmdBuilder = new StringBuilder();
+        swiftCmdBuilder.append(getSwiftContainerCmd(swift, getSwiftCLIPath(), "list", container));
 
         if (rFilename != null) {
             swiftCmdBuilder.append(" -p ");
             swiftCmdBuilder.append(rFilename);
         }
 
+        Script command = new Script("/bin/bash", logger);
+        command.add("-c");
         command.add(swiftCmdBuilder.toString());
+
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result == null && parser.getLines() != null && !parser.getLines().equalsIgnoreCase("")) {
@@ -178,11 +148,11 @@ public class SwiftUtil {
         } else {
             destFilePath = destDirectory.getAbsolutePath();
         }
-        String swiftCli = getSwiftCLIPath();
+
         Script command = new Script("/bin/bash", logger);
         command.add("-c");
-        command.add("/usr/bin/python " + swiftCli + " -A " + cfg.getEndPoint() + " -U " + cfg.getAccount() + ":" + cfg.getUserName() + " -K " + cfg.getKey() +
-                " download " + container + " " + srcPath + " -o " + destFilePath);
+        command.add(getSwiftObjectCmd(cfg, getSwiftCLIPath(), "download", container, srcPath)+" -o " + destFilePath);
+
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result != null) {
@@ -203,27 +173,6 @@ public class SwiftUtil {
         return new File(destFilePath);
     }
 
-    public static String getContainerName(String type, Long id) {
-        if (type.startsWith("T")) {
-            return "T-" + id;
-        } else if (type.startsWith("S")) {
-            return "S-" + id;
-        } else if (type.startsWith("V")) {
-            return "V-" + id;
-        }
-        return null;
-    }
-
-    public static String[] splitSwiftPath(String path) {
-        int index = path.indexOf(File.separator);
-        if (index == -1) {
-            return null;
-        }
-        String[] paths = new String[2];
-        paths[0] = path.substring(0, index);
-        paths[1] = path.substring(index + 1);
-        return paths;
-    }
 
     public static boolean deleteObject(SwiftClientCfg cfg, String path) {
         Script command = new Script("/bin/bash", logger);
@@ -236,13 +185,8 @@ public class SwiftUtil {
         String container = paths[0];
         String objectName = paths[1];
 
-        StringBuilder swiftCmdBuilder = buildSwiftCmd(cfg);
-        swiftCmdBuilder.append(" delete ");
-        swiftCmdBuilder.append(container);
-        swiftCmdBuilder.append(" ");
-        swiftCmdBuilder.append(objectName);
+        command.add(getSwiftObjectCmd(cfg, getSwiftCLIPath(), "delete", container, objectName));
 
-        command.add(swiftCmdBuilder.toString());
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         command.execute(parser);
         return true;
@@ -284,7 +228,7 @@ public class SwiftUtil {
 
     }
 
-    public static String calculateRFC2104HMAC(String data, String key)
+    static String calculateRFC2104HMAC(String data, String key)
             throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
 
         SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), HMAC_SHA1_ALGORITHM);
@@ -294,12 +238,75 @@ public class SwiftUtil {
 
     }
 
-    public static String toHexString(byte[] bytes) {
+    static String toHexString(byte[] bytes) {
+        return Hex.encodeHexString(bytes);
+    }
 
-        Formatter formatter = new Formatter();
-        for (byte b : bytes) {
-            formatter.format("%02x", b);
+    /////////////// SWIFT CMD STRING HELPERS ///////////////
+    protected static String getSwiftCmd(SwiftClientCfg cfg, String swiftCli, String operation){
+        return String.format(SWIFT_CMD, swiftCli,cfg.getEndPoint(),cfg.getAccount(),cfg.getUserName(),cfg.getKey(),operation);
+    }
+
+    protected static String getSwiftObjectCmd(SwiftClientCfg cfg, String swiftCliPath, String operation,String container, String objectName) {
+        String cmd = getSwiftCmd(cfg,swiftCliPath, operation)  +" "+ container+" "+objectName;
+        if(StringUtils.isNotBlank(cfg.getStoragePolicy()) && supportsStoragePolicies(operation)){
+            return cmd + String.format(WITH_STORAGE_POLICY, cfg.getStoragePolicy());
         }
-        return formatter.toString();
+        return cmd;
+    }
+
+    private static boolean supportsStoragePolicies(String operation) {
+        for(String supportedOp: OPERATIONS_WITH_STORAGE_POLICIES){
+            if(supportedOp.equals(operation)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected static String getSwiftContainerCmd(SwiftClientCfg cfg, String swiftCliPath, String operation, String container) {
+        return getSwiftCmd(cfg,swiftCliPath, operation) +" "+ container;
+    }
+
+    protected static String getUploadObjectCommand(SwiftClientCfg cfg, String swiftCliPath, String container, String objectName, long size) {
+        String cmd = getSwiftObjectCmd(cfg, swiftCliPath, "upload", container, objectName);
+        if(size > SWIFT_MAX_SIZE){
+            return cmd + WITH_SEGMENTS;
+        }
+        return cmd;
+    }
+
+    public static String getContainerName(String type, Long id) {
+        if (type.startsWith("T")) {
+            return "T-" + id;
+        } else if (type.startsWith("S")) {
+            return "S-" + id;
+        } else if (type.startsWith("V")) {
+            return "V-" + id;
+        }
+        return null;
+    }
+
+    public static String[] splitSwiftPath(String path) {
+        int index = path.indexOf(File.separator);
+        if (index == -1) {
+            return null;
+        }
+        String[] paths = new String[2];
+        paths[0] = path.substring(0, index);
+        paths[1] = path.substring(index + 1);
+        return paths;
+    }
+
+    private static String getMeta(Map<String, String> metas) {
+        StringBuilder cms = new StringBuilder();
+        for (Map.Entry<String, String> entry : metas.entrySet()) {
+            cms.append(" -m ");
+            cms.append(entry.getKey());
+            cms.append(":");
+            cms.append(entry.getValue());
+            cms.append(" ");
+        }
+        return cms.toString();
     }
 }

@@ -92,7 +92,8 @@ notifyqemu() {
     if `virsh domstate $vmname >/dev/null 2>&1`
     then
       sizeinkb=$(($newsize/1024))
-      virsh blockresize --domain $vmname --path $path --size $sizeinkb >/dev/null 2>&1
+      devicepath=$(virsh domblklist $vmname | grep $path | awk '{print $1}')
+      virsh blockresize --path $devicepath --size $sizeinkb $vmname >/dev/null 2>&1
       retval=$?
       if [ -z $retval ] || [ $retval -ne 0 ]
       then

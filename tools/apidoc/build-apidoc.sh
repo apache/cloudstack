@@ -20,6 +20,8 @@
 # cloud-build-api-doc.sh -- builds api documentation.
 #set -x
 #set -u
+ACS_RELEASE="$1"
+shift
 TARGETJARDIR="$1"
 shift
 DEPSDIR="$1"
@@ -47,7 +49,7 @@ fi
 
 CP=$PATHSEP/
 
-java -cp $CP$PATHSEP$TARGETJARDIR/*$PATHSEP$DEPSDIR/* com.cloud.api.doc.ApiXmlDocWriter -d "$DISTDIR" $*
+java -cp $CP$PATHSEP$TARGETJARDIR$PATHSEP$DEPSDIR com.cloud.api.doc.ApiXmlDocWriter -d "$DISTDIR" $*
 
 if [ $? -ne 0 ]
 then
@@ -59,6 +61,8 @@ set -e
  cp "$thisdir"/*.java .
  cp "$thisdir"/*.xsl .
  sed -e 's,%API_HEADER%,All APIs,g' "$thisdir/generatetoc_header.xsl" >generatetoc.xsl
+ sed -i "s/%ACS_RELEASE%/${ACS_RELEASE}/g" generatetoc.xsl
+ sed -i "s/%ACS_RELEASE%/${ACS_RELEASE}/g" generatecommands.xsl
 
  PLATFORM=`uname -s`
  if [[ "$PLATFORM" =~ .*WIN.* ]]

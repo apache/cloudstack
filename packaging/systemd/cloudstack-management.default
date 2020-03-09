@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -15,35 +15,18 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Required for a tocmat cloned service
-SERVICE_NAME=cloudstack-management
+JAVA_OPTS="-Djava.security.properties=/etc/cloudstack/management/java.security.ciphers -Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2G -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/cloudstack/management/ -XX:ErrorFile=/var/log/cloudstack/management/cloudstack-management.err "
 
-# Where your java installation lives
-#JAVA_HOME="/usr/lib/jvm/java"
+CLASSPATH="/usr/share/cloudstack-management/lib/*:/etc/cloudstack/management:/usr/share/cloudstack-common:/usr/share/cloudstack-management/setup:/usr/share/cloudstack-management:/usr/share/java/mysql-connector-java.jar"
 
-# Where your cloudstack-management installation lives
-CATALINA_BASE="/usr/share/cloudstack-management"
-CATALINA_HOME="/usr/share/cloudstack-management"
-JASPER_HOME="/usr/share/cloudstack-management"
-CATALINA_TMPDIR="/usr/share/cloudstack-management/temp"
+BOOTSTRAP_CLASS=org.apache.cloudstack.ServerDaemon
 
+################################################################################################
+#You can uncomment one of these options if you want to enable Java remote debugging.           #
+#You can change the parameters at your will. The 'address' field defines the port to be used.  #
+################################################################################################ 
+# This option here should be used with 'systemmd' based operating systems such as CentOS7, Ubuntu 16, and so on.
+#JAVA_DEBUG="-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=n"
 
-if [ -r "/etc/cloudstack/management/cloudmanagementserver.keystore" ] ; then
-  JAVA_OPTS="-Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/cloudstack/management/ -XX:PermSize=512M -XX:MaxPermSize=800m -Djavax.net.ssl.trustStore=/etc/cloudstack/management/cloudmanagementserver.keystore -Djavax.net.ssl.trustStorePassword=vmops.com "
-else
-  JAVA_OPTS="-Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/cloudstack/management/ -XX:PermSize=512M -XX:MaxPermSize=800m"
-fi
-
-TOMCAT_USER="cloud"
-
-SECURITY_MANAGER="false"
-
-SHUTDOWN_WAIT="30"
-
-SHUTDOWN_VERBOSE="false"
-
-# Set the TOMCAT_PID location
-CATALINA_PID="/var/run/cloudstack-management.pid"
-
-CLASSPATH=/etc/cloudstack/management:/usr/share/cloudstack-common:/usr/share/cloudstack-management/setup
-
+# On the other hand, this option is used by CentOS6.
+#JAVA_DEBUG="-Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n"

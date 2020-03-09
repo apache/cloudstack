@@ -55,12 +55,24 @@
                             label: 'label.community'
                         }
                     },
+                    preFilter: function() {
+                        if (isAdmin()||isDomainAdmin()) {
+                            return []
+                        }
+                        return ['account']
+                    },
                     fields: {
                         name: {
                             label: 'label.name'
                         },
                         hypervisor: {
                             label: 'label.hypervisor'
+                        },
+                        ostypename: {
+                            label: 'label.os.type'
+                        },
+                        account: {
+                            label: 'label.account'
                         }
                     },
 
@@ -238,27 +250,38 @@
                                                     $form.find('.form-item[rel=keyboardType]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
+                                                    $form.find('.form-item[rel=directdownload]').hide();
+                                                    $form.find('.form-item[rel=requireshvm]').hide();
                                                 } else if ($(this).val() == "XenServer") {
                                                     $form.find('.form-item[rel=rootDiskControllerType]').hide();
                                                     $form.find('.form-item[rel=nicAdapterType]').hide();
                                                     $form.find('.form-item[rel=keyboardType]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
+                                                    $form.find('.form-item[rel=directdownload]').hide();
+                                                    $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
 
-                                                    if (isAdmin())
+                                                    if (isAdmin()) {
                                                         $form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
+                                                    }
                                                 } else if ($(this).val() == "KVM") {
                                                     $form.find('.form-item[rel=rootDiskControllerType]').hide();
                                                     $form.find('.form-item[rel=nicAdapterType]').hide();
                                                     $form.find('.form-item[rel=keyboardType]').hide();
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').css('display', 'inline-block');
-                                                    $form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
+                                                    $('#label_root_disk_controller').prop('selectedIndex', 2);
+                                                    $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
+                                                    if (isAdmin()) {
+                                                      $form.find('.form-item[rel=directdownload]').css('display', 'inline-block');
+                                                    }
                                                 } else {
                                                     $form.find('.form-item[rel=rootDiskControllerType]').hide();
                                                     $form.find('.form-item[rel=nicAdapterType]').hide();
                                                     $form.find('.form-item[rel=keyboardType]').hide();
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
+                                                    $form.find('.form-item[rel=directdownload]').hide();
+                                                    $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
                                                 }
                                             });
 
@@ -274,6 +297,7 @@
                                         }
                                     },
 
+                                    // fields for hypervisor == XenServer (starts here)
                                     xenserverToolsVersion61plus: {
                                         label: 'label.xenserver.tools.version.61.plus',
                                         isBoolean: true,
@@ -297,8 +321,23 @@
                                         },
                                         isHidden: true
                                     },
+                                    // fields for hypervisor == XenServer (ends here)
 
-                                    //fields for hypervisor == "KVM" (starts here)
+                                    // fields for hypervisor == "KVM" (starts here)
+                                    // Direct Download
+                                    directdownload : {
+                                        label: 'label.direct.download',
+                                        docID: 'helpRegisterTemplateDirectDownload',
+                                        isBoolean: true,
+                                        dependsOn: 'hypervisor',
+                                        isHidden: true
+                                    },
+                                    checksum: {
+                                        label: 'label.checksum',
+                                        dependsOn: 'directdownload',
+                                        isHidden: true
+                                    },
+                                    // Direct Download - End
                                     rootDiskControllerTypeKVM: {
                                         label: 'label.root.disk.controller',
                                         isHidden: true,
@@ -329,8 +368,9 @@
                                             });
                                         }
                                     },
+                                    // fields for hypervisor == "KVM" (ends here)
 
-                                    //fields for hypervisor == "VMware" (starts here)
+                                    // fields for hypervisor == "VMware" (starts here)
                                     rootDiskControllerType: {
                                         label: 'label.root.disk.controller',
                                         isHidden: true,
@@ -412,28 +452,18 @@
                                                 id: "",
                                                 description: ""
                                             });
-                                            items.push({
-                                                id: "us",
-                                                description: "US Keboard"
-                                            });
-                                            items.push({
-                                                id: "uk",
-                                                description: "UK Keyboard"
-                                            });
-                                            items.push({
-                                                id: "jp",
-                                                description: "Japanese Keyboard"
-                                            });
-                                            items.push({
-                                                id: "sc",
-                                                description: "Simplified Chinese"
-                                            });
+                                            for (var key in cloudStackOptions.keyboardOptions) {
+                                                items.push({
+                                                    id: key,
+                                                    description: _l(cloudStackOptions.keyboardOptions[key])
+                                                });
+                                            }
                                             args.response.success({
                                                 data: items
                                             });
                                         }
                                     },
-                                    //fields for hypervisor == "VMware" (ends here)
+                                    // fields for hypervisor == "VMware" (ends here)
 
                                     format: {
                                         label: 'label.format',
@@ -614,23 +644,30 @@
                                     });
                                 }
 
-                                //XenServer only (starts here)
+                                // for hypervisor == XenServer (starts here)
                                 if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css("display") != "none") {
                                     $.extend(data, {
                                         'details[0].hypervisortoolsversion': (args.data.xenserverToolsVersion61plus == "on") ? "xenserver61" : "xenserver56"
                                     });
                                 }
-                                //XenServer only (ends here)
+                                // for hypervisor == XenServer (ends here)
 
-                                // KVM only (starts here)
+                                // for hypervisor == KVM (starts here)
                                 if (args.$form.find('.form-item[rel=rootDiskControllerTypeKVM]').css("display") != "none" && args.data.rootDiskControllerTypeKVM != "") {
                                     $.extend(data, {
                                         'details[0].rootDiskController': args.data.rootDiskControllerTypeKVM
                                     });
                                 }
-                                // KVM only (ends here)
 
-                                //VMware only (starts here)
+                                if (args.$form.find('.form-item[rel=directdownload]').css("display") != "none" && args.data.directdownload != "") {
+                                    $.extend(data, {
+                                        'directdownload': (args.data.directdownload == "on") ? "true" : "false",
+                                        'checksum': args.data.checksum
+                                    });
+                                }
+                                // for hypervisor == KVM (ends here)
+
+                                // for hypervisor == VMware (starts here)
                                 if (args.$form.find('.form-item[rel=rootDiskControllerType]').css("display") != "none" && args.data.rootDiskControllerType != "") {
                                     $.extend(data, {
                                         'details[0].rootDiskController': args.data.rootDiskControllerType
@@ -646,7 +683,7 @@
                                         'details[0].keyboard': args.data.keyboardType
                                     });
                                 }
-                                //VMware only (ends here)
+                                // for hypervisor == VMware (ends here)
 
                                 $.ajax({
                                     url: createURL('registerTemplate'),
@@ -697,6 +734,40 @@
                                             osTypeId: args.data.osTypeId,
                                             hypervisor: args.data.hypervisor
                                         };
+
+                                        // for hypervisor == XenServer (starts here)
+                                        if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css("display") != "none") {
+                                            $.extend(data, {
+                                                'details[0].hypervisortoolsversion': (args.data.xenserverToolsVersion61plus == "on") ? "xenserver61" : "xenserver56"
+                                            });
+                                        }
+                                        // for hypervisor == XenServer (ends here)
+
+                                        // for hypervisor == KVM (starts here)
+                                        if (args.$form.find('.form-item[rel=rootDiskControllerTypeKVM]').css("display") != "none" && args.data.rootDiskControllerTypeKVM != "") {
+                                            $.extend(data, {
+                                                'details[0].rootDiskController': args.data.rootDiskControllerTypeKVM
+                                            });
+                                        }
+                                        // for hypervisor == KVM (ends here)
+
+                                        // for hypervisor == VMware (starts here)
+                                        if (args.$form.find('.form-item[rel=rootDiskControllerType]').css("display") != "none" && args.data.rootDiskControllerType != "") {
+                                            $.extend(data, {
+                                                'details[0].rootDiskController': args.data.rootDiskControllerType
+                                            });
+                                        }
+                                        if (args.$form.find('.form-item[rel=nicAdapterType]').css("display") != "none" && args.data.nicAdapterType != "") {
+                                            $.extend(data, {
+                                                'details[0].nicAdapter': args.data.nicAdapterType
+                                            });
+                                        }
+                                        if (args.$form.find('.form-item[rel=keyboardType]').css("display") != "none" && args.data.keyboardType != "") {
+                                            $.extend(data, {
+                                                'details[0].keyboard': args.data.keyboardType
+                                            });
+                                        }
+                                        // for hypervisor == VMware (ends here)
 
                                         if (args.$form.find('.form-item[rel=isPublic]').css("display") != "none") {
                                             $.extend(data, {
@@ -831,8 +902,198 @@
                                                     });
                                                 }
                                             });
+                                            args.$select.change(function() {
+                                                var $form = $(this).closest('form');
+                                                if ($(this).val() == "VMware") {
+                                                    $form.find('.form-item[rel=rootDiskControllerType]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=nicAdapterType]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=keyboardType]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
+                                                    $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
+                                                    $form.find('.form-item[rel=requireshvm]').hide();
+                                                } else if ($(this).val() == "XenServer") {
+                                                    $form.find('.form-item[rel=rootDiskControllerType]').hide();
+                                                    $form.find('.form-item[rel=nicAdapterType]').hide();
+                                                    $form.find('.form-item[rel=keyboardType]').hide();
+                                                    $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
+                                                    $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
+                                                    if (isAdmin()) {
+                                                        $form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
+                                                    }
+                                                } else if ($(this).val() == "KVM") {
+                                                    $form.find('.form-item[rel=rootDiskControllerType]').hide();
+                                                    $form.find('.form-item[rel=nicAdapterType]').hide();
+                                                    $form.find('.form-item[rel=keyboardType]').hide();
+                                                    $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
+                                                    $form.find('.form-item[rel=rootDiskControllerTypeKVM]').css('display', 'inline-block');
+                                                    $('#label_root_disk_controller').prop('selectedIndex', 2);
+                                                    $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
+                                                } else {
+                                                    $form.find('.form-item[rel=rootDiskControllerType]').hide();
+                                                    $form.find('.form-item[rel=nicAdapterType]').hide();
+                                                    $form.find('.form-item[rel=keyboardType]').hide();
+                                                    $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
+                                                    $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
+                                                    $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
+                                                }
+                                            });
+                                            args.$select.trigger('change');
                                         }
                                     },
+
+                                    // fields for hypervisor == XenServer (starts here)
+                                    xenserverToolsVersion61plus: {
+                                        label: 'label.xenserver.tools.version.61.plus',
+                                        isBoolean: true,
+                                        isChecked: function (args) {
+                                             var b = true;
+                                            if (isAdmin()) {
+                                                $.ajax({
+                                                    url: createURL('listConfigurations'),
+                                                    data: {
+                                                        name: 'xenserver.pvdriver.version'
+                                                    },
+                                                    async: false,
+                                                    success: function (json) {
+                                                        if (json.listconfigurationsresponse.configuration != null && json.listconfigurationsresponse.configuration[0].value != 'xenserver61') {
+                                                            b = false;
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                            return b;
+                                        },
+                                        isHidden: true
+                                    },
+                                    // fields for hypervisor == XenServer (ends here)
+
+                                    // fields for hypervisor == "KVM" (starts here)
+                                    rootDiskControllerTypeKVM: {
+                                        label: 'label.root.disk.controller',
+                                        isHidden: true,
+                                        select: function(args) {
+                                            var items = []
+                                            items.push({
+                                                id: "",
+                                                description: ""
+                                            });
+                                            items.push({
+                                                id: "ide",
+                                                description: "ide"
+                                            });
+                                            items.push({
+                                                id: "osdefault",
+                                                description: "osdefault"
+                                            });
+                                            items.push({
+                                                id: "scsi",
+                                                description: "virtio-scsi"
+                                            });
+                                            items.push({
+                                                id: "virtio",
+                                                description: "virtio"
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    // fields for hypervisor == "KVM" (ends here)
+
+                                    // fields for hypervisor == "VMware" (starts here)
+                                    rootDiskControllerType: {
+                                        label: 'label.root.disk.controller',
+                                        isHidden: true,
+                                        select: function(args) {
+                                            var items = []
+                                            items.push({
+                                                id: "",
+                                                description: ""
+                                            });
+                                            items.push({
+                                                id: "scsi",
+                                                description: "scsi"
+                                            });
+                                            items.push({
+                                                id: "ide",
+                                                description: "ide"
+                                            });
+                                            items.push({
+                                                id: "osdefault",
+                                                description: "osdefault"
+                                            });
+                                            items.push({
+                                                id: "pvscsi",
+                                                description: "pvscsi"
+                                            });
+                                            items.push({
+                                                id: "lsilogic",
+                                                description: "lsilogic"
+                                            });
+                                            items.push({
+                                                id: "lsisas1068",
+                                                description: "lsilogicsas"
+                                            });
+                                            items.push({
+                                                id: "buslogic",
+                                                description: "buslogic"
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    nicAdapterType: {
+                                        label: 'label.nic.adapter.type',
+                                        isHidden: true,
+                                        select: function(args) {
+                                            var items = []
+                                            items.push({
+                                                id: "",
+                                                description: ""
+                                            });
+                                            items.push({
+                                                id: "E1000",
+                                                description: "E1000"
+                                            });
+                                            items.push({
+                                                id: "PCNet32",
+                                                description: "PCNet32"
+                                            });
+                                            items.push({
+                                                id: "Vmxnet2",
+                                                description: "Vmxnet2"
+                                            });
+                                            items.push({
+                                                id: "Vmxnet3",
+                                                description: "Vmxnet3"
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    keyboardType: {
+                                        label: 'label.keyboard.type',
+                                        isHidden: true,
+                                        select: function(args) {
+                                            var items = []
+                                            items.push({
+                                                id: "",
+                                                description: ""
+                                            });
+                                            for (var key in cloudStackOptions.keyboardOptions) {
+                                                items.push({
+                                                    id: key,
+                                                    description: _l(cloudStackOptions.keyboardOptions[key])
+                                                });
+                                            }
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    // fields for hypervisor == "VMware" (ends here)
 
                                     format: {
                                         label: 'label.format',
@@ -994,7 +1255,6 @@
                                 }
                                 switch (args.filterBy.kind) {
                                     case "all":
-                                        ignoreProject = true;
                                         $.extend(data, {
                                             templatefilter: 'all'
                                         });
@@ -1247,8 +1507,335 @@
                                 notification: {
                                     poll: pollAsyncJobResult
                                 }
-                            }
+                            },
+                            // Share template
+                            shareTemplate: {
+                                label: 'label.action.share.template',
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.action.share.template';
+                                    }
+                                },
 
+                                createForm: {
+                                    title: 'label.action.share.template',
+                                    desc: '',
+                                    fields: {
+                                        operation: {
+                                            label: 'label.operation',
+                                            docID: 'helpUpdateTemplateOperation',
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function (args) {
+                                                var items = [];
+                                                items.push({
+                                                    id: "add",
+                                                    description: "Add"
+                                                });
+                                                items.push({
+                                                    id: "remove",
+                                                    description: "Remove"
+                                                });
+                                                items.push({
+                                                    id: "reset",
+                                                    description: "Reset"
+                                                });
+
+                                                args.response.success({
+                                                    data: items
+                                                });
+
+                                                // Select change
+                                                args.$select.change(function () {
+                                                    var $form = $(this).closest('form');
+                                                    var selectedOperation = $(this).val();
+                                                    if (selectedOperation === "reset") {
+                                                        $form.find('[rel=projects]').hide();
+                                                        $form.find('[rel=sharewith]').hide();
+                                                        $form.find('[rel=accounts]').hide();
+                                                        $form.find('[rel=accountlist]').hide();
+                                                    } else {
+                                                        // allow.user.view.domain.accounts = true
+                                                        // Populate List of accounts in domain as dropdown multiselect
+                                                        $form.find('[rel=sharewith]').css('display', 'inline-block');
+                                                        if (!isUser() || g_allowUserViewAllDomainAccounts === true) {
+                                                            $form.find('[rel=projects]').css('display', 'inline-block');
+                                                            $form.find('[rel=accounts]').css('display', 'inline-block');
+                                                            $form.find('[rel=accountlist]').hide();
+                                                        } else {
+                                                            // If users are not allowed to see accounts in the domain, show input text field for Accounts
+                                                            // Projects will always be shown as dropdown multiselect
+                                                            $form.find('[rel=projects]').css('display', 'inline-block');
+                                                            $form.find('[rel=accountslist]').css('display', 'inline-block');
+                                                            $form.find('[rel=accounts]').hide();
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        },
+                                        shareWith: {
+                                            label: 'label.share.with',
+                                            docID: 'helpUpdateTemplateShareWith',
+                                            validation: {
+                                                required: true
+                                            },
+                                            dependsOn: 'operation',
+                                            select: function (args) {
+                                                var items = [];
+                                                items.push({
+                                                    id: "account",
+                                                    description: "Account"
+                                                });
+                                                items.push({
+                                                    id: "project",
+                                                    description: "Project"
+                                                });
+
+                                                args.response.success({ data: items });
+
+                                                // Select change
+                                                args.$select.change(function () {
+                                                    var $form = $(this).closest('form');
+                                                    var sharedWith = $(this).val();
+                                                    if (args.operation !== "reset") {
+                                                        if (sharedWith === "project") {
+                                                            $form.find('[rel=accounts]').hide();
+                                                            $form.find('[rel=accountlist]').hide();
+                                                            $form.find('[rel=projects]').css('display', 'inline-block');
+                                                        } else {
+                                                            // allow.user.view.domain.accounts = true
+                                                            // Populate List of accounts in domain as dropdown multiselect
+                                                            if (!isUser() || g_allowUserViewAllDomainAccounts === true) {
+                                                                $form.find('[rel=projects]').hide();
+                                                                $form.find('[rel=accountlist]').hide();
+                                                                $form.find('[rel=accounts]').css('display', 'inline-block');
+                                                            } else {
+                                                                // If users are not allowed to see accounts in the domain, show input text field for Accounts
+                                                                // Projects will always be shown as dropdown multiselect
+                                                                $form.find('[rel=projects]').hide();
+                                                                $form.find('[rel=accounts]').hide();
+                                                                $form.find('[rel=accountlist]').css('display', 'inline-block');
+                                                            }
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        },
+
+                                        accountlist: {
+                                            label: 'label.accounts',
+                                            docID: 'helpUpdateTemplateAccountList'
+                                        },
+
+                                        accounts: {
+                                            label: 'label.accounts',
+                                            docID: 'helpUpdateTemplateAccounts',
+                                            dependsOn: 'shareWith',
+                                            isMultiple: true,
+                                            select: function (args) {
+                                                var operation = args.operation;
+                                                if (operation !== "reset") {
+                                                    $.ajax({
+                                                        url: createURL("listAccounts&listall=true"),
+                                                        dataType: "json",
+                                                        async: true,
+                                                        success: function (jsonAccounts) {
+                                                            var accountByName = {};
+                                                            $.each(jsonAccounts.listaccountsresponse.account, function(idx, account) {
+                                                                // Only add current domain's accounts for add as update template permissions supports that
+                                                                if (account.domainid === g_domainid && operation === "add") {
+                                                                    accountByName[account.name] = {
+                                                                        projName: account.name,
+                                                                        hasPermission: false
+                                                                    };
+                                                                }
+                                                            });
+                                                            $.ajax({
+                                                                url: createURL('listTemplatePermissions&id=' + args.context.templates[0].id),
+                                                                dataType: "json",
+                                                                async: true,
+                                                                success: function (json) {
+                                                                    items = json.listtemplatepermissionsresponse.templatepermission.account;
+                                                                    $.each(items, function(idx, accountName) {
+                                                                        if (accountByName[accountName]) {
+                                                                            accountByName[accountName].hasPermission = true;
+                                                                        }
+                                                                    });
+
+                                                                    var accountObjs = [];
+                                                                    if (operation === "add") {
+                                                                        // Skip already permitted accounts
+                                                                        $.each(Object.keys(accountByName), function(idx, accountName) {
+                                                                            if (accountByName[accountName].hasPermission == false) {
+                                                                                accountObjs.push({
+                                                                                    name: accountName,
+                                                                                    description: accountName
+                                                                                });
+                                                                            }
+                                                                        });
+                                                                    } else if (items != null) {
+                                                                        $.each(items, function(idx, accountName) {
+                                                                            if (accountName !== g_account) {
+                                                                                accountObjs.push({
+                                                                                    name: accountName,
+                                                                                    description: accountName
+                                                                                });
+                                                                            }
+                                                                        });
+                                                                    }
+                                                                    args.$select.html('');
+                                                                    args.response.success({data: accountObjs});
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        },
+
+                                        projects: {
+                                            label: 'label.projects',
+                                            docID: 'helpUpdateTemplateProjectIds',
+                                            dependsOn: 'shareWith',
+                                            isMultiple: true,
+                                            select: function (args) {
+                                                var operation = args.operation;
+                                                if (operation !== "reset") {
+                                                    $.ajax({
+                                                        url: createURL("listProjects&listall=true"),
+                                                        dataType: "json",
+                                                        async: true,
+                                                        success: function (jsonProjects) {
+                                                            var projectsByIds = {};
+                                                            $.each(jsonProjects.listprojectsresponse.project, function(idx, project) {
+                                                                // Only add current domain's projects for add operation as update template permissions supports that
+                                                                if ((project.domainid === g_domainid && operation === "add") || operation === "remove") {
+                                                                    projectsByIds[project.id] = {
+                                                                        projName: project.name,
+                                                                        hasPermission: false
+                                                                    };
+                                                                }
+                                                            });
+
+                                                            $.ajax({
+                                                                url: createURL('listTemplatePermissions&id=' + args.context.templates[0].id),
+                                                                dataType: "json",
+                                                                async: true,
+                                                                success: function (json) {
+                                                                    items = json.listtemplatepermissionsresponse.templatepermission.projectids;
+                                                                    $.each(items, function(idx, projectId) {
+                                                                        if (projectsByIds[projectId]) {
+                                                                            projectsByIds[projectId].hasPermission = true;
+                                                                        }
+                                                                    });
+
+                                                                    var projectObjs = [];
+                                                                    if (operation === "add") {
+                                                                        // Skip already permitted accounts
+                                                                        $.each(Object.keys(projectsByIds), function(idx, projectId) {
+                                                                            if (projectsByIds[projectId].hasPermission == false) {
+                                                                                projectObjs.push({
+                                                                                    id: projectId,
+                                                                                    description: projectsByIds[projectId].projName
+                                                                                });
+                                                                            }
+                                                                        });
+                                                                    } else if (items != null) {
+                                                                        $.each(items, function(idx, projectId) {
+                                                                            if (projectId !== g_account) {
+                                                                                projectObjs.push({
+                                                                                    id: projectId,
+                                                                                    description: projectsByIds[projectId] ? projectsByIds[projectId].projName : projectId
+                                                                                });
+                                                                            }
+                                                                        });
+                                                                    }
+                                                                    args.$select.html('');
+                                                                    args.response.success({data: projectObjs});
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+
+                                action: function (args) {
+                                    // Load data from form
+                                    var data = {
+                                        id: args.context.templates[0].id,
+                                        op: args.data.operation
+                                    };
+                                    var selectedOperation = args.data.operation;
+                                    if (selectedOperation === "reset") {
+                                        // Do not append Project ID or Account to data object
+                                    } else {
+                                        var projects = args.data.projects;
+                                        var accounts = args.data.accounts;
+                                        var accountList = args.data.accountlist;
+
+                                        if (accounts !== undefined || (accountList !== undefined && accountList.length > 0)) {
+                                            var accountNames = "";
+                                            if (accountList !== undefined && accounts === undefined) {
+                                                accountNames = accountList;
+                                            } else {
+                                                if (Object.prototype.toString.call(accounts) === '[object Array]') {
+                                                    accountNames = accounts.join(",");
+                                                } else {
+                                                    accountNames = accounts;
+                                                }
+                                            }
+                                            $.extend(data, {
+                                                accounts: accountNames
+                                            });
+                                        }
+
+                                        if (projects !== undefined) {
+                                            var projectIds = "";
+                                            if (Object.prototype.toString.call(projects) === '[object Array]') {
+                                                projectIds = projects.join(",");
+                                            } else {
+                                                projectIds = projects;
+                                            }
+
+                                            $.extend(data, {
+                                                projectids: projectIds
+                                            });
+                                        }
+                                    }
+
+                                    $.ajax({
+                                        url: createURL('updateTemplatePermissions'),
+                                        data: data,
+                                        dataType: "json",
+                                        async: false,
+                                        success: function (json) {
+                                            var item = json.updatetemplatepermissionsresponse.success;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    }); //end ajax
+                                }
+                            }
+                        },
+                        tabFilter: function (args) {
+                            $.ajax({
+                                url: createURL("listTemplateOvfProperties&id=" + args.context.templates[0].id),
+                                dataType: "json",
+                                async: false,
+                                success: function(json) {
+                                    ovfprops = json.listtemplateovfpropertiesresponse.ovfproperty;
+                                }
+                            });
+                            var hiddenTabs = [];
+                            if (ovfprops == null || ovfprops.length === 0) {
+                                hiddenTabs.push("ovfpropertiestab");
+                            }
+                            return hiddenTabs;
                         },
                         tabs: {
                             details: {
@@ -1327,15 +1914,15 @@
                                                 return cloudStack.converters.convertBytes(args);
                                         }
                                     },
+                                    directdownload: {
+                                        label: 'label.direct.download',
+                                        isBoolean: true,
+                                        converter: cloudStack.converters.toBooleanText
+                                    },
                                     isextractable: {
                                         label: 'label.extractable.lower',
                                         isBoolean: true,
-                                        isEditable: function() {
-                                            if (isAdmin())
-                                                return true;
-                                            else
-                                                return false;
-                                        },
+                                        isEditable: true,
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     passwordenabled: {
@@ -1526,14 +2113,24 @@
                                         actions: {
                                              remove: {
                                                  label: 'label.action.delete.template',
+                                                 createForm: {
+                                                    title: 'label.action.delete.template',
+                                                    desc: function(args) {
+                                                       if(args.context.templates[0].crossZones == true) {
+                                                          return 'message.action.delete.template.for.all.zones';
+                                                       } else {
+                                                          return 'message.action.delete.template';
+                                                       }
+                                                      },
+                                                    fields: {
+                                                        forced: {
+                                                            label: 'force.delete',
+                                                            isBoolean: true,
+                                                            isChecked: false
+                                                        }
+                                                    }
+                                                 },
                                                  messages: {
-                                                     confirm: function(args) {
-                                                         if(args.context.templates[0].crossZones == true) {
-                                                             return 'message.action.delete.template.for.all.zones';
-                                                         } else {
-                                                             return 'message.action.delete.template';
-                                                         }
-                                                     },
                                                      notification: function(args) {
                                                          return 'label.action.delete.template';
                                                      }
@@ -1544,7 +2141,7 @@
                                                         queryParams += "&zoneid=" + args.context.zones[0].zoneid;
                                                      }
                                                      $.ajax({
-                                                         url: createURL(queryParams),
+                                                         url: createURL(queryParams + "&forced=" + (args.data.forced == "on")),
                                                          dataType: "json",
                                                          async: true,
                                                          success: function(json) {
@@ -1612,11 +2209,11 @@
                                                                                 }else if(args.page == 1) {
 							                             args.response.success({
                                                                                          data: []
-                                                                                     }); 
+                                                                                     });
                                                                             } else {
 							                             args.response.success({
                                                                                          data: []
-                                                                                     }); 
+                                                                                     });
                                                                             }
                                                                         }
                                                                     });
@@ -1764,12 +2361,7 @@
                                                 isextractable: {
                                                     label: 'label.extractable.lower',
                                                     isBoolean: true,
-                                                    isEditable: function() {
-                                                        if (isAdmin())
-                                                            return true;
-                                                        else
-                                                            return false;
-                                                    },
+                                                    isEditable: true,
                                                     converter: cloudStack.converters.toBooleanText
                                                 },
                                                 passwordenabled: {
@@ -1895,7 +2487,15 @@
 							settings: {
 								title: 'label.settings',
 								custom: cloudStack.uiCustom.granularDetails({
+                                    resourceType: 'Template',
 									dataProvider: function(args) {
+									    // no paging for listTemplates details
+									    if (args.page > 1) {
+									        args.response.success({
+									            data: []
+									        });
+									        return;
+									    }
 										$.ajax({
 											url: createURL('listTemplates'),
 											data: {
@@ -1936,7 +2536,7 @@
 												}
 											}
 											newDetails += 'details[0].' + data.name + '=' + data.value;
-											
+
 											$.ajax({
 												url: createURL('updateTemplate&id=' + args.context.templates[0].id + '&' + newDetails),
 												success: function(json) {
@@ -2005,7 +2605,57 @@
 										}
 									}
 								})
-							}
+							},
+
+                            /**
+                             * OVF properties tab (only displayed when OVF properties are available)
+                             */
+                            ovfpropertiestab: {
+                                title: 'label.ovf.properties',
+                                listView: {
+                                    id: 'ovfproperties',
+                                    fields: {
+                                        label: {
+                                            label: 'label.label'
+                                        },
+                                        description: {
+                                            label: 'label.description'
+                                        },
+                                        value: {
+                                            label: 'label.value'
+                                        }
+                                    },
+                                    hideSearchBar: true,
+                                    dataProvider: function(args) {
+                                        $.ajax({
+                                            url: createURL("listTemplateOvfProperties"),
+                                            data: {
+                                                id: args.context.templates[0].id
+                                            },
+                                            success: function(json) {
+                                                var ovfprops = json.listtemplateovfpropertiesresponse.ovfproperty;
+                                                var listDetails = [];
+                                                for (index in ovfprops){
+                                                    var prop = ovfprops[index];
+                                                    var det = {};
+                                                    det['label'] = prop['label'];
+                                                    det['description'] = prop['description'];
+                                                    det['value'] = prop['value'];
+                                                    listDetails.push(det);
+                                                }
+                                                args.response.success({
+                                                    data: listDetails
+                                                });
+                                            },
+
+                                            error: function(json) {
+                                                args.response.error(parseXMLHttpResponse(json));
+                                            }
+                                        });
+
+                                    }
+                                }
+                            }
 						}
                     }
                 }
@@ -2038,9 +2688,21 @@
                             label: 'label.community'
                         }
                     },
+                    preFilter: function() {
+                        if (isAdmin()||isDomainAdmin()) {
+                            return []
+                        }
+                        return ['account']
+                    },
                     fields: {
                         name: {
                             label: 'label.name'
+                        },
+                        ostypename: {
+                            label: 'label.os.type'
+                        },
+                        account: {
+                            label: 'label.account'
                         }
                     },
 
@@ -2079,6 +2741,18 @@
                                             required: true
                                         }
                                     },
+                                    // For KVM only: Direct Download
+                                    directdownload : {
+                                        label: 'label.direct.download',
+                                        docID: 'helpRegisterTemplateDirectDownload',
+                                        isBoolean: true
+                                    },
+                                    checksum: {
+                                        label: 'label.checksum',
+                                        dependsOn: 'directdownload',
+                                        isHidden: true
+                                    },
+                                    // Direct Download - End
                                     zone: {
                                         label: 'label.zone',
                                         docID: 'helpRegisterISOZone',
@@ -2189,7 +2863,8 @@
                                     url: args.data.url,
                                     zoneid: args.data.zone,
                                     isextractable: (args.data.isExtractable == "on"),
-                                    bootable: (args.data.isBootable == "on")
+                                    bootable: (args.data.isBootable == "on"),
+                                    directdownload: (args.data.directdownload == "on")
                                 };
 
                                 if (args.$form.find('.form-item[rel=osTypeId]').css("display") != "none") {
@@ -2205,6 +2880,11 @@
                                 if (args.$form.find('.form-item[rel=isFeatured]').css("display") != "none") {
                                     $.extend(data, {
                                         isfeatured: (args.data.isFeatured == "on")
+                                    });
+                                }
+                                if (args.$form.find('.form-item[rel=checksum]').css("display") != "none") {
+                                    $.extend(data, {
+                                        checksum: args.data.checksum
                                     });
                                 }
 
@@ -2232,6 +2912,180 @@
                                         args.response.error(errorMsg);
                                     }
                                 });
+                            },
+
+                            notification: {
+                                poll: function(args) {
+                                    args.complete();
+                                }
+                            }
+                        },
+                        uploadISOFromLocal: {
+                            isHeader: true,
+                            label: 'label.upload.from.local',
+                            messages: {
+                                notification: function(args) {
+                                    return 'label.upload.iso.from.local';
+                                }
+                            },
+                            createForm: {
+                                title: 'label.upload.iso.from.local',
+                                preFilter: cloudStack.preFilter.createTemplate,
+                                fileUpload: {
+                                    getURL: function(args) {
+                                        args.data = args.formData;
+
+                                        var data = {
+                                            name: args.data.name,
+                                            displayText: args.data.description,
+                                            zoneid: args.data.zone,
+                                            format: "ISO",
+                                            isextractable: (args.data.isExtractable == "on"),
+                                            bootable: (args.data.isBootable == "on"),
+                                            ispublic: (args.data.isPublic == "on"),
+                                            isfeatured: (args.data.isFeatured == "on")
+                                        };
+
+                                        if (args.$form.find('.form-item[rel=osTypeId]').is(':visible')) {
+                                            $.extend(data, {
+                                                osTypeId: args.data.osTypeId,
+                                            });
+                                        }
+
+                                        $.ajax({
+                                            url: createURL('getUploadParamsForIso'),
+                                            data: data,
+                                            async: false,
+                                            success: function(json) {
+                                                var uploadparams = json.postuploadisoresponse.getuploadparams;
+                                                var templateId = uploadparams.id;
+
+                                                args.response.success({
+                                                    url: uploadparams.postURL,
+                                                    ajaxPost: true,
+                                                    data: {
+                                                        'X-signature': uploadparams.signature,
+                                                        'X-expires': uploadparams.expires,
+                                                        'X-metadata': uploadparams.metadata
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    },
+                                    postUpload: function(args) {
+                                        if(args.error) {
+                                            args.response.error(args.errorMsg);
+                                        } else {
+                                            cloudStack.dialog.notice({
+                                                message: "This ISO file has been uploaded. Please check its status at Templates menu > " + args.data.name + " > Zones tab > click a zone > Status field and Ready field."
+                                            });
+                                            args.response.success();
+                                        }
+                                    }
+                                },
+                                fields: {
+                                    templateFileUpload: {
+                                        label: 'label.local.file',
+                                        isFileUpload: true,
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    name: {
+                                        label: 'label.name',
+                                        docID: 'helpRegisterISOName',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    description: {
+                                        label: 'label.description',
+                                        docID: 'helpRegisterISODescription',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+
+                                    zone: {
+                                        label: 'label.zone',
+                                        docID: 'helpRegisterISOZone',
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listZones&available=true"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var zoneObjs = json.listzonesresponse.zone;
+                                                    args.response.success({
+                                                        descriptionField: 'name',
+                                                        data: zoneObjs
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    },
+
+                                    isBootable: {
+                                        label: "label.bootable",
+                                        docID: 'helpRegisterISOBootable',
+                                        isBoolean: true,
+                                        isChecked: true
+                                    },
+
+                                    osTypeId: {
+                                        label: 'label.os.type',
+                                        docID: 'helpRegisterISOOSType',
+                                        dependsOn: 'isBootable',
+                                        isHidden: false,
+                                        validation: {
+                                            required: true
+                                        },
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listOsTypes"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var ostypeObjs = json.listostypesresponse.ostype;
+                                                    var items = [];
+                                                    $(ostypeObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.description
+                                                        });
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    },
+
+                                    isExtractable: {
+                                        label: "label.extractable",
+                                        docID: 'helpRegisterISOExtractable',
+                                        isBoolean: true
+                                    },
+
+                                    isPublic: {
+                                        label: "label.public",
+                                        docID: 'helpRegisterISOPublic',
+                                        isBoolean: true,
+                                        isHidden: true
+                                    },
+
+                                    isFeatured: {
+                                        label: "label.featured",
+                                        docID: 'helpRegisterISOFeatured',
+                                        isBoolean: true,
+                                        isHidden: true
+                                    }
+                                }
+                            },
+
+                            action: function(args) {
+                                return;
                             },
 
                             notification: {
@@ -2294,7 +3148,6 @@
                                 }
                                 switch (args.filterBy.kind) {
                                     case "all":
-                                        ignoreProject = true;
                                         $.extend(data, {
                                             isofilter: 'all'
                                         });
@@ -2347,7 +3200,10 @@
                                             id: item.id,
                                             name: item.name,
                                             description: item.description,
+                                            ostypename: item.ostypename,
                                             ostypeid: item.ostypeid,
+                                            account: item.account,
+                                            domain: item.domain,
                                             zones: item.zonename,
                                             zoneids: [item.zoneid]
                                         };
@@ -2526,6 +3382,11 @@
                                         validation: {
                                             required: true
                                         }
+                                    },
+                                    directdownload: {
+                                        label: 'label.direct.download',
+                                        isBoolean: true,
+                                        converter: cloudStack.converters.toBooleanText
                                     },
                                     size: {
                                         label: 'label.size',
@@ -2840,12 +3701,7 @@
                                                 isextractable: {
                                                     label: 'label.extractable.lower',
                                                     isBoolean: true,
-                                                    isEditable: function() {
-                                                        if (isAdmin())
-                                                            return true;
-                                                        else
-                                                            return false;
-                                                    },
+                                                    isEditable: true,
                                                     converter: cloudStack.converters.toBooleanText
                                                 },
                                                 bootable: {
@@ -2957,12 +3813,15 @@
             allowedActions.push("copyTemplate");
         }
 
-        // "Download Template"
+        // "Download Template" , "Update Template Permissions"
         if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id))) //if neither root-admin, nor the same account, nor the same project
             || (jsonObj.isready == false) || jsonObj.templatetype == "SYSTEM") {
             //do nothing
         } else {
-            allowedActions.push("downloadTemplate");
+            if (jsonObj.isextractable){
+                allowedActions.push("downloadTemplate");
+            }
+            allowedActions.push("shareTemplate");
         }
 
         // "Delete Template"
