@@ -44,7 +44,13 @@
             :tab="$t(tab.name)"
             :key="tab.name"
             v-if="showHideTab(tab)">
-            <component :is="tab.component" :resource="resource" :loading="loading" :tab="activeTab" />
+            <component
+              :is="tab.component"
+              :resource="resource"
+              :loading="loading"
+              :tab="activeTab"
+              :params="tab.params"
+              :fields="tab.fields"/>
           </a-tab-pane>
         </a-tabs>
       </a-card>

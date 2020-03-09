@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-spin :spinning="loading || formLoading">
+  <a-spin :spinning="formLoading">
     <a-form
       :form="form"
       @submit="handleSubmit"
@@ -24,21 +24,23 @@
     >
       <a-form-item
         v-for="(item, index) in dataResource"
-        v-if="dataSource.includes(item.resourcetypename)"
+        v-if="checkExistFields(item.resourcetypename)"
         :key="index"
         :v-bind="item.resourcetypename"
-        :label="$t('max' + item.resourcetypename)">
+        :label="getFieldLabel(item.resourcetypename)">
         <a-input-number
           style="width: 100%;"
           v-decorator="[item.resourcetype, {
             initialValue: item.max
           }]"
-          :placeholder="$t('project.' + item.resourcetypename + '.description')"
         />
       </a-form-item>
       <div class="card-footer">
-        <!-- ToDo extract as component -->
-        <a-button :loading="formLoading" type="primary" @click="handleSubmit">{{ this.$t('apply') }}</a-button>
+        <a-button
+          v-if="!disabled"
+          :loading="formLoading"
+          type="primary"
+          @click="handleSubmit">{{ this.$t('apply') }}</a-button>
       </div>
     </a-form>
   </a-spin>
@@ -48,7 +50,7 @@
 import { api } from '@/api'
 
 export default {
-  name: 'ResourceTab',
+  name: 'ResourcesTab',
   props: {
     resource: {
       type: Object,
@@ -57,31 +59,28 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    },
+    params: {
+      type: Object,
+      default: () => {}
+    },
+    fields: {
+      type: Array,
+      default: () => []
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
-  },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
   },
   data () {
     return {
       formLoading: false,
-      dataResource: [],
-      dataSource: []
+      dataResource: []
     }
   },
-  created () {
-    this.dataSource = [
-      'network',
-      'volume',
-      'public_ip',
-      'template',
-      'user_vm',
-      'snapshot',
-      'vpc', 'cpu',
-      'memory',
-      'primary_storage',
-      'secondary_storage'
-    ]
+  beforeCreate () {
+    this.form = this.$form.createForm(this)
   },
   mounted () {
     this.fetchData()
@@ -91,30 +90,29 @@ export default {
       if (!newData || !newData.id) {
         return
       }
-
       this.resource = newData
       this.fetchData()
     }
   },
   methods: {
-    fetchData () {
+    async fetchData () {
       const params = {}
-      params.projectid = this.resource.id
-
-      this.formLoading = true
-
-      api('listResourceLimits', params).then(json => {
-        if (json.listresourcelimitsresponse.resourcelimit) {
-          this.dataResource = json.listresourcelimitsresponse.resourcelimit
-        }
-      }).catch(error => {
+      Object.keys(this.params).forEach((field) => {
+        const resourceField = this.params[field]
+        const fieldVal = this.resource[resourceField] ? this.resource[resourceField] : null
+        params[field] = fieldVal
+      })
+      try {
+        this.formLoading = true
+        this.dataResource = await this.listResourceLimits(params)
+        this.formLoading = false
+      } catch (e) {
         this.$notification.error({
           message: 'Request Failed',
-          description: error.response.headers['x-description']
+          description: e
         })
-      }).finally(() => {
         this.formLoading = false
-      })
+      }
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -123,29 +121,23 @@ export default {
         if (err) {
           return
         }
-
         const arrAsync = []
         const params = {}
-        params.projectid = this.resource.id
+        Object.keys(this.params).forEach((field) => {
+          const resourceField = this.params[field]
+          const fieldVal = this.resource[resourceField] ? this.resource[resourceField] : null
+          params[field] = fieldVal
+        })
 
-        // create parameter from form
         for (const key in values) {
           const input = values[key]
 
           if (input === undefined) {
             continue
           }
-
           params.resourcetype = key
           params.max = input
-
-          arrAsync.push(new Promise((resolve, reject) => {
-            api('updateResourceLimit', params).then(json => {
-              resolve()
-            }).catch(error => {
-              reject(error)
-            })
-          }))
+          arrAsync.push(this.updateResourceLimit(params))
         }
 
         this.formLoading = true
@@ -162,6 +154,44 @@ export default {
           this.formLoading = false
         })
       })
+    },
+    listResourceLimits (params) {
+      return new Promise((resolve, reject) => {
+        let dataResource = []
+        api('listResourceLimits', params).then(json => {
+          if (json.listresourcelimitsresponse.resourcelimit) {
+            dataResource = json.listresourcelimitsresponse.resourcelimit
+          }
+          resolve(dataResource)
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    updateResourceLimit (params) {
+      return new Promise((resolve, reject) => {
+        api('updateResourceLimit', params).then(json => {
+          resolve()
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    },
+    checkExistFields (resourcetypename) {
+      const fieldExists = this.fields.filter((item) => item.field === resourcetypename)
+      if (fieldExists && fieldExists.length > 0) {
+        return true
+      }
+
+      return false
+    },
+    getFieldLabel (resourcetypename) {
+      const field = this.fields.filter((item) => item.field === resourcetypename)
+      if (field && field.length > 0) {
+        return this.$t(field[0].title)
+      }
+
+      return resourcetypename
     }
   }
 }

@@ -68,7 +68,10 @@
               :items="items"
               :tab="tabActive"
               :loading="loading"
-              :bordered="false" />
+              :bordered="false"
+              :params="tab.params"
+              :fields="tab.fields"
+              :disabled="resource && resource.level === 0" />
           </a-tab-pane>
         </a-tabs>
       </a-card>

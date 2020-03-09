@@ -34,7 +34,9 @@
                 :resource="project"
                 :loading="loading"
                 :bordered="false"
-                :stats="stats" />
+                :stats="stats"
+                :params="tab.params"
+                :fields="tab.fields" />
             </a-tab-pane>
           </a-tabs>
           <a-col

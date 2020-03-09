@@ -179,8 +179,57 @@ export const asyncRouterMap = [
             },
             {
               name: 'resources',
+              params: {
+                projectid: 'id'
+              },
+              fields: [
+                {
+                  field: 'network',
+                  title: 'maxnetwork'
+                },
+                {
+                  field: 'volume',
+                  title: 'maxvolume'
+                },
+                {
+                  field: 'public_ip',
+                  title: 'maxpublic_ip'
+                },
+                {
+                  field: 'template',
+                  title: 'maxtemplate'
+                },
+                {
+                  field: 'user_vm',
+                  title: 'maxuser_vm'
+                },
+                {
+                  field: 'snapshot',
+                  title: 'maxsnapshot'
+                },
+                {
+                  field: 'vpc',
+                  title: 'maxvpc'
+                },
+                {
+                  field: 'cpu',
+                  title: 'maxcpu'
+                },
+                {
+                  field: 'memory',
+                  title: 'maxmemory'
+                },
+                {
+                  field: 'primary_storage',
+                  title: 'maxprimary_storage'
+                },
+                {
+                  field: 'secondary_storage',
+                  title: 'maxsecondary_storage'
+                }
+              ],
               show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
-              component: () => import('@/views/project/ResourcesTab.vue')
+              component: () => import('@/components/view/ResourcesTab.vue')
             }
           ]
         },

@@ -84,7 +84,7 @@ export default {
       icon: 'team',
       permission: ['listAccounts'],
       columns: ['name', 'state', 'rolename', 'roletype', 'domain'],
-      details: ['name', 'id', 'rolename', 'roletype', 'domain', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
+      details: ['name', 'id', 'rolename', 'roletype', 'domain', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes'],
       related: [{
         name: 'accountuser',
         title: 'Users',
@@ -102,6 +102,61 @@ export default {
         {
           name: 'Settings',
           component: () => import('@/components/view/SettingsTab.vue')
+        },
+        {
+          name: 'resources',
+          params: {
+            account: 'name',
+            domainid: 'domainid'
+          },
+          fields: [
+            {
+              field: 'network',
+              title: 'networkLimit'
+            },
+            {
+              field: 'volume',
+              title: 'volumeLimit'
+            },
+            {
+              field: 'public_ip',
+              title: 'ipLimit'
+            },
+            {
+              field: 'template',
+              title: 'templateLimit'
+            },
+            {
+              field: 'user_vm',
+              title: 'vmLimit'
+            },
+            {
+              field: 'snapshot',
+              title: 'snapshotLimit'
+            },
+            {
+              field: 'vpc',
+              title: 'vpcLimit'
+            },
+            {
+              field: 'cpu',
+              title: 'cpuLimit'
+            },
+            {
+              field: 'memory',
+              title: 'memoryLimit'
+            },
+            {
+              field: 'primary_storage',
+              title: 'primaryStorageLimit'
+            },
+            {
+              field: 'secondary_storage',
+              title: 'secondaryStorageLimit'
+            }
+          ],
+          show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
+          component: () => import('@/components/view/ResourcesTab.vue')
         }
       ],
       actions: [
@@ -219,7 +274,7 @@ export default {
       permission: ['listDomains', 'listDomainChildren'],
       resourceType: 'Domain',
       columns: ['name', 'state', 'path', 'parentdomainname', 'level'],
-      details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
+      details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal'],
       related: [{
         name: 'account',
         title: 'Accounts',
@@ -237,6 +292,60 @@ export default {
         }, {
           name: 'Settings',
           component: () => import('@/components/view/SettingsTab.vue')
+        },
+        {
+          name: 'resources',
+          params: {
+            domainid: 'id'
+          },
+          fields: [
+            {
+              field: 'network',
+              title: 'networkLimit'
+            },
+            {
+              field: 'volume',
+              title: 'volumeLimit'
+            },
+            {
+              field: 'public_ip',
+              title: 'ipLimit'
+            },
+            {
+              field: 'template',
+              title: 'templateLimit'
+            },
+            {
+              field: 'user_vm',
+              title: 'vmLimit'
+            },
+            {
+              field: 'snapshot',
+              title: 'snapshotLimit'
+            },
+            {
+              field: 'vpc',
+              title: 'vpcLimit'
+            },
+            {
+              field: 'cpu',
+              title: 'cpuLimit'
+            },
+            {
+              field: 'memory',
+              title: 'memoryLimit'
+            },
+            {
+              field: 'primary_storage',
+              title: 'primaryStorageLimit'
+            },
+            {
+              field: 'secondary_storage',
+              title: 'secondaryStorageLimit'
+            }
+          ],
+          show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
+          component: () => import('@/components/view/ResourcesTab.vue')
         }
       ],
       treeView: true,
