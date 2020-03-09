@@ -20,6 +20,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.RollingMaintenanceAnswer;
 import com.cloud.agent.api.RollingMaintenanceCommand;
+import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
@@ -85,6 +86,8 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
     private ClusterDetailsDao clusterDetailsDao;
     @Inject
     private HostTagsDao hostTagsDao;
+    @Inject
+    private AlertManager alertManager;
 
     protected List<AffinityGroupProcessor> _affinityProcessors;
 
@@ -294,6 +297,8 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
             return new Ternary<>(false, true, "Maintenance stage must be avoided");
         }
 
+        s_logger.debug("Updating capacity before re-checking capacity");
+        alertManager.recalculateCapacity();
         result = reCheckCapacityBeforeMaintenanceOnHost(cluster, host, forced, hostsSkipped);
         if (result.first() || result.second()) {
             return result;
