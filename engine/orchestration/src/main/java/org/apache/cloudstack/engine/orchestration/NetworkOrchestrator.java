@@ -77,7 +77,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -116,13 +115,10 @@ import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.dao.AccountGuestVlanMapDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkServiceMapVO;
 import com.cloud.network.dao.NetworkVO;
@@ -159,7 +155,6 @@ import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
-import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -169,7 +164,6 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
-import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
@@ -213,7 +207,6 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
-import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
 
@@ -238,8 +231,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Inject
     ConfigurationDao _configDao;
     @Inject
-    UserVmDao _userVmDao;
-    @Inject
     AlertManager _alertMgr;
     @Inject
     ConfigurationManager _configMgr;
@@ -261,12 +252,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     PodVlanMapDao _podVlanMapDao;
     @Inject
     NetworkOfferingDetailsDao _ntwkOffDetailsDao;
-    @Inject
-    AccountGuestVlanMapDao _accountGuestVlanMapDao;
-    @Inject
-    DataCenterVnetDao _datacenterVnetDao;
-    @Inject
-    NetworkAccountDao _networkAccountDao;
     @Inject
     protected NicIpAliasDao _nicIpAliasDao;
     @Inject
@@ -307,9 +292,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         this.networkElements = networkElements;
     }
 
-    @Inject
-    NetworkDomainDao _networkDomainDao;
-
     List<IpDeployer> ipDeployers;
 
     public List<IpDeployer> getIpDeployers() {
@@ -337,9 +319,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Inject
     FirewallRulesDao _firewallDao;
     @Inject
-    ResourceLimitService _resourceLimitMgr;
-
-    @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
@@ -357,8 +336,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
     VpcManager _vpcMgr;
-    @Inject
-    PrivateIpDao _privateIpDao;
     @Inject
     NetworkACLManager _networkACLMgr;
     @Inject
