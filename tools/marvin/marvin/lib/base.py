@@ -1265,12 +1265,15 @@ class Template:
 
     @classmethod
     def create(cls, apiclient, services, volumeid=None,
-               account=None, domainid=None, projectid=None):
+               account=None, domainid=None, projectid=None, randomise=True):
         """Create template from Volume"""
         # Create template from Virtual machine and Volume ID
         cmd = createTemplate.createTemplateCmd()
         cmd.displaytext = services["displaytext"]
-        cmd.name = "-".join([services["name"], random_gen()])
+        if randomise:
+            cmd.name = "-".join([services["name"], random_gen()])
+        else:
+            cmd.name = services["name"]
         if "ostypeid" in services:
             cmd.ostypeid = services["ostypeid"]
         elif "ostype" in services:
