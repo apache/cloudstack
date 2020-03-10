@@ -939,7 +939,6 @@ class CsForwardingRules(CsDataBag):
             )
 
         self.fw.append(["nat", "", fw_prerout_rule])
-        self.fw.append(["nat", "", fw_postrout_rule])
         self.fw.append(["nat", "", fw_postrout_rule2])
         self.fw.append(["nat", "", fw_output_rule])
 
