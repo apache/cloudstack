@@ -468,6 +468,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             if (answer != null && !answer.getResult()) {
                 errMsg = answer.getDetails();
             }
+            if (answer == null) {
+                errMsg = "answer is null, set to error for CopyCommandResult";
+            }
         } catch (Exception e) {
             s_logger.debug("copy failed", e);
             errMsg = e.toString();
