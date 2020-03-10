@@ -1124,7 +1124,6 @@
                         <xmlOutput>true</xmlOutput>
                         <failOnError>false</failOnError>
                         <maxHeap>2048</maxHeap>
-                        <excludeFilterFile>findbugsExcludeFilter.xml</excludeFilterFile>
                     </configuration>
                     <executions>
                         <execution>
@@ -1225,17 +1224,6 @@
                 <configuration>
                     <threshold>Low</threshold><!-- High|Normal|Low|Exp|Ignore -->
                     <effort>Default</effort><!-- Min|Default|Max -->
-                    <excludeFilterFile>${basedir}/findbugsExcludeFilter.xml</excludeFilterFile>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${cs.maven-javadoc-plugin.version}</version>
-                <configuration>
-                    <minmemory>128m</minmemory>
-                    <maxmemory>1g</maxmemory>
-                    <show>public</show>
                 </configuration>
             </plugin>
             <plugin>
