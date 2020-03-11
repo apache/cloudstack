@@ -59,7 +59,7 @@
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
         <cs.builder-helper-plugin.version>3.0.0</cs.builder-helper-plugin.version>
         <cs.checkstyle-plugin.version>3.1.0</cs.checkstyle-plugin.version>
-        <cs.cobertura-plugin.version>2.7</cs.cobertura-plugin.version>
+        <cs.jacoco-plugin.version>0.8.3</cs.jacoco-plugin.version>
         <cs.compiler-plugin.version>3.8.1</cs.compiler-plugin.version>
         <cs.dependency-plugin.version>3.1.1</cs.dependency-plugin.version>
         <cs.failsafe-plugin.version>2.22.2</cs.failsafe-plugin.version>
@@ -735,6 +735,11 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${cs.jacoco-plugin.version}</version>
+            </plugin>
+            <plugin>
                 <groupId>org.openclover</groupId>
                 <artifactId>clover-maven-plugin</artifactId>
                 <version>${cs.clover-maven-plugin.version}</version>
@@ -765,7 +770,6 @@
                             <goal>aggregate</goal>
                             <!-- We save a history point in order to have data to generate a historical report -->
                             <goal>save-history</goal>
-
                         </goals>
                     </execution>
                 </executions>
@@ -1167,7 +1171,7 @@
                     <version>${cs.surefire-plugin.version}</version>
                     <configuration>
                         <useSystemClassLoader>false</useSystemClassLoader>
-                        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify</argLine>
+                        <argLine>@{argLine} -Djava.security.egd=file:/dev/./urandom -noverify</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1235,6 +1239,19 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>${cs.resources-plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${cs.jacoco-plugin.version}</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <!-- select non-aggregate reports -->
+                            <report>report</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
             </plugin>
         </plugins>
     </reporting>
@@ -1309,10 +1326,6 @@
             <id>enablefindbugs</id>
             <build>
                 <plugins>
-<!--                     <plugin> -->
-<!--                         <groupId>org.apache.maven.plugins</groupId> -->
-<!--                         <artifactId>maven-pmd-plugin</artifactId> -->
-<!--                     </plugin> -->
                     <plugin>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs-maven-plugin</artifactId>
