@@ -19,6 +19,11 @@
 -- Schema upgrade from 4.13.0.0 to 4.14.0.0
 --;
 
+-- Don't reserve capacities for stopped VMs by default as this influences normal capacity checks when doing i.e. rolling host maintenance, etc.
+-- One is free to increase this to a high value in case it's needed in his environment, otherwise makes no sense in most environments,
+-- as new VM can't be started on an empty host which was consumed previously by many VMS which are now stopped
+UPDATE `cloud`.`configuration` SET `default_value`='10' WHERE  `name`='capacity.skipcounting.hours';
+
 -- KVM: enable storage data motion on KVM hypervisor_capabilities
 UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported` = 1 WHERE `hypervisor_capabilities`.`hypervisor_type` = 'KVM';
 
