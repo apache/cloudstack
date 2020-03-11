@@ -38,7 +38,7 @@ public interface RollingMaintenanceManager extends Configurable {
             "Ping interval in seconds between management server and hosts performing stages during rolling maintenance",
             true, ConfigKey.Scope.Global);
     ConfigKey<Integer> KvmRollingMaintenanceWaitForMaintenanceTimeout = new ConfigKey<>("Advanced", Integer.class,
-            "kvm.rolling.maintenance.wait.maintenance.timeout", "600",
+            "kvm.rolling.maintenance.wait.maintenance.timeout", "1800",
             "Timeout (in seconds) to wait for a host preparing to enter maintenance mode",
             true, ConfigKey.Scope.Global);
 

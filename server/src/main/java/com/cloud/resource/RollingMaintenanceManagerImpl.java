@@ -163,6 +163,12 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         String details = null;
         List<HostUpdated> hostsUpdated = new ArrayList<>();
         List<HostSkipped> hostsSkipped = new ArrayList<>();
+
+        if (timeout <= KvmRollingMaintenancePingInterval.value()) {
+            return new Ternary<>(success, "The timeout value provided must be greater or equal than the ping interval " +
+                    "defined in '" + KvmRollingMaintenancePingInterval.key() + "'", new Pair<>(hostsUpdated, hostsSkipped));
+        }
+
         try {
             Map<Long, List<Host>> hostsByCluster = getHostsByClusterForRollingMaintenance(type, ids);
 
