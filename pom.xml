@@ -634,6 +634,11 @@
                 <artifactId>wsdl4j</artifactId>
                 <version>1.6.3</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.maven.doxia</groupId>
+                <artifactId>doxia-site-renderer</artifactId>
+                <version>1.8.1</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
