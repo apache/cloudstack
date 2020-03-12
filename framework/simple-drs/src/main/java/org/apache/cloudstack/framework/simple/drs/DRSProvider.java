@@ -19,6 +19,7 @@ package org.apache.cloudstack.framework.simple.drs;
 import java.util.List;
 
 public interface DRSProvider {
+    String getProviderName();
     void calculateClusterImbalance(long clusterId);
     void performWorkloadRebalance(long clusterId, long workloadId, long destinationId);
     List<String> findPossibleRebalancingPlans(long clusterId);

@@ -20,6 +20,8 @@ import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
+import java.util.List;
+
 public interface SimpleDRSManager extends PluggableService, Configurable {
 
     ConfigKey<String> SimpleDRSProvider = new ConfigKey<>("Advanced", String.class,
@@ -32,4 +34,5 @@ public interface SimpleDRSManager extends PluggableService, Configurable {
             "balanced",
             "The simple DRS rebalancing algorithm plugin that is used. Possible values: balanced, condensed", true);
 
+    List<String> listProviderNames();
 }

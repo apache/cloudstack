@@ -21,28 +21,41 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.simple.drs.SimpleDRSManager;
+import org.apache.log4j.Logger;
 
-public class ScheduleDRSCmd extends BaseAsyncCmd {
-    @Override
-    public String getEventType() {
-        return null;
-    }
+import javax.inject.Inject;
+import java.util.List;
 
-    @Override
-    public String getEventDescription() {
-        return null;
-    }
+@APICommand(name = ScheduleDRSCmd.APINAME,
+        description = "Schedule a DRS job using configured DRS provider and rebalancing algorithm",
+        responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = true,
+        responseHasSensitiveInfo = true,
+        since = "4.14.0",
+        authorized = {RoleType.Admin})
+public class ScheduleDRSCmd extends BaseCmd {
+
+    @Inject
+    SimpleDRSManager drsManager;
+
+    private static final Logger LOG = Logger.getLogger(ScheduleDRSCmd.class);
+    public static final String APINAME = "scheduleDRS";
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-
+        List<String> providers = drsManager.listProviderNames();
+        int a = 2;
     }
 
     @Override
     public String getCommandName() {
-        return null;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

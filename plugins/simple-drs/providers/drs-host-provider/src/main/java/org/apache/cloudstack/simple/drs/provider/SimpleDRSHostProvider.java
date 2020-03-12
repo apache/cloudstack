@@ -22,6 +22,13 @@ import java.util.List;
 
 public class SimpleDRSHostProvider implements DRSProvider {
 
+    private static final String PROVIDER_NAME = "host-vm-provider";
+
+    @Override
+    public String getProviderName() {
+        return PROVIDER_NAME;
+    }
+
     @Override
     public void calculateClusterImbalance(long clusterId) {
 

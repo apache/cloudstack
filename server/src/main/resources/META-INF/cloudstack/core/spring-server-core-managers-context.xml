@@ -317,4 +317,9 @@
         <property name="affinityGroupProcessors"
                   value="#{affinityProcessorsRegistry.registered}" />
     </bean>
+
+    <bean id="drsManager" class="org.apache.cloudstack.simple.drs.SimpleDRSManagerImpl">
+        <property name="drsProviders" value="#{drsProvidersRegistry.registered}" />
+        <property name="drsAlgorithms" value="#{drsAlgorithmsRegistry.registered}" />
+    </bean>
 </beans>

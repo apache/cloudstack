@@ -18,11 +18,58 @@ package org.apache.cloudstack.simple.drs;
 
 import org.apache.cloudstack.api.command.admin.simple.drs.ScheduleDRSCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.simple.drs.DRSProvider;
+import org.apache.cloudstack.framework.simple.drs.DRSRebalancingAlgorithm;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class SimpleDRSManagerImpl implements SimpleDRSManager {
+
+    private static Map<String, DRSProvider> drsProvidersMap = new HashMap<>();
+    private static Map<String, DRSRebalancingAlgorithm> drsAlgorithmsMap = new HashMap<>();
+
+    private List<DRSProvider> drsProviders;
+    private List<DRSRebalancingAlgorithm> drsAlgorithms;
+
+    ////////////////////////////////////////////////////
+    /////////////// Init DRS providers /////////////////
+    ////////////////////////////////////////////////////
+
+    public void setDrsProviders(List<DRSProvider> drsProviders) {
+        this.drsProviders = drsProviders;
+        initDrsProvidersMap();
+    }
+
+    private void initDrsProvidersMap() {
+        if (CollectionUtils.isNotEmpty(drsProviders)) {
+            for (DRSProvider provider : drsProviders) {
+                drsProvidersMap.put(provider.getProviderName().toLowerCase(), provider);
+            }
+        }
+    }
+
+    ////////////////////////////////////////////////////
+    /////////////// Init DRS algorithms ////////////////
+    ////////////////////////////////////////////////////
+
+    private void initDrsAlgorithmsMap() {
+        if (CollectionUtils.isNotEmpty(drsAlgorithms)) {
+            for (DRSRebalancingAlgorithm algorithm : drsAlgorithms) {
+                drsAlgorithmsMap.put(algorithm.getAlgorithmName().toLowerCase(), algorithm);
+            }
+        }
+    }
+
+    public void setDrsAlgorithms(List<DRSRebalancingAlgorithm> drsAlgorithms) {
+        this.drsAlgorithms = drsAlgorithms;
+        initDrsAlgorithmsMap();
+    }
 
     @Override
     public List<Class<?>> getCommands() {
@@ -41,5 +88,16 @@ public class SimpleDRSManagerImpl implements SimpleDRSManager {
         return new ConfigKey[] {
                 SimpleDRSProvider, SimpleDRSRebalancingAlgorithm
         };
+    }
+
+    @Override
+    public List<String> listProviderNames() {
+        List<String> list = new LinkedList<>();
+        if (MapUtils.isNotEmpty(drsProvidersMap)) {
+            for (String key : drsProvidersMap.keySet()) {
+                list.add(key);
+            }
+        }
+        return list;
     }
 }

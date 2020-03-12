@@ -21,6 +21,14 @@ import org.apache.cloudstack.framework.simple.drs.DRSRebalancingAlgorithm;
 import java.util.List;
 
 public class SimpleDRSCondensedAlgorithm implements DRSRebalancingAlgorithm {
+
+    private static final String ALGORITHM_NAME = "condensed";
+
+    @Override
+    public String getAlgorithmName() {
+        return ALGORITHM_NAME;
+    }
+
     @Override
     public boolean isClusterImbalanced(long clusterId) {
         return false;

@@ -19,6 +19,7 @@ package org.apache.cloudstack.framework.simple.drs;
 import java.util.List;
 
 public interface DRSRebalancingAlgorithm {
+    String getAlgorithmName();
     boolean isClusterImbalanced(long clusterId);
     List<String> findResourcesToBalance();
     List<String> findWorkloadsToBalance();
